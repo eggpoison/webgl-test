@@ -35,9 +35,5 @@ export function loadTextures(): Promise<void> {
 }
 
 export function getTexture(textureSource: string): WebGLTexture {
-   if (!TEXTURES.hasOwnProperty(textureSource)) {
-      throw new Error("Couldn't find texture " + textureSource);
-   }
-
    return TEXTURES[textureSource];
 }

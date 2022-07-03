@@ -2,8 +2,9 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
-import Board from './Board';
 import { loadTextures } from './textures';
+import Game from './Game';
+import { connectToServer } from './client';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -14,10 +15,24 @@ root.render(
   </React.StrictMode>
 );
 
+let canvas: HTMLCanvasElement;
 export let gl: WebGLRenderingContext;
 
+export let windowWidth: number;
+export let windowHeight: number;
+
+const resizeCanvas = (): void => {
+   // Update the size of the canvas
+   canvas.width = window.innerWidth;
+   canvas.height = window.innerHeight;
+   windowWidth = window.innerWidth;
+   windowHeight = window.innerHeight;
+   gl.viewport(0, 0, window.innerWidth, window.innerHeight);
+}
+window.addEventListener("resize", resizeCanvas)
+
 export async function loadGame(): Promise<void> {
-   const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
+   canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
    const glAttempt = canvas.getContext("webgl");
 
    if (glAttempt === null) {
@@ -26,20 +41,15 @@ export async function loadGame(): Promise<void> {
    }
    gl = glAttempt;
 
-   canvas.width = window.innerWidth;
-   canvas.height = window.innerHeight;
-
-   gl.viewport(0, 0, window.innerWidth, window.innerHeight);
+   resizeCanvas();
    
    await loadTextures();
-   Board.setup();
 
-   // Main render loop
-   const loop = (): void => {
-      Board.update();
-      Board.render();
-
-      requestAnimationFrame(loop);
+   const serverResponse = await connectToServer();
+   if (serverResponse === null) {
+      alert("Failed to connect to the server!");
+      return;
    }
-   requestAnimationFrame(loop);
+
+   Game.setup();
 };

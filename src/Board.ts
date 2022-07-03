@@ -1,8 +1,11 @@
 import { gl } from ".";
+import Chunk from "./Chunk";
+import TransformComponent from "./components/TransformComponent";
+import Entity from "./entities/Entity";
 import { generateTerrain } from "./terrain-generation";
 import { getTexture } from "./textures";
 import Tile, { TileInfo, TILE_TYPE_INFO_RECORD } from "./Tile";
-import { getXPositionInCanvas, getYPositionInCanvas } from "./utils";
+import { getXPositionInCanvas, getYPositionInCanvas, isDev } from "./utils";
 
 const tileVertexShaderText = `
 precision mediump float;
@@ -33,23 +36,26 @@ void main() {
 
 abstract class Board {
    /** Size of a tile */
-   public static readonly TILE_SIZE = 60;
+   public static readonly TILE_SIZE = 64;
    /** Width and height of the board in chunks */
-   public static readonly BOARD_SIZE = 16;
+   public static readonly BOARD_SIZE = 1;
    /** Number of tiles in the width and height of a chunk */
    public static readonly CHUNK_SIZE = 8;
    /** Width and height of the board in tiles */
    public static readonly DIMENSIONS = this.BOARD_SIZE * this.CHUNK_SIZE;
 
-   public static tiles: Array<Array<Tile>>;
+   private static tiles: Array<Array<Tile>>;
+
+   private static chunks: Array<Array<Chunk>>;
 
    private static tileProgram: WebGLProgram;
-
-   private static tileTextures: { [key: string]: WebGLTexture } = {};
 
    public static setup(): void {
       // Generate terrain
       this.tiles = generateTerrain();
+
+      // Initialise chunks array
+      this.initialiseChunkArray();
 
       // Create shaders
       const vertexShader = gl.createShader(gl.VERTEX_SHADER)!;
@@ -80,44 +86,28 @@ abstract class Board {
          return;
       }
 
-      // NOTE: only do in testing!
-      gl.validateProgram(this.tileProgram);
-      if (!gl.getProgramParameter(this.tileProgram, gl.VALIDATE_STATUS)) {
-         console.error("ERROR validating program!", gl.getProgramInfoLog(this.tileProgram));
-         return;
+      if (isDev()) {
+         gl.validateProgram(this.tileProgram);
+         if (!gl.getProgramParameter(this.tileProgram, gl.VALIDATE_STATUS)) {
+            console.error("ERROR validating program!", gl.getProgramInfoLog(this.tileProgram));
+            return;
+         }
       }
+   }
 
-      
-      // this.vertPositionLocation = gl.getAttribLocation(this.tileProgram, "a_position");
-      // this.v_texCoordLocation = gl.getAttribLocation(this.tileProgram, "a_texCoord");
-      
-      // gl.enableVertexAttribArray(this.vertPositionLocation);
-      // gl.enableVertexAttribArray(this.v_texCoordLocation);
+   private static initialiseChunkArray(): void {
+      this.chunks = new Array<Array<Chunk>>(this.BOARD_SIZE);
 
+      for (let x = 0; x < this.BOARD_SIZE; x++) {
+         this.chunks[x] = new Array<Chunk>(this.BOARD_SIZE);
+         for (let y = 0; y < this.BOARD_SIZE; y++) {
+            this.chunks[x][y] = new Chunk();
+         }
+      }
+   }
 
-
-      // //
-      // // Create grass texture:
-      // //
-      // const image = TEXTURES["grass.jpg"];
-
-      // // Look up where the texture coordinates need to go.
-      // var texCoordLocation = gl.getAttribLocation(this.tileProgram, "a_texCoord");
-      // gl.enableVertexAttribArray(texCoordLocation);
-      // gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);
-      
-      // // Create a texture.
-      // var texture = gl.createTexture();
-      // gl.bindTexture(gl.TEXTURE_2D, texture);
-      
-      // // Set the parameters so we can render any size image.
-      // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-      // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-      
-      // // Upload the image into the texture.
-      // gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+   public static getChunk(x: number, y: number): Chunk {
+      return this.chunks[x][y];
    }
 
    public static getTile(x: number, y: number): TileInfo {
@@ -125,13 +115,35 @@ abstract class Board {
    }
 
    public static update(): void {
+      for (let x = 0; x < this.BOARD_SIZE; x++) {
+         for (let y = 0; y < this.BOARD_SIZE; y++) {
+            const chunk = this.getChunk(x, y);
 
+            const entities = chunk.getEntities().slice();
+            for (const entity of entities) {
+               entity.tick();
+            }
+         }
+      }
    }
 
    public static render(): void {
+      // Render tiles
       for (let x = 0; x < this.DIMENSIONS; x++) {
          for (let y = 0; y < this.DIMENSIONS; y++) {
             this.renderTile(x, y);
+         }
+      }
+
+      // Render entities
+      for (let x = 0; x < this.BOARD_SIZE; x++) {
+         for (let y = 0; y < this.BOARD_SIZE; y++) {
+            const chunk = this.getChunk(x, y);
+
+            const entities = chunk.getEntities().slice();
+            for (const entity of entities) {
+               entity.render();
+            }
          }
       }
    }
@@ -143,8 +155,8 @@ abstract class Board {
       const x1 = tileX * Board.TILE_SIZE;
       const x2 = x1 + Board.TILE_SIZE;
       const y1 = tileY * Board.TILE_SIZE;
-      const y2 = y1 + Board.TILE_SIZE
-
+      const y2 = y1 + Board.TILE_SIZE;
+      
       const canvasX1 = getXPositionInCanvas(x1);
       const canvasX2 = getXPositionInCanvas(x2);
       const canvasY1 = getYPositionInCanvas(y1);
@@ -189,13 +201,43 @@ abstract class Board {
       gl.enableVertexAttribArray(positionAttribLocation);
       gl.enableVertexAttribArray(texCoordAttribLocation);
 
+      // Set the texture
       const texture = getTexture(tileTypeInfo.textureSource);
-
       gl.bindTexture(gl.TEXTURE_2D, texture);
-      gl.activeTexture(gl.TEXTURE0)
+      gl.activeTexture(gl.TEXTURE0);
 
+      // Draw the tile
       gl.useProgram(this.tileProgram);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
+   }
+
+   private static getEntityChunk(entity: Entity): Chunk {
+      // Get the chunk
+      const entityPositionComponent = entity.getComponent(TransformComponent)!;
+      const chunk = entityPositionComponent.getChunk()!;
+      return chunk;
+   }
+
+   public static addEntity(entity: Entity): void {
+      const chunk = this.getEntityChunk(entity);
+
+      // If the entity's spawn position is outside the board, don't add it
+      if (chunk === null) return;
+
+      if (typeof entity.onLoad !== "undefined") entity.onLoad();
+      entity.loadComponents();
+
+      // Add the entity to the chunk
+      chunk.addEntity(entity);
+
+      // Update the entity's previous chunk
+      entity.previousChunk = chunk;
+   }
+
+   public static removeEntity(entity: Entity): void {
+      // Remove the entity from its chunk
+      const chunk = entity.previousChunk!;
+      chunk.removeEntity(entity);
    }
 }
 
