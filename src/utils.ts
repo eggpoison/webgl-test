@@ -1,6 +1,3 @@
-import TransformComponent from "./components/TransformComponent";
-import Player from "./entities/Player";
-
 export function randFloat(min: number, max: number): number {
    return Math.random() * (max - min) + min;
 }
@@ -228,22 +225,6 @@ export function imageIsLoaded(image: HTMLImageElement): Promise<boolean> {
          resolve(true);
       });
    });
-}
-
-export function getXPositionInCanvas(x: number): number {
-   // Account for the player position
-   const worldX = x - Player.instance.getComponent(TransformComponent)!.position.x + window.innerWidth / 2;
-   
-   const canvasX = worldX / window.innerWidth * 2 - 1;
-   return canvasX;
-}
-
-export function getYPositionInCanvas(y: number): number {
-   // Account for the player position
-   const worldY = y - Player.instance.getComponent(TransformComponent)!.position.y + window.innerHeight / 2;
-   
-   const canvasY = worldY / window.innerHeight * 2 - 1;
-   return canvasY;
 }
 
 const isDevBool = !process.env.NODE_ENV || process.env.NODE_ENV === "development";

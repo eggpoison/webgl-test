@@ -1,7 +1,7 @@
+import SETTINGS from "webgl-test-shared/lib/settings";
+import { TILE_TYPE_INFO_RECORD } from "webgl-test-shared/lib/Tile";
 import Board from "../Board";
 import Chunk from "../Chunk";
-import SETTINGS from "../settings";
-import { TILE_TYPE_INFO_RECORD } from "../Tile";
 import { Coordinates, Point, Vector } from "../utils";
 import Component from "./Component";
 import HitboxComponent from "./HitboxComponent";
@@ -41,7 +41,7 @@ class TransformComponent extends Component {
       // Apply acceleration
       if (this.acceleration !== null) {
          const acceleration = this.acceleration.copy();
-         acceleration.magnitude /= SETTINGS.tps; 
+         acceleration.magnitude /= SETTINGS.TPS; 
 
          // Add acceleration to velocity
          if (this.velocity === null) {
@@ -52,7 +52,7 @@ class TransformComponent extends Component {
       }
       else if (!this.isMoving && this.velocity !== null) {
          // Apply friction
-         this.velocity.magnitude -= this.terminalVelocity * tileTypeInfo.friction * TransformComponent.FRICTION_CONSTANT / SETTINGS.tps;
+         this.velocity.magnitude -= this.terminalVelocity * tileTypeInfo.friction * TransformComponent.FRICTION_CONSTANT / SETTINGS.TPS;
          if (this.velocity.magnitude < 0) this.velocity = null;
       }
 
@@ -64,7 +64,7 @@ class TransformComponent extends Component {
       // Apply velocity
       if (this.velocity !== null) {
          const velocity = this.velocity.copy();
-         velocity.magnitude /= SETTINGS.tps;
+         velocity.magnitude /= SETTINGS.TPS;
           
          // // Apply tile slowness to velocity
          if (typeof tileTypeInfo.effects?.moveSpeedMultiplier !== "undefined") {
@@ -103,21 +103,21 @@ class TransformComponent extends Component {
    }
 
    public getChunk(): Chunk | null {
-      const chunkX = Math.floor(this.position.x / (Board.TILE_SIZE * Board.CHUNK_SIZE));
-      const chunkY = Math.floor(this.position.y / (Board.TILE_SIZE * Board.CHUNK_SIZE));
+      const chunkX = Math.floor(this.position.x / (SETTINGS.TILE_SIZE * SETTINGS.CHUNK_SIZE));
+      const chunkY = Math.floor(this.position.y / (SETTINGS.TILE_SIZE * SETTINGS.CHUNK_SIZE));
 
       return Board.getChunk(chunkX, chunkY);
    }
 
    public getTileCoordinates(): Coordinates {
-      const x = Math.floor(this.position.x / Board.TILE_SIZE);
-      const y = Math.floor(this.position.y / Board.TILE_SIZE);
+      const x = Math.floor(this.position.x / SETTINGS.TILE_SIZE);
+      const y = Math.floor(this.position.y / SETTINGS.TILE_SIZE);
       
       return [x, y];
    }
 
    private resolveWallCollisions(): void {
-      const boardUnits = Board.DIMENSIONS * Board.TILE_SIZE;
+      const boardUnits = SETTINGS.DIMENSIONS * SETTINGS.TILE_SIZE;
 
       const hitboxComponent = this.getEntity().getComponent(HitboxComponent)!;
       if (hitboxComponent === null) return;

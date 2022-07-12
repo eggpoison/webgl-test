@@ -1,10 +1,17 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App';
+import App, { GameState, setGameState } from './App';
 import { loadTextures } from './textures';
 import Game from './Game';
-import { connectToServer } from './client';
+import Client from './client/Client';
+import Board from './Board';
+import { createCircleProgram } from './webgl';
+
+import './css/index.css';
+import './css/name-input.css';
+import './css/chat-box.css';
+import { getPlayerName } from './components/NameInput';
+import { setupTextCanvas } from './text-canvas';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -22,16 +29,24 @@ export let windowWidth: number;
 export let windowHeight: number;
 
 const resizeCanvas = (): void => {
+   if (typeof canvas === "undefined") return;
+
    // Update the size of the canvas
    canvas.width = window.innerWidth;
    canvas.height = window.innerHeight;
+
    windowWidth = window.innerWidth;
    windowHeight = window.innerHeight;
-   gl.viewport(0, 0, window.innerWidth, window.innerHeight);
-}
-window.addEventListener("resize", resizeCanvas)
 
-export async function loadGame(): Promise<void> {
+   gl.viewport(0, 0, window.innerWidth, window.innerHeight);
+
+   const textCanvas = document.getElementById("text-canvas") as HTMLCanvasElement;
+   textCanvas.width = window.innerWidth;
+   textCanvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resizeCanvas);
+
+const setupCanvas = (): void => {
    canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
    const glAttempt = canvas.getContext("webgl");
 
@@ -42,14 +57,38 @@ export async function loadGame(): Promise<void> {
    gl = glAttempt;
 
    resizeCanvas();
-   
-   await loadTextures();
+}
 
-   const serverResponse = await connectToServer();
+export async function loadGame(): Promise<void> {
+   // Get the player name
+   const playerName = await getPlayerName();
+
+   setGameState(GameState.connecting);
+   
+   // Attempt to connect to the server
+   const serverResponse = await Client.connectToServer();
    if (serverResponse === null) {
       alert("Failed to connect to the server!");
       return;
    }
 
-   Game.setup();
+   await setGameState(GameState.game);
+
+   // Initialise the canvas and gl variables, and configure the canvas
+   setupCanvas();
+   setupTextCanvas();
+   
+   // Load all textures
+   await loadTextures();
+
+   createCircleProgram();
+
+   Board.setup(serverResponse.tiles);
+   const position = Game.spawnPlayer(playerName);
+   Game.start();
+
+   Client.sendPlayerData({
+      name: playerName,
+      position: [position.x, position.y]
+   });
 };

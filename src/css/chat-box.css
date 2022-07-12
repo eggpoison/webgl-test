@@ -1,0 +1,22 @@
+#chat-box {
+   opacity: 0;
+   --message-height: 1.3rem;
+   min-width: 15rem;
+   max-width: 25rem;
+   position: absolute;
+   left: 2rem;
+   bottom: 10rem;
+}
+#chat-box .chat-message {
+   color: #fff;
+   text-shadow: 2px 2px 2px #000, 2px -2px 2px #000, -2px 2px 2px #000, -2px -2px 2px #000;
+   font-family: "Noto Sans";
+   font-size: 0.95rem;
+   min-height: var(--message-height);
+   background-image: linear-gradient(to right, rgba(0, 0, 0, 0.4) 0%, transparent 100%);
+   padding: 0 5px;
+   margin: 5px;
+}
+#chat-box .message-preview .chat-message {
+   border: 2px solid rgba(0, 0, 0, 0.5);
+}

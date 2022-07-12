@@ -1,5 +1,5 @@
 import Chunk from "../Chunk";
-import Component from "../components/Component";
+import Component from "../entity-components/Component";
 
 abstract class Entity {
    private readonly components = new Map<(abstract new (...args: any[]) => any), Component>();

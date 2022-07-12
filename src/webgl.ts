@@ -1,5 +1,6 @@
 import { gl } from ".";
-import { getXPositionInCanvas, getYPositionInCanvas, isDev } from "./utils";
+import Camera from "./Camera";
+import { isDev } from "./utils";
 
 /** Number of triangles to create when drawing a circle */
 const CIRCLE_DETAIL = 25;
@@ -80,8 +81,8 @@ export function drawCircle(x: number, y: number, radius: number, rgba: [number, 
    const vertices = new Array<number>();
    for (let i = 0; i < 360; i += 360 / CIRCLE_DETAIL) {
       // Add the center of the circle as the first vertex
-      vertices.push(getXPositionInCanvas(x));
-      vertices.push(getYPositionInCanvas(y));
+      vertices.push(Camera.getXPositionInCanvas(x, "game"));
+      vertices.push(Camera.getYPositionInCanvas(y, "game"));
       vertices.push(...rgba);
 
       // Two outer points
@@ -91,8 +92,8 @@ export function drawCircle(x: number, y: number, radius: number, rgba: [number, 
          const worldX = Math.cos(radians) * radius + x;
          const worldY = Math.sin(radians) * radius + y;
          
-         const canvasX = getXPositionInCanvas(worldX);
-         const canvasY = getYPositionInCanvas(worldY);
+         const canvasX = Camera.getXPositionInCanvas(worldX, "game");
+         const canvasY = Camera.getYPositionInCanvas(worldY, "game");
          
          vertices.push(canvasX);
          vertices.push(canvasY);

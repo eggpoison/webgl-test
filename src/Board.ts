@@ -1,11 +1,12 @@
 import { gl } from ".";
 import Chunk from "./Chunk";
-import TransformComponent from "./components/TransformComponent";
+import TransformComponent from "./entity-components/TransformComponent";
 import Entity from "./entities/Entity";
-import { generateTerrain } from "./terrain-generation";
 import { getTexture } from "./textures";
-import Tile, { TileInfo, TILE_TYPE_INFO_RECORD } from "./Tile";
-import { getXPositionInCanvas, getYPositionInCanvas, isDev } from "./utils";
+import Tile, { TileInfo, TILE_TYPE_INFO_RECORD } from "webgl-test-shared/lib/Tile";
+import { isDev } from "./utils";
+import SETTINGS from "webgl-test-shared/lib/settings";
+import Camera from "./Camera";
 
 const tileVertexShaderText = `
 precision mediump float;
@@ -35,24 +36,14 @@ void main() {
 `;
 
 abstract class Board {
-   /** Size of a tile */
-   public static readonly TILE_SIZE = 64;
-   /** Width and height of the board in chunks */
-   public static readonly BOARD_SIZE = 1;
-   /** Number of tiles in the width and height of a chunk */
-   public static readonly CHUNK_SIZE = 8;
-   /** Width and height of the board in tiles */
-   public static readonly DIMENSIONS = this.BOARD_SIZE * this.CHUNK_SIZE;
-
    private static tiles: Array<Array<Tile>>;
 
    private static chunks: Array<Array<Chunk>>;
 
    private static tileProgram: WebGLProgram;
 
-   public static setup(): void {
-      // Generate terrain
-      this.tiles = generateTerrain();
+   public static setup(tiles: Array<Array<Tile>>): void {
+      this.tiles = tiles;
 
       // Initialise chunks array
       this.initialiseChunkArray();
@@ -96,11 +87,11 @@ abstract class Board {
    }
 
    private static initialiseChunkArray(): void {
-      this.chunks = new Array<Array<Chunk>>(this.BOARD_SIZE);
+      this.chunks = new Array<Array<Chunk>>(SETTINGS.BOARD_SIZE);
 
-      for (let x = 0; x < this.BOARD_SIZE; x++) {
-         this.chunks[x] = new Array<Chunk>(this.BOARD_SIZE);
-         for (let y = 0; y < this.BOARD_SIZE; y++) {
+      for (let x = 0; x < SETTINGS.BOARD_SIZE; x++) {
+         this.chunks[x] = new Array<Chunk>(SETTINGS.BOARD_SIZE);
+         for (let y = 0; y < SETTINGS.BOARD_SIZE; y++) {
             this.chunks[x][y] = new Chunk();
          }
       }
@@ -115,8 +106,8 @@ abstract class Board {
    }
 
    public static update(): void {
-      for (let x = 0; x < this.BOARD_SIZE; x++) {
-         for (let y = 0; y < this.BOARD_SIZE; y++) {
+      for (let x = 0; x < SETTINGS.BOARD_SIZE; x++) {
+         for (let y = 0; y < SETTINGS.BOARD_SIZE; y++) {
             const chunk = this.getChunk(x, y);
 
             const entities = chunk.getEntities().slice();
@@ -129,18 +120,18 @@ abstract class Board {
 
    public static render(): void {
       // Render tiles
-      for (let x = 0; x < this.DIMENSIONS; x++) {
-         for (let y = 0; y < this.DIMENSIONS; y++) {
+      for (let x = 0; x < SETTINGS.DIMENSIONS; x++) {
+         for (let y = 0; y < SETTINGS.DIMENSIONS; y++) {
             this.renderTile(x, y);
          }
       }
 
       // Render entities
-      for (let x = 0; x < this.BOARD_SIZE; x++) {
-         for (let y = 0; y < this.BOARD_SIZE; y++) {
+      for (let x = 0; x < SETTINGS.BOARD_SIZE; x++) {
+         for (let y = 0; y < SETTINGS.BOARD_SIZE; y++) {
             const chunk = this.getChunk(x, y);
 
-            const entities = chunk.getEntities().slice();
+            const entities = chunk.getEntities();
             for (const entity of entities) {
                entity.render();
             }
@@ -152,15 +143,15 @@ abstract class Board {
       const tile = this.getTile(tileX, tileY);
       const tileTypeInfo = TILE_TYPE_INFO_RECORD[tile.type]; 
 
-      const x1 = tileX * Board.TILE_SIZE;
-      const x2 = x1 + Board.TILE_SIZE;
-      const y1 = tileY * Board.TILE_SIZE;
-      const y2 = y1 + Board.TILE_SIZE;
+      const x1 = tileX * SETTINGS.TILE_SIZE;
+      const x2 = x1 + SETTINGS.TILE_SIZE;
+      const y1 = tileY * SETTINGS.TILE_SIZE;
+      const y2 = y1 + SETTINGS.TILE_SIZE;
       
-      const canvasX1 = getXPositionInCanvas(x1);
-      const canvasX2 = getXPositionInCanvas(x2);
-      const canvasY1 = getYPositionInCanvas(y1);
-      const canvasY2 = getYPositionInCanvas(y2);
+      const canvasX1 = Camera.getXPositionInCanvas(x1, "game");
+      const canvasX2 = Camera.getXPositionInCanvas(x2, "game");
+      const canvasY1 = Camera.getYPositionInCanvas(y1, "game");
+      const canvasY2 = Camera.getYPositionInCanvas(y2, "game");
 
       // Create buffer
       const triangleVertices =
