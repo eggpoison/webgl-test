@@ -60,9 +60,7 @@ const ChatBox = () => {
          </div>
 
          <div className="message-preview">
-            <div className="chat-message">
-               {messagePreview}
-            </div>
+            {messagePreview}
          </div>
       </div>
    );

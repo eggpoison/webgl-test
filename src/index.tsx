@@ -9,7 +9,7 @@ import { createCircleProgram } from './webgl';
 
 import './css/index.css';
 import './css/name-input.css';
-import './css/chat-box.css';
+import './css/chatbox.css';
 import { getPlayerName } from './components/NameInput';
 import { setupTextCanvas } from './text-canvas';
 
@@ -85,6 +85,7 @@ export async function loadGame(): Promise<void> {
 
    Board.setup(serverResponse.tiles);
    const position = Game.spawnPlayer(playerName);
+   Game.setup();
    Game.start();
 
    Client.sendPlayerData({

@@ -12,15 +12,15 @@ export function setupTextCanvas(): void {
    ctx = textCanvas.getContext("2d")!;
 }
 
-export function renderText(): void {
+export function renderPlayerNames(): void {
    // Clear the canvas
    ctx.fillStyle = "transparent";
    ctx.clearRect(0, 0, windowWidth, windowHeight);
 
-   const [minX, maxX, minY, maxY] = Camera.getVisibleChunkBounds();
+   const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
 
-   for (let chunkX = minX; chunkX <= maxX; chunkX++) {
-      for (let chunkY = minY; chunkY <= maxY; chunkY++) {
+   for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+      for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
          const chunk = Board.getChunk(chunkX, chunkY);
 
          for (const entity of chunk.getEntities()) {

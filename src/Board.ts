@@ -4,7 +4,7 @@ import TransformComponent from "./entity-components/TransformComponent";
 import Entity from "./entities/Entity";
 import { getTexture } from "./textures";
 import Tile, { TileInfo, TILE_TYPE_INFO_RECORD } from "webgl-test-shared/lib/Tile";
-import { isDev } from "./utils";
+import { Coordinates, isDev } from "./utils";
 import SETTINGS from "webgl-test-shared/lib/settings";
 import Camera from "./Camera";
 
@@ -106,22 +106,51 @@ abstract class Board {
    }
 
    public static update(): void {
+      const entityChunkChanges = new Array<[entity: Entity, previousChunkCoordinates: Coordinates, newChunkCoordinates: Coordinates]>();
+
       for (let x = 0; x < SETTINGS.BOARD_SIZE; x++) {
          for (let y = 0; y < SETTINGS.BOARD_SIZE; y++) {
             const chunk = this.getChunk(x, y);
 
             const entities = chunk.getEntities().slice();
             for (const entity of entities) {
+               const transformComponent = entity.getComponent(TransformComponent)!;
+               const chunkCoordinatesBeforeTick = transformComponent.getChunkCoordinates();
+
                entity.tick();
+
+               // If the entity has changed chunks, add it to the list
+               const chunkCoordinatesAfterTick = transformComponent.getChunkCoordinates();
+               if (chunkCoordinatesBeforeTick[0] !== chunkCoordinatesAfterTick[0] || chunkCoordinatesBeforeTick[1] !== chunkCoordinatesAfterTick[1]) {
+                  entityChunkChanges.push([entity, chunkCoordinatesBeforeTick, chunkCoordinatesAfterTick]);
+               }
             }
          }
+      }
+
+      // Apply entity chunk changes
+      for (const [entity, previousChunkCoordinates, newChunkCoordinates] of entityChunkChanges) {
+         this.getChunk(...previousChunkCoordinates).removeEntity(entity);
+         this.getChunk(...newChunkCoordinates).addEntity(entity);
       }
    }
 
    public static render(): void {
+      // Get chunk bounds
+      const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
+      const minTileX = minChunkX * SETTINGS.CHUNK_SIZE;
+      const maxTileX = (maxChunkX + 1) * SETTINGS.CHUNK_SIZE;
+      const minTileY = minChunkY * SETTINGS.CHUNK_SIZE;
+      const maxTileY = (maxChunkY + 1) * SETTINGS.CHUNK_SIZE;
+
+      // Create tile buffer
+      const tileBuffer = gl.createBuffer()!;
+      gl.bindBuffer(gl.ARRAY_BUFFER, tileBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, 4 * 6 * Float32Array.BYTES_PER_ELEMENT, gl.STATIC_DRAW);
+
       // Render tiles
-      for (let x = 0; x < SETTINGS.DIMENSIONS; x++) {
-         for (let y = 0; y < SETTINGS.DIMENSIONS; y++) {
+      for (let x = minTileX; x < maxTileX; x++) {
+         for (let y = minTileY; y < maxTileY; y++) {
             this.renderTile(x, y);
          }
       }
@@ -164,9 +193,7 @@ abstract class Board {
          canvasX2, canvasY2,    1, 1
       ];
 
-      const triangleVertexBufferObject = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexBufferObject);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(triangleVertices), gl.STATIC_DRAW);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Float32Array(triangleVertices));
 
       const positionAttribLocation = gl.getAttribLocation(this.tileProgram, "vertPosition")
       const texCoordAttribLocation = gl.getAttribLocation(this.tileProgram, "vertTexCoord")

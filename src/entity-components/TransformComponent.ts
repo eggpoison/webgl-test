@@ -102,10 +102,15 @@ class TransformComponent extends Component {
       this.resolveWallCollisions();
    }
 
-   public getChunk(): Chunk | null {
+   public getChunkCoordinates(): Coordinates {
       const chunkX = Math.floor(this.position.x / (SETTINGS.TILE_SIZE * SETTINGS.CHUNK_SIZE));
       const chunkY = Math.floor(this.position.y / (SETTINGS.TILE_SIZE * SETTINGS.CHUNK_SIZE));
 
+      return [chunkX, chunkY];
+   }
+
+   public getChunk(): Chunk | null {
+      const [chunkX, chunkY] = this.getChunkCoordinates();
       return Board.getChunk(chunkX, chunkY);
    }
 

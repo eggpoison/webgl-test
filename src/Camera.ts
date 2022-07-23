@@ -15,23 +15,18 @@ abstract class Camera {
 
    private static readonly visibleChunkBounds: [number, number, number, number] = [0, 0, 0, 0];
 
-   public static setup(): void {
-      this.position = new Point(0, 0);
-   }
-
-   public static tick(): void {
-      // Number of units in a chunk
+   public static updateVisibleChunkBounds(): void {
+      const playerPosition = Player.instance.getComponent(TransformComponent)!.position;
       const unitsInChunk = SETTINGS.TILE_SIZE * SETTINGS.CHUNK_SIZE;
 
       // minX
-      this.visibleChunkBounds[0] = Math.max(Math.floor((this.position.x - windowWidth / 2) / unitsInChunk), 0);
+      this.visibleChunkBounds[0] = Math.max(Math.floor((playerPosition.x - windowWidth / 2) / unitsInChunk), 0);
       // maxX
-      this.visibleChunkBounds[1] = Math.min(Math.ceil((this.position.x + windowWidth / 2) / unitsInChunk), SETTINGS.BOARD_SIZE - 1);
-      
+      this.visibleChunkBounds[1] = Math.min(Math.floor((playerPosition.x + windowWidth / 2) / unitsInChunk), SETTINGS.BOARD_SIZE - 1);
       // minY
-      this.visibleChunkBounds[2] = Math.max(Math.floor((this.position.y - windowHeight / 2) / unitsInChunk), 0);
+      this.visibleChunkBounds[2] = Math.max(Math.floor((playerPosition.y - windowHeight / 2) / unitsInChunk), 0);
       // maxY
-      this.visibleChunkBounds[3] = Math.min(Math.ceil((this.position.y + windowHeight / 2) / unitsInChunk), SETTINGS.BOARD_SIZE - 1);
+      this.visibleChunkBounds[3] = Math.min(Math.floor((playerPosition.y + windowHeight / 2) / unitsInChunk), SETTINGS.BOARD_SIZE - 1);
    }
 
    public static getVisibleChunkBounds(): [number, number, number, number] {

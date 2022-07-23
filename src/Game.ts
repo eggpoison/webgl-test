@@ -2,7 +2,8 @@ import Board from "./Board";
 import Player from "./entities/Player";
 import SETTINGS from "webgl-test-shared/lib/settings";
 import { Point, randInt } from "./utils";
-import { renderText } from "./text-canvas";
+import { renderPlayerNames } from "./text-canvas";
+import Camera from "./Camera";
 
 abstract class Game {
    public static start(): void {
@@ -10,10 +11,18 @@ abstract class Game {
       setInterval(this.main, 1000 / SETTINGS.TPS);
    }
 
+   /**
+    * Runs the setup functions for various different parts of the game. Called once just before the game starts.
+    */
+   public static setup(): void {
+      
+   }
+
    public static main(): void {
       Board.update();
+      Camera.updateVisibleChunkBounds();
       Board.render();
-      renderText();
+      renderPlayerNames();
    }
 
    public static spawnPlayer(name: string): Point {

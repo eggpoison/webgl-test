@@ -12,7 +12,7 @@ interface ServerResponse {
    tiles: Array<Array<Tile>>;
 }
 
-const SERVER_IP_ADDRESS = "172.28.119.15";
+const SERVER_IP_ADDRESS = "172.28.117.107";
 
 abstract class Client {
    private static socket: Socket<ServerToClientEvents, ClientToServerEvents>;
@@ -49,11 +49,10 @@ abstract class Client {
             player.receiveMovementHash(movementHash);
          });
          
-         // Receive the terrain
+         // Receive the tiles from the server
          this.socket.on("terrain", (tiles: Array<Array<Tile>>) => {
-            console.log("Received tiles from server:", tiles);
-   
             serverResponse.tiles = tiles;
+            console.log(tiles);
             resolve(serverResponse as ServerResponse);
          });
          
