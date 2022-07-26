@@ -15,14 +15,13 @@ abstract class Game {
     * Runs the setup functions for various different parts of the game. Called once just before the game starts.
     */
    public static setup(): void {
-      
+      renderPlayerNames();
    }
 
    public static main(): void {
       Board.update();
       Camera.updateVisibleChunkBounds();
       Board.render();
-      renderPlayerNames();
    }
 
    public static spawnPlayer(name: string): Point {

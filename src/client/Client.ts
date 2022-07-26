@@ -12,7 +12,7 @@ interface ServerResponse {
    tiles: Array<Array<Tile>>;
 }
 
-const SERVER_IP_ADDRESS = "172.28.117.107";
+const SERVER_IP_ADDRESS = "10.61.29.81";
 
 abstract class Client {
    private static socket: Socket<ServerToClientEvents, ClientToServerEvents>;
@@ -52,10 +52,10 @@ abstract class Client {
          // Receive the tiles from the server
          this.socket.on("terrain", (tiles: Array<Array<Tile>>) => {
             serverResponse.tiles = tiles;
-            console.log(tiles);
             resolve(serverResponse as ServerResponse);
          });
          
+         // Check if there was an error when connecting to the server
          this.socket.on("connect_error", () => {
             resolve(null);
          });

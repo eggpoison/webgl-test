@@ -1,4 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import Client from "../client/Client";
+import Player from "../entities/Player";
+import { endChatMessage } from "../keyboard";
 
 const MAX_CHAT_MESSAGES = 50;
 
@@ -17,9 +20,15 @@ export function setChatMessagePreview(message: string | null): void {
    setChatMessagePreviewReference(message);
 }
 
+let focusChatboxReference: () => void;
+export function focusChatbox(): void {
+   focusChatboxReference();
+}
+
 const ChatBox = () => {
+   const inputBoxRef = useRef<HTMLInputElement | null>(null);
    const [chatMessages, setChatMessages] = useState<Array<ChatMessage>>([]);
-   const [messagePreview, setMessagePreview] = useState<string | null>(null);
+   const [isFocused, setIsFocused] = useState<boolean>(false);
 
    const addChatMessage = useCallback((senderName: string, message: string): void => {
       const newChatMessages = chatMessages.slice();
@@ -37,9 +46,46 @@ const ChatBox = () => {
       setChatMessages(newChatMessages);
    }, [chatMessages]);
 
-   const setChatMessagePreview = useCallback((message: string | null): void => {
-      setMessagePreview(message);
+   const focusChatbox = useCallback((): void => {
+      const inputBox = inputBoxRef.current!;
+      inputBox.focus();
+      setIsFocused(true);
    }, []);
+
+   const closeChatbox = useCallback(() => {
+      endChatMessage();
+
+      setIsFocused(false);
+
+      // Reset the chat preview
+      inputBoxRef.current!.value = "";
+      inputBoxRef.current!.blur();
+   }, []);
+
+   const keyPress = (e: KeyboardEvent): void => {
+      const key = e.key;
+
+      switch (key) {
+         case "Escape": {
+            // Cancel the chat message
+            closeChatbox();
+
+            break;
+         }
+         case "Enter": {
+            // Send the chat message
+            const chatMessage = inputBoxRef.current!.value;
+            if (chatMessage !== "") {
+               Client.sendChatMessage(chatMessage);
+               addChatMessage(Player.instance.name, chatMessage);
+            }
+
+            closeChatbox();
+
+            break;
+         }
+      }
+   }
 
    useEffect(() => {
       setChatMessagePreviewReference = setChatMessagePreview;
@@ -48,6 +94,10 @@ const ChatBox = () => {
    useEffect(() => {
       addChatMessageReference = addChatMessage;
    }, [addChatMessage]);
+
+   useEffect(() => {
+      focusChatboxReference = focusChatbox;
+   }, [focusChatbox]);
 
    return (
       <div id="chat-box">
@@ -59,9 +109,7 @@ const ChatBox = () => {
             })}
          </div>
 
-         <div className="message-preview">
-            {messagePreview}
-         </div>
+         <input ref={inputBoxRef} type="text" onKeyDown={e => keyPress(e.nativeEvent as KeyboardEvent)} className={`message-preview${isFocused ? " active" : ""}`} />
       </div>
    );
 }

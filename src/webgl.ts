@@ -78,8 +78,9 @@ export function createCircleProgram(): void {
  */
 export function drawCircle(x: number, y: number, radius: number, rgba: [number, number, number, number]): void {
    // x, y, r, g, b, a
+   let n = 0;
    const vertices = new Array<number>();
-   for (let i = 0; i < 360; i += 360 / CIRCLE_DETAIL) {
+   for (let i = 0; n < CIRCLE_DETAIL; i += 360 / CIRCLE_DETAIL) {
       // Add the center of the circle as the first vertex
       vertices.push(Camera.getXPositionInCanvas(x, "game"));
       vertices.push(Camera.getYPositionInCanvas(y, "game"));
@@ -101,14 +102,16 @@ export function drawCircle(x: number, y: number, radius: number, rgba: [number, 
          // Colour
          vertices.push(...rgba);
       }
+
+      n++;
    }
 
    const triangleVertexBufferObject = gl.createBuffer();
    gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexBufferObject);
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
-   const positionAttribLocation = gl.getAttribLocation(program, "vertPosition")
-   const colourAttribLocation = gl.getAttribLocation(program, "vertColour")
+   const positionAttribLocation = gl.getAttribLocation(program, "vertPosition");
+   const colourAttribLocation = gl.getAttribLocation(program, "vertColour");
    
    gl.vertexAttribPointer(
       positionAttribLocation, // Attribute location
@@ -133,5 +136,5 @@ export function drawCircle(x: number, y: number, radius: number, rgba: [number, 
 
    // Draw the tile
    gl.useProgram(program);
-   gl.drawArrays(gl.TRIANGLES, 0, CIRCLE_DETAIL * 6);
+   gl.drawArrays(gl.TRIANGLES, 0, CIRCLE_DETAIL * 3);
 }

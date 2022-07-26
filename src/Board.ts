@@ -136,24 +136,7 @@ abstract class Board {
    }
 
    public static render(): void {
-      // Get chunk bounds
-      const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
-      const minTileX = minChunkX * SETTINGS.CHUNK_SIZE;
-      const maxTileX = (maxChunkX + 1) * SETTINGS.CHUNK_SIZE;
-      const minTileY = minChunkY * SETTINGS.CHUNK_SIZE;
-      const maxTileY = (maxChunkY + 1) * SETTINGS.CHUNK_SIZE;
-
-      // Create tile buffer
-      const tileBuffer = gl.createBuffer()!;
-      gl.bindBuffer(gl.ARRAY_BUFFER, tileBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, 4 * 6 * Float32Array.BYTES_PER_ELEMENT, gl.STATIC_DRAW);
-
-      // Render tiles
-      for (let x = minTileX; x < maxTileX; x++) {
-         for (let y = minTileY; y < maxTileY; y++) {
-            this.renderTile(x, y);
-         }
-      }
+      this.renderTiles();
 
       // Render entities
       for (let x = 0; x < SETTINGS.BOARD_SIZE; x++) {
@@ -168,10 +151,78 @@ abstract class Board {
       }
    }
 
-   private static renderTile(tileX: number, tileY: number): void {
-      const tile = this.getTile(tileX, tileY);
-      const tileTypeInfo = TILE_TYPE_INFO_RECORD[tile.type]; 
+   private static renderTiles(): void {
 
+      // Get chunk bounds
+      const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
+      const minTileX = minChunkX * SETTINGS.CHUNK_SIZE;
+      const maxTileX = (maxChunkX + 1) * SETTINGS.CHUNK_SIZE;
+      const minTileY = minChunkY * SETTINGS.CHUNK_SIZE;
+      const maxTileY = (maxChunkY + 1) * SETTINGS.CHUNK_SIZE;
+
+      const triangleVertices: { [key: string]: Array<number> } = {};
+
+      // Render tiles
+      for (let x = minTileX; x < maxTileX; x++) {
+         for (let y = minTileY; y < maxTileY; y++) {
+            const vertices = this.calculateTileVertices(x, y);
+
+            // Get the tile data
+            const tile = this.getTile(x, y);
+            const tileTypeInfo = TILE_TYPE_INFO_RECORD[tile.type]; 
+            
+            // Add the vertices to its appropriate section
+            if (triangleVertices.hasOwnProperty(tileTypeInfo.textureSource)) {
+               triangleVertices[tileTypeInfo.textureSource] = triangleVertices[tileTypeInfo.textureSource].concat(vertices);
+            } else {
+               triangleVertices[tileTypeInfo.textureSource] = vertices;
+            }
+         }
+      }
+      
+      gl.useProgram(this.tileProgram);
+
+      const entries = Object.entries(triangleVertices) as Array<[string, Array<number>]>;
+      for (const [textureSource, vertices] of entries) {
+         // Create tile buffer
+         const tileBuffer = gl.createBuffer()!;
+         gl.bindBuffer(gl.ARRAY_BUFFER, tileBuffer);
+         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+
+         const positionAttribLocation = gl.getAttribLocation(this.tileProgram, "vertPosition");
+         const texCoordAttribLocation = gl.getAttribLocation(this.tileProgram, "vertTexCoord");
+         gl.vertexAttribPointer(
+            positionAttribLocation, // Attribute location
+            2, // Number of elements per attribute
+            gl.FLOAT, // Type of elements
+            false,
+            4 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
+            0 // Offset from the beginning of a single vertex to this attribute
+         );
+         gl.vertexAttribPointer(
+            texCoordAttribLocation, // Attribute location
+            2, // Number of elements per attribute
+            gl.FLOAT, // Type of elements
+            false,
+            4 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
+            2 * Float32Array.BYTES_PER_ELEMENT // Offset from the beginning of a single vertex to this attribute
+         );
+   
+         // Enable the attributes
+         gl.enableVertexAttribArray(positionAttribLocation);
+         gl.enableVertexAttribArray(texCoordAttribLocation);
+         
+         // Set the texture
+         const texture = getTexture(textureSource);
+         gl.bindTexture(gl.TEXTURE_2D, texture);
+         gl.activeTexture(gl.TEXTURE0);
+
+         // Draw the tile
+         gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 4);
+      }
+   }
+
+   private static calculateTileVertices(tileX: number, tileY: number): Array<number> {
       const x1 = tileX * SETTINGS.TILE_SIZE;
       const x2 = x1 + SETTINGS.TILE_SIZE;
       const y1 = tileY * SETTINGS.TILE_SIZE;
@@ -182,7 +233,7 @@ abstract class Board {
       const canvasY1 = Camera.getYPositionInCanvas(y1, "game");
       const canvasY2 = Camera.getYPositionInCanvas(y2, "game");
 
-      // Create buffer
+      // Calculate vertices
       const triangleVertices =
       [
          canvasX1, canvasY1,    0, 0,
@@ -193,40 +244,7 @@ abstract class Board {
          canvasX2, canvasY2,    1, 1
       ];
 
-      gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Float32Array(triangleVertices));
-
-      const positionAttribLocation = gl.getAttribLocation(this.tileProgram, "vertPosition")
-      const texCoordAttribLocation = gl.getAttribLocation(this.tileProgram, "vertTexCoord")
-      
-      gl.vertexAttribPointer(
-         positionAttribLocation, // Attribute location
-         2, // Number of elements per attribute
-         gl.FLOAT, // Type of elements
-         false,
-         4 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
-         0 // Offset from the beginning of a single vertex to this attribute
-      );
-      gl.vertexAttribPointer(
-         texCoordAttribLocation, // Attribute location
-         2, // Number of elements per attribute
-         gl.FLOAT, // Type of elements
-         false,
-         4 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
-         2 * Float32Array.BYTES_PER_ELEMENT // Offset from the beginning of a single vertex to this attribute
-      );
-
-      // Enable the attributes
-      gl.enableVertexAttribArray(positionAttribLocation);
-      gl.enableVertexAttribArray(texCoordAttribLocation);
-
-      // Set the texture
-      const texture = getTexture(tileTypeInfo.textureSource);
-      gl.bindTexture(gl.TEXTURE_2D, texture);
-      gl.activeTexture(gl.TEXTURE0);
-
-      // Draw the tile
-      gl.useProgram(this.tileProgram);
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
+      return triangleVertices;
    }
 
    private static getEntityChunk(entity: Entity): Chunk {

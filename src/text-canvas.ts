@@ -50,4 +50,6 @@ export function renderPlayerNames(): void {
          }
       }
    }
+
+   requestAnimationFrame(renderPlayerNames);
 }

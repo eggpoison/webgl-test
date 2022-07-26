@@ -20,8 +20,11 @@
    background-color: rgba(0, 0, 0, 0.7);
 }
 #chat-box .message-preview {
+   border: none;
+   outline: none;
    margin-top: 3rem;
-}
-#chat-box .message-preview {
    background-color: rgba(0, 0, 0, 0.5);
+}
+#chat-box .message-preview.active {
+   background-color: rgba(0, 0, 0, 0.7);
 }
