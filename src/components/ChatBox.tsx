@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Client from "../client/Client";
 import Player from "../entities/Player";
-import { endChatMessage } from "../keyboard";
 
 const MAX_CHAT_MESSAGES = 50;
+
+const MAX_CHAR_COUNT = 128;
 
 type ChatMessage = {
    readonly senderName: string;
@@ -15,14 +16,14 @@ export function addChatMessage(senderName: string, message: string): void {
    addChatMessageReference(senderName, message);
 }
 
-let setChatMessagePreviewReference: (message: string | null) => void;
-export function setChatMessagePreview(message: string | null): void {
-   setChatMessagePreviewReference(message);
-}
-
 let focusChatboxReference: () => void;
 export function focusChatbox(): void {
    focusChatboxReference();
+}
+
+let chatboxIsFocusedReference: () => boolean;
+export function chatboxIsFocused(): boolean {
+   return chatboxIsFocusedReference();
 }
 
 const ChatBox = () => {
@@ -53,8 +54,6 @@ const ChatBox = () => {
    }, []);
 
    const closeChatbox = useCallback(() => {
-      endChatMessage();
-
       setIsFocused(false);
 
       // Reset the chat preview
@@ -63,8 +62,18 @@ const ChatBox = () => {
    }, []);
 
    const keyPress = (e: KeyboardEvent): void => {
-      const key = e.key;
+      // Don't type past the max char count
+      const chatMessage = inputBoxRef.current!.value;
+      if (chatMessage.length >= MAX_CHAR_COUNT) {
+         const isAllowed = e.shiftKey || e.metaKey || ["Enter", "Backspace", "Escape", "ArrowRight", "ArrowLeft"].includes(e.key);
 
+         if (!isAllowed) {
+            e.preventDefault();
+            return;
+         }
+      }
+
+      const key = e.key;
       switch (key) {
          case "Escape": {
             // Cancel the chat message
@@ -88,8 +97,8 @@ const ChatBox = () => {
    }
 
    useEffect(() => {
-      setChatMessagePreviewReference = setChatMessagePreview;
-   }, [setChatMessagePreview]);
+      chatboxIsFocusedReference = () => isFocused;
+   }, [isFocused]);
 
    useEffect(() => {
       addChatMessageReference = addChatMessage;
@@ -109,7 +118,7 @@ const ChatBox = () => {
             })}
          </div>
 
-         <input ref={inputBoxRef} type="text" onKeyDown={e => keyPress(e.nativeEvent as KeyboardEvent)} className={`message-preview${isFocused ? " active" : ""}`} />
+         <input ref={inputBoxRef} type="text" onFocus={() => setIsFocused(true)} onBlur={() => setIsFocused(false)} onKeyDown={e => keyPress(e.nativeEvent as KeyboardEvent)} className={`message-preview${isFocused ? " active" : ""}`} />
       </div>
    );
 }

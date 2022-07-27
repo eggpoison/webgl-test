@@ -6,9 +6,13 @@ import { renderPlayerNames } from "./text-canvas";
 import Camera from "./Camera";
 
 abstract class Game {
+   public static isRunning: boolean = false;
+
    public static start(): void {
       // Start the game loop
       setInterval(this.main, 1000 / SETTINGS.TPS);
+
+      this.isRunning = true;
    }
 
    /**
@@ -25,8 +29,10 @@ abstract class Game {
    }
 
    public static spawnPlayer(name: string): Point {
-      const x = randInt(0, SETTINGS.BOARD_SIZE * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
-      const y = randInt(0, SETTINGS.BOARD_SIZE * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
+      // const x = randInt(0, SETTINGS.BOARD_SIZE * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
+      // const y = randInt(0, SETTINGS.BOARD_SIZE * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
+      const x = 100;
+      const y = 100;
 
       const position = new Point(x, y);
       const player = new Player(position, name, true);

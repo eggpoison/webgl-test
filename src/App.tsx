@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { loadGame } from ".";
+import Client from "./client/Client";
 import ChatBox from "./components/ChatBox";
 import NameInput from "./components/NameInput";
 
 export enum GameState {
    nameInput,
    connecting,
-   game
+   game,
+   serverError
 }
 
 let setGameStateReference: (gameState: GameState) => Promise<void>;
@@ -60,6 +62,11 @@ function App() {
 
       {gameState === GameState.connecting ? <>
          <div className="game-message">Connecting to server...</div>
+      </> : null}
+
+      {gameState === GameState.serverError ? <>
+         <div className="game-message">Error connecting to server</div>
+         <button onClick={Client.attemptReconnect}>Reconnect</button>
       </> : null}
 
       {gameState === GameState.game ? <>

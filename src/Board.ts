@@ -152,7 +152,6 @@ abstract class Board {
    }
 
    private static renderTiles(): void {
-
       // Get chunk bounds
       const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
       const minTileX = minChunkX * SETTINGS.CHUNK_SIZE;

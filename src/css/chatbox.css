@@ -17,14 +17,14 @@
    margin: 5px;
 }
 #chat-box .chat-message {
-   background-color: rgba(0, 0, 0, 0.7);
+   background-color: rgba(0, 0, 0, 0.6);
 }
 #chat-box .message-preview {
    border: none;
    outline: none;
    margin-top: 3rem;
-   background-color: rgba(0, 0, 0, 0.5);
+   background-color: rgba(0, 0, 0, 0.4);
 }
 #chat-box .message-preview.active {
-   background-color: rgba(0, 0, 0, 0.7);
+   background-color: rgba(0, 0, 0, 0.6);
 }

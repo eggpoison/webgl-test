@@ -1,11 +1,14 @@
 import { io, Socket } from "socket.io-client";
-import { PlayerData, ClientToServerEvents, ServerToClientEvents, SocketData } from "webgl-test-shared/lib/client-server-types";
+import { ClientToServerEvents, ServerToClientEvents, SocketData } from "webgl-test-shared/lib/client-server-types";
 import SETTINGS from "webgl-test-shared/lib/settings";
 import Tile from "webgl-test-shared/lib/Tile";
+import { GameState, setGameState } from "../App";
 import Board from "../Board";
 import { addChatMessage } from "../components/ChatBox";
 import Player from "../entities/Player";
-import { addPlayerToObject, getPlayer } from "../players";
+import TransformComponent from "../entity-components/TransformComponent";
+import Game from "../Game";
+import { addPlayer, getPlayer, removePlayer } from "../players";
 import { Point } from "../utils";
 
 interface ServerResponse {
@@ -14,20 +17,22 @@ interface ServerResponse {
 
 const SERVER_IP_ADDRESS = "10.61.29.81";
 
+export type PlayerData = Omit<SocketData, "clientID">;
+
 abstract class Client {
    private static socket: Socket<ServerToClientEvents, ClientToServerEvents>;
 
    public static connectToServer(): Promise<ServerResponse | null> {
       return new Promise(resolve => {
-         this.socket = io("ws://" + SERVER_IP_ADDRESS + ":" + SETTINGS.SERVER_PORT, { transports: ["websocket", "polling", "flashsocket"] });
-         
-         const serverResponse: Partial<ServerResponse> = {};
-         
-         this.socket.on("message", (...args) => {
-            for (const message of args) {
-               console.log(message);
-            }
+         const url = "ws://" + SERVER_IP_ADDRESS + ":" + SETTINGS.SERVER_PORT;
+         this.socket = io(url, {
+            transports: ["websocket", "polling", "flashsocket"],
+            autoConnect: false
          });
+
+         this.socket.connect();
+
+         const serverResponse: Partial<ServerResponse> = {};
 
          // Receive chat messages
          this.socket.on("chatMessage", (senderName, message) => {
@@ -40,7 +45,7 @@ abstract class Client {
             const player = new Player(position, playerData.name, false);
             Board.addEntity(player);
 
-            addPlayerToObject(playerData.clientID, player);
+            addPlayer(playerData.clientID, player);
          });
 
          // Receive movement packets
@@ -48,18 +53,41 @@ abstract class Client {
             const player = getPlayer(clientID)!;
             player.receiveMovementHash(movementHash);
          });
+
+         // Forward position
+         this.socket.on("position", () => {
+            const playerPosition = Player.instance.getComponent(TransformComponent)!.position;
+
+            const positionData: [number, number] = [playerPosition.x, playerPosition.y];
+            this.socket.emit("position", positionData);
+         });
          
          // Receive the tiles from the server
          this.socket.on("terrain", (tiles: Array<Array<Tile>>) => {
             serverResponse.tiles = tiles;
             resolve(serverResponse as ServerResponse);
          });
+
+         this.socket.on("clientDisconnect", (clientID: string) => {
+            removePlayer(clientID);
+         });
          
          // Check if there was an error when connecting to the server
          this.socket.on("connect_error", () => {
-            resolve(null);
+            if (Game.isRunning) {
+               console.log("err1");
+               setGameState(GameState.serverError);
+            } else {
+               console.log("err2");
+               resolve(null);
+               this.socket.connect();
+            }
          });
       });
+   }
+
+   public static attemptReconnect(): void {
+      this.socket.connect();
    }
 
    /**
@@ -71,9 +99,11 @@ abstract class Client {
       this.socket.emit("chatMessage", message);
    }
 
-   public static sendPlayerData(data: PlayerData): void {
+   public static sendPlayerData(playerData: PlayerData): void {
+      const socketData: SocketData = Object.assign(playerData, { clientID: this.socket.id });
+
       // Send the player data to the server
-      this.socket.emit("playerData", data);
+      this.socket.emit("socketData", socketData);
    }
 
    public static sendMovementPacket(movementHash: number): void {

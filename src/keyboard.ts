@@ -1,9 +1,6 @@
 import { GameState, getGameState } from "./App";
-import { focusChatbox } from "./components/ChatBox";
+import { chatboxIsFocused, focusChatbox } from "./components/ChatBox";
 
-const CHAT_CHARACTER_BLACKLIST: ReadonlyArray<string> = ["Shift"];
-
-let isSendingChatMessage = false;
 const pressedKeys: { [key: string]: boolean } = {};
 
 export function keyIsPressed(key: string): boolean {
@@ -16,22 +13,16 @@ const clearPressedKeys = (): void => {
    }
 }
 
-export function endChatMessage(): void {
-   isSendingChatMessage = false;
-}
-
 /**
  * Updates the chat message preview
  * @param key The pressed key
  * @returns Whether the keystroke affected the chat message or not
  */
 const updateChatMessage = (event: KeyboardEvent, key: string): boolean => {
-   if (isSendingChatMessage) {
+   if (chatboxIsFocused()) {
       return true;
    } else if (key === "t") {
       // Start a chat message
-      isSendingChatMessage = true;
-
       event.preventDefault();
       focusChatbox();
 
@@ -47,16 +38,16 @@ const updateKey = (e: KeyboardEvent, isKeyDown: boolean): void => {
    
    const key = e.key;
 
-   if (isKeyDown && !CHAT_CHARACTER_BLACKLIST.includes(key)) {
+   if (isKeyDown) {
       const didChangeMessage = updateChatMessage(e, key);
 
       if (!didChangeMessage) {
-         pressedKeys[key] = isKeyDown;
+         pressedKeys[key] = true;
       } else {
          clearPressedKeys();
       }
    } else {
-      pressedKeys[key] = isKeyDown;
+      pressedKeys[key] = false;
    }
 };
 
