@@ -15,7 +15,7 @@ interface ServerResponse {
    tiles: Array<Array<Tile>>;
 }
 
-const SERVER_IP_ADDRESS = "10.61.29.81";
+const SERVER_IP_ADDRESS = "172.20.92.247";
 
 export type PlayerData = Omit<SocketData, "clientID">;
 
@@ -24,11 +24,7 @@ abstract class Client {
 
    public static connectToServer(): Promise<ServerResponse | null> {
       return new Promise(resolve => {
-         const url = "ws://" + SERVER_IP_ADDRESS + ":" + SETTINGS.SERVER_PORT;
-         this.socket = io(url, {
-            transports: ["websocket", "polling", "flashsocket"],
-            autoConnect: false
-         });
+         this.createSocket();
 
          this.socket.connect();
 
@@ -75,10 +71,8 @@ abstract class Client {
          // Check if there was an error when connecting to the server
          this.socket.on("connect_error", () => {
             if (Game.isRunning) {
-               console.log("err1");
                setGameState(GameState.serverError);
             } else {
-               console.log("err2");
                resolve(null);
                this.socket.connect();
             }
@@ -87,7 +81,16 @@ abstract class Client {
    }
 
    public static attemptReconnect(): void {
-      this.socket.connect();
+      Client.createSocket();
+      Client.socket.connect();
+   }
+
+   private static createSocket(): void {
+      const url = "ws://" + SERVER_IP_ADDRESS + ":" + SETTINGS.SERVER_PORT;
+      this.socket = io(url, {
+         transports: ["websocket", "polling", "flashsocket"],
+         autoConnect: false
+      });
    }
 
    /**

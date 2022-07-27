@@ -68,7 +68,7 @@ export async function loadGame(): Promise<void> {
    // Attempt to connect to the server
    const serverResponse = await Client.connectToServer();
    if (serverResponse === null) {
-      alert("Failed to connect to the server!");
+      setGameState(GameState.serverError);
       return;
    }
 

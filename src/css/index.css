@@ -15,9 +15,25 @@ code {
    position: absolute;
 }
 
+#game-canvas::after {
+   position: absolute;
+   top: 0;
+   right: 0;
+   bottom: 0;
+   left: 0;
+   box-shadow: 0 0 15px 5px #000 inset;
+}
+
 .game-message {
    position: absolute;
    top: 50%;
    left: 50%;
    transform: translate(-50%, -50%);
+}
+.game-message p {
+   text-align: center;
+}
+.game-message button {
+   margin-left: 50%;
+   transform: translateX(-50%);
 }

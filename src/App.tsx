@@ -60,14 +60,14 @@ function App() {
          <NameInput />
       </> : null}
 
-      {gameState === GameState.connecting ? <>
-         <div className="game-message">Connecting to server...</div>
-      </> : null}
+      {gameState === GameState.connecting ? <div className="game-message">
+         <p>Connecting to server...</p>
+      </div> : null}
 
-      {gameState === GameState.serverError ? <>
-         <div className="game-message">Error connecting to server</div>
+      {gameState === GameState.serverError ? <div className="game-message">
+         <p>Error connecting to server</p>
          <button onClick={Client.attemptReconnect}>Reconnect</button>
-      </> : null}
+      </div> : null}
 
       {gameState === GameState.game ? <>
          <ChatBox />
