@@ -44,7 +44,7 @@ export const TILE_TYPE_INFO_RECORD: { [key in TileType]: SolidTileTypeInfo | Liq
       isLiquid: true
    },
    [TileType.sludge]: {
-      textureSource: "grass.png",
+      textureSource: "sludge.png",
       friction: DEFAULT_FRICTION
    },
    [TileType.rock]: {
@@ -52,7 +52,7 @@ export const TILE_TYPE_INFO_RECORD: { [key in TileType]: SolidTileTypeInfo | Liq
       friction: DEFAULT_FRICTION
    },
    [TileType.sand]: {
-      textureSource: "grass.png",
+      textureSource: "sand.png",
       friction: DEFAULT_FRICTION
    },
    [TileType.sandstone]: {
@@ -60,7 +60,7 @@ export const TILE_TYPE_INFO_RECORD: { [key in TileType]: SolidTileTypeInfo | Liq
       friction: DEFAULT_FRICTION
    },
    [TileType.snow]: {
-      textureSource: "grass.png",
+      textureSource: "snow.png",
       friction: 0.7
    },
    [TileType.ice]: {

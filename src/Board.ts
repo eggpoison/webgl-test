@@ -4,7 +4,7 @@ import TransformComponent from "./entity-components/TransformComponent";
 import Entity from "./entities/Entity";
 import { getTexture } from "./textures";
 import { Tile, TileInfo, SETTINGS } from "webgl-test-shared";
-import { Coordinates, isDev } from "./utils";
+import { Coordinates } from "./utils";
 import Camera from "./Camera";
 import { TILE_TYPE_INFO_RECORD } from "./tile-type-info";
 import { createWebGLProgram } from "./webgl";
@@ -186,9 +186,10 @@ abstract class Board {
          }
       }
       
+      // Render solid tiles
+
       gl.useProgram(this.solidTileProgram);
 
-      // Render solid tiles
       const entries = Object.entries(texturedTriangleVertices) as Array<[string, Array<number>]>;
       for (const [textureSource, vertices] of entries) {
          // Create tile buffer

@@ -7,7 +7,7 @@ export function keyIsPressed(key: string): boolean {
    return pressedKeys.hasOwnProperty(key) && pressedKeys[key];
 }
 
-const clearPressedKeys = (): void => {
+export function clearPressedKeys(): void {
    for (const key of Object.keys(pressedKeys)) {
       pressedKeys[key] = false;
    }

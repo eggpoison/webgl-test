@@ -12,6 +12,7 @@ import './css/name-input.css';
 import './css/chatbox.css';
 import { getPlayerName } from './components/NameInput';
 import { setupTextCanvas } from './text-canvas';
+import { clearPressedKeys } from './keyboard';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -45,6 +46,10 @@ const resizeCanvas = (): void => {
    textCanvas.height = window.innerHeight;
 }
 window.addEventListener("resize", resizeCanvas);
+
+window.addEventListener("contextmenu", () => {
+   clearPressedKeys();
+});
 
 const setupCanvas = (): void => {
    canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
