@@ -61,6 +61,8 @@ const setupCanvas = (): void => {
    }
    gl = glAttempt;
 
+   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+
    resizeCanvas();
 }
 

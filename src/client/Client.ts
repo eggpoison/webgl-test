@@ -13,8 +13,6 @@ interface ServerResponse {
    tiles: Array<Array<Tile>>;
 }
 
-const SERVER_IP_ADDRESS = "10.61.29.81";
-
 export type PlayerData = Omit<SocketData, "clientID">;
 
 abstract class Client {
@@ -85,8 +83,12 @@ abstract class Client {
    }
 
    private static createSocket(): void {
-      const url = "ws://" + SERVER_IP_ADDRESS + ":" + SETTINGS.SERVER_PORT;
-      this.socket = io(url, {
+      // const url = "ws://" + SERVER_IP_ADDRESS + ":" + SETTINGS.SERVER_PORT;
+      // this.socket = io(url, {
+      //    transports: ["websocket", "polling", "flashsocket"],
+      //    autoConnect: false
+      // });
+      this.socket = io(`ws://localhost:${SETTINGS.SERVER_PORT}`, {
          transports: ["websocket", "polling", "flashsocket"],
          autoConnect: false
       });

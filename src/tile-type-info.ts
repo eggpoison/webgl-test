@@ -56,7 +56,7 @@ export const TILE_TYPE_INFO_RECORD: { [key in TileType]: SolidTileTypeInfo | Liq
       friction: DEFAULT_FRICTION
    },
    [TileType.sandstone]: {
-      textureSource: "grass.png",
+      textureSource: "sandstone.png",
       friction: DEFAULT_FRICTION
    },
    [TileType.snow]: {

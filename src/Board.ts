@@ -136,18 +136,7 @@ abstract class Board {
 
    public static render(): void {
       this.renderTiles();
-
-      // Render entities
-      for (let x = 0; x < SETTINGS.BOARD_SIZE; x++) {
-         for (let y = 0; y < SETTINGS.BOARD_SIZE; y++) {
-            const chunk = this.getChunk(x, y);
-
-            const entities = chunk.getEntities();
-            for (const entity of entities) {
-               entity.render();
-            }
-         }
-      }
+      this.renderEntities();
    }
 
    private static renderTiles(): void {
@@ -313,6 +302,19 @@ abstract class Board {
       ];
 
       return triangleVertices;
+   }
+
+   private static renderEntities(): void {
+      for (let x = 0; x < SETTINGS.BOARD_SIZE; x++) {
+         for (let y = 0; y < SETTINGS.BOARD_SIZE; y++) {
+            const chunk = this.getChunk(x, y);
+
+            const entities = chunk.getEntities();
+            for (const entity of entities) {
+               entity.render();
+            }
+         }
+      }
    }
 
    private static getEntityChunk(entity: Entity): Chunk {
