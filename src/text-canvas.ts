@@ -25,7 +25,7 @@ export function renderPlayerNames(): void {
 
          for (const entity of chunk.getEntities()) {
             // Render player nametags
-            if (entity instanceof Player) {
+            if (entity instanceof Player && entity !== Player.instance) {
                // Calculate the position of the text
                const position = entity.getComponent(TransformComponent)!.position;
                const x = Camera.getXPositionInCanvas(position.x, "text");

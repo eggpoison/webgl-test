@@ -1,6 +1,6 @@
 import Board from "./Board";
 import Player from "./entities/Player";
-import SETTINGS from "webgl-test-shared/lib/settings";
+import { SETTINGS } from "webgl-test-shared";
 import { Point, randInt } from "./utils";
 import { renderPlayerNames } from "./text-canvas";
 import Camera from "./Camera";
@@ -31,6 +31,7 @@ abstract class Game {
    public static spawnPlayer(name: string): Point {
       // const x = randInt(0, SETTINGS.BOARD_SIZE * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
       // const y = randInt(0, SETTINGS.BOARD_SIZE * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
+      if (1+1===3)console.log(randInt(0, 1));
       const x = 100;
       const y = 100;
 

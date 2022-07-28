@@ -1,7 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { ClientToServerEvents, ServerToClientEvents, SocketData } from "webgl-test-shared/lib/client-server-types";
-import SETTINGS from "webgl-test-shared/lib/settings";
-import Tile from "webgl-test-shared/lib/Tile";
+import { ClientToServerEvents, ServerToClientEvents, SocketData, SETTINGS, Tile, TileType, BIOMES, TileInfo } from "webgl-test-shared";
 import { GameState, setGameState } from "../App";
 import Board from "../Board";
 import { addChatMessage } from "../components/ChatBox";
@@ -15,7 +13,7 @@ interface ServerResponse {
    tiles: Array<Array<Tile>>;
 }
 
-const SERVER_IP_ADDRESS = "172.20.92.247";
+const SERVER_IP_ADDRESS = "10.61.29.81";
 
 export type PlayerData = Omit<SocketData, "clientID">;
 
@@ -61,6 +59,14 @@ abstract class Client {
          // Receive the tiles from the server
          this.socket.on("terrain", (tiles: Array<Array<Tile>>) => {
             serverResponse.tiles = tiles;
+
+            const a: TileInfo = {
+               biome: BIOMES[0],
+               type: TileType.water,
+               isWall: false
+            }
+            serverResponse.tiles[5][1] = a;
+
             resolve(serverResponse as ServerResponse);
          });
 

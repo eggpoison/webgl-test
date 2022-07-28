@@ -1,7 +1,7 @@
-import SETTINGS from "webgl-test-shared/lib/settings";
-import { TILE_TYPE_INFO_RECORD } from "webgl-test-shared/lib/Tile";
+import { SETTINGS } from "webgl-test-shared";
 import Board from "../Board";
 import Chunk from "../Chunk";
+import { TILE_TYPE_INFO_RECORD } from "../tile-type-info";
 import { Coordinates, Point, Vector } from "../utils";
 import Component from "./Component";
 import HitboxComponent from "./HitboxComponent";

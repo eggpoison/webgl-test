@@ -1,4 +1,4 @@
-import SETTINGS from "webgl-test-shared/lib/settings";
+import { SETTINGS } from "webgl-test-shared";
 import { windowHeight, windowWidth } from ".";
 import Entity from "./entities/Entity";
 import Player from "./entities/Player";
