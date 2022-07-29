@@ -7,7 +7,11 @@
    bottom: 1rem;
    z-index: 1;
 }
+#chat-box.idle .message-history {
+   animation: Disappear 5s forwards;
+}
 #chat-box :is(.chat-message, .message-preview) {
+   width: 100%;
    color: #fff;
    text-shadow: 2px 2px #000;
    font-family: "Noto Sans";
@@ -15,6 +19,8 @@
    min-height: var(--message-height);
    padding: 0 5px;
    margin: 5px;
+   overflow: hidden;
+   word-wrap: break-word;
 }
 #chat-box .chat-message {
    background-color: rgba(0, 0, 0, 0.6);
@@ -27,4 +33,19 @@
 }
 #chat-box .message-preview.active {
    background-color: rgba(0, 0, 0, 0.6);
+}
+
+@keyframes Disappear {
+   0% {
+      opacity: 1;
+      visibility: visible;
+   }
+   90% {
+      opacity: 1;
+      visibility: visible;
+   }
+   100% {
+      opacity: 0;
+      visibility: hidden;
+   }
 }

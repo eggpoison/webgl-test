@@ -1,4 +1,4 @@
-import { KeyboardEvent, useRef } from "react";
+import { KeyboardEvent, useEffect, useRef } from "react";
 
 const nameIsValid = (name: string): string | true => {
    if (name.length > 15) return "Name cannot be more than 15 characters long!";
@@ -17,6 +17,10 @@ export function getPlayerName(): Promise<string> {
 
 const NameInput = () => {
    const nameInputBoxRef = useRef<HTMLInputElement | null>(null);
+
+   useEffect(() => {
+      nameInputBoxRef.current!.focus();
+   }, []);
 
    const enterName = (): void => {
       // Get the inputted name

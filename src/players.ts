@@ -14,7 +14,6 @@ export function addPlayer(clientID: string, player: Player): void {
 export function removePlayer(clientID: string): void {
    // Remove the player from the game
    const player = PLAYERS[clientID];
-   console.log(player);
    Board.removeEntity(player);
 
    delete PLAYERS[clientID];

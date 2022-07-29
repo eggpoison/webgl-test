@@ -2,6 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Client from "../client/Client";
 import Player from "../entities/Player";
 
+const SPAM_FILTER = {
+   
+};
+
 const MAX_CHAT_MESSAGES = 50;
 
 const MAX_CHAR_COUNT = 128;
@@ -27,6 +31,7 @@ export function chatboxIsFocused(): boolean {
 }
 
 const ChatBox = () => {
+   const chatboxRef = useRef<HTMLDivElement | null>(null);
    const inputBoxRef = useRef<HTMLInputElement | null>(null);
    const [chatMessages, setChatMessages] = useState<Array<ChatMessage>>([]);
    const [isFocused, setIsFocused] = useState<boolean>(false);
@@ -44,8 +49,14 @@ const ChatBox = () => {
          newChatMessages.splice(0, 1);
       }
 
+      if (!isFocused) {
+         chatboxRef.current!.classList.remove("idle");
+         if (chatboxRef.current!.offsetHeight) {} // Refresh the element
+         chatboxRef.current!.classList.add("idle");
+      }
+
       setChatMessages(newChatMessages);
-   }, [chatMessages]);
+   }, [chatMessages, isFocused]);
 
    const focusChatbox = useCallback((): void => {
       const inputBox = inputBoxRef.current!;
@@ -57,7 +68,6 @@ const ChatBox = () => {
       setIsFocused(false);
 
       // Reset the chat preview
-      inputBoxRef.current!.value = "";
       inputBoxRef.current!.blur();
    }, []);
 
@@ -98,6 +108,10 @@ const ChatBox = () => {
 
    useEffect(() => {
       chatboxIsFocusedReference = () => isFocused;
+
+      if (!isFocused) {
+         inputBoxRef.current!.value = "";
+      }
    }, [isFocused]);
 
    useEffect(() => {
@@ -109,7 +123,7 @@ const ChatBox = () => {
    }, [focusChatbox]);
 
    return (
-      <div id="chat-box">
+      <div id="chat-box" className={`${!isFocused ? "idle" : ""}`} ref={chatboxRef}>
          <div className="message-history">
             {chatMessages.map((message, i) => {
                return <div key={i} className="chat-message">

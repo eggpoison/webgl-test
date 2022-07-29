@@ -64,7 +64,7 @@ export const TILE_TYPE_INFO_RECORD: { [key in TileType]: SolidTileTypeInfo | Liq
       friction: 0.7
    },
    [TileType.ice]: {
-      textureSource: "grass.png",
+      textureSource: "ice.png",
       friction: 0.15
    },
    [TileType.magma]: {

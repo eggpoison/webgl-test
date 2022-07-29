@@ -67,6 +67,25 @@ void main() {
 }
 `;
 
+// 
+// Border shaders
+// 
+const borderVertexShaderText = `
+precision mediump float;
+
+attribute vec2 vertPosition;
+
+void main() {
+   gl_Position = vec4(vertPosition, 0.0, 1.0);
+}`;
+const borderFragmentShaderText = `
+precision mediump float;
+
+void main() {
+   gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+}
+`;
+
 abstract class Board {
    private static tiles: Array<Array<Tile>>;
 
@@ -74,6 +93,7 @@ abstract class Board {
 
    private static solidTileProgram: WebGLProgram;
    private static liquidTileProgram: WebGLProgram;
+   private static borderTileProgram: WebGLProgram;
 
    public static setup(tiles: Array<Array<Tile>>): void {
       this.tiles = tiles;
@@ -83,6 +103,7 @@ abstract class Board {
 
       this.solidTileProgram = createWebGLProgram(solidTileVertexShaderText, solidTileFragmentShaderText);
       this.liquidTileProgram = createWebGLProgram(liquidTileVertexShaderText, liquidTileFragmentShaderText);
+      this.borderTileProgram = createWebGLProgram(borderVertexShaderText, borderFragmentShaderText);
    }
 
    private static initialiseChunkArray(): void {
@@ -105,6 +126,7 @@ abstract class Board {
    }
 
    public static update(): void {
+      // console.log(this.getChunk(0, 0).getEntities());
       const entityChunkChanges = new Array<[entity: Entity, previousChunkCoordinates: Coordinates, newChunkCoordinates: Coordinates]>();
 
       for (let x = 0; x < SETTINGS.BOARD_SIZE; x++) {
@@ -130,12 +152,16 @@ abstract class Board {
       // Apply entity chunk changes
       for (const [entity, previousChunkCoordinates, newChunkCoordinates] of entityChunkChanges) {
          this.getChunk(...previousChunkCoordinates).removeEntity(entity);
-         this.getChunk(...newChunkCoordinates).addEntity(entity);
+
+         const newChunk = this.getChunk(...newChunkCoordinates);
+         newChunk.addEntity(entity);
+         entity.previousChunk = newChunk;
       }
    }
 
    public static render(): void {
       this.renderTiles();
+      this.renderBorder();
       this.renderEntities();
    }
 
@@ -302,6 +328,128 @@ abstract class Board {
       ];
 
       return triangleVertices;
+   }
+
+   private static renderBorder(): void {
+      const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
+
+      const BORDER_WIDTH = 5;
+
+      gl.useProgram(this.borderTileProgram);
+
+      const positionAttribLocation = gl.getAttribLocation(this.borderTileProgram, "vertPosition");
+      gl.vertexAttribPointer(
+         positionAttribLocation, // Attribute location
+         2, // Number of elements per attribute
+         gl.FLOAT, // Type of elements
+         false,
+         2 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
+         0 // Offset from the beginning of a single vertex to this attribute
+      );
+   
+      // Enable the attributes
+      gl.enableVertexAttribArray(positionAttribLocation);
+
+      const minChunkXPos = minChunkX * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
+      const maxChunkXPos = (maxChunkX + 1) * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
+      const minChunkYPos = minChunkY * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
+      const maxChunkYPos = (maxChunkY + 1) * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
+
+      const vertices = new Array<number>();
+
+      if (minChunkX === 0) {
+         const x1 = minChunkXPos - BORDER_WIDTH;
+         const x2 = minChunkXPos;
+         const y1 = minChunkYPos - BORDER_WIDTH;
+         const y2 = maxChunkYPos + BORDER_WIDTH;
+
+         // Calculate screen positions
+         const screenX1 = Camera.getXPositionInCanvas(x1, "game");
+         const screenX2 = Camera.getXPositionInCanvas(x2, "game");
+         const screenY1 = Camera.getYPositionInCanvas(y1, "game");
+         const screenY2 = Camera.getYPositionInCanvas(y2, "game");
+
+         vertices.push(
+            screenX1, screenY1,
+            screenX2, screenY2,
+            screenX1, screenY2,
+            screenX1, screenY1,
+            screenX2, screenY1,
+            screenX2, screenY2
+         );
+      }
+
+      if (maxChunkX === SETTINGS.BOARD_SIZE - 1) {
+         const x1 = maxChunkXPos;
+         const x2 = maxChunkXPos + BORDER_WIDTH;
+         const y1 = minChunkYPos - BORDER_WIDTH;
+         const y2 = maxChunkYPos + BORDER_WIDTH;
+
+         // Calculate screen positions
+         const screenX1 = Camera.getXPositionInCanvas(x1, "game");
+         const screenX2 = Camera.getXPositionInCanvas(x2, "game");
+         const screenY1 = Camera.getYPositionInCanvas(y1, "game");
+         const screenY2 = Camera.getYPositionInCanvas(y2, "game");
+
+         vertices.push(
+            screenX1, screenY1,
+            screenX2, screenY2,
+            screenX1, screenY2,
+            screenX1, screenY1,
+            screenX2, screenY1,
+            screenX2, screenY2
+         );
+      }
+
+      if (minChunkY === 0) {
+         const x1 = minChunkXPos - BORDER_WIDTH;
+         const x2 = maxChunkXPos + BORDER_WIDTH;
+         const y1 = minChunkYPos - BORDER_WIDTH;
+         const y2 = minChunkYPos;
+
+         // Calculate screen positions
+         const screenX1 = Camera.getXPositionInCanvas(x1, "game");
+         const screenX2 = Camera.getXPositionInCanvas(x2, "game");
+         const screenY1 = Camera.getYPositionInCanvas(y1, "game");
+         const screenY2 = Camera.getYPositionInCanvas(y2, "game");
+
+         vertices.push(
+            screenX1, screenY1,
+            screenX2, screenY2,
+            screenX1, screenY2,
+            screenX1, screenY1,
+            screenX2, screenY1,
+            screenX2, screenY2
+         );
+      }
+
+      if (maxChunkY === SETTINGS.BOARD_SIZE - 1) {
+         const x1 = minChunkXPos - BORDER_WIDTH;
+         const x2 = maxChunkXPos + BORDER_WIDTH;
+         const y1 = maxChunkYPos;
+         const y2 = maxChunkYPos + BORDER_WIDTH;
+
+         // Calculate screen positions
+         const screenX1 = Camera.getXPositionInCanvas(x1, "game");
+         const screenX2 = Camera.getXPositionInCanvas(x2, "game");
+         const screenY1 = Camera.getYPositionInCanvas(y1, "game");
+         const screenY2 = Camera.getYPositionInCanvas(y2, "game");
+
+         vertices.push(
+            screenX1, screenY1,
+            screenX2, screenY2,
+            screenX1, screenY2,
+            screenX1, screenY1,
+            screenX2, screenY1,
+            screenX2, screenY2
+         );
+      }
+
+      const buffer = gl.createBuffer()!;
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+
+      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 2);
    }
 
    private static renderEntities(): void {

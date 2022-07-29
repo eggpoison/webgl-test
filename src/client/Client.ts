@@ -33,6 +33,7 @@ abstract class Client {
 
          // Add new players
          this.socket.on("newPlayer", (playerData: SocketData) => {
+            console.log("new player: " + playerData.clientID);
             const position = new Point(playerData.position[0], playerData.position[1]);
             const player = new Player(position, playerData.name, false);
             Board.addEntity(player);
