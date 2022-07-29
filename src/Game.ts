@@ -10,6 +10,7 @@ abstract class Game {
 
    public static start(): void {
       // Start the game loop
+      this.main();
       setInterval(this.main, 1000 / SETTINGS.TPS);
 
       this.isRunning = true;
@@ -22,7 +23,7 @@ abstract class Game {
       renderPlayerNames();
    }
 
-   public static main(): void {
+   private static main(): void {
       Board.update();
       Camera.updateVisibleChunkBounds();
       Board.render();

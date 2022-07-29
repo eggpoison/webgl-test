@@ -51,5 +51,5 @@ export function renderPlayerNames(): void {
       }
    }
 
-   requestAnimationFrame(renderPlayerNames);
+   // requestAnimationFrame(renderPlayerNames);
 }
