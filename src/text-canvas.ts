@@ -12,6 +12,13 @@ export function setupTextCanvas(): void {
    ctx = textCanvas.getContext("2d")!;
 }
 
+const getXPos = (x: number): number => {
+   return x - Camera.position.x + window.innerWidth / 2;
+}
+const getYPos = (y: number): number => {
+   return Camera.position.y + window.innerHeight / 2 - y;
+}
+
 export function renderPlayerNames(): void {
    // Clear the canvas
    ctx.fillStyle = "transparent";
@@ -28,8 +35,8 @@ export function renderPlayerNames(): void {
             if (entity instanceof Player && entity !== Player.instance) {
                // Calculate the position of the text
                const position = entity.getComponent(TransformComponent)!.position;
-               const x = Camera.getXPositionInCanvas(position.x, "text");
-               const y = Camera.getYPositionInCanvas(position.y + Player.RADIUS + 5, "text");
+               const x = getXPos(position.x);
+               const y = getYPos(position.y + Player.RADIUS + 5);
 
                ctx.fillStyle = "#000";
                ctx.font = "400 20px Helvetica";

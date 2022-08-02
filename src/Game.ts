@@ -21,12 +21,13 @@ abstract class Game {
     * Runs the setup functions for various different parts of the game. Called once just before the game starts.
     */
    public static setup(): void {
-      renderPlayerNames();
    }
 
    public static main(): void {
       updateSpamFilter();
       Board.update();
+      Camera.updateCameraPosition();
+      renderPlayerNames();
       Camera.updateVisibleChunkBounds();
       Board.render();
    }

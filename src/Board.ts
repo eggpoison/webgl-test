@@ -133,7 +133,6 @@ abstract class Board {
    }
 
    public static update(): void {
-      // console.log(this.getChunk(0, 0).getEntities());
       const entityChunkChanges = new Array<[entity: Entity, previousChunkCoordinates: Coordinates, newChunkCoordinates: Coordinates]>();
 
       for (let x = 0; x < SETTINGS.BOARD_SIZE; x++) {
@@ -175,14 +174,15 @@ abstract class Board {
    private static renderTiles(): void {
       // Calculate tile vertices
       const tileVerticesCollection = this.calculateTileVertices();
-      const texturedTriangleVertices = tileVerticesCollection.texturedTriangleVertices;
-      const colouredTriangleVertices = tileVerticesCollection.colouredTriangleVertices;
 
-      // Render solid tiles
+      this.renderSolidTiles(tileVerticesCollection.texturedTriangleVertices);
+      this.renderLiquidTiles(tileVerticesCollection.colouredTriangleVertices);
+   }
 
+   private static renderSolidTiles(triangleVertices: { [textureSource: string]: Array<number> }): void {
       gl.useProgram(this.solidTileProgram);
 
-      const entries = Object.entries(texturedTriangleVertices) as Array<[string, Array<number>]>;
+      const entries = Object.entries(triangleVertices) as Array<[string, Array<number>]>;
       for (const [textureSource, vertices] of entries) {
          // Create tile buffer
          const tileBuffer = gl.createBuffer()!;
@@ -220,15 +220,15 @@ abstract class Board {
          // Draw the tile
          gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 4);
       }
+   }
 
-      // Render liquids
-
+   private static renderLiquidTiles(triangleVertices: Array<number>): void {
       gl.useProgram(this.liquidTileProgram);
 
       // Create tile buffer
       const tileBuffer = gl.createBuffer()!;
       gl.bindBuffer(gl.ARRAY_BUFFER, tileBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colouredTriangleVertices), gl.STATIC_DRAW);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(triangleVertices), gl.STATIC_DRAW);
 
       const positionAttribLocation = gl.getAttribLocation(this.liquidTileProgram, "vertPosition");
       const colourAttribLocation = gl.getAttribLocation(this.liquidTileProgram, "vertColour");
@@ -254,7 +254,7 @@ abstract class Board {
       gl.enableVertexAttribArray(colourAttribLocation);
 
       // Draw the tile
-      gl.drawArrays(gl.TRIANGLES, 0, colouredTriangleVertices.length / 5);
+      gl.drawArrays(gl.TRIANGLES, 0, triangleVertices.length / 5);
    }
 
    private static calculateTileVertices(): TileVerticesCollection {
@@ -265,7 +265,7 @@ abstract class Board {
       const minTileY = minChunkY * SETTINGS.CHUNK_SIZE;
       const maxTileY = (maxChunkY + 1) * SETTINGS.CHUNK_SIZE;
 
-      const tileVertexCoordinates = this.calculateTileVertexCoordinates(minTileX, maxTileX, minTileY, maxTileY);
+      const [xTileVertexCoordinates, yTileVertexCoordinates] = this.calculateTileVertexCoordinates(minTileX, maxTileX, minTileY, maxTileY);
 
       const texturedTriangleVertices: { [key: string]: Array<number> } = {};
       let colouredTriangleVertices = new Array<number>();
@@ -277,16 +277,17 @@ abstract class Board {
             const tile = this.getTile(x, y);
             const tileTypeInfo = TILE_TYPE_INFO_RECORD[tile.type];
 
-            const x1 = tileVertexCoordinates[0][x];
-            const x2 = tileVertexCoordinates[0][x + 1];
-            const y1 = tileVertexCoordinates[1][y];
-            const y2 = tileVertexCoordinates[1][y + 1];
+            const x1 = xTileVertexCoordinates[x];
+            const x2 = xTileVertexCoordinates[x + 1];
+            const y1 = yTileVertexCoordinates[y];
+            const y2 = yTileVertexCoordinates[y + 1];
             
             // Add the vertices to its appropriate section
             if (tileTypeInfo.isLiquid) {
-               colouredTriangleVertices.push(
-                  ...this.calculateLiquidTileVertices(x1, x2, y1, y2, tileTypeInfo.colour)
-               );
+               const vertices = this.calculateLiquidTileVertices(x1, x2, y1, y2, tileTypeInfo.colour);
+               for (const vertex of vertices) {
+                  colouredTriangleVertices.push(vertex);
+               }
             } else {
                const vertices = this.calculateSolidTileVertices(x1, x2, y1, y2);
    
@@ -313,13 +314,13 @@ abstract class Board {
       // X
       for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
          const x = tileX * SETTINGS.TILE_SIZE;
-         const screenX = Camera.getXPositionInCanvas(x, "game");
+         const screenX = Camera.getXPositionInScreen(x, "game");
          tileVertexCoordinates[0][tileX] = screenX;
       }
       // Y
       for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
          const y = tileY * SETTINGS.TILE_SIZE;
-         const screenY = Camera.getYPositionInCanvas(y, "game");
+         const screenY = Camera.getYPositionInScreen(y, "game");
          tileVertexCoordinates[1][tileY] = screenY;
       }
 
@@ -382,10 +383,10 @@ abstract class Board {
          const y2 = maxChunkYPos + BORDER_WIDTH;
 
          // Calculate screen positions
-         const screenX1 = Camera.getXPositionInCanvas(x1, "game");
-         const screenX2 = Camera.getXPositionInCanvas(x2, "game");
-         const screenY1 = Camera.getYPositionInCanvas(y1, "game");
-         const screenY2 = Camera.getYPositionInCanvas(y2, "game");
+         const screenX1 = Camera.getXPositionInScreen(x1, "game");
+         const screenX2 = Camera.getXPositionInScreen(x2, "game");
+         const screenY1 = Camera.getYPositionInScreen(y1, "game");
+         const screenY2 = Camera.getYPositionInScreen(y2, "game");
 
          vertices.push(
             screenX1, screenY1,
@@ -404,10 +405,10 @@ abstract class Board {
          const y2 = maxChunkYPos + BORDER_WIDTH;
 
          // Calculate screen positions
-         const screenX1 = Camera.getXPositionInCanvas(x1, "game");
-         const screenX2 = Camera.getXPositionInCanvas(x2, "game");
-         const screenY1 = Camera.getYPositionInCanvas(y1, "game");
-         const screenY2 = Camera.getYPositionInCanvas(y2, "game");
+         const screenX1 = Camera.getXPositionInScreen(x1, "game");
+         const screenX2 = Camera.getXPositionInScreen(x2, "game");
+         const screenY1 = Camera.getYPositionInScreen(y1, "game");
+         const screenY2 = Camera.getYPositionInScreen(y2, "game");
 
          vertices.push(
             screenX1, screenY1,
@@ -426,10 +427,10 @@ abstract class Board {
          const y2 = minChunkYPos;
 
          // Calculate screen positions
-         const screenX1 = Camera.getXPositionInCanvas(x1, "game");
-         const screenX2 = Camera.getXPositionInCanvas(x2, "game");
-         const screenY1 = Camera.getYPositionInCanvas(y1, "game");
-         const screenY2 = Camera.getYPositionInCanvas(y2, "game");
+         const screenX1 = Camera.getXPositionInScreen(x1, "game");
+         const screenX2 = Camera.getXPositionInScreen(x2, "game");
+         const screenY1 = Camera.getYPositionInScreen(y1, "game");
+         const screenY2 = Camera.getYPositionInScreen(y2, "game");
 
          vertices.push(
             screenX1, screenY1,
@@ -448,10 +449,10 @@ abstract class Board {
          const y2 = maxChunkYPos + BORDER_WIDTH;
 
          // Calculate screen positions
-         const screenX1 = Camera.getXPositionInCanvas(x1, "game");
-         const screenX2 = Camera.getXPositionInCanvas(x2, "game");
-         const screenY1 = Camera.getYPositionInCanvas(y1, "game");
-         const screenY2 = Camera.getYPositionInCanvas(y2, "game");
+         const screenX1 = Camera.getXPositionInScreen(x1, "game");
+         const screenX2 = Camera.getXPositionInScreen(x2, "game");
+         const screenY1 = Camera.getYPositionInScreen(y1, "game");
+         const screenY2 = Camera.getYPositionInScreen(y2, "game");
 
          vertices.push(
             screenX1, screenY1,
