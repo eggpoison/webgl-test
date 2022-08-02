@@ -11,6 +11,7 @@ abstract class Game {
 
    public static start(): void {
       // Start the game loop
+      this.main();
       setInterval(this.main, 1000 / SETTINGS.TPS);
 
       this.isRunning = true;

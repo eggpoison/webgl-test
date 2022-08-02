@@ -86,6 +86,13 @@ void main() {
 }
 `;
 
+type TileVerticesCollection = {
+   readonly texturedTriangleVertices: { [key: string]: Array<number> };
+   readonly colouredTriangleVertices: Array<number>;
+};
+
+type TileVertexCoordinates = [{ [key: number]: number }, { [key: number]: number }];
+
 abstract class Board {
    private static tiles: Array<Array<Tile>>;
 
@@ -166,41 +173,11 @@ abstract class Board {
    }
 
    private static renderTiles(): void {
-      // Get chunk bounds
-      const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
-      const minTileX = minChunkX * SETTINGS.CHUNK_SIZE;
-      const maxTileX = (maxChunkX + 1) * SETTINGS.CHUNK_SIZE;
-      const minTileY = minChunkY * SETTINGS.CHUNK_SIZE;
-      const maxTileY = (maxChunkY + 1) * SETTINGS.CHUNK_SIZE;
+      // Calculate tile vertices
+      const tileVerticesCollection = this.calculateTileVertices();
+      const texturedTriangleVertices = tileVerticesCollection.texturedTriangleVertices;
+      const colouredTriangleVertices = tileVerticesCollection.colouredTriangleVertices;
 
-      const texturedTriangleVertices: { [key: string]: Array<number> } = {};
-      let colouredTriangleVertices = new Array<number>();
-
-      // Render tiles
-      for (let x = minTileX; x < maxTileX; x++) {
-         for (let y = minTileY; y < maxTileY; y++) {
-            // Get the tile data
-            const tile = this.getTile(x, y);
-            const tileTypeInfo = TILE_TYPE_INFO_RECORD[tile.type]; 
-            
-            // Add the vertices to its appropriate section
-            if (tileTypeInfo.isLiquid) {
-               const vertices = this.calculateLiquidTileVertices(x, y, tileTypeInfo.colour);
-
-               // Add liquid vertices
-               colouredTriangleVertices = colouredTriangleVertices.concat(vertices);
-            } else {
-               const vertices = this.calculateSolidTileVertices(x, y);
-   
-               if (texturedTriangleVertices.hasOwnProperty(tileTypeInfo.textureSource)) {
-                  texturedTriangleVertices[tileTypeInfo.textureSource] = texturedTriangleVertices[tileTypeInfo.textureSource].concat(vertices);
-               } else {
-                  texturedTriangleVertices[tileTypeInfo.textureSource] = vertices;
-               }
-            }
-         }
-      }
-      
       // Render solid tiles
 
       gl.useProgram(this.solidTileProgram);
@@ -280,54 +257,95 @@ abstract class Board {
       gl.drawArrays(gl.TRIANGLES, 0, colouredTriangleVertices.length / 5);
    }
 
-   private static calculateSolidTileVertices(tileX: number, tileY: number): Array<number> {
-      const x1 = tileX * SETTINGS.TILE_SIZE;
-      const x2 = x1 + SETTINGS.TILE_SIZE;
-      const y1 = tileY * SETTINGS.TILE_SIZE;
-      const y2 = y1 + SETTINGS.TILE_SIZE;
-      
-      const canvasX1 = Camera.getXPositionInCanvas(x1, "game");
-      const canvasX2 = Camera.getXPositionInCanvas(x2, "game");
-      const canvasY1 = Camera.getYPositionInCanvas(y1, "game");
-      const canvasY2 = Camera.getYPositionInCanvas(y2, "game");
+   private static calculateTileVertices(): TileVerticesCollection {
+      // Get chunk bounds
+      const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
+      const minTileX = minChunkX * SETTINGS.CHUNK_SIZE;
+      const maxTileX = (maxChunkX + 1) * SETTINGS.CHUNK_SIZE;
+      const minTileY = minChunkY * SETTINGS.CHUNK_SIZE;
+      const maxTileY = (maxChunkY + 1) * SETTINGS.CHUNK_SIZE;
+
+      const tileVertexCoordinates = this.calculateTileVertexCoordinates(minTileX, maxTileX, minTileY, maxTileY);
+
+      const texturedTriangleVertices: { [key: string]: Array<number> } = {};
+      let colouredTriangleVertices = new Array<number>();
 
       // Calculate vertices
-      const triangleVertices =
-      [
-         canvasX1, canvasY1,    0, 0,
-         canvasX2, canvasY1,    1, 0,
-         canvasX1, canvasY2,    0, 1,
-         canvasX1, canvasY2,    0, 1,
-         canvasX2, canvasY1,    1, 0,
-         canvasX2, canvasY2,    1, 1
-      ];
+      for (let x = minTileX; x < maxTileX; x++) {
+         for (let y = minTileY; y < maxTileY; y++) {
+            // Get the tile data
+            const tile = this.getTile(x, y);
+            const tileTypeInfo = TILE_TYPE_INFO_RECORD[tile.type];
 
-      return triangleVertices;
+            const x1 = tileVertexCoordinates[0][x];
+            const x2 = tileVertexCoordinates[0][x + 1];
+            const y1 = tileVertexCoordinates[1][y];
+            const y2 = tileVertexCoordinates[1][y + 1];
+            
+            // Add the vertices to its appropriate section
+            if (tileTypeInfo.isLiquid) {
+               colouredTriangleVertices.push(
+                  ...this.calculateLiquidTileVertices(x1, x2, y1, y2, tileTypeInfo.colour)
+               );
+            } else {
+               const vertices = this.calculateSolidTileVertices(x1, x2, y1, y2);
+   
+               if (!texturedTriangleVertices.hasOwnProperty(tileTypeInfo.textureSource)) {
+                  texturedTriangleVertices[tileTypeInfo.textureSource] = new Array<number>();
+               }
+               
+               for (const vertex of vertices) {
+                  texturedTriangleVertices[tileTypeInfo.textureSource].push(vertex);
+               }
+            }
+         }
+      }
+
+      return {
+         texturedTriangleVertices: texturedTriangleVertices,
+         colouredTriangleVertices: colouredTriangleVertices
+      };
    }
 
-   private static calculateLiquidTileVertices(tileX: number, tileY: number, colour: [number, number, number]): Array<number> {
-      const x1 = tileX * SETTINGS.TILE_SIZE;
-      const x2 = x1 + SETTINGS.TILE_SIZE;
-      const y1 = tileY * SETTINGS.TILE_SIZE;
-      const y2 = y1 + SETTINGS.TILE_SIZE;
-      
-      const canvasX1 = Camera.getXPositionInCanvas(x1, "game");
-      const canvasX2 = Camera.getXPositionInCanvas(x2, "game");
-      const canvasY1 = Camera.getYPositionInCanvas(y1, "game");
-      const canvasY2 = Camera.getYPositionInCanvas(y2, "game");
+   private static calculateTileVertexCoordinates(minTileX: number, maxTileX: number, minTileY: number, maxTileY: number): TileVertexCoordinates {
+      const tileVertexCoordinates: TileVertexCoordinates = [{}, {}];
 
-      // Calculate vertices
-      const triangleVertices =
-      [
-         canvasX1, canvasY1,    colour[0], colour[1], colour[2],
-         canvasX2, canvasY1,    colour[0], colour[1], colour[2],
-         canvasX1, canvasY2,    colour[0], colour[1], colour[2],
-         canvasX1, canvasY2,    colour[0], colour[1], colour[2],
-         canvasX2, canvasY1,    colour[0], colour[1], colour[2],
-         canvasX2, canvasY2,    colour[0], colour[1], colour[2]
+      // X
+      for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
+         const x = tileX * SETTINGS.TILE_SIZE;
+         const screenX = Camera.getXPositionInCanvas(x, "game");
+         tileVertexCoordinates[0][tileX] = screenX;
+      }
+      // Y
+      for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
+         const y = tileY * SETTINGS.TILE_SIZE;
+         const screenY = Camera.getYPositionInCanvas(y, "game");
+         tileVertexCoordinates[1][tileY] = screenY;
+      }
+
+      return tileVertexCoordinates;
+   }
+
+   private static calculateSolidTileVertices(x1: number, x2: number, y1: number, y2: number): Array<number> {
+      return [
+         x1, y1, 0, 0,
+         x2, y1, 1, 0,
+         x1, y2, 0, 1,
+         x1, y2, 0, 1,
+         x2, y1, 1, 0,
+         x2, y2, 1, 1
       ];
+   }
 
-      return triangleVertices;
+   private static calculateLiquidTileVertices(x1: number, x2: number, y1: number, y2: number, [r, g, b]: [number, number, number]): Array<number> {
+      return [
+         x1, y1, r, g, b,
+         x2, y1, r, g, b,
+         x1, y2, r, g, b,
+         x1, y2, r, g, b,
+         x2, y1, r, g, b,
+         x2, y2, r, g, b
+      ];
    }
 
    private static renderBorder(): void {
