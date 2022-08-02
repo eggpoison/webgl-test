@@ -4,6 +4,7 @@ import { SETTINGS } from "webgl-test-shared";
 import { Point, randInt } from "./utils";
 import { renderPlayerNames } from "./text-canvas";
 import Camera from "./Camera";
+import { updateSpamFilter } from "./components/ChatBox";
 
 abstract class Game {
    public static isRunning: boolean = false;
@@ -23,6 +24,7 @@ abstract class Game {
    }
 
    public static main(): void {
+      updateSpamFilter();
       Board.update();
       Camera.updateVisibleChunkBounds();
       Board.render();
