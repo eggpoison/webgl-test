@@ -8,6 +8,7 @@ import { Coordinates } from "./utils";
 import Camera from "./Camera";
 import { TILE_TYPE_INFO_RECORD } from "./tile-type-info";
 import { createWebGLProgram } from "./webgl";
+import RenderComponent from "./entity-components/RenderComponent";
 
 // 
 // Solid Tile Shaders
@@ -165,10 +166,10 @@ abstract class Board {
       }
    }
 
-   public static render(): void {
+   public static render(frameProgress: number): void {
       this.renderTiles();
       this.renderBorder();
-      this.renderEntities();
+      this.renderEntities(frameProgress);
    }
 
    private static renderTiles(): void {
@@ -314,13 +315,13 @@ abstract class Board {
       // X
       for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
          const x = tileX * SETTINGS.TILE_SIZE;
-         const screenX = Camera.getXPositionInScreen(x, "game");
+         const screenX = Camera.getXPositionInScreen(x);
          tileVertexCoordinates[0][tileX] = screenX;
       }
       // Y
       for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
          const y = tileY * SETTINGS.TILE_SIZE;
-         const screenY = Camera.getYPositionInScreen(y, "game");
+         const screenY = Camera.getYPositionInScreen(y);
          tileVertexCoordinates[1][tileY] = screenY;
       }
 
@@ -383,10 +384,10 @@ abstract class Board {
          const y2 = maxChunkYPos + BORDER_WIDTH;
 
          // Calculate screen positions
-         const screenX1 = Camera.getXPositionInScreen(x1, "game");
-         const screenX2 = Camera.getXPositionInScreen(x2, "game");
-         const screenY1 = Camera.getYPositionInScreen(y1, "game");
-         const screenY2 = Camera.getYPositionInScreen(y2, "game");
+         const screenX1 = Camera.getXPositionInScreen(x1);
+         const screenX2 = Camera.getXPositionInScreen(x2);
+         const screenY1 = Camera.getYPositionInScreen(y1);
+         const screenY2 = Camera.getYPositionInScreen(y2);
 
          vertices.push(
             screenX1, screenY1,
@@ -405,10 +406,10 @@ abstract class Board {
          const y2 = maxChunkYPos + BORDER_WIDTH;
 
          // Calculate screen positions
-         const screenX1 = Camera.getXPositionInScreen(x1, "game");
-         const screenX2 = Camera.getXPositionInScreen(x2, "game");
-         const screenY1 = Camera.getYPositionInScreen(y1, "game");
-         const screenY2 = Camera.getYPositionInScreen(y2, "game");
+         const screenX1 = Camera.getXPositionInScreen(x1);
+         const screenX2 = Camera.getXPositionInScreen(x2);
+         const screenY1 = Camera.getYPositionInScreen(y1);
+         const screenY2 = Camera.getYPositionInScreen(y2);
 
          vertices.push(
             screenX1, screenY1,
@@ -427,10 +428,10 @@ abstract class Board {
          const y2 = minChunkYPos;
 
          // Calculate screen positions
-         const screenX1 = Camera.getXPositionInScreen(x1, "game");
-         const screenX2 = Camera.getXPositionInScreen(x2, "game");
-         const screenY1 = Camera.getYPositionInScreen(y1, "game");
-         const screenY2 = Camera.getYPositionInScreen(y2, "game");
+         const screenX1 = Camera.getXPositionInScreen(x1);
+         const screenX2 = Camera.getXPositionInScreen(x2);
+         const screenY1 = Camera.getYPositionInScreen(y1);
+         const screenY2 = Camera.getYPositionInScreen(y2);
 
          vertices.push(
             screenX1, screenY1,
@@ -449,10 +450,10 @@ abstract class Board {
          const y2 = maxChunkYPos + BORDER_WIDTH;
 
          // Calculate screen positions
-         const screenX1 = Camera.getXPositionInScreen(x1, "game");
-         const screenX2 = Camera.getXPositionInScreen(x2, "game");
-         const screenY1 = Camera.getYPositionInScreen(y1, "game");
-         const screenY2 = Camera.getYPositionInScreen(y2, "game");
+         const screenX1 = Camera.getXPositionInScreen(x1);
+         const screenX2 = Camera.getXPositionInScreen(x2);
+         const screenY1 = Camera.getYPositionInScreen(y1);
+         const screenY2 = Camera.getYPositionInScreen(y2);
 
          vertices.push(
             screenX1, screenY1,
@@ -471,14 +472,17 @@ abstract class Board {
       gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 2);
    }
 
-   private static renderEntities(): void {
+   private static renderEntities(frameProgress: number): void {
       for (let x = 0; x < SETTINGS.BOARD_SIZE; x++) {
          for (let y = 0; y < SETTINGS.BOARD_SIZE; y++) {
             const chunk = this.getChunk(x, y);
 
             const entities = chunk.getEntities();
             for (const entity of entities) {
-               entity.render();
+               const renderComponent = entity.getComponent(RenderComponent);
+               if (renderComponent !== null) {
+                  renderComponent.render(frameProgress);
+               }
             }
          }
       }

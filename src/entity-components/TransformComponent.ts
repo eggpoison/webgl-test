@@ -2,7 +2,7 @@ import { SETTINGS } from "webgl-test-shared";
 import Board from "../Board";
 import Chunk from "../Chunk";
 import { TILE_TYPE_INFO_RECORD } from "../tile-type-info";
-import { Coordinates, Point, Vector } from "../utils";
+import { Coordinates, lerp, Point, Vector } from "../utils";
 import Component from "./Component";
 import HitboxComponent from "./HitboxComponent";
 
@@ -41,7 +41,11 @@ class TransformComponent extends Component {
       // Apply acceleration
       if (this.acceleration !== null) {
          const acceleration = this.acceleration.copy();
-         acceleration.magnitude /= SETTINGS.TPS; 
+         acceleration.magnitude /= SETTINGS.TPS;
+
+         // Apply friction to acceleration
+         const REDUCTION_FACTOR = 0.3;
+         acceleration.magnitude *= lerp(REDUCTION_FACTOR, 1, tileTypeInfo.friction);
 
          // Add acceleration to velocity
          if (this.velocity === null) {

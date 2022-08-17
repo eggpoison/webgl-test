@@ -80,8 +80,8 @@ export function drawCircle(x: number, y: number, radius: number, rgba: [number, 
    const triangleVertices = new Array<number>();
 
    // Add the center point
-   const centerX = Camera.getXPositionInScreen(x, "game");
-   const centerY = Camera.getYPositionInScreen(y, "game");
+   const centerX = Camera.getXPositionInScreen(x);
+   const centerY = Camera.getYPositionInScreen(y);
    triangleVertices.push(centerX, centerY, ...rgba);
 
    const step = 2 * Math.PI / CIRCLE_DETAIL;
@@ -93,8 +93,8 @@ export function drawCircle(x: number, y: number, radius: number, rgba: [number, 
       const worldX = Math.cos(radians) * radius + x;
       const worldY = Math.sin(radians) * radius + y;
       
-      const screenX = Camera.getXPositionInScreen(worldX, "game");
-      const screenY = Camera.getYPositionInScreen(worldY, "game");
+      const screenX = Camera.getXPositionInScreen(worldX);
+      const screenY = Camera.getYPositionInScreen(worldY);
       
       triangleVertices.push(screenX, screenY, ...rgba);
 

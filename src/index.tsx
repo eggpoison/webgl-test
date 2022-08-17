@@ -47,9 +47,7 @@ const resizeCanvas = (): void => {
 }
 window.addEventListener("resize", resizeCanvas);
 
-window.addEventListener("contextmenu", () => {
-   clearPressedKeys();
-});
+window.addEventListener("contextmenu", clearPressedKeys);
 
 const setupCanvas = (): void => {
    canvas = document.getElementById("game-canvas") as HTMLCanvasElement;

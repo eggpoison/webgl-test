@@ -3,6 +3,9 @@ import { chatboxIsFocused, focusChatbox } from "./components/ChatBox";
 
 const pressedKeys: { [key: string]: boolean } = {};
 
+const LOWERCASE_LETTERS = "abcdefghijklmnopqrstuvwxyz".split("");
+const UPPERCASE_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
 export function keyIsPressed(key: string): boolean {
    return pressedKeys.hasOwnProperty(key) && pressedKeys[key];
 }
@@ -10,6 +13,31 @@ export function keyIsPressed(key: string): boolean {
 export function clearPressedKeys(): void {
    for (const key of Object.keys(pressedKeys)) {
       pressedKeys[key] = false;
+   }
+}
+
+const handleCapsLockPress = (): void => {
+   let letters!: Array<string>;
+   let otherLetters!: Array<string>;
+
+   const capsIsPressed = keyIsPressed("CapsLock");
+
+   if (capsIsPressed) {
+      letters = LOWERCASE_LETTERS;
+      otherLetters = UPPERCASE_LETTERS;
+   } else {
+      letters = UPPERCASE_LETTERS;
+      otherLetters = LOWERCASE_LETTERS;
+   }
+
+   for (let i = 0; i < 26; i++) {
+      const letter = letters[i];
+      const otherLetter = otherLetters[i];
+
+      if (pressedKeys[letter]) {
+         pressedKeys[otherLetter] = true;
+      }
+      pressedKeys[letter] = false;
    }
 }
 
@@ -35,7 +63,7 @@ const updateChatMessage = (event: KeyboardEvent, key: string): boolean => {
 const updateKey = (e: KeyboardEvent, isKeyDown: boolean): void => {
    const gameState = getGameState();
    if (gameState !== GameState.game) return;
-   
+
    const key = e.key;
 
    if (isKeyDown) {
@@ -48,6 +76,10 @@ const updateKey = (e: KeyboardEvent, isKeyDown: boolean): void => {
       }
    } else {
       pressedKeys[key] = false;
+   }
+   
+   if (key === "CapsLock") {
+      handleCapsLockPress();
    }
 };
 
