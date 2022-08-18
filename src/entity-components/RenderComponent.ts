@@ -1,5 +1,6 @@
 import { SETTINGS } from "webgl-test-shared";
 import Entity from "../entities/Entity";
+import Player from "../entities/Player";
 import { Point } from "../utils";
 import { drawCircle } from "../webgl";
 import Component from "./Component";
@@ -18,16 +19,13 @@ interface CircleRenderPart extends BaseRenderPart {
 
 type RenderPart = CircleRenderPart;
 
-const drawRenderPart = (part: RenderPart, entity: Entity, frameProgress: number): void => {
+const drawRenderPart = (part: RenderPart, entity: Entity, lagOffset: Point): void => {
    const transformComponent = entity.getComponent(TransformComponent)!;
 
    let position = transformComponent.position;
-   if (transformComponent.velocity !== null) {
-      const velocity = transformComponent.velocity.copy();
-      velocity.magnitude *= frameProgress / SETTINGS.TPS;
 
-      position = position.add(velocity.convertToPoint());
-   }
+   // Account for frame progress
+   position = position.add(lagOffset);
 
    switch (part.type) {
       case "circle": {
@@ -47,10 +45,10 @@ class RenderComponent extends Component {
    }
 
    // eslint-disable-next-line react/require-render-return
-   public render(frameProgress: number): void {
+   public render(lagOffset: Point): void {
       const entity = this.getEntity();
       for (const renderPart of this.renderParts) {
-         drawRenderPart(renderPart, entity, frameProgress);
+         drawRenderPart(renderPart, entity, lagOffset);
       }
    }
 }

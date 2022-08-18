@@ -4,7 +4,7 @@ import TransformComponent from "./entity-components/TransformComponent";
 import Entity from "./entities/Entity";
 import { getTexture } from "./textures";
 import { Tile, TileInfo, SETTINGS } from "webgl-test-shared";
-import { Coordinates } from "./utils";
+import { Coordinates, Point } from "./utils";
 import Camera from "./Camera";
 import { TILE_TYPE_INFO_RECORD } from "./tile-type-info";
 import { createWebGLProgram } from "./webgl";
@@ -167,15 +167,15 @@ abstract class Board {
       }
    }
 
-   public static render(frameProgress: number): void {
-      this.renderTiles(frameProgress);
-      this.drawBorder(frameProgress);
-      this.renderEntities(frameProgress);
+   public static render(lagOffset: Point): void {
+      this.renderTiles(lagOffset);
+      this.drawBorder(lagOffset);
+      this.renderEntities(lagOffset);
    }
 
-   private static renderTiles(frameProgress: number): void {
+   private static renderTiles(lagOffset: Point): void {
       // Calculate tile vertices
-      const tileVerticesCollection = this.calculateTileVertices(frameProgress);
+      const tileVerticesCollection = this.calculateTileVertices(lagOffset);
 
       this.renderSolidTiles(tileVerticesCollection.texturedTriangleVertices);
       this.renderLiquidTiles(tileVerticesCollection.colouredTriangleVertices);
@@ -259,7 +259,7 @@ abstract class Board {
       gl.drawArrays(gl.TRIANGLES, 0, triangleVertices.length / 5);
    }
 
-   private static calculateTileVertices(frameProgress: number): TileVerticesCollection {
+   private static calculateTileVertices(lagOffset: Point): TileVerticesCollection {
       // Get chunk bounds
       const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
       const minTileX = minChunkX * SETTINGS.CHUNK_SIZE;
@@ -267,7 +267,7 @@ abstract class Board {
       const minTileY = minChunkY * SETTINGS.CHUNK_SIZE;
       const maxTileY = (maxChunkY + 1) * SETTINGS.CHUNK_SIZE;
 
-      const [xTileVertexCoordinates, yTileVertexCoordinates] = this.calculateTileVertexCoordinates(minTileX, maxTileX, minTileY, maxTileY, frameProgress);
+      const [xTileVertexCoordinates, yTileVertexCoordinates] = this.calculateTileVertexCoordinates(minTileX, maxTileX, minTileY, maxTileY, lagOffset);
 
       const texturedTriangleVertices: { [key: string]: Array<number> } = {};
       let colouredTriangleVertices = new Array<number>();
@@ -318,31 +318,18 @@ abstract class Board {
       };
    }
 
-   private static calculateTileVertexCoordinates(minTileX: number, maxTileX: number, minTileY: number, maxTileY: number, frameProgress: number): TileVertexCoordinates {
+   private static calculateTileVertexCoordinates(minTileX: number, maxTileX: number, minTileY: number, maxTileY: number, lagOffset: Point): TileVertexCoordinates {
       const tileVertexCoordinates: TileVertexCoordinates = [{}, {}];
-
-      // Calculate tile offset
-      const playerVelocity = Player.instance.getComponent(TransformComponent)!.velocity;
-      let xOffset;
-      let yOffset;
-      if (playerVelocity !== null) {
-         const pointVelocity = playerVelocity.convertToPoint();
-         xOffset = pointVelocity.x / SETTINGS.TPS * frameProgress;
-         yOffset = pointVelocity.y / SETTINGS.TPS * frameProgress;
-      } else {
-         xOffset = 0;
-         yOffset = 0;
-      }
 
       // X
       for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
-         const x = tileX * SETTINGS.TILE_SIZE + xOffset;
+         const x = tileX * SETTINGS.TILE_SIZE + lagOffset.x;
          const screenX = Camera.getXPositionInScreen(x);
          tileVertexCoordinates[0][tileX] = screenX;
       }
       // Y
       for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
-         const y = tileY * SETTINGS.TILE_SIZE + yOffset;
+         const y = tileY * SETTINGS.TILE_SIZE + lagOffset.y;
          const screenY = Camera.getYPositionInScreen(y);
          tileVertexCoordinates[1][tileY] = screenY;
       }
@@ -350,7 +337,7 @@ abstract class Board {
       return tileVertexCoordinates;
    }
 
-   private static drawBorder(frameProgress: number): void {
+   private static drawBorder(lagOffset: Point): void {
       const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
 
       const BORDER_WIDTH = 5;
@@ -359,12 +346,12 @@ abstract class Board {
 
       const positionAttribLocation = gl.getAttribLocation(this.borderTileProgram, "vertPosition");
       gl.vertexAttribPointer(
-         positionAttribLocation, // Attribute location
-         2, // Number of elements per attribute
-         gl.FLOAT, // Type of elements
+         positionAttribLocation,
+         2,
+         gl.FLOAT,
          false,
-         2 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
-         0 // Offset from the beginning of a single vertex to this attribute
+         2 * Float32Array.BYTES_PER_ELEMENT,
+         0
       );
    
       // Enable the attributes
@@ -377,33 +364,21 @@ abstract class Board {
 
       const vertices = new Array<number>();
 
-      // Calculate tile offset
-      const playerVelocity = Player.instance.getComponent(TransformComponent)!.velocity;
-      let xOffset: number;
-      let yOffset: number;
-      if (playerVelocity !== null) {
-         const pointVelocity = playerVelocity.convertToPoint();
-         xOffset = pointVelocity.x / SETTINGS.TPS * frameProgress;
-         yOffset = pointVelocity.y / SETTINGS.TPS * frameProgress;
-      } else {
-         xOffset = 0;
-         yOffset = 0;
-      }
-
       const calculateAndAddVertices = (x1: number, x2: number, y1: number, y2: number): void => {
          // Calculate screen positions
-         const screenX1 = Camera.getXPositionInScreen(x1 + xOffset);
-         const screenX2 = Camera.getXPositionInScreen(x2 + xOffset);
-         const screenY1 = Camera.getYPositionInScreen(y1 + yOffset);
-         const screenY2 = Camera.getYPositionInScreen(y2 + yOffset);
+         const screenX1 = Camera.getXPositionInScreen(x1 + lagOffset.x);
+         const screenX2 = Camera.getXPositionInScreen(x2 + lagOffset.x);
+         const screenY1 = Camera.getYPositionInScreen(y1 + lagOffset.y);
+         const screenY2 = Camera.getYPositionInScreen(y2 + lagOffset.y);
 
          vertices.push(
-            screenX1, screenY1,
-            screenX2, screenY2,
-            screenX1, screenY2,
-            screenX1, screenY1,
-            screenX2, screenY1,
-            screenX2, screenY2
+            screenX1, screenY1, // Bottom left
+            screenX2, screenY1, // Bottom right
+            screenX2, screenY2, // Top right
+
+            screenX1, screenY1, // Bottom left
+            screenX2, screenY2, // Top right
+            screenX1, screenY2 // Top left
          );
       }
 
@@ -454,7 +429,7 @@ abstract class Board {
       gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 2);
    }
 
-   private static renderEntities(frameProgress: number): void {
+   private static renderEntities(lagOffset: Point): void {
       for (let x = 0; x < SETTINGS.BOARD_SIZE; x++) {
          for (let y = 0; y < SETTINGS.BOARD_SIZE; y++) {
             const chunk = this.getChunk(x, y);
@@ -463,7 +438,7 @@ abstract class Board {
             for (const entity of entities) {
                const renderComponent = entity.getComponent(RenderComponent);
                if (renderComponent !== null) {
-                  renderComponent.render(frameProgress);
+                  renderComponent.render(lagOffset);
                }
             }
          }

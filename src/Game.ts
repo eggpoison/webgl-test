@@ -5,6 +5,30 @@ import { renderPlayerNames } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/ChatBox";
 import { SETTINGS } from "webgl-test-shared";
+import TransformComponent from "./entity-components/TransformComponent";
+
+/**
+ * Calculates the offset of the screen based on frame progress
+ */
+const calculateLagOffset = (frameProgress: number): Point => {
+   let lagOffset: Point;
+   
+   // Calculate offset
+   const playerVelocity = Player.instance.getComponent(TransformComponent)!.velocity;
+   if (playerVelocity !== null) {
+      // Guess the step that the player will take to be in the next frame
+      const playerVelocityCopy = playerVelocity.copy();
+      playerVelocityCopy.magnitude *= frameProgress / SETTINGS.TPS;
+
+      // Convert this from a vector to a point
+      lagOffset = playerVelocityCopy.convertToPoint();
+   } else {
+      // If the player has no velocity, there will be no lag offset
+      lagOffset = new Point(0, 0);
+   }
+
+   return lagOffset;
+}
 
 abstract class Game {
    public static isRunning: boolean = false;
@@ -39,12 +63,14 @@ abstract class Game {
     * @param frameProgress How far the game is into the current frame (0 = frame just started, 0.99 means frame is about to end)
     */
    private static render(frameProgress: number): void {
+      const lagOffset = calculateLagOffset(frameProgress);
+
       // Update the camera
       Camera.updateCameraPosition(frameProgress);
       Camera.updateVisibleChunkBounds();
 
-      renderPlayerNames();
-      Board.render(frameProgress);
+      renderPlayerNames(lagOffset);
+      Board.render(lagOffset);
    }
 
    public static main(): Promise<void> {
@@ -54,7 +80,7 @@ abstract class Game {
          Game.lastTime = currentTime;
 
          // Allow time for user inputs
-         await sleep(5);
+         await sleep(4);
          
          // Update
          Game.lag += deltaTime;
