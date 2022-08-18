@@ -10,6 +10,7 @@ abstract class Game {
    public static isRunning: boolean = false;
 
    private static lastTime: number;
+   /** Amount of time the game is through the current frame */
    private static lag: number = 0;
 
    public static async start(): Promise<void> {
@@ -62,7 +63,9 @@ abstract class Game {
             Game.lag -= 1000 / SETTINGS.TPS;
          }
 
-         Game.render(Game.lag * SETTINGS.TPS / 1000);
+         // Render the game and extrapolate positions using the amount of lag (frame progress)
+         const frameProgress = Game.lag / 1000 * SETTINGS.TPS;
+         Game.render(frameProgress);
 
          resolve();
       });

@@ -9,6 +9,7 @@ import Camera from "./Camera";
 import { TILE_TYPE_INFO_RECORD } from "./tile-type-info";
 import { createWebGLProgram } from "./webgl";
 import RenderComponent from "./entity-components/RenderComponent";
+import Player from "./entities/Player";
 
 // 
 // Solid Tile Shaders
@@ -167,14 +168,14 @@ abstract class Board {
    }
 
    public static render(frameProgress: number): void {
-      this.renderTiles();
-      this.renderBorder();
+      this.renderTiles(frameProgress);
+      this.drawBorder(frameProgress);
       this.renderEntities(frameProgress);
    }
 
-   private static renderTiles(): void {
+   private static renderTiles(frameProgress: number): void {
       // Calculate tile vertices
-      const tileVerticesCollection = this.calculateTileVertices();
+      const tileVerticesCollection = this.calculateTileVertices(frameProgress);
 
       this.renderSolidTiles(tileVerticesCollection.texturedTriangleVertices);
       this.renderLiquidTiles(tileVerticesCollection.colouredTriangleVertices);
@@ -258,7 +259,7 @@ abstract class Board {
       gl.drawArrays(gl.TRIANGLES, 0, triangleVertices.length / 5);
    }
 
-   private static calculateTileVertices(): TileVerticesCollection {
+   private static calculateTileVertices(frameProgress: number): TileVerticesCollection {
       // Get chunk bounds
       const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
       const minTileX = minChunkX * SETTINGS.CHUNK_SIZE;
@@ -266,7 +267,7 @@ abstract class Board {
       const minTileY = minChunkY * SETTINGS.CHUNK_SIZE;
       const maxTileY = (maxChunkY + 1) * SETTINGS.CHUNK_SIZE;
 
-      const [xTileVertexCoordinates, yTileVertexCoordinates] = this.calculateTileVertexCoordinates(minTileX, maxTileX, minTileY, maxTileY);
+      const [xTileVertexCoordinates, yTileVertexCoordinates] = this.calculateTileVertexCoordinates(minTileX, maxTileX, minTileY, maxTileY, frameProgress);
 
       const texturedTriangleVertices: { [key: string]: Array<number> } = {};
       let colouredTriangleVertices = new Array<number>();
@@ -285,20 +286,28 @@ abstract class Board {
             
             // Add the vertices to its appropriate section
             if (tileTypeInfo.isLiquid) {
-               const vertices = this.calculateLiquidTileVertices(x1, x2, y1, y2, tileTypeInfo.colour);
-               for (const vertex of vertices) {
-                  colouredTriangleVertices.push(vertex);
-               }
+               const [r, g, b] = tileTypeInfo.colour;
+               colouredTriangleVertices.push(
+                  x1, y1, r, g, b,
+                  x2, y1, r, g, b,
+                  x1, y2, r, g, b,
+                  x1, y2, r, g, b,
+                  x2, y1, r, g, b,
+                  x2, y2, r, g, b
+               );
             } else {
-               const vertices = this.calculateSolidTileVertices(x1, x2, y1, y2);
-   
                if (!texturedTriangleVertices.hasOwnProperty(tileTypeInfo.textureSource)) {
                   texturedTriangleVertices[tileTypeInfo.textureSource] = new Array<number>();
                }
                
-               for (const vertex of vertices) {
-                  texturedTriangleVertices[tileTypeInfo.textureSource].push(vertex);
-               }
+               texturedTriangleVertices[tileTypeInfo.textureSource].push(
+                  x1, y1, 0, 0,
+                  x2, y1, 1, 0,
+                  x1, y2, 0, 1,
+                  x1, y2, 0, 1,
+                  x2, y1, 1, 0,
+                  x2, y2, 1, 1
+               );
             }
          }
       }
@@ -309,18 +318,31 @@ abstract class Board {
       };
    }
 
-   private static calculateTileVertexCoordinates(minTileX: number, maxTileX: number, minTileY: number, maxTileY: number): TileVertexCoordinates {
+   private static calculateTileVertexCoordinates(minTileX: number, maxTileX: number, minTileY: number, maxTileY: number, frameProgress: number): TileVertexCoordinates {
       const tileVertexCoordinates: TileVertexCoordinates = [{}, {}];
+
+      // Calculate tile offset
+      const playerVelocity = Player.instance.getComponent(TransformComponent)!.velocity;
+      let xOffset;
+      let yOffset;
+      if (playerVelocity !== null) {
+         const pointVelocity = playerVelocity.convertToPoint();
+         xOffset = pointVelocity.x / SETTINGS.TPS * frameProgress;
+         yOffset = pointVelocity.y / SETTINGS.TPS * frameProgress;
+      } else {
+         xOffset = 0;
+         yOffset = 0;
+      }
 
       // X
       for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
-         const x = tileX * SETTINGS.TILE_SIZE;
+         const x = tileX * SETTINGS.TILE_SIZE + xOffset;
          const screenX = Camera.getXPositionInScreen(x);
          tileVertexCoordinates[0][tileX] = screenX;
       }
       // Y
       for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
-         const y = tileY * SETTINGS.TILE_SIZE;
+         const y = tileY * SETTINGS.TILE_SIZE + yOffset;
          const screenY = Camera.getYPositionInScreen(y);
          tileVertexCoordinates[1][tileY] = screenY;
       }
@@ -328,29 +350,7 @@ abstract class Board {
       return tileVertexCoordinates;
    }
 
-   private static calculateSolidTileVertices(x1: number, x2: number, y1: number, y2: number): Array<number> {
-      return [
-         x1, y1, 0, 0,
-         x2, y1, 1, 0,
-         x1, y2, 0, 1,
-         x1, y2, 0, 1,
-         x2, y1, 1, 0,
-         x2, y2, 1, 1
-      ];
-   }
-
-   private static calculateLiquidTileVertices(x1: number, x2: number, y1: number, y2: number, [r, g, b]: [number, number, number]): Array<number> {
-      return [
-         x1, y1, r, g, b,
-         x2, y1, r, g, b,
-         x1, y2, r, g, b,
-         x1, y2, r, g, b,
-         x2, y1, r, g, b,
-         x2, y2, r, g, b
-      ];
-   }
-
-   private static renderBorder(): void {
+   private static drawBorder(frameProgress: number): void {
       const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
 
       const BORDER_WIDTH = 5;
@@ -377,92 +377,74 @@ abstract class Board {
 
       const vertices = new Array<number>();
 
+      // Calculate tile offset
+      const playerVelocity = Player.instance.getComponent(TransformComponent)!.velocity;
+      let xOffset: number;
+      let yOffset: number;
+      if (playerVelocity !== null) {
+         const pointVelocity = playerVelocity.convertToPoint();
+         xOffset = pointVelocity.x / SETTINGS.TPS * frameProgress;
+         yOffset = pointVelocity.y / SETTINGS.TPS * frameProgress;
+      } else {
+         xOffset = 0;
+         yOffset = 0;
+      }
+
+      const calculateAndAddVertices = (x1: number, x2: number, y1: number, y2: number): void => {
+         // Calculate screen positions
+         const screenX1 = Camera.getXPositionInScreen(x1 + xOffset);
+         const screenX2 = Camera.getXPositionInScreen(x2 + xOffset);
+         const screenY1 = Camera.getYPositionInScreen(y1 + yOffset);
+         const screenY2 = Camera.getYPositionInScreen(y2 + yOffset);
+
+         vertices.push(
+            screenX1, screenY1,
+            screenX2, screenY2,
+            screenX1, screenY2,
+            screenX1, screenY1,
+            screenX2, screenY1,
+            screenX2, screenY2
+         );
+      }
+
+      // Left wall
       if (minChunkX === 0) {
          const x1 = minChunkXPos - BORDER_WIDTH;
          const x2 = minChunkXPos;
          const y1 = minChunkYPos - BORDER_WIDTH;
          const y2 = maxChunkYPos + BORDER_WIDTH;
 
-         // Calculate screen positions
-         const screenX1 = Camera.getXPositionInScreen(x1);
-         const screenX2 = Camera.getXPositionInScreen(x2);
-         const screenY1 = Camera.getYPositionInScreen(y1);
-         const screenY2 = Camera.getYPositionInScreen(y2);
-
-         vertices.push(
-            screenX1, screenY1,
-            screenX2, screenY2,
-            screenX1, screenY2,
-            screenX1, screenY1,
-            screenX2, screenY1,
-            screenX2, screenY2
-         );
+         calculateAndAddVertices(x1, x2, y1, y2);
       }
 
+      // Right wall
       if (maxChunkX === SETTINGS.BOARD_SIZE - 1) {
          const x1 = maxChunkXPos;
          const x2 = maxChunkXPos + BORDER_WIDTH;
          const y1 = minChunkYPos - BORDER_WIDTH;
          const y2 = maxChunkYPos + BORDER_WIDTH;
 
-         // Calculate screen positions
-         const screenX1 = Camera.getXPositionInScreen(x1);
-         const screenX2 = Camera.getXPositionInScreen(x2);
-         const screenY1 = Camera.getYPositionInScreen(y1);
-         const screenY2 = Camera.getYPositionInScreen(y2);
-
-         vertices.push(
-            screenX1, screenY1,
-            screenX2, screenY2,
-            screenX1, screenY2,
-            screenX1, screenY1,
-            screenX2, screenY1,
-            screenX2, screenY2
-         );
+         calculateAndAddVertices(x1, x2, y1, y2);
       }
 
+      // Bottom wall
       if (minChunkY === 0) {
          const x1 = minChunkXPos - BORDER_WIDTH;
          const x2 = maxChunkXPos + BORDER_WIDTH;
          const y1 = minChunkYPos - BORDER_WIDTH;
          const y2 = minChunkYPos;
 
-         // Calculate screen positions
-         const screenX1 = Camera.getXPositionInScreen(x1);
-         const screenX2 = Camera.getXPositionInScreen(x2);
-         const screenY1 = Camera.getYPositionInScreen(y1);
-         const screenY2 = Camera.getYPositionInScreen(y2);
-
-         vertices.push(
-            screenX1, screenY1,
-            screenX2, screenY2,
-            screenX1, screenY2,
-            screenX1, screenY1,
-            screenX2, screenY1,
-            screenX2, screenY2
-         );
+         calculateAndAddVertices(x1, x2, y1, y2);
       }
 
+      // Top wall
       if (maxChunkY === SETTINGS.BOARD_SIZE - 1) {
          const x1 = minChunkXPos - BORDER_WIDTH;
          const x2 = maxChunkXPos + BORDER_WIDTH;
          const y1 = maxChunkYPos;
          const y2 = maxChunkYPos + BORDER_WIDTH;
 
-         // Calculate screen positions
-         const screenX1 = Camera.getXPositionInScreen(x1);
-         const screenX2 = Camera.getXPositionInScreen(x2);
-         const screenY1 = Camera.getYPositionInScreen(y1);
-         const screenY2 = Camera.getYPositionInScreen(y2);
-
-         vertices.push(
-            screenX1, screenY1,
-            screenX2, screenY2,
-            screenX1, screenY2,
-            screenX1, screenY1,
-            screenX2, screenY1,
-            screenX2, screenY2
-         );
+         calculateAndAddVertices(x1, x2, y1, y2);
       }
 
       const buffer = gl.createBuffer()!;
@@ -501,6 +483,7 @@ abstract class Board {
       // If the entity's spawn position is outside the board, don't add it
       if (chunk === null) return;
 
+      // Load the entity and its components
       if (typeof entity.onLoad !== "undefined") entity.onLoad();
       entity.loadComponents();
 
