@@ -133,7 +133,6 @@ abstract class Board {
    }
 
    public static update(): void {
-      // console.log(this.getChunk(0, 0).getEntities());
       const entityChunkChanges = new Array<[entity: Entity, previousChunkCoordinates: Coordinates, newChunkCoordinates: Coordinates]>();
 
       for (let x = 0; x < SETTINGS.BOARD_SIZE; x++) {
