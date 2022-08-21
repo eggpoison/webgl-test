@@ -80,11 +80,13 @@ abstract class Game {
          Game.lastTime = currentTime;
 
          // Allow time for user inputs
-         await sleep(4);
+         await sleep(2);
          
          // Update
          Game.lag += deltaTime;
+         let i = 0;
          while (Game.lag >= 1000 / SETTINGS.TPS) {
+            i++;
             Game.update();
             Game.lag -= 1000 / SETTINGS.TPS;
          }

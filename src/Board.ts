@@ -366,10 +366,18 @@ abstract class Board {
 
       const calculateAndAddVertices = (x1: number, x2: number, y1: number, y2: number): void => {
          // Calculate screen positions
-         const screenX1 = Camera.getXPositionInScreen(x1 + lagOffset.x);
-         const screenX2 = Camera.getXPositionInScreen(x2 + lagOffset.x);
-         const screenY1 = Camera.getYPositionInScreen(y1 + lagOffset.y);
-         const screenY2 = Camera.getYPositionInScreen(y2 + lagOffset.y);
+         const screenX1 = Camera.getXPositionInScreen(Math.round(x1 + lagOffset.x));
+         const screenX2 = Camera.getXPositionInScreen(Math.round(x2 + lagOffset.x));
+         const screenY1 = Camera.getYPositionInScreen(Math.round(y1 + lagOffset.y));
+         const screenY2 = Camera.getYPositionInScreen(Math.round(y2 + lagOffset.y));
+         // const screenX1 = Camera.getXPositionInScreen(x1 - lagOffset.x);
+         // const screenX2 = Camera.getXPositionInScreen(x2 - lagOffset.x);
+         // const screenY1 = Camera.getYPositionInScreen(y1 - lagOffset.y);
+         // const screenY2 = Camera.getYPositionInScreen(y2 - lagOffset.y);
+         // const screenX1 = Camera.getXPositionInScreen(x1);
+         // const screenX2 = Camera.getXPositionInScreen(x2);
+         // const screenY1 = Camera.getYPositionInScreen(y1);
+         // const screenY2 = Camera.getYPositionInScreen(y2);
 
          vertices.push(
             screenX1, screenY1, // Bottom left

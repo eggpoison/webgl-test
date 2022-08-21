@@ -247,7 +247,7 @@ type SleepResolve = {
 
 let sleepFunctionResolves = new Array<SleepResolve>();
 
-const INTERVAL_TIME = 3;
+const INTERVAL_TIME = 2;
 setInterval(() => {
    for (let i = 0; i < sleepFunctionResolves.length; i++) {
       const sleepResolve = sleepFunctionResolves[i];
