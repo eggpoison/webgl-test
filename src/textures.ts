@@ -4,21 +4,34 @@ import { imageIsLoaded } from "./utils";
 
 let TEXTURES: { [key: string]: WebGLTexture } = {};
 
-const TEXTURE_SOURCES = new Array<string>();
+type TextureSource = {
+   readonly folder?: string;
+   readonly src: string;
+}
+
+const TEXTURE_SOURCES = new Array<TextureSource>();
+
+const textureSourceIsAlreadyIncluded = (src: string): boolean => {
+   return TEXTURE_SOURCES.some(textureSource => textureSource.src === src);
+}
 
 export function loadTextures(): Promise<void> {
    return new Promise(async resolve => {
       // Add solid tile textures
       for (const tileTypeInfo of Object.values(TILE_TYPE_INFO_RECORD)) {
-         if (!tileTypeInfo.isLiquid && !TEXTURE_SOURCES.includes(tileTypeInfo.textureSource)) {
-            TEXTURE_SOURCES.push(tileTypeInfo.textureSource);
+         if (!tileTypeInfo.isLiquid && !textureSourceIsAlreadyIncluded(tileTypeInfo.textureSource)) {
+            TEXTURE_SOURCES.push({
+               folder: "tiles",
+               src: tileTypeInfo.textureSource
+            });
          }
       }
 
       for (const textureSource of TEXTURE_SOURCES) {
          // Load the image
          const image = new Image();
-         image.src = require("./images/" + textureSource);
+         const folderPath = typeof textureSource.folder !== "undefined" ? textureSource.folder + "/" : "";
+         image.src = require("./images/" + folderPath + textureSource.src);
 
          // Create texture from the image once it is loaded
          await imageIsLoaded(image).then(() => {
@@ -34,7 +47,7 @@ export function loadTextures(): Promise<void> {
       
             gl.bindTexture(gl.TEXTURE_2D, null);
             
-            TEXTURES[textureSource] = texture;
+            TEXTURES[textureSource.src] = texture;
          });
       }
       

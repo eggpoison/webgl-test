@@ -1,10 +1,39 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { SETTINGS } from "webgl-test-shared";
 import Client from "../client/Client";
 import Player from "../entities/Player";
 
-const SPAM_FILTER = {
-   
+interface SpamFilter {
+   readonly testDuration: number;
+   readonly maxMessages: number;
+}
+
+const spamFilterHistory = new Array<[string, number]>();
+
+const SPAM_FILTER: SpamFilter = {
+   testDuration: 5,
+   maxMessages: 5
 };
+
+export function updateSpamFilter(): void {
+   for (let idx = spamFilterHistory.length - 1; idx >= 0; idx--) {
+      const spamFilterMessage = spamFilterHistory[idx];
+      spamFilterMessage[1] -= 1 / SETTINGS.TPS;
+      if (spamFilterMessage[1] <= 0) {
+         spamFilterHistory.splice(idx, 1);
+      }
+   }
+}
+
+const messagePassesSpamFilter = (message: string): boolean => {
+   if (spamFilterHistory.length >= SPAM_FILTER.maxMessages) {
+      return false;
+   }
+
+   spamFilterHistory.push([message, SPAM_FILTER.testDuration]);
+
+   return true;
+}
 
 const MAX_CHAT_MESSAGES = 50;
 
@@ -94,6 +123,9 @@ const ChatBox = () => {
          case "Enter": {
             // Send the chat message
             const chatMessage = inputBoxRef.current!.value;
+
+            if (!messagePassesSpamFilter(chatMessage)) return;
+
             if (chatMessage !== "") {
                Client.sendChatMessage(chatMessage);
                addChatMessage(Player.instance.name, chatMessage);

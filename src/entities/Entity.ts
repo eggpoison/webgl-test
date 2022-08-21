@@ -16,8 +16,6 @@ abstract class Entity {
 
    public onLoad?(): void;
 
-   public abstract render(): void;
-
    public loadComponents(): void {
       this.components.forEach(component => {
          if (typeof component.onLoad !== "undefined") component.onLoad();

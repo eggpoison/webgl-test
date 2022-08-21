@@ -1,9 +1,9 @@
 import Client from "../client/Client";
 import HitboxComponent from "../entity-components/HitboxComponent";
+import RenderComponent from "../entity-components/RenderComponent";
 import TransformComponent from "../entity-components/TransformComponent";
 import { keyIsPressed } from "../keyboard";
 import { Point } from "../utils";
-import { drawCircle } from "../webgl";
 import Entity from "./Entity";
 
 const generateMovementHash = (wIsPressed: boolean, aIsPressed: boolean, sIsPressed: boolean, dIsPressed: boolean): number => {
@@ -44,7 +44,14 @@ class Player extends Entity {
          new HitboxComponent({
             type: "circular",
             radius: Player.RADIUS
-         })
+         }),
+         new RenderComponent([
+            {
+               type: "circle",
+               radius: Player.RADIUS,
+               rgba: [255, 0, 0, 1]
+            }
+         ])
       ]);
 
       this.name = name;
@@ -68,10 +75,10 @@ class Player extends Entity {
 
    private detectMovement(): void {
       // Get pressed keys
-      const wIsPressed = keyIsPressed("w");
-      const aIsPressed = keyIsPressed("a");
-      const sIsPressed = keyIsPressed("s");
-      const dIsPressed = keyIsPressed("d");
+      const wIsPressed = keyIsPressed("w") || keyIsPressed("W") || keyIsPressed("ArrowUp");
+      const aIsPressed = keyIsPressed("a") || keyIsPressed("A") || keyIsPressed("ArrowLeft");
+      const sIsPressed = keyIsPressed("s") || keyIsPressed("S") || keyIsPressed("ArrowDown");
+      const dIsPressed = keyIsPressed("d") || keyIsPressed("D") || keyIsPressed("ArrowRight");
 
       const movementHash = generateMovementHash(wIsPressed, aIsPressed, sIsPressed, dIsPressed);
 
@@ -118,11 +125,6 @@ class Player extends Entity {
          transformComponent.acceleration = velocity;
          transformComponent.isMoving = true;
       }
-   }
-
-   public render(): void {
-      const position = this.getComponent(TransformComponent)!.position;
-      drawCircle(position.x, position.y, Player.RADIUS, [255, 0, 0, 1]);
    }
 }
 

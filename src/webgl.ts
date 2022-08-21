@@ -77,38 +77,33 @@ export function createCircleProgram(): void {
  * @param radius Radius of the circle
  */
 export function drawCircle(x: number, y: number, radius: number, rgba: [number, number, number, number]): void {
-   // x, y, r, g, b, a
-   let n = 0;
-   const vertices = new Array<number>();
-   for (let i = 0; n < CIRCLE_DETAIL; i += 360 / CIRCLE_DETAIL) {
-      // Add the center of the circle as the first vertex
-      vertices.push(Camera.getXPositionInCanvas(x, "game"));
-      vertices.push(Camera.getYPositionInCanvas(y, "game"));
-      vertices.push(...rgba);
+   const triangleVertices = new Array<number>();
 
-      // Two outer points
-      for (let j = 0; j < 2; j++) {
-         // Trig shenanigans
-         const radians = (i + 360 / CIRCLE_DETAIL * j) / 180 * Math.PI;
-         const worldX = Math.cos(radians) * radius + x;
-         const worldY = Math.sin(radians) * radius + y;
-         
-         const canvasX = Camera.getXPositionInCanvas(worldX, "game");
-         const canvasY = Camera.getYPositionInCanvas(worldY, "game");
-         
-         vertices.push(canvasX);
-         vertices.push(canvasY);
-         
-         // Colour
-         vertices.push(...rgba);
-      }
+   // Add the center point
+   const centerX = Camera.getXPositionInScreen(x);
+   const centerY = Camera.getYPositionInScreen(y);
+   triangleVertices.push(centerX, centerY, ...rgba);
+
+   const step = 2 * Math.PI / CIRCLE_DETAIL;
+
+   // Add the outer vertices
+   let n = 0;
+   for (let radians = 0; n <= CIRCLE_DETAIL; radians += step) {
+      // Trig shenanigans to get x and y coords
+      const worldX = Math.cos(radians) * radius + x;
+      const worldY = Math.sin(radians) * radius + y;
+      
+      const screenX = Camera.getXPositionInScreen(worldX);
+      const screenY = Camera.getYPositionInScreen(worldY);
+      
+      triangleVertices.push(screenX, screenY, ...rgba);
 
       n++;
    }
 
    const triangleVertexBufferObject = gl.createBuffer();
    gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexBufferObject);
-   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(triangleVertices), gl.STATIC_DRAW);
 
    const positionAttribLocation = gl.getAttribLocation(program, "vertPosition");
    const colourAttribLocation = gl.getAttribLocation(program, "vertColour");
@@ -136,7 +131,7 @@ export function drawCircle(x: number, y: number, radius: number, rgba: [number, 
 
    // Draw the tile
    gl.useProgram(program);
-   gl.drawArrays(gl.TRIANGLES, 0, CIRCLE_DETAIL * 3);
+   gl.drawArrays(gl.TRIANGLE_FAN, 0, CIRCLE_DETAIL + 2);
 }
 
 export function createWebGLProgram(vertexShaderText: string, fragmentShaderText: string): WebGLProgram {

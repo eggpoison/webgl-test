@@ -2,7 +2,7 @@ export function randFloat(min: number, max: number): number {
    return Math.random() * (max - min) + min;
 }
 
-export type Coordinates = [number, number];
+export type Coordinates = readonly [number, number];
 
 /**
  * Returns a random integer inclusively.
@@ -234,4 +234,37 @@ const isDevBool = !process.env.NODE_ENV || process.env.NODE_ENV === "development
  */
  export function isDev(): boolean {
    return isDevBool;
+}
+
+export function lerp(start: number, end: number, amount: number): number {
+   return start * (1 - amount) + end * amount;
+}
+
+type SleepResolve = {
+   resolve(value: void | PromiseLike<void>): void;
+   timeRemaining: number;
+}
+
+let sleepFunctionResolves = new Array<SleepResolve>();
+
+const INTERVAL_TIME = 2;
+setInterval(() => {
+   for (let i = 0; i < sleepFunctionResolves.length; i++) {
+      const sleepResolve = sleepFunctionResolves[i];
+
+      sleepResolve.timeRemaining -= INTERVAL_TIME;
+      if (sleepResolve.timeRemaining <= 0) {
+         sleepResolve.resolve();
+         sleepFunctionResolves.splice(i, 1);
+      }
+   }
+}, INTERVAL_TIME);
+
+export function sleep(ms: number): Promise<void> {
+   return new Promise(resolve => {
+      sleepFunctionResolves.push({
+         resolve: resolve,
+         timeRemaining: ms
+      });
+   });
 }
