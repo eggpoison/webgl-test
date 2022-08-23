@@ -1,4 +1,3 @@
-import { SETTINGS } from "webgl-test-shared";
 import { windowHeight, windowWidth } from ".";
 import Board from "./Board";
 import Camera from "./Camera";

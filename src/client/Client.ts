@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { ClientToServerEvents, ServerToClientEvents, SocketData, SETTINGS, Tile } from "webgl-test-shared";
+import { ClientToServerEvents, ServerToClientEvents, SocketData, SETTINGS, Tile, EntityPacket } from "webgl-test-shared";
 import { GameState, setGameState } from "../App";
 import Board from "../Board";
 import { addChatMessage } from "../components/ChatBox";
@@ -14,6 +14,10 @@ interface ServerResponse {
 }
 
 export type PlayerData = Omit<SocketData, "clientID">;
+
+const spawnMobs = (positions: Array<[number, number]>, entityID: number): void => {
+   
+}
 
 abstract class Client {
    private static socket: Socket<ServerToClientEvents, ClientToServerEvents>;
@@ -64,6 +68,10 @@ abstract class Client {
 
          this.socket.on("clientDisconnect", (clientID: string) => {
             removePlayer(clientID);
+         });
+
+         this.socket.on("entityPacket", (packet: EntityPacket) => {
+            spawnMobs(packet.positions, packet.entityID);
          });
          
          // Check if there was an error when connecting to the server

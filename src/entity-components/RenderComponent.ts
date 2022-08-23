@@ -1,6 +1,4 @@
-import { SETTINGS } from "webgl-test-shared";
 import Entity from "../entities/Entity";
-import Player from "../entities/Player";
 import { Point } from "../utils";
 import { drawCircle } from "../webgl";
 import Component from "./Component";

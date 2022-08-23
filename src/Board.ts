@@ -9,7 +9,6 @@ import Camera from "./Camera";
 import { TILE_TYPE_INFO_RECORD } from "./tile-type-info";
 import { createWebGLProgram } from "./webgl";
 import RenderComponent from "./entity-components/RenderComponent";
-import Player from "./entities/Player";
 
 // 
 // Solid Tile Shaders
