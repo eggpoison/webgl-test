@@ -1,22 +1,18 @@
 import { io, Socket } from "socket.io-client";
-import { ClientToServerEvents, ServerToClientEvents, SocketData, SETTINGS, Tile, EntityPacket } from "webgl-test-shared";
+import { ClientToServerEvents, ServerToClientEvents, SETTINGS, Tile } from "webgl-test-shared";
 import { GameState, setGameState } from "../App";
-import Board from "../Board";
-import { addChatMessage } from "../components/ChatBox";
+import Camera from "../Camera";
 import Player from "../entities/Player";
 import TransformComponent from "../entity-components/TransformComponent";
 import Game from "../Game";
-import { addPlayer, getPlayer, removePlayer } from "../players";
-import { Point } from "../utils";
 
-interface ServerResponse {
-   tiles: Array<Array<Tile>>;
-}
+// const spawnMobs = (positions: Array<[number, number]>, entityID: number): void => {
 
-export type PlayerData = Omit<SocketData, "clientID">;
+// }
 
-const spawnMobs = (positions: Array<[number, number]>, entityID: number): void => {
-   
+type ServerResponse = {
+   readonly gameTicks: number;
+   readonly tiles: Array<Array<Tile>>;
 }
 
 abstract class Client {
@@ -24,55 +20,62 @@ abstract class Client {
 
    public static connectToServer(): Promise<ServerResponse | null> {
       return new Promise(resolve => {
+         // Create the socket
          this.createSocket();
-
          this.socket.connect();
 
-         const serverResponse: Partial<ServerResponse> = {};
-
-         // Receive chat messages
-         this.socket.on("chatMessage", (senderName, message) => {
-            addChatMessage(senderName, message);
+         // Wait for the server data
+         this.socket.on("initialGameData", (gameTicks: number, tiles: Array<Array<Tile>>) => {
+            const serverResponse: ServerResponse = {
+               gameTicks: gameTicks,
+               tiles: tiles
+            };
+            resolve(serverResponse);
          });
 
-         // Add new players
-         this.socket.on("newPlayer", (playerData: SocketData) => {
-            console.log("new player: " + playerData.clientID);
-            const position = new Point(playerData.position[0], playerData.position[1]);
-            const player = new Player(position, playerData.name, false);
-            Board.addEntity(player);
+         // // Receive chat messages
+         // this.socket.on("chatMessage", (senderName, message) => {
+         //    addChatMessage(senderName, message);
+         // });
 
-            addPlayer(playerData.clientID, player);
-         });
+         // // Add new players
+         // this.socket.on("newPlayer", (playerData: SocketData) => {
+         //    console.log("new player: " + playerData.clientID);
+         //    const position = new Point(playerData.position[0], playerData.position[1]);
+         //    const player = new Player(position, playerData.name, false);
+         //    Board.addEntity(player);
 
-         // Receive movement packets
-         this.socket.on("playerMovement", (clientID: string, movementHash: number) => {
-            const player = getPlayer(clientID)!;
-            player.receiveMovementHash(movementHash);
-         });
+         //    addPlayer(playerData.clientID, player);
+         // });
 
-         // Forward position
-         this.socket.on("position", () => {
-            const playerPosition = Player.instance.getComponent(TransformComponent)!.position;
+         // // Receive movement packets
+         // this.socket.on("playerMovement", (clientID: string, movementHash: number) => {
+         //    const player = getPlayer(clientID)!;
+         //    player.receiveMovementHash(movementHash);
+         // });
 
-            const positionData: [number, number] = [playerPosition.x, playerPosition.y];
-            this.socket.emit("position", positionData);
-         });
+         // // Forward position
+         // this.socket.on("position", () => {
+         //    const playerPosition = Player.instance.getComponent(TransformComponent)!.position;
+
+         //    const positionData: [number, number] = [playerPosition.x, playerPosition.y];
+         //    this.socket.emit("position", positionData);
+         // });
          
-         // Receive the tiles from the server
-         this.socket.on("terrain", (tiles: Array<Array<Tile>>) => {
-            serverResponse.tiles = tiles;
+         // // Receive the tiles from the server
+         // this.socket.on("terrain", (tiles: Array<Array<Tile>>) => {
+         //    serverResponse.tiles = tiles;
 
-            resolve(serverResponse as ServerResponse);
-         });
+         //    resolve(serverResponse as ServerResponse);
+         // });
 
-         this.socket.on("clientDisconnect", (clientID: string) => {
-            removePlayer(clientID);
-         });
+         // this.socket.on("clientDisconnect", (clientID: string) => {
+         //    removePlayer(clientID);
+         // });
 
-         this.socket.on("entityPacket", (packet: EntityPacket) => {
-            spawnMobs(packet.positions, packet.entityID);
-         });
+         // this.socket.on("entityPacket", (packet: EntityPacket) => {
+         //    spawnMobs(packet.positions, packet.entityID);
+         // });
          
          // Check if there was an error when connecting to the server
          this.socket.on("connect_error", () => {
@@ -91,12 +94,8 @@ abstract class Client {
       Client.socket.connect();
    }
 
+   /** Creates the socket used to connect to the server */
    private static createSocket(): void {
-      // const url = "ws://" + SERVER_IP_ADDRESS + ":" + SETTINGS.SERVER_PORT;
-      // this.socket = io(url, {
-      //    transports: ["websocket", "polling", "flashsocket"],
-      //    autoConnect: false
-      // });
       this.socket = io(`ws://localhost:${SETTINGS.SERVER_PORT}`, {
          transports: ["websocket", "polling", "flashsocket"],
          autoConnect: false
@@ -112,16 +111,19 @@ abstract class Client {
       this.socket.emit("chatMessage", message);
    }
 
-   public static sendPlayerData(playerData: PlayerData): void {
-      const socketData: SocketData = Object.assign(playerData, { clientID: this.socket.id });
+   public static sendPlayerData(name: string, position: [number, number]): void {
+      const visibleChunkBounds = Camera.calculateVisibleChunkBounds();
 
       // Send the player data to the server
-      this.socket.emit("socketData", socketData);
+      this.socket.emit("initialPlayerData", name, position, visibleChunkBounds);
    }
 
    public static sendMovementPacket(movementHash: number): void {
+      const playerPosition = Player.instance.getComponent(TransformComponent)!.position;
+      const positionData: [number, number] = [playerPosition.x, playerPosition.y];
+      
       // Send the movement packet to the server
-      this.socket.emit("playerMovement", movementHash);
+      this.socket.emit("playerMovement", positionData, movementHash);
    }
 }
 

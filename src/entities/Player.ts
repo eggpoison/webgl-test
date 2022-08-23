@@ -1,3 +1,4 @@
+import Camera from "../Camera";
 import Client from "../client/Client";
 import HitboxComponent from "../entity-components/HitboxComponent";
 import RenderComponent from "../entity-components/RenderComponent";
@@ -62,6 +63,8 @@ class Player extends Entity {
          }
 
          Player.instance = this;
+
+         Camera.position = this.getComponent(TransformComponent)!.position;
       }
    }
 
