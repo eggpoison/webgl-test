@@ -128,7 +128,7 @@ const ChatBox = () => {
 
             if (chatMessage !== "") {
                Client.sendChatMessage(chatMessage);
-               addChatMessage(Player.instance.name, chatMessage);
+               addChatMessage(Player.instance.displayName, chatMessage);
             }
 
             closeChatbox();

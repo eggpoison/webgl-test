@@ -1,11 +1,10 @@
 import Board from "./Board";
 import Player from "./entities/Player";
-import { Point, randInt, sleep } from "./utils";
+import { sleep } from "./utils";
 import { renderPlayerNames } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/ChatBox";
-import { SETTINGS } from "webgl-test-shared";
-import TransformComponent from "./entity-components/TransformComponent";
+import { Point, randInt, SETTINGS } from "webgl-test-shared";
 
 /**
  * Calculates the offset of the screen based on frame progress
@@ -14,7 +13,7 @@ const calculateLagOffset = (frameProgress: number): Point => {
    let lagOffset: Point;
    
    // Calculate offset
-   const playerVelocity = Player.instance.getComponent(TransformComponent)!.velocity;
+   const playerVelocity = Player.instance.velocity;
    if (playerVelocity !== null) {
       // Guess the step that the player will take to be in the next frame
       const playerVelocityCopy = playerVelocity.copy();
@@ -100,12 +99,12 @@ abstract class Game {
    public static spawnPlayer(name: string): Point {
       // const x = randInt(0, SETTINGS.BOARD_SIZE * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
       // const y = randInt(0, SETTINGS.BOARD_SIZE * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
-      if (1+1===3)console.log(randInt(0, 1));
+      if (1 + 1 === 3) console.log(randInt(0, 1));
       const x = 100;
       const y = 100;
 
       const position = new Point(x, y);
-      const player = new Player(position, name, true);
+      const player = new Player(-1, position, null, null, 300, name, true);
       Board.addEntity(player);
 
       return position;

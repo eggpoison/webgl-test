@@ -1,14 +1,10 @@
 import { gl } from ".";
-import Chunk from "./Chunk";
-import TransformComponent from "./entity-components/TransformComponent";
 import Entity from "./entities/Entity";
 import { getTexture } from "./textures";
-import { Tile, TileInfo, SETTINGS } from "webgl-test-shared";
-import { Coordinates, Point } from "./utils";
+import { Tile, TileInfo, SETTINGS, Point } from "webgl-test-shared";
 import Camera from "./Camera";
-import { TILE_TYPE_INFO_RECORD } from "./tile-type-info";
+import { TILE_TYPE_RENDER_INFO_RECORD } from "./tile-type-info";
 import { createWebGLProgram } from "./webgl";
-import RenderComponent from "./entity-components/RenderComponent";
 
 // 
 // Solid Tile Shaders
@@ -97,7 +93,7 @@ type TileVertexCoordinates = [{ [key: number]: number }, { [key: number]: number
 abstract class Board {
    private static tiles: Array<Array<Tile>>;
 
-   private static chunks: Array<Array<Chunk>>;
+   public static entities: Record<number, Entity> = {};
 
    private static solidTileProgram: WebGLProgram;
    private static liquidTileProgram: WebGLProgram;
@@ -106,27 +102,9 @@ abstract class Board {
    public static setup(tiles: Array<Array<Tile>>): void {
       this.tiles = tiles;
 
-      // Initialise chunks array
-      this.initialiseChunkArray();
-
       this.solidTileProgram = createWebGLProgram(solidTileVertexShaderText, solidTileFragmentShaderText);
       this.liquidTileProgram = createWebGLProgram(liquidTileVertexShaderText, liquidTileFragmentShaderText);
       this.borderTileProgram = createWebGLProgram(borderVertexShaderText, borderFragmentShaderText);
-   }
-
-   private static initialiseChunkArray(): void {
-      this.chunks = new Array<Array<Chunk>>(SETTINGS.BOARD_SIZE);
-
-      for (let x = 0; x < SETTINGS.BOARD_SIZE; x++) {
-         this.chunks[x] = new Array<Chunk>(SETTINGS.BOARD_SIZE);
-         for (let y = 0; y < SETTINGS.BOARD_SIZE; y++) {
-            this.chunks[x][y] = new Chunk();
-         }
-      }
-   }
-
-   public static getChunk(x: number, y: number): Chunk {
-      return this.chunks[x][y];
    }
 
    public static getTile(x: number, y: number): TileInfo {
@@ -134,35 +112,8 @@ abstract class Board {
    }
 
    public static update(): void {
-      const entityChunkChanges = new Array<[entity: Entity, previousChunkCoordinates: Coordinates, newChunkCoordinates: Coordinates]>();
-
-      for (let x = 0; x < SETTINGS.BOARD_SIZE; x++) {
-         for (let y = 0; y < SETTINGS.BOARD_SIZE; y++) {
-            const chunk = this.getChunk(x, y);
-
-            const entities = chunk.getEntities().slice();
-            for (const entity of entities) {
-               const transformComponent = entity.getComponent(TransformComponent)!;
-               const chunkCoordinatesBeforeTick = transformComponent.getChunkCoordinates();
-
-               entity.tick();
-
-               // If the entity has changed chunks, add it to the list
-               const chunkCoordinatesAfterTick = transformComponent.getChunkCoordinates();
-               if (chunkCoordinatesBeforeTick[0] !== chunkCoordinatesAfterTick[0] || chunkCoordinatesBeforeTick[1] !== chunkCoordinatesAfterTick[1]) {
-                  entityChunkChanges.push([entity, chunkCoordinatesBeforeTick, chunkCoordinatesAfterTick]);
-               }
-            }
-         }
-      }
-
-      // Apply entity chunk changes
-      for (const [entity, previousChunkCoordinates, newChunkCoordinates] of entityChunkChanges) {
-         this.getChunk(...previousChunkCoordinates).removeEntity(entity);
-
-         const newChunk = this.getChunk(...newChunkCoordinates);
-         newChunk.addEntity(entity);
-         entity.previousChunk = newChunk;
+      for (const entity of Object.values(this.entities)) {
+         entity.tick();
       }
    }
 
@@ -276,7 +227,7 @@ abstract class Board {
          for (let y = minTileY; y < maxTileY; y++) {
             // Get the tile data
             const tile = this.getTile(x, y);
-            const tileTypeInfo = TILE_TYPE_INFO_RECORD[tile.type];
+            const tileTypeInfo = TILE_TYPE_RENDER_INFO_RECORD[tile.type];
 
             const x1 = xTileVertexCoordinates[x];
             const x2 = xTileVertexCoordinates[x + 1];
@@ -429,49 +380,17 @@ abstract class Board {
    }
 
    private static renderEntities(lagOffset: Point): void {
-      for (let x = 0; x < SETTINGS.BOARD_SIZE; x++) {
-         for (let y = 0; y < SETTINGS.BOARD_SIZE; y++) {
-            const chunk = this.getChunk(x, y);
-
-            const entities = chunk.getEntities();
-            for (const entity of entities) {
-               const renderComponent = entity.getComponent(RenderComponent);
-               if (renderComponent !== null) {
-                  renderComponent.render(lagOffset);
-               }
-            }
-         }
+      for (const entity of Object.values(this.entities)) {
+         entity.render(lagOffset);
       }
    }
 
-   private static getEntityChunk(entity: Entity): Chunk {
-      // Get the chunk
-      const entityPositionComponent = entity.getComponent(TransformComponent)!;
-      const chunk = entityPositionComponent.getChunk()!;
-      return chunk;
-   }
-
    public static addEntity(entity: Entity): void {
-      const chunk = this.getEntityChunk(entity);
-
-      // If the entity's spawn position is outside the board, don't add it
-      if (chunk === null) return;
-
-      // Load the entity and its components
-      if (typeof entity.onLoad !== "undefined") entity.onLoad();
-      entity.loadComponents();
-
-      // Add the entity to the chunk
-      chunk.addEntity(entity);
-
-      // Update the entity's previous chunk
-      entity.previousChunk = chunk;
+      this.entities[entity.id] = entity;
    }
 
    public static removeEntity(entity: Entity): void {
-      // Remove the entity from its chunk
-      const chunk = entity.previousChunk!;
-      chunk.removeEntity(entity);
+      delete this.entities[entity.id];
    }
 }
 

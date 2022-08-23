@@ -1,8 +1,6 @@
-import { SETTINGS, VisibleChunkBounds } from "webgl-test-shared";
+import { Point, SETTINGS, VisibleChunkBounds } from "webgl-test-shared";
 import { windowHeight, windowWidth } from ".";
 import Player from "./entities/Player";
-import TransformComponent from "./entity-components/TransformComponent";
-import { Point } from "./utils";
 
 abstract class Camera {
    /** Larger = zoomed in, smaller = zoomed out */
@@ -36,23 +34,20 @@ abstract class Camera {
    }
 
    public static updateCameraPosition(frameProgress: number): void {
-      const playerTransformComponent = Player.instance.getComponent(TransformComponent)!;
-
       // Predict where the player is
-      const previousFramePlayerPos = playerTransformComponent.position;
+      const previousFramePlayerPos = Player.instance.position;
 
       let predictedPlayerPos: Point;
-      if (playerTransformComponent.velocity === null) {
+      if (Player.instance.velocity === null) {
          predictedPlayerPos = previousFramePlayerPos;
       } else {
-         const playerVelocity = playerTransformComponent.velocity.copy();
+         const playerVelocity = Player.instance.velocity.copy();
          playerVelocity.magnitude *= frameProgress / SETTINGS.TPS;
 
          predictedPlayerPos = previousFramePlayerPos.add(playerVelocity.convertToPoint());
       }
 
       this.position = new Point(predictedPlayerPos.x, predictedPlayerPos.y);
-      // this.position = new Point(previousFramePlayerPos.x, previousFramePlayerPos.y);
    }
 
    public static getXPositionInScreen(x: number): number {

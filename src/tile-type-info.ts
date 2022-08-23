@@ -1,78 +1,54 @@
 import { TileType } from "webgl-test-shared";
 
-
-type TileEffects = {
-   readonly moveSpeedMultiplier?: number;
-   readonly walkDamage?: number;
-   // readonly statusEffectOnWalk?: {
-   //    readonly type: StatusEffectType;
-   //    readonly duration: number;
-   // }
-}
-
-interface BaseTileTypeInfo {
-   /** How quickly an entity loses velocity on the tile (1 = instant, 0 = no loss) */
-   readonly friction: number;
-   readonly effects?: TileEffects;
+interface BaseTileTypeRenderInfo {
    readonly isLiquid?: boolean;
 }
 
-interface SolidTileTypeInfo extends BaseTileTypeInfo {
+interface SolidTileTypeRenderInfo extends BaseTileTypeRenderInfo {
    readonly isLiquid?: false;
    readonly textureSource: string;
 }
 
-interface LiquidTileTypeInfo extends BaseTileTypeInfo {
+interface LiquidTileTypeRenderInfo extends BaseTileTypeRenderInfo {
    readonly isLiquid: true;
    readonly colour: [number, number, number];
 }
 
-const DEFAULT_FRICTION = 0.5;
+type TileTypeRenderInfo = SolidTileTypeRenderInfo | LiquidTileTypeRenderInfo;
 
-export const TILE_TYPE_INFO_RECORD: { [key in TileType]: SolidTileTypeInfo | LiquidTileTypeInfo } = {
-   [TileType.grass]: {
-      textureSource: "grass.png",
-      friction: DEFAULT_FRICTION
+export const TILE_TYPE_RENDER_INFO_RECORD: Record<TileType, TileTypeRenderInfo> = {
+   grass: {
+      textureSource: "grass.png"
    },
-   [TileType.dirt]: {
-      textureSource: "dirt.png",
-      friction: DEFAULT_FRICTION
+   dirt: {
+      textureSource: "dirt.png"
    },
-   [TileType.water]: {
+   water: {
       colour: [0, 240, 228],
-      friction: DEFAULT_FRICTION,
       isLiquid: true
    },
-   [TileType.sludge]: {
-      textureSource: "sludge.png",
-      friction: DEFAULT_FRICTION
+   sludge: {
+      textureSource: "sludge.png"
    },
-   [TileType.rock]: {
-      textureSource: "rock.png",
-      friction: DEFAULT_FRICTION
+   rock: {
+      textureSource: "rock.png"
    },
-   [TileType.sand]: {
-      textureSource: "sand.png",
-      friction: DEFAULT_FRICTION
+   sand: {
+      textureSource: "sand.png"
    },
-   [TileType.sandstone]: {
-      textureSource: "sandstone.png",
-      friction: DEFAULT_FRICTION
+   sandstone: {
+      textureSource: "sandstone.png"
    },
-   [TileType.snow]: {
-      textureSource: "snow.png",
-      friction: 0.7
+   snow: {
+      textureSource: "snow.png"
    },
-   [TileType.ice]: {
-      textureSource: "ice.png",
-      friction: 0.15
+   ice: {
+      textureSource: "ice.png"
    },
-   [TileType.magma]: {
-      textureSource: "grass.png",
-      friction: DEFAULT_FRICTION
+   magma: {
+      textureSource: "grass.png"
    },
-   [TileType.lava]: {
-      textureSource: "grass.png",
-      friction: 0.8
+   lava: {
+      textureSource: "grass.png"
    }
 };

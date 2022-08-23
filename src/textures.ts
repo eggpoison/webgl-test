@@ -1,5 +1,5 @@
 import { gl } from ".";
-import { TILE_TYPE_INFO_RECORD } from "./tile-type-info";
+import { TILE_TYPE_RENDER_INFO_RECORD } from "./tile-type-info";
 import { imageIsLoaded } from "./utils";
 
 let TEXTURES: { [key: string]: WebGLTexture } = {};
@@ -18,7 +18,7 @@ const textureSourceIsAlreadyIncluded = (src: string): boolean => {
 export function loadTextures(): Promise<void> {
    return new Promise(async resolve => {
       // Add solid tile textures
-      for (const tileTypeInfo of Object.values(TILE_TYPE_INFO_RECORD)) {
+      for (const tileTypeInfo of Object.values(TILE_TYPE_RENDER_INFO_RECORD)) {
          if (!tileTypeInfo.isLiquid && !textureSourceIsAlreadyIncluded(tileTypeInfo.textureSource)) {
             TEXTURE_SOURCES.push({
                folder: "tiles",

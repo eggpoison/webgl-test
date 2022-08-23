@@ -1,9 +1,8 @@
+import { Point } from "webgl-test-shared";
 import { windowHeight, windowWidth } from ".";
 import Board from "./Board";
 import Camera from "./Camera";
 import Player from "./entities/Player";
-import TransformComponent from "./entity-components/TransformComponent";
-import { Point } from "./utils";
 
 let ctx: CanvasRenderingContext2D;
 
@@ -27,41 +26,33 @@ export function renderPlayerNames(lagOffset: Point): void {
    ctx.fillStyle = "transparent";
    ctx.clearRect(0, 0, windowWidth, windowHeight);
 
-   const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
+   for (const entity of Object.values(Board.entities)) {
+      // If the entity is a player, render a nametag for it
+      if (entity instanceof Player && entity !== Player.instance) {
+         // Calculate the position of the text
+         const position = entity.position;
+         const x = position.x + lagOffset.x;
+         const y = position.y + Player.RADIUS + NAMETAG_Y_OFFSET + lagOffset.y;
 
-   for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
-      for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
-         const chunk = Board.getChunk(chunkX, chunkY);
+         // Calculate position in camera
+         const cameraX = getXPosInCamera(x);
+         const cameraY = getYPosInCamera(y);
 
-         for (const entity of chunk.getEntities()) {
-            // Find players to render nametags
-            if (entity instanceof Player && entity !== Player.instance) {
-               // Calculate the position of the text
-               const position = entity.getComponent(TransformComponent)!.position;
-               const x = position.x + lagOffset.x;
-               const y = position.y + Player.RADIUS + NAMETAG_Y_OFFSET + lagOffset.y;
+         ctx.fillStyle = "#000";
+         ctx.font = "400 20px Helvetica";
+         ctx.lineJoin = "round";
+         ctx.miterLimit = 2;
 
-               // Calculate position in camera
-               const cameraX = getXPosInCamera(x);
-               const cameraY = getYPosInCamera(y);
+         const width = ctx.measureText(entity.displayName).width;
 
-               ctx.fillStyle = "#000";
-               ctx.font = "400 20px Helvetica";
-               ctx.lineJoin = "round";
-               ctx.miterLimit = 2;
-
-               const width = ctx.measureText(entity.name).width;
-
-               // Draw text outline
-               ctx.lineWidth = 6;
-               ctx.strokeStyle = "#000";
-               ctx.strokeText(entity.name, cameraX - width / 2, cameraY);
-               
-               // Draw text
-               ctx.fillStyle = "#fff";
-               ctx.fillText(entity.name, cameraX - width / 2, cameraY);
-            }
-         }
+         // Draw text outline
+         ctx.lineWidth = 6;
+         ctx.strokeStyle = "#000";
+         ctx.strokeText(entity.displayName, cameraX - width / 2, cameraY);
+         
+         // Draw text
+         ctx.fillStyle = "#fff";
+         ctx.fillText(entity.displayName, cameraX - width / 2, cameraY);
       }
    }
 }

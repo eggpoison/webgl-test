@@ -1,11 +1,8 @@
+import { Point, Vector } from "webgl-test-shared";
 import Camera from "../Camera";
 import Client from "../client/Client";
-import HitboxComponent from "../entity-components/HitboxComponent";
-import RenderComponent from "../entity-components/RenderComponent";
-import TransformComponent from "../entity-components/TransformComponent";
 import { keyIsPressed } from "../keyboard";
-import { Point } from "../utils";
-import Entity from "./Entity";
+import Entity, { RenderPart } from "./Entity";
 
 const generateMovementHash = (wIsPressed: boolean, aIsPressed: boolean, sIsPressed: boolean, dIsPressed: boolean): number => {
    let movementHash = 0;
@@ -30,7 +27,7 @@ const parseMovementHash = (movementHash: number): [boolean, boolean, boolean, bo
 class Player extends Entity {
    public static instance: Player;
 
-   public readonly name: string;
+   public readonly displayName: string;
 
    private previousMovementHash: number = 0;
 
@@ -39,23 +36,18 @@ class Player extends Entity {
    private static readonly ACCELERATION = 1000;
    private static readonly TERMINAL_VELOCITY = 300;
 
-   constructor(position: Point, name: string, isCurrentPlayer: boolean) {
-      super([
-         new TransformComponent(position),
-         new HitboxComponent({
-            type: "circular",
-            radius: Player.RADIUS
-         }),
-         new RenderComponent([
-            {
-               type: "circle",
-               radius: Player.RADIUS,
-               rgba: [255, 0, 0, 1]
-            }
-         ])
-      ]);
+   private static readonly RENDER_PARTS: ReadonlyArray<RenderPart> = [
+      {
+         type: "circle",
+         radius: Player.RADIUS,
+         rgba: [255, 0, 0, 1]
+      }
+   ]
 
-      this.name = name;
+   constructor(id: number, position: Point, velocity: Vector | null, acceleration: Vector | null, terminalVelocity: number, displayName: string, isCurrentPlayer: boolean) {
+      super(id, position, velocity, acceleration, terminalVelocity, Player.RENDER_PARTS);
+
+      this.displayName = displayName;
 
       if (isCurrentPlayer) {
          if (typeof Player.instance !== "undefined") {
@@ -64,7 +56,7 @@ class Player extends Entity {
 
          Player.instance = this;
 
-         Camera.position = this.getComponent(TransformComponent)!.position;
+         Camera.position = this.position;
       }
    }
 
@@ -118,15 +110,14 @@ class Player extends Entity {
          xVel += Player.ACCELERATION;
       }
 
-      const transformComponent = this.getComponent(TransformComponent)!;
       if (xVel === 0 && yVel === 0) {
-         transformComponent.acceleration = null;
-         transformComponent.isMoving = false;
+         this.acceleration = null;
+         this.isMoving = false;
       } else {
-         transformComponent.terminalVelocity = Player.TERMINAL_VELOCITY;
+         this.terminalVelocity = Player.TERMINAL_VELOCITY;
          const velocity = new Point(xVel, yVel).convertToVector();
-         transformComponent.acceleration = velocity;
-         transformComponent.isMoving = true;
+         this.acceleration = velocity;
+         this.isMoving = true;
       }
    }
 }

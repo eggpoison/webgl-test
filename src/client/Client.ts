@@ -1,9 +1,8 @@
 import { io, Socket } from "socket.io-client";
-import { ClientToServerEvents, ServerToClientEvents, SETTINGS, Tile } from "webgl-test-shared";
+import { ClientToServerEvents, GameDataPacket, ServerToClientEvents, SETTINGS, Tile } from "webgl-test-shared";
 import { GameState, setGameState } from "../App";
 import Camera from "../Camera";
 import Player from "../entities/Player";
-import TransformComponent from "../entity-components/TransformComponent";
 import Game from "../Game";
 
 // const spawnMobs = (positions: Array<[number, number]>, entityID: number): void => {
@@ -31,6 +30,10 @@ abstract class Client {
                tiles: tiles
             };
             resolve(serverResponse);
+         });
+
+         this.socket.on("gameDataPacket", (gameDataPacket: GameDataPacket) => {
+            console.log(gameDataPacket);
          });
 
          // // Receive chat messages
@@ -119,7 +122,7 @@ abstract class Client {
    }
 
    public static sendMovementPacket(movementHash: number): void {
-      const playerPosition = Player.instance.getComponent(TransformComponent)!.position;
+      const playerPosition = Player.instance.position;
       const positionData: [number, number] = [playerPosition.x, playerPosition.y];
       
       // Send the movement packet to the server
