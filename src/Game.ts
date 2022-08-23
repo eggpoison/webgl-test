@@ -84,9 +84,7 @@ abstract class Game {
          
          // Update
          Game.lag += deltaTime;
-         let i = 0;
          while (Game.lag >= 1000 / SETTINGS.TPS) {
-            i++;
             Game.update();
             Game.lag -= 1000 / SETTINGS.TPS;
          }
