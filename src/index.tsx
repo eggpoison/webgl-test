@@ -93,8 +93,5 @@ export async function loadGame(): Promise<void> {
    Game.setup();
    Game.start();
 
-   Client.sendPlayerData({
-      name: playerName,
-      position: [position.x, position.y]
-   });
+   Client.sendPlayerData(playerName, [position.x, position.y]);
 };

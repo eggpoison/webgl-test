@@ -1,4 +1,4 @@
-import { SETTINGS } from "webgl-test-shared";
+import { SETTINGS, VisibleChunkBounds } from "webgl-test-shared";
 import { windowHeight, windowWidth } from ".";
 import Player from "./entities/Player";
 import TransformComponent from "./entity-components/TransformComponent";
@@ -10,19 +10,21 @@ abstract class Camera {
 
    public static position: Point;
 
-   private static readonly visibleChunkBounds: [number, number, number, number] = [0, 0, 0, 0];
+   private static visibleChunkBounds: VisibleChunkBounds = [0, 0, 0, 0];
 
-   public static updateVisibleChunkBounds(): void {
+   public static calculateVisibleChunkBounds(): VisibleChunkBounds {
       const unitsInChunk = SETTINGS.TILE_SIZE * SETTINGS.CHUNK_SIZE;
 
-      // minX
-      this.visibleChunkBounds[0] = Math.max(Math.floor((this.position.x - windowWidth / 2) / unitsInChunk), 0);
-      // maxX
-      this.visibleChunkBounds[1] = Math.min(Math.floor((this.position.x + windowWidth / 2) / unitsInChunk), SETTINGS.BOARD_SIZE - 1);
-      // minY
-      this.visibleChunkBounds[2] = Math.max(Math.floor((this.position.y - windowHeight / 2) / unitsInChunk), 0);
-      // maxY
-      this.visibleChunkBounds[3] = Math.min(Math.floor((this.position.y + windowHeight / 2) / unitsInChunk), SETTINGS.BOARD_SIZE - 1);
+      const minX = Math.max(Math.floor((this.position.x - windowWidth / 2) / unitsInChunk), 0);
+      const maxX = Math.min(Math.floor((this.position.x + windowWidth / 2) / unitsInChunk), SETTINGS.BOARD_SIZE - 1);
+      const minY = Math.max(Math.floor((this.position.y - windowHeight / 2) / unitsInChunk), 0);
+      const maxY = Math.min(Math.floor((this.position.y + windowHeight / 2) / unitsInChunk), SETTINGS.BOARD_SIZE - 1);
+
+      return [minX, maxX, minY, maxY];
+   }
+
+   public static updateVisibleChunkBounds(): void {
+      this.visibleChunkBounds = this.calculateVisibleChunkBounds();
    }
 
    public static getVisibleChunkBounds(): [number, number, number, number] {
