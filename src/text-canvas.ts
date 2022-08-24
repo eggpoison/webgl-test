@@ -1,4 +1,3 @@
-import { Point } from "webgl-test-shared";
 import { windowHeight, windowWidth } from ".";
 import Board from "./Board";
 import Camera from "./Camera";
@@ -21,7 +20,7 @@ const getYPosInCamera = (y: number): number => {
    return Camera.position.y + window.innerHeight / 2 - y;
 }
 
-export function renderPlayerNames(lagOffset: Point): void {
+export function renderPlayerNames(frameProgress: number): void {
    // Clear the canvas
    ctx.fillStyle = "transparent";
    ctx.clearRect(0, 0, windowWidth, windowHeight);
@@ -30,13 +29,19 @@ export function renderPlayerNames(lagOffset: Point): void {
       // If the entity is a player, render a nametag for it
       if (entity instanceof Player && entity !== Player.instance) {
          // Calculate the position of the text
-         const position = entity.position;
-         const x = position.x + lagOffset.x;
-         const y = position.y + Player.RADIUS + NAMETAG_Y_OFFSET + lagOffset.y;
+         let drawPosition = entity.position.copy();
+         drawPosition.y += Player.RADIUS + NAMETAG_Y_OFFSET;
+
+         // Account for frame progress
+         if (entity.velocity !== null) {
+            const frameVelocity = entity.velocity.copy();
+            frameVelocity.magnitude *= frameProgress;
+            drawPosition = drawPosition.add(frameVelocity.convertToPoint());
+         }
 
          // Calculate position in camera
-         const cameraX = getXPosInCamera(x);
-         const cameraY = getYPosInCamera(y);
+         const cameraX = getXPosInCamera(drawPosition.x);
+         const cameraY = getYPosInCamera(drawPosition.y);
 
          ctx.fillStyle = "#000";
          ctx.font = "400 20px Helvetica";

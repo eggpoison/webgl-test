@@ -1,5 +1,5 @@
 import { gl } from ".";
-import { TILE_TYPE_RENDER_INFO_RECORD } from "./tile-type-info";
+import { TILE_TYPE_RENDER_INFO_RECORD } from "./tile-type-render-info";
 import { imageIsLoaded } from "./utils";
 
 let TEXTURES: { [key: string]: WebGLTexture } = {};

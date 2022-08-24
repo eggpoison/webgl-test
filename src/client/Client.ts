@@ -1,8 +1,10 @@
 import { io, Socket } from "socket.io-client";
-import { ClientToServerEvents, GameDataPacket, ServerToClientEvents, SETTINGS, Tile } from "webgl-test-shared";
+import { ClientToServerEvents, EntityData, GameDataPacket, Point, ServerToClientEvents, SETTINGS, Tile, Vector } from "webgl-test-shared";
 import { GameState, setGameState } from "../App";
+import Board from "../Board";
 import Camera from "../Camera";
 import Player from "../entities/Player";
+import ENTITY_CLASS_RECORD from "../entity-class-record";
 import Game from "../Game";
 
 // const spawnMobs = (positions: Array<[number, number]>, entityID: number): void => {
@@ -33,7 +35,7 @@ abstract class Client {
          });
 
          this.socket.on("gameDataPacket", (gameDataPacket: GameDataPacket) => {
-            console.log(gameDataPacket);
+            this.unloadGameDataPacket(gameDataPacket);
          });
 
          // // Receive chat messages
@@ -103,6 +105,29 @@ abstract class Client {
          transports: ["websocket", "polling", "flashsocket"],
          autoConnect: false
       });
+   }
+
+   private static unloadGameDataPacket(gameDataPacket: GameDataPacket): void {
+      // Update the game entities
+      for (const entityData of gameDataPacket.nearbyEntities) {
+         // If it already exists, update it
+         if (Board.entities.hasOwnProperty(entityData.id)) {
+            Board.entities[entityData.id].updateFromData(entityData);
+         } else {
+            this.createEntityFromData(entityData);
+         }
+      }
+   }
+
+   public static createEntityFromData(entityData: EntityData): void {
+      const position = Point.unpackage(entityData.position);
+      const velocity = entityData.velocity !== null ? Vector.unpackage(entityData.velocity) : null;
+      const acceleration = entityData.acceleration !== null ? Vector.unpackage(entityData.acceleration) : null;
+
+      // Create the entity
+      const entityClass = ENTITY_CLASS_RECORD[entityData.type]();
+      const entity = new entityClass(entityData.id, position, velocity, acceleration, entityData.terminalVelocity);
+      Board.addEntity(entity);
    }
 
    /**

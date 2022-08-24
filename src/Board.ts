@@ -1,9 +1,9 @@
 import { gl } from ".";
 import Entity from "./entities/Entity";
 import { getTexture } from "./textures";
-import { Tile, TileInfo, SETTINGS, Point } from "webgl-test-shared";
+import { Tile, TileInfo, SETTINGS, } from "webgl-test-shared";
 import Camera from "./Camera";
-import { TILE_TYPE_RENDER_INFO_RECORD } from "./tile-type-info";
+import { TILE_TYPE_RENDER_INFO_RECORD } from "./tile-type-render-info";
 import { createWebGLProgram } from "./webgl";
 
 // 
@@ -117,15 +117,15 @@ abstract class Board {
       }
    }
 
-   public static render(lagOffset: Point): void {
-      this.renderTiles(lagOffset);
-      this.drawBorder(lagOffset);
-      this.renderEntities(lagOffset);
+   public static render(frameProgress: number): void {
+      this.renderTiles();
+      this.drawBorder();
+      this.renderEntities(frameProgress);
    }
 
-   private static renderTiles(lagOffset: Point): void {
+   private static renderTiles(): void {
       // Calculate tile vertices
-      const tileVerticesCollection = this.calculateTileVertices(lagOffset);
+      const tileVerticesCollection = this.calculateTileVertices();
 
       this.renderSolidTiles(tileVerticesCollection.texturedTriangleVertices);
       this.renderLiquidTiles(tileVerticesCollection.colouredTriangleVertices);
@@ -209,7 +209,7 @@ abstract class Board {
       gl.drawArrays(gl.TRIANGLES, 0, triangleVertices.length / 5);
    }
 
-   private static calculateTileVertices(lagOffset: Point): TileVerticesCollection {
+   private static calculateTileVertices(): TileVerticesCollection {
       // Get chunk bounds
       const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
       const minTileX = minChunkX * SETTINGS.CHUNK_SIZE;
@@ -217,7 +217,7 @@ abstract class Board {
       const minTileY = minChunkY * SETTINGS.CHUNK_SIZE;
       const maxTileY = (maxChunkY + 1) * SETTINGS.CHUNK_SIZE;
 
-      const [xTileVertexCoordinates, yTileVertexCoordinates] = this.calculateTileVertexCoordinates(minTileX, maxTileX, minTileY, maxTileY, lagOffset);
+      const [xTileVertexCoordinates, yTileVertexCoordinates] = this.calculateTileVertexCoordinates(minTileX, maxTileX, minTileY, maxTileY);
 
       const texturedTriangleVertices: { [key: string]: Array<number> } = {};
       let colouredTriangleVertices = new Array<number>();
@@ -268,7 +268,7 @@ abstract class Board {
       };
    }
 
-   private static calculateTileVertexCoordinates(minTileX: number, maxTileX: number, minTileY: number, maxTileY: number, lagOffset: Point): TileVertexCoordinates {
+   private static calculateTileVertexCoordinates(minTileX: number, maxTileX: number, minTileY: number, maxTileY: number): TileVertexCoordinates {
       const tileVertexCoordinates: TileVertexCoordinates = [{}, {}];
 
       // X
@@ -287,7 +287,7 @@ abstract class Board {
       return tileVertexCoordinates;
    }
 
-   private static drawBorder(lagOffset: Point): void {
+   private static drawBorder(): void {
       const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
 
       const BORDER_WIDTH = 5;
@@ -379,9 +379,9 @@ abstract class Board {
       gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 2);
    }
 
-   private static renderEntities(lagOffset: Point): void {
+   private static renderEntities(frameProgress: number): void {
       for (const entity of Object.values(this.entities)) {
-         entity.render(lagOffset);
+         entity.render(frameProgress);
       }
    }
 

@@ -1,4 +1,4 @@
-import { lerp, Point, SETTINGS, Tile, TILE_TYPE_INFO_RECORD, Vector } from "webgl-test-shared";
+import { EntityData, lerp, Point, SETTINGS, Tile, TILE_TYPE_INFO_RECORD, Vector } from "webgl-test-shared";
 import Board from "../Board";
 import { drawCircle } from "../webgl";
 
@@ -186,24 +186,35 @@ abstract class Entity {
    //    }
    // }
 
-   public render(lagOffset: Point): void {
+   public render(frameProgress: number): void {
       for (const renderPart of this.renderParts) {
-         this.drawRenderPart(renderPart, lagOffset);
+         this.drawRenderPart(renderPart, frameProgress);
       }
    }
 
-   private drawRenderPart(part: RenderPart, lagOffset: Point): void {
-      const position = this.position.copy();
+   private drawRenderPart(part: RenderPart, frameProgress: number): void {
+      let drawPosition = this.position.copy();
       
       // Account for frame progress
-      const predictedPosition = position.add(lagOffset);
+      if (this.velocity !== null) {
+         const frameVelocity = this.velocity?.copy();
+         frameVelocity.magnitude *= frameProgress / SETTINGS.TPS;
+         drawPosition = drawPosition.add(frameVelocity.convertToPoint());
+      }
    
       switch (part.type) {
          case "circle": {
-            drawCircle(predictedPosition.x, predictedPosition.y, part.radius, part.rgba);
+            drawCircle(drawPosition.x, drawPosition.y, part.radius, part.rgba);
             break;
          }
       }
+   }
+
+   public updateFromData(entityData: EntityData): void {
+      this.position = Point.unpackage(entityData.position);
+      this.velocity = entityData.velocity !== null ? Vector.unpackage(entityData.velocity) : null;
+      this.acceleration = entityData.acceleration !== null ? Vector.unpackage(entityData.acceleration) : null;
+      this.terminalVelocity = entityData.terminalVelocity;
    }
 }
 

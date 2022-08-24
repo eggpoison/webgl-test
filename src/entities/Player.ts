@@ -44,16 +44,12 @@ class Player extends Entity {
       }
    ]
 
-   constructor(id: number, position: Point, velocity: Vector | null, acceleration: Vector | null, terminalVelocity: number, displayName: string, isCurrentPlayer: boolean) {
+   constructor(id: number, position: Point, velocity: Vector | null, acceleration: Vector | null, terminalVelocity: number, displayName: string) {
       super(id, position, velocity, acceleration, terminalVelocity, Player.RENDER_PARTS);
 
       this.displayName = displayName;
 
-      if (isCurrentPlayer) {
-         if (typeof Player.instance !== "undefined") {
-            throw new Error("Tried to create more than one current player!");
-         }
-
+      if (typeof Player.instance === "undefined") {
          Player.instance = this;
 
          Camera.position = this.position;
