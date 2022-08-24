@@ -1,5 +1,6 @@
 import { Point, SETTINGS, VisibleChunkBounds } from "webgl-test-shared";
 import { windowHeight, windowWidth } from ".";
+import Client from "./client/Client";
 import Player from "./entities/Player";
 
 abstract class Camera {
@@ -22,15 +23,18 @@ abstract class Camera {
    }
 
    public static updateVisibleChunkBounds(): void {
-      this.visibleChunkBounds = this.calculateVisibleChunkBounds();
+      const newVisibleChunkBounds = this.calculateVisibleChunkBounds();
+
+      // If the visible chunk bounds have changed, send them to the server
+      if (!newVisibleChunkBounds.every((value: number, idx: number) => value === this.visibleChunkBounds[idx])) {
+         Client.sendVisibleChunkBoundsPacket(newVisibleChunkBounds);
+      }
+
+      this.visibleChunkBounds = newVisibleChunkBounds;
    }
 
-   public static getVisibleChunkBounds(): [number, number, number, number] {
+   public static getVisibleChunkBounds(): VisibleChunkBounds {
       return this.visibleChunkBounds;
-   }
-
-   public static chunkIsVisible(x: number, y: number): boolean {
-      return x >= this.visibleChunkBounds[0] && x <= this.visibleChunkBounds[1] && y >= this.visibleChunkBounds[2] && y <= this.visibleChunkBounds[3];
    }
 
    public static updateCameraPosition(frameProgress: number): void {

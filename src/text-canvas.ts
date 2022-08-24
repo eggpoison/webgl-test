@@ -1,3 +1,4 @@
+import { SETTINGS } from "webgl-test-shared";
 import { windowHeight, windowWidth } from ".";
 import Board from "./Board";
 import Camera from "./Camera";
@@ -35,7 +36,7 @@ export function renderPlayerNames(frameProgress: number): void {
          // Account for frame progress
          if (entity.velocity !== null) {
             const frameVelocity = entity.velocity.copy();
-            frameVelocity.magnitude *= frameProgress;
+            frameVelocity.magnitude *= frameProgress / SETTINGS.TPS;
             drawPosition = drawPosition.add(frameVelocity.convertToPoint());
          }
 

@@ -8,12 +8,17 @@ export enum GameState {
    nameInput,
    connecting,
    game,
-   serverError
+   error
 }
 
 let setGameStateReference: (gameState: GameState) => Promise<void>;
 export function setGameState(gameState: GameState): Promise<void> {
    return setGameStateReference(gameState);
+}
+
+let setGameMessageReference: (message: string) => void;
+export function setGameMessage(message: string): void {
+   setGameMessageReference(message);
 }
 
 let getGameStateReference: () => GameState;
@@ -23,6 +28,7 @@ export function getGameState(): GameState {
 
 function App() {
    const [gameState, setGameState] = useState<GameState>(GameState.nameInput);
+   const [gameMessage, setGameMessage] = useState<string>("");
    const hasLoaded = useRef<boolean>(false);
    const gameStateUpdateCallbacks = useRef<Array<() => void>>([]);
 
@@ -38,6 +44,10 @@ function App() {
 
             setGameState(gameState);
          });
+      }
+
+      setGameMessageReference = (gameMessage: string): void => {
+         setGameMessage(gameMessage);
       }
    }, []);
 
@@ -61,10 +71,10 @@ function App() {
       </> : null}
 
       {gameState === GameState.connecting ? <div className="game-message">
-         <p>Connecting to server...</p>
+         <p>{gameMessage}</p>
       </div> : null}
 
-      {gameState === GameState.serverError ? <div className="game-message">
+      {gameState === GameState.error ? <div className="game-message">
          <p>Error connecting to server</p>
          <button onClick={Client.attemptReconnect}>Reconnect</button>
       </div> : null}

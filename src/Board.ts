@@ -290,7 +290,7 @@ abstract class Board {
    private static drawBorder(): void {
       const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
 
-      const BORDER_WIDTH = 5;
+      const BORDER_WIDTH = 20;
 
       gl.useProgram(this.borderTileProgram);
 
@@ -334,8 +334,8 @@ abstract class Board {
 
       // Left wall
       if (minChunkX === 0) {
-         const x1 = minChunkXPos - BORDER_WIDTH;
-         const x2 = minChunkXPos;
+         const x1 = -BORDER_WIDTH;
+         const x2 = 0;
          const y1 = minChunkYPos - BORDER_WIDTH;
          const y2 = maxChunkYPos + BORDER_WIDTH;
 
@@ -356,8 +356,8 @@ abstract class Board {
       if (minChunkY === 0) {
          const x1 = minChunkXPos - BORDER_WIDTH;
          const x2 = maxChunkXPos + BORDER_WIDTH;
-         const y1 = minChunkYPos - BORDER_WIDTH;
-         const y2 = minChunkYPos;
+         const y1 = -BORDER_WIDTH;
+         const y2 = 0;
 
          calculateAndAddVertices(x1, x2, y1, y2);
       }

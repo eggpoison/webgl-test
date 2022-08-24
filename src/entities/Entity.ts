@@ -1,4 +1,4 @@
-import { EntityData, lerp, Point, SETTINGS, Tile, TILE_TYPE_INFO_RECORD, Vector } from "webgl-test-shared";
+import { EntityData, EntityType, lerp, Point, SETTINGS, Tile, TILE_TYPE_INFO_RECORD, Vector } from "webgl-test-shared";
 import Board from "../Board";
 import { drawCircle } from "../webgl";
 
@@ -28,19 +28,17 @@ abstract class Entity {
    /** Limit to how many units the entity can move in a second */
    public terminalVelocity: number = 0;
 
-   private readonly renderParts: ReadonlyArray<RenderPart>;
+   protected readonly abstract renderParts: ReadonlyArray<RenderPart>;
 
    public isMoving: boolean = true;
 
-   constructor(id: number, position: Point, velocity: Vector | null, acceleration: Vector | null, terminalVelocity: number, renderParts: ReadonlyArray<RenderPart>) {
+   constructor(id: number, position: Point, velocity: Vector | null, acceleration: Vector | null, terminalVelocity: number) {
       this.id = id;
       
       this.position = position;
       this.velocity = velocity;
       this.acceleration = acceleration;
       this.terminalVelocity = terminalVelocity;
-
-      this.renderParts = renderParts;
    }
 
    public tick(): void {
@@ -49,6 +47,11 @@ abstract class Entity {
 
    private applyPhysics(): void {
       const tile = this.findCurrentTile();
+      if (typeof tile === "undefined") {
+         console.log(this);
+         throw new Error("Couldnt' find a tile for an entity!");
+      }
+
       const tileTypeInfo = TILE_TYPE_INFO_RECORD[tile.type];
 
       // Apply acceleration
@@ -67,7 +70,7 @@ abstract class Entity {
             this.velocity = this.velocity.add(acceleration);
          }
       }
-      else if (!this.isMoving && this.velocity !== null) {
+      else if (this.velocity !== null) {
          // Apply friction
          this.velocity.magnitude -= this.terminalVelocity * tileTypeInfo.friction * SETTINGS.FRICTION_CONSTANT / SETTINGS.TPS;
          if (this.velocity.magnitude < 0) this.velocity = null;
@@ -114,9 +117,6 @@ abstract class Entity {
       //    const tileCollisions = this.getTileCollisions();
       //    if (tileCollisions.length > 0) this.resolveTileCollisions(tileCollisions);
       // }
-
-      // Resolve wall collisions
-      // this.resolveWallCollisions();
    }
 
    private findCurrentTile(): Tile {
@@ -124,67 +124,6 @@ abstract class Entity {
       const tileY = Math.floor(this.position.y / SETTINGS.TILE_SIZE);
       return Board.getTile(tileX, tileY);
    }
-
-   
-   // private resolveWallCollisions(): void {
-   //    const boardUnits = SETTINGS.DIMENSIONS * SETTINGS.TILE_SIZE;
-
-   //    const hitboxComponent = this.getEntity().getComponent(HitboxComponent)!;
-   //    if (hitboxComponent === null) return;
-
-   //    const hitbox = hitboxComponent.hitbox;
-
-   //    let width!: number;
-   //    let height!: number;
-   //    switch (hitbox.type) {
-   //       case "circular": {
-   //          width = hitbox.radius * 2;
-   //          height = hitbox.radius * 2;
-   //          break;
-   //       }
-   //       case "rectangular": {
-   //          width = hitbox.width;
-   //          height = hitbox.height;
-   //          break;
-   //       }
-   //    }
-
-   //    if (this.position.x - width / 2 < 0) {
-   //       this.position.x = width / 2;
-
-   //       if (this.velocity !== null) {
-   //          const pointVelocity = this.velocity.convertToPoint();
-   //          pointVelocity.x = 0;
-   //          this.velocity = pointVelocity.convertToVector();
-   //       }
-   //    } else if (this.position.x + width / 2 > boardUnits) {
-   //       this.position.x = boardUnits - width / 2;
-         
-   //       if (this.velocity !== null) {
-   //          const pointVelocity = this.velocity.convertToPoint();
-   //          pointVelocity.x = 0;
-   //          this.velocity = pointVelocity.convertToVector();
-   //       }
-   //    }
-
-   //    if (this.position.y - height / 2 < 0) {
-   //       this.position.y = height / 2;
-         
-   //       if (this.velocity !== null) {
-   //          const pointVelocity = this.velocity.convertToPoint();
-   //          pointVelocity.y = 0;
-   //          this.velocity = pointVelocity.convertToVector();
-   //       }
-   //    } else if (this.position.y + height / 2 > boardUnits) {
-   //       this.position.y = boardUnits - height / 2;
-         
-   //       if (this.velocity !== null) {
-   //          const pointVelocity = this.velocity.convertToPoint();
-   //          pointVelocity.y = 0;
-   //          this.velocity = pointVelocity.convertToVector();
-   //       }
-   //    }
-   // }
 
    public render(frameProgress: number): void {
       for (const renderPart of this.renderParts) {
@@ -210,7 +149,7 @@ abstract class Entity {
       }
    }
 
-   public updateFromData(entityData: EntityData): void {
+   public updateFromData(entityData: EntityData<EntityType>): void {
       this.position = Point.unpackage(entityData.position);
       this.velocity = entityData.velocity !== null ? Vector.unpackage(entityData.velocity) : null;
       this.acceleration = entityData.acceleration !== null ? Vector.unpackage(entityData.acceleration) : null;

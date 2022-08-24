@@ -55,7 +55,7 @@ const setupCanvas = (): void => {
 
    if (glAttempt === null) {
       alert("Your browser does not support WebGL.");
-      return;
+      throw new Error("Your browser does not support WebGL.");
    }
    gl = glAttempt;
 
@@ -64,16 +64,15 @@ const setupCanvas = (): void => {
    resizeCanvas();
 }
 
-export async function loadGame(): Promise<void> {
-   // Get the player name
-   const playerName = await getPlayerName();
+let playerName: string;
 
-   setGameState(GameState.connecting);
+export async function connect(): Promise<void> {
+   await setGameState(GameState.connecting);
    
    // Attempt to connect to the server
    const serverResponse = await Client.connectToServer();
    if (serverResponse === null) {
-      setGameState(GameState.serverError);
+      setGameState(GameState.error);
       return;
    }
 
@@ -82,10 +81,8 @@ export async function loadGame(): Promise<void> {
    // Initialise the canvas and gl variables, and configure the canvas
    setupCanvas();
    setupTextCanvas();
-   
-   // Load all textures
-   await loadTextures();
 
+   await loadTextures();
    createCircleProgram();
 
    Board.setup(serverResponse.tiles);
@@ -94,4 +91,11 @@ export async function loadGame(): Promise<void> {
    Game.start();
 
    Client.sendPlayerData(playerName, [position.x, position.y]);
+}
+
+export async function loadGame(): Promise<void> {
+   // Prompt the player name
+   playerName = await getPlayerName();
+
+   connect();
 };

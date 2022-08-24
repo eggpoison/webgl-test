@@ -1,4 +1,4 @@
-import { Point, Vector } from "webgl-test-shared";
+import { Point, SETTINGS, Vector } from "webgl-test-shared";
 import Camera from "../Camera";
 import Client from "../client/Client";
 import { keyIsPressed } from "../keyboard";
@@ -36,7 +36,7 @@ class Player extends Entity {
    private static readonly ACCELERATION = 1000;
    private static readonly TERMINAL_VELOCITY = 300;
 
-   private static readonly RENDER_PARTS: ReadonlyArray<RenderPart> = [
+   protected readonly renderParts: ReadonlyArray<RenderPart> = [
       {
          type: "circle",
          radius: Player.RADIUS,
@@ -45,7 +45,7 @@ class Player extends Entity {
    ]
 
    constructor(id: number, position: Point, velocity: Vector | null, acceleration: Vector | null, terminalVelocity: number, displayName: string) {
-      super(id, position, velocity, acceleration, terminalVelocity, Player.RENDER_PARTS);
+      super(id, position, velocity, acceleration, terminalVelocity);
 
       this.displayName = displayName;
 
@@ -57,11 +57,13 @@ class Player extends Entity {
    }
 
    public tick(): void {
-      super.tick();
-
       if (this === Player.instance) {
          this.detectMovement();
       }
+
+      super.tick();
+
+      this.resolveWallCollisions();
    }
 
    private detectMovement(): void {
@@ -114,6 +116,47 @@ class Player extends Entity {
          const velocity = new Point(xVel, yVel).convertToVector();
          this.acceleration = velocity;
          this.isMoving = true;
+      }
+   }
+
+   private stopXVelocity(): void {
+      if (this.velocity !== null) {
+         const pointVelocity = this.velocity.convertToPoint();
+         pointVelocity.x = 0;
+         this.velocity = pointVelocity.convertToVector();
+      }
+   }
+
+   private stopYVelocity(): void {
+      if (this.velocity !== null) {
+         // Stop y velocity
+         const pointVelocity = this.velocity.convertToPoint();
+         pointVelocity.y = 0;
+         this.velocity = pointVelocity.convertToVector();
+      }
+   }
+   
+   private resolveWallCollisions(): void {
+      const boardUnits = SETTINGS.DIMENSIONS * SETTINGS.TILE_SIZE;
+
+      // Left wall
+      if (this.position.x - Player.RADIUS < 0) {
+         this.stopXVelocity();
+         this.position.x = Player.RADIUS;
+      // Right wall
+      } else if (this.position.x + Player.RADIUS > boardUnits) {
+         this.position.x = boardUnits - Player.RADIUS;
+         this.stopXVelocity();
+      }
+
+      // Bottom wall
+      if (this.position.y - Player.RADIUS < 0) {
+         this.position.y = Player.RADIUS;
+         this.stopYVelocity();
+      // Top wall
+      } else if (this.position.y + Player.RADIUS > boardUnits) {
+         this.position.y = boardUnits - Player.RADIUS;
+         this.stopYVelocity();
       }
    }
 }

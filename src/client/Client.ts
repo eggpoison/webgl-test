@@ -1,15 +1,14 @@
 import { io, Socket } from "socket.io-client";
-import { ClientToServerEvents, EntityData, GameDataPacket, Point, ServerToClientEvents, SETTINGS, Tile, Vector } from "webgl-test-shared";
-import { GameState, setGameState } from "../App";
+import { ClientToServerEvents, EntityData, EntityType, GameDataPacket, Point, ServerToClientEvents, SETTINGS, Tile, Vector, VisibleChunkBounds } from "webgl-test-shared";
+import { connect } from "..";
+import { GameState, setGameMessage, setGameState } from "../App";
 import Board from "../Board";
 import Camera from "../Camera";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD from "../entity-class-record";
 import Game from "../Game";
 
-// const spawnMobs = (positions: Array<[number, number]>, entityID: number): void => {
-
-// }
+type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
 type ServerResponse = {
    readonly gameTicks: number;
@@ -17,13 +16,17 @@ type ServerResponse = {
 }
 
 abstract class Client {
-   private static socket: Socket<ServerToClientEvents, ClientToServerEvents>;
+   private static socket: ISocket | null = null;
 
    public static connectToServer(): Promise<ServerResponse | null> {
       return new Promise(resolve => {
+         setGameMessage("Connecting to server...");
+
          // Create the socket
-         this.createSocket();
+         this.socket = this.createSocket();
          this.socket.connect();
+
+         setGameMessage("Waiting for game data...");
 
          // Wait for the server data
          this.socket.on("initialGameData", (gameTicks: number, tiles: Array<Array<Tile>>) => {
@@ -37,77 +40,44 @@ abstract class Client {
          this.socket.on("gameDataPacket", (gameDataPacket: GameDataPacket) => {
             this.unloadGameDataPacket(gameDataPacket);
          });
-
-         // // Receive chat messages
-         // this.socket.on("chatMessage", (senderName, message) => {
-         //    addChatMessage(senderName, message);
-         // });
-
-         // // Add new players
-         // this.socket.on("newPlayer", (playerData: SocketData) => {
-         //    console.log("new player: " + playerData.clientID);
-         //    const position = new Point(playerData.position[0], playerData.position[1]);
-         //    const player = new Player(position, playerData.name, false);
-         //    Board.addEntity(player);
-
-         //    addPlayer(playerData.clientID, player);
-         // });
-
-         // // Receive movement packets
-         // this.socket.on("playerMovement", (clientID: string, movementHash: number) => {
-         //    const player = getPlayer(clientID)!;
-         //    player.receiveMovementHash(movementHash);
-         // });
-
-         // // Forward position
-         // this.socket.on("position", () => {
-         //    const playerPosition = Player.instance.getComponent(TransformComponent)!.position;
-
-         //    const positionData: [number, number] = [playerPosition.x, playerPosition.y];
-         //    this.socket.emit("position", positionData);
-         // });
-         
-         // // Receive the tiles from the server
-         // this.socket.on("terrain", (tiles: Array<Array<Tile>>) => {
-         //    serverResponse.tiles = tiles;
-
-         //    resolve(serverResponse as ServerResponse);
-         // });
-
-         // this.socket.on("clientDisconnect", (clientID: string) => {
-         //    removePlayer(clientID);
-         // });
-
-         // this.socket.on("entityPacket", (packet: EntityPacket) => {
-         //    spawnMobs(packet.positions, packet.entityID);
-         // });
          
          // Check if there was an error when connecting to the server
          this.socket.on("connect_error", () => {
-            if (Game.isRunning) {
-               setGameState(GameState.serverError);
-            } else {
-               resolve(null);
-               this.socket.connect();
-            }
+            this.disconnect();
+            setGameState(GameState.error);
+            resolve(null);
          });
       });
    }
 
-   public static attemptReconnect(): void {
-      Client.createSocket();
-      Client.socket.connect();
+   /** Disconnects from the server */
+   public static disconnect(): void {
+      Game.isRunning = false;
+
+      if (this.socket !== null) {
+         this.socket.disconnect();
+      }
+   }
+
+   public static async attemptReconnect(): Promise<void> {
+      connect();
    }
 
    /** Creates the socket used to connect to the server */
-   private static createSocket(): void {
-      this.socket = io(`ws://localhost:${SETTINGS.SERVER_PORT}`, {
+   private static createSocket(): ISocket {
+      return io(`ws://localhost:${SETTINGS.SERVER_PORT}`, {
          transports: ["websocket", "polling", "flashsocket"],
-         autoConnect: false
+         autoConnect: false,
+         reconnection: false
       });
    }
 
    private static unloadGameDataPacket(gameDataPacket: GameDataPacket): void {
+      const clientKnownEntityIDs: Array<number> = Object.keys(Board.entities).map(idString => Number(idString));
+
+      // Remove the player from the list of known entities so the player isn't removed
+      clientKnownEntityIDs.splice(clientKnownEntityIDs.indexOf(-1), 1);
+
       // Update the game entities
       for (const entityData of gameDataPacket.nearbyEntities) {
          // If it already exists, update it
@@ -116,17 +86,24 @@ abstract class Client {
          } else {
             this.createEntityFromData(entityData);
          }
+
+         clientKnownEntityIDs.splice(clientKnownEntityIDs.indexOf(entityData.id), 1);
+      }
+
+      // All remaining known entities must then have been removed
+      for (const id of clientKnownEntityIDs) {
+         Board.removeEntity(Board.entities[id]);
       }
    }
 
-   public static createEntityFromData(entityData: EntityData): void {
+   public static createEntityFromData(entityData: EntityData<EntityType>): void {
       const position = Point.unpackage(entityData.position);
       const velocity = entityData.velocity !== null ? Vector.unpackage(entityData.velocity) : null;
       const acceleration = entityData.acceleration !== null ? Vector.unpackage(entityData.acceleration) : null;
 
       // Create the entity
       const entityClass = ENTITY_CLASS_RECORD[entityData.type]();
-      const entity = new entityClass(entityData.id, position, velocity, acceleration, entityData.terminalVelocity);
+      const entity = new entityClass(entityData.id, position, velocity, acceleration, entityData.terminalVelocity, ...entityData.clientArgs);
       Board.addEntity(entity);
    }
 
@@ -136,22 +113,33 @@ abstract class Client {
     */
    public static sendChatMessage(message: string): void {
       // Send the chat message to the server
-      this.socket.emit("chatMessage", message);
+      if (this.socket !== null) {
+         this.socket.emit("chatMessage", message);
+      }
    }
 
    public static sendPlayerData(name: string, position: [number, number]): void {
-      const visibleChunkBounds = Camera.calculateVisibleChunkBounds();
-
-      // Send the player data to the server
-      this.socket.emit("initialPlayerData", name, position, visibleChunkBounds);
+      // Send player data to the server
+      if (this.socket !== null) {
+         const visibleChunkBounds = Camera.calculateVisibleChunkBounds();
+         this.socket.emit("initialPlayerData", name, position, visibleChunkBounds);
+      }
    }
 
    public static sendMovementPacket(movementHash: number): void {
-      const playerPosition = Player.instance.position;
-      const positionData: [number, number] = [playerPosition.x, playerPosition.y];
-      
-      // Send the movement packet to the server
-      this.socket.emit("playerMovement", positionData, movementHash);
+      if (this.socket !== null) {
+         const playerPosition = Player.instance.position;
+         const positionData: [number, number] = [playerPosition.x, playerPosition.y];
+         
+         // Send the movement packet to the server
+         this.socket.emit("playerMovement", positionData, movementHash);
+      }
+   }
+
+   public static sendVisibleChunkBoundsPacket(visibleChunkBounds: VisibleChunkBounds): void {
+      if (this.socket !== null) {
+         this.socket.emit("newVisibleChunkBounds", visibleChunkBounds);
+      }
    }
 }
 
