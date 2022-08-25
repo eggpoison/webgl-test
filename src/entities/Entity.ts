@@ -59,6 +59,10 @@ abstract class Entity {
          const acceleration = this.acceleration.copy();
          acceleration.magnitude /= SETTINGS.TPS;
 
+         // Reduce acceleration due to friction
+         const friction = tileTypeInfo.friction;
+         acceleration.magnitude *= friction;
+
          // Add acceleration to velocity
          this.velocity = this.velocity !== null ? this.velocity.add(acceleration) : acceleration;
       }
