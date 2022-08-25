@@ -1,4 +1,4 @@
-import { EntityData, EntityType, lerp, Point, SETTINGS, Tile, TILE_TYPE_INFO_RECORD, Vector } from "webgl-test-shared";
+import { EntityData, EntityType, Point, SETTINGS, Tile, TILE_TYPE_INFO_RECORD, Vector } from "webgl-test-shared";
 import Board from "../Board";
 import { drawCircle } from "../webgl";
 
@@ -59,21 +59,16 @@ abstract class Entity {
          const acceleration = this.acceleration.copy();
          acceleration.magnitude /= SETTINGS.TPS;
 
-         // Apply friction to acceleration
-         const REDUCTION_FACTOR = 0.3;
-         acceleration.magnitude *= lerp(REDUCTION_FACTOR, 1, tileTypeInfo.friction);
-
          // Add acceleration to velocity
-         if (this.velocity === null) {
-            this.velocity = acceleration;
-         } else {
-            this.velocity = this.velocity.add(acceleration);
-         }
+         this.velocity = this.velocity !== null ? this.velocity.add(acceleration) : acceleration;
       }
-      else if (this.velocity !== null) {
-         // Apply friction
-         this.velocity.magnitude -= this.terminalVelocity * tileTypeInfo.friction * SETTINGS.FRICTION_CONSTANT / SETTINGS.TPS;
-         if (this.velocity.magnitude < 0) this.velocity = null;
+      // Apply friction if the entity isn't accelerating
+      else if (this.velocity !== null) { 
+         const friction = tileTypeInfo.friction * SETTINGS.FRICTION_CONSTANT / SETTINGS.TPS;
+         this.velocity.magnitude /= 1 + friction;
+         
+         this.velocity.magnitude -= this.terminalVelocity / SETTINGS.TPS;
+         if (this.velocity.magnitude <= 0) this.velocity = null;
       }
 
       // Terminal velocity
@@ -136,7 +131,7 @@ abstract class Entity {
       
       // Account for frame progress
       if (this.velocity !== null) {
-         const frameVelocity = this.velocity?.copy();
+         const frameVelocity = this.velocity.copy();
          frameVelocity.magnitude *= frameProgress / SETTINGS.TPS;
          drawPosition = drawPosition.add(frameVelocity.convertToPoint());
       }

@@ -1,5 +1,5 @@
 import { Point, SETTINGS, VisibleChunkBounds } from "webgl-test-shared";
-import { windowHeight, windowWidth } from ".";
+import { halfWindowHeight, halfWindowWidth, windowHeight, windowWidth } from ".";
 import Client from "./client/Client";
 import Player from "./entities/Player";
 
@@ -56,17 +56,17 @@ abstract class Camera {
 
    public static getXPositionInScreen(x: number): number {
       // Account for the player position
-      const worldX = x - this.position.x + window.innerWidth / 2;
+      const worldX = x - this.position.x + halfWindowWidth;
 
-      const canvasX = worldX / window.innerWidth * 2 - 1;
+      const canvasX = worldX / windowWidth * 2 - 1;
       return canvasX;
    }
    
    public static getYPositionInScreen(y: number): number {
       // Account for the player position
-      const worldY = y - this.position.y + window.innerHeight / 2;
+      const worldY = y - this.position.y + halfWindowHeight;
       
-      const canvasY = worldY / window.innerHeight * 2 - 1;
+      const canvasY = worldY / windowHeight * 2 - 1;
       return canvasY;
    }
 

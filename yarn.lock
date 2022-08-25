@@ -8655,10 +8655,10 @@ web-vitals@^2.1.0:
   resolved "https://registry.yarnpkg.com/web-vitals/-/web-vitals-2.1.4.tgz#76563175a475a5e835264d373704f9dde718290c"
   integrity sha512-sVWcwhU5mX6crfI5Vd2dC4qchyTqxV8URinzt25XqVh+bHEPGH4C3NPrNionCP7Obx59wrYEbNlw4Z8sjALzZg==
 
-webgl-test-shared@^1.2.22:
-  version "1.2.22"
-  resolved "https://registry.yarnpkg.com/webgl-test-shared/-/webgl-test-shared-1.2.22.tgz#0806f41eecc110d3e68cd798c3d4945c5c838fd0"
-  integrity sha512-x+5rh5N7JVZ/2TTziwigRPnkJpVwIlyZlYbHpGEQ507p7jYqt5DuYYMqckQ/NTAgRwja2Nq1XXY87y/XawJjgA==
+webgl-test-shared@^1.2.24:
+  version "1.2.24"
+  resolved "https://registry.yarnpkg.com/webgl-test-shared/-/webgl-test-shared-1.2.24.tgz#0bf04a4441f0a699d9ae065e63e0a2e31fc5c4f6"
+  integrity sha512-lqGKCgS3wSIbK4ocCXYlL6yNISi5Q75MUdS+fM/T3GvJXepv3iXvMewNe7tH2Byv4xGXdEfqXo4fxm4op9+DIQ==
 
 webidl-conversions@^4.0.2:
   version "4.0.2"

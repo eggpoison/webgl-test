@@ -28,6 +28,8 @@ export let gl: WebGLRenderingContext;
 
 export let windowWidth: number;
 export let windowHeight: number;
+export let halfWindowWidth: number;
+export let halfWindowHeight: number;
 
 const resizeCanvas = (): void => {
    if (typeof canvas === "undefined") return;
@@ -39,11 +41,14 @@ const resizeCanvas = (): void => {
    windowWidth = window.innerWidth;
    windowHeight = window.innerHeight;
 
-   gl.viewport(0, 0, window.innerWidth, window.innerHeight);
+   halfWindowWidth = windowWidth / 2;
+   halfWindowHeight = windowHeight / 2;
+
+   gl.viewport(0, 0, windowWidth, windowHeight);
 
    const textCanvas = document.getElementById("text-canvas") as HTMLCanvasElement;
-   textCanvas.width = window.innerWidth;
-   textCanvas.height = window.innerHeight;
+   textCanvas.width = windowWidth;
+   textCanvas.height = windowHeight;
 }
 window.addEventListener("resize", resizeCanvas);
 

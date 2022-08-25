@@ -33,7 +33,7 @@ class Player extends Entity {
 
    public static readonly RADIUS = 32;
 
-   private static readonly ACCELERATION = 1000;
+   private static readonly ACCELERATION = 750;
    private static readonly TERMINAL_VELOCITY = 300;
 
    protected readonly renderParts: ReadonlyArray<RenderPart> = [
@@ -78,7 +78,6 @@ class Player extends Entity {
       if (movementHash !== this.previousMovementHash) {
          // Send the movement hash to the server
          Client.sendMovementPacket(movementHash);
-   
          this.updateMovementFromHash(movementHash);
       }
 
