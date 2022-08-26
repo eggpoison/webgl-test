@@ -9,7 +9,20 @@ type TextureSource = {
    readonly src: string;
 }
 
-const TEXTURE_SOURCES = new Array<TextureSource>();
+const TEXTURE_SOURCES: Array<TextureSource> = [
+   {
+      folder: "entities",
+      src: "cow-head.png"
+   },
+   {
+      folder: "entities",
+      src: "cow-body.png"
+   },
+   {
+      folder: "entities",
+      src: "boulder.png"
+   }
+];
 
 const textureSourceIsAlreadyIncluded = (src: string): boolean => {
    return TEXTURE_SOURCES.some(textureSource => textureSource.src === src);

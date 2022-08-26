@@ -5,7 +5,7 @@ import { loadTextures } from './textures';
 import Game from './Game';
 import Client from './client/Client';
 import Board from './Board';
-import { createCircleProgram } from './webgl';
+import { createCircleShaders } from './webgl';
 
 import './css/index.css';
 import './css/name-input.css';
@@ -13,6 +13,7 @@ import './css/chatbox.css';
 import { getPlayerName } from './components/NameInput';
 import { setupTextCanvas } from './text-canvas';
 import { clearPressedKeys } from './keyboard';
+import { createEntityShaders } from './entity-rendering';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -56,7 +57,7 @@ window.addEventListener("contextmenu", clearPressedKeys);
 
 const setupCanvas = (): void => {
    canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
-   const glAttempt = canvas.getContext("webgl");
+   const glAttempt = canvas.getContext("webgl", { alpha: false });
 
    if (glAttempt === null) {
       alert("Your browser does not support WebGL.");
@@ -88,7 +89,9 @@ export async function connect(): Promise<void> {
    setupTextCanvas();
 
    await loadTextures();
-   createCircleProgram();
+   
+   createCircleShaders();
+   createEntityShaders();
 
    Board.setup(serverResponse.tiles);
    const position = Game.spawnPlayer(playerName);

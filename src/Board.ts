@@ -5,6 +5,7 @@ import { Tile, TileInfo, SETTINGS, } from "webgl-test-shared";
 import Camera from "./Camera";
 import { TILE_TYPE_RENDER_INFO_RECORD } from "./tile-type-render-info";
 import { createWebGLProgram } from "./webgl";
+import { renderEntities } from "./entity-rendering";
 
 // 
 // Solid Tile Shaders
@@ -118,6 +119,9 @@ abstract class Board {
    }
 
    public static render(frameProgress: number): void {
+      gl.clearColor(1, 1, 1, 1);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+
       this.renderTiles();
       this.drawBorder();
       this.renderEntities(frameProgress);
@@ -380,9 +384,10 @@ abstract class Board {
    }
 
    private static renderEntities(frameProgress: number): void {
-      for (const entity of Object.values(this.entities)) {
-         entity.render(frameProgress);
-      }
+      renderEntities(frameProgress);
+      // for (const entity of Object.values(this.entities)) {
+      //    entity.render(frameProgress);
+      // }
    }
 
    public static addEntity(entity: Entity): void {

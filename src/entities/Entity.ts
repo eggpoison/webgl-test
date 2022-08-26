@@ -5,15 +5,39 @@ import { drawCircle } from "../webgl";
 interface BaseRenderPart {
    readonly type: string;
    readonly offset?: Point | (() => Point);
+   readonly zIndex: number;
 }
 
-interface CircleRenderPart extends BaseRenderPart {
+export interface CircleRenderPart extends BaseRenderPart {
    readonly type: "circle";
    readonly rgba: [number, number, number, number];
    readonly radius: number;
 }
 
-export type RenderPart = CircleRenderPart;
+export interface ImageRenderPart extends BaseRenderPart {
+   readonly type: "image";
+   readonly width: number;
+   readonly height: number;
+   readonly textureSrc: string;
+}
+
+export type RenderPart = CircleRenderPart | ImageRenderPart;
+
+// Sort render parts from lowest z-index to highest z-index
+export function sortRenderParts(unsortedRenderParts: ReadonlyArray<RenderPart>): ReadonlyArray<RenderPart> {
+   const sortedRenderParts = unsortedRenderParts.slice();
+   for (let i = 0; i < unsortedRenderParts.length - 1; i++) {
+      for (let j = i; j < unsortedRenderParts.length - 1; j++) {
+         if (sortedRenderParts[j].zIndex > sortedRenderParts[j + 1].zIndex) {
+            const temp = sortedRenderParts[j + 1];
+            sortedRenderParts[j + 1] = sortedRenderParts[j];
+            sortedRenderParts[j] = temp;
+         }
+      }
+   }
+
+   return sortedRenderParts;
+}
 
 abstract class Entity {
    public readonly id: number;
@@ -25,6 +49,9 @@ abstract class Entity {
    /** Acceleration of the entity */
    public acceleration: Vector | null = null;
 
+   /** Direction the entity is facing (radians) */
+   public rotation: number;
+   
    /** Limit to how many units the entity can move in a second */
    public terminalVelocity: number = 0;
 
@@ -32,13 +59,14 @@ abstract class Entity {
 
    public isMoving: boolean = true;
 
-   constructor(id: number, position: Point, velocity: Vector | null, acceleration: Vector | null, terminalVelocity: number) {
+   constructor(id: number, position: Point, velocity: Vector | null, acceleration: Vector | null, terminalVelocity: number, rotation: number) {
       this.id = id;
       
       this.position = position;
       this.velocity = velocity;
       this.acceleration = acceleration;
       this.terminalVelocity = terminalVelocity;
+      this.rotation = rotation;
    }
 
    public tick(): void {
@@ -62,33 +90,31 @@ abstract class Entity {
          // Reduce acceleration due to friction
          const friction = tileTypeInfo.friction;
          acceleration.magnitude *= friction;
+          
+         // Apply tile speed multiplier
+         if (typeof tileTypeInfo.moveSpeedMultiplier !== "undefined") {
+            acceleration.magnitude *= tileTypeInfo.moveSpeedMultiplier;
+         }
 
          // Add acceleration to velocity
          this.velocity = this.velocity !== null ? this.velocity.add(acceleration) : acceleration;
       }
       // Apply friction if the entity isn't accelerating
       else if (this.velocity !== null) { 
-         const friction = tileTypeInfo.friction * SETTINGS.FRICTION_CONSTANT / SETTINGS.TPS;
+         const friction = tileTypeInfo.friction * SETTINGS.GLOBAL_FRICTION_CONSTANT / SETTINGS.TPS;
          this.velocity.magnitude /= 1 + friction;
-         
-         this.velocity.magnitude -= this.terminalVelocity / SETTINGS.TPS;
-         if (this.velocity.magnitude <= 0) this.velocity = null;
       }
 
-      // Terminal velocity
-      if (this.velocity !== null && this.velocity.magnitude > this.terminalVelocity) {
-         this.velocity.magnitude = this.terminalVelocity;
+      // Restrict the entity's velocity to their terminal velocity
+      const terminalVelocity = this.terminalVelocity * (tileTypeInfo.moveSpeedMultiplier || 1);
+      if (this.velocity !== null && this.velocity.magnitude > terminalVelocity) {
+         this.velocity.magnitude = terminalVelocity;
       }
 
       // Apply velocity
       if (this.velocity !== null) {
          const velocity = this.velocity.copy();
          velocity.magnitude /= SETTINGS.TPS;
-          
-         // // Apply tile slowness to velocity
-         if (typeof tileTypeInfo.effects?.moveSpeedMultiplier !== "undefined") {
-            velocity.magnitude *= tileTypeInfo.effects.moveSpeedMultiplier;
-         }
          
          this.position = this.position.add(velocity.convertToPoint());
       }
@@ -128,6 +154,10 @@ abstract class Entity {
       for (const renderPart of this.renderParts) {
          this.drawRenderPart(renderPart, frameProgress);
       }
+   }
+
+   public getRenderParts(): ReadonlyArray<RenderPart> {
+      return this.renderParts;
    }
 
    private drawRenderPart(part: RenderPart, frameProgress: number): void {

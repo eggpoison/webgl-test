@@ -79,7 +79,7 @@ abstract class Game {
       const y = 100;
 
       const position = new Point(x, y);
-      const player = new Player(-1, position, null, null, 300, name);
+      const player = new Player(-1, position, null, null, 0, 0, name);
       Board.addEntity(player);
 
       return position;

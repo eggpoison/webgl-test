@@ -2,7 +2,7 @@ import { Point, SETTINGS, Vector } from "webgl-test-shared";
 import Camera from "../Camera";
 import Client from "../client/Client";
 import { keyIsPressed } from "../keyboard";
-import Entity, { RenderPart } from "./Entity";
+import Entity, { RenderPart, sortRenderParts } from "./Entity";
 
 const generateMovementHash = (wIsPressed: boolean, aIsPressed: boolean, sIsPressed: boolean, dIsPressed: boolean): number => {
    let movementHash = 0;
@@ -36,16 +36,26 @@ class Player extends Entity {
    private static readonly ACCELERATION = 1000;
    private static readonly TERMINAL_VELOCITY = 300;
 
-   protected readonly renderParts: ReadonlyArray<RenderPart> = [
+   private static readonly RENDER_PARTS: ReadonlyArray<RenderPart> = sortRenderParts([
       {
          type: "circle",
          radius: Player.RADIUS,
-         rgba: [255, 0, 0, 1]
+         rgba: [255, 0, 0, 1],
+         zIndex: 1
+      },
+      {
+         type: "image",
+         width: 64,
+         height: 64,
+         textureSrc: "boulder.png",
+         zIndex: 2
       }
-   ]
+   ]);
 
-   constructor(id: number, position: Point, velocity: Vector | null, acceleration: Vector | null, terminalVelocity: number, displayName: string) {
-      super(id, position, velocity, acceleration, terminalVelocity);
+   protected readonly renderParts: ReadonlyArray<RenderPart> = Player.RENDER_PARTS;
+
+   constructor(id: number, position: Point, velocity: Vector | null, acceleration: Vector | null, terminalVelocity: number, rotation: number, displayName: string) {
+      super(id, position, velocity, acceleration, terminalVelocity, rotation);
 
       this.displayName = displayName;
 
@@ -136,7 +146,7 @@ class Player extends Entity {
    }
    
    private resolveWallCollisions(): void {
-      const boardUnits = SETTINGS.DIMENSIONS * SETTINGS.TILE_SIZE;
+      const boardUnits = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE;
 
       // Left wall
       if (this.position.x - Player.RADIUS < 0) {

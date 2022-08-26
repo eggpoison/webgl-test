@@ -1,3 +1,4 @@
+import { Point } from "webgl-test-shared";
 import { gl } from ".";
 import Camera from "./Camera";
 import { isDev } from "./utils";
@@ -31,43 +32,8 @@ void main() {
 
 let program: WebGLProgram;
 
-export function createCircleProgram(): void {
-   // Create shaders
-   const vertexShader = gl.createShader(gl.VERTEX_SHADER)!;
-   const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER)!;
-
-   gl.shaderSource(vertexShader, vertexShaderText);
-   gl.shaderSource(fragmentShader, fragmentShaderText);
-
-   gl.compileShader(vertexShader);
-   if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
-      console.error("ERROR compiling vertex shader!", gl.getShaderInfoLog(vertexShader));
-      return;
-   }
-
-   gl.compileShader(fragmentShader);
-   if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
-      console.error("ERROR compiling fragment shader!", gl.getShaderInfoLog(fragmentShader));
-      return;
-   }
-
-   // Create a program and attach the shaders to the program
-   program = gl.createProgram()!;
-   gl.attachShader(program, vertexShader);
-   gl.attachShader(program, fragmentShader);
-   gl.linkProgram(program);
-   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      console.error("ERROR linking program!", gl.getProgramInfoLog(program));
-      return;
-   }
-
-   if (isDev()) {
-      gl.validateProgram(program);
-      if (!gl.getProgramParameter(program, gl.VALIDATE_STATUS)) {
-         console.error("ERROR validating program!", gl.getProgramInfoLog(program));
-         return;
-      }
-   }
+export function createCircleShaders(): void {
+   createWebGLProgram(vertexShaderText, fragmentShaderText);
 }
 
 /**
@@ -170,3 +136,31 @@ export function createWebGLProgram(vertexShaderText: string, fragmentShaderText:
 
    return program;
 }
+
+export function rotatePoint(point: Point, origin: Point, rotation: number): Point {
+   const angle = point.angleBetween(origin);
+   if (point.x === 50) {
+      console.log(angle, rotation);
+   }
+
+   const x = Math.cos(angle) * (point.x - origin.x) + Math.sin(angle) * (point.y - origin.y) + origin.x;
+   const y = -Math.sin(angle) * (point.x - origin.x) + Math.cos(angle) * (point.y - origin.y) + origin.y;
+   // return new Point(x, y);
+
+
+   // Subtract origin
+   const relativePos = point.subtract(origin);
+
+   // Rotate
+   const vector = relativePos.convertToVector();
+   vector.direction += rotation;
+
+   // Add back origin
+   let rotatedPoint = vector.convertToPoint();
+   rotatedPoint = rotatedPoint.add(origin);
+   // console.log(rotatedPoint, x, y);
+   return new Point(x, y);
+   return rotatedPoint;
+}
+
+console.log(rotatePoint(new Point(50, 60), new Point(20, 30), 0));

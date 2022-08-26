@@ -103,7 +103,7 @@ abstract class Client {
 
       // Create the entity
       const entityClass = ENTITY_CLASS_RECORD[entityData.type]();
-      const entity = new entityClass(entityData.id, position, velocity, acceleration, entityData.terminalVelocity, ...entityData.clientArgs);
+      const entity = new entityClass(entityData.id, position, velocity, acceleration, entityData.terminalVelocity, entityData.rotation, ...entityData.clientArgs);
       Board.addEntity(entity);
    }
 
