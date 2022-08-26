@@ -183,6 +183,7 @@ abstract class Entity {
       this.velocity = entityData.velocity !== null ? Vector.unpackage(entityData.velocity) : null;
       this.acceleration = entityData.acceleration !== null ? Vector.unpackage(entityData.acceleration) : null;
       this.terminalVelocity = entityData.terminalVelocity;
+      this.rotation = entityData.rotation;
    }
 }
 

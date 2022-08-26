@@ -138,29 +138,8 @@ export function createWebGLProgram(vertexShaderText: string, fragmentShaderText:
 }
 
 export function rotatePoint(point: Point, origin: Point, rotation: number): Point {
-   const angle = point.angleBetween(origin);
-   if (point.x === 50) {
-      console.log(angle, rotation);
-   }
-
-   const x = Math.cos(angle) * (point.x - origin.x) + Math.sin(angle) * (point.y - origin.y) + origin.x;
-   const y = -Math.sin(angle) * (point.x - origin.x) + Math.cos(angle) * (point.y - origin.y) + origin.y;
-   // return new Point(x, y);
-
-
-   // Subtract origin
-   const relativePos = point.subtract(origin);
-
-   // Rotate
-   const vector = relativePos.convertToVector();
-   vector.direction += rotation;
-
-   // Add back origin
-   let rotatedPoint = vector.convertToPoint();
-   rotatedPoint = rotatedPoint.add(origin);
-   // console.log(rotatedPoint, x, y);
+   // math ew
+   const x = Math.cos(rotation) * (point.x - origin.x) + Math.sin(rotation) * (point.y - origin.y) + origin.x;
+   const y = -Math.sin(rotation) * (point.x - origin.x) + Math.cos(rotation) * (point.y - origin.y) + origin.y;
    return new Point(x, y);
-   return rotatedPoint;
 }
-
-console.log(rotatePoint(new Point(50, 60), new Point(20, 30), 0));

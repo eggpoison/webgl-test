@@ -35,13 +35,17 @@ void main() {
 let entityRenderingProgram: WebGLProgram;
 
 const calculateImageRenderPartVertices = (entity: Entity, renderPart: ImageRenderPart, frameProgress: number): Array<number> => {
-   let drawPosition = entity.position.copy();
+   let renderPartDrawPosition = entity.position.copy();
+   let entityPosition = entity.position.copy();
       
    // Account for frame progress
    if (entity.velocity !== null) {
       const frameVelocity = entity.velocity.copy();
       frameVelocity.magnitude *= frameProgress / SETTINGS.TPS;
-      drawPosition = drawPosition.add(frameVelocity.convertToPoint());
+      
+      const framePoint = frameVelocity.convertToPoint();
+      renderPartDrawPosition = renderPartDrawPosition.add(framePoint);
+      entityPosition = entityPosition.add(framePoint);
    }
 
    // Add the offset
@@ -53,36 +57,26 @@ const calculateImageRenderPartVertices = (entity: Entity, renderPart: ImageRende
          offset = renderPart.offset;
       }
 
-      drawPosition = drawPosition.add(offset);
+      renderPartDrawPosition = renderPartDrawPosition.add(offset);
    }
 
    // Calculate the positions of the corners
-   let topLeft = new Point(drawPosition.x - renderPart.width / 2, drawPosition.y + renderPart.height / 2);
-   let topRight = new Point(drawPosition.x + renderPart.width / 2, drawPosition.y + renderPart.height / 2);
-   let bottomLeft = new Point(drawPosition.x - renderPart.width / 2, drawPosition.y - renderPart.height / 2);
-   let bottomRight = new Point(drawPosition.x + renderPart.width / 2, drawPosition.y - renderPart.height / 2);
+   let topLeft = new Point(renderPartDrawPosition.x - renderPart.width / 2, renderPartDrawPosition.y + renderPart.height / 2);
+   let topRight = new Point(renderPartDrawPosition.x + renderPart.width / 2, renderPartDrawPosition.y + renderPart.height / 2);
+   let bottomLeft = new Point(renderPartDrawPosition.x - renderPart.width / 2, renderPartDrawPosition.y - renderPart.height / 2);
+   let bottomRight = new Point(renderPartDrawPosition.x + renderPart.width / 2, renderPartDrawPosition.y - renderPart.height / 2);
 
    // Rotate the corners
-   topLeft = rotatePoint(topLeft, drawPosition, entity.rotation);
-   topRight = rotatePoint(topRight, drawPosition, entity.rotation);
-   bottomLeft = rotatePoint(bottomLeft, drawPosition, entity.rotation);
-   bottomRight = rotatePoint(bottomRight, drawPosition, entity.rotation);
+   topLeft = rotatePoint(topLeft, entityPosition, entity.rotation);
+   topRight = rotatePoint(topRight, entityPosition, entity.rotation);
+   bottomLeft = rotatePoint(bottomLeft, entityPosition, entity.rotation);
+   bottomRight = rotatePoint(bottomRight, entityPosition, entity.rotation);
 
    // Convert the corners to screen space
    topLeft = new Point(Camera.getXPositionInScreen(topLeft.x), Camera.getYPositionInScreen(topLeft.y));
    topRight = new Point(Camera.getXPositionInScreen(topRight.x), Camera.getYPositionInScreen(topRight.y));
    bottomLeft = new Point(Camera.getXPositionInScreen(bottomLeft.x), Camera.getYPositionInScreen(bottomLeft.y));
    bottomRight = new Point(Camera.getXPositionInScreen(bottomRight.x), Camera.getYPositionInScreen(bottomRight.y));
-
-   // const x1 = rotatePoint(topLeft, drawPosition, entity.rotation);
-   // const x2 = rotatePoint();
-   // const y1 = drawPosition.y - renderPart.height / 2;
-   // const y2 = drawPosition.y + renderPart.height / 2;
-
-   // const screenX1 = Camera.getXPositionInScreen(x1);
-   // const screenX2 = Camera.getXPositionInScreen(x2);
-   // const screenY1 = Camera.getYPositionInScreen(y1);
-   // const screenY2 = Camera.getYPositionInScreen(y2);
 
    return [
       bottomLeft.x, bottomLeft.y, 0, 0,
