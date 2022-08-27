@@ -98,7 +98,7 @@ export async function connect(): Promise<void> {
    Game.setup();
    Game.start();
 
-   Client.sendPlayerData(playerName, [position.x, position.y]);
+   Client.sendInitialPlayerData(playerName, [position.x, position.y]);
 }
 
 export async function loadGame(): Promise<void> {

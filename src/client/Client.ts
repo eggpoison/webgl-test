@@ -118,7 +118,7 @@ abstract class Client {
       }
    }
 
-   public static sendPlayerData(name: string, position: [number, number]): void {
+   public static sendInitialPlayerData(name: string, position: [number, number]): void {
       // Send player data to the server
       if (this.socket !== null) {
          const visibleChunkBounds = Camera.calculateVisibleChunkBounds();

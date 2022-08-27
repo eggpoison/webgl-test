@@ -65,12 +65,13 @@ const calculateImageRenderPartVertices = (entity: Entity, renderPart: ImageRende
    let topRight = new Point(renderPartDrawPosition.x + renderPart.width / 2, renderPartDrawPosition.y + renderPart.height / 2);
    let bottomLeft = new Point(renderPartDrawPosition.x - renderPart.width / 2, renderPartDrawPosition.y - renderPart.height / 2);
    let bottomRight = new Point(renderPartDrawPosition.x + renderPart.width / 2, renderPartDrawPosition.y - renderPart.height / 2);
-
+   
    // Rotate the corners
-   topLeft = rotatePoint(topLeft, entityPosition, entity.rotation);
-   topRight = rotatePoint(topRight, entityPosition, entity.rotation);
-   bottomLeft = rotatePoint(bottomLeft, entityPosition, entity.rotation);
-   bottomRight = rotatePoint(bottomRight, entityPosition, entity.rotation);
+   const rotation = -entity.rotation + Math.PI/2;
+   topLeft = rotatePoint(topLeft, entityPosition, rotation);
+   topRight = rotatePoint(topRight, entityPosition, rotation);
+   bottomLeft = rotatePoint(bottomLeft, entityPosition, rotation);
+   bottomRight = rotatePoint(bottomRight, entityPosition, rotation);
 
    // Convert the corners to screen space
    topLeft = new Point(Camera.getXPositionInScreen(topLeft.x), Camera.getYPositionInScreen(topLeft.y));
