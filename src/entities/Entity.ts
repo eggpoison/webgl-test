@@ -82,6 +82,8 @@ abstract class Entity {
 
       const tileTypeInfo = TILE_TYPE_INFO_RECORD[tile.type];
 
+      const terminalVelocity = this.terminalVelocity * (tileTypeInfo.moveSpeedMultiplier || 1);
+
       // Apply acceleration
       if (this.acceleration !== null) {
          const acceleration = this.acceleration.copy();
@@ -96,8 +98,15 @@ abstract class Entity {
             acceleration.magnitude *= tileTypeInfo.moveSpeedMultiplier;
          }
 
+         const magnitudeBeforeAdd = this.velocity?.magnitude || 0;
+
          // Add acceleration to velocity
          this.velocity = this.velocity !== null ? this.velocity.add(acceleration) : acceleration;
+
+         // Don't accelerate past terminal velocity
+         if (this.velocity.magnitude > terminalVelocity && this.velocity.magnitude > magnitudeBeforeAdd) {
+            this.velocity.magnitude = magnitudeBeforeAdd;
+         }
       }
       // Apply friction if the entity isn't accelerating
       else if (this.velocity !== null) { 
@@ -106,9 +115,11 @@ abstract class Entity {
       }
 
       // Restrict the entity's velocity to their terminal velocity
-      const terminalVelocity = this.terminalVelocity * (tileTypeInfo.moveSpeedMultiplier || 1);
-      if (this.velocity !== null && this.velocity.magnitude > terminalVelocity) {
-         this.velocity.magnitude = terminalVelocity;
+      if (this.velocity !== null) {
+         const mach = this.velocity.magnitude / terminalVelocity;
+         if (mach > 1) {
+            this.velocity.magnitude /= 1 + mach / SETTINGS.TPS;
+         }
       }
 
       // Apply velocity

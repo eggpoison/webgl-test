@@ -1,19 +1,20 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App, { GameState, setGameState } from './App';
+import App, { fullyCloseSettings, GameState, getGameState, openSettings, setGameState, settingsIsOpen } from './components/App';
 import { loadTextures } from './textures';
 import Game from './Game';
 import Client from './client/Client';
 import Board from './Board';
 import { createCircleShaders } from './webgl';
-
-import './css/index.css';
-import './css/name-input.css';
-import './css/chatbox.css';
 import { getPlayerName } from './components/NameInput';
 import { setupTextCanvas } from './text-canvas';
 import { clearPressedKeys } from './keyboard';
 import { createEntityShaders } from './entity-rendering';
+
+import "./css/index.css";
+import "./css/name-input.css";
+import "./css/chatbox.css";
+import "./css/settings.css";
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -107,3 +108,9 @@ export async function loadGame(): Promise<void> {
 
    connect();
 };
+
+window.addEventListener("keydown", (e: KeyboardEvent) => {
+   if (e.key === "Escape" && getGameState() === GameState.game) {
+      settingsIsOpen() ? fullyCloseSettings() : openSettings();
+   }
+});

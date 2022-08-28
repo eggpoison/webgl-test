@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { loadGame } from ".";
-import Client from "./client/Client";
-import ChatBox from "./components/ChatBox";
-import NameInput from "./components/NameInput";
+import { loadGame } from "..";
+import Client from "../client/Client";
+import ChatBox from "./ChatBox";
+import NameInput from "./NameInput";
+import Settings from "./Settings";
 
 export enum GameState {
    nameInput,
@@ -26,9 +27,25 @@ export function getGameState(): GameState {
    return getGameStateReference();
 }
 
+let settingsIsOpenReference: () => boolean;
+export function settingsIsOpen(): boolean {
+   return settingsIsOpenReference();
+}
+
+let openSettingsReference: () => void;
+export function openSettings(): void {
+   openSettingsReference();
+}
+
+let fullyCloseSettingsReference: () => void;
+export function fullyCloseSettings(): void {
+   fullyCloseSettingsReference();
+}
+
 function App() {
    const [gameState, setGameState] = useState<GameState>(GameState.nameInput);
    const [gameMessage, setGameMessage] = useState<string>("");
+   const [settingsIsOpen, setSettingsIsOpen] = useState(false);
    const hasLoaded = useRef<boolean>(false);
    const gameStateUpdateCallbacks = useRef<Array<() => void>>([]);
 
@@ -49,7 +66,14 @@ function App() {
       setGameMessageReference = (gameMessage: string): void => {
          setGameMessage(gameMessage);
       }
+
+      openSettingsReference = (): void => setSettingsIsOpen(true);
+      fullyCloseSettingsReference = (): void => setSettingsIsOpen(false);
    }, []);
+
+   useEffect(() => {
+      settingsIsOpenReference = (): boolean => settingsIsOpen;
+   }, [settingsIsOpen]);
 
    useEffect(() => {
       // Call all callbacks
@@ -84,6 +108,9 @@ function App() {
 
          <canvas id="game-canvas"></canvas>
          <canvas id="text-canvas"></canvas>
+
+      {/* Settings */}
+         {settingsIsOpen ? <Settings /> : null}
       </> : null}
    </>;
 }

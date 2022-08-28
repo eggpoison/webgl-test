@@ -101,29 +101,29 @@ class Player extends Entity {
    private updateMovementFromHash(movementHash: number): void {
       const [wIsPressed, aIsPressed, sIsPressed, dIsPressed] = parseMovementHash(movementHash);
 
-      let xVel = 0;
-      let yVel = 0;
+      let xAcceleration = 0;
+      let yAcceleration = 0;
 
       if (wIsPressed) {
-         yVel += Player.ACCELERATION;
+         yAcceleration += Player.ACCELERATION;
       }
       if (aIsPressed) {
-         xVel -= Player.ACCELERATION;
+         xAcceleration -= Player.ACCELERATION;
       }
       if (sIsPressed) {
-         yVel -= Player.ACCELERATION;
+         yAcceleration -= Player.ACCELERATION;
       }
       if (dIsPressed) {
-         xVel += Player.ACCELERATION;
+         xAcceleration += Player.ACCELERATION;
       }
 
-      if (xVel === 0 && yVel === 0) {
+      if (xAcceleration === 0 && yAcceleration === 0) {
          this.acceleration = null;
          this.isMoving = false;
       } else {
          this.terminalVelocity = Player.TERMINAL_VELOCITY;
-         const velocity = new Point(xVel, yVel).convertToVector();
-         this.acceleration = velocity;
+         const acceleration = new Point(xAcceleration, yAcceleration).convertToVector();
+         this.acceleration = acceleration;
          this.isMoving = true;
       }
    }

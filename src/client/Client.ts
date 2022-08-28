@@ -1,7 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import { ClientToServerEvents, EntityData, EntityType, GameDataPacket, Point, ServerToClientEvents, SETTINGS, Tile, Vector, VisibleChunkBounds } from "webgl-test-shared";
 import { connect } from "..";
-import { GameState, setGameMessage, setGameState } from "../App";
+import { GameState, setGameMessage, setGameState } from "../components/App";
 import Board from "../Board";
 import Camera from "../Camera";
 import Player from "../entities/Player";

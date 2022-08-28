@@ -1,4 +1,4 @@
-import { GameState, getGameState } from "./App";
+import { GameState, getGameState } from "./components/App";
 import { chatboxIsFocused, focusChatbox } from "./components/ChatBox";
 
 const pressedKeys: { [key: string]: boolean } = {};
