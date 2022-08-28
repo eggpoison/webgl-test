@@ -1,7 +1,7 @@
-import { SETTINGS } from "webgl-test-shared";
 import { windowHeight, windowWidth } from ".";
 import Board from "./Board";
 import Camera from "./Camera";
+import { calculateRenderPosition } from "./entities/Entity";
 import Player from "./entities/Player";
 
 let ctx: CanvasRenderingContext2D;
@@ -21,7 +21,7 @@ const getYPosInCamera = (y: number): number => {
    return Camera.position.y + window.innerHeight / 2 - y;
 }
 
-export function renderPlayerNames(frameProgress: number): void {
+export function renderPlayerNames(): void {
    // Clear the canvas
    ctx.fillStyle = "transparent";
    ctx.clearRect(0, 0, windowWidth, windowHeight);
@@ -30,15 +30,11 @@ export function renderPlayerNames(frameProgress: number): void {
       // If the entity is a player, render a nametag for it
       if (entity instanceof Player && entity !== Player.instance) {
          // Calculate the position of the text
-         let drawPosition = entity.position.copy();
+         let drawPosition = entity.renderPosition.copy();
          drawPosition.y += Player.RADIUS + NAMETAG_Y_OFFSET;
 
          // Account for frame progress
-         if (entity.velocity !== null) {
-            const frameVelocity = entity.velocity.copy();
-            frameVelocity.magnitude *= frameProgress / SETTINGS.TPS;
-            drawPosition = drawPosition.add(frameVelocity.convertToPoint());
-         }
+         drawPosition = calculateRenderPosition(drawPosition, entity.velocity);
 
          // Calculate position in camera
          const cameraX = getXPosInCamera(drawPosition.x);

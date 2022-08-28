@@ -1,4 +1,4 @@
-import { EntityData, EntityType, Point, SETTINGS, Tile, TILE_TYPE_INFO_RECORD, Vector } from "webgl-test-shared";
+import { EntityData, EntityType, ENTITY_INFO_RECORD, Hitbox, Point, SETTINGS, Tile, TILE_TYPE_INFO_RECORD, Vector } from "webgl-test-shared";
 import Board from "../Board";
 import { drawCircle } from "../webgl";
 
@@ -39,8 +39,39 @@ export function sortRenderParts(unsortedRenderParts: ReadonlyArray<RenderPart>):
    return sortedRenderParts;
 }
 
+let frameProgress: number;
+
+export function setFrameProgress(newFrameProgress: number): void {
+   frameProgress = newFrameProgress;
+}
+
+export function calculateRenderPosition(position: Point, velocity: Vector | null): Point {
+   let entityRenderPosition = position.copy();
+   
+   // Account for frame progress
+   if (velocity !== null) {
+      const frameVelocity = velocity.copy();
+      frameVelocity.magnitude *= frameProgress / SETTINGS.TPS;
+      
+      const framePoint = frameVelocity.convertToPoint();
+      entityRenderPosition = entityRenderPosition.add(framePoint);
+   }
+
+   return entityRenderPosition;
+}
+
+export function calculateEntityRenderPositions(): void {
+   for (const entity of Object.values(Board.entities)) {
+      entity.renderPosition = calculateRenderPosition(entity.position, entity.velocity);
+   }
+}
+
 abstract class Entity {
    public readonly id: number;
+
+   public readonly type: EntityType;
+
+   public readonly hitbox: Hitbox;
 
    /** Position of the entity */
    public position: Point;
@@ -48,6 +79,9 @@ abstract class Entity {
    public velocity: Vector | null = null;
    /** Acceleration of the entity */
    public acceleration: Vector | null = null;
+
+   /** Estimated position of the entity during the current frame */
+   public renderPosition: Point;
 
    /** Direction the entity is facing (radians) */
    public rotation: number;
@@ -59,7 +93,7 @@ abstract class Entity {
 
    public isMoving: boolean = true;
 
-   constructor(id: number, position: Point, velocity: Vector | null, acceleration: Vector | null, terminalVelocity: number, rotation: number) {
+   constructor(id: number, type: EntityType, position: Point, velocity: Vector | null, acceleration: Vector | null, terminalVelocity: number, rotation: number) {
       this.id = id;
       
       this.position = position;
@@ -67,6 +101,11 @@ abstract class Entity {
       this.acceleration = acceleration;
       this.terminalVelocity = terminalVelocity;
       this.rotation = rotation;
+
+      this.renderPosition = position;
+
+      this.type = type;
+      this.hitbox = ENTITY_INFO_RECORD[this.type].hitbox;
    }
 
    public tick(): void {

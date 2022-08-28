@@ -1,6 +1,7 @@
 import { Point, SETTINGS, VisibleChunkBounds } from "webgl-test-shared";
 import { halfWindowHeight, halfWindowWidth, windowHeight, windowWidth } from ".";
 import Client from "./client/Client";
+import { calculateEntityRenderPositions, calculateRenderPosition } from "./entities/Entity";
 import Player from "./entities/Player";
 
 abstract class Camera {
@@ -37,21 +38,9 @@ abstract class Camera {
       return this.visibleChunkBounds;
    }
 
-   public static updateCameraPosition(frameProgress: number): void {
+   public static updateCameraPosition(): void {
       // Predict where the player is
-      const previousFramePlayerPos = Player.instance.position;
-
-      let predictedPlayerPos: Point;
-      if (Player.instance.velocity === null) {
-         predictedPlayerPos = previousFramePlayerPos;
-      } else {
-         const playerVelocity = Player.instance.velocity.copy();
-         playerVelocity.magnitude *= frameProgress / SETTINGS.TPS;
-
-         predictedPlayerPos = previousFramePlayerPos.add(playerVelocity.convertToPoint());
-      }
-
-      this.position = new Point(predictedPlayerPos.x, predictedPlayerPos.y);
+      this.position = Player.instance.renderPosition.copy();
    }
 
    public static getXPositionInScreen(x: number): number {

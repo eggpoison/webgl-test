@@ -55,7 +55,7 @@ class Player extends Entity {
    protected readonly renderParts: ReadonlyArray<RenderPart> = Player.RENDER_PARTS;
 
    constructor(id: number, position: Point, velocity: Vector | null, acceleration: Vector | null, terminalVelocity: number, rotation: number, displayName: string) {
-      super(id, position, velocity, acceleration, terminalVelocity, rotation);
+      super(id, "player", position, velocity, acceleration, terminalVelocity, rotation);
 
       this.displayName = displayName;
 

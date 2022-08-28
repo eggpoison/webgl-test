@@ -5,6 +5,8 @@ import { renderPlayerNames } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/ChatBox";
 import { Point, randInt, SETTINGS } from "webgl-test-shared";
+import { calculateEntityRenderPositions, setFrameProgress } from "./entities/Entity";
+import { renderEntities } from "./entity-rendering";
 
 abstract class Game {
    public static isRunning: boolean = false;
@@ -39,12 +41,16 @@ abstract class Game {
     * @param frameProgress How far the game is into the current frame (0 = frame just started, 0.99 means frame is about to end)
     */
    private static render(frameProgress: number): void {
+      setFrameProgress(frameProgress);
+      calculateEntityRenderPositions();
+
       // Update the camera
-      Camera.updateCameraPosition(frameProgress);
+      Camera.updateCameraPosition();
       Camera.updateVisibleChunkBounds();
 
-      renderPlayerNames(frameProgress);
-      Board.render(frameProgress);
+      renderPlayerNames();
+      Board.render();
+      renderEntities();
    }
 
    public static main(): Promise<void> {

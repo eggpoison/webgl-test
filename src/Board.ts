@@ -118,13 +118,12 @@ abstract class Board {
       }
    }
 
-   public static render(frameProgress: number): void {
+   public static render(): void {
       gl.clearColor(1, 1, 1, 1);
       gl.clear(gl.COLOR_BUFFER_BIT);
 
       this.renderTiles();
       this.drawBorder();
-      this.renderEntities(frameProgress);
    }
 
    private static renderTiles(): void {
@@ -381,13 +380,6 @@ abstract class Board {
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 
       gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 2);
-   }
-
-   private static renderEntities(frameProgress: number): void {
-      renderEntities(frameProgress);
-      // for (const entity of Object.values(this.entities)) {
-      //    entity.render(frameProgress);
-      // }
    }
 
    public static addEntity(entity: Entity): void {

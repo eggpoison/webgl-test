@@ -1,4 +1,4 @@
-import { Point } from "webgl-test-shared";
+import { Point, Vector } from "webgl-test-shared";
 import Entity, { RenderPart, sortRenderParts } from "./Entity";
 
 class Cow extends Entity {
@@ -28,6 +28,10 @@ class Cow extends Entity {
          zIndex: 1
       }
    ]);
+
+   constructor(id: number, position: Point, velocity: Vector | null, acceleration: Vector | null, terminalVelocity: number, rotation: number, displayName: string) {
+      super(id, "cow", position, velocity, acceleration, terminalVelocity, rotation);
+   }
 
    /*
    topmost position: (HEAD_SIZE + BODY_HEIGHT - HEAD_OVERLAP) / 2 = 64

@@ -1,12 +1,13 @@
-import { Point, SETTINGS } from "webgl-test-shared";
+import { Point } from "webgl-test-shared";
 import { gl } from ".";
 import Board from "./Board";
 import Camera from "./Camera";
 import Entity, { ImageRenderPart } from "./entities/Entity";
+import OPTIONS from "./options";
 import { getTexture } from "./textures";
 import { createWebGLProgram, rotatePoint } from "./webgl";
 
-const vertexShaderText = `
+const entityRenderingVertexShaderText = `
 precision mediump float;
 
 attribute vec2 vertPosition;
@@ -20,7 +21,7 @@ void main() {
    fragTexCoord = vertTexCoord;
 }
 `;
-const fragmentShaderText = `
+const entityRenderingFragmentShaderText = `
 precision mediump float;
  
 uniform sampler2D sampler;
@@ -32,22 +33,29 @@ void main() {
 }
 `;
 
+const hitboxVertexShaderText = `
+precision mediump float;
+
+attribute vec2 vertPosition;
+
+void main() {
+   gl_Position = vec4(vertPosition, 0.0, 1.0);   
+}
+`;
+const hitboxFragmentShaderText = `
+precision mediump float;
+
+void main() {
+   gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);   
+}
+`;
+
 let entityRenderingProgram: WebGLProgram;
+let hitboxProgram: WebGLProgram;
 
-const calculateImageRenderPartVertices = (entity: Entity, renderPart: ImageRenderPart, frameProgress: number): Array<number> => {
-   let renderPartDrawPosition = entity.position.copy();
-   let entityPosition = entity.position.copy();
-      
-   // Account for frame progress
-   if (entity.velocity !== null) {
-      const frameVelocity = entity.velocity.copy();
-      frameVelocity.magnitude *= frameProgress / SETTINGS.TPS;
-      
-      const framePoint = frameVelocity.convertToPoint();
-      renderPartDrawPosition = renderPartDrawPosition.add(framePoint);
-      entityPosition = entityPosition.add(framePoint);
-   }
-
+const calculateImageRenderPartVertices = (entity: Entity, renderPart: ImageRenderPart): Array<number> => {
+   let renderPartPosition = entity.renderPosition.copy();
+   
    // Add the offset
    if (typeof renderPart.offset !== "undefined") {
       let offset: Point;
@@ -57,21 +65,21 @@ const calculateImageRenderPartVertices = (entity: Entity, renderPart: ImageRende
          offset = renderPart.offset;
       }
 
-      renderPartDrawPosition = renderPartDrawPosition.add(offset);
+      renderPartPosition = renderPartPosition.add(offset);
    }
 
    // Calculate the positions of the corners
-   let topLeft = new Point(renderPartDrawPosition.x - renderPart.width / 2, renderPartDrawPosition.y + renderPart.height / 2);
-   let topRight = new Point(renderPartDrawPosition.x + renderPart.width / 2, renderPartDrawPosition.y + renderPart.height / 2);
-   let bottomLeft = new Point(renderPartDrawPosition.x - renderPart.width / 2, renderPartDrawPosition.y - renderPart.height / 2);
-   let bottomRight = new Point(renderPartDrawPosition.x + renderPart.width / 2, renderPartDrawPosition.y - renderPart.height / 2);
+   let topLeft = new Point(renderPartPosition.x - renderPart.width / 2, renderPartPosition.y + renderPart.height / 2);
+   let topRight = new Point(renderPartPosition.x + renderPart.width / 2, renderPartPosition.y + renderPart.height / 2);
+   let bottomLeft = new Point(renderPartPosition.x - renderPart.width / 2, renderPartPosition.y - renderPart.height / 2);
+   let bottomRight = new Point(renderPartPosition.x + renderPart.width / 2, renderPartPosition.y - renderPart.height / 2);
    
    // Rotate the corners
    const rotation = -entity.rotation + Math.PI/2;
-   topLeft = rotatePoint(topLeft, entityPosition, rotation);
-   topRight = rotatePoint(topRight, entityPosition, rotation);
-   bottomLeft = rotatePoint(bottomLeft, entityPosition, rotation);
-   bottomRight = rotatePoint(bottomRight, entityPosition, rotation);
+   topLeft = rotatePoint(topLeft, entity.renderPosition, rotation);
+   topRight = rotatePoint(topRight, entity.renderPosition, rotation);
+   bottomLeft = rotatePoint(bottomLeft, entity.renderPosition, rotation);
+   bottomRight = rotatePoint(bottomRight, entity.renderPosition, rotation);
 
    // Convert the corners to screen space
    topLeft = new Point(Camera.getXPositionInScreen(topLeft.x), Camera.getYPositionInScreen(topLeft.y));
@@ -90,10 +98,11 @@ const calculateImageRenderPartVertices = (entity: Entity, renderPart: ImageRende
 }
 
 export function createEntityShaders(): void {
-   entityRenderingProgram = createWebGLProgram(vertexShaderText, fragmentShaderText);
+   entityRenderingProgram = createWebGLProgram(entityRenderingVertexShaderText, entityRenderingFragmentShaderText);
+   hitboxProgram = createWebGLProgram(hitboxVertexShaderText, hitboxFragmentShaderText);
 }
 
-export function renderEntities(frameProgress: number): void {
+export function renderEntities(): void {
    // Sort the render parts into their textures
    const groupedRenderParts: { [textureSrc: string]: Array<[Entity, ImageRenderPart]> } = {};
    for (const entity of Object.values(Board.entities)) {
@@ -118,7 +127,7 @@ export function renderEntities(frameProgress: number): void {
    for (const [textureSrc, entities] of Object.entries(groupedRenderParts)) {
       const vertices = new Array<number>();
       for (const [entity, renderPart] of entities) {
-         const renderPartVertices = calculateImageRenderPartVertices(entity, renderPart, frameProgress);
+         const renderPartVertices = calculateImageRenderPartVertices(entity, renderPart);
 
          vertices.push(...renderPartVertices);
       }
@@ -162,4 +171,68 @@ export function renderEntities(frameProgress: number): void {
 
    gl.disable(gl.BLEND);
    gl.blendFunc(gl.ONE, gl.ZERO);
+
+   if (OPTIONS.showEntityHitboxes) {
+      renderEntityHitboxes();
+   }
+}
+
+const renderEntityHitboxes = (): void => {
+   gl.useProgram(hitboxProgram);
+
+   for (const entity of Object.values(Board.entities)) {
+      const vertices = new Array<number>();
+      
+      switch (entity.hitbox.type) {
+         case "rectangular": {
+            const x1 = entity.renderPosition.x - entity.hitbox.width / 2;
+            const x2 = entity.renderPosition.x + entity.hitbox.width / 2;
+            const y1 = entity.renderPosition.y - entity.hitbox.height / 2;
+            const y2 = entity.renderPosition.y + entity.hitbox.height / 2;
+
+            const screenX1 = Camera.getXPositionInScreen(x1);
+            const screenX2 = Camera.getXPositionInScreen(x2);
+            const screenY1 = Camera.getYPositionInScreen(y1);
+            const screenY2 = Camera.getYPositionInScreen(y2);
+
+            vertices.push(
+               screenX1, screenY1,
+               screenX2, screenY1,
+               screenX2, screenY2,
+               screenX1, screenY2
+            );
+            break;
+         }
+         case "circular": {
+            const CIRCLE_VERTEX_COUNT = 10;
+
+            const step = 2 * Math.PI / CIRCLE_VERTEX_COUNT;
+         
+            // Add the outer vertices
+            for (let radians = 0, n = 0; n <= CIRCLE_VERTEX_COUNT; radians += step, n++) {
+               // Trig shenanigans to get x and y coords
+               const worldX = Math.cos(radians) * entity.hitbox.radius + entity.renderPosition.x;
+               const worldY = Math.sin(radians) * entity.hitbox.radius + entity.renderPosition.y;
+               
+               const screenX = Camera.getXPositionInScreen(worldX);
+               const screenY = Camera.getYPositionInScreen(worldY);
+               
+               vertices.push(screenX, screenY);
+            }
+
+            break;
+         }
+      }
+
+      const buffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+
+      const positionAttribLocation = gl.getAttribLocation(hitboxProgram, "vertPosition");
+      gl.vertexAttribPointer(positionAttribLocation, 2, gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
+
+      gl.enableVertexAttribArray(positionAttribLocation);
+
+      gl.drawArrays(gl.LINE_LOOP, 0, vertices.length / 2);
+   }
 }
