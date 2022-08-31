@@ -5,6 +5,7 @@ import { Tile, SETTINGS, } from "webgl-test-shared";
 import Camera from "./Camera";
 import { TILE_TYPE_RENDER_INFO_RECORD } from "./tile-type-render-info";
 import { createWebGLProgram } from "./webgl";
+import Chunk from "./Chunk";
 
 // 
 // Solid Tile Shaders
@@ -93,6 +94,8 @@ type TileVertexCoordinates = [{ [key: number]: number }, { [key: number]: number
 abstract class Board {
    private static tiles: Array<Array<Tile>>;
 
+   private static chunks: Array<Array<Chunk>>;
+
    public static entities: Record<number, Entity> = {};
 
    private static solidTileProgram: WebGLProgram;
@@ -105,10 +108,29 @@ abstract class Board {
       this.solidTileProgram = createWebGLProgram(solidTileVertexShaderText, solidTileFragmentShaderText);
       this.liquidTileProgram = createWebGLProgram(liquidTileVertexShaderText, liquidTileFragmentShaderText);
       this.borderTileProgram = createWebGLProgram(borderVertexShaderText, borderFragmentShaderText);
+
+      this.chunks = this.createChunkArray();
+   }
+
+   private static createChunkArray(): Array<Array<Chunk>> {
+      const chunks = new Array<Array<Chunk>>();
+
+      for (let x = 0; x < SETTINGS.BOARD_SIZE; x++) {
+         chunks[x] = new Array<Chunk>();
+         for (let y = 0; y < SETTINGS.BOARD_SIZE; y++) {
+            chunks[x][y] = new Chunk(x, y);
+         }
+      }
+
+      return chunks;
    }
 
    public static getTile(x: number, y: number): Tile {
       return this.tiles[x][y];
+   }
+
+   public static getChunk(x: number, y: number): Chunk {
+      return this.chunks[x][y];
    }
 
    public static update(): void {
