@@ -403,8 +403,17 @@ abstract class Board {
       gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 2);
    }
 
-   public static addEntity(entity: Entity): void {
+   public static addEntity(entity: Entity, chunk?: Chunk): void {
       this.entities[entity.id] = entity;
+
+      if (typeof chunk !== "undefined") {
+         chunk.addEntity(entity);
+         entity.chunk = chunk;
+      } else {
+         const chunk = entity.getChunk();
+         chunk.addEntity(entity);
+         entity.chunk = chunk;
+      }
    }
 
    public static removeEntity(entity: Entity): void {

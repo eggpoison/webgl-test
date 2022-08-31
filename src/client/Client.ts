@@ -101,10 +101,12 @@ abstract class Client {
       const velocity = entityData.velocity !== null ? Vector.unpackage(entityData.velocity) : null;
       const acceleration = entityData.acceleration !== null ? Vector.unpackage(entityData.acceleration) : null;
 
+      const chunk = Board.getChunk(...entityData.chunkCoords);
+
       // Create the entity
       const entityClass = ENTITY_CLASS_RECORD[entityData.type]();
       const entity = new entityClass(entityData.id, position, velocity, acceleration, entityData.terminalVelocity, entityData.rotation, ...entityData.clientArgs);
-      Board.addEntity(entity);
+      Board.addEntity(entity, chunk);
    }
 
    /**

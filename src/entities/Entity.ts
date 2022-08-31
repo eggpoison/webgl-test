@@ -1,5 +1,6 @@
 import { CircularHitbox, EntityData, EntityType, ENTITY_INFO_RECORD, Hitbox, Point, RectangularHitbox, rotatePoint, SETTINGS, Tile, TILE_TYPE_INFO_RECORD, Vector } from "webgl-test-shared";
 import Board from "../Board";
+import Chunk from "../Chunk";
 
 interface BaseRenderPart {
    readonly type: string;
@@ -165,6 +166,8 @@ abstract class Entity {
    protected readonly abstract renderParts: ReadonlyArray<RenderPart>;
 
    public isMoving: boolean = true;
+
+   public chunk!: Chunk;
 
    constructor(id: number, type: EntityType, position: Point, velocity: Vector | null, acceleration: Vector | null, terminalVelocity: number, rotation: number) {
       this.id = id;
@@ -339,6 +342,12 @@ abstract class Entity {
       return Board.getTile(tileX, tileY);
    }
 
+   public getChunk(): Chunk {
+      const x = Math.floor(this.position.x / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE);
+      const y = Math.floor(this.position.y / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE);
+      return Board.getChunk(x, y);
+   }
+
    public getRenderParts(): ReadonlyArray<RenderPart> {
       return this.renderParts;
    }
@@ -349,6 +358,13 @@ abstract class Entity {
       this.acceleration = entityData.acceleration !== null ? Vector.unpackage(entityData.acceleration) : null;
       this.terminalVelocity = entityData.terminalVelocity;
       this.rotation = entityData.rotation;
+
+      const newChunk = Board.getChunk(...entityData.chunkCoords);
+      if (newChunk !== this.chunk) {
+         this.chunk.removeEntity(this);
+         newChunk.addEntity(this);
+         this.chunk = newChunk;
+      }
    }
 
    private handleEntityCollisions(hitboxBounds: [number, number, number, number]): void {
