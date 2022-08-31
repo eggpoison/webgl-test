@@ -1,6 +1,5 @@
-import { EntityData, EntityType, ENTITY_INFO_RECORD, Hitbox, Point, SETTINGS, Tile, TILE_TYPE_INFO_RECORD, Vector } from "webgl-test-shared";
+import { EntityData, EntityType, ENTITY_INFO_RECORD, Hitbox, Point, rotatePoint, SETTINGS, Tile, TILE_TYPE_INFO_RECORD, Vector } from "webgl-test-shared";
 import Board from "../Board";
-import { drawCircle } from "../webgl";
 
 interface BaseRenderPart {
    readonly type: string;
@@ -110,15 +109,12 @@ abstract class Entity {
 
    public tick(): void {
       this.applyPhysics();
+
+      this.resolveWallCollisions();
    }
 
    private applyPhysics(): void {
       const tile = this.findCurrentTile();
-      if (typeof tile === "undefined") {
-         console.log(this);
-         throw new Error("Couldnt' find a tile for an entity!");
-      }
-
       const tileTypeInfo = TILE_TYPE_INFO_RECORD[tile.type];
 
       const terminalVelocity = this.terminalVelocity * (tileTypeInfo.moveSpeedMultiplier || 1);
@@ -154,10 +150,10 @@ abstract class Entity {
       }
 
       // Restrict the entity's velocity to their terminal velocity
-      if (this.velocity !== null) {
-         const mach = this.velocity.magnitude / terminalVelocity;
+      if (this.velocity !== null && terminalVelocity > 0) {
+         const mach = Math.abs(this.velocity.magnitude / terminalVelocity);
          if (mach > 1) {
-            this.velocity.magnitude /= 1 + mach / SETTINGS.TPS;
+            this.velocity.magnitude /= 1 + (mach - 1) / SETTINGS.TPS;
          }
       }
 
@@ -168,30 +164,94 @@ abstract class Entity {
          
          this.position = this.position.add(velocity.convertToPoint());
       }
+   }
 
-      // // Apply status effects
-      // if (typeof tileInfo.effects?.statusEffectOnWalk !== "undefined") {
-      //    const { type, duration } = tileInfo.effects.statusEffectOnWalk;
+   private stopXVelocity(): void {
+      if (this.velocity !== null) {
+         const pointVelocity = this.velocity.convertToPoint();
+         pointVelocity.x = 0;
+         this.velocity = pointVelocity.convertToVector();
+      }
+   }
 
-      //    const statusEffectComponent = this.getEntity().getComponent(StatusEffectComponent);
-      //    if (statusEffectComponent !== null) {
-      //       statusEffectComponent.applyStatusEffect(type, duration);
-      //    }
-      // }
+   private stopYVelocity(): void {
+      if (this.velocity !== null) {
+         // Stop y velocity
+         const pointVelocity = this.velocity.convertToPoint();
+         pointVelocity.y = 0;
+         this.velocity = pointVelocity.convertToVector();
+      }
+   }
 
-      // if (this.knockbackTime > 0) {
-      //    // Add knockback
-      //    this.position = this.position.add(this.knockback);
+   private calculateHitboxBounds(): [minX: number, maxX: number, minY: number, maxY: number] {
+      let minX: number;
+      let maxX: number;
+      let minY: number;
+      let maxY: number;
 
-      //    this.knockbackTime -= 1 / SETTINGS.tps;
-      // }
+      switch (this.hitbox.type) {
+         case "circular": {
+            minX = this.position.x - this.hitbox.radius;
+            maxX = this.position.x + this.hitbox.radius;
+            minY = this.position.y - this.hitbox.radius;
+            maxY = this.position.y + this.hitbox.radius;
 
-      // const hitboxComponent = this.getEntity().getComponent(HitboxComponent);
-      // if (hitboxComponent !== null) {
-      //    // If the entity is intersecting with a wall tile, move it out of the collision
-      //    const tileCollisions = this.getTileCollisions();
-      //    if (tileCollisions.length > 0) this.resolveTileCollisions(tileCollisions);
-      // }
+            break;
+         }
+         case "rectangular": {
+            const x1 = this.position.x - this.hitbox.width / 2;
+            const x2 = this.position.x + this.hitbox.width / 2;
+            const y1 = this.position.y - this.hitbox.height / 2;
+            const y2 = this.position.y + this.hitbox.height / 2;
+
+            let topLeft = new Point(x1, y2);
+            let topRight = new Point(x2, y2);
+            let bottomRight = new Point(x2, y1);
+            let bottomLeft = new Point(x1, y1);
+
+            // Rotate the points to match the entity's rotation
+            const rotation = -this.rotation + Math.PI/2;
+            topLeft = rotatePoint(topLeft, this.renderPosition, rotation);
+            topRight = rotatePoint(topRight, this.renderPosition, rotation);
+            bottomRight = rotatePoint(bottomRight, this.renderPosition, rotation);
+            bottomLeft = rotatePoint(bottomLeft, this.renderPosition, rotation);
+
+            minX = Math.min(topLeft.x, topRight.x, bottomRight.x, bottomLeft.x);
+            maxX = Math.max(topLeft.x, topRight.x, bottomRight.x, bottomLeft.x);
+            minY = Math.min(topLeft.y, topRight.y, bottomRight.y, bottomLeft.y);
+            maxY = Math.max(topLeft.y, topRight.y, bottomRight.y, bottomLeft.y);
+
+            break;
+         }
+      }
+
+      return [minX, maxX, minY, maxY];
+   }
+
+   private resolveWallCollisions(): void {
+      const [minX, maxX, minY, maxY] = this.calculateHitboxBounds();
+
+      const boardUnits = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE;
+
+      // Left wall
+      if (minX < 0) {
+         this.stopXVelocity();
+         this.position.x -= minX;
+      // Right wall
+      } else if (maxX > boardUnits) {
+         this.position.x -= maxX - boardUnits;
+         this.stopXVelocity();
+      }
+
+      // Bottom wall
+      if (minY < 0) {
+         this.position.y -= minY;
+         this.stopYVelocity();
+      // Top wall
+      } else if (maxY > boardUnits) {
+         this.position.y -= maxY - boardUnits;
+         this.stopYVelocity();
+      }
    }
 
    private findCurrentTile(): Tile {
@@ -200,32 +260,8 @@ abstract class Entity {
       return Board.getTile(tileX, tileY);
    }
 
-   public render(frameProgress: number): void {
-      for (const renderPart of this.renderParts) {
-         this.drawRenderPart(renderPart, frameProgress);
-      }
-   }
-
    public getRenderParts(): ReadonlyArray<RenderPart> {
       return this.renderParts;
-   }
-
-   private drawRenderPart(part: RenderPart, frameProgress: number): void {
-      let drawPosition = this.position.copy();
-      
-      // Account for frame progress
-      if (this.velocity !== null) {
-         const frameVelocity = this.velocity.copy();
-         frameVelocity.magnitude *= frameProgress / SETTINGS.TPS;
-         drawPosition = drawPosition.add(frameVelocity.convertToPoint());
-      }
-   
-      switch (part.type) {
-         case "circle": {
-            drawCircle(drawPosition.x, drawPosition.y, part.radius, part.rgba);
-            break;
-         }
-      }
    }
 
    public updateFromData(entityData: EntityData<EntityType>): void {

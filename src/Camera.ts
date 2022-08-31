@@ -1,7 +1,6 @@
 import { Point, SETTINGS, VisibleChunkBounds } from "webgl-test-shared";
 import { halfWindowHeight, halfWindowWidth, windowHeight, windowWidth } from ".";
 import Client from "./client/Client";
-import { calculateEntityRenderPositions, calculateRenderPosition } from "./entities/Entity";
 import Player from "./entities/Player";
 
 abstract class Camera {

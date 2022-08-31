@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { ClientToServerEvents, EntityData, EntityType, GameDataPacket, Point, ServerToClientEvents, SETTINGS, Tile, Vector, VisibleChunkBounds } from "webgl-test-shared";
+import { ClientToServerEvents, EntityData, EntityType, GameDataPacket, PlayerDataPacket, Point, ServerToClientEvents, SETTINGS, Tile, Vector, VisibleChunkBounds } from "webgl-test-shared";
 import { connect } from "..";
 import { GameState, setGameMessage, setGameState } from "../components/App";
 import Board from "../Board";
@@ -126,14 +126,16 @@ abstract class Client {
       }
    }
 
-   public static sendMovementPacket(movementHash: number): void {
-      if (this.socket !== null) {
-         const playerPosition = Player.instance.position;
-         const positionData: [number, number] = [playerPosition.x, playerPosition.y];
-         
-         // Send the movement packet to the server
-         this.socket.emit("playerMovement", positionData, movementHash);
-      }
+   public static sendPlayerDataPacket(): void {
+      const packet: PlayerDataPacket = {
+         position: Player.instance.position.package(),
+         velocity: Player.instance.velocity?.package() || null,
+         acceleration: Player.instance.acceleration?.package() || null,
+         terminalVelocity: Player.instance.terminalVelocity,
+         rotation: Player.instance.rotation
+      };
+
+      this.socket?.emit("playerDataPacket", packet);
    }
 
    public static sendVisibleChunkBoundsPacket(visibleChunkBounds: VisibleChunkBounds): void {

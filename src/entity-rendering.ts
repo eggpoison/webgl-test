@@ -1,11 +1,11 @@
-import { Point } from "webgl-test-shared";
+import { Point, rotatePoint } from "webgl-test-shared";
 import { gl } from ".";
 import Board from "./Board";
 import Camera from "./Camera";
 import Entity, { ImageRenderPart } from "./entities/Entity";
 import OPTIONS from "./options";
 import { getTexture } from "./textures";
-import { createWebGLProgram, rotatePoint } from "./webgl";
+import { createWebGLProgram } from "./webgl";
 
 const entityRenderingVertexShaderText = `
 precision mediump float;
@@ -190,16 +190,28 @@ const renderEntityHitboxes = (): void => {
             const y1 = entity.renderPosition.y - entity.hitbox.height / 2;
             const y2 = entity.renderPosition.y + entity.hitbox.height / 2;
 
-            const screenX1 = Camera.getXPositionInScreen(x1);
-            const screenX2 = Camera.getXPositionInScreen(x2);
-            const screenY1 = Camera.getYPositionInScreen(y1);
-            const screenY2 = Camera.getYPositionInScreen(y2);
+            let topLeft = new Point(x1, y2);
+            let topRight = new Point(x2, y2);
+            let bottomRight = new Point(x2, y1);
+            let bottomLeft = new Point(x1, y1);
+
+            // Rotate the points to match the entity's rotation
+            const rotation = -entity.rotation + Math.PI/2;
+            topLeft = rotatePoint(topLeft, entity.renderPosition, rotation);
+            topRight = rotatePoint(topRight, entity.renderPosition, rotation);
+            bottomRight = rotatePoint(bottomRight, entity.renderPosition, rotation);
+            bottomLeft = rotatePoint(bottomLeft, entity.renderPosition, rotation);
+
+            topLeft = new Point(Camera.getXPositionInScreen(topLeft.x), Camera.getYPositionInScreen(topLeft.y));
+            topRight = new Point(Camera.getXPositionInScreen(topRight.x), Camera.getYPositionInScreen(topRight.y));
+            bottomRight = new Point(Camera.getXPositionInScreen(bottomRight.x), Camera.getYPositionInScreen(bottomRight.y));
+            bottomLeft = new Point(Camera.getXPositionInScreen(bottomLeft.x), Camera.getYPositionInScreen(bottomLeft.y));
 
             vertices.push(
-               screenX1, screenY1,
-               screenX2, screenY1,
-               screenX2, screenY2,
-               screenX1, screenY2
+               bottomLeft.x, bottomLeft.y,
+               bottomRight.x, bottomRight.y,
+               topRight.x, topRight.y,
+               topLeft.x, topLeft.y
             );
             break;
          }

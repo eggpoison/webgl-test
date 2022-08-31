@@ -1,11 +1,10 @@
 import { gl } from ".";
 import Entity from "./entities/Entity";
 import { getTexture } from "./textures";
-import { Tile, TileInfo, SETTINGS, } from "webgl-test-shared";
+import { Tile, SETTINGS, } from "webgl-test-shared";
 import Camera from "./Camera";
 import { TILE_TYPE_RENDER_INFO_RECORD } from "./tile-type-render-info";
 import { createWebGLProgram } from "./webgl";
-import { renderEntities } from "./entity-rendering";
 
 // 
 // Solid Tile Shaders
@@ -108,7 +107,7 @@ abstract class Board {
       this.borderTileProgram = createWebGLProgram(borderVertexShaderText, borderFragmentShaderText);
    }
 
-   public static getTile(x: number, y: number): TileInfo {
+   public static getTile(x: number, y: number): Tile {
       return this.tiles[x][y];
    }
 

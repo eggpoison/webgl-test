@@ -7,6 +7,7 @@ import { updateSpamFilter } from "./components/ChatBox";
 import { Point, randInt, SETTINGS } from "webgl-test-shared";
 import { calculateEntityRenderPositions, setFrameProgress } from "./entities/Entity";
 import { renderEntities } from "./entity-rendering";
+import Client from "./client/Client";
 
 abstract class Game {
    public static isRunning: boolean = false;
@@ -34,6 +35,7 @@ abstract class Game {
    private static update(): void {
       updateSpamFilter();
       Board.update();
+      Client.sendPlayerDataPacket();
    }
 
    /**
