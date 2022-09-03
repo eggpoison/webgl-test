@@ -41,6 +41,7 @@
    width: 15rem;
    height: 2.5rem;
    cursor: pointer;
+   outline: none;
 }
 #settings button:hover {
    background-color: #bbb;

@@ -188,8 +188,8 @@ abstract class Entity {
       this.applyPhysics();
 
       const hitboxBounds = this.calculateHitboxBounds();
-      this.resolveWallCollisions(hitboxBounds);
       this.handleEntityCollisions(hitboxBounds);
+      this.resolveWallCollisions(hitboxBounds);
    }
 
    public addVelocity(magnitude: number, direction: number): void {
