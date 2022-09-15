@@ -2,11 +2,15 @@ import { Point, rotatePoint } from "webgl-test-shared";
 import { gl } from ".";
 import Board from "./Board";
 import Camera from "./Camera";
-import Entity, { ImageRenderPart } from "./entities/Entity";
+import CLIENT_SETTINGS from "./client-settings";
+import Entity, { CircleRenderPart, ImageRenderPart } from "./entities/Entity";
 import OPTIONS from "./options";
 import { getTexture } from "./textures";
 import { createWebGLProgram } from "./webgl";
 
+// 
+// Image shaders
+// 
 const entityRenderingVertexShaderText = `
 precision mediump float;
 
@@ -33,6 +37,35 @@ void main() {
 }
 `;
 
+// 
+// Circle shaders
+// 
+const circleVertexShaderText = `
+precision mediump float;
+
+attribute vec2 vertPosition;
+attribute vec4 vertColour;
+
+varying vec4 fragColour;
+
+void main() {
+   fragColour = vertColour;
+   gl_Position = vec4(vertPosition, 0, 1);
+}
+`;
+const circleFragmentShaderText = `
+precision mediump float;
+
+varying vec4 fragColour;
+
+void main() {
+   gl_FragColor = fragColour;
+}
+`;
+
+// 
+// Hitbox shaders
+// 
 const hitboxVertexShaderText = `
 precision mediump float;
 
@@ -52,6 +85,7 @@ void main() {
 
 let entityRenderingProgram: WebGLProgram;
 let hitboxProgram: WebGLProgram;
+let circleProgram: WebGLProgram;
 
 const calculateImageRenderPartVertices = (entity: Entity, renderPart: ImageRenderPart): Array<number> => {
    let renderPartPosition = entity.renderPosition.copy();
@@ -100,21 +134,55 @@ const calculateImageRenderPartVertices = (entity: Entity, renderPart: ImageRende
 export function createEntityShaders(): void {
    entityRenderingProgram = createWebGLProgram(entityRenderingVertexShaderText, entityRenderingFragmentShaderText);
    hitboxProgram = createWebGLProgram(hitboxVertexShaderText, hitboxFragmentShaderText);
+   circleProgram = createWebGLProgram(circleVertexShaderText, circleFragmentShaderText);
+}
+
+const calculateCircleVertices = (position: Point, radius: number, rgba: [number, number, number, number]): Array<number> => {
+   const triangleVertices = new Array<number>();
+
+   // Add the center point
+   const centerX = Camera.getXPositionInScreen(position.x);
+   const centerY = Camera.getYPositionInScreen(position.y);
+   triangleVertices.push(centerX, centerY, ...rgba);
+
+   // Add the outer vertices
+   for (let n = 0; n <= CLIENT_SETTINGS.CIRCLE_DETAIL; n++) {
+      const radians = 2 * Math.PI / CLIENT_SETTINGS.CIRCLE_DETAIL * n;
+
+      // Trig shenanigans to get x and y coords
+      const worldX = Math.cos(radians) * radius + position.x;
+      const worldY = Math.sin(radians) * radius + position.y;
+      
+      const screenX = Camera.getXPositionInScreen(worldX);
+      const screenY = Camera.getYPositionInScreen(worldY);
+      
+      triangleVertices.push(screenX, screenY, ...rgba);
+   }
+
+   return triangleVertices;
 }
 
 export function renderEntities(): void {
    // Sort the render parts into their textures
    const groupedRenderParts: { [textureSrc: string]: Array<[Entity, ImageRenderPart]> } = {};
+   const circleRenderParts = new Array<[Entity, CircleRenderPart]>();
    for (const entity of Object.values(Board.entities)) {
       const renderParts = entity.getRenderParts();
 
       for (const renderPart of renderParts) {
-         if (renderPart.type === "image") {
-            // Add the render part to the record
-            if (!groupedRenderParts.hasOwnProperty(renderPart.textureSrc)) {
-               groupedRenderParts[renderPart.textureSrc] = new Array<[Entity, ImageRenderPart]>();
+         switch (renderPart.type) {
+            case "image": {
+               // Add the render part to the record
+               if (!groupedRenderParts.hasOwnProperty(renderPart.textureSrc)) {
+                  groupedRenderParts[renderPart.textureSrc] = new Array<[Entity, ImageRenderPart]>();
+               }
+               groupedRenderParts[renderPart.textureSrc].push([entity, renderPart]);
+               break;
             }
-            groupedRenderParts[renderPart.textureSrc].push([entity, renderPart]);
+            case "circle": {
+               circleRenderParts.push([entity, renderPart]);
+               break;
+            }
          }
       }
    }
@@ -128,7 +196,6 @@ export function renderEntities(): void {
       const vertices = new Array<number>();
       for (const [entity, renderPart] of entities) {
          const renderPartVertices = calculateImageRenderPartVertices(entity, renderPart);
-
          vertices.push(...renderPartVertices);
       }
 
@@ -161,7 +228,7 @@ export function renderEntities(): void {
       gl.enableVertexAttribArray(texCoordAttribLocation);
       
       // Set the texture
-      const texture = getTexture(textureSrc);
+      const texture = getTexture("entities/" + textureSrc);
       gl.bindTexture(gl.TEXTURE_2D, texture);
       gl.activeTexture(gl.TEXTURE0);
 
@@ -171,6 +238,47 @@ export function renderEntities(): void {
 
    gl.disable(gl.BLEND);
    gl.blendFunc(gl.ONE, gl.ZERO);
+
+   // 
+   // Draw circle render parts
+   // 
+   gl.useProgram(circleProgram);
+
+   // Calculate vertices
+   for (const [entity, renderPart] of circleRenderParts) {
+      const vertices = calculateCircleVertices(entity.renderPosition, renderPart.radius, renderPart.rgba);
+
+      const buffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+   
+      const positionAttribLocation = gl.getAttribLocation(circleProgram, "vertPosition");
+      const colourAttribLocation = gl.getAttribLocation(circleProgram, "vertColour");
+      
+      gl.vertexAttribPointer(
+         positionAttribLocation, // Attribute location
+         2, // Number of elements per attribute
+         gl.FLOAT, // Type of elements
+         false,
+         6 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
+         0 // Offset from the beginning of a single vertex to this attribute
+      );
+      gl.vertexAttribPointer(
+         colourAttribLocation, // Attribute location
+         4, // Number of elements per attribute
+         gl.FLOAT, // Type of elements
+         false,
+         6 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
+         2 * Float32Array.BYTES_PER_ELEMENT // Offset from the beginning of a single vertex to this attribute
+      );
+   
+      // Enable the attributes
+      gl.enableVertexAttribArray(positionAttribLocation);
+      gl.enableVertexAttribArray(colourAttribLocation);
+   
+      // Draw the tile
+      gl.drawArrays(gl.TRIANGLE_FAN, 0, CLIENT_SETTINGS.CIRCLE_DETAIL + 2);
+   }
 
    if (OPTIONS.showEntityHitboxes) {
       renderEntityHitboxes();

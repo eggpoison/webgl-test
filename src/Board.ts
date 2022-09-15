@@ -189,7 +189,7 @@ abstract class Board {
          gl.enableVertexAttribArray(texCoordAttribLocation);
          
          // Set the texture
-         const texture = getTexture(textureSource);
+         const texture = getTexture("tiles/" + textureSource);
          gl.bindTexture(gl.TEXTURE_2D, texture);
          gl.activeTexture(gl.TEXTURE0);
 

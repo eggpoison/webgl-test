@@ -1,0 +1,62 @@
+@import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;700;900&display=swap');
+
+#pause-screen {
+   position: absolute;
+   top: 0;
+   right: 0;
+   bottom: 0;
+   left: 0;
+}
+
+#pause-screen .main {
+   font-family: "Inconsolata";
+   background-color: #333;
+   padding: 0.2rem 5rem;
+   border-radius: 5px;
+   position: absolute;
+   top: 50%;
+   left: 50%;
+   transform: translate(-50%, -50%);
+   z-index: 1;
+   box-shadow: 0 0 5px 2px rgba(0, 0, 0, 0.3);
+}
+#pause-screen .main h1 {
+   color: #fff;
+   font-weight: 700;
+   margin: 0;
+   white-space: pre;
+}
+#pause-screen .main h1 span {
+   color: #bbb;
+   font-weight: 900;
+   animation: 1.75s ghostWiggle ease-in-out infinite;
+}
+#pause-screen .main h1 span.left {
+   
+}
+#pause-screen .main p {
+   color: #fff;
+   text-align: center;
+   margin: 0.5rem 0;
+}
+
+@keyframes ghostWiggle {
+   0% {
+      opacity: 0;
+   }
+   50% {
+      opacity: 1;
+   }
+   100% {
+      opacity: 0;
+   }
+}
+
+#pause-screen .bg {
+   background-color: rgba(0, 0, 0, 0.2);
+   position: absolute;
+   top: 0;
+   right: 0;
+   bottom: 0;
+   left: 0;
+}

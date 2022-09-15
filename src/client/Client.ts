@@ -38,7 +38,13 @@ abstract class Client {
          });
 
          this.socket.on("gameDataPacket", (gameDataPacket: GameDataPacket) => {
-            this.unloadGameDataPacket(gameDataPacket);
+            // Don't unload game packets when paused
+            if (!Game.isPaused) {
+               this.unloadGameDataPacket(gameDataPacket);
+               
+               // Sync the game
+               Game.isSynced = true;
+            }
          });
          
          // Check if there was an error when connecting to the server

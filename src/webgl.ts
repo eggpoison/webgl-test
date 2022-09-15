@@ -5,34 +5,9 @@ import { isDev } from "./utils";
 /** Number of triangles to create when drawing a circle */
 const CIRCLE_DETAIL = 25;
 
-const vertexShaderText = `
-precision mediump float;
-
-attribute vec2 vertPosition;
-attribute vec4 vertColour;
-
-varying vec4 fragColour;
-
-void main() {
-   fragColour = vertColour;
-   gl_Position = vec4(vertPosition, 0, 1);
-}
-`;
-
-const fragmentShaderText = `
-precision mediump float;
-
-varying vec4 fragColour;
-
-void main() {
-   gl_FragColor = fragColour;
-}
-`;
-
 let program: WebGLProgram;
 
 export function createCircleShaders(): void {
-   createWebGLProgram(vertexShaderText, fragmentShaderText);
 }
 
 /**
@@ -95,7 +70,6 @@ export function drawCircle(x: number, y: number, radius: number, rgba: [number, 
    gl.enableVertexAttribArray(colourAttribLocation);
 
    // Draw the tile
-   gl.useProgram(program);
    gl.drawArrays(gl.TRIANGLE_FAN, 0, CIRCLE_DETAIL + 2);
 }
 

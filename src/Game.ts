@@ -8,9 +8,14 @@ import { Point, randInt, SETTINGS } from "webgl-test-shared";
 import { calculateEntityRenderPositions, setFrameProgress } from "./entities/Entity";
 import { renderEntities } from "./entity-rendering";
 import Client from "./client/Client";
+import { hidePauseScreen, showPauseScreen } from "./components/App";
 
 abstract class Game {
    public static isRunning: boolean = false;
+   private static _isPaused: boolean = false;
+
+   /** If the game has recevied up-to-date game data from the server. Set to false when paused */
+   public static isSynced: boolean = true;
 
    private static lastTime: number;
    /** Amount of time the game is through the current frame */
@@ -21,7 +26,24 @@ abstract class Game {
       
       // Start the game loop
       while (this.isRunning) {
-         await this.main();
+         if (!this._isPaused && this.isSynced) {
+            await this.main();
+         } else {
+            // Stop infinite loops
+            await sleep(5);
+         }
+      }
+   }
+
+   public static get isPaused(): boolean {
+      return this._isPaused;
+   }
+   public static set isPaused(newValue: boolean) {
+      this._isPaused = newValue;
+      newValue ? showPauseScreen() : hidePauseScreen();
+
+      if (newValue) {
+         this.isSynced = false;
       }
    }
 

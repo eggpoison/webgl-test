@@ -3,6 +3,7 @@ import { loadGame } from "..";
 import Client from "../client/Client";
 import ChatBox from "./ChatBox";
 import NameInput from "./NameInput";
+import PauseScreen from "./PauseScreen";
 import Settings from "./Settings";
 
 export enum GameState {
@@ -42,10 +43,21 @@ export function fullyCloseSettings(): void {
    fullyCloseSettingsReference();
 }
 
+let showPauseScreenReference: () => void;
+export function showPauseScreen(): void {
+   showPauseScreenReference();
+}
+
+let hidePauseScreenReference: () => void;
+export function hidePauseScreen(): void {
+   hidePauseScreenReference();
+}
+
 function App() {
    const [gameState, setGameState] = useState<GameState>(GameState.nameInput);
    const [gameMessage, setGameMessage] = useState<string>("");
    const [settingsIsOpen, setSettingsIsOpen] = useState(false);
+   const [isPaused, setIsPaused] = useState(false);
    const hasLoaded = useRef<boolean>(false);
    const gameStateUpdateCallbacks = useRef<Array<() => void>>([]);
 
@@ -69,6 +81,9 @@ function App() {
 
       openSettingsReference = (): void => setSettingsIsOpen(true);
       fullyCloseSettingsReference = (): void => setSettingsIsOpen(false);
+
+      showPauseScreenReference = (): void => setIsPaused(true);
+      hidePauseScreenReference = (): void => setIsPaused(false);
    }, []);
 
    useEffect(() => {
@@ -109,8 +124,9 @@ function App() {
          <canvas id="game-canvas"></canvas>
          <canvas id="text-canvas"></canvas>
 
-      {/* Settings */}
          {settingsIsOpen ? <Settings /> : null}
+
+         {isPaused ? <PauseScreen /> : null}
       </> : null}
    </>;
 }

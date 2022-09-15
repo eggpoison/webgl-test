@@ -4,28 +4,16 @@ import { imageIsLoaded } from "./utils";
 
 let TEXTURES: { [key: string]: WebGLTexture } = {};
 
-type TextureSource = {
-   readonly folder?: string;
-   readonly src: string;
-}
-
-const TEXTURE_SOURCES: Array<TextureSource> = [
-   {
-      folder: "entities",
-      src: "cow-head.png"
-   },
-   {
-      folder: "entities",
-      src: "cow-body.png"
-   },
-   {
-      folder: "entities",
-      src: "boulder.png"
-   }
-];
+const TEXTURE_SOURCES: Array<string> = [
+   "entities/cow/cow-body-1.png",
+   "entities/cow/cow-head-1.png",
+   "entities/cow/cow-body-2.png",
+   "entities/cow/cow-head-2.png",
+   "entities/boulder.png"
+]
 
 const textureSourceIsAlreadyIncluded = (src: string): boolean => {
-   return TEXTURE_SOURCES.some(textureSource => textureSource.src === src);
+   return TEXTURE_SOURCES.includes(src);
 }
 
 export function loadTextures(): Promise<void> {
@@ -33,18 +21,14 @@ export function loadTextures(): Promise<void> {
       // Add solid tile textures
       for (const tileTypeInfo of Object.values(TILE_TYPE_RENDER_INFO_RECORD)) {
          if (!tileTypeInfo.isLiquid && !textureSourceIsAlreadyIncluded(tileTypeInfo.textureSource)) {
-            TEXTURE_SOURCES.push({
-               folder: "tiles",
-               src: tileTypeInfo.textureSource
-            });
+            TEXTURE_SOURCES.push(`tiles/${tileTypeInfo.textureSource}`);
          }
       }
 
       for (const textureSource of TEXTURE_SOURCES) {
          // Load the image
          const image = new Image();
-         const folderPath = typeof textureSource.folder !== "undefined" ? textureSource.folder + "/" : "";
-         image.src = require("./images/" + folderPath + textureSource.src);
+         image.src = require("./images/" + textureSource);
 
          // Create texture from the image once it is loaded
          await imageIsLoaded(image).then(() => {
@@ -60,7 +44,7 @@ export function loadTextures(): Promise<void> {
       
             gl.bindTexture(gl.TEXTURE_2D, null);
             
-            TEXTURES[textureSource.src] = texture;
+            TEXTURES[textureSource] = texture;
          });
       }
       
@@ -69,5 +53,8 @@ export function loadTextures(): Promise<void> {
 }
 
 export function getTexture(textureSource: string): WebGLTexture {
+   if (!TEXTURES.hasOwnProperty(textureSource)) {
+      throw new Error(`Couldn't find texture with source '${textureSource}'`);
+   }
    return TEXTURES[textureSource];
 }

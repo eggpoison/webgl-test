@@ -14,16 +14,9 @@ class Player extends Entity {
    private static readonly RENDER_PARTS: ReadonlyArray<RenderPart> = sortRenderParts([
       {
          type: "circle",
-         radius: 1,
+         radius: 32,
          rgba: [255, 0, 0, 1],
          zIndex: 1
-      },
-      {
-         type: "image",
-         width: 64,
-         height: 64,
-         textureSrc: "boulder.png",
-         zIndex: 2
       }
    ]);
 
@@ -62,6 +55,32 @@ class Player extends Entity {
    private updateMovement(wIsPressed: boolean, aIsPressed: boolean, sIsPressed: boolean, dIsPressed: boolean): void {
       let xAcceleration = 0;
       let yAcceleration = 0;
+
+      // Update rotation
+      const hash = (wIsPressed ? 1 : 0) + (aIsPressed ? 2 : 0) + (sIsPressed ? 4 : 0) + (dIsPressed ? 8 : 0)
+      let rotation!: number | null;
+      switch (hash) {
+         case 0:  rotation = null;          break;
+         case 1:  rotation = 0;             break;
+         case 2:  rotation = Math.PI * 3/2; break;
+         case 3:  rotation = Math.PI * 7/4; break;
+         case 4:  rotation = Math.PI;       break;
+         case 5:  rotation = null;          break;
+         case 6:  rotation = Math.PI * 5/4; break;
+         case 7:  rotation = Math.PI * 3/2; break;
+         case 8:  rotation = Math.PI / 2;   break;
+         case 9:  rotation = Math.PI / 4;   break;
+         case 10:  rotation = null;         break;
+         case 11: rotation = 0;             break;
+         case 12: rotation = Math.PI * 3/4; break;
+         case 13: rotation = Math.PI / 2;   break;
+         case 14: rotation = Math.PI;       break;
+         case 15: rotation = null;          break;
+      }
+
+      if (rotation !== null) {
+         this.rotation = rotation;
+      }
 
       if (wIsPressed) {
          yAcceleration += Player.ACCELERATION;

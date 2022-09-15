@@ -15,13 +15,14 @@ import "./css/index.css";
 import "./css/name-input.css";
 import "./css/chatbox.css";
 import "./css/settings.css";
+import "./css/pause-screen.css";
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 root.render(
   <React.StrictMode>
-    <App />
+      <App />
   </React.StrictMode>
 );
 
@@ -113,4 +114,11 @@ window.addEventListener("keydown", (e: KeyboardEvent) => {
    if (e.key === "Escape" && getGameState() === GameState.game) {
       settingsIsOpen() ? fullyCloseSettings() : openSettings();
    }
+});
+
+window.addEventListener("focus", () => {
+   Game.isPaused = false;
+});
+window.addEventListener("blur", () => {
+   Game.isPaused = true;
 });

@@ -53,6 +53,74 @@ export function calculateRenderPosition(position: Point, velocity: Vector | null
       const frameVelocity = velocity.copy();
       frameVelocity.magnitude *= frameProgress / SETTINGS.TPS;
       
+      // Apply the frame velocity to the entity's position
+      const framePoint = frameVelocity.convertToPoint();
+      entityRenderPosition = entityRenderPosition.add(framePoint);
+   }
+
+   return entityRenderPosition;
+}
+
+const calculateEntityRenderPosition = (entity: Entity): Point => {
+   let entityRenderPosition = entity.position.copy();
+   
+   // Account for frame progress
+   if (entity.velocity !== null) {
+      const tile = entity.findCurrentTile();
+      const tileTypeInfo = TILE_TYPE_INFO_RECORD[tile.type];
+
+      const terminalVelocity = entity.terminalVelocity * (tileTypeInfo.moveSpeedMultiplier || 1);
+
+      // 
+      // Calculate the change in position that has occurred since the start of the frame
+      // 
+      let frameVelocity = entity.velocity.copy();
+
+      // Apply acceleration
+      if (entity.acceleration !== null) {
+         const acceleration = entity.acceleration.copy();
+         acceleration.magnitude /= SETTINGS.TPS;
+
+         // Reduce acceleration due to friction
+         const friction = tileTypeInfo.friction;
+         acceleration.magnitude *= friction;
+          
+         // Apply tile speed multiplier
+         if (typeof tileTypeInfo.moveSpeedMultiplier !== "undefined") {
+            acceleration.magnitude *= tileTypeInfo.moveSpeedMultiplier;
+         }
+
+         const magnitudeBeforeAdd = frameVelocity.magnitude;
+         
+         // Add acceleration to velocity
+         frameVelocity = frameVelocity.add(acceleration);
+
+         // Don't accelerate past terminal velocity
+         if (frameVelocity.magnitude > terminalVelocity && frameVelocity.magnitude > magnitudeBeforeAdd) {
+            frameVelocity.magnitude = magnitudeBeforeAdd;
+         }
+      }
+      // Apply friction if the entity isn't accelerating
+      else { 
+         const friction = tileTypeInfo.friction * SETTINGS.GLOBAL_FRICTION_CONSTANT / SETTINGS.TPS;
+         frameVelocity.magnitude /= 1 + friction;
+      }
+
+      // Apply friction if the entity isn't accelerating
+      const friction = tileTypeInfo.friction * SETTINGS.GLOBAL_FRICTION_CONSTANT / SETTINGS.TPS;
+      frameVelocity.magnitude /= 1 + friction;
+
+      // Restrict the entity's velocity to their terminal velocity
+      if (terminalVelocity > 0) {
+         const mach = Math.abs(frameVelocity.magnitude / terminalVelocity);
+         if (mach > 1) {
+            frameVelocity.magnitude /= 1 + (mach - 1) / SETTINGS.TPS;
+         }
+      }
+
+      frameVelocity.magnitude *= frameProgress / SETTINGS.TPS;
+      
+      // Apply the frame velocity to the entity's position
       const framePoint = frameVelocity.convertToPoint();
       entityRenderPosition = entityRenderPosition.add(framePoint);
    }
@@ -62,7 +130,7 @@ export function calculateRenderPosition(position: Point, velocity: Vector | null
 
 export function calculateEntityRenderPositions(): void {
    for (const entity of Object.values(Board.entities)) {
-      entity.renderPosition = calculateRenderPosition(entity.position, entity.velocity);
+      entity.renderPosition = calculateEntityRenderPosition(entity);
    }
 }
 
@@ -169,6 +237,8 @@ abstract class Entity {
 
    public chunk!: Chunk;
 
+   private readonly a = new Array<Point>();
+
    constructor(id: number, type: EntityType, position: Point, velocity: Vector | null, acceleration: Vector | null, terminalVelocity: number, rotation: number) {
       this.id = id;
       
@@ -190,6 +260,13 @@ abstract class Entity {
       const hitboxBounds = this.calculateHitboxBounds();
       this.handleEntityCollisions(hitboxBounds);
       this.resolveWallCollisions(hitboxBounds);
+      
+
+      if (this.position.x < 0 || this.position.y < 0 || this.position.x >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE || this.position.y >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
+         console.warn("detected terrorist in the second tower");
+         console.log(this.position.copy());
+         console.log(hitboxBounds);
+      }
    }
 
    public addVelocity(magnitude: number, direction: number): void {
@@ -202,7 +279,7 @@ abstract class Entity {
       const tileTypeInfo = TILE_TYPE_INFO_RECORD[tile.type];
 
       const terminalVelocity = this.terminalVelocity * (tileTypeInfo.moveSpeedMultiplier || 1);
-
+      
       // Apply acceleration
       if (this.acceleration !== null) {
          const acceleration = this.acceleration.copy();
@@ -218,7 +295,7 @@ abstract class Entity {
          }
 
          const magnitudeBeforeAdd = this.velocity?.magnitude || 0;
-
+         
          // Add acceleration to velocity
          this.velocity = this.velocity !== null ? this.velocity.add(acceleration) : acceleration;
 
@@ -247,6 +324,7 @@ abstract class Entity {
          velocity.magnitude /= SETTINGS.TPS;
          
          this.position = this.position.add(velocity.convertToPoint());
+         this.a.push(this.position.copy());
       }
    }
 
@@ -294,11 +372,10 @@ abstract class Entity {
             let bottomLeft = new Point(x1, y1);
 
             // Rotate the points to match the entity's rotation
-            const rotation = -this.rotation + Math.PI/2;
-            topLeft = rotatePoint(topLeft, this.renderPosition, rotation);
-            topRight = rotatePoint(topRight, this.renderPosition, rotation);
-            bottomRight = rotatePoint(bottomRight, this.renderPosition, rotation);
-            bottomLeft = rotatePoint(bottomLeft, this.renderPosition, rotation);
+            topLeft = rotatePoint(topLeft, this.position, this.rotation);
+            topRight = rotatePoint(topRight, this.position, this.rotation);
+            bottomRight = rotatePoint(bottomRight, this.position, this.rotation);
+            bottomLeft = rotatePoint(bottomLeft, this.position, this.rotation);
 
             minX = Math.min(topLeft.x, topRight.x, bottomRight.x, bottomLeft.x);
             maxX = Math.max(topLeft.x, topRight.x, bottomRight.x, bottomLeft.x);
@@ -336,9 +413,14 @@ abstract class Entity {
       }
    }
 
-   private findCurrentTile(): Tile {
+   public findCurrentTile(): Tile {
       const tileX = Math.floor(this.position.x / SETTINGS.TILE_SIZE);
       const tileY = Math.floor(this.position.y / SETTINGS.TILE_SIZE);
+      if (tileX < 0 || tileX >= SETTINGS.BOARD_DIMENSIONS || tileY < 0 || tileY >= SETTINGS.BOARD_DIMENSIONS) {
+         console.log(this.a);
+         console.log(this);
+         throw new Error("Entity is out of bounds!");
+      }
       return Board.getTile(tileX, tileY);
    }
 
