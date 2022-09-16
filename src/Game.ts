@@ -42,7 +42,7 @@ abstract class Game {
       this._isPaused = newValue;
       newValue ? showPauseScreen() : hidePauseScreen();
 
-      if (newValue) {
+      if (!newValue) {
          this.isSynced = false;
       }
    }

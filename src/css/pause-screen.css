@@ -22,6 +22,7 @@
 }
 #pause-screen .main h1 {
    color: #fff;
+   text-align: center;
    font-weight: 700;
    margin: 0;
    white-space: pre;
@@ -30,9 +31,6 @@
    color: #bbb;
    font-weight: 900;
    animation: 1.75s ghostWiggle ease-in-out infinite;
-}
-#pause-screen .main h1 span.left {
-   
 }
 #pause-screen .main p {
    color: #fff;
