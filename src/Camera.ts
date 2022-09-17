@@ -44,17 +44,17 @@ abstract class Camera {
 
    public static getXPositionInScreen(x: number): number {
       // Account for the player position
-      const worldX = x - this.position.x + halfWindowWidth;
+      const screenX = x - this.position.x + halfWindowWidth;
 
-      const canvasX = worldX / windowWidth * 2 - 1;
+      const canvasX = screenX / windowWidth * 2 - 1;
       return canvasX;
    }
    
    public static getYPositionInScreen(y: number): number {
       // Account for the player position
-      const worldY = y - this.position.y + halfWindowHeight;
+      const screenY = y - this.position.y + halfWindowHeight;
       
-      const canvasY = worldY / windowHeight * 2 - 1;
+      const canvasY = screenY / windowHeight * 2 - 1;
       return canvasY;
    }
 

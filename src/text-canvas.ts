@@ -1,5 +1,5 @@
 import { CircularHitbox } from "webgl-test-shared";
-import { windowHeight, windowWidth } from ".";
+import { halfWindowHeight, halfWindowWidth, windowHeight, windowWidth } from ".";
 import Board from "./Board";
 import Camera from "./Camera";
 import Player from "./entities/Player";
@@ -15,10 +15,10 @@ export function setupTextCanvas(): void {
 }
 
 const getXPosInCamera = (x: number): number => {
-   return x - Camera.position.x + window.innerWidth / 2;
+   return x - Camera.position.x + halfWindowWidth;
 }
 const getYPosInCamera = (y: number): number => {
-   return Camera.position.y + window.innerHeight / 2 - y;
+   return -y + Camera.position.y + halfWindowHeight;
 }
 
 export function renderPlayerNames(): void {

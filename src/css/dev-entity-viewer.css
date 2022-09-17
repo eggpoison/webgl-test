@@ -1,0 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;700;900&display=swap');
+
+#dev-entity-viewer {
+   position: absolute;
+   top: 0;
+   right: 0;
+   z-index: 1;
+}
+#dev-entity-viewer * {
+   color: #fff;
+   text-shadow: 2px 2px 2px #000;
+   font-family: "Inconsolata";
+   background-color: rgba(0, 0, 0, 0.3);
+}
+#dev-entity-viewer span.highlight {
+   background-color: #000;
+}
+#dev-entity-viewer h1 {
+   margin: 0.5rem 0;
+   padding: 0 0.5rem;
+}
+#dev-entity-viewer p {
+   margin: 0.5rem 0;
+   padding: 0 0.5rem;
+}

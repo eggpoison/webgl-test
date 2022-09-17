@@ -10,12 +10,15 @@ import { getPlayerName } from './components/NameInput';
 import { setupTextCanvas } from './text-canvas';
 import { clearPressedKeys } from './keyboard';
 import { createEntityShaders } from './entity-rendering';
+import { handleMouseMovement } from './mouse';
 
 import "./css/index.css";
 import "./css/name-input.css";
 import "./css/chatbox.css";
 import "./css/settings.css";
 import "./css/pause-screen.css";
+import "./css/cursor-tooltip.css";
+import "./css/dev-entity-viewer.css";
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -122,3 +125,5 @@ window.addEventListener("focus", () => {
 window.addEventListener("blur", () => {
    Game.isPaused = true;
 });
+
+window.addEventListener("mousemove", handleMouseMovement);

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { loadGame } from "..";
 import Client from "../client/Client";
 import ChatBox from "./ChatBox";
+import CursorTooltip from "./CursorTooltip";
+import DevEntityViewer from "./DevEntityViewer";
 import NameInput from "./NameInput";
 import PauseScreen from "./PauseScreen";
 import Settings from "./Settings";
@@ -48,10 +50,7 @@ export function showPauseScreen(): void {
    showPauseScreenReference();
 }
 
-let hidePauseScreenReference: () => void;
-export function hidePauseScreen(): void {
-   hidePauseScreenReference();
-}
+export let hidePauseScreen: () => void;
 
 function App() {
    const [gameState, setGameState] = useState<GameState>(GameState.nameInput);
@@ -83,7 +82,7 @@ function App() {
       fullyCloseSettingsReference = (): void => setSettingsIsOpen(false);
 
       showPauseScreenReference = (): void => setIsPaused(true);
-      hidePauseScreenReference = (): void => setIsPaused(false);
+      hidePauseScreen = (): void => setIsPaused(false);
    }, []);
 
    useEffect(() => {
@@ -123,6 +122,10 @@ function App() {
 
          <canvas id="game-canvas"></canvas>
          <canvas id="text-canvas"></canvas>
+
+         <CursorTooltip />
+
+         <DevEntityViewer />
 
          {settingsIsOpen ? <Settings /> : null}
 

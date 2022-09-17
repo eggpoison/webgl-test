@@ -1,6 +1,6 @@
 import Board from "./Board";
 import Player from "./entities/Player";
-import { sleep } from "./utils";
+import { isDev, sleep } from "./utils";
 import { renderPlayerNames } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/ChatBox";
@@ -9,6 +9,8 @@ import { calculateEntityRenderPositions, setFrameProgress } from "./entities/Ent
 import { renderEntities } from "./entity-rendering";
 import Client from "./client/Client";
 import { hidePauseScreen, showPauseScreen } from "./components/App";
+import { calculateCursorWorldPosition, renderCursorTooltip } from "./mouse";
+import { updateDevEntityViewer } from "./components/DevEntityViewer";
 
 abstract class Game {
    public static isRunning: boolean = false;
@@ -21,6 +23,8 @@ abstract class Game {
    /** Amount of time the game is through the current frame */
    private static lag: number = 0;
 
+   public static cursorPosition: Point | null;
+
    public static async start(): Promise<void> {
       this.isRunning = true;
       
@@ -29,7 +33,7 @@ abstract class Game {
          if (!this._isPaused && this.isSynced) {
             await this.main();
          } else {
-            // Stop infinite loops
+            // Stop infinite loops 
             await sleep(5);
          }
       }
@@ -58,6 +62,8 @@ abstract class Game {
       updateSpamFilter();
       Board.update();
       Client.sendPlayerDataPacket();
+      
+      if (isDev()) updateDevEntityViewer();
    }
 
    /**
@@ -75,6 +81,9 @@ abstract class Game {
       renderPlayerNames();
       Board.render();
       renderEntities();
+
+      this.cursorPosition = calculateCursorWorldPosition();
+      renderCursorTooltip();
    }
 
    public static main(): Promise<void> {
