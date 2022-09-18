@@ -5,7 +5,7 @@ import { renderPlayerNames } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/ChatBox";
 import { Point, randInt, SETTINGS } from "webgl-test-shared";
-import { calculateEntityRenderPositions, setFrameProgress } from "./entities/Entity";
+import { calculateEntityRenderPositions, resetRectangleHitboxVertices, setFrameProgress } from "./entities/Entity";
 import { renderEntities } from "./entity-rendering";
 import Client from "./client/Client";
 import { hidePauseScreen, showPauseScreen } from "./components/App";
@@ -62,6 +62,8 @@ abstract class Game {
       updateSpamFilter();
       Board.update();
       Client.sendPlayerDataPacket();
+
+      resetRectangleHitboxVertices();
       
       if (isDev()) updateDevEntityViewer();
    }

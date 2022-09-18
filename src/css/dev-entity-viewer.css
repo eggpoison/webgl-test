@@ -15,9 +15,13 @@
 #dev-entity-viewer span.highlight {
    background-color: #000;
 }
-#dev-entity-viewer h1 {
+#dev-entity-viewer .title {
    margin: 0.5rem 0;
    padding: 0 0.5rem;
+}
+#dev-entity-viewer .title .id {
+   background-color: #000;
+   float: right;
 }
 #dev-entity-viewer p {
    margin: 0.5rem 0;

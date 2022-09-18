@@ -417,6 +417,7 @@ abstract class Board {
    }
 
    public static removeEntity(entity: Entity): void {
+      entity.chunk.removeEntity(entity);
       delete this.entities[entity.id];
    }
 }

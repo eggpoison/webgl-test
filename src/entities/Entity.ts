@@ -1,4 +1,4 @@
-import { circleAndRectangleDoIntersect, circlesDoIntersect, CircularHitbox, EntityData, EntityType, ENTITY_INFO_RECORD, Hitbox, Point, rectanglesDoIntersect, RectangularHitbox, rotatePoint, SETTINGS, Tile, TILE_TYPE_INFO_RECORD, Vector } from "webgl-test-shared";
+import { circleAndRectangleDoIntersect, circlesDoIntersect, CircularHitbox, computeSideAxis, EntityData, EntityType, ENTITY_INFO_RECORD, Hitbox, Point, rectanglePointsDoIntersect, RectangularHitbox, rotatePoint, SETTINGS, Tile, TILE_TYPE_INFO_RECORD, Vector } from "webgl-test-shared";
 import Board from "../Board";
 import Chunk from "../Chunk";
 
@@ -134,48 +134,32 @@ export function calculateEntityRenderPositions(): void {
    }
 }
 
-// // https://www.jkh.me/files/tutorials/Separating%20Axis%20Theorem%20for%20Oriented%20Bounding%20Boxes.pdf
-// const rectanglesDoIntersect = (rect1Pos: Point, rect1Hitbox: RectangularHitbox, rect2Pos: Point, rect2Hitbox: RectangularHitbox): boolean => {
-//    const x1 = rect1Pos.x;
-//    const y1 = rect1Pos.y;
-//    const x2 = rect2Pos.x;
-//    const y2 = rect2Pos.y;
+const calculateRectangleVertices = (position: Point, width: number, height: number, rotation: number): [Point, Point, Point, Point] => {
+   const rect1x1 = position.x - width / 2;
+   const rect1x2 = position.x + width / 2;
+   const rect1y1 = position.y - height / 2;
+   const rect1y2 = position.y + height / 2;
 
-//    const w1 = rect1Hitbox.width / 2;
-//    const h1 = rect1Hitbox.height / 2;
-//    const w2 = rect2Hitbox.width / 2;
-//    const h2 = rect2Hitbox.height / 2;
+   // Calculate vertex positions
+   let tl1 = new Point(rect1x1, rect1y2);
+   let tr1 = new Point(rect1x2, rect1y2);
+   let bl1 = new Point(rect1x1, rect1y1);
+   let br1 = new Point(rect1x2, rect1y1);
 
-//    const T = rect1Pos.distanceFrom(rect2Pos);
+   // Rotate vertices
+   tl1 = rotatePoint(tl1, position, rotation);
+   tr1 = rotatePoint(tr1, position, rotation);
+   bl1 = rotatePoint(bl1, position, rotation);
+   br1 = rotatePoint(br1, position, rotation);
 
-//    if (Math.abs(T * x1) > w1 + Math.abs(w2 * x2 * x1) + Math.abs(h2 * y2 * x1)) {
-//       return false;
-//    } else if (Math.abs(T * y1) > h1 + Math.abs(w2 * x2 * y1) + Math.abs(h2 * y2 * y1)) {
-//       return false;
-//    } else if (Math.abs(T * x2) > Math.abs(w1 * x1 * x2) + Math.abs(h1 * y1 * x2) + w2) {
-//       return false;
-//    } else if (Math.abs(T * y2) > Math.abs(w2 * x1 * y2) + Math.abs(h1 * y1 * y2) + h2) {
-//       return false;
-//    }
-//    return true;
-// }
+   return [tl1, tr1, bl1, br1];
+}
 
-// const rectangleAndCircleDoIntersect = (rectPos: Point, rectHitbox: RectangularHitbox, circlePos: Point, circleHitbox: CircularHitbox, rectRotation: number): boolean => {
-//    // Rotate the point
-//    const circularHitboxPosition = rotatePoint(circlePos, rectPos, -rectRotation);
-   
-//    const minX = rectPos.x - rectHitbox.width / 2;
-//    const maxX = rectPos.x + rectHitbox.width / 2;
-//    const minY = rectPos.y - rectHitbox.height / 2;
-//    const maxY = rectPos.y + rectHitbox.height / 2;
-
-//    // https://stackoverflow.com/questions/5254838/calculating-distance-between-a-point-and-a-rectangular-box-nearest-point
-//    var dx = Math.max(minX - circularHitboxPosition.x, 0, circularHitboxPosition.x - maxX);
-//    var dy = Math.max(minY - circularHitboxPosition.y, 0, circularHitboxPosition.y - maxY);
-
-//    const dist = Math.sqrt(dx * dx + dy * dy) - circleHitbox.radius;
-//    return dist <= 0;
-// } 
+type RectangleVertexCalculations = {
+   readonly vertices: readonly [Point, Point, Point, Point];
+   readonly axes: ReadonlyArray<Vector>;
+}
+let rectangleHitboxVertices: { [id: number]: RectangleVertexCalculations} = {};
 
 const isColliding = (entity1: Entity, entity2: Entity): boolean => {
    // Circle-circle collisions
@@ -198,10 +182,31 @@ const isColliding = (entity1: Entity, entity2: Entity): boolean => {
    }
    // Rectangle-rectangle collisions
    else if (entity1.hitbox.type === "rectangular" && entity2.hitbox.type === "rectangular") {
-      return rectanglesDoIntersect(entity1.position, entity1.hitbox.width, entity1.hitbox.height, entity1.rotation, entity2.position, entity2.hitbox.width, entity2.hitbox.height, entity2.rotation);
+      // Compute the vertex calculations if they aren't already done
+      const entities = [entity1, entity2];
+      for (const entity of entities) {
+         if (!rectangleHitboxVertices.hasOwnProperty(entity.id)) {
+            const vertices = calculateRectangleVertices(entity.position, (entity.hitbox as RectangularHitbox).width, (entity.hitbox as RectangularHitbox).height, entity.rotation);
+            const axes = [
+               computeSideAxis(vertices[0], vertices[1]),
+               computeSideAxis(vertices[0], vertices[2])
+            ];
+
+            rectangleHitboxVertices[entity.id] = {
+               vertices: vertices,
+               axes: axes
+            };
+         }
+      }
+
+      return rectanglePointsDoIntersect(...rectangleHitboxVertices[entity1.id].vertices, ...rectangleHitboxVertices[entity2.id].vertices, rectangleHitboxVertices[entity1.id].axes, rectangleHitboxVertices[entity2.id].axes);
    }
 
    throw new Error(`No collision calculations for collision between hitboxes of type ${entity1.hitbox.type} and ${entity2.hitbox.type}`);
+}
+
+export function resetRectangleHitboxVertices(): void {
+   rectangleHitboxVertices = {};
 }
 
 abstract class Entity {
@@ -440,8 +445,8 @@ abstract class Entity {
          const force = Entity.MAX_ENTITY_COLLISION_PUSH_FORCE / SETTINGS.TPS;
          const angle = this.position.angleBetween(entity.position);
 
+         // No need to apply force to other entity as they will do it themselves
          this.addVelocity(force, angle + Math.PI);
-         entity.addVelocity(force, angle);
       }
    }
 

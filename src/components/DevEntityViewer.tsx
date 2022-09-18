@@ -11,6 +11,10 @@ const DevEntityViewer = () => {
 
    useEffect(() => {
       updateDevEntityViewer = (entity?: Entity | null): void => {
+         if (typeof entity !== "undefined" && entity !== null && entity.velocity !== null) {
+            // console.log(entity);
+         }
+
          if (typeof entity !== "undefined") {
             setEntity(entity);
          } else {
@@ -30,7 +34,7 @@ const DevEntityViewer = () => {
    const displayAccelerationMagnitude = entity.acceleration !== null ? roundNum(entity.acceleration.magnitude, 0) : 0;
 
    return <div id="dev-entity-viewer">
-      <h1>{clientEntityInfo.name}</h1>
+      <div className="title">{clientEntityInfo.name}<span className="id">#{entity.id}</span></div>
       
       <p>x: <span className="highlight">{displayX}</span>, y: <span className="highlight">{displayY}</span></p>
 
