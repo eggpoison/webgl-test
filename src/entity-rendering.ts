@@ -163,9 +163,23 @@ const calculateCircleVertices = (position: Point, radius: number, rgba: [number,
 }
 
 export function renderEntities(): void {
-   // Sort the render parts into their textures
-   const groupedRenderParts: { [textureSrc: string]: Array<[Entity, ImageRenderPart]> } = {};
+   // Classify all render parts into their different major features
+   const [sortedImageRenderParts, circleRenderParts] = sortEntities();
+
+   renderImageRenderParts(sortedImageRenderParts);
+   renderCircleRenderParts(circleRenderParts);
+   if (OPTIONS.showEntityHitboxes) {
+      renderEntityHitboxes();
+   }
+}
+
+type SortedImageRenderParts = { [textureSrc: string]: Array<[Entity, ImageRenderPart]> }
+
+/** Sort the render parts into their textures */
+const sortEntities = (): [sortedImageRenderParts: SortedImageRenderParts, circleRenderParts: Array<[Entity, CircleRenderPart]>] => {
+   const sortedImageRenderParts: SortedImageRenderParts = {};
    const circleRenderParts = new Array<[Entity, CircleRenderPart]>();
+
    for (const entity of Object.values(Board.entities)) {
       const renderParts = entity.getRenderParts();
 
@@ -173,10 +187,10 @@ export function renderEntities(): void {
          switch (renderPart.type) {
             case "image": {
                // Add the render part to the record
-               if (!groupedRenderParts.hasOwnProperty(renderPart.textureSrc)) {
-                  groupedRenderParts[renderPart.textureSrc] = new Array<[Entity, ImageRenderPart]>();
+               if (!sortedImageRenderParts.hasOwnProperty(renderPart.textureSrc)) {
+                  sortedImageRenderParts[renderPart.textureSrc] = new Array<[Entity, ImageRenderPart]>();
                }
-               groupedRenderParts[renderPart.textureSrc].push([entity, renderPart]);
+               sortedImageRenderParts[renderPart.textureSrc].push([entity, renderPart]);
                break;
             }
             case "circle": {
@@ -187,17 +201,29 @@ export function renderEntities(): void {
       }
    }
 
+   return [sortedImageRenderParts, circleRenderParts];
+}
+
+/** Calculates the vertices for a collection of image render parts */
+const calculateImageRenderPartCollectionVertices = (imageRenderParts: ReadonlyArray<[Entity, ImageRenderPart]>): ReadonlyArray<number> => {
+   const vertices = new Array<number>();
+
+   for (const [entity, renderPart] of imageRenderParts) {
+      const renderPartVertices = calculateImageRenderPartVertices(entity, renderPart);
+      vertices.push(...renderPartVertices);
+   }
+
+   return vertices;
+}
+
+const renderImageRenderParts = (renderParts: SortedImageRenderParts): void => {
    gl.useProgram(entityRenderingProgram);
 
    gl.enable(gl.BLEND);
    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-   for (const [textureSrc, entities] of Object.entries(groupedRenderParts)) {
-      const vertices = new Array<number>();
-      for (const [entity, renderPart] of entities) {
-         const renderPartVertices = calculateImageRenderPartVertices(entity, renderPart);
-         vertices.push(...renderPartVertices);
-      }
+   for (const [textureSrc, imageRenderParts] of Object.entries(renderParts)) {
+      const vertices = calculateImageRenderPartCollectionVertices(imageRenderParts);
 
       // Create tile buffer
       const tileBuffer = gl.createBuffer()!;
@@ -238,10 +264,9 @@ export function renderEntities(): void {
 
    gl.disable(gl.BLEND);
    gl.blendFunc(gl.ONE, gl.ZERO);
+}
 
-   // 
-   // Draw circle render parts
-   // 
+const renderCircleRenderParts = (circleRenderParts: Array<[Entity, CircleRenderPart]>): void => {
    gl.useProgram(circleProgram);
 
    // Calculate vertices
@@ -278,10 +303,6 @@ export function renderEntities(): void {
    
       // Draw the tile
       gl.drawArrays(gl.TRIANGLE_FAN, 0, CLIENT_SETTINGS.CIRCLE_DETAIL + 2);
-   }
-
-   if (OPTIONS.showEntityHitboxes) {
-      renderEntityHitboxes();
    }
 }
 

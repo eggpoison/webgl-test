@@ -1,4 +1,4 @@
-import { CircularHitbox } from "webgl-test-shared";
+import { CircularHitboxInfo } from "webgl-test-shared";
 import { halfWindowHeight, halfWindowWidth, windowHeight, windowWidth } from ".";
 import Board from "./Board";
 import Camera from "./Camera";
@@ -31,7 +31,7 @@ export function renderPlayerNames(): void {
       if (entity instanceof Player && entity !== Player.instance) {
          // Calculate the position of the text
          let drawPosition = entity.renderPosition.copy();
-         drawPosition.y += (entity.hitbox as CircularHitbox).radius + NAMETAG_Y_OFFSET;
+         drawPosition.y += (entity.hitbox as CircularHitboxInfo).radius + NAMETAG_Y_OFFSET;
 
          // Calculate position in camera
          const cameraX = getXPosInCamera(drawPosition.x);
