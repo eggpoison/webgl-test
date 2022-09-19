@@ -13,6 +13,7 @@ type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 type ServerResponse = {
    readonly gameTicks: number;
    readonly tiles: Array<Array<Tile>>;
+   readonly playerID: number;
 }
 
 abstract class Client {
@@ -29,10 +30,11 @@ abstract class Client {
          setGameMessage("Waiting for game data...");
 
          // Wait for the server data
-         this.socket.on("initialGameData", (gameTicks: number, tiles: Array<Array<Tile>>) => {
+         this.socket.on("initialGameData", (gameTicks: number, tiles: Array<Array<Tile>>, playerID: number) => {
             const serverResponse: ServerResponse = {
                gameTicks: gameTicks,
-               tiles: tiles
+               tiles: tiles,
+               playerID: playerID
             };
             resolve(serverResponse);
          });
@@ -82,7 +84,7 @@ abstract class Client {
       const clientKnownEntityIDs: Array<number> = Object.keys(Board.entities).map(idString => Number(idString));
 
       // Remove the player from the list of known entities so the player isn't removed
-      clientKnownEntityIDs.splice(clientKnownEntityIDs.indexOf(-1), 1);
+      clientKnownEntityIDs.splice(clientKnownEntityIDs.indexOf(Player.instance.id), 1);
 
       // Update the game entities
       for (const entityData of gameDataPacket.nearbyEntities) {
@@ -107,12 +109,9 @@ abstract class Client {
       const velocity = entityData.velocity !== null ? Vector.unpackage(entityData.velocity) : null;
       const acceleration = entityData.acceleration !== null ? Vector.unpackage(entityData.acceleration) : null;
 
-      const chunk = Board.getChunk(...entityData.chunkCoords);
-
       // Create the entity
       const entityClass = ENTITY_CLASS_RECORD[entityData.type]();
-      const entity = new entityClass(entityData.id, position, velocity, acceleration, entityData.terminalVelocity, entityData.rotation, ...entityData.clientArgs);
-      Board.addEntity(entity, chunk);
+      new entityClass(entityData.id, position, velocity, acceleration, entityData.terminalVelocity, entityData.rotation, ...entityData.clientArgs);
    }
 
    /**

@@ -1,5 +1,5 @@
-import { circleAndRectangleDoIntersect, circlesDoIntersect, CircularHitbox, computeSideAxis, EntityData, EntityType, ENTITY_INFO_RECORD, Hitbox, Point, rectanglePointsDoIntersect, RectangularHitbox, rotatePoint, SETTINGS, Tile, TILE_TYPE_INFO_RECORD, Vector } from "webgl-test-shared";
-import Board from "../Board";
+import { circleAndRectangleDoIntersect, circlesDoIntersect, CircularHitbox, EntityData, EntityType, ENTITY_INFO_RECORD, Hitbox, HitboxVertexPositions, Point, rectanglePointsDoIntersect, RectangularHitbox, rotatePoint, SETTINGS, Tile, TILE_TYPE_INFO_RECORD, Vector } from "webgl-test-shared";
+import Board, { EntityHitboxInfo } from "../Board";
 import Chunk from "../Chunk";
 
 interface BaseRenderPart {
@@ -40,7 +40,6 @@ export function sortRenderParts(unsortedRenderParts: ReadonlyArray<RenderPart>):
 }
 
 let frameProgress: number;
-
 export function setFrameProgress(newFrameProgress: number): void {
    frameProgress = newFrameProgress;
 }
@@ -134,34 +133,7 @@ export function calculateEntityRenderPositions(): void {
    }
 }
 
-const calculateRectangleVertices = (position: Point, width: number, height: number, rotation: number): [Point, Point, Point, Point] => {
-   const rect1x1 = position.x - width / 2;
-   const rect1x2 = position.x + width / 2;
-   const rect1y1 = position.y - height / 2;
-   const rect1y2 = position.y + height / 2;
-
-   // Calculate vertex positions
-   let tl1 = new Point(rect1x1, rect1y2);
-   let tr1 = new Point(rect1x2, rect1y2);
-   let bl1 = new Point(rect1x1, rect1y1);
-   let br1 = new Point(rect1x2, rect1y1);
-
-   // Rotate vertices
-   tl1 = rotatePoint(tl1, position, rotation);
-   tr1 = rotatePoint(tr1, position, rotation);
-   bl1 = rotatePoint(bl1, position, rotation);
-   br1 = rotatePoint(br1, position, rotation);
-
-   return [tl1, tr1, bl1, br1];
-}
-
-type RectangleVertexCalculations = {
-   readonly vertices: readonly [Point, Point, Point, Point];
-   readonly axes: ReadonlyArray<Vector>;
-}
-let rectangleHitboxVertices: { [id: number]: RectangleVertexCalculations} = {};
-
-const isColliding = (entity1: Entity, entity2: Entity): boolean => {
+const isColliding = (entity1: Entity, entity2: Entity, entityHitboxInfoRecord: { [id: number]: EntityHitboxInfo }): boolean => {
    // Circle-circle collisions
    if (entity1.hitbox.type === "circular" && entity2.hitbox.type === "circular") {
       return circlesDoIntersect(entity1.position, entity1.hitbox.radius, entity2.position, entity2.hitbox.radius);
@@ -182,38 +154,16 @@ const isColliding = (entity1: Entity, entity2: Entity): boolean => {
    }
    // Rectangle-rectangle collisions
    else if (entity1.hitbox.type === "rectangular" && entity2.hitbox.type === "rectangular") {
-      // Compute the vertex calculations if they aren't already done
-      const entities = [entity1, entity2];
-      for (const entity of entities) {
-         if (!rectangleHitboxVertices.hasOwnProperty(entity.id)) {
-            const vertices = calculateRectangleVertices(entity.position, (entity.hitbox as RectangularHitbox).width, (entity.hitbox as RectangularHitbox).height, entity.rotation);
-            const axes = [
-               computeSideAxis(vertices[0], vertices[1]),
-               computeSideAxis(vertices[0], vertices[2])
-            ];
-
-            rectangleHitboxVertices[entity.id] = {
-               vertices: vertices,
-               axes: axes
-            };
-         }
-      }
-
-      return rectanglePointsDoIntersect(...rectangleHitboxVertices[entity1.id].vertices, ...rectangleHitboxVertices[entity2.id].vertices, rectangleHitboxVertices[entity1.id].axes, rectangleHitboxVertices[entity2.id].axes);
+      return rectanglePointsDoIntersect(...entityHitboxInfoRecord[entity1.id].vertexPositions, ...entityHitboxInfoRecord[entity2.id].vertexPositions, entityHitboxInfoRecord[entity1.id].sideAxes, entityHitboxInfoRecord[entity2.id].sideAxes);
    }
 
    throw new Error(`No collision calculations for collision between hitboxes of type ${entity1.hitbox.type} and ${entity2.hitbox.type}`);
-}
-
-export function resetRectangleHitboxVertices(): void {
-   rectangleHitboxVertices = {};
 }
 
 abstract class Entity {
    private static readonly MAX_ENTITY_COLLISION_PUSH_FORCE = 200;
 
    public readonly id: number;
-
    public readonly type: EntityType;
 
    public readonly hitbox: Hitbox;
@@ -238,10 +188,13 @@ abstract class Entity {
 
    public isMoving: boolean = true;
 
-   public chunk!: Chunk;
+   public chunks: Array<Chunk>;
 
    constructor(id: number, type: EntityType, position: Point, velocity: Vector | null, acceleration: Vector | null, terminalVelocity: number, rotation: number) {
       this.id = id;
+      this.type = type;
+
+      this.hitbox = ENTITY_INFO_RECORD[this.type].hitbox;
       
       this.position = position;
       this.velocity = velocity;
@@ -251,24 +204,61 @@ abstract class Entity {
 
       this.renderPosition = position;
 
-      this.type = type;
-      this.hitbox = ENTITY_INFO_RECORD[this.type].hitbox;
+      // Add entity to the ID record
+      Board.entities[this.id] = this;
+
+      // Calculate initial containing chunks
+      const hitboxVertexPositions = this.calculateHitboxVertexPositions();
+      const hitboxBounds = this.calculateHitboxBounds(hitboxVertexPositions);
+      this.chunks = this.calculateContainingChunks(hitboxBounds);
+
+      // Add entity to chunks
+      for (const chunk of this.chunks) {
+         chunk.addEntity(this);
+      }
    }
 
-   public tick(): void {
-      this.applyPhysics();
-
-      const hitboxBounds = this.calculateHitboxBounds();
-      this.handleEntityCollisions(hitboxBounds);
-      this.resolveWallCollisions(hitboxBounds);
-   }
+   public tick?(): void;
 
    public addVelocity(magnitude: number, direction: number): void {
       const velocity = new Vector(magnitude, direction);
       this.velocity = this.velocity?.add(velocity) || velocity;
    }
 
-   private applyPhysics(): void {
+   public updateChunks(newChunks: ReadonlyArray<Chunk>): void {
+      // Find all chunks which aren't present in the new chunks and remove them
+      const removedChunks = this.chunks.filter(chunk => !newChunks.includes(chunk));
+      for (const chunk of removedChunks) {
+         chunk.removeEntity(this);
+         this.chunks.splice(this.chunks.indexOf(chunk), 1);
+      }
+
+      // Add all new chunks
+      const addedChunks = newChunks.filter(chunk => !this.chunks.includes(chunk));
+      for (const chunk of addedChunks) {
+         chunk.addEntity(this);
+         this.chunks.push(chunk);
+      }
+   }
+
+   public calculateContainingChunks([minX, maxX, minY, maxY]: [number, number, number, number]): Array<Chunk> {
+      const minChunkX = Math.max(Math.min(Math.floor(minX / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+      const maxChunkX = Math.max(Math.min(Math.floor(maxX / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+      const minChunkY = Math.max(Math.min(Math.floor(minY / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+      const maxChunkY = Math.max(Math.min(Math.floor(maxY / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+
+      const chunks = new Array<Chunk>();
+      for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+         for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
+            const chunk = Board.getChunk(chunkX, chunkY);
+            chunks.push(chunk);
+         }
+      }
+
+      return chunks;
+   }
+
+   public applyPhysics(): void {
       const tile = this.findCurrentTile();
       const tileTypeInfo = TILE_TYPE_INFO_RECORD[tile.type];
 
@@ -338,7 +328,30 @@ abstract class Entity {
       }
    }
 
-   private calculateHitboxBounds(): [minX: number, maxX: number, minY: number, maxY: number] {
+   /** Only runs on entities with a rectangular hitobx */
+   public calculateHitboxVertexPositions(): HitboxVertexPositions | null {
+      if (this.hitbox.type !== "rectangular") return null;
+
+      const x1 = this.position.x - this.hitbox.width / 2;
+      const x2 = this.position.x + this.hitbox.width / 2;
+      const y1 = this.position.y - this.hitbox.height / 2;
+      const y2 = this.position.y + this.hitbox.height / 2;
+
+      let topLeft = new Point(x1, y2);
+      let topRight = new Point(x2, y2);
+      let bottomLeft = new Point(x1, y1);
+      let bottomRight = new Point(x2, y1);
+
+      // Rotate the points to match the entity's rotation
+      topLeft = rotatePoint(topLeft, this.position, this.rotation);
+      topRight = rotatePoint(topRight, this.position, this.rotation);
+      bottomLeft = rotatePoint(bottomLeft, this.position, this.rotation);
+      bottomRight = rotatePoint(bottomRight, this.position, this.rotation);
+
+      return [topLeft, topRight, bottomLeft, bottomRight];
+   }
+
+   public calculateHitboxBounds(hitboxVertexPositions: HitboxVertexPositions | null): [minX: number, maxX: number, minY: number, maxY: number] {
       let minX: number;
       let maxX: number;
       let minY: number;
@@ -354,26 +367,12 @@ abstract class Entity {
             break;
          }
          case "rectangular": {
-            const x1 = this.position.x - this.hitbox.width / 2;
-            const x2 = this.position.x + this.hitbox.width / 2;
-            const y1 = this.position.y - this.hitbox.height / 2;
-            const y2 = this.position.y + this.hitbox.height / 2;
+            const [tl, tr, bl, br] = hitboxVertexPositions!;
 
-            let topLeft = new Point(x1, y2);
-            let topRight = new Point(x2, y2);
-            let bottomRight = new Point(x2, y1);
-            let bottomLeft = new Point(x1, y1);
-
-            // Rotate the points to match the entity's rotation
-            topLeft = rotatePoint(topLeft, this.position, this.rotation);
-            topRight = rotatePoint(topRight, this.position, this.rotation);
-            bottomRight = rotatePoint(bottomRight, this.position, this.rotation);
-            bottomLeft = rotatePoint(bottomLeft, this.position, this.rotation);
-
-            minX = Math.min(topLeft.x, topRight.x, bottomRight.x, bottomLeft.x);
-            maxX = Math.max(topLeft.x, topRight.x, bottomRight.x, bottomLeft.x);
-            minY = Math.min(topLeft.y, topRight.y, bottomRight.y, bottomLeft.y);
-            maxY = Math.max(topLeft.y, topRight.y, bottomRight.y, bottomLeft.y);
+            minX = Math.min(tl.x, tr.x, bl.x, br.x);
+            maxX = Math.max(tl.x, tr.x, bl.x, br.x);
+            minY = Math.min(tl.y, tr.y, bl.y, br.y);
+            maxY = Math.max(tl.y, tr.y, bl.y, br.y);
 
             break;
          }
@@ -382,7 +381,7 @@ abstract class Entity {
       return [minX, maxX, minY, maxY];
    }
 
-   private resolveWallCollisions([minX, maxX, minY, maxY]: [number, number, number, number]): void {
+   public resolveWallCollisions([minX, maxX, minY, maxY]: [number, number, number, number]): void {
       const boardUnits = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE;
 
       // Left wall
@@ -429,16 +428,11 @@ abstract class Entity {
       this.terminalVelocity = entityData.terminalVelocity;
       this.rotation = entityData.rotation;
 
-      const newChunk = Board.getChunk(...entityData.chunkCoords);
-      if (newChunk !== this.chunk) {
-         this.chunk.removeEntity(this);
-         newChunk.addEntity(this);
-         this.chunk = newChunk;
-      }
+      this.updateChunks(entityData.chunks.map(([x, y]) => Board.getChunk(x, y)));
    }
 
-   private handleEntityCollisions(hitboxBounds: [number, number, number, number]): void {
-      const collidingEntities = this.getCollidingEntities(hitboxBounds);
+   public resolveCollisions(entityHitboxInfoRecord: { [id: number]: EntityHitboxInfo }): void {
+      const collidingEntities = this.getCollidingEntities(entityHitboxInfoRecord);
 
       for (const entity of collidingEntities) {
          // Push both entities away from each other
@@ -450,36 +444,20 @@ abstract class Entity {
       }
    }
 
-   private getCollidingEntities([minX, maxX, minY, maxY]: [number, number, number, number]): ReadonlyArray<Entity> {
-      const collidingEntityInfo = new Array<Entity>();
+   private getCollidingEntities(entityHitboxInfoRecord: { [id: number]: EntityHitboxInfo }): ReadonlyArray<Entity> {
+      const collidingEntities = new Array<Entity>();
 
-      const minChunkX = Math.max(Math.min(Math.floor(minX / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-      const maxChunkX = Math.max(Math.min(Math.floor(maxX / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-      const minChunkY = Math.max(Math.min(Math.floor(minY / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-      const maxChunkY = Math.max(Math.min(Math.floor(maxY / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+      for (const chunk of this.chunks) {
+         for (const entity of chunk.getEntities()) {
+            if (entity === this) continue;
 
-      for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
-         for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
-            const chunk = Board.getChunk(chunkX, chunkY);
-
-            for (const entity of chunk.getEntities()) {
-               if (entity === this) continue;
-
-               if (isColliding(this, entity)) {
-                  collidingEntityInfo.push(entity);
-               }
+            if (isColliding(this, entity, entityHitboxInfoRecord)) {
+               collidingEntities.push(entity);
             }
          }
       }
-      for (const entity of Object.values(Board.entities)) {
-         if (entity === this) continue;
 
-         if (isColliding(this, entity)) {
-            collidingEntityInfo.push(entity);
-         }
-      }
-
-      return collidingEntityInfo;
+      return collidingEntities;
    }
 }
 

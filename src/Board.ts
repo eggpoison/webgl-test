@@ -1,7 +1,7 @@
 import { gl } from ".";
 import Entity from "./entities/Entity";
 import { getTexture } from "./textures";
-import { Tile, SETTINGS, } from "webgl-test-shared";
+import { Tile, SETTINGS, computeSideAxis, Point, Vector, } from "webgl-test-shared";
 import Camera from "./Camera";
 import { TILE_TYPE_RENDER_INFO_RECORD } from "./tile-type-render-info";
 import { createWebGLProgram } from "./webgl";
@@ -91,6 +91,11 @@ type TileVerticesCollection = {
 
 type TileVertexCoordinates = [{ [key: number]: number }, { [key: number]: number }];
 
+export type EntityHitboxInfo = {
+   readonly vertexPositions: readonly [Point, Point, Point, Point];
+   readonly sideAxes: ReadonlyArray<Vector>
+}
+
 abstract class Board {
    private static tiles: Array<Array<Tile>>;
 
@@ -102,12 +107,17 @@ abstract class Board {
    private static liquidTileProgram: WebGLProgram;
    private static borderTileProgram: WebGLProgram;
 
+   private static solidTileProgramPositionAttribLocation: GLint;
+   private static solidTileProgramTexCoordAttribLocation: GLint;
+
    public static setup(tiles: Array<Array<Tile>>): void {
       this.tiles = tiles;
 
       this.solidTileProgram = createWebGLProgram(solidTileVertexShaderText, solidTileFragmentShaderText);
       this.liquidTileProgram = createWebGLProgram(liquidTileVertexShaderText, liquidTileFragmentShaderText);
       this.borderTileProgram = createWebGLProgram(borderVertexShaderText, borderFragmentShaderText);
+
+      this.precomputeAttribLocations();
 
       this.chunks = this.createChunkArray();
    }
@@ -134,9 +144,46 @@ abstract class Board {
    }
 
    public static update(): void {
+      const entityHitboxInfoRecord: Record<number, EntityHitboxInfo> = {};
+
       for (const entity of Object.values(this.entities)) {
-         entity.tick();
+         entity.applyPhysics();
+         if (typeof entity.tick !== "undefined") entity.tick();
+
+         // Calculate the entity's new info
+         const hitboxVertexPositons = entity.calculateHitboxVertexPositions();
+         const hitboxBounds = entity.calculateHitboxBounds(hitboxVertexPositons);
+         const newChunks = entity.calculateContainingChunks(hitboxBounds);
+
+         // Update the entities' containing chunks
+         entity.updateChunks(newChunks);
+
+         if (hitboxVertexPositons !== null) {
+            const sideAxes = [
+               computeSideAxis(hitboxVertexPositons[0], hitboxVertexPositons[1]),
+               computeSideAxis(hitboxVertexPositons[0], hitboxVertexPositons[2])
+            ];
+
+            entityHitboxInfoRecord[entity.id] = {
+               vertexPositions: hitboxVertexPositons,
+               sideAxes: sideAxes
+            };
+         }
       }
+
+      for (const entity of Object.values(this.entities)) {
+         entity.resolveCollisions(entityHitboxInfoRecord);
+
+         // Resolve wall collisions
+         const hitboxVertexPositons = entity.calculateHitboxVertexPositions();
+         const hitboxBounds = entity.calculateHitboxBounds(hitboxVertexPositons);
+         entity.resolveWallCollisions(hitboxBounds);
+      }
+   }
+
+   private static precomputeAttribLocations(): void {
+      this.solidTileProgramPositionAttribLocation = gl.getAttribLocation(this.solidTileProgram, "vertPosition");
+      this.solidTileProgramTexCoordAttribLocation = gl.getAttribLocation(this.solidTileProgram, "vertTexCoord");
    }
 
    public static render(): void {
@@ -165,10 +212,8 @@ abstract class Board {
          gl.bindBuffer(gl.ARRAY_BUFFER, tileBuffer);
          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
-         const positionAttribLocation = gl.getAttribLocation(this.solidTileProgram, "vertPosition");
-         const texCoordAttribLocation = gl.getAttribLocation(this.solidTileProgram, "vertTexCoord");
          gl.vertexAttribPointer(
-            positionAttribLocation, // Attribute location
+            this.solidTileProgramPositionAttribLocation, // Attribute location
             2, // Number of elements per attribute
             gl.FLOAT, // Type of elements
             false,
@@ -176,7 +221,7 @@ abstract class Board {
             0 // Offset from the beginning of a single vertex to this attribute
          );
          gl.vertexAttribPointer(
-            texCoordAttribLocation, // Attribute location
+            this.solidTileProgramTexCoordAttribLocation, // Attribute location
             2, // Number of elements per attribute
             gl.FLOAT, // Type of elements
             false,
@@ -185,8 +230,8 @@ abstract class Board {
          );
    
          // Enable the attributes
-         gl.enableVertexAttribArray(positionAttribLocation);
-         gl.enableVertexAttribArray(texCoordAttribLocation);
+         gl.enableVertexAttribArray(this.solidTileProgramPositionAttribLocation);
+         gl.enableVertexAttribArray(this.solidTileProgramTexCoordAttribLocation);
          
          // Set the texture
          const texture = getTexture("tiles/" + textureSource);
@@ -403,22 +448,12 @@ abstract class Board {
       gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 2);
    }
 
-   public static addEntity(entity: Entity, chunk?: Chunk): void {
-      this.entities[entity.id] = entity;
-
-      if (typeof chunk !== "undefined") {
-         chunk.addEntity(entity);
-         entity.chunk = chunk;
-      } else {
-         const chunk = entity.getChunk();
-         chunk.addEntity(entity);
-         entity.chunk = chunk;
-      }
-   }
-
    public static removeEntity(entity: Entity): void {
-      entity.chunk.removeEntity(entity);
       delete this.entities[entity.id];
+
+      for (const chunk of entity.chunks) {
+         chunk.removeEntity(entity);
+      }
    }
 }
 

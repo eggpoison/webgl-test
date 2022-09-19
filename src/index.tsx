@@ -99,7 +99,7 @@ export async function connect(): Promise<void> {
    createEntityShaders();
 
    Board.setup(serverResponse.tiles);
-   const position = Game.spawnPlayer(playerName);
+   const position = Game.spawnPlayer(playerName, serverResponse.playerID);
    Game.setup();
    Game.start();
 

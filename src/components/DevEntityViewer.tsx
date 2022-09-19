@@ -33,6 +33,8 @@ const DevEntityViewer = () => {
    const displayVelocityMagnitude = entity.velocity !== null ? roundNum(entity.velocity.magnitude, 0) : 0;
    const displayAccelerationMagnitude = entity.acceleration !== null ? roundNum(entity.acceleration.magnitude, 0) : 0;
 
+   const chunks = entity.chunks.map(chunk => `${chunk.x} ${chunk.y}`);
+
    return <div id="dev-entity-viewer">
       <div className="title">{clientEntityInfo.name}<span className="id">#{entity.id}</span></div>
       
@@ -40,6 +42,8 @@ const DevEntityViewer = () => {
 
       <p>Velocity: <span className="highlight">{displayVelocityMagnitude}</span></p>
       <p>Acceleration: <span className="highlight">{displayAccelerationMagnitude}</span></p>
+
+      <p>Chunks: <span className="highlight">{chunks.join(", ")}</span></p>
    </div>;
 }
 

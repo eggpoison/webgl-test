@@ -5,7 +5,7 @@ import { renderPlayerNames } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/ChatBox";
 import { Point, randInt, SETTINGS } from "webgl-test-shared";
-import { calculateEntityRenderPositions, resetRectangleHitboxVertices, setFrameProgress } from "./entities/Entity";
+import { calculateEntityRenderPositions, setFrameProgress } from "./entities/Entity";
 import { renderEntities } from "./entity-rendering";
 import Client from "./client/Client";
 import { hidePauseScreen, showPauseScreen } from "./components/App";
@@ -63,8 +63,6 @@ abstract class Game {
       Board.update();
       Client.sendPlayerDataPacket();
 
-      resetRectangleHitboxVertices();
-      
       if (isDev()) updateDevEntityViewer();
    }
 
@@ -112,7 +110,7 @@ abstract class Game {
       });
    }
 
-   public static spawnPlayer(name: string): Point {
+   public static spawnPlayer(name: string, id: number): Point {
       // const x = randInt(0, SETTINGS.BOARD_SIZE * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
       // const y = randInt(0, SETTINGS.BOARD_SIZE * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
       if (1 + 1 === 3) console.log(randInt(0, 1));
@@ -120,8 +118,7 @@ abstract class Game {
       const y = 100;
 
       const position = new Point(x, y);
-      const player = new Player(-1, position, null, null, 0, 0, name);
-      Board.addEntity(player);
+      new Player(id, position, null, null, 0, 0, name);
 
       return position;
    }

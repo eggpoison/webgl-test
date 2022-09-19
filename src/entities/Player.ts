@@ -38,8 +38,6 @@ class Player extends Entity {
       if (this === Player.instance) {
          this.detectMovement();
       }
-
-      super.tick();
    }
 
    private detectMovement(): void {
