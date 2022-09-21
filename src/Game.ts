@@ -11,6 +11,7 @@ import Client from "./client/Client";
 import { hidePauseScreen, showPauseScreen } from "./components/App";
 import { calculateCursorWorldPosition, renderCursorTooltip } from "./mouse";
 import { updateDevEntityViewer } from "./components/DevEntityViewer";
+import OPTIONS from "./options";
 
 abstract class Game {
    public static isRunning: boolean = false;
@@ -80,6 +81,9 @@ abstract class Game {
 
       renderPlayerNames();
       Board.render();
+      if (OPTIONS.showChunkBorders) {
+         Board.drawChunkBorders();
+      }
       renderEntities();
 
       this.cursorPosition = calculateCursorWorldPosition();

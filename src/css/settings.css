@@ -25,7 +25,7 @@
    margin-bottom: 3rem;
 }
 #settings .row {
-   margin: 1rem 0;
+   margin: 0.8rem 0;
    display: flex;
    justify-content: space-around;
    align-items: center;
@@ -35,22 +35,21 @@
    color: #fff;
    font-size: 1.25rem;
    text-shadow: 2px 2px #000;
-   background-color: #aaa;
+   background-color: #999;
    border-radius: 0;
    border: 3px solid #000;
-   width: 15rem;
-   height: 2.5rem;
+   min-width: 15rem;
+   padding: 0.5rem 0.3rem;
    cursor: pointer;
+   box-shadow: -3px -3px 0 0 #666 inset, 3px 3px 0 0 #ccc inset;
    outline: none;
 }
 #settings button:hover {
-   background-color: #bbb;
+   background-color: #aaa;
+   box-shadow: -3px -3px 0 0 #777 inset, 3px 3px 0 0 #ddd inset;
 }
 #settings button:active {
    background-color: #999;
-}
-#settings button:focus {
-   box-shadow: 0 0 0 3px #ddd;
 }
 
 #settings .bg {

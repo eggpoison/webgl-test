@@ -1,5 +1,7 @@
-import { Point, Vector } from "webgl-test-shared";
+import { AttackPacket, Point, SETTINGS, Vector } from "webgl-test-shared";
+import Board from "../Board";
 import Camera from "../Camera";
+import Client from "../client/Client";
 import { keyIsPressed } from "../keyboard";
 import Entity, { RenderPart, sortRenderParts } from "./Entity";
 
@@ -7,6 +9,11 @@ class Player extends Entity {
    public static instance: Player;
 
    public readonly displayName: string;
+
+   /** How far away from the entity the attack is done */
+   private static readonly ATTACK_OFFSET = 64;
+   /** Max distance from the attack position that the attack will be registered from */
+   private static readonly ATTACK_TEST_RADIUS = 32;
 
    private static readonly ACCELERATION = 1000;
    private static readonly TERMINAL_VELOCITY = 300;
@@ -32,6 +39,53 @@ class Player extends Entity {
 
          Camera.position = this.position;
       }
+   }
+
+   public static attack(): void {
+      const instance = this.instance;
+      if (typeof instance === "undefined") return;
+
+      const targets = this.getAttackTargets();
+
+      if (targets.length > 0) {
+         // Send attack packet
+         const attackPacket: AttackPacket = {
+            targetEntites: targets.map(target => target.id),
+            heldItem: null
+         }
+         Client.sendAttackPacket(attackPacket);
+      }
+   }
+
+   private static getAttackTargets(): ReadonlyArray<Entity> {
+      const offset = new Vector(this.ATTACK_OFFSET, Player.instance.rotation)
+      const attackPosition = Player.instance.position.add(offset.convertToPoint());
+
+      const minChunkX = Math.max(Math.min(Math.floor(attackPosition.x / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+      const maxChunkX = Math.max(Math.min(Math.floor(attackPosition.x / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+      const minChunkY = Math.max(Math.min(Math.floor(attackPosition.y / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+      const maxChunkY = Math.max(Math.min(Math.floor(attackPosition.y / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+
+      // Find all attacked entities
+      const attackedEntities = new Array<Entity>();
+      for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+         for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
+            const chunk = Board.getChunk(chunkX, chunkY);
+
+            for (const entity of chunk.getEntities()) {
+               // Skip entities that are already in the array
+               if (attackedEntities.includes(entity)) continue;
+
+               const dist = Board.calculateDistanceBetweenPointAndEntity(attackPosition, entity);
+               if (dist <= Player.ATTACK_TEST_RADIUS) attackedEntities.push(entity);
+            }
+         }
+      }
+
+      // Don't attack yourself
+      attackedEntities.splice(attackedEntities.indexOf(this.instance), 1);
+
+      return attackedEntities;
    }
 
    public tick(): void {

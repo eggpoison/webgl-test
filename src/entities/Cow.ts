@@ -10,6 +10,8 @@ class Cow extends Entity {
    private static readonly BODY_WIDTH = 64;
    private static readonly BODY_HEIGHT = 96;
 
+   // private static readonly a = m;
+
    private static readonly RENDER_PARTS: { [key in CowSpecies]: ReadonlyArray<RenderPart> } = (Object.values(CowSpecies).filter((_, i, arr) => i >= arr.length / 2) as ReadonlyArray<CowSpecies>).reduce((previousValue, currentValue) => {
       const num = currentValue === CowSpecies.brown ? 1 : 2;
 
@@ -42,6 +44,54 @@ class Cow extends Entity {
    constructor(id: number, position: Point, velocity: Vector | null, acceleration: Vector | null, terminalVelocity: number, rotation: number, species: CowSpecies) {
       super(id, "cow", position, velocity, acceleration, terminalVelocity, rotation);
 
+      // const headSize = Math.random() * 1;
+      // const bodySize = Math.random() / 2;
+
+      // const b = (Object.values(CowSpecies).filter((_, i, arr) => i >= arr.length / 2) as ReadonlyArray<CowSpecies>).reduce((previousValue, currentValue) => {
+      //    const num = currentValue === CowSpecies.brown ? 1 : 2;
+   
+      //    const newObject: Partial<{ [key in CowSpecies]: ReadonlyArray<RenderPart> }> = Object.assign({}, previousValue);
+      //    newObject[currentValue] = sortRenderParts([
+      //       // Head
+      //       {
+      //          type: "image",
+      //          width: Cow.HEAD_IMAGE_WIDTH * headSize,
+      //          height: Cow.HEAD_IMAGE_HEIGHT * headSize,
+      //          textureSrc: `cow/cow-head-${num}.png`,
+      //          offset: new Point(0, (Cow.BODY_HEIGHT - Cow.HEAD_OVERLAP) / 2),
+      //          zIndex: 2
+      //       },
+      //       // Body
+      //       {
+      //          type: "image",
+      //          width: Cow.BODY_WIDTH * bodySize,
+      //          height: Cow.BODY_HEIGHT * bodySize,
+      //          textureSrc: `cow/cow-body-${num}.png`,
+      //          offset: new Point(0, -(Cow.HEAD_SIZE - Cow.HEAD_OVERLAP) / 2),
+      //          zIndex: 1
+      //       },
+      //       // Yeti
+      //       {
+      //          type: "image",
+      //          width: 200 * bodySize,
+      //          height: 200 * bodySize,
+      //          textureSrc: `yeti.png`,
+      //          offset: new Point(0, 200),
+      //          zIndex: 1
+      //       },
+      //       // Yeti
+      //       {
+      //          type: "image",
+      //          width: 200 * bodySize + 100,
+      //          height: 200 * bodySize + 100,
+      //          textureSrc: `snowberry-bush.png`,
+      //          offset: new Point(0, -300),
+      //          zIndex: 1
+      //       },
+      //    ]);
+      //    return newObject;
+      // }, {}) as { [key in CowSpecies]: ReadonlyArray<RenderPart>};
+      // this.renderParts = b[species];
       this.renderParts = Cow.RENDER_PARTS[species];
    }
 

@@ -19,6 +19,7 @@ import "./css/settings.css";
 import "./css/pause-screen.css";
 import "./css/cursor-tooltip.css";
 import "./css/dev-entity-viewer.css";
+import Player from './entities/Player';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -127,3 +128,7 @@ window.addEventListener("blur", () => {
 });
 
 window.addEventListener("mousemove", handleMouseMovement);
+
+window.addEventListener("mousedown", () => {
+   Player.attack();
+});

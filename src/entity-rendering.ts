@@ -309,9 +309,9 @@ const renderCircleRenderParts = (circleRenderParts: Array<[Entity, CircleRenderP
 const renderEntityHitboxes = (): void => {
    gl.useProgram(hitboxProgram);
 
+   const vertices = new Array<number>();
+
    for (const entity of Object.values(Board.entities)) {
-      const vertices = new Array<number>();
-      
       switch (entity.hitbox.type) {
          case "rectangular": {
             const x1 = entity.renderPosition.x - entity.hitbox.width / 2;
@@ -337,9 +337,13 @@ const renderEntityHitboxes = (): void => {
             bottomLeft = new Point(Camera.getXPositionInScreen(bottomLeft.x), Camera.getYPositionInScreen(bottomLeft.y));
 
             vertices.push(
-               bottomLeft.x, bottomLeft.y,
-               bottomRight.x, bottomRight.y,
+               topLeft.x, topLeft.y,
                topRight.x, topRight.y,
+               topRight.x, topRight.y,
+               bottomRight.x, bottomRight.y,
+               bottomRight.x, bottomRight.y,
+               bottomLeft.x, bottomLeft.y,
+               bottomLeft.x, bottomLeft.y,
                topLeft.x, topLeft.y
             );
             break;
@@ -364,16 +368,16 @@ const renderEntityHitboxes = (): void => {
             break;
          }
       }
-
-      const buffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-
-      const positionAttribLocation = gl.getAttribLocation(hitboxProgram, "vertPosition");
-      gl.vertexAttribPointer(positionAttribLocation, 2, gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
-
-      gl.enableVertexAttribArray(positionAttribLocation);
-
-      gl.drawArrays(gl.LINE_LOOP, 0, vertices.length / 2);
    }
+
+   const buffer = gl.createBuffer();
+   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+
+   const positionAttribLocation = gl.getAttribLocation(hitboxProgram, "vertPosition");
+   gl.vertexAttribPointer(positionAttribLocation, 2, gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
+
+   gl.enableVertexAttribArray(positionAttribLocation);
+
+   gl.drawArrays(gl.LINES, 0, vertices.length / 2);
 }

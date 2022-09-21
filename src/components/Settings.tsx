@@ -74,6 +74,11 @@ const BASE_MENU: SettingsMenu = {
                   type: "option",
                   text: "Show Hitboxes",
                   option: "showEntityHitboxes"
+               },
+               {
+                  type: "option",
+                  text: "Show Chunk Borders",
+                  option: "showChunkBorders"
                }
             ],
             [

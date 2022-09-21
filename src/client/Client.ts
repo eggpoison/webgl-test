@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { ClientToServerEvents, EntityData, EntityType, GameDataPacket, PlayerDataPacket, Point, ServerToClientEvents, SETTINGS, Tile, Vector, VisibleChunkBounds } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, EntityData, EntityType, GameDataPacket, PlayerDataPacket, Point, ServerToClientEvents, SETTINGS, Tile, Vector, VisibleChunkBounds } from "webgl-test-shared";
 import { connect } from "..";
 import { GameState, setGameMessage, setGameState } from "../components/App";
 import Board from "../Board";
@@ -12,7 +12,7 @@ type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
 type ServerResponse = {
    readonly gameTicks: number;
-   readonly tiles: Array<Array<Tile>>;
+   readonly tiles: ReadonlyArray<ReadonlyArray<Tile>>;
    readonly playerID: number;
 }
 
@@ -30,7 +30,7 @@ abstract class Client {
          setGameMessage("Waiting for game data...");
 
          // Wait for the server data
-         this.socket.on("initialGameData", (gameTicks: number, tiles: Array<Array<Tile>>, playerID: number) => {
+         this.socket.on("initialGameData", (gameTicks: number, tiles: ReadonlyArray<ReadonlyArray<Tile>>, playerID: number) => {
             const serverResponse: ServerResponse = {
                gameTicks: gameTicks,
                tiles: tiles,
@@ -143,6 +143,12 @@ abstract class Client {
       };
 
       this.socket?.emit("playerDataPacket", packet);
+   }
+
+   public static sendAttackPacket(attackPacket: AttackPacket): void {
+      if (this.socket !== null) {
+         this.socket.emit("attackPacket", attackPacket);
+      }
    }
 
    public static sendVisibleChunkBoundsPacket(visibleChunkBounds: VisibleChunkBounds): void {
