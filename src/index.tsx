@@ -5,12 +5,12 @@ import { loadTextures } from './textures';
 import Game from './Game';
 import Client from './client/Client';
 import Board from './Board';
-import { createCircleShaders } from './webgl';
 import { getPlayerName } from './components/NameInput';
 import { setupTextCanvas } from './text-canvas';
 import { clearPressedKeys } from './keyboard';
 import { createEntityShaders } from './entity-rendering';
 import { handleMouseMovement } from './mouse';
+import Player from './entities/Player';
 
 import "./css/index.css";
 import "./css/name-input.css";
@@ -19,7 +19,6 @@ import "./css/settings.css";
 import "./css/pause-screen.css";
 import "./css/cursor-tooltip.css";
 import "./css/dev-entity-viewer.css";
-import Player from './entities/Player';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -96,7 +95,6 @@ export async function connect(): Promise<void> {
 
    await loadTextures();
    
-   createCircleShaders();
    createEntityShaders();
 
    Board.setup(serverResponse.tiles);
@@ -108,27 +106,30 @@ export async function connect(): Promise<void> {
 }
 
 export async function loadGame(): Promise<void> {
+   createEventListeners();
+
    // Prompt the player name
    playerName = await getPlayerName();
 
    connect();
 };
 
-window.addEventListener("keydown", (e: KeyboardEvent) => {
-   if (e.key === "Escape" && getGameState() === GameState.game) {
-      settingsIsOpen() ? fullyCloseSettings() : openSettings();
-   }
-});
+const createEventListeners = (): void => {
+   window.addEventListener("keydown", (e: KeyboardEvent) => {
+      if (e.key === "Escape" && getGameState() === GameState.game) {
+         settingsIsOpen() ? fullyCloseSettings() : openSettings();
+      }
+   });
+   
+   window.addEventListener("focus", () => {
+      Game.isPaused = false;
+   });
+   window.addEventListener("blur", () => {
+      Game.isPaused = true;
+   });
 
-window.addEventListener("focus", () => {
-   Game.isPaused = false;
-});
-window.addEventListener("blur", () => {
-   Game.isPaused = true;
-});
+   window.addEventListener("mousemove", handleMouseMovement);
 
-window.addEventListener("mousemove", handleMouseMovement);
-
-window.addEventListener("mousedown", () => {
-   Player.attack();
-});
+   // Has to be arrow function as otherwise it has the wrong scope
+   window.addEventListener("mousedown", () => Player.attack());
+}

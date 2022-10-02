@@ -1,12 +1,13 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, EntityData, EntityType, GameDataPacket, PlayerDataPacket, Point, ServerToClientEvents, SETTINGS, Tile, Vector, VisibleChunkBounds } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, ServerAttackData, ServerEntityData, ServerItemData, ServerToClientEvents, SETTINGS, Tile, Vector, VisibleChunkBounds } from "webgl-test-shared";
 import { connect } from "..";
 import { GameState, setGameMessage, setGameState } from "../components/App";
 import Board from "../Board";
 import Camera from "../Camera";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD from "../entity-class-record";
-import Game from "../Game";
+import Game, { ClientAttackInfo as AttackInfo } from "../Game";
+import Item from "../Item";
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -14,6 +15,20 @@ type ServerResponse = {
    readonly gameTicks: number;
    readonly tiles: ReadonlyArray<ReadonlyArray<Tile>>;
    readonly playerID: number;
+}
+
+const parseServerAttackDataArray = (serverAttackInfoArray: ReadonlyArray<ServerAttackData>): ReadonlyArray<AttackInfo> => {
+   // Don't consider attacks where the target entity isn't visible
+   const filteredServerAttackInfoArray = serverAttackInfoArray.filter(serverAttackInfo => {
+      return Board.entities.hasOwnProperty(serverAttackInfo.targetEntityID);
+   });
+
+   return filteredServerAttackInfoArray.map(serverAttackInfo => {
+      return {
+         targetEntity: Board.entities[serverAttackInfo.targetEntityID],
+         progress: serverAttackInfo.progress
+      };
+   });
 }
 
 abstract class Client {
@@ -81,13 +96,22 @@ abstract class Client {
    }
 
    private static unloadGameDataPacket(gameDataPacket: GameDataPacket): void {
+      this.updateEntities(gameDataPacket.serverEntityDataArray);
+      this.updateItems(gameDataPacket.serverItemDataArray);
+      this.addNewAttacks(gameDataPacket.serverAttackDataArray);
+   }
+
+   /**
+    * Updates the client's entities to match those in the server
+    */
+   private static updateEntities(entityDataArray: ReadonlyArray<ServerEntityData>): void {
       const clientKnownEntityIDs: Array<number> = Object.keys(Board.entities).map(idString => Number(idString));
 
       // Remove the player from the list of known entities so the player isn't removed
       clientKnownEntityIDs.splice(clientKnownEntityIDs.indexOf(Player.instance.id), 1);
 
       // Update the game entities
-      for (const entityData of gameDataPacket.nearbyEntities) {
+      for (const entityData of entityDataArray) {
          // If it already exists, update it
          if (Board.entities.hasOwnProperty(entityData.id)) {
             Board.entities[entityData.id].updateFromData(entityData);
@@ -104,7 +128,44 @@ abstract class Client {
       }
    }
 
-   public static createEntityFromData(entityData: EntityData<EntityType>): void {
+   private static updateItems(serverItemDataArray: ReadonlyArray<ServerItemData>): void {
+      const knownItemIDs = Object.keys(Board.items).map(stringID => Number(stringID));
+
+      for (const serverItemData of serverItemDataArray) {
+         if (!knownItemIDs.includes(serverItemData.id)) {
+            // New item
+            this.createItemFromServerItemData(serverItemData);
+         } else {
+            // Existing item
+            this.updateItemFromServerItemData(serverItemData);
+         }
+
+         knownItemIDs.splice(knownItemIDs.indexOf(serverItemData.id), 1);
+      }
+
+      // Thus the remaining known item IDs have had their items removed
+      for (const itemID of knownItemIDs) {
+         Board.items[itemID].remove();
+      }
+   }
+
+   private static createItemFromServerItemData(serverItemData: ServerItemData): void {
+      const position = Point.unpackage(serverItemData.position); 
+      const containingChunks = serverItemData.chunkCoordinates.map(([x, y]) => Board.getChunk(x, y));
+      new Item(serverItemData.id, position, containingChunks, serverItemData.itemID, serverItemData.count, serverItemData.rotation);
+   }
+
+   private static updateItemFromServerItemData(serverItemData: ServerItemData): void {
+      const item = Board.items[serverItemData.id];
+      item.count = serverItemData.count;
+   }
+
+   private static addNewAttacks(serverAttackDataArray: ReadonlyArray<ServerAttackData>): void {
+      const attackInfoArray = parseServerAttackDataArray(serverAttackDataArray);
+      Game.loadAttackDataArray(attackInfoArray);
+   }
+
+   public static createEntityFromData(entityData: ServerEntityData): void {
       const position = Point.unpackage(entityData.position);
       const velocity = entityData.velocity !== null ? Vector.unpackage(entityData.velocity) : null;
       const acceleration = entityData.acceleration !== null ? Vector.unpackage(entityData.acceleration) : null;
@@ -134,15 +195,17 @@ abstract class Client {
    }
 
    public static sendPlayerDataPacket(): void {
-      const packet: PlayerDataPacket = {
-         position: Player.instance.position.package(),
-         velocity: Player.instance.velocity?.package() || null,
-         acceleration: Player.instance.acceleration?.package() || null,
-         terminalVelocity: Player.instance.terminalVelocity,
-         rotation: Player.instance.rotation
-      };
+      if (this.socket !== null) {
+         const packet: PlayerDataPacket = {
+            position: Player.instance.position.package(),
+            velocity: Player.instance.velocity?.package() || null,
+            acceleration: Player.instance.acceleration?.package() || null,
+            terminalVelocity: Player.instance.terminalVelocity,
+            rotation: Player.instance.rotation
+         };
 
-      this.socket?.emit("playerDataPacket", packet);
+         this.socket?.emit("playerDataPacket", packet);
+      }
    }
 
    public static sendAttackPacket(attackPacket: AttackPacket): void {

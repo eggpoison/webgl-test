@@ -1,11 +1,13 @@
 import { gl } from ".";
 import Entity from "./entities/Entity";
 import { getTexture } from "./textures";
-import { Tile, SETTINGS, computeSideAxis, Point, Vector, TileUpdate, rotatePoint, } from "webgl-test-shared";
+import { Tile, SETTINGS, computeSideAxis, Point, Vector, TileUpdateData, rotatePoint, } from "webgl-test-shared";
 import Camera from "./Camera";
 import { TILE_TYPE_RENDER_INFO_RECORD } from "./tile-type-render-info";
 import { createWebGLProgram } from "./webgl";
 import Chunk from "./Chunk";
+import Item from "./Item";
+import CLIENT_ITEM_INFO_RECORD from "./client-item-info";
 
 // 
 // Solid Tile Shaders
@@ -103,6 +105,35 @@ void main() {
 }
 `;
 
+// 
+// Item shaders
+// 
+const itemVertexShaderText = `
+precision mediump float;
+
+attribute vec2 vertPosition;
+attribute vec2 vertTexCoord;
+
+varying vec2 fragTexCoord;
+ 
+void main() {
+   gl_Position = vec4(vertPosition, 0.0, 1.0);
+
+   fragTexCoord = vertTexCoord;
+}
+`;
+const itemFragmentShaderText = `
+precision mediump float;
+ 
+uniform sampler2D sampler;
+ 
+varying vec2 fragTexCoord;
+ 
+void main() {
+   gl_FragColor = texture2D(sampler, fragTexCoord);
+}
+`;
+
 type TileVerticesCollection = {
    readonly texturedTriangleVertices: { [key: string]: Array<number> };
    readonly colouredTriangleVertices: Array<number>;
@@ -121,11 +152,14 @@ abstract class Board {
    private static chunks: Array<Array<Chunk>>;
 
    public static entities: Record<number, Entity> = {};
+   
+   public static items: Record<number, Item> = {};
 
    private static solidTileProgram: WebGLProgram;
    private static liquidTileProgram: WebGLProgram;
    private static borderProgram: WebGLProgram;
    private static chunkBorderProgram: WebGLProgram;
+   private static itemProgram: WebGLProgram;
 
    private static solidTileProgramPositionAttribLocation: GLint;
    private static solidTileProgramTexCoordAttribLocation: GLint;
@@ -137,6 +171,7 @@ abstract class Board {
       this.liquidTileProgram = createWebGLProgram(liquidTileVertexShaderText, liquidTileFragmentShaderText);
       this.borderProgram = createWebGLProgram(borderVertexShaderText, borderFragmentShaderText);
       this.chunkBorderProgram = createWebGLProgram(chunkBorderVertexShaderText, chunkBorderFragmentShaderText);
+      this.itemProgram = createWebGLProgram(itemVertexShaderText, itemFragmentShaderText);
 
       this.precomputeAttribLocations();
 
@@ -203,7 +238,7 @@ abstract class Board {
    }
 
    /** Updates the client's copy of the tiles array to match any tile updates that have occurred */
-   public static loadTileUpdates(tileUpdates: ReadonlyArray<TileUpdate>): void {
+   public static loadTileUpdates(tileUpdates: ReadonlyArray<TileUpdateData>): void {
       for (const update of tileUpdates) {
          let tile = this.getTile(update.x, update.y);
          tile.type = update.type;
@@ -216,15 +251,7 @@ abstract class Board {
       this.solidTileProgramTexCoordAttribLocation = gl.getAttribLocation(this.solidTileProgram, "vertTexCoord");
    }
 
-   public static render(): void {
-      gl.clearColor(1, 1, 1, 1);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-
-      this.renderTiles();
-      this.drawBorder();
-   }
-
-   private static renderTiles(): void {
+   public static renderTiles(): void {
       // Calculate tile vertices
       const tileVerticesCollection = this.calculateTileVertices();
 
@@ -386,7 +413,7 @@ abstract class Board {
       return tileVertexCoordinates;
    }
 
-   private static drawBorder(): void {
+   public static drawBorder(): void {
       const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
 
       const BORDER_WIDTH = 20;
@@ -479,6 +506,8 @@ abstract class Board {
    }
 
    public static drawChunkBorders(): void {
+      gl.useProgram(this.chunkBorderProgram);
+      
       const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
 
       const vertices = new Array<number>();
@@ -511,8 +540,6 @@ abstract class Board {
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 
       gl.drawArrays(gl.LINES, 0, vertices.length / 2);
-      
-      gl.useProgram(this.chunkBorderProgram);
    }
 
    public static removeEntity(entity: Entity): void {
@@ -539,38 +566,96 @@ abstract class Board {
          }
       }
    }
+
+   public static renderItems(): void {
+      gl.useProgram(this.itemProgram);
+
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+      const itemVertexRecord = this.calculateItemVertices();
+
+      for (const [textureSrc, vertices] of Object.entries(itemVertexRecord)) {
+         const buffer = gl.createBuffer()!;
+         gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+
+         const positionAttribLocation = gl.getAttribLocation(this.itemProgram, "vertPosition");
+         const texCoordAttribLocation = gl.getAttribLocation(this.itemProgram, "vertTexCoord");
+         gl.vertexAttribPointer(
+            positionAttribLocation,
+            2,
+            gl.FLOAT,
+            false,
+            4 * Float32Array.BYTES_PER_ELEMENT,
+            0
+         );
+         gl.vertexAttribPointer(
+            texCoordAttribLocation,
+            2,
+            gl.FLOAT,
+            false,
+            4 * Float32Array.BYTES_PER_ELEMENT,
+            2 * Float32Array.BYTES_PER_ELEMENT
+         );
+
+         gl.enableVertexAttribArray(positionAttribLocation);
+         gl.enableVertexAttribArray(texCoordAttribLocation);
+         
+         const texture = getTexture(`items/${textureSrc}`);
+         gl.bindTexture(gl.TEXTURE_2D, texture);
+         gl.activeTexture(gl.TEXTURE0);
+
+         gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 4);
+      }
+
+      gl.disable(gl.BLEND);
+      gl.blendFunc(gl.ONE, gl.ZERO);
+   }
+
+   private static calculateItemVertices(): { [textureSrc: string]: ReadonlyArray<number> } {
+      const itemVertexRecord: { [textureSrc: string]: Array<number> } = {};
+
+      for (const item of Object.values(this.items)) {
+         const textureSrc = CLIENT_ITEM_INFO_RECORD[item.itemID].textureSrc;
+
+         if (!itemVertexRecord.hasOwnProperty(textureSrc)) {
+            itemVertexRecord[textureSrc] = new Array<number>();
+         }
+
+         const x1 = item.position.x - SETTINGS.ITEM_SIZE;
+         const x2 = item.position.x + SETTINGS.ITEM_SIZE;
+         const y1 = item.position.y - SETTINGS.ITEM_SIZE;
+         const y2 = item.position.y + SETTINGS.ITEM_SIZE;
+
+         let topLeft = new Point(x1, y2);
+         let topRight = new Point(x2, y2);
+         let bottomRight = new Point(x2, y1);
+         let bottomLeft = new Point(x1, y1);
+
+         // Rotate
+         topLeft = rotatePoint(topLeft, item.position, item.rotation);
+         topRight = rotatePoint(topRight, item.position, item.rotation);
+         bottomRight = rotatePoint(bottomRight, item.position, item.rotation);
+         bottomLeft = rotatePoint(bottomLeft, item.position, item.rotation);
+
+         topLeft = new Point(Camera.getXPositionInScreen(topLeft.x), Camera.getYPositionInScreen(topLeft.y));
+         topRight = new Point(Camera.getXPositionInScreen(topRight.x), Camera.getYPositionInScreen(topRight.y));
+         bottomRight = new Point(Camera.getXPositionInScreen(bottomRight.x), Camera.getYPositionInScreen(bottomRight.y));
+         bottomLeft = new Point(Camera.getXPositionInScreen(bottomLeft.x), Camera.getYPositionInScreen(bottomLeft.y));
+               
+         itemVertexRecord[textureSrc].push(
+            bottomLeft.x, bottomLeft.y, 0, 0,
+            bottomRight.x, bottomRight.y, 1, 0,
+            topLeft.x, topLeft.y, 0, 1,
+            topLeft.x, topLeft.y, 0, 1,
+            bottomRight.x, bottomRight.y, 1, 0,
+            topRight.x, topRight.y, 1, 1
+         );
+      }
+
+      return itemVertexRecord;
+   }
 }
-
-/*
-// Circle-circle collisions
-   if (entity1.hitbox.type === "circular" && entity2.hitbox.type === "circular") {
-      return circlesDoIntersect(entity1.position, entity1.hitbox.radius, entity2.position, entity2.hitbox.radius);
-   }
-   // Circle-rectangle collisions
-   else if ((entity1.hitbox.type === "circular" && entity2.hitbox.type === "rectangular") || (entity1.hitbox.type === "rectangular" && entity2.hitbox.type === "circular")) {
-      let circleEntity: Entity;
-      let rectEntity: Entity;
-      if (entity1.hitbox.type === "circular") {
-         circleEntity = entity1;
-         rectEntity = entity2;
-      } else {
-         rectEntity = entity1;
-         circleEntity = entity2;
-      }
-
-      return circleAndRectangleDoIntersect(circleEntity.position, (circleEntity.hitbox as CircularHitboxInfo).radius, rectEntity.position, (rectEntity.hitbox as RectangularHitboxInfo).width, (rectEntity.hitbox as RectangularHitboxInfo).height, rectEntity.rotation);
-   }
-   // Rectangle-rectangle collisions
-   else if (entity1.hitbox.type === "rectangular" && entity2.hitbox.type === "rectangular") {
-      const distance = entity1.position.distanceFrom(entity2.position);
-      const diagonal1Squared = Math.sqrt((Math.pow(entity1.hitbox.width / 2, 2) + Math.pow(entity1.hitbox.height / 2, 2)) / 4);
-      const diagonal2Squared = Math.sqrt((Math.pow(entity2.hitbox.width / 2, 2) + Math.pow(entity2.hitbox.height / 2, 2)) / 4);
-      if (distance > diagonal1Squared + diagonal2Squared) {
-         return false;
-      }
-
-      return rectanglePointsDoIntersect(...entityHitboxInfoRecord[entity1.id].vertexPositions, ...entityHitboxInfoRecord[entity2.id].vertexPositions, entityHitboxInfoRecord[entity1.id].sideAxes, entityHitboxInfoRecord[entity2.id].sideAxes);
-   }
-*/
 
 export default Board;

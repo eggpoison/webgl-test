@@ -16,11 +16,11 @@ export function clearPressedKeys(): void {
    }
 }
 
-const handleCapsLockPress = (): void => {
+const handleCapsLockChange = (): void => {
    let letters!: Array<string>;
    let otherLetters!: Array<string>;
 
-   const capsIsPressed = keyIsPressed("CapsLock");
+   const capsIsPressed = keyIsPressed("CapsLock") || keyIsPressed("Shift");
 
    if (capsIsPressed) {
       letters = LOWERCASE_LETTERS;
@@ -78,8 +78,8 @@ const updateKey = (e: KeyboardEvent, isKeyDown: boolean): void => {
       pressedKeys[key] = false;
    }
    
-   if (key === "CapsLock") {
-      handleCapsLockPress();
+   if (key === "CapsLock" || key === "Shift") {
+      handleCapsLockChange();
    }
 };
 

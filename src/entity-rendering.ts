@@ -4,6 +4,7 @@ import Board from "./Board";
 import Camera from "./Camera";
 import CLIENT_SETTINGS from "./client-settings";
 import Entity, { CircleRenderPart, ImageRenderPart } from "./entities/Entity";
+import Game from "./Game";
 import OPTIONS from "./options";
 import { getTexture } from "./textures";
 import { createWebGLProgram } from "./webgl";
@@ -16,13 +17,16 @@ precision mediump float;
 
 attribute vec2 vertPosition;
 attribute vec2 vertTexCoord;
+attribute float vertRedness;
 
 varying vec2 fragTexCoord;
+varying float fragRedness;
  
 void main() {
    gl_Position = vec4(vertPosition, 0.0, 1.0);
 
    fragTexCoord = vertTexCoord;
+   fragRedness = vertRedness;
 }
 `;
 const entityRenderingFragmentShaderText = `
@@ -31,9 +35,14 @@ precision mediump float;
 uniform sampler2D sampler;
  
 varying vec2 fragTexCoord;
+varying float fragRedness;
  
 void main() {
-   gl_FragColor = texture2D(sampler, fragTexCoord);
+   vec4 pixelVal = texture2D(sampler, fragTexCoord);
+   float r = pixelVal.r * (1.0 - fragRedness) + 1.0 * fragRedness;
+   float g = pixelVal.g * (1.0 - fragRedness);
+   float b = pixelVal.b * (1.0 - fragRedness);
+   gl_FragColor = vec4(r, g, b, pixelVal.a);
 }
 `;
 
@@ -121,13 +130,21 @@ const calculateImageRenderPartVertices = (entity: Entity, renderPart: ImageRende
    bottomLeft = new Point(Camera.getXPositionInScreen(bottomLeft.x), Camera.getYPositionInScreen(bottomLeft.y));
    bottomRight = new Point(Camera.getXPositionInScreen(bottomRight.x), Camera.getYPositionInScreen(bottomRight.y));
 
+   const attackInfo = Game.getClientAttack(entity.id);
+   let redness: number;
+   if (attackInfo !== null) {
+      redness = 0.85 * (1 - attackInfo.progress);
+   } else {
+      redness = 0;
+   }
+
    return [
-      bottomLeft.x, bottomLeft.y, 0, 0,
-      bottomRight.x, bottomRight.y, 1, 0,
-      topLeft.x, topLeft.y, 0, 1,
-      topLeft.x, topLeft.y, 0, 1,
-      bottomRight.x, bottomRight.y, 1, 0,
-      topRight.x, topRight.y, 1, 1
+      bottomLeft.x, bottomLeft.y, 0, 0, redness,
+      bottomRight.x, bottomRight.y, 1, 0, redness,
+      topLeft.x, topLeft.y, 0, 1, redness,
+      topLeft.x, topLeft.y, 0, 1, redness,
+      bottomRight.x, bottomRight.y, 1, 0, redness,
+      topRight.x, topRight.y, 1, 1, redness
    ];
 }
 
@@ -232,12 +249,13 @@ const renderImageRenderParts = (renderParts: SortedImageRenderParts): void => {
 
       const positionAttribLocation = gl.getAttribLocation(entityRenderingProgram, "vertPosition");
       const texCoordAttribLocation = gl.getAttribLocation(entityRenderingProgram, "vertTexCoord");
+      const rednessAttribLocation = gl.getAttribLocation(entityRenderingProgram, "vertRedness");
       gl.vertexAttribPointer(
          positionAttribLocation, // Attribute location
          2, // Number of elements per attribute
          gl.FLOAT, // Type of elements
          false,
-         4 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
+         5 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
          0 // Offset from the beginning of a single vertex to this attribute
       );
       gl.vertexAttribPointer(
@@ -245,13 +263,22 @@ const renderImageRenderParts = (renderParts: SortedImageRenderParts): void => {
          2, // Number of elements per attribute
          gl.FLOAT, // Type of elements
          false,
-         4 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
+         5 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
          2 * Float32Array.BYTES_PER_ELEMENT // Offset from the beginning of a single vertex to this attribute
+      );
+      gl.vertexAttribPointer(
+         rednessAttribLocation, // Attribute location
+         1, // Number of elements per attribute
+         gl.FLOAT, // Type of elements
+         false,
+         5 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
+         4 * Float32Array.BYTES_PER_ELEMENT // Offset from the beginning of a single vertex to this attribute
       );
       
       // Enable the attributes
       gl.enableVertexAttribArray(positionAttribLocation);
       gl.enableVertexAttribArray(texCoordAttribLocation);
+      gl.enableVertexAttribArray(rednessAttribLocation);
       
       // Set the texture
       const texture = getTexture("entities/" + textureSrc);
@@ -259,7 +286,7 @@ const renderImageRenderParts = (renderParts: SortedImageRenderParts): void => {
       gl.activeTexture(gl.TEXTURE0);
 
       // Draw the tile
-      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 4);
+      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 5);
    }
 
    gl.disable(gl.BLEND);
@@ -309,8 +336,8 @@ const renderCircleRenderParts = (circleRenderParts: Array<[Entity, CircleRenderP
 const renderEntityHitboxes = (): void => {
    gl.useProgram(hitboxProgram);
 
+   // Calculate vertices
    const vertices = new Array<number>();
-
    for (const entity of Object.values(Board.entities)) {
       switch (entity.hitbox.type) {
          case "rectangular": {

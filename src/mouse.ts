@@ -43,8 +43,6 @@ const calculateCursorTooltipTargetEntity = (cursorPosition: Point): Entity | nul
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
          const chunk = Board.getChunk(chunkX, chunkY);
          for (const entity of chunk.getEntities()) {
-            if (entity === Player.instance) continue;
-
             const distance = cursorPosition.distanceFrom(entity.position);
             if (distance <= CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE && distance < minDistance) {
                closestEntity = entity;

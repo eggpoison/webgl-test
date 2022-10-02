@@ -1,4 +1,4 @@
-import { circleAndRectangleDoIntersect, circlesDoIntersect, CircularHitboxInfo, EntityData, EntityType, ENTITY_INFO_RECORD, HitboxInfo, HitboxVertexPositions, Point, rectanglePointsDoIntersect, RectangularHitboxInfo, rotatePoint, SETTINGS, Tile, TILE_TYPE_INFO_RECORD, Vector } from "webgl-test-shared";
+import { circleAndRectangleDoIntersect, circlesDoIntersect, CircularHitboxInfo, ServerEntityData, EntityType, ENTITY_INFO_RECORD, HitboxInfo, HitboxVertexPositions, Point, rectanglePointsDoIntersect, RectangularHitboxInfo, rotatePoint, SETTINGS, Tile, TILE_TYPE_INFO_RECORD, Vector } from "webgl-test-shared";
 import Board, { EntityHitboxInfo } from "../Board";
 import Chunk from "../Chunk";
 
@@ -68,60 +68,38 @@ const calculateEntityRenderPosition = (entity: Entity): Point => {
       const tile = entity.findCurrentTile();
       const tileTypeInfo = TILE_TYPE_INFO_RECORD[tile.type];
 
-      const terminalVelocity = entity.terminalVelocity * (tileTypeInfo.moveSpeedMultiplier || 1);
+      const tileMoveSpeedMultiplier = tileTypeInfo.moveSpeedMultiplier || 1;
+
+      const terminalVelocity = entity.terminalVelocity * tileMoveSpeedMultiplier;
 
       // 
       // Calculate the change in position that has occurred since the start of the frame
       // 
-      let frameVelocity = entity.velocity.copy();
-
-      // Apply acceleration
+      let frameVelocity: Vector | null = entity.velocity.copy();
+      
+      // Accelerate
       if (entity.acceleration !== null) {
          const acceleration = entity.acceleration.copy();
-         acceleration.magnitude /= SETTINGS.TPS;
+         acceleration.magnitude *= tileTypeInfo.friction * tileMoveSpeedMultiplier / SETTINGS.TPS;
 
-         // Reduce acceleration due to friction
-         const friction = tileTypeInfo.friction;
-         acceleration.magnitude *= friction;
-          
-         // Apply tile speed multiplier
-         if (typeof tileTypeInfo.moveSpeedMultiplier !== "undefined") {
-            acceleration.magnitude *= tileTypeInfo.moveSpeedMultiplier;
-         }
-
-         const magnitudeBeforeAdd = frameVelocity.magnitude;
-         
+         const magnitudeBeforeAdd = entity.velocity?.magnitude || 0;
          // Add acceleration to velocity
-         frameVelocity = frameVelocity.add(acceleration);
-
+         frameVelocity = frameVelocity?.add(acceleration) || acceleration;
          // Don't accelerate past terminal velocity
-         if (frameVelocity.magnitude > terminalVelocity && frameVelocity.magnitude > magnitudeBeforeAdd) {
-            frameVelocity.magnitude = magnitudeBeforeAdd;
+         if (frameVelocity.magnitude > terminalVelocity && entity.velocity.magnitude > magnitudeBeforeAdd) {
+            frameVelocity.magnitude = terminalVelocity;
          }
-      }
-      // Apply friction if the entity isn't accelerating
-      else { 
-         const friction = tileTypeInfo.friction * SETTINGS.GLOBAL_FRICTION_CONSTANT / SETTINGS.TPS;
-         frameVelocity.magnitude /= 1 + friction;
+      // Decelerate
+      } else if (entity.velocity !== null) {
       }
 
-      // Apply friction if the entity isn't accelerating
-      const friction = tileTypeInfo.friction * SETTINGS.GLOBAL_FRICTION_CONSTANT / SETTINGS.TPS;
-      frameVelocity.magnitude /= 1 + friction;
-
-      // Restrict the entity's velocity to their terminal velocity
-      if (terminalVelocity > 0) {
-         const mach = Math.abs(frameVelocity.magnitude / terminalVelocity);
-         if (mach > 1) {
-            frameVelocity.magnitude /= 1 + (mach - 1) / SETTINGS.TPS;
-         }
-      }
-
-      frameVelocity.magnitude *= frameProgress / SETTINGS.TPS;
-      
       // Apply the frame velocity to the entity's position
-      const framePoint = frameVelocity.convertToPoint();
-      entityRenderPosition = entityRenderPosition.add(framePoint);
+      if (frameVelocity !== null) {
+         frameVelocity.magnitude *= frameProgress / SETTINGS.TPS;
+
+         const offset = frameVelocity.convertToPoint();
+         entityRenderPosition = entityRenderPosition.add(offset);
+      }
    }
 
    return entityRenderPosition;
@@ -273,43 +251,36 @@ abstract class Entity {
       const tile = this.findCurrentTile();
       const tileTypeInfo = TILE_TYPE_INFO_RECORD[tile.type];
 
-      const terminalVelocity = this.terminalVelocity * (tileTypeInfo.moveSpeedMultiplier || 1);
+      const tileMoveSpeedMultiplier = tileTypeInfo.moveSpeedMultiplier || 1;
+
+      const terminalVelocity = this.terminalVelocity * tileMoveSpeedMultiplier;
+
+      // Friction
+      if (this.velocity !== null) {
+         this.velocity.magnitude /= 1 + 1 / SETTINGS.TPS;
+      }
       
-      // Apply acceleration
+      // Accelerate
       if (this.acceleration !== null) {
          const acceleration = this.acceleration.copy();
-         acceleration.magnitude /= SETTINGS.TPS;
-
-         // Reduce acceleration due to friction
-         const friction = tileTypeInfo.friction;
-         acceleration.magnitude *= friction;
-          
-         // Apply tile speed multiplier
-         if (typeof tileTypeInfo.moveSpeedMultiplier !== "undefined") {
-            acceleration.magnitude *= tileTypeInfo.moveSpeedMultiplier;
-         }
+         acceleration.magnitude *= tileTypeInfo.friction * tileMoveSpeedMultiplier / SETTINGS.TPS;
 
          const magnitudeBeforeAdd = this.velocity?.magnitude || 0;
-         
          // Add acceleration to velocity
          this.velocity = this.velocity !== null ? this.velocity.add(acceleration) : acceleration;
-
          // Don't accelerate past terminal velocity
          if (this.velocity.magnitude > terminalVelocity && this.velocity.magnitude > magnitudeBeforeAdd) {
-            this.velocity.magnitude = magnitudeBeforeAdd;
+            if (magnitudeBeforeAdd < terminalVelocity) {
+               this.velocity.magnitude = terminalVelocity;
+            } else {
+               this.velocity.magnitude = magnitudeBeforeAdd;
+            }
          }
-      }
-      // Apply friction if the entity isn't accelerating
-      else if (this.velocity !== null) { 
-         const friction = tileTypeInfo.friction * SETTINGS.GLOBAL_FRICTION_CONSTANT / SETTINGS.TPS;
-         this.velocity.magnitude /= 1 + friction;
-      }
-
-      // Restrict the entity's velocity to their terminal velocity
-      if (this.velocity !== null && terminalVelocity > 0) {
-         const mach = Math.abs(this.velocity.magnitude / terminalVelocity);
-         if (mach > 1) {
-            this.velocity.magnitude /= 1 + (mach - 1) / SETTINGS.TPS;
+      // Friction
+      } else if (this.velocity !== null) {
+         this.velocity.magnitude -= 50 * tileTypeInfo.friction / SETTINGS.TPS;
+         if (this.velocity.magnitude <= 0) {
+            this.velocity = null;
          }
       }
 
@@ -332,7 +303,6 @@ abstract class Entity {
 
    private stopYVelocity(): void {
       if (this.velocity !== null) {
-         // Stop y velocity
          const pointVelocity = this.velocity.convertToPoint();
          pointVelocity.y = 0;
          this.velocity = pointVelocity.convertToVector();
@@ -432,14 +402,14 @@ abstract class Entity {
       return this.renderParts;
    }
 
-   public updateFromData(entityData: EntityData<EntityType>): void {
+   public updateFromData(entityData: ServerEntityData): void {
       this.position = Point.unpackage(entityData.position);
       this.velocity = entityData.velocity !== null ? Vector.unpackage(entityData.velocity) : null;
       this.acceleration = entityData.acceleration !== null ? Vector.unpackage(entityData.acceleration) : null;
       this.terminalVelocity = entityData.terminalVelocity;
       this.rotation = entityData.rotation;
 
-      this.updateChunks(entityData.chunks.map(([x, y]) => Board.getChunk(x, y)));
+      this.updateChunks(entityData.chunkCoordinates.map(([x, y]) => Board.getChunk(x, y)));
    }
 
    public resolveCollisions(entityHitboxInfoRecord: { [id: number]: EntityHitboxInfo }): void {

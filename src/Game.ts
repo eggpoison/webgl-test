@@ -5,13 +5,19 @@ import { renderPlayerNames } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/ChatBox";
 import { Point, randInt, SETTINGS } from "webgl-test-shared";
-import { calculateEntityRenderPositions, setFrameProgress } from "./entities/Entity";
+import Entity, { calculateEntityRenderPositions, setFrameProgress } from "./entities/Entity";
 import { renderEntities } from "./entity-rendering";
 import Client from "./client/Client";
 import { hidePauseScreen, showPauseScreen } from "./components/App";
 import { calculateCursorWorldPosition, renderCursorTooltip } from "./mouse";
 import { updateDevEntityViewer } from "./components/DevEntityViewer";
 import OPTIONS from "./options";
+import { gl } from ".";
+
+export type ClientAttackInfo = {
+   readonly targetEntity: Entity;
+   readonly progress: number;
+}
 
 abstract class Game {
    public static isRunning: boolean = false;
@@ -26,6 +32,8 @@ abstract class Game {
 
    public static cursorPosition: Point | null;
 
+   private static attackInfoRecord: { [id: number]: ClientAttackInfo } = {};
+
    public static async start(): Promise<void> {
       this.isRunning = true;
       
@@ -34,7 +42,7 @@ abstract class Game {
          if (!this._isPaused && this.isSynced) {
             await this.main();
          } else {
-            // Stop infinite loops 
+            // Stop infinite loops
             await sleep(5);
          }
       }
@@ -72,6 +80,10 @@ abstract class Game {
     * @param frameProgress How far the game is into the current frame (0 = frame just started, 0.99 means frame is about to end)
     */
    private static render(frameProgress: number): void {
+      // Clear
+      gl.clearColor(1, 1, 1, 1);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+
       setFrameProgress(frameProgress);
       calculateEntityRenderPositions();
 
@@ -80,7 +92,10 @@ abstract class Game {
       Camera.updateVisibleChunkBounds();
 
       renderPlayerNames();
-      Board.render();
+
+      Board.renderTiles();
+      Board.renderItems();
+      Board.drawBorder();
       if (OPTIONS.showChunkBorders) {
          Board.drawChunkBorders();
       }
@@ -125,6 +140,21 @@ abstract class Game {
       new Player(id, position, null, null, 0, 0, name);
 
       return position;
+   }
+
+   public static loadAttackDataArray(clientAttacks: ReadonlyArray<ClientAttackInfo>): void {
+      const attackInfoRecord: { [id: number]: ClientAttackInfo } = {};
+      for (const attack of clientAttacks) {
+         attackInfoRecord[attack.targetEntity.id] = attack;
+      }
+      this.attackInfoRecord = attackInfoRecord;
+   }
+
+   public static getClientAttack(targetID: number): ClientAttackInfo | null {
+      if (this.attackInfoRecord.hasOwnProperty(targetID)) {
+         return this.attackInfoRecord[targetID];
+      }
+      return null;
    }
 }
 

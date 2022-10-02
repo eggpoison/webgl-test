@@ -11,9 +11,9 @@ class Player extends Entity {
    public readonly displayName: string;
 
    /** How far away from the entity the attack is done */
-   private static readonly ATTACK_OFFSET = 64;
+   private static readonly ATTACK_OFFSET = 80;
    /** Max distance from the attack position that the attack will be registered from */
-   private static readonly ATTACK_TEST_RADIUS = 32;
+   private static readonly ATTACK_TEST_RADIUS = 48;
 
    private static readonly ACCELERATION = 1000;
    private static readonly TERMINAL_VELOCITY = 300;
@@ -46,11 +46,10 @@ class Player extends Entity {
       if (typeof instance === "undefined") return;
 
       const targets = this.getAttackTargets();
-
       if (targets.length > 0) {
          // Send attack packet
          const attackPacket: AttackPacket = {
-            targetEntites: targets.map(target => target.id),
+            targetEntities: targets.map(target => target.id),
             heldItem: null
          }
          Client.sendAttackPacket(attackPacket);
@@ -58,13 +57,13 @@ class Player extends Entity {
    }
 
    private static getAttackTargets(): ReadonlyArray<Entity> {
-      const offset = new Vector(this.ATTACK_OFFSET, Player.instance.rotation)
+      const offset = new Vector(this.ATTACK_OFFSET, -Player.instance.rotation + Math.PI/2);
       const attackPosition = Player.instance.position.add(offset.convertToPoint());
 
-      const minChunkX = Math.max(Math.min(Math.floor(attackPosition.x / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-      const maxChunkX = Math.max(Math.min(Math.floor(attackPosition.x / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-      const minChunkY = Math.max(Math.min(Math.floor(attackPosition.y / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-      const maxChunkY = Math.max(Math.min(Math.floor(attackPosition.y / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+      const minChunkX = Math.max(Math.min(Math.floor((attackPosition.x - this.ATTACK_TEST_RADIUS) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+      const maxChunkX = Math.max(Math.min(Math.floor((attackPosition.x + this.ATTACK_TEST_RADIUS) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+      const minChunkY = Math.max(Math.min(Math.floor((attackPosition.y - this.ATTACK_TEST_RADIUS) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+      const maxChunkY = Math.max(Math.min(Math.floor((attackPosition.y + this.ATTACK_TEST_RADIUS) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
 
       // Find all attacked entities
       const attackedEntities = new Array<Entity>();
@@ -81,7 +80,7 @@ class Player extends Entity {
             }
          }
       }
-
+      
       // Don't attack yourself
       attackedEntities.splice(attackedEntities.indexOf(this.instance), 1);
 
@@ -151,9 +150,9 @@ class Player extends Entity {
          this.acceleration = null;
          this.isMoving = false;
       } else {
-         this.terminalVelocity = Player.TERMINAL_VELOCITY;
          const acceleration = new Point(xAcceleration, yAcceleration).convertToVector();
          this.acceleration = acceleration;
+         this.terminalVelocity = Player.TERMINAL_VELOCITY;
          this.isMoving = true;
       }
    }
