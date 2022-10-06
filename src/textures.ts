@@ -1,4 +1,4 @@
-import { gl } from ".";
+import { gl } from "./webgl";
 import CLIENT_ITEM_INFO_RECORD from "./client-item-info";
 import { TILE_TYPE_RENDER_INFO_RECORD } from "./tile-type-render-info";
 import { imageIsLoaded } from "./utils";

@@ -1,6 +1,6 @@
-import { useEffect, useReducer, useState } from "react";
+import { useCallback, useReducer, useState } from "react";
 import OPTIONS from "../options";
-import { fullyCloseSettings } from "./App";
+import { closeSettingsMenu } from "./GameScreen";
 
 type BaseSettingsButton = {
    readonly type: string;
@@ -134,11 +134,6 @@ const getParentMenu = (menu: SettingsMenu): SettingsMenu | null => {
    throw new Error(`Couldn't find parent menu of menu with name '${menu.name}'`);
 }
 
-let closeSettingsReference: () => void;
-export function closeSettings(): void {
-   closeSettingsReference();
-}
-
 const Settings = () => {
    const [currentMenu, setCurrentMenu] = useState<SettingsMenu>(BASE_MENU);
    const [, forceUpdate] = useReducer(x => x + 1, 0);
@@ -148,14 +143,12 @@ const Settings = () => {
       setCurrentMenu(menu);
    }
 
-   useEffect(() => {
-      closeSettingsReference = (): void => {
-         const parentMenu = getParentMenu(currentMenu);
-         if (parentMenu === null) {
-            fullyCloseSettings();
-         } else {
-            setCurrentMenu(parentMenu);
-         }
+   const closeCurrentMenu = useCallback((): void => {
+      const parentMenu = getParentMenu(currentMenu);
+      if (parentMenu === null) {
+         closeSettingsMenu();
+      } else {
+         setCurrentMenu(parentMenu);
       }
    }, [currentMenu]);
 
@@ -173,7 +166,7 @@ const Settings = () => {
                            return <button onClick={button.onClick} key={j}>{button.text}</button>
                         }
                         case "close": {
-                           return <button onClick={closeSettings} key={j}>{button.text}</button>
+                           return <button onClick={closeCurrentMenu} key={j}>{button.text}</button>
                         }
                         case "openMenu": {
                            return <button onClick={typeof button.menuName !== "undefined" ? () => changeCurrentMenu(button.menuName!) : undefined} key={j}>{button.text}</button>

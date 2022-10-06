@@ -1,6 +1,5 @@
 import { Point, SETTINGS, VisibleChunkBounds } from "webgl-test-shared";
-import { halfWindowHeight, halfWindowWidth, windowHeight, windowWidth } from ".";
-import Client from "./client/Client";
+import { halfWindowHeight, halfWindowWidth, windowHeight, windowWidth } from "./webgl";
 import Player from "./entities/Player";
 
 abstract class Camera {
@@ -23,14 +22,7 @@ abstract class Camera {
    }
 
    public static updateVisibleChunkBounds(): void {
-      const newVisibleChunkBounds = this.calculateVisibleChunkBounds();
-
-      // If the visible chunk bounds have changed, send them to the server
-      if (!newVisibleChunkBounds.every((value: number, idx: number) => value === this.visibleChunkBounds[idx])) {
-         Client.sendVisibleChunkBoundsPacket(newVisibleChunkBounds);
-      }
-
-      this.visibleChunkBounds = newVisibleChunkBounds;
+      this.visibleChunkBounds = this.calculateVisibleChunkBounds();
    }
 
    public static getVisibleChunkBounds(): VisibleChunkBounds {

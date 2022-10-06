@@ -1,14 +1,14 @@
 import { CircularHitboxInfo } from "webgl-test-shared";
-import { halfWindowHeight, halfWindowWidth, windowHeight, windowWidth } from ".";
 import Board from "./Board";
 import Camera from "./Camera";
 import Player from "./entities/Player";
+import { halfWindowHeight, halfWindowWidth, windowHeight, windowWidth } from "./webgl";
 
 let ctx: CanvasRenderingContext2D;
 
 const NAMETAG_Y_OFFSET = 5;
 
-export function setupTextCanvas(): void {
+export function createTextCanvasContext(): void {
    const textCanvas = document.getElementById("text-canvas") as HTMLCanvasElement;
 
    ctx = textCanvas.getContext("2d")!;

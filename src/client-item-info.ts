@@ -13,6 +13,9 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemID, ClientItemInfo> = {
    },
    raw_beef: {
       textureSrc: "raw-beef.png"
+   },
+   cooked_beef: {
+      textureSrc: "raw-beef.png"
    }
 };
 

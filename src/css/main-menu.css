@@ -1,3 +1,11 @@
+#main-menu {
+   position: absolute;
+   top: 0;
+   right: 0;
+   bottom: 0;
+   left: 0;
+}
+
 #name-input {
    position: absolute;
    top: 50%;
@@ -12,4 +20,11 @@
 }
 #name-input button {
    padding: 0 10px;
+}
+
+#main-menu .content {
+   position: absolute;
+   top: 50%;
+   left: 50%;
+   transform: translate(-50%, -50%);
 }

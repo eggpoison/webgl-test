@@ -1,27 +1,52 @@
 import Board from "./Board";
 import Player from "./entities/Player";
 import { isDev, sleep } from "./utils";
-import { renderPlayerNames } from "./text-canvas";
+import { renderPlayerNames, createTextCanvasContext } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/ChatBox";
 import { Point, randInt, SETTINGS } from "webgl-test-shared";
 import Entity, { calculateEntityRenderPositions, setFrameProgress } from "./entities/Entity";
-import { renderEntities } from "./entity-rendering";
-import Client from "./client/Client";
-import { hidePauseScreen, showPauseScreen } from "./components/App";
-import { calculateCursorWorldPosition, renderCursorTooltip } from "./mouse";
+import { createEntityShaders, renderEntities } from "./entity-rendering";
+import Client, { GameData } from "./client/Client";
+import { calculateCursorWorldPosition, handleMouseMovement, renderCursorTooltip } from "./mouse";
 import { updateDevEntityViewer } from "./components/DevEntityViewer";
 import OPTIONS from "./options";
-import { gl } from ".";
+import { clearCanvas, createWebGLContext, resizeCanvas } from "./webgl";
+import { loadTextures } from "./textures";
+import { hidePauseScreen, showPauseScreen, toggleSettingsMenu } from "./components/GameScreen";
+import { getGameState } from "./components/App";
+import { clearPressedKeys } from "./keyboard-input";
 
 export type ClientAttackInfo = {
    readonly targetEntity: Entity;
    readonly progress: number;
 }
 
+const createEventListeners = (): void => {
+   window.addEventListener("contextmenu", clearPressedKeys);
+
+   window.addEventListener("keydown", (e: KeyboardEvent) => {
+      if (e.key === "Escape" && getGameState() === "game") {
+         toggleSettingsMenu();
+      }
+   });
+   
+   window.addEventListener("focus", () => {
+      Game.unpause();
+   });
+   window.addEventListener("blur", () => {
+      Game.pause();
+   });
+
+   window.addEventListener("mousemove", handleMouseMovement);
+
+   // Has to be arrow function as otherwise it has the wrong scope
+   window.addEventListener("mousedown", () => Player.attack());
+}
+
 abstract class Game {
    public static isRunning: boolean = false;
-   private static _isPaused: boolean = false;
+   private static isPaused: boolean = false;
 
    /** If the game has recevied up-to-date game data from the server. Set to false when paused */
    public static isSynced: boolean = true;
@@ -34,12 +59,17 @@ abstract class Game {
 
    private static attackInfoRecord: { [id: number]: ClientAttackInfo } = {};
 
+   /** Pretty self-explanatory */
    public static async start(): Promise<void> {
-      this.isRunning = true;
-      
+      createEventListeners();
+      resizeCanvas();
+
+      Game.lastTime = new Date().getTime();
+
       // Start the game loop
+      this.isRunning = true;
       while (this.isRunning) {
-         if (!this._isPaused && this.isSynced) {
+         if (!this.isPaused && this.isSynced) {
             await this.main();
          } else {
             // Stop infinite loops
@@ -48,23 +78,38 @@ abstract class Game {
       }
    }
 
-   public static get isPaused(): boolean {
-      return this._isPaused;
-   }
-   public static set isPaused(newValue: boolean) {
-      this._isPaused = newValue;
-      newValue ? showPauseScreen() : hidePauseScreen();
+   public static pause(): void {
+      this.isPaused = true;
+      showPauseScreen();
 
-      if (!newValue) {
-         this.isSynced = false;
-      }
+      this.isSynced = false;
    }
-
-   /**
-    * Runs the setup functions for various different parts of the game. Called once just before the game starts.
-    */
-   public static setup(): void {
+   public static unpause(): void {
+      this.isPaused = false;
+      hidePauseScreen();
+   }
+   public static getIsPaused(): boolean {
+      return this.isPaused;
+   }
+   
+   public static sync(): void {
       Game.lastTime = new Date().getTime();
+      this.isSynced = true;
+   }
+   
+   /**
+    * Prepares the game to be played. Called once just before the game starts.
+    */
+   public static async initialise(gameData: GameData): Promise<void> {
+      Board.setTiles(gameData.tiles);
+
+      createWebGLContext();
+      createTextCanvasContext();
+
+      Board.setupShaders();
+      createEntityShaders();
+      
+      await loadTextures();
    }
 
    private static update(): void {
@@ -80,9 +125,7 @@ abstract class Game {
     * @param frameProgress How far the game is into the current frame (0 = frame just started, 0.99 means frame is about to end)
     */
    private static render(frameProgress: number): void {
-      // Clear
-      gl.clearColor(1, 1, 1, 1);
-      gl.clear(gl.COLOR_BUFFER_BIT);
+      clearCanvas();
 
       setFrameProgress(frameProgress);
       calculateEntityRenderPositions();
@@ -129,17 +172,15 @@ abstract class Game {
       });
    }
 
-   public static spawnPlayer(name: string, id: number): Point {
+   public static spawnPlayer(username: string, id: number): void {
       // const x = randInt(0, SETTINGS.BOARD_SIZE * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
       // const y = randInt(0, SETTINGS.BOARD_SIZE * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
       if (1 + 1 === 3) console.log(randInt(0, 1));
       const x = 100;
       const y = 100;
-
       const position = new Point(x, y);
-      new Player(id, position, null, null, 0, 0, name);
 
-      return position;
+      new Player(id, position, null, null, 0, 0, username);
    }
 
    public static loadAttackDataArray(clientAttacks: ReadonlyArray<ClientAttackInfo>): void {

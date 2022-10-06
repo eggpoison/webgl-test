@@ -1,20 +1,40 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, ServerAttackData, ServerEntityData, ServerItemData, ServerToClientEvents, SETTINGS, Tile, Vector, VisibleChunkBounds } from "webgl-test-shared";
-import { connect } from "..";
-import { GameState, setGameMessage, setGameState } from "../components/App";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, ServerAttackData, ServerEntityData, ServerItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, InitialPlayerDataPacket } from "webgl-test-shared";
 import Board from "../Board";
 import Camera from "../Camera";
+import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD from "../entity-class-record";
 import Game, { ClientAttackInfo as AttackInfo } from "../Game";
 import Item from "../Item";
+import { Tile } from "../Tile";
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
-type ServerResponse = {
+export type GameData = {
    readonly gameTicks: number;
-   readonly tiles: ReadonlyArray<ReadonlyArray<Tile>>;
+   readonly tiles: Array<Array<Tile>>;
    readonly playerID: number;
+}
+
+/** Parses the server tile data array into an array of client tiles */
+const parseServerTileDataArray = (serverTileDataArray: ReadonlyArray<ReadonlyArray<ServerTileData>>): Array<Array<Tile>> => {
+   const tiles = new Array<Array<Tile>>();
+
+   for (let y = 0; y < SETTINGS.BOARD_DIMENSIONS; y++) {
+      tiles[y] = new Array<Tile>();
+      for (let x = 0; x < SETTINGS.BOARD_DIMENSIONS; x++) {
+         const serverTileData = serverTileDataArray[y][x];
+         const tileInfo: TileInfo = {
+            type: serverTileData.type,
+            biome: serverTileData.biome,
+            isWall: serverTileData.isWall
+         }
+         tiles[y][x] = new Tile(serverTileData.x, serverTileData.y, tileInfo);
+      }
+   }
+
+   return tiles;
 }
 
 const parseServerAttackDataArray = (serverAttackInfoArray: ReadonlyArray<ServerAttackData>): ReadonlyArray<AttackInfo> => {
@@ -34,43 +54,64 @@ const parseServerAttackDataArray = (serverAttackInfoArray: ReadonlyArray<ServerA
 abstract class Client {
    private static socket: ISocket | null = null;
 
-   public static connectToServer(): Promise<ServerResponse | null> {
-      return new Promise(resolve => {
-         setGameMessage("Connecting to server...");
+   private static gameDataResponse: Promise<GameData>;
 
+   public static hasConnected(): boolean {
+      return this.socket !== null;
+   }
+
+   public static connectToServer(): Promise<boolean> {
+      return new Promise(resolve => {
          // Create the socket
          this.socket = this.createSocket();
          this.socket.connect();
 
-         setGameMessage("Waiting for game data...");
+         // If connection was successful, return true
+         this.socket.on("connect", () => {
+            resolve(true);
+         });
+         // If couldn't connect to server, return false
+         this.socket.on("connect_error", () => {
+            resolve(false);
+         });
 
-         // Wait for the server data
-         this.socket.on("initialGameData", (gameTicks: number, tiles: ReadonlyArray<ReadonlyArray<Tile>>, playerID: number) => {
-            const serverResponse: ServerResponse = {
+         let gameDataRequestResolve: (value: GameData | PromiseLike<GameData>) => void;
+         this.gameDataResponse = new Promise(resolve => {
+            gameDataRequestResolve = resolve;
+         });
+         this.socket.on("initialGameData", (gameTicks: number, serverTileDataArray: ReadonlyArray<ReadonlyArray<ServerTileData>>, playerID: number) => {
+            const tiles = parseServerTileDataArray(serverTileDataArray);
+
+            const serverResponse: GameData = {
                gameTicks: gameTicks,
                tiles: tiles,
                playerID: playerID
             };
-            resolve(serverResponse);
-         });
+            gameDataRequestResolve!(serverResponse);
+         })
+         
+         this.socket.on("gameDataPacket", gameDataPacket => {
+            // Only unload game packets when the game is running
+            if (Game.getIsPaused() || !Game.isRunning) return;
 
-         this.socket.on("gameDataPacket", (gameDataPacket: GameDataPacket) => {
-            // Don't unload game packets when paused
-            if (!Game.isPaused) {
-               this.unloadGameDataPacket(gameDataPacket);
-               
-               // Sync the game
-               Game.isSynced = true;
+            this.unloadGameDataPacket(gameDataPacket);
+
+            if (!Game.isSynced) {
+               Game.sync();
             }
          });
-         
-         // Check if there was an error when connecting to the server
-         this.socket.on("connect_error", () => {
-            this.disconnect();
-            setGameState(GameState.error);
-            resolve(null);
+
+         this.socket.on("disconnect", () => {
+            this.handleServerDisconnect();
          });
       });
+   }
+
+   public static async receiveGameData(): Promise<GameData> {
+      if (this.socket === null) throw new Error("Socket hadn't been created when requesting game data")
+
+      const serverResponse = await this.gameDataResponse;
+      return serverResponse;
    }
 
    /** Disconnects from the server */
@@ -80,10 +121,6 @@ abstract class Client {
       if (this.socket !== null) {
          this.socket.disconnect();
       }
-   }
-
-   public static async attemptReconnect(): Promise<void> {
-      connect();
    }
 
    /** Creates the socket used to connect to the server */
@@ -98,6 +135,7 @@ abstract class Client {
    private static unloadGameDataPacket(gameDataPacket: GameDataPacket): void {
       this.updateEntities(gameDataPacket.serverEntityDataArray);
       this.updateItems(gameDataPacket.serverItemDataArray);
+      this.registerTileUpdates(gameDataPacket.tileUpdates);
       this.addNewAttacks(gameDataPacket.serverAttackDataArray);
    }
 
@@ -160,6 +198,14 @@ abstract class Client {
       item.count = serverItemData.count;
    }
 
+   private static registerTileUpdates(tileUpdates: ReadonlyArray<ServerTileUpdateData>): void {
+      for (const tileUpdate of tileUpdates) {
+         const tile = Board.getTile(tileUpdate.x, tileUpdate.y);
+         tile.type = tileUpdate.type;
+         tile.isWall = tileUpdate.isWall;
+      }
+   }
+
    private static addNewAttacks(serverAttackDataArray: ReadonlyArray<ServerAttackData>): void {
       const attackInfoArray = parseServerAttackDataArray(serverAttackDataArray);
       Game.loadAttackDataArray(attackInfoArray);
@@ -186,11 +232,10 @@ abstract class Client {
       }
    }
 
-   public static sendInitialPlayerData(name: string, position: [number, number]): void {
+   public static sendInitialPlayerData(initialPlayerDataPacket: InitialPlayerDataPacket): void {
       // Send player data to the server
       if (this.socket !== null) {
-         const visibleChunkBounds = Camera.calculateVisibleChunkBounds();
-         this.socket.emit("initialPlayerData", name, position, visibleChunkBounds);
+         this.socket.emit("initialPlayerDataPacket", initialPlayerDataPacket);
       }
    }
 
@@ -201,10 +246,11 @@ abstract class Client {
             velocity: Player.instance.velocity?.package() || null,
             acceleration: Player.instance.acceleration?.package() || null,
             terminalVelocity: Player.instance.terminalVelocity,
-            rotation: Player.instance.rotation
+            rotation: Player.instance.rotation,
+            visibleChunkBounds: Camera.getVisibleChunkBounds()
          };
 
-         this.socket?.emit("playerDataPacket", packet);
+         this.socket.emit("playerDataPacket", packet);
       }
    }
 
@@ -214,10 +260,9 @@ abstract class Client {
       }
    }
 
-   public static sendVisibleChunkBoundsPacket(visibleChunkBounds: VisibleChunkBounds): void {
-      if (this.socket !== null) {
-         this.socket.emit("newVisibleChunkBounds", visibleChunkBounds);
-      }
+   private static handleServerDisconnect(): void {
+      setLoadingScreenInitialStatus("server_disconnect");
+      setGameState("loading");
    }
 }
 

@@ -1,5 +1,4 @@
 import { Point, rotatePoint } from "webgl-test-shared";
-import { gl } from ".";
 import Board from "./Board";
 import Camera from "./Camera";
 import CLIENT_SETTINGS from "./client-settings";
@@ -7,7 +6,7 @@ import Entity, { CircleRenderPart, ImageRenderPart } from "./entities/Entity";
 import Game from "./Game";
 import OPTIONS from "./options";
 import { getTexture } from "./textures";
-import { createWebGLProgram } from "./webgl";
+import { createWebGLProgram, gl } from "./webgl";
 
 // 
 // Image shaders

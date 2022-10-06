@@ -1,13 +1,13 @@
-import { gl } from ".";
 import Entity from "./entities/Entity";
 import { getTexture } from "./textures";
-import { Tile, SETTINGS, computeSideAxis, Point, Vector, TileUpdateData, rotatePoint, } from "webgl-test-shared";
+import { SETTINGS, computeSideAxis, Point, Vector, ServerTileUpdateData, rotatePoint, } from "webgl-test-shared";
 import Camera from "./Camera";
 import { TILE_TYPE_RENDER_INFO_RECORD } from "./tile-type-render-info";
-import { createWebGLProgram } from "./webgl";
+import { createWebGLProgram, gl } from "./webgl";
 import Chunk from "./Chunk";
 import Item from "./Item";
 import CLIENT_ITEM_INFO_RECORD from "./client-item-info";
+import { Tile } from "./Tile";
 
 // 
 // Solid Tile Shaders
@@ -149,7 +149,7 @@ export type EntityHitboxInfo = {
 abstract class Board {
    private static tiles: Array<Array<Tile>>;
 
-   private static chunks: Array<Array<Chunk>>;
+   private static chunks = this.createChunkArray();
 
    public static entities: Record<number, Entity> = {};
    
@@ -164,20 +164,6 @@ abstract class Board {
    private static solidTileProgramPositionAttribLocation: GLint;
    private static solidTileProgramTexCoordAttribLocation: GLint;
 
-   public static setup(tiles: ReadonlyArray<ReadonlyArray<Tile>>): void {
-      this.tiles = tiles as Array<Array<Tile>>;
-
-      this.solidTileProgram = createWebGLProgram(solidTileVertexShaderText, solidTileFragmentShaderText);
-      this.liquidTileProgram = createWebGLProgram(liquidTileVertexShaderText, liquidTileFragmentShaderText);
-      this.borderProgram = createWebGLProgram(borderVertexShaderText, borderFragmentShaderText);
-      this.chunkBorderProgram = createWebGLProgram(chunkBorderVertexShaderText, chunkBorderFragmentShaderText);
-      this.itemProgram = createWebGLProgram(itemVertexShaderText, itemFragmentShaderText);
-
-      this.precomputeAttribLocations();
-
-      this.chunks = this.createChunkArray();
-   }
-
    private static createChunkArray(): Array<Array<Chunk>> {
       const chunks = new Array<Array<Chunk>>();
 
@@ -189,6 +175,20 @@ abstract class Board {
       }
 
       return chunks;
+   }
+
+   public static setTiles(tiles: Array<Array<Tile>>): void {
+      this.tiles = tiles;
+   }
+
+   public static setupShaders(): void {
+      this.solidTileProgram = createWebGLProgram(solidTileVertexShaderText, solidTileFragmentShaderText);
+      this.liquidTileProgram = createWebGLProgram(liquidTileVertexShaderText, liquidTileFragmentShaderText);
+      this.borderProgram = createWebGLProgram(borderVertexShaderText, borderFragmentShaderText);
+      this.chunkBorderProgram = createWebGLProgram(chunkBorderVertexShaderText, chunkBorderFragmentShaderText);
+      this.itemProgram = createWebGLProgram(itemVertexShaderText, itemFragmentShaderText);
+
+      this.precomputeAttribLocations();
    }
 
    public static getTile(x: number, y: number): Tile {
@@ -238,7 +238,7 @@ abstract class Board {
    }
 
    /** Updates the client's copy of the tiles array to match any tile updates that have occurred */
-   public static loadTileUpdates(tileUpdates: ReadonlyArray<TileUpdateData>): void {
+   public static loadTileUpdates(tileUpdates: ReadonlyArray<ServerTileUpdateData>): void {
       for (const update of tileUpdates) {
          let tile = this.getTile(update.x, update.y);
          tile.type = update.type;

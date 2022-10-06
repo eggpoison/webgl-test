@@ -2,7 +2,7 @@ import { AttackPacket, Point, SETTINGS, Vector } from "webgl-test-shared";
 import Board from "../Board";
 import Camera from "../Camera";
 import Client from "../client/Client";
-import { keyIsPressed } from "../keyboard";
+import { keyIsPressed } from "../keyboard-input";
 import Entity, { RenderPart, sortRenderParts } from "./Entity";
 
 class Player extends Entity {
@@ -42,8 +42,7 @@ class Player extends Entity {
    }
 
    public static attack(): void {
-      const instance = this.instance;
-      if (typeof instance === "undefined") return;
+      if (typeof this.instance === "undefined") return;
 
       const targets = this.getAttackTargets();
       if (targets.length > 0) {
@@ -82,7 +81,14 @@ class Player extends Entity {
       }
       
       // Don't attack yourself
-      attackedEntities.splice(attackedEntities.indexOf(this.instance), 1);
+      while (true) {
+         const idx = attackedEntities.indexOf(this.instance);
+         if (idx !== -1) {
+            attackedEntities.splice(idx, 1);
+         } else {
+            break;
+         }
+      }
 
       return attackedEntities;
    }

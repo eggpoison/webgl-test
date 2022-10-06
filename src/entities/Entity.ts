@@ -1,6 +1,7 @@
-import { circleAndRectangleDoIntersect, circlesDoIntersect, CircularHitboxInfo, ServerEntityData, EntityType, ENTITY_INFO_RECORD, HitboxInfo, HitboxVertexPositions, Point, rectanglePointsDoIntersect, RectangularHitboxInfo, rotatePoint, SETTINGS, Tile, TILE_TYPE_INFO_RECORD, Vector } from "webgl-test-shared";
+import { circleAndRectangleDoIntersect, circlesDoIntersect, CircularHitboxInfo, ServerEntityData, EntityType, ENTITY_INFO_RECORD, HitboxInfo, HitboxVertexPositions, Point, rectanglePointsDoIntersect, RectangularHitboxInfo, rotatePoint, SETTINGS, TILE_TYPE_INFO_RECORD, Vector } from "webgl-test-shared";
 import Board, { EntityHitboxInfo } from "../Board";
 import Chunk from "../Chunk";
+import { Tile } from "../Tile";
 
 interface BaseRenderPart {
    readonly type: string;
