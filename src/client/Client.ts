@@ -79,7 +79,7 @@ abstract class Client {
          this.gameDataResponse = new Promise(resolve => {
             gameDataRequestResolve = resolve;
          });
-         this.socket.on("initialGameData", (gameTicks: number, serverTileDataArray: ReadonlyArray<ReadonlyArray<ServerTileData>>, playerID: number) => {
+         this.socket.on("initial_game_data", (gameTicks: number, serverTileDataArray: ReadonlyArray<ReadonlyArray<ServerTileData>>, playerID: number) => {
             const tiles = parseServerTileDataArray(serverTileDataArray);
 
             const serverResponse: GameData = {
@@ -90,7 +90,7 @@ abstract class Client {
             gameDataRequestResolve!(serverResponse);
          })
          
-         this.socket.on("gameDataPacket", gameDataPacket => {
+         this.socket.on("game_data_packet", gameDataPacket => {
             // Only unload game packets when the game is running
             if (Game.getIsPaused() || !Game.isRunning) return;
 
@@ -228,14 +228,14 @@ abstract class Client {
    public static sendChatMessage(message: string): void {
       // Send the chat message to the server
       if (this.socket !== null) {
-         this.socket.emit("chatMessage", message);
+         this.socket.emit("chat_message", message);
       }
    }
 
    public static sendInitialPlayerData(initialPlayerDataPacket: InitialPlayerDataPacket): void {
       // Send player data to the server
       if (this.socket !== null) {
-         this.socket.emit("initialPlayerDataPacket", initialPlayerDataPacket);
+         this.socket.emit("initial_player_data_packet", initialPlayerDataPacket);
       }
    }
 
@@ -250,13 +250,13 @@ abstract class Client {
             visibleChunkBounds: Camera.getVisibleChunkBounds()
          };
 
-         this.socket.emit("playerDataPacket", packet);
+         this.socket.emit("player_data_packet", packet);
       }
    }
 
    public static sendAttackPacket(attackPacket: AttackPacket): void {
       if (this.socket !== null) {
-         this.socket.emit("attackPacket", attackPacket);
+         this.socket.emit("attack_packet", attackPacket);
       }
    }
 

@@ -87,10 +87,11 @@ void main() {
 `;
 
 // 
-// Chunk border shaders
+// Chunk border wireframe shaders
 // 
+const chunkBorderColour = "1.0, 0.0, 0.0";
 const chunkBorderVertexShaderText = `
-precision mediump float;
+precision lowp float;
 
 attribute vec2 vertPosition;
 
@@ -101,7 +102,7 @@ const chunkBorderFragmentShaderText = `
 precision mediump float;
 
 void main() {
-   gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+   gl_FragColor = vec4(${chunkBorderColour}, 1.0);
 }
 `;
 
@@ -512,12 +513,18 @@ abstract class Board {
 
       const vertices = new Array<number>();
 
+      // Calculate line end positions
+      const top = Camera.getYPositionInScreen(SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE);
+      const bottom = Camera.getYPositionInScreen(0);
+      const left = Camera.getXPositionInScreen(0);
+      const right = Camera.getXPositionInScreen(SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE);
+
       // Horizontal lines
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
          const screenY = Camera.getYPositionInScreen(chunkY * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
          vertices.push(
-            -1, screenY,
-            1, screenY
+            left, screenY,
+            right, screenY
          );
       }
 
@@ -525,8 +532,8 @@ abstract class Board {
       for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
          const screenX = Camera.getXPositionInScreen(chunkX * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
          vertices.push(
-            screenX, -1,
-            screenX, 1
+            screenX, top,
+            screenX, bottom
          );
       }
 
