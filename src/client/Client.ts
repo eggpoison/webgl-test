@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, ServerAttackData, ServerEntityData, ServerItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, InitialPlayerDataPacket } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, ServerAttackData, ServerEntityData, ServerItemEntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, InitialPlayerDataPacket } from "webgl-test-shared";
 import Board from "../Board";
 import Camera from "../Camera";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
@@ -166,7 +166,7 @@ abstract class Client {
       }
    }
 
-   private static updateItems(serverItemDataArray: ReadonlyArray<ServerItemData>): void {
+   private static updateItems(serverItemDataArray: ReadonlyArray<ServerItemEntityData>): void {
       const knownItemIDs = Object.keys(Board.items).map(stringID => Number(stringID));
 
       for (const serverItemData of serverItemDataArray) {
@@ -187,13 +187,13 @@ abstract class Client {
       }
    }
 
-   private static createItemFromServerItemData(serverItemData: ServerItemData): void {
+   private static createItemFromServerItemData(serverItemData: ServerItemEntityData): void {
       const position = Point.unpackage(serverItemData.position); 
       const containingChunks = serverItemData.chunkCoordinates.map(([x, y]) => Board.getChunk(x, y));
       new Item(serverItemData.id, position, containingChunks, serverItemData.itemID, serverItemData.count, serverItemData.rotation);
    }
 
-   private static updateItemFromServerItemData(serverItemData: ServerItemData): void {
+   private static updateItemFromServerItemData(serverItemData: ServerItemEntityData): void {
       const item = Board.items[serverItemData.id];
       item.count = serverItemData.count;
    }

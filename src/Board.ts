@@ -8,6 +8,7 @@ import Chunk from "./Chunk";
 import Item from "./Item";
 import CLIENT_ITEM_INFO_RECORD from "./client-item-info";
 import { Tile } from "./Tile";
+import RectangularHitbox from "./hitboxes/RectangularHitbox";
 
 // 
 // Solid Tile Shaders
@@ -200,41 +201,29 @@ abstract class Board {
       return this.chunks[x][y];
    }
 
-   public static update(): void {
-      const entityHitboxInfoRecord: Record<number, EntityHitboxInfo> = {};
-
+   public static tickEntities(): void {
       for (const entity of Object.values(this.entities)) {
          entity.applyPhysics();
          if (typeof entity.tick !== "undefined") entity.tick();
 
          // Calculate the entity's new info
-         const hitboxVertexPositons = entity.calculateHitboxVertexPositions();
-         const hitboxBounds = entity.calculateHitboxBounds(hitboxVertexPositons);
-         const newChunks = entity.calculateContainingChunks(hitboxBounds);
+         if (entity.hitbox.info.type === "rectangular") {
+            (entity.hitbox as RectangularHitbox).computeVertexPositions();
+            (entity.hitbox as RectangularHitbox).computeSideAxes();
+         }
+         entity.hitbox.updateHitboxBounds();
 
          // Update the entities' containing chunks
+         const newChunks = entity.calculateContainingChunks();
          entity.updateChunks(newChunks);
-
-         if (hitboxVertexPositons !== null) {
-            const sideAxes = [
-               computeSideAxis(hitboxVertexPositons[0], hitboxVertexPositons[1]),
-               computeSideAxis(hitboxVertexPositons[0], hitboxVertexPositons[2])
-            ];
-
-            entityHitboxInfoRecord[entity.id] = {
-               vertexPositions: hitboxVertexPositons,
-               sideAxes: sideAxes
-            };
-         }
+         entity.updateChunks(newChunks);
       }
+   }
 
+   public static resolveCollisions(): void {
       for (const entity of Object.values(this.entities)) {
-         entity.resolveCollisions(entityHitboxInfoRecord);
-
-         // Resolve wall collisions
-         const hitboxVertexPositons = entity.calculateHitboxVertexPositions();
-         const hitboxBounds = entity.calculateHitboxBounds(hitboxVertexPositons);
-         entity.resolveWallCollisions(hitboxBounds);
+         entity.resolveEntityCollisions();
+         entity.resolveWallCollisions();
       }
    }
 
@@ -558,17 +547,17 @@ abstract class Board {
    }
 
    public static calculateDistanceBetweenPointAndEntity(position: Point, entity: Entity): number {
-      switch (entity.hitbox.type) {
+      switch (entity.hitbox.info.type) {
          case "circular": {
             const dist = position.distanceFrom(entity.position);
-            return dist - entity.hitbox.radius;
+            return dist - entity.hitbox.info.radius;
          }
          case "rectangular": {
             // Rotate the objects to axis-align the rectangle
             const rotatedPositon = rotatePoint(position, entity.position, -entity.rotation);
 
-            const distanceX = Math.max(Math.abs(rotatedPositon.x - entity.position.x) - entity.hitbox.width / 2, 0);
-            const distanceY = Math.max(Math.abs(rotatedPositon.y - entity.position.y) - entity.hitbox.height / 2, 0);
+            const distanceX = Math.max(Math.abs(rotatedPositon.x - entity.position.x) - entity.hitbox.info.width / 2, 0);
+            const distanceY = Math.max(Math.abs(rotatedPositon.y - entity.position.y) - entity.hitbox.info.height / 2, 0);
             return Math.sqrt(distanceX * distanceX + distanceY * distanceY);
          }
       }

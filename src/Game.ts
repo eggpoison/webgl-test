@@ -114,7 +114,10 @@ abstract class Game {
 
    private static update(): void {
       updateSpamFilter();
-      Board.update();
+
+      Board.tickEntities();
+      Board.resolveCollisions();
+
       Client.sendPlayerDataPacket();
 
       if (isDev()) updateDevEntityViewer();

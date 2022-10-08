@@ -4,6 +4,7 @@ import Camera from "./Camera";
 import CLIENT_SETTINGS from "./client-settings";
 import Entity, { CircleRenderPart, ImageRenderPart } from "./entities/Entity";
 import Game from "./Game";
+import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import OPTIONS from "./options";
 import { getTexture } from "./textures";
 import { createWebGLProgram, gl } from "./webgl";
@@ -338,12 +339,12 @@ const renderEntityHitboxes = (): void => {
    // Calculate vertices
    const vertices = new Array<number>();
    for (const entity of Object.values(Board.entities)) {
-      switch (entity.hitbox.type) {
+      switch (entity.hitbox.info.type) {
          case "rectangular": {
-            const x1 = entity.renderPosition.x - entity.hitbox.width / 2;
-            const x2 = entity.renderPosition.x + entity.hitbox.width / 2;
-            const y1 = entity.renderPosition.y - entity.hitbox.height / 2;
-            const y2 = entity.renderPosition.y + entity.hitbox.height / 2;
+            const x1 = entity.renderPosition.x - entity.hitbox.info.width / 2;
+            const x2 = entity.renderPosition.x + entity.hitbox.info.width / 2;
+            const y1 = entity.renderPosition.y - entity.hitbox.info.height / 2;
+            const y2 = entity.renderPosition.y + entity.hitbox.info.height / 2;
 
             let topLeft = new Point(x1, y2);
             let topRight = new Point(x2, y2);
@@ -382,8 +383,8 @@ const renderEntityHitboxes = (): void => {
             // Add the outer vertices
             for (let radians = 0, n = 0; n <= CIRCLE_VERTEX_COUNT; radians += step, n++) {
                // Trig shenanigans to get x and y coords
-               const worldX = Math.cos(radians) * entity.hitbox.radius + entity.renderPosition.x;
-               const worldY = Math.sin(radians) * entity.hitbox.radius + entity.renderPosition.y;
+               const worldX = Math.cos(radians) * entity.hitbox.info.radius + entity.renderPosition.x;
+               const worldY = Math.sin(radians) * entity.hitbox.info.radius + entity.renderPosition.y;
                
                const screenX = Camera.getXPositionInScreen(worldX);
                const screenY = Camera.getYPositionInScreen(worldY);
