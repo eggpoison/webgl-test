@@ -376,9 +376,16 @@ const renderEntityHitboxes = (): void => {
             const CIRCLE_VERTEX_COUNT = 10;
 
             const step = 2 * Math.PI / CIRCLE_VERTEX_COUNT;
+
+            let previousX: number;
+            let previousY: number;
          
             // Add the outer vertices
             for (let radians = 0, n = 0; n <= CIRCLE_VERTEX_COUNT; radians += step, n++) {
+               if (n > 1) {
+                  vertices.push(previousX!, previousY!);
+               }
+
                // Trig shenanigans to get x and y coords
                const worldX = Math.cos(radians) * entity.hitbox.info.radius + entity.renderPosition.x;
                const worldY = Math.sin(radians) * entity.hitbox.info.radius + entity.renderPosition.y;
@@ -387,6 +394,9 @@ const renderEntityHitboxes = (): void => {
                const screenY = Camera.getYPositionInScreen(worldY);
                
                vertices.push(screenX, screenY);
+
+               previousX = screenX;
+               previousY = screenY;
             }
 
             break;
