@@ -1,8 +1,8 @@
-import { circleAndRectangleDoIntersect, circlesDoIntersect, CircularHitboxInfo, ServerEntityData, EntityType, ENTITY_INFO_RECORD, HitboxInfo, HitboxVertexPositions, Point, rectanglePointsDoIntersect, RectangularHitboxInfo, rotatePoint, SETTINGS, TILE_TYPE_INFO_RECORD, Vector, HitboxType } from "webgl-test-shared";
-import Board, { EntityHitboxInfo } from "../Board";
+import { ServerEntityData, EntityType, ENTITY_INFO_RECORD, Point, SETTINGS, TILE_TYPE_INFO_RECORD, Vector, HitboxType } from "webgl-test-shared";
+import Board from "../Board";
 import Chunk from "../Chunk";
 import CircularHitbox from "../hitboxes/CircularHitbox";
-import Hitbox, { HitboxBounds } from "../hitboxes/Hitbox";
+import Hitbox from "../hitboxes/Hitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { Tile } from "../Tile";
 
@@ -109,45 +109,11 @@ const calculateEntityRenderPosition = (entity: Entity): Point => {
    return entityRenderPosition;
 }
 
-export function calculateEntityRenderPositions(): void {
+export function calculateEntityRenderValues(): void {
    for (const entity of Object.values(Board.entities)) {
       entity.renderPosition = calculateEntityRenderPosition(entity);
    }
 }
-
-// const isColliding = (entity1: Entity, entity2: Entity, entityHitboxInfoRecord: { [id: number]: EntityHitboxInfo }): boolean => {
-//    // Circle-circle collisions
-//    if (entity1.hitbox.type === "circular" && entity2.hitbox.type === "circular") {
-//       return circlesDoIntersect(entity1.position, entity1.hitbox.radius, entity2.position, entity2.hitbox.radius);
-//    }
-//    // Circle-rectangle collisions
-//    else if ((entity1.hitbox.type === "circular" && entity2.hitbox.type === "rectangular") || (entity1.hitbox.type === "rectangular" && entity2.hitbox.type === "circular")) {
-//       let circleEntity: Entity;
-//       let rectEntity: Entity;
-//       if (entity1.hitbox.type === "circular") {
-//          circleEntity = entity1;
-//          rectEntity = entity2;
-//       } else {
-//          rectEntity = entity1;
-//          circleEntity = entity2;
-//       }
-
-//       return circleAndRectangleDoIntersect(circleEntity.position, (circleEntity.hitbox as CircularHitboxInfo).radius, rectEntity.position, (rectEntity.hitbox as RectangularHitboxInfo).width, (rectEntity.hitbox as RectangularHitboxInfo).height, rectEntity.rotation);
-//    }
-//    // Rectangle-rectangle collisions
-//    else if (entity1.hitbox.type === "rectangular" && entity2.hitbox.type === "rectangular") {
-//       const distance = entity1.position.distanceFrom(entity2.position);
-//       const diagonal1Squared = Math.sqrt((Math.pow(entity1.hitbox.width / 2, 2) + Math.pow(entity1.hitbox.height / 2, 2)) / 4);
-//       const diagonal2Squared = Math.sqrt((Math.pow(entity2.hitbox.width / 2, 2) + Math.pow(entity2.hitbox.height / 2, 2)) / 4);
-//       if (distance > diagonal1Squared + diagonal2Squared) {
-//          return false;
-//       }
-
-//       return rectanglePointsDoIntersect(...entityHitboxInfoRecord[entity1.id].vertexPositions, ...entityHitboxInfoRecord[entity2.id].vertexPositions, entityHitboxInfoRecord[entity1.id].sideAxes, entityHitboxInfoRecord[entity2.id].sideAxes);
-//    }
-
-//    throw new Error(`No collision calculations for collision between hitboxes of type ${entity1.hitbox.type} and ${entity2.hitbox.type}`);
-// }
 
 abstract class Entity {
    private static readonly MAX_ENTITY_COLLISION_PUSH_FORCE = 200;
@@ -168,7 +134,7 @@ abstract class Entity {
    /** Estimated position of the entity during the current frame */
    public renderPosition: Point;
 
-   /** Direction the entity is facing (radians) */
+   /** Angle the entity is facing, taken counterclockwise from the positive x axis (radians) */
    public rotation: number;
    
    /** Limit to how many units the entity can move in a second */

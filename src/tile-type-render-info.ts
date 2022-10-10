@@ -4,12 +4,12 @@ interface BaseTileTypeRenderInfo {
    readonly isLiquid?: boolean;
 }
 
-interface SolidTileTypeRenderInfo extends BaseTileTypeRenderInfo {
+export interface SolidTileTypeRenderInfo extends BaseTileTypeRenderInfo {
    readonly isLiquid?: false;
    readonly textureSource: string;
 }
 
-interface LiquidTileTypeRenderInfo extends BaseTileTypeRenderInfo {
+export interface LiquidTileTypeRenderInfo extends BaseTileTypeRenderInfo {
    readonly isLiquid: true;
    readonly colour: [number, number, number];
 }

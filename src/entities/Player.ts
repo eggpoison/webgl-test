@@ -56,7 +56,7 @@ class Player extends Entity {
    }
 
    private static getAttackTargets(): ReadonlyArray<Entity> {
-      const offset = new Vector(this.ATTACK_OFFSET, -Player.instance.rotation + Math.PI/2);
+      const offset = new Vector(this.ATTACK_OFFSET, Player.instance.rotation);
       const attackPosition = Player.instance.position.add(offset.convertToPoint());
 
       const minChunkX = Math.max(Math.min(Math.floor((attackPosition.x - this.ATTACK_TEST_RADIUS) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
@@ -110,57 +110,40 @@ class Player extends Entity {
    }
 
    private updateMovement(wIsPressed: boolean, aIsPressed: boolean, sIsPressed: boolean, dIsPressed: boolean): void {
-      let xAcceleration = 0;
-      let yAcceleration = 0;
-
-      // Update rotation
       const hash = (wIsPressed ? 1 : 0) + (aIsPressed ? 2 : 0) + (sIsPressed ? 4 : 0) + (dIsPressed ? 8 : 0)
+      
+      // Update rotation
       let rotation!: number | null;
       switch (hash) {
          case 0:  rotation = null;          break;
-         case 1:  rotation = 0;             break;
-         case 2:  rotation = Math.PI * 3/2; break;
-         case 3:  rotation = Math.PI * 7/4; break;
-         case 4:  rotation = Math.PI;       break;
+         case 1:  rotation = Math.PI / 2;   break;
+         case 2:  rotation = Math.PI;       break;
+         case 3:  rotation = Math.PI * 3/4; break;
+         case 4:  rotation = Math.PI * 3/2; break;
          case 5:  rotation = null;          break;
          case 6:  rotation = Math.PI * 5/4; break;
-         case 7:  rotation = Math.PI * 3/2; break;
-         case 8:  rotation = Math.PI / 2;   break;
+         case 7:  rotation = Math.PI;       break;
+         case 8:  rotation = 0;             break;
          case 9:  rotation = Math.PI / 4;   break;
-         case 10:  rotation = null;         break;
-         case 11: rotation = 0;             break;
-         case 12: rotation = Math.PI * 3/4; break;
-         case 13: rotation = Math.PI / 2;   break;
-         case 14: rotation = Math.PI;       break;
+         case 10: rotation = null;          break;
+         case 11: rotation = Math.PI / 2;   break;
+         case 12: rotation = Math.PI * 7/4; break;
+         case 13: rotation = 0;             break;
+         case 14: rotation = Math.PI * 3/2; break;
          case 15: rotation = null;          break;
       }
 
       if (rotation !== null) {
          this.rotation = rotation;
-      }
-
-      if (wIsPressed) {
-         yAcceleration += Player.ACCELERATION;
-      }
-      if (aIsPressed) {
-         xAcceleration -= Player.ACCELERATION;
-      }
-      if (sIsPressed) {
-         yAcceleration -= Player.ACCELERATION;
-      }
-      if (dIsPressed) {
-         xAcceleration += Player.ACCELERATION;
-      }
-
-      if (xAcceleration === 0 && yAcceleration === 0) {
+      } else {
          this.acceleration = null;
          this.isMoving = false;
-      } else {
-         const acceleration = new Point(xAcceleration, yAcceleration).convertToVector();
-         this.acceleration = acceleration;
-         this.terminalVelocity = Player.TERMINAL_VELOCITY;
-         this.isMoving = true;
+         return;
       }
+
+      this.acceleration = new Vector(Player.ACCELERATION, this.rotation);
+      this.terminalVelocity = Player.TERMINAL_VELOCITY;
+      this.isMoving = true;
    }
 }
 

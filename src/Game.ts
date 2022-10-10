@@ -1,11 +1,11 @@
 import Board from "./Board";
 import Player from "./entities/Player";
-import { isDev, sleep } from "./utils";
+import { isDev } from "./utils";
 import { renderPlayerNames, createTextCanvasContext } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/ChatBox";
 import { Point, randInt, SETTINGS } from "webgl-test-shared";
-import Entity, { calculateEntityRenderPositions, setFrameProgress } from "./entities/Entity";
+import Entity, { calculateEntityRenderValues, setFrameProgress } from "./entities/Entity";
 import { createEntityShaders, renderEntities } from "./entity-rendering";
 import Client, { GameData } from "./client/Client";
 import { calculateCursorWorldPosition, handleMouseMovement, renderCursorTooltip } from "./mouse";
@@ -65,17 +65,10 @@ abstract class Game {
       resizeCanvas();
 
       Game.lastTime = new Date().getTime();
-
+               
       // Start the game loop
       this.isRunning = true;
-      while (this.isRunning) {
-         if (!this.isPaused && this.isSynced) {
-            await this.main();
-         } else {
-            // Stop infinite loops
-            await sleep(5);
-         }
-      }
+      this.main();
    }
 
    public static pause(): void {
@@ -131,7 +124,7 @@ abstract class Game {
       clearCanvas();
 
       setFrameProgress(frameProgress);
-      calculateEntityRenderPositions();
+      calculateEntityRenderValues();
 
       // Update the camera
       Camera.updateCameraPosition();
@@ -151,36 +144,32 @@ abstract class Game {
       renderCursorTooltip();
    }
 
-   public static main(): Promise<void> {
-      return new Promise(async resolve => {
+   public static main(): void {
+      if (this.isSynced) {
          const currentTime = new Date().getTime();
-         const deltaTime = currentTime - Game.lastTime;
-         Game.lastTime = currentTime;
-
-         // Allow time for user inputs
-         await sleep(2);
+         const deltaTime = currentTime - this.lastTime;
+         this.lastTime = currentTime;
          
          // Update
-         Game.lag += deltaTime;
-         while (Game.lag >= 1000 / SETTINGS.TPS) {
-            Game.update();
-            Game.lag -= 1000 / SETTINGS.TPS;
+         this.lag += deltaTime;
+         while (this.lag >= 1000 / SETTINGS.TPS) {
+            this.update();
+            this.lag -= 1000 / SETTINGS.TPS;
          }
-
+         
          // Render the game and extrapolate positions using the amount of lag (frame progress)
-         const frameProgress = Game.lag / 1000 * SETTINGS.TPS;
-         Game.render(frameProgress);
+         const frameProgress = this.lag / 1000 * SETTINGS.TPS;
+         this.render(frameProgress);
+      }
 
-         resolve();
-      });
+      if (this.isRunning) {
+         requestAnimationFrame(() => this.main());
+      }
    }
 
    public static spawnPlayer(username: string, id: number): void {
-      // const x = randInt(0, SETTINGS.BOARD_SIZE * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
-      // const y = randInt(0, SETTINGS.BOARD_SIZE * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
-      if (1 + 1 === 3) console.log(randInt(0, 1));
-      const x = 100;
-      const y = 100;
+      const x = randInt(0, SETTINGS.BOARD_SIZE * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
+      const y = randInt(0, SETTINGS.BOARD_SIZE * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
       const position = new Point(x, y);
 
       new Player(id, position, null, null, 0, 0, username);

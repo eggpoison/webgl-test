@@ -1,4 +1,4 @@
-import { circleAndRectangleDoIntersect, computeSideAxis, HitboxType, HitboxVertexPositions, Point, rectanglePointsDoIntersect, rectanglesDoIntersect, RectangularHitboxInfo, rotatePoint, Vector } from "webgl-test-shared";
+import { circleAndRectangleDoIntersect, computeSideAxis, HitboxType, HitboxVertexPositions, Point, rectanglePointsDoIntersect, RectangularHitboxInfo, rotatePoint, Vector } from "webgl-test-shared";
 import Entity from "../entities/Entity";
 import Hitbox, { HitboxBounds } from "./Hitbox";
 

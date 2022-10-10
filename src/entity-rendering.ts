@@ -4,7 +4,6 @@ import Camera from "./Camera";
 import CLIENT_SETTINGS from "./client-settings";
 import Entity, { CircleRenderPart, ImageRenderPart } from "./entities/Entity";
 import Game from "./Game";
-import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import OPTIONS from "./options";
 import { getTexture } from "./textures";
 import { createWebGLProgram, gl } from "./webgl";
@@ -118,11 +117,10 @@ const calculateImageRenderPartVertices = (entity: Entity, renderPart: ImageRende
    let bottomRight = new Point(renderPartPosition.x + renderPart.width / 2, renderPartPosition.y - renderPart.height / 2);
    
    // Rotate the corners
-   const rotation = -entity.rotation + Math.PI/2;
-   topLeft = rotatePoint(topLeft, entity.renderPosition, rotation);
-   topRight = rotatePoint(topRight, entity.renderPosition, rotation);
-   bottomLeft = rotatePoint(bottomLeft, entity.renderPosition, rotation);
-   bottomRight = rotatePoint(bottomRight, entity.renderPosition, rotation);
+   topLeft = rotatePoint(topLeft, entity.renderPosition, entity.rotation);
+   topRight = rotatePoint(topRight, entity.renderPosition, entity.rotation);
+   bottomLeft = rotatePoint(bottomLeft, entity.renderPosition, entity.rotation);
+   bottomRight = rotatePoint(bottomRight, entity.renderPosition, entity.rotation);
 
    // Convert the corners to screen space
    topLeft = new Point(Camera.getXPositionInScreen(topLeft.x), Camera.getYPositionInScreen(topLeft.y));
@@ -282,8 +280,8 @@ const renderImageRenderParts = (renderParts: SortedImageRenderParts): void => {
       
       // Set the texture
       const texture = getTexture("entities/" + textureSrc);
-      gl.bindTexture(gl.TEXTURE_2D, texture);
       gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, texture);
 
       // Draw the tile
       gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 5);
@@ -352,11 +350,10 @@ const renderEntityHitboxes = (): void => {
             let bottomLeft = new Point(x1, y1);
 
             // Rotate the points to match the entity's rotation
-            const rotation = -entity.rotation + Math.PI/2;
-            topLeft = rotatePoint(topLeft, entity.renderPosition, rotation);
-            topRight = rotatePoint(topRight, entity.renderPosition, rotation);
-            bottomRight = rotatePoint(bottomRight, entity.renderPosition, rotation);
-            bottomLeft = rotatePoint(bottomLeft, entity.renderPosition, rotation);
+            topLeft = rotatePoint(topLeft, entity.renderPosition, entity.rotation);
+            topRight = rotatePoint(topRight, entity.renderPosition, entity.rotation);
+            bottomRight = rotatePoint(bottomRight, entity.renderPosition, entity.rotation);
+            bottomLeft = rotatePoint(bottomLeft, entity.renderPosition, entity.rotation);
 
             topLeft = new Point(Camera.getXPositionInScreen(topLeft.x), Camera.getYPositionInScreen(topLeft.y));
             topRight = new Point(Camera.getXPositionInScreen(topRight.x), Camera.getYPositionInScreen(topRight.y));

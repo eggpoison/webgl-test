@@ -8,6 +8,8 @@ export let windowHeight = window.innerHeight;
 export let halfWindowWidth = windowWidth / 2;
 export let halfWindowHeight = windowHeight / 2;
 
+export const MAX_ACTIVE_TEXTURE_UNITS = 8;
+
 export function resizeCanvas(): void {
    if (typeof canvas === "undefined") return;
 

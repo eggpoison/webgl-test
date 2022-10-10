@@ -105,13 +105,13 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
             <div className="loading-message">
                <p>Establishing connection with server...</p>
             </div>
-         </> : status === "initialising_game" ? <>
-            <div className="loading-message">
-               <p>Initialising game...</p>
-            </div>
          </> : status === "sending_player_data" ? <>
             <div className="loading-message">
                <p>Sending player data...</p>
+            </div>
+         </> : status === "initialising_game" ? <>
+            <div className="loading-message">
+               <p>Initialising game...</p>
             </div>
          </> : status === "connection_error" ? <>
             <div className="loading-message">
