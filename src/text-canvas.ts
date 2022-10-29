@@ -1,6 +1,6 @@
-import Board from "./Board";
 import Camera from "./Camera";
 import Player from "./entities/Player";
+import Game from "./Game";
 import CircularHitbox from "./hitboxes/CircularHitbox";
 import { halfWindowHeight, halfWindowWidth, windowHeight, windowWidth } from "./webgl";
 
@@ -26,7 +26,7 @@ export function renderPlayerNames(): void {
    ctx.fillStyle = "transparent";
    ctx.clearRect(0, 0, windowWidth, windowHeight);
 
-   for (const entity of Object.values(Board.entities)) {
+   for (const entity of Object.values(Game.board.entities)) {
       // If the entity is a player, render a nametag for it
       if (entity instanceof Player && entity !== Player.instance) {
          // Calculate the position of the text

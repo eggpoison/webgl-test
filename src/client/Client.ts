@@ -1,10 +1,9 @@
 import { io, Socket } from "socket.io-client";
 import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, ServerAttackData, ServerEntityData, ServerItemEntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, InitialPlayerDataPacket } from "webgl-test-shared";
-import Board from "../Board";
 import Camera from "../Camera";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
-import ENTITY_CLASS_RECORD from "../entity-class-record";
+import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
 import Game, { ClientAttackInfo as AttackInfo } from "../Game";
 import Item from "../Item";
 import { Tile } from "../Tile";
@@ -40,12 +39,12 @@ const parseServerTileDataArray = (serverTileDataArray: ReadonlyArray<ReadonlyArr
 const parseServerAttackDataArray = (serverAttackInfoArray: ReadonlyArray<ServerAttackData>): ReadonlyArray<AttackInfo> => {
    // Don't consider attacks where the target entity isn't visible
    const filteredServerAttackInfoArray = serverAttackInfoArray.filter(serverAttackInfo => {
-      return Board.entities.hasOwnProperty(serverAttackInfo.targetEntityID);
+      return Game.board.entities.hasOwnProperty(serverAttackInfo.targetEntityID);
    });
 
    return filteredServerAttackInfoArray.map(serverAttackInfo => {
       return {
-         targetEntity: Board.entities[serverAttackInfo.targetEntityID],
+         targetEntity: Game.board.entities[serverAttackInfo.targetEntityID],
          progress: serverAttackInfo.progress
       };
    });
@@ -54,17 +53,26 @@ const parseServerAttackDataArray = (serverAttackInfoArray: ReadonlyArray<ServerA
 abstract class Client {
    private static socket: ISocket | null = null;
 
-   private static gameDataResponse: Promise<GameData>;
-
-   public static hasConnected(): boolean {
-      return this.socket !== null;
-   }
-
    public static connectToServer(): Promise<boolean> {
       return new Promise(resolve => {
-         // Create the socket
-         this.socket = this.createSocket();
-         this.socket.connect();
+         let socketAlreadyExists = false;
+
+         // Don't add events if the socket already exists
+         if (this.socket !== null) {
+            socketAlreadyExists = true;
+            
+            // Reconnect
+            if (!this.socket.connected) {
+               this.socket.connect();
+            }
+
+            this.socket.off("connect");
+            this.socket.off("connect_error");
+         } else {
+            // Create the socket
+            this.socket = this.createSocket();
+            this.socket.connect();
+         }
 
          // If connection was successful, return true
          this.socket.on("connect", () => {
@@ -74,53 +82,52 @@ abstract class Client {
          this.socket.on("connect_error", () => {
             resolve(false);
          });
+         
+         if (!socketAlreadyExists) {
+            this.socket.on("game_data_packet", gameDataPacket => {
+               // Only unload game packets when the game is running
+               if (Game.getIsPaused() || !Game.isRunning) return;
+   
+               this.unloadGameDataPacket(gameDataPacket);
+   
+               if (!Game.isSynced) {
+                  Game.sync();
+               }
+            });
+   
+            // When the connection to the server fails
+            this.socket.on("disconnect", () => {
+               Game.isRunning = false;
+   
+               if (this.socket !== null) {
+                  this.socket.disconnect();
+               }
+   
+               setLoadingScreenInitialStatus("connection_error");
+               setGameState("loading");
+            });
+         }
+      });
+   }
 
-         let gameDataRequestResolve: (value: GameData | PromiseLike<GameData>) => void;
-         this.gameDataResponse = new Promise(resolve => {
-            gameDataRequestResolve = resolve;
-         });
+   public static async requestGameData(): Promise<GameData> {
+      return new Promise(resolve => {
+         if (this.socket === null) throw new Error("Socket hadn't been created when requesting game data")
+
+         this.socket.emit("initial_game_data_request");
+         
+         this.socket.off("initial_game_data");
          this.socket.on("initial_game_data", (gameTicks: number, serverTileDataArray: ReadonlyArray<ReadonlyArray<ServerTileData>>, playerID: number) => {
             const tiles = parseServerTileDataArray(serverTileDataArray);
-
-            const serverResponse: GameData = {
+            
+            const gameData: GameData = {
                gameTicks: gameTicks,
                tiles: tiles,
                playerID: playerID
             };
-            gameDataRequestResolve!(serverResponse);
-         })
-         
-         this.socket.on("game_data_packet", gameDataPacket => {
-            // Only unload game packets when the game is running
-            if (Game.getIsPaused() || !Game.isRunning) return;
-
-            this.unloadGameDataPacket(gameDataPacket);
-
-            if (!Game.isSynced) {
-               Game.sync();
-            }
-         });
-
-         this.socket.on("disconnect", () => {
-            this.handleServerDisconnect();
+            resolve(gameData);
          });
       });
-   }
-
-   public static async receiveGameData(): Promise<GameData> {
-      if (this.socket === null) throw new Error("Socket hadn't been created when requesting game data")
-
-      const serverResponse = await this.gameDataResponse;
-      return serverResponse;
-   }
-
-   /** Disconnects from the server */
-   public static disconnect(): void {
-      Game.isRunning = false;
-
-      if (this.socket !== null) {
-         this.socket.disconnect();
-      }
    }
 
    /** Creates the socket used to connect to the server */
@@ -143,16 +150,16 @@ abstract class Client {
     * Updates the client's entities to match those in the server
     */
    private static updateEntities(entityDataArray: ReadonlyArray<ServerEntityData>): void {
-      const clientKnownEntityIDs: Array<number> = Object.keys(Board.entities).map(idString => Number(idString));
+      const clientKnownEntityIDs: Array<number> = Object.keys(Game.board.entities).map(idString => Number(idString));
 
       // Remove the player from the list of known entities so the player isn't removed
-      clientKnownEntityIDs.splice(clientKnownEntityIDs.indexOf(Player.instance.id), 1);
+      clientKnownEntityIDs.splice(clientKnownEntityIDs.indexOf(Player.instance!.id), 1);
 
       // Update the game entities
       for (const entityData of entityDataArray) {
          // If it already exists, update it
-         if (Board.entities.hasOwnProperty(entityData.id)) {
-            Board.entities[entityData.id].updateFromData(entityData);
+         if (Game.board.entities.hasOwnProperty(entityData.id)) {
+            Game.board.entities[entityData.id].updateFromData(entityData);
          } else {
             this.createEntityFromData(entityData);
          }
@@ -162,12 +169,12 @@ abstract class Client {
 
       // All remaining known entities must then have been removed
       for (const id of clientKnownEntityIDs) {
-         Board.removeEntity(Board.entities[id]);
+         Game.board.removeEntity(Game.board.entities[id]);
       }
    }
 
    private static updateItems(serverItemDataArray: ReadonlyArray<ServerItemEntityData>): void {
-      const knownItemIDs = Object.keys(Board.items).map(stringID => Number(stringID));
+      const knownItemIDs = Object.keys(Game.board.items).map(stringID => Number(stringID));
 
       for (const serverItemData of serverItemDataArray) {
          if (!knownItemIDs.includes(serverItemData.id)) {
@@ -183,24 +190,24 @@ abstract class Client {
 
       // Thus the remaining known item IDs have had their items removed
       for (const itemID of knownItemIDs) {
-         Board.items[itemID].remove();
+         Game.board.items[itemID].remove();
       }
    }
 
    private static createItemFromServerItemData(serverItemData: ServerItemEntityData): void {
       const position = Point.unpackage(serverItemData.position); 
-      const containingChunks = serverItemData.chunkCoordinates.map(([x, y]) => Board.getChunk(x, y));
+      const containingChunks = serverItemData.chunkCoordinates.map(([x, y]) => Game.board.getChunk(x, y));
       new Item(serverItemData.id, position, containingChunks, serverItemData.itemID, serverItemData.count, serverItemData.rotation);
    }
 
    private static updateItemFromServerItemData(serverItemData: ServerItemEntityData): void {
-      const item = Board.items[serverItemData.id];
+      const item = Game.board.items[serverItemData.id];
       item.count = serverItemData.count;
    }
 
    private static registerTileUpdates(tileUpdates: ReadonlyArray<ServerTileUpdateData>): void {
       for (const tileUpdate of tileUpdates) {
-         const tile = Board.getTile(tileUpdate.x, tileUpdate.y);
+         const tile = Game.board.getTile(tileUpdate.x, tileUpdate.y);
          tile.type = tileUpdate.type;
          tile.isWall = tileUpdate.isWall;
       }
@@ -213,12 +220,15 @@ abstract class Client {
 
    public static createEntityFromData(entityData: ServerEntityData): void {
       const position = Point.unpackage(entityData.position);
-      const velocity = entityData.velocity !== null ? Vector.unpackage(entityData.velocity) : null;
-      const acceleration = entityData.acceleration !== null ? Vector.unpackage(entityData.acceleration) : null;
 
       // Create the entity
-      const entityClass = ENTITY_CLASS_RECORD[entityData.type]();
-      new entityClass(entityData.id, position, velocity, acceleration, entityData.terminalVelocity, entityData.rotation, ...entityData.clientArgs);
+      const entityConstructor = ENTITY_CLASS_RECORD[entityData.type]() as EntityClassType<typeof entityData.type>;
+      const entity = new entityConstructor(position, entityData.id, ...entityData.clientArgs);
+      
+      entity.velocity = entityData.velocity !== null ? Vector.unpackage(entityData.velocity) : null;
+      entity.acceleration = entityData.acceleration !== null ? Vector.unpackage(entityData.acceleration) : null
+      entity.rotation = entityData.rotation;
+      entity.special = entityData.special;
    }
 
    /**
@@ -240,13 +250,13 @@ abstract class Client {
    }
 
    public static sendPlayerDataPacket(): void {
-      if (this.socket !== null) {
+      if (Game.isRunning && this.socket !== null) {
          const packet: PlayerDataPacket = {
-            position: Player.instance.position.package(),
-            velocity: Player.instance.velocity?.package() || null,
-            acceleration: Player.instance.acceleration?.package() || null,
-            terminalVelocity: Player.instance.terminalVelocity,
-            rotation: Player.instance.rotation,
+            position: Player.instance!.position.package(),
+            velocity: Player.instance!.velocity?.package() || null,
+            acceleration: Player.instance!.acceleration?.package() || null,
+            terminalVelocity: Player.instance!.terminalVelocity,
+            rotation: Player.instance!.rotation,
             visibleChunkBounds: Camera.getVisibleChunkBounds()
          };
 
@@ -255,14 +265,9 @@ abstract class Client {
    }
 
    public static sendAttackPacket(attackPacket: AttackPacket): void {
-      if (this.socket !== null) {
+      if (Game.isRunning && this.socket !== null) {
          this.socket.emit("attack_packet", attackPacket);
       }
-   }
-
-   private static handleServerDisconnect(): void {
-      setLoadingScreenInitialStatus("server_disconnect");
-      setGameState("loading");
    }
 }
 

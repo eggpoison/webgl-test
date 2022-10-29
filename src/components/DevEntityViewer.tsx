@@ -44,6 +44,12 @@ const DevEntityViewer = () => {
       <p>Acceleration: <span className="highlight">{displayAccelerationMagnitude}</span></p>
 
       <p>Chunks: <span className="highlight">{chunks.join(", ")}</span></p>
+
+      {typeof entity.special !== "undefined" ? <>
+         <br />
+
+         <p>Current Mob AI: <span className="highlight">{entity.special.mobAIType}</span></p>
+      </> : null}
    </div>;
 }
 

@@ -22,7 +22,12 @@ export type ClientAttackInfo = {
    readonly progress: number;
 }
 
+let listenersHaveBeenCreated = false;
+
 const createEventListeners = (): void => {
+   if (listenersHaveBeenCreated) return;
+   listenersHaveBeenCreated = true;
+   
    window.addEventListener("contextmenu", clearPressedKeys);
 
    window.addEventListener("keydown", (e: KeyboardEvent) => {
@@ -45,6 +50,8 @@ const createEventListeners = (): void => {
 }
 
 abstract class Game {
+   public static board: Board;
+   
    public static isRunning: boolean = false;
    private static isPaused: boolean = false;
 
@@ -55,11 +62,13 @@ abstract class Game {
    /** Amount of time the game is through the current frame */
    private static lag: number = 0;
 
+   private static clientInformationTimer: number = 1 / SETTINGS.TPS;
+
    public static cursorPosition: Point | null;
 
    private static attackInfoRecord: { [id: number]: ClientAttackInfo } = {};
 
-   /** Pretty self-explanatory */
+   /** Starts the game */
    public static async start(): Promise<void> {
       createEventListeners();
       resizeCanvas();
@@ -93,13 +102,19 @@ abstract class Game {
    /**
     * Prepares the game to be played. Called once just before the game starts.
     */
-   public static async initialise(gameData: GameData): Promise<void> {
-      Board.setTiles(gameData.tiles);
-
+   public static async initialise(gameData: GameData, username: string): Promise<void> {
       createWebGLContext();
       createTextCanvasContext();
+      
+      this.board = new Board(gameData.tiles);
 
-      Board.setupShaders();
+      // Spawn the player
+      Player.instance = null;
+      const x = randInt(0, SETTINGS.BOARD_SIZE * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
+      const y = randInt(0, SETTINGS.BOARD_SIZE * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
+      const playerSpawnPosition = new Point(x, y);
+      new Player(playerSpawnPosition, gameData.playerID, username);
+
       createEntityShaders();
       
       await loadTextures();
@@ -108,10 +123,8 @@ abstract class Game {
    private static update(): void {
       updateSpamFilter();
 
-      Board.tickEntities();
-      Board.resolveCollisions();
-
-      Client.sendPlayerDataPacket();
+      this.board.tickEntities();
+      this.board.resolveCollisions();
 
       if (isDev()) updateDevEntityViewer();
    }
@@ -127,16 +140,16 @@ abstract class Game {
       calculateEntityRenderValues();
 
       // Update the camera
-      Camera.updateCameraPosition();
+      Camera.setCameraPosition(Player.instance!.renderPosition);
       Camera.updateVisibleChunkBounds();
 
       renderPlayerNames();
 
-      Board.renderTiles();
-      Board.renderItems();
-      Board.drawBorder();
+      this.board.renderTiles();
+      this.board.renderItems();
+      this.board.drawBorder();
       if (OPTIONS.showChunkBorders) {
-         Board.drawChunkBorders();
+         this.board.drawChunkBorders();
       }
       renderEntities();
 
@@ -149,6 +162,17 @@ abstract class Game {
          const currentTime = new Date().getTime();
          const deltaTime = currentTime - this.lastTime;
          this.lastTime = currentTime;
+
+         // Send client info
+         let shouldSendClientInfo = false;
+         this.clientInformationTimer -= deltaTime;
+         while (this.clientInformationTimer < 0) {
+            shouldSendClientInfo = true;
+            this.clientInformationTimer += 1 / SETTINGS.TPS;
+         }
+         if (shouldSendClientInfo) {
+            Client.sendPlayerDataPacket();
+         }
          
          // Update
          this.lag += deltaTime;
@@ -165,14 +189,6 @@ abstract class Game {
       if (this.isRunning) {
          requestAnimationFrame(() => this.main());
       }
-   }
-
-   public static spawnPlayer(username: string, id: number): void {
-      const x = randInt(0, SETTINGS.BOARD_SIZE * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
-      const y = randInt(0, SETTINGS.BOARD_SIZE * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
-      const position = new Point(x, y);
-
-      new Player(id, position, null, null, 0, 0, username);
    }
 
    public static loadAttackDataArray(clientAttacks: ReadonlyArray<ClientAttackInfo>): void {

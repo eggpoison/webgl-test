@@ -1,6 +1,5 @@
 import { Point, SETTINGS } from "webgl-test-shared";
 import { halfWindowHeight, halfWindowWidth } from "./webgl";
-import Board from "./Board";
 import CLIENT_SETTINGS from "./client-settings";
 import { updateCursorTooltipTarget } from "./components/CursorTooltip";
 import Entity from "./entities/Entity";
@@ -14,8 +13,8 @@ export function calculateCursorWorldPosition(): Point | null {
    if (Game.getIsPaused()) return null;
    if (typeof cursorX === "undefined" || typeof cursorY === "undefined") return null;
 
-   const worldX = cursorX - halfWindowWidth + Player.instance.renderPosition.x;
-   const worldY = -cursorY + halfWindowHeight + Player.instance.renderPosition.y;
+   const worldX = cursorX - halfWindowWidth + Player.instance!.renderPosition.x;
+   const worldY = -cursorY + halfWindowHeight + Player.instance!.renderPosition.y;
 
    // If out of bounds return null;
    if (worldX < 0 || worldX >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE || worldY < 0 || worldY >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
@@ -40,7 +39,7 @@ const calculateCursorTooltipTargetEntity = (cursorPosition: Point): Entity | nul
    let minDistance = Number.MAX_SAFE_INTEGER;
    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
-         const chunk = Board.getChunk(chunkX, chunkY);
+         const chunk = Game.board.getChunk(chunkX, chunkY);
          for (const entity of chunk.getEntities()) {
             const distance = cursorPosition.distanceFrom(entity.renderPosition);
             if (distance <= CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE && distance < minDistance) {
@@ -55,8 +54,8 @@ const calculateCursorTooltipTargetEntity = (cursorPosition: Point): Entity | nul
 }
 
 const calculateEntityScreenPosition = (entity: Entity): Point => {
-   const x = entity.renderPosition.x - Player.instance.renderPosition.x + halfWindowWidth;
-   const y = -entity.renderPosition.y + Player.instance.renderPosition.y + halfWindowHeight;
+   const x = entity.renderPosition.x - Player.instance!.renderPosition.x + halfWindowWidth;
+   const y = -entity.renderPosition.y + Player.instance!.renderPosition.y + halfWindowHeight;
 
    return new Point(x, y);
 }

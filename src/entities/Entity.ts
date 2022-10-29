@@ -1,34 +1,16 @@
-import { ServerEntityData, EntityType, ENTITY_INFO_RECORD, Point, SETTINGS, TILE_TYPE_INFO_RECORD, Vector, HitboxType } from "webgl-test-shared";
-import Board from "../Board";
+import { ServerEntityData, EntityType, ENTITY_INFO_RECORD, Point, SETTINGS, TILE_TYPE_INFO_RECORD, Vector, HitboxType, ServerEntitySpecialData } from "webgl-test-shared";
 import Chunk from "../Chunk";
+import Game from "../Game";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import Hitbox from "../hitboxes/Hitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
+import CircleRenderPart from "../render-parts/CircleRenderPart";
+import ImageRenderPart from "../render-parts/ImageRenderPart";
+import RenderPart, { RenderPartInfo } from "../render-parts/RenderPart";
 import { Tile } from "../Tile";
 
-interface BaseRenderPart {
-   readonly type: string;
-   readonly offset?: Point | (() => Point);
-   readonly zIndex: number;
-}
-
-export interface CircleRenderPart extends BaseRenderPart {
-   readonly type: "circle";
-   readonly rgba: [number, number, number, number];
-   readonly radius: number;
-}
-
-export interface ImageRenderPart extends BaseRenderPart {
-   readonly type: "image";
-   readonly width: number;
-   readonly height: number;
-   readonly textureSrc: string;
-}
-
-export type RenderPart = CircleRenderPart | ImageRenderPart;
-
 // Sort render parts from lowest z-index to highest z-index
-export function sortRenderParts(unsortedRenderParts: ReadonlyArray<RenderPart>): ReadonlyArray<RenderPart> {
+export function sortRenderParts<T extends RenderPartInfo>(unsortedRenderParts: ReadonlyArray<T>): ReadonlyArray<T> {
    const sortedRenderParts = unsortedRenderParts.slice();
    for (let i = 0; i < unsortedRenderParts.length - 1; i++) {
       for (let j = i; j < unsortedRenderParts.length - 1; j++) {
@@ -110,7 +92,7 @@ const calculateEntityRenderPosition = (entity: Entity): Point => {
 }
 
 export function calculateEntityRenderValues(): void {
-   for (const entity of Object.values(Board.entities)) {
+   for (const entity of Object.values(Game.board.entities)) {
       entity.renderPosition = calculateEntityRenderPosition(entity);
    }
 }
@@ -135,21 +117,39 @@ abstract class Entity {
    public renderPosition: Point;
 
    /** Angle the entity is facing, taken counterclockwise from the positive x axis (radians) */
-   public rotation: number;
+   public rotation: number = 0;
    
    /** Limit to how many units the entity can move in a second */
    public terminalVelocity: number = 0;
 
-   protected readonly abstract renderParts: ReadonlyArray<RenderPart>;
+   public readonly renderParts: ReadonlyArray<RenderPart<RenderPartInfo>>;
 
    public isMoving: boolean = true;
 
    public chunks: Array<Chunk>;
 
-   constructor(id: number, type: EntityType, position: Point, velocity: Vector | null, acceleration: Vector | null, terminalVelocity: number, rotation: number) {
-      this.id = id;
-      this.type = type;
+   public special?: ServerEntitySpecialData;
 
+   constructor(position: Point, id: number, type: EntityType, renderPartInfo: ReadonlyArray<RenderPartInfo>) {
+      this.id = id;
+
+      // Create render parts
+      const renderParts = new Array<RenderPart<RenderPartInfo>>();
+      for (let i = 0; i < renderPartInfo.length; i++) {
+         const info = renderPartInfo[i];
+         switch (info.type) {
+            case "image": {
+               renderParts.push(new ImageRenderPart(info as ImageRenderPart, this, i))
+               break;
+            }
+            case "circle": {
+               renderParts.push(new CircleRenderPart(info as CircleRenderPart, this, i))
+               break;
+            }
+         }
+      }
+      this.renderParts = renderParts;
+      
       // Create hitbox using hitbox info
       const hitboxInfo = ENTITY_INFO_RECORD[type].hitbox;
       switch (hitboxInfo.type) {
@@ -163,16 +163,12 @@ abstract class Entity {
          }
       }
       
+      this.type = type;
       this.position = position;
-      this.velocity = velocity;
-      this.acceleration = acceleration;
-      this.terminalVelocity = terminalVelocity;
-      this.rotation = rotation;
-
       this.renderPosition = position;
 
       // Add entity to the ID record
-      Board.entities[this.id] = this;
+      Game.board.entities[this.id] = this;
 
       // Calculate initial containing chunks
       if (this.hitbox.info.type === "rectangular") {
@@ -219,7 +215,7 @@ abstract class Entity {
       const chunks = new Array<Chunk>();
       for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
          for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
-            const chunk = Board.getChunk(chunkX, chunkY);
+            const chunk = Game.board.getChunk(chunkX, chunkY);
             chunks.push(chunk);
          }
       }
@@ -316,17 +312,13 @@ abstract class Entity {
    public findCurrentTile(): Tile {
       const tileX = Math.floor(this.position.x / SETTINGS.TILE_SIZE);
       const tileY = Math.floor(this.position.y / SETTINGS.TILE_SIZE);
-      return Board.getTile(tileX, tileY);
+      return Game.board.getTile(tileX, tileY);
    }
 
    public getChunk(): Chunk {
       const x = Math.floor(this.position.x / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE);
       const y = Math.floor(this.position.y / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE);
-      return Board.getChunk(x, y);
-   }
-
-   public getRenderParts(): ReadonlyArray<RenderPart> {
-      return this.renderParts;
+      return Game.board.getChunk(x, y);
    }
 
    public updateFromData(entityData: ServerEntityData): void {
@@ -335,8 +327,9 @@ abstract class Entity {
       this.acceleration = entityData.acceleration !== null ? Vector.unpackage(entityData.acceleration) : null;
       this.terminalVelocity = entityData.terminalVelocity;
       this.rotation = entityData.rotation;
+      this.special = entityData.special;
 
-      this.updateChunks(entityData.chunkCoordinates.map(([x, y]) => Board.getChunk(x, y)));
+      this.updateChunks(entityData.chunkCoordinates.map(([x, y]) => Game.board.getChunk(x, y)));
    }
 
    public resolveEntityCollisions(): void {

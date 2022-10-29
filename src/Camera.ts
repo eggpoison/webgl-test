@@ -1,6 +1,5 @@
 import { Point, SETTINGS, VisibleChunkBounds } from "webgl-test-shared";
 import { halfWindowHeight, halfWindowWidth, windowHeight, windowWidth } from "./webgl";
-import Player from "./entities/Player";
 
 abstract class Camera {
    /** Larger = zoomed in, smaller = zoomed out */
@@ -29,12 +28,21 @@ abstract class Camera {
       return this.visibleChunkBounds;
    }
 
-   public static updateCameraPosition(): void {
-      // Predict where the player is
-      this.position = Player.instance.renderPosition.copy();
+   public static setCameraPosition(position: Point): void {
+      this.position = position;
    }
 
-   public static getXPositionInScreen(x: number): number {
+   /** X position in the screen (0 = left, windowWidth = right) */
+   public static calculateXScreenPos(x: number): number {
+      return x - this.position.x + halfWindowWidth;
+   }
+
+   /** Y position in the screen (0 = bottom, windowHeight = top) */
+   public static calculateYScreenPos(y: number): number {
+      return y - this.position.y + halfWindowHeight;
+   }
+
+   public static calculateXCanvasPosition(x: number): number {
       // Account for the player position
       const screenX = x - this.position.x + halfWindowWidth;
 
@@ -42,7 +50,7 @@ abstract class Camera {
       return canvasX;
    }
    
-   public static getYPositionInScreen(y: number): number {
+   public static calculateYCanvasPosition(y: number): number {
       // Account for the player position
       const screenY = y - this.position.y + halfWindowHeight;
       

@@ -164,63 +164,62 @@ export type EntityHitboxInfo = {
    readonly sideAxes: ReadonlyArray<Vector>
 }
 
-abstract class Board {
-   private static tiles: Array<Array<Tile>>;
-   private static chunks = this.createChunkArray();
+class Board {
+   private tiles: Array<Array<Tile>>;
+   private chunks: Array<Array<Chunk>>;
 
-   public static entities: Record<number, Entity> = {};
-   public static items: Record<number, Item> = {};
+   public entities: Record<number, Entity> = {};
+   public items: Record<number, Item> = {};
 
-   private static solidTileProgram: WebGLProgram;
-   private static liquidTileProgram: WebGLProgram;
-   private static borderProgram: WebGLProgram;
-   private static chunkBorderProgram: WebGLProgram;
-   private static itemProgram: WebGLProgram;
+   private solidTileProgram: WebGLProgram;
+   private liquidTileProgram: WebGLProgram;
+   private borderProgram: WebGLProgram;
+   private chunkBorderProgram: WebGLProgram;
+   private itemProgram: WebGLProgram;
 
-   private static solidTileProgramPlayerPosUniformLocation: WebGLUniformLocation;
-   private static solidTileProgramHalfWindowSizeUniformLocation: WebGLUniformLocation;
-   private static solidTileProgramTexturesUniformLocation: WebGLUniformLocation;
-   
-   private static solidTileProgramTilePosAttribLocation: GLint;
-   private static solidTileProgramTexCoordAttribLocation: GLint;
-   private static solidTileProgramTextureIdxAttribLocation: GLint;
+   private solidTileProgramPlayerPosUniformLocation: WebGLUniformLocation;
+   private solidTileProgramHalfWindowSizeUniformLocation: WebGLUniformLocation;
+   private solidTileProgramTexturesUniformLocation: WebGLUniformLocation;
+   private solidTileProgramTilePosAttribLocation: GLint;
+   private solidTileProgramTexCoordAttribLocation: GLint;
+   private solidTileProgramTextureIdxAttribLocation: GLint;
 
-   private static createChunkArray(): Array<Array<Chunk>> {
-      const chunks = new Array<Array<Chunk>>();
-
+   constructor(tiles: Array<Array<Tile>>) {
+      this.tiles = tiles;
+      
+      // Create the chunk array
+      this.chunks = new Array<Array<Chunk>>();
       for (let x = 0; x < SETTINGS.BOARD_SIZE; x++) {
-         chunks[x] = new Array<Chunk>();
+         this.chunks[x] = new Array<Chunk>();
          for (let y = 0; y < SETTINGS.BOARD_SIZE; y++) {
-            chunks[x][y] = new Chunk(x, y);
+            this.chunks[x][y] = new Chunk(x, y);
          }
       }
 
-      return chunks;
-   }
-
-   public static setTiles(tiles: Array<Array<Tile>>): void {
-      this.tiles = tiles;
-   }
-
-   public static setupShaders(): void {
       this.solidTileProgram = createWebGLProgram(solidTileVertexShaderText, solidTileFragmentShaderText);
       this.liquidTileProgram = createWebGLProgram(liquidTileVertexShaderText, liquidTileFragmentShaderText);
       this.borderProgram = createWebGLProgram(borderVertexShaderText, borderFragmentShaderText);
       this.chunkBorderProgram = createWebGLProgram(chunkBorderVertexShaderText, chunkBorderFragmentShaderText);
       this.itemProgram = createWebGLProgram(itemVertexShaderText, itemFragmentShaderText);
 
-      this.precomputeWebGLDataLocations();
+      this.solidTileProgramPlayerPosUniformLocation = gl.getUniformLocation(this.solidTileProgram, "u_playerPos")!;
+      this.solidTileProgramHalfWindowSizeUniformLocation = gl.getUniformLocation(this.solidTileProgram, "u_halfWindowSize")!;
+      this.solidTileProgramTexturesUniformLocation = gl.getUniformLocation(this.solidTileProgram, "u_textures")!;
+
+      this.solidTileProgramTilePosAttribLocation = gl.getAttribLocation(this.solidTileProgram, "a_tilePos");
+      this.solidTileProgramTexCoordAttribLocation = gl.getAttribLocation(this.solidTileProgram, "a_texCoord");
+      this.solidTileProgramTextureIdxAttribLocation = gl.getAttribLocation(this.solidTileProgram, "a_textureIdx");
    }
 
-   public static getTile(x: number, y: number): Tile {
+   public getTile(x: number, y: number): Tile {
       return this.tiles[x][y];
    }
 
-   public static getChunk(x: number, y: number): Chunk {
+   public getChunk(x: number, y: number): Chunk {
       return this.chunks[x][y];
    }
 
-   public static tickEntities(): void {
+   public tickEntities(): void {
       for (const entity of Object.values(this.entities)) {
          entity.applyPhysics();
          if (typeof entity.tick !== "undefined") entity.tick();
@@ -239,7 +238,7 @@ abstract class Board {
       }
    }
 
-   public static resolveCollisions(): void {
+   public resolveCollisions(): void {
       for (const entity of Object.values(this.entities)) {
          entity.resolveEntityCollisions();
          entity.resolveWallCollisions();
@@ -247,7 +246,7 @@ abstract class Board {
    }
 
    /** Updates the client's copy of the tiles array to match any tile updates that have occurred */
-   public static loadTileUpdates(tileUpdates: ReadonlyArray<ServerTileUpdateData>): void {
+   public loadTileUpdates(tileUpdates: ReadonlyArray<ServerTileUpdateData>): void {
       for (const update of tileUpdates) {
          let tile = this.getTile(update.x, update.y);
          tile.type = update.type;
@@ -255,32 +254,20 @@ abstract class Board {
       }
    }
 
-   private static precomputeWebGLDataLocations(): void {
-      this.solidTileProgramPlayerPosUniformLocation = gl.getUniformLocation(this.solidTileProgram, "u_playerPos")!;
-      this.solidTileProgramHalfWindowSizeUniformLocation = gl.getUniformLocation(this.solidTileProgram, "u_halfWindowSize")!;
-      this.solidTileProgramTexturesUniformLocation = gl.getUniformLocation(this.solidTileProgram, "u_textures")!;
+   public renderTiles(): void {
+      const visibleTiles = this.categoriseVisibleTiles();
 
-      this.solidTileProgramTilePosAttribLocation = gl.getAttribLocation(this.solidTileProgram, "a_tilePos");
-      this.solidTileProgramTexCoordAttribLocation = gl.getAttribLocation(this.solidTileProgram, "a_texCoord");
-      this.solidTileProgramTextureIdxAttribLocation = gl.getAttribLocation(this.solidTileProgram, "a_textureIdx");
-   }
-
-   public static renderTiles(): void {
-      // Calculate tile vertices
-      const tiles = this.sortVisibleTiles();
-
-      {
-         const { vertices, textureSources } = this.calculateSolidTileVertices(tiles.solidTiles);
-         this.renderSolidTiles(vertices, textureSources);
+      // Calculate and render solid tiles
+      const solidTileRenderInfo = this.calculateSolidTileRenderInfo(visibleTiles.solidTiles);
+      for (const { vertices, indexedTextureSources } of solidTileRenderInfo) {
+         this.renderSolidTiles(vertices, indexedTextureSources);
       }
       
-      {
-         const vertices = this.calculateLiquidTileVertices(tiles.liquidTiles);
-         this.renderLiquidTiles(vertices);
-      }
+      const liquidTileVertices = this.calculateLiquidTileVertices(visibleTiles.liquidTiles);
+      this.renderLiquidTiles(liquidTileVertices);
    }
 
-   private static sortVisibleTiles(): { solidTiles: ReadonlyArray<Tile>, liquidTiles: ReadonlyArray<Tile> } {
+   private categoriseVisibleTiles(): { solidTiles: ReadonlyArray<Tile>, liquidTiles: ReadonlyArray<Tile> } {
       const [minTileX, maxTileX, minTileY, maxTileY] = Camera.calculateVisibleTileBounds();
       
       const tiles = {
@@ -301,42 +288,65 @@ abstract class Board {
       return tiles;
    }
 
-   private static calculateSolidTileVertices(tiles: ReadonlyArray<Tile>): { vertices: ReadonlyArray<number>, textureSources: ReadonlyArray<string> } {
-      const info = {
-         vertices: new Array<number>(),
-         textureSources: new Array<string>()
-      };
-
-      for (const tile of tiles) {
-         const x1 = tile.x * SETTINGS.TILE_SIZE;
-         const x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
-         const y1 = tile.y * SETTINGS.TILE_SIZE;
-         const y2 = (tile.y + 1) * SETTINGS.TILE_SIZE;
-
-         // Calculate texture index
-         let textureIdx: number;
+   private calculateSolidTileRenderInfo(visibleTiles: ReadonlyArray<Tile>): ReadonlyArray<{ vertices: ReadonlyArray<number>, indexedTextureSources: ReadonlyArray<string> }> {
+      // Categorize the tiles based on their texture
+      const visibleTilesCategorized: { [textureSource: string]: Array<Tile> } = {};
+      for (const tile of visibleTiles) {
+         // Find texture source of tile
          const textureSource = (TILE_TYPE_RENDER_INFO_RECORD[tile.type] as SolidTileTypeRenderInfo).textureSource;
-         if (!info.textureSources.includes(textureSource)) {
-            textureIdx = info.textureSources.length;
-            info.textureSources.push(textureSource);
-         } else {
-            textureIdx = info.textureSources.indexOf(textureSource);
+         
+         if (!visibleTilesCategorized.hasOwnProperty(textureSource)) {
+            visibleTilesCategorized[textureSource] = new Array<Tile>();
          }
 
-         info.vertices.push(
-            x1, y1, 0, 0, textureIdx,
-            x2, y1, 1, 0, textureIdx,
-            x1, y2, 0, 1, textureIdx,
-            x1, y2, 0, 1, textureIdx,
-            x2, y1, 1, 0, textureIdx,
-            x2, y2, 1, 1, textureIdx
-         )
+         visibleTilesCategorized[textureSource].push(tile);
       }
 
-      return info;
+      const renderInfo = new Array<{ vertices: Array<number>, indexedTextureSources: Array<string> }>();
+
+      const numVisibleTileTextures = Object.keys(visibleTilesCategorized).length;
+
+      const visibleTilesCategorizedEntries = Object.entries(visibleTilesCategorized);
+      for (let i = 0; i <= Math.floor(numVisibleTileTextures / MAX_ACTIVE_TEXTURE_UNITS); i++) {
+         // Info for the collection of textures
+         const info: { vertices: Array<number>, indexedTextureSources: Array<string> } = {
+            vertices: [],
+            indexedTextureSources: []
+         };
+
+         for (let j = i * MAX_ACTIVE_TEXTURE_UNITS; j < Math.min((i + 1) * MAX_ACTIVE_TEXTURE_UNITS, numVisibleTileTextures - i * MAX_ACTIVE_TEXTURE_UNITS); j++) {
+            const [ textureSource, tiles ] = visibleTilesCategorizedEntries[j];
+
+            // Add texture source
+            info.indexedTextureSources.push(textureSource);
+            
+            // Add vertices
+            for (const tile of tiles) {
+               const x1 = tile.x * SETTINGS.TILE_SIZE;
+               const x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
+               const y1 = tile.y * SETTINGS.TILE_SIZE;
+               const y2 = (tile.y + 1) * SETTINGS.TILE_SIZE;
+
+               const textureIndex = info.indexedTextureSources.length - 1;
+
+               info.vertices.push(
+                  x1, y1, 0, 0, textureIndex,
+                  x2, y1, 1, 0, textureIndex,
+                  x1, y2, 0, 1, textureIndex,
+                  x1, y2, 0, 1, textureIndex,
+                  x2, y1, 1, 0, textureIndex,
+                  x2, y2, 1, 1, textureIndex
+               );
+            }
+         }
+
+         renderInfo.push(info);
+      }
+      
+      return renderInfo;
    }
 
-   private static renderSolidTiles(vertices: ReadonlyArray<number>, indexedTextureSources: ReadonlyArray<string>): void {
+   private renderSolidTiles(vertices: ReadonlyArray<number>, indexedTextureSources: ReadonlyArray<string>): void {
       gl.useProgram(this.solidTileProgram);
 
       // Create tile buffer
@@ -369,7 +379,7 @@ abstract class Board {
          4 * Float32Array.BYTES_PER_ELEMENT
       );
 
-      gl.uniform2f(this.solidTileProgramPlayerPosUniformLocation, Player.instance.renderPosition.x, Player.instance.renderPosition.y);
+      gl.uniform2f(this.solidTileProgramPlayerPosUniformLocation, Player.instance!.renderPosition.x, Player.instance!.renderPosition.y);
       gl.uniform2f(this.solidTileProgramHalfWindowSizeUniformLocation, windowWidth / 2, windowHeight / 2);
       gl.uniform1iv(this.solidTileProgramTexturesUniformLocation, indexedTextureSources.map((_, idx) => idx));
       
@@ -386,11 +396,11 @@ abstract class Board {
          gl.bindTexture(gl.TEXTURE_2D, texture);
       }
 
-      // Draw the tile
+      // Draw the tiles
       gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 5);
    }
 
-   private static calculateLiquidTileVertices(tiles: ReadonlyArray<Tile>): ReadonlyArray<number> {
+   private calculateLiquidTileVertices(tiles: ReadonlyArray<Tile>): ReadonlyArray<number> {
       const vertices = new Array<number>();
 
       for (const tile of tiles) {
@@ -413,7 +423,7 @@ abstract class Board {
       return vertices;
    }
 
-   private static renderLiquidTiles(vertices: ReadonlyArray<number>): void {
+   private renderLiquidTiles(vertices: ReadonlyArray<number>): void {
       gl.useProgram(this.liquidTileProgram);
 
       // Create tile buffer
@@ -448,7 +458,7 @@ abstract class Board {
       gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 5);
    }
 
-   public static drawBorder(): void {
+   public drawBorder(): void {
       const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
 
       const BORDER_WIDTH = 20;
@@ -477,10 +487,10 @@ abstract class Board {
 
       const calculateAndAddVertices = (x1: number, x2: number, y1: number, y2: number): void => {
          // Calculate screen positions
-         const screenX1 = Camera.getXPositionInScreen(x1);
-         const screenX2 = Camera.getXPositionInScreen(x2);
-         const screenY1 = Camera.getYPositionInScreen(y1);
-         const screenY2 = Camera.getYPositionInScreen(y2);
+         const screenX1 = Camera.calculateXCanvasPosition(x1);
+         const screenX2 = Camera.calculateXCanvasPosition(x2);
+         const screenY1 = Camera.calculateYCanvasPosition(y1);
+         const screenY2 = Camera.calculateYCanvasPosition(y2);
 
          vertices.push(
             screenX1, screenY1, // Bottom left
@@ -540,7 +550,7 @@ abstract class Board {
       gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 2);
    }
 
-   public static drawChunkBorders(): void {
+   public drawChunkBorders(): void {
       gl.useProgram(this.chunkBorderProgram);
       
       const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
@@ -548,14 +558,14 @@ abstract class Board {
       const vertices = new Array<number>();
 
       // Calculate line end positions
-      const top = Camera.getYPositionInScreen(SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE);
-      const bottom = Camera.getYPositionInScreen(0);
-      const left = Camera.getXPositionInScreen(0);
-      const right = Camera.getXPositionInScreen(SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE);
+      const top = Camera.calculateYCanvasPosition(SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE);
+      const bottom = Camera.calculateYCanvasPosition(0);
+      const left = Camera.calculateXCanvasPosition(0);
+      const right = Camera.calculateXCanvasPosition(SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE);
 
       // Horizontal lines
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
-         const screenY = Camera.getYPositionInScreen(chunkY * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
+         const screenY = Camera.calculateYCanvasPosition(chunkY * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
          vertices.push(
             left, screenY,
             right, screenY
@@ -564,7 +574,7 @@ abstract class Board {
 
       // Vertical lines
       for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
-         const screenX = Camera.getXPositionInScreen(chunkX * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
+         const screenX = Camera.calculateXCanvasPosition(chunkX * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
          vertices.push(
             screenX, top,
             screenX, bottom
@@ -583,7 +593,7 @@ abstract class Board {
       gl.drawArrays(gl.LINES, 0, vertices.length / 2);
    }
 
-   public static removeEntity(entity: Entity): void {
+   public removeEntity(entity: Entity): void {
       delete this.entities[entity.id];
 
       for (const chunk of entity.chunks) {
@@ -591,7 +601,7 @@ abstract class Board {
       }
    }
 
-   public static calculateDistanceBetweenPointAndEntity(position: Point, entity: Entity): number {
+   public calculateDistanceBetweenPointAndEntity(position: Point, entity: Entity): number {
       switch (entity.hitbox.info.type) {
          case "circular": {
             const dist = position.distanceFrom(entity.position);
@@ -608,7 +618,7 @@ abstract class Board {
       }
    }
 
-   public static renderItems(): void {
+   public renderItems(): void {
       gl.useProgram(this.itemProgram);
 
       gl.enable(gl.BLEND);
@@ -654,7 +664,7 @@ abstract class Board {
       gl.blendFunc(gl.ONE, gl.ZERO);
    }
 
-   private static calculateItemVertices(): { [textureSrc: string]: ReadonlyArray<number> } {
+   private calculateItemVertices(): { [textureSrc: string]: ReadonlyArray<number> } {
       const itemVertexRecord: { [textureSrc: string]: Array<number> } = {};
 
       for (const item of Object.values(this.items)) {
@@ -680,10 +690,10 @@ abstract class Board {
          bottomRight = rotatePoint(bottomRight, item.position, item.rotation);
          bottomLeft = rotatePoint(bottomLeft, item.position, item.rotation);
 
-         topLeft = new Point(Camera.getXPositionInScreen(topLeft.x), Camera.getYPositionInScreen(topLeft.y));
-         topRight = new Point(Camera.getXPositionInScreen(topRight.x), Camera.getYPositionInScreen(topRight.y));
-         bottomRight = new Point(Camera.getXPositionInScreen(bottomRight.x), Camera.getYPositionInScreen(bottomRight.y));
-         bottomLeft = new Point(Camera.getXPositionInScreen(bottomLeft.x), Camera.getYPositionInScreen(bottomLeft.y));
+         topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));
+         topRight = new Point(Camera.calculateXCanvasPosition(topRight.x), Camera.calculateYCanvasPosition(topRight.y));
+         bottomRight = new Point(Camera.calculateXCanvasPosition(bottomRight.x), Camera.calculateYCanvasPosition(bottomRight.y));
+         bottomLeft = new Point(Camera.calculateXCanvasPosition(bottomLeft.x), Camera.calculateYCanvasPosition(bottomLeft.y));
                
          itemVertexRecord[textureSrc].push(
             bottomLeft.x, bottomLeft.y, 0, 0,

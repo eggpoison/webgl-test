@@ -1,6 +1,6 @@
 import { BaseItemInfo, ItemID, ITEM_INFO_RECORD, Point } from "webgl-test-shared";
-import Board from "./Board";
 import Chunk from "./Chunk";
+import Game from "./Game";
 
 class Item implements BaseItemInfo {
    public readonly id: number;
@@ -32,7 +32,7 @@ class Item implements BaseItemInfo {
          chunk.addItem(this);
       }
 
-      Board.items[this.id] = this;
+      Game.board.items[this.id] = this;
    }
 
    public remove(): void {
@@ -40,7 +40,7 @@ class Item implements BaseItemInfo {
          chunk.removeItem(this);
       }
 
-      delete Board.items[this.id];
+      delete Game.board.items[this.id];
    }
 }
 

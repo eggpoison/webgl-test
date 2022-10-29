@@ -1,12 +1,13 @@
 import { AttackPacket, Point, SETTINGS, Vector } from "webgl-test-shared";
-import Board from "../Board";
 import Camera from "../Camera";
 import Client from "../client/Client";
+import Game from "../Game";
 import { keyIsPressed } from "../keyboard-input";
-import Entity, { RenderPart, sortRenderParts } from "./Entity";
+import { RenderPartInfo } from "../render-parts/RenderPart";
+import Entity, { sortRenderParts } from "./Entity";
 
 class Player extends Entity {
-   public static instance: Player;
+   public static instance: Player | null = null;
 
    public readonly displayName: string;
 
@@ -18,7 +19,7 @@ class Player extends Entity {
    private static readonly ACCELERATION = 1000;
    private static readonly TERMINAL_VELOCITY = 300;
 
-   private static readonly RENDER_PARTS: ReadonlyArray<RenderPart> = sortRenderParts([
+   private static readonly RENDER_PARTS: ReadonlyArray<RenderPartInfo> = sortRenderParts([
       {
          type: "circle",
          radius: 32,
@@ -27,14 +28,12 @@ class Player extends Entity {
       }
    ]);
 
-   protected readonly renderParts: ReadonlyArray<RenderPart> = Player.RENDER_PARTS;
-
-   constructor(id: number, position: Point, velocity: Vector | null, acceleration: Vector | null, terminalVelocity: number, rotation: number, displayName: string) {
-      super(id, "player", position, velocity, acceleration, terminalVelocity, rotation);
+   constructor(position: Point, id: number, displayName: string) {
+      super(position, id, "player", Player.RENDER_PARTS);
 
       this.displayName = displayName;
 
-      if (typeof Player.instance === "undefined") {
+      if (Player.instance === null) {
          Player.instance = this;
 
          Camera.position = this.position;
@@ -56,8 +55,8 @@ class Player extends Entity {
    }
 
    private static getAttackTargets(): ReadonlyArray<Entity> {
-      const offset = new Vector(this.ATTACK_OFFSET, Player.instance.rotation);
-      const attackPosition = Player.instance.position.add(offset.convertToPoint());
+      const offset = new Vector(this.ATTACK_OFFSET, Player.instance!.rotation);
+      const attackPosition = Player.instance!.position.add(offset.convertToPoint());
 
       const minChunkX = Math.max(Math.min(Math.floor((attackPosition.x - this.ATTACK_TEST_RADIUS) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
       const maxChunkX = Math.max(Math.min(Math.floor((attackPosition.x + this.ATTACK_TEST_RADIUS) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
@@ -68,13 +67,13 @@ class Player extends Entity {
       const attackedEntities = new Array<Entity>();
       for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
          for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
-            const chunk = Board.getChunk(chunkX, chunkY);
+            const chunk = Game.board.getChunk(chunkX, chunkY);
 
             for (const entity of chunk.getEntities()) {
                // Skip entities that are already in the array
                if (attackedEntities.includes(entity)) continue;
 
-               const dist = Board.calculateDistanceBetweenPointAndEntity(attackPosition, entity);
+               const dist = Game.board.calculateDistanceBetweenPointAndEntity(attackPosition, entity);
                if (dist <= Player.ATTACK_TEST_RADIUS) attackedEntities.push(entity);
             }
          }
@@ -82,7 +81,7 @@ class Player extends Entity {
       
       // Don't attack yourself
       while (true) {
-         const idx = attackedEntities.indexOf(this.instance);
+         const idx = attackedEntities.indexOf(this.instance!);
          if (idx !== -1) {
             attackedEntities.splice(idx, 1);
          } else {

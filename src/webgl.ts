@@ -8,7 +8,7 @@ export let windowHeight = window.innerHeight;
 export let halfWindowWidth = windowWidth / 2;
 export let halfWindowHeight = windowHeight / 2;
 
-export const MAX_ACTIVE_TEXTURE_UNITS = 8;
+export let MAX_ACTIVE_TEXTURE_UNITS = 8;
 
 export function resizeCanvas(): void {
    if (typeof canvas === "undefined") return;
@@ -44,6 +44,8 @@ export function createWebGLContext(): void {
    gl = glAttempt;
 
    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+
+   MAX_ACTIVE_TEXTURE_UNITS = gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS);
 }
 
 export function clearCanvas(): void {
