@@ -1,4 +1,5 @@
-import { gl } from ".";
+import { gl } from "./webgl";
+import CLIENT_ITEM_INFO_RECORD from "./client-item-info";
 import { TILE_TYPE_RENDER_INFO_RECORD } from "./tile-type-render-info";
 import { imageIsLoaded } from "./utils";
 
@@ -25,6 +26,11 @@ export function loadTextures(): Promise<void> {
          if (!tileTypeInfo.isLiquid && !textureSourceIsAlreadyIncluded(tileTypeInfo.textureSource)) {
             TEXTURE_SOURCES.push(`tiles/${tileTypeInfo.textureSource}`);
          }
+      }
+
+      // Add item textures
+      for (const clientItemInfo of Object.values(CLIENT_ITEM_INFO_RECORD)) {
+         TEXTURE_SOURCES.push(`items/${clientItemInfo.textureSrc}`);
       }
 
       for (const textureSource of TEXTURE_SOURCES) {

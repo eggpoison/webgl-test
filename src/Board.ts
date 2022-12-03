@@ -1,11 +1,15 @@
-import { gl } from ".";
 import Entity from "./entities/Entity";
 import { getTexture } from "./textures";
-import { Tile, SETTINGS, computeSideAxis, Point, Vector, TileUpdate, rotatePoint, } from "webgl-test-shared";
+import { SETTINGS, Point, Vector, ServerTileUpdateData, rotatePoint, TILE_TYPE_INFO_RECORD, } from "webgl-test-shared";
 import Camera from "./Camera";
-import { TILE_TYPE_RENDER_INFO_RECORD } from "./tile-type-render-info";
-import { createWebGLProgram } from "./webgl";
+import { LiquidTileTypeRenderInfo, SolidTileTypeRenderInfo, TILE_TYPE_RENDER_INFO_RECORD } from "./tile-type-render-info";
+import { createWebGLProgram, gl, MAX_ACTIVE_TEXTURE_UNITS, windowHeight, windowWidth } from "./webgl";
 import Chunk from "./Chunk";
+import Item from "./Item";
+import CLIENT_ITEM_INFO_RECORD from "./client-item-info";
+import { Tile } from "./Tile";
+import RectangularHitbox from "./hitboxes/RectangularHitbox";
+import Player from "./entities/Player";
 
 // 
 // Solid Tile Shaders
@@ -13,26 +17,48 @@ import Chunk from "./Chunk";
 const solidTileVertexShaderText = `
 precision mediump float;
 
-attribute vec2 vertPosition;
-attribute vec2 vertTexCoord;
+uniform vec2 u_playerPos;
+uniform vec2 u_halfWindowSize;
 
-varying vec2 fragTexCoord;
- 
+attribute vec2 a_tilePos;
+attribute vec2 a_texCoord;
+attribute float a_textureIdx;
+
+varying vec2 v_texCoord;
+varying float v_textureIdx;
+
 void main() {
-   gl_Position = vec4(vertPosition, 0.0, 1.0);
+   vec2 screenPos = a_tilePos - u_playerPos + u_halfWindowSize;
+   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+   gl_Position = vec4(clipSpacePos, 0.0, 1.0);
 
-   fragTexCoord = vertTexCoord;
+   v_texCoord = a_texCoord;
+   v_textureIdx = a_textureIdx;
 }
 `;
 const solidTileFragmentShaderText = `
+#define maxNumTextures ${MAX_ACTIVE_TEXTURE_UNITS}
+
 precision mediump float;
+
+uniform sampler2D u_textures[maxNumTextures];
  
-uniform sampler2D sampler;
- 
-varying vec2 fragTexCoord;
+varying vec2 v_texCoord;
+varying float v_textureIdx;
+    
+vec4 getSampleFromArray(sampler2D textures[maxNumTextures], int ndx, vec2 uv) {
+   vec4 color = vec4(0);
+   for (int i = 0; i < maxNumTextures; i++) {
+      vec4 c = texture2D(u_textures[i], uv);
+      if (i == ndx) {
+         color += c;
+      }
+   }
+   return color;
+}
  
 void main() {
-   gl_FragColor = texture2D(sampler, fragTexCoord);
+   gl_FragColor = getSampleFromArray(u_textures, int(v_textureIdx + 0.5), v_texCoord);
 }
 `;
 
@@ -85,10 +111,11 @@ void main() {
 `;
 
 // 
-// Chunk border shaders
+// Chunk border wireframe shaders
 // 
+const chunkBorderColour = "1.0, 0.0, 0.0";
 const chunkBorderVertexShaderText = `
-precision mediump float;
+precision lowp float;
 
 attribute vec2 vertPosition;
 
@@ -99,111 +126,127 @@ const chunkBorderFragmentShaderText = `
 precision mediump float;
 
 void main() {
-   gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+   gl_FragColor = vec4(${chunkBorderColour}, 1.0);
 }
 `;
 
-type TileVerticesCollection = {
-   readonly texturedTriangleVertices: { [key: string]: Array<number> };
-   readonly colouredTriangleVertices: Array<number>;
-};
+// 
+// Item shaders
+// 
+const itemVertexShaderText = `
+precision mediump float;
 
-type TileVertexCoordinates = [{ [key: number]: number }, { [key: number]: number }];
+attribute vec2 vertPosition;
+attribute vec2 vertTexCoord;
+
+varying vec2 fragTexCoord;
+ 
+void main() {
+   gl_Position = vec4(vertPosition, 0.0, 1.0);
+
+   fragTexCoord = vertTexCoord;
+}
+`;
+const itemFragmentShaderText = `
+precision mediump float;
+ 
+uniform sampler2D sampler;
+ 
+varying vec2 fragTexCoord;
+ 
+void main() {
+   gl_FragColor = texture2D(sampler, fragTexCoord);
+}
+`;
 
 export type EntityHitboxInfo = {
    readonly vertexPositions: readonly [Point, Point, Point, Point];
    readonly sideAxes: ReadonlyArray<Vector>
 }
 
-abstract class Board {
-   private static tiles: Array<Array<Tile>>;
+class Board {
+   private tiles: Array<Array<Tile>>;
+   private chunks: Array<Array<Chunk>>;
 
-   private static chunks: Array<Array<Chunk>>;
+   public entities: Record<number, Entity> = {};
+   public items: Record<number, Item> = {};
 
-   public static entities: Record<number, Entity> = {};
+   private solidTileProgram: WebGLProgram;
+   private liquidTileProgram: WebGLProgram;
+   private borderProgram: WebGLProgram;
+   private chunkBorderProgram: WebGLProgram;
+   private itemProgram: WebGLProgram;
 
-   private static solidTileProgram: WebGLProgram;
-   private static liquidTileProgram: WebGLProgram;
-   private static borderProgram: WebGLProgram;
-   private static chunkBorderProgram: WebGLProgram;
+   private solidTileProgramPlayerPosUniformLocation: WebGLUniformLocation;
+   private solidTileProgramHalfWindowSizeUniformLocation: WebGLUniformLocation;
+   private solidTileProgramTexturesUniformLocation: WebGLUniformLocation;
+   private solidTileProgramTilePosAttribLocation: GLint;
+   private solidTileProgramTexCoordAttribLocation: GLint;
+   private solidTileProgramTextureIdxAttribLocation: GLint;
 
-   private static solidTileProgramPositionAttribLocation: GLint;
-   private static solidTileProgramTexCoordAttribLocation: GLint;
-
-   public static setup(tiles: ReadonlyArray<ReadonlyArray<Tile>>): void {
-      this.tiles = tiles as Array<Array<Tile>>;
+   constructor(tiles: Array<Array<Tile>>) {
+      this.tiles = tiles;
+      
+      // Create the chunk array
+      this.chunks = new Array<Array<Chunk>>();
+      for (let x = 0; x < SETTINGS.BOARD_SIZE; x++) {
+         this.chunks[x] = new Array<Chunk>();
+         for (let y = 0; y < SETTINGS.BOARD_SIZE; y++) {
+            this.chunks[x][y] = new Chunk(x, y);
+         }
+      }
 
       this.solidTileProgram = createWebGLProgram(solidTileVertexShaderText, solidTileFragmentShaderText);
       this.liquidTileProgram = createWebGLProgram(liquidTileVertexShaderText, liquidTileFragmentShaderText);
       this.borderProgram = createWebGLProgram(borderVertexShaderText, borderFragmentShaderText);
       this.chunkBorderProgram = createWebGLProgram(chunkBorderVertexShaderText, chunkBorderFragmentShaderText);
+      this.itemProgram = createWebGLProgram(itemVertexShaderText, itemFragmentShaderText);
 
-      this.precomputeAttribLocations();
+      this.solidTileProgramPlayerPosUniformLocation = gl.getUniformLocation(this.solidTileProgram, "u_playerPos")!;
+      this.solidTileProgramHalfWindowSizeUniformLocation = gl.getUniformLocation(this.solidTileProgram, "u_halfWindowSize")!;
+      this.solidTileProgramTexturesUniformLocation = gl.getUniformLocation(this.solidTileProgram, "u_textures")!;
 
-      this.chunks = this.createChunkArray();
+      this.solidTileProgramTilePosAttribLocation = gl.getAttribLocation(this.solidTileProgram, "a_tilePos");
+      this.solidTileProgramTexCoordAttribLocation = gl.getAttribLocation(this.solidTileProgram, "a_texCoord");
+      this.solidTileProgramTextureIdxAttribLocation = gl.getAttribLocation(this.solidTileProgram, "a_textureIdx");
    }
 
-   private static createChunkArray(): Array<Array<Chunk>> {
-      const chunks = new Array<Array<Chunk>>();
-
-      for (let x = 0; x < SETTINGS.BOARD_SIZE; x++) {
-         chunks[x] = new Array<Chunk>();
-         for (let y = 0; y < SETTINGS.BOARD_SIZE; y++) {
-            chunks[x][y] = new Chunk(x, y);
-         }
-      }
-
-      return chunks;
-   }
-
-   public static getTile(x: number, y: number): Tile {
+   public getTile(x: number, y: number): Tile {
       return this.tiles[x][y];
    }
 
-   public static getChunk(x: number, y: number): Chunk {
+   public getChunk(x: number, y: number): Chunk {
       return this.chunks[x][y];
    }
 
-   public static update(): void {
-      const entityHitboxInfoRecord: Record<number, EntityHitboxInfo> = {};
-
+   public tickEntities(): void {
       for (const entity of Object.values(this.entities)) {
          entity.applyPhysics();
          if (typeof entity.tick !== "undefined") entity.tick();
 
          // Calculate the entity's new info
-         const hitboxVertexPositons = entity.calculateHitboxVertexPositions();
-         const hitboxBounds = entity.calculateHitboxBounds(hitboxVertexPositons);
-         const newChunks = entity.calculateContainingChunks(hitboxBounds);
+         if (entity.hitbox.info.type === "rectangular") {
+            (entity.hitbox as RectangularHitbox).computeVertexPositions();
+            (entity.hitbox as RectangularHitbox).computeSideAxes();
+         }
+         entity.hitbox.updateHitboxBounds();
 
          // Update the entities' containing chunks
+         const newChunks = entity.calculateContainingChunks();
          entity.updateChunks(newChunks);
-
-         if (hitboxVertexPositons !== null) {
-            const sideAxes = [
-               computeSideAxis(hitboxVertexPositons[0], hitboxVertexPositons[1]),
-               computeSideAxis(hitboxVertexPositons[0], hitboxVertexPositons[2])
-            ];
-
-            entityHitboxInfoRecord[entity.id] = {
-               vertexPositions: hitboxVertexPositons,
-               sideAxes: sideAxes
-            };
-         }
+         entity.updateChunks(newChunks);
       }
+   }
 
+   public resolveCollisions(): void {
       for (const entity of Object.values(this.entities)) {
-         entity.resolveCollisions(entityHitboxInfoRecord);
-
-         // Resolve wall collisions
-         const hitboxVertexPositons = entity.calculateHitboxVertexPositions();
-         const hitboxBounds = entity.calculateHitboxBounds(hitboxVertexPositons);
-         entity.resolveWallCollisions(hitboxBounds);
+         entity.resolveEntityCollisions();
+         entity.resolveWallCollisions();
       }
    }
 
    /** Updates the client's copy of the tiles array to match any tile updates that have occurred */
-   public static loadTileUpdates(tileUpdates: ReadonlyArray<TileUpdate>): void {
+   public loadTileUpdates(tileUpdates: ReadonlyArray<ServerTileUpdateData>): void {
       for (const update of tileUpdates) {
          let tile = this.getTile(update.x, update.y);
          tile.type = update.type;
@@ -211,75 +254,182 @@ abstract class Board {
       }
    }
 
-   private static precomputeAttribLocations(): void {
-      this.solidTileProgramPositionAttribLocation = gl.getAttribLocation(this.solidTileProgram, "vertPosition");
-      this.solidTileProgramTexCoordAttribLocation = gl.getAttribLocation(this.solidTileProgram, "vertTexCoord");
+   public renderTiles(): void {
+      const visibleTiles = this.categoriseVisibleTiles();
+
+      // Calculate and render solid tiles
+      const solidTileRenderInfo = this.calculateSolidTileRenderInfo(visibleTiles.solidTiles);
+      for (const { vertices, indexedTextureSources } of solidTileRenderInfo) {
+         this.renderSolidTiles(vertices, indexedTextureSources);
+      }
+      
+      const liquidTileVertices = this.calculateLiquidTileVertices(visibleTiles.liquidTiles);
+      this.renderLiquidTiles(liquidTileVertices);
    }
 
-   public static render(): void {
-      gl.clearColor(1, 1, 1, 1);
-      gl.clear(gl.COLOR_BUFFER_BIT);
+   private categoriseVisibleTiles(): { solidTiles: ReadonlyArray<Tile>, liquidTiles: ReadonlyArray<Tile> } {
+      const [minTileX, maxTileX, minTileY, maxTileY] = Camera.calculateVisibleTileBounds();
+      
+      const tiles = {
+         solidTiles: new Array<Tile>(),
+         liquidTiles: new Array<Tile>()
+      };
+      for (let x = minTileX; x <= maxTileX; x++) {
+         for (let y = minTileY; y <= maxTileY; y++) {
+            const tile = this.getTile(x, y);
+            if (TILE_TYPE_INFO_RECORD[tile.type].isLiquid) {
+               tiles.liquidTiles.push(tile);
+            } else {
+               tiles.solidTiles.push(tile);
+            }
+         }
+      }
 
-      this.renderTiles();
-      this.drawBorder();
+      return tiles;
    }
 
-   private static renderTiles(): void {
-      // Calculate tile vertices
-      const tileVerticesCollection = this.calculateTileVertices();
+   private calculateSolidTileRenderInfo(visibleTiles: ReadonlyArray<Tile>): ReadonlyArray<{ vertices: ReadonlyArray<number>, indexedTextureSources: ReadonlyArray<string> }> {
+      // Categorize the tiles based on their texture
+      const visibleTilesCategorized: { [textureSource: string]: Array<Tile> } = {};
+      for (const tile of visibleTiles) {
+         // Find texture source of tile
+         const textureSource = (TILE_TYPE_RENDER_INFO_RECORD[tile.type] as SolidTileTypeRenderInfo).textureSource;
+         
+         if (!visibleTilesCategorized.hasOwnProperty(textureSource)) {
+            visibleTilesCategorized[textureSource] = new Array<Tile>();
+         }
 
-      this.renderSolidTiles(tileVerticesCollection.texturedTriangleVertices);
-      this.renderLiquidTiles(tileVerticesCollection.colouredTriangleVertices);
+         visibleTilesCategorized[textureSource].push(tile);
+      }
+
+      const renderInfo = new Array<{ vertices: Array<number>, indexedTextureSources: Array<string> }>();
+
+      const numVisibleTileTextures = Object.keys(visibleTilesCategorized).length;
+
+      const visibleTilesCategorizedEntries = Object.entries(visibleTilesCategorized);
+      for (let i = 0; i <= Math.floor(numVisibleTileTextures / MAX_ACTIVE_TEXTURE_UNITS); i++) {
+         // Info for the collection of textures
+         const info: { vertices: Array<number>, indexedTextureSources: Array<string> } = {
+            vertices: [],
+            indexedTextureSources: []
+         };
+
+         for (let j = i * MAX_ACTIVE_TEXTURE_UNITS; j < Math.min((i + 1) * MAX_ACTIVE_TEXTURE_UNITS, numVisibleTileTextures - i * MAX_ACTIVE_TEXTURE_UNITS); j++) {
+            const [ textureSource, tiles ] = visibleTilesCategorizedEntries[j];
+
+            // Add texture source
+            info.indexedTextureSources.push(textureSource);
+            
+            // Add vertices
+            for (const tile of tiles) {
+               const x1 = tile.x * SETTINGS.TILE_SIZE;
+               const x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
+               const y1 = tile.y * SETTINGS.TILE_SIZE;
+               const y2 = (tile.y + 1) * SETTINGS.TILE_SIZE;
+
+               const textureIndex = info.indexedTextureSources.length - 1;
+
+               info.vertices.push(
+                  x1, y1, 0, 0, textureIndex,
+                  x2, y1, 1, 0, textureIndex,
+                  x1, y2, 0, 1, textureIndex,
+                  x1, y2, 0, 1, textureIndex,
+                  x2, y1, 1, 0, textureIndex,
+                  x2, y2, 1, 1, textureIndex
+               );
+            }
+         }
+
+         renderInfo.push(info);
+      }
+      
+      return renderInfo;
    }
 
-   private static renderSolidTiles(triangleVertices: { [textureSource: string]: Array<number> }): void {
+   private renderSolidTiles(vertices: ReadonlyArray<number>, indexedTextureSources: ReadonlyArray<string>): void {
       gl.useProgram(this.solidTileProgram);
 
-      const entries = Object.entries(triangleVertices) as Array<[string, Array<number>]>;
-      for (const [textureSource, vertices] of entries) {
-         // Create tile buffer
-         const tileBuffer = gl.createBuffer()!;
-         gl.bindBuffer(gl.ARRAY_BUFFER, tileBuffer);
-         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+      // Create tile buffer
+      const tileBuffer = gl.createBuffer()!;
+      gl.bindBuffer(gl.ARRAY_BUFFER, tileBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
-         gl.vertexAttribPointer(
-            this.solidTileProgramPositionAttribLocation, // Attribute location
-            2, // Number of elements per attribute
-            gl.FLOAT, // Type of elements
-            false,
-            4 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
-            0 // Offset from the beginning of a single vertex to this attribute
-         );
-         gl.vertexAttribPointer(
-            this.solidTileProgramTexCoordAttribLocation, // Attribute location
-            2, // Number of elements per attribute
-            gl.FLOAT, // Type of elements
-            false,
-            4 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
-            2 * Float32Array.BYTES_PER_ELEMENT // Offset from the beginning of a single vertex to this attribute
-         );
-   
-         // Enable the attributes
-         gl.enableVertexAttribArray(this.solidTileProgramPositionAttribLocation);
-         gl.enableVertexAttribArray(this.solidTileProgramTexCoordAttribLocation);
-         
-         // Set the texture
+      gl.vertexAttribPointer(
+         this.solidTileProgramTilePosAttribLocation, // Attribute location
+         2, // Number of elements per attribute
+         gl.FLOAT, // Type of elements
+         false,
+         5 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
+         0 // Offset from the beginning of a single vertex to this attribute
+      );
+      gl.vertexAttribPointer(
+         this.solidTileProgramTexCoordAttribLocation, // Attribute location
+         2, // Number of elements per attribute
+         gl.FLOAT, // Type of elements
+         false,
+         5 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
+         2 * Float32Array.BYTES_PER_ELEMENT // Offset from the beginning of a single vertex to this attribute
+      );
+      gl.vertexAttribPointer(
+         this.solidTileProgramTextureIdxAttribLocation,
+         1,
+         gl.FLOAT,
+         false,
+         5 * Float32Array.BYTES_PER_ELEMENT,
+         4 * Float32Array.BYTES_PER_ELEMENT
+      );
+
+      gl.uniform2f(this.solidTileProgramPlayerPosUniformLocation, Player.instance!.renderPosition.x, Player.instance!.renderPosition.y);
+      gl.uniform2f(this.solidTileProgramHalfWindowSizeUniformLocation, windowWidth / 2, windowHeight / 2);
+      gl.uniform1iv(this.solidTileProgramTexturesUniformLocation, indexedTextureSources.map((_, idx) => idx));
+      
+      // Enable the attributes
+      gl.enableVertexAttribArray(this.solidTileProgramTilePosAttribLocation);
+      gl.enableVertexAttribArray(this.solidTileProgramTexCoordAttribLocation);
+      gl.enableVertexAttribArray(this.solidTileProgramTextureIdxAttribLocation);
+      
+      // Set all texture units
+      for (let i = 0; i < indexedTextureSources.length; i++) {
+         const textureSource = indexedTextureSources[i];
          const texture = getTexture("tiles/" + textureSource);
+         gl.activeTexture(gl.TEXTURE0 + i);
          gl.bindTexture(gl.TEXTURE_2D, texture);
-         gl.activeTexture(gl.TEXTURE0);
-
-         // Draw the tile
-         gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 4);
       }
+
+      // Draw the tiles
+      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 5);
    }
 
-   private static renderLiquidTiles(triangleVertices: Array<number>): void {
+   private calculateLiquidTileVertices(tiles: ReadonlyArray<Tile>): ReadonlyArray<number> {
+      const vertices = new Array<number>();
+
+      for (const tile of tiles) {
+         const x1 = tile.x * SETTINGS.TILE_SIZE;
+         const x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
+         const y1 = tile.y * SETTINGS.TILE_SIZE;
+         const y2 = (tile.y + 1) * SETTINGS.TILE_SIZE;
+
+         const [r, g, b] = (TILE_TYPE_RENDER_INFO_RECORD[tile.type] as LiquidTileTypeRenderInfo).colour;
+         vertices.push(
+            x1, y1, r, g, b,
+            x2, y1, r, g, b,
+            x1, y2, r, g, b,
+            x1, y2, r, g, b,
+            x2, y1, r, g, b,
+            x2, y2, r, g, b
+         );
+      }
+
+      return vertices;
+   }
+
+   private renderLiquidTiles(vertices: ReadonlyArray<number>): void {
       gl.useProgram(this.liquidTileProgram);
 
       // Create tile buffer
       const tileBuffer = gl.createBuffer()!;
       gl.bindBuffer(gl.ARRAY_BUFFER, tileBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(triangleVertices), gl.STATIC_DRAW);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
       const positionAttribLocation = gl.getAttribLocation(this.liquidTileProgram, "vertPosition");
       const colourAttribLocation = gl.getAttribLocation(this.liquidTileProgram, "vertColour");
@@ -305,88 +455,10 @@ abstract class Board {
       gl.enableVertexAttribArray(colourAttribLocation);
 
       // Draw the tile
-      gl.drawArrays(gl.TRIANGLES, 0, triangleVertices.length / 5);
+      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 5);
    }
 
-   private static calculateTileVertices(): TileVerticesCollection {
-      // Get chunk bounds
-      const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
-      const minTileX = minChunkX * SETTINGS.CHUNK_SIZE;
-      const maxTileX = (maxChunkX + 1) * SETTINGS.CHUNK_SIZE;
-      const minTileY = minChunkY * SETTINGS.CHUNK_SIZE;
-      const maxTileY = (maxChunkY + 1) * SETTINGS.CHUNK_SIZE;
-
-      const [xTileVertexCoordinates, yTileVertexCoordinates] = this.calculateTileVertexCoordinates(minTileX, maxTileX, minTileY, maxTileY);
-
-      const texturedTriangleVertices: { [key: string]: Array<number> } = {};
-      let colouredTriangleVertices = new Array<number>();
-
-      // Calculate vertices
-      for (let x = minTileX; x < maxTileX; x++) {
-         for (let y = minTileY; y < maxTileY; y++) {
-            // Get the tile data
-            const tile = this.getTile(x, y);
-            const tileTypeInfo = TILE_TYPE_RENDER_INFO_RECORD[tile.type];
-
-            const x1 = xTileVertexCoordinates[x];
-            const x2 = xTileVertexCoordinates[x + 1];
-            const y1 = yTileVertexCoordinates[y];
-            const y2 = yTileVertexCoordinates[y + 1];
-            
-            // Add the vertices to its appropriate section
-            if (tileTypeInfo.isLiquid) {
-               const [r, g, b] = tileTypeInfo.colour;
-               colouredTriangleVertices.push(
-                  x1, y1, r, g, b,
-                  x2, y1, r, g, b,
-                  x1, y2, r, g, b,
-                  x1, y2, r, g, b,
-                  x2, y1, r, g, b,
-                  x2, y2, r, g, b
-               );
-            } else {
-               if (!texturedTriangleVertices.hasOwnProperty(tileTypeInfo.textureSource)) {
-                  texturedTriangleVertices[tileTypeInfo.textureSource] = new Array<number>();
-               }
-               
-               texturedTriangleVertices[tileTypeInfo.textureSource].push(
-                  x1, y1, 0, 0,
-                  x2, y1, 1, 0,
-                  x1, y2, 0, 1,
-                  x1, y2, 0, 1,
-                  x2, y1, 1, 0,
-                  x2, y2, 1, 1
-               );
-            }
-         }
-      }
-
-      return {
-         texturedTriangleVertices: texturedTriangleVertices,
-         colouredTriangleVertices: colouredTriangleVertices
-      };
-   }
-
-   private static calculateTileVertexCoordinates(minTileX: number, maxTileX: number, minTileY: number, maxTileY: number): TileVertexCoordinates {
-      const tileVertexCoordinates: TileVertexCoordinates = [{}, {}];
-
-      // X
-      for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
-         const x = tileX * SETTINGS.TILE_SIZE;
-         const screenX = Camera.getXPositionInScreen(x);
-         tileVertexCoordinates[0][tileX] = screenX;
-      }
-      // Y
-      for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
-         const y = tileY * SETTINGS.TILE_SIZE;
-         const screenY = Camera.getYPositionInScreen(y);
-         tileVertexCoordinates[1][tileY] = screenY;
-      }
-
-      return tileVertexCoordinates;
-   }
-
-   private static drawBorder(): void {
+   public drawBorder(): void {
       const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
 
       const BORDER_WIDTH = 20;
@@ -415,10 +487,10 @@ abstract class Board {
 
       const calculateAndAddVertices = (x1: number, x2: number, y1: number, y2: number): void => {
          // Calculate screen positions
-         const screenX1 = Camera.getXPositionInScreen(x1);
-         const screenX2 = Camera.getXPositionInScreen(x2);
-         const screenY1 = Camera.getYPositionInScreen(y1);
-         const screenY2 = Camera.getYPositionInScreen(y2);
+         const screenX1 = Camera.calculateXCanvasPosition(x1);
+         const screenX2 = Camera.calculateXCanvasPosition(x2);
+         const screenY1 = Camera.calculateYCanvasPosition(y1);
+         const screenY2 = Camera.calculateYCanvasPosition(y2);
 
          vertices.push(
             screenX1, screenY1, // Bottom left
@@ -478,26 +550,34 @@ abstract class Board {
       gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 2);
    }
 
-   public static drawChunkBorders(): void {
+   public drawChunkBorders(): void {
+      gl.useProgram(this.chunkBorderProgram);
+      
       const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
 
       const vertices = new Array<number>();
 
+      // Calculate line end positions
+      const top = Camera.calculateYCanvasPosition(SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE);
+      const bottom = Camera.calculateYCanvasPosition(0);
+      const left = Camera.calculateXCanvasPosition(0);
+      const right = Camera.calculateXCanvasPosition(SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE);
+
       // Horizontal lines
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
-         const screenY = Camera.getYPositionInScreen(chunkY * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
+         const screenY = Camera.calculateYCanvasPosition(chunkY * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
          vertices.push(
-            -1, screenY,
-            1, screenY
+            left, screenY,
+            right, screenY
          );
       }
 
       // Vertical lines
       for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
-         const screenX = Camera.getXPositionInScreen(chunkX * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
+         const screenX = Camera.calculateXCanvasPosition(chunkX * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
          vertices.push(
-            screenX, -1,
-            screenX, 1
+            screenX, top,
+            screenX, bottom
          );
       }
 
@@ -511,11 +591,9 @@ abstract class Board {
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 
       gl.drawArrays(gl.LINES, 0, vertices.length / 2);
-      
-      gl.useProgram(this.chunkBorderProgram);
    }
 
-   public static removeEntity(entity: Entity): void {
+   public removeEntity(entity: Entity): void {
       delete this.entities[entity.id];
 
       for (const chunk of entity.chunks) {
@@ -523,54 +601,112 @@ abstract class Board {
       }
    }
 
-   public static calculateDistanceBetweenPointAndEntity(position: Point, entity: Entity): number {
-      switch (entity.hitbox.type) {
+   public calculateDistanceBetweenPointAndEntity(position: Point, entity: Entity): number {
+      switch (entity.hitbox.info.type) {
          case "circular": {
             const dist = position.distanceFrom(entity.position);
-            return dist - entity.hitbox.radius;
+            return dist - entity.hitbox.info.radius;
          }
          case "rectangular": {
             // Rotate the objects to axis-align the rectangle
             const rotatedPositon = rotatePoint(position, entity.position, -entity.rotation);
 
-            const distanceX = Math.max(Math.abs(rotatedPositon.x - entity.position.x) - entity.hitbox.width / 2, 0);
-            const distanceY = Math.max(Math.abs(rotatedPositon.y - entity.position.y) - entity.hitbox.height / 2, 0);
+            const distanceX = Math.max(Math.abs(rotatedPositon.x - entity.position.x) - entity.hitbox.info.width / 2, 0);
+            const distanceY = Math.max(Math.abs(rotatedPositon.y - entity.position.y) - entity.hitbox.info.height / 2, 0);
             return Math.sqrt(distanceX * distanceX + distanceY * distanceY);
          }
       }
    }
+
+   public renderItems(): void {
+      gl.useProgram(this.itemProgram);
+
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+      const itemVertexRecord = this.calculateItemVertices();
+
+      for (const [textureSrc, vertices] of Object.entries(itemVertexRecord)) {
+         const buffer = gl.createBuffer()!;
+         gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+
+         const positionAttribLocation = gl.getAttribLocation(this.itemProgram, "vertPosition");
+         const texCoordAttribLocation = gl.getAttribLocation(this.itemProgram, "vertTexCoord");
+         gl.vertexAttribPointer(
+            positionAttribLocation,
+            2,
+            gl.FLOAT,
+            false,
+            4 * Float32Array.BYTES_PER_ELEMENT,
+            0
+         );
+         gl.vertexAttribPointer(
+            texCoordAttribLocation,
+            2,
+            gl.FLOAT,
+            false,
+            4 * Float32Array.BYTES_PER_ELEMENT,
+            2 * Float32Array.BYTES_PER_ELEMENT
+         );
+
+         gl.enableVertexAttribArray(positionAttribLocation);
+         gl.enableVertexAttribArray(texCoordAttribLocation);
+         
+         const texture = getTexture(`items/${textureSrc}`);
+         gl.activeTexture(gl.TEXTURE0);
+         gl.bindTexture(gl.TEXTURE_2D, texture);
+
+         gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 4);
+      }
+
+      gl.disable(gl.BLEND);
+      gl.blendFunc(gl.ONE, gl.ZERO);
+   }
+
+   private calculateItemVertices(): { [textureSrc: string]: ReadonlyArray<number> } {
+      const itemVertexRecord: { [textureSrc: string]: Array<number> } = {};
+
+      for (const item of Object.values(this.items)) {
+         const textureSrc = CLIENT_ITEM_INFO_RECORD[item.itemID].textureSrc;
+
+         if (!itemVertexRecord.hasOwnProperty(textureSrc)) {
+            itemVertexRecord[textureSrc] = new Array<number>();
+         }
+
+         const x1 = item.position.x - SETTINGS.ITEM_SIZE;
+         const x2 = item.position.x + SETTINGS.ITEM_SIZE;
+         const y1 = item.position.y - SETTINGS.ITEM_SIZE;
+         const y2 = item.position.y + SETTINGS.ITEM_SIZE;
+
+         let topLeft = new Point(x1, y2);
+         let topRight = new Point(x2, y2);
+         let bottomRight = new Point(x2, y1);
+         let bottomLeft = new Point(x1, y1);
+
+         // Rotate
+         topLeft = rotatePoint(topLeft, item.position, item.rotation);
+         topRight = rotatePoint(topRight, item.position, item.rotation);
+         bottomRight = rotatePoint(bottomRight, item.position, item.rotation);
+         bottomLeft = rotatePoint(bottomLeft, item.position, item.rotation);
+
+         topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));
+         topRight = new Point(Camera.calculateXCanvasPosition(topRight.x), Camera.calculateYCanvasPosition(topRight.y));
+         bottomRight = new Point(Camera.calculateXCanvasPosition(bottomRight.x), Camera.calculateYCanvasPosition(bottomRight.y));
+         bottomLeft = new Point(Camera.calculateXCanvasPosition(bottomLeft.x), Camera.calculateYCanvasPosition(bottomLeft.y));
+               
+         itemVertexRecord[textureSrc].push(
+            bottomLeft.x, bottomLeft.y, 0, 0,
+            bottomRight.x, bottomRight.y, 1, 0,
+            topLeft.x, topLeft.y, 0, 1,
+            topLeft.x, topLeft.y, 0, 1,
+            bottomRight.x, bottomRight.y, 1, 0,
+            topRight.x, topRight.y, 1, 1
+         );
+      }
+
+      return itemVertexRecord;
+   }
 }
-
-/*
-// Circle-circle collisions
-   if (entity1.hitbox.type === "circular" && entity2.hitbox.type === "circular") {
-      return circlesDoIntersect(entity1.position, entity1.hitbox.radius, entity2.position, entity2.hitbox.radius);
-   }
-   // Circle-rectangle collisions
-   else if ((entity1.hitbox.type === "circular" && entity2.hitbox.type === "rectangular") || (entity1.hitbox.type === "rectangular" && entity2.hitbox.type === "circular")) {
-      let circleEntity: Entity;
-      let rectEntity: Entity;
-      if (entity1.hitbox.type === "circular") {
-         circleEntity = entity1;
-         rectEntity = entity2;
-      } else {
-         rectEntity = entity1;
-         circleEntity = entity2;
-      }
-
-      return circleAndRectangleDoIntersect(circleEntity.position, (circleEntity.hitbox as CircularHitboxInfo).radius, rectEntity.position, (rectEntity.hitbox as RectangularHitboxInfo).width, (rectEntity.hitbox as RectangularHitboxInfo).height, rectEntity.rotation);
-   }
-   // Rectangle-rectangle collisions
-   else if (entity1.hitbox.type === "rectangular" && entity2.hitbox.type === "rectangular") {
-      const distance = entity1.position.distanceFrom(entity2.position);
-      const diagonal1Squared = Math.sqrt((Math.pow(entity1.hitbox.width / 2, 2) + Math.pow(entity1.hitbox.height / 2, 2)) / 4);
-      const diagonal2Squared = Math.sqrt((Math.pow(entity2.hitbox.width / 2, 2) + Math.pow(entity2.hitbox.height / 2, 2)) / 4);
-      if (distance > diagonal1Squared + diagonal2Squared) {
-         return false;
-      }
-
-      return rectanglePointsDoIntersect(...entityHitboxInfoRecord[entity1.id].vertexPositions, ...entityHitboxInfoRecord[entity2.id].vertexPositions, entityHitboxInfoRecord[entity1.id].sideAxes, entityHitboxInfoRecord[entity2.id].sideAxes);
-   }
-*/
 
 export default Board;

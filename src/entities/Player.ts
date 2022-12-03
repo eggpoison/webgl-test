@@ -1,24 +1,25 @@
 import { AttackPacket, Point, SETTINGS, Vector } from "webgl-test-shared";
-import Board from "../Board";
 import Camera from "../Camera";
 import Client from "../client/Client";
-import { keyIsPressed } from "../keyboard";
-import Entity, { RenderPart, sortRenderParts } from "./Entity";
+import Game from "../Game";
+import { keyIsPressed } from "../keyboard-input";
+import { RenderPartInfo } from "../render-parts/RenderPart";
+import Entity, { sortRenderParts } from "./Entity";
 
 class Player extends Entity {
-   public static instance: Player;
+   public static instance: Player | null = null;
 
    public readonly displayName: string;
 
    /** How far away from the entity the attack is done */
-   private static readonly ATTACK_OFFSET = 64;
+   private static readonly ATTACK_OFFSET = 80;
    /** Max distance from the attack position that the attack will be registered from */
-   private static readonly ATTACK_TEST_RADIUS = 32;
+   private static readonly ATTACK_TEST_RADIUS = 48;
 
    private static readonly ACCELERATION = 1000;
    private static readonly TERMINAL_VELOCITY = 300;
 
-   private static readonly RENDER_PARTS: ReadonlyArray<RenderPart> = sortRenderParts([
+   private static readonly RENDER_PARTS: ReadonlyArray<RenderPartInfo> = sortRenderParts([
       {
          type: "circle",
          radius: 32,
@@ -27,14 +28,12 @@ class Player extends Entity {
       }
    ]);
 
-   protected readonly renderParts: ReadonlyArray<RenderPart> = Player.RENDER_PARTS;
-
-   constructor(id: number, position: Point, velocity: Vector | null, acceleration: Vector | null, terminalVelocity: number, rotation: number, displayName: string) {
-      super(id, "player", position, velocity, acceleration, terminalVelocity, rotation);
+   constructor(position: Point, id: number, displayName: string) {
+      super(position, id, "player", Player.RENDER_PARTS);
 
       this.displayName = displayName;
 
-      if (typeof Player.instance === "undefined") {
+      if (Player.instance === null) {
          Player.instance = this;
 
          Camera.position = this.position;
@@ -42,15 +41,13 @@ class Player extends Entity {
    }
 
    public static attack(): void {
-      const instance = this.instance;
-      if (typeof instance === "undefined") return;
+      if (typeof this.instance === "undefined") return;
 
       const targets = this.getAttackTargets();
-
       if (targets.length > 0) {
          // Send attack packet
          const attackPacket: AttackPacket = {
-            targetEntites: targets.map(target => target.id),
+            targetEntities: targets.map(target => target.id),
             heldItem: null
          }
          Client.sendAttackPacket(attackPacket);
@@ -58,32 +55,39 @@ class Player extends Entity {
    }
 
    private static getAttackTargets(): ReadonlyArray<Entity> {
-      const offset = new Vector(this.ATTACK_OFFSET, Player.instance.rotation)
-      const attackPosition = Player.instance.position.add(offset.convertToPoint());
+      const offset = new Vector(this.ATTACK_OFFSET, Player.instance!.rotation);
+      const attackPosition = Player.instance!.position.add(offset.convertToPoint());
 
-      const minChunkX = Math.max(Math.min(Math.floor(attackPosition.x / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-      const maxChunkX = Math.max(Math.min(Math.floor(attackPosition.x / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-      const minChunkY = Math.max(Math.min(Math.floor(attackPosition.y / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-      const maxChunkY = Math.max(Math.min(Math.floor(attackPosition.y / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+      const minChunkX = Math.max(Math.min(Math.floor((attackPosition.x - this.ATTACK_TEST_RADIUS) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+      const maxChunkX = Math.max(Math.min(Math.floor((attackPosition.x + this.ATTACK_TEST_RADIUS) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+      const minChunkY = Math.max(Math.min(Math.floor((attackPosition.y - this.ATTACK_TEST_RADIUS) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+      const maxChunkY = Math.max(Math.min(Math.floor((attackPosition.y + this.ATTACK_TEST_RADIUS) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
 
       // Find all attacked entities
       const attackedEntities = new Array<Entity>();
       for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
          for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
-            const chunk = Board.getChunk(chunkX, chunkY);
+            const chunk = Game.board.getChunk(chunkX, chunkY);
 
             for (const entity of chunk.getEntities()) {
                // Skip entities that are already in the array
                if (attackedEntities.includes(entity)) continue;
 
-               const dist = Board.calculateDistanceBetweenPointAndEntity(attackPosition, entity);
+               const dist = Game.board.calculateDistanceBetweenPointAndEntity(attackPosition, entity);
                if (dist <= Player.ATTACK_TEST_RADIUS) attackedEntities.push(entity);
             }
          }
       }
-
+      
       // Don't attack yourself
-      attackedEntities.splice(attackedEntities.indexOf(this.instance), 1);
+      while (true) {
+         const idx = attackedEntities.indexOf(this.instance!);
+         if (idx !== -1) {
+            attackedEntities.splice(idx, 1);
+         } else {
+            break;
+         }
+      }
 
       return attackedEntities;
    }
@@ -105,57 +109,40 @@ class Player extends Entity {
    }
 
    private updateMovement(wIsPressed: boolean, aIsPressed: boolean, sIsPressed: boolean, dIsPressed: boolean): void {
-      let xAcceleration = 0;
-      let yAcceleration = 0;
-
-      // Update rotation
       const hash = (wIsPressed ? 1 : 0) + (aIsPressed ? 2 : 0) + (sIsPressed ? 4 : 0) + (dIsPressed ? 8 : 0)
+      
+      // Update rotation
       let rotation!: number | null;
       switch (hash) {
          case 0:  rotation = null;          break;
-         case 1:  rotation = 0;             break;
-         case 2:  rotation = Math.PI * 3/2; break;
-         case 3:  rotation = Math.PI * 7/4; break;
-         case 4:  rotation = Math.PI;       break;
+         case 1:  rotation = Math.PI / 2;   break;
+         case 2:  rotation = Math.PI;       break;
+         case 3:  rotation = Math.PI * 3/4; break;
+         case 4:  rotation = Math.PI * 3/2; break;
          case 5:  rotation = null;          break;
          case 6:  rotation = Math.PI * 5/4; break;
-         case 7:  rotation = Math.PI * 3/2; break;
-         case 8:  rotation = Math.PI / 2;   break;
+         case 7:  rotation = Math.PI;       break;
+         case 8:  rotation = 0;             break;
          case 9:  rotation = Math.PI / 4;   break;
-         case 10:  rotation = null;         break;
-         case 11: rotation = 0;             break;
-         case 12: rotation = Math.PI * 3/4; break;
-         case 13: rotation = Math.PI / 2;   break;
-         case 14: rotation = Math.PI;       break;
+         case 10: rotation = null;          break;
+         case 11: rotation = Math.PI / 2;   break;
+         case 12: rotation = Math.PI * 7/4; break;
+         case 13: rotation = 0;             break;
+         case 14: rotation = Math.PI * 3/2; break;
          case 15: rotation = null;          break;
       }
 
       if (rotation !== null) {
          this.rotation = rotation;
-      }
-
-      if (wIsPressed) {
-         yAcceleration += Player.ACCELERATION;
-      }
-      if (aIsPressed) {
-         xAcceleration -= Player.ACCELERATION;
-      }
-      if (sIsPressed) {
-         yAcceleration -= Player.ACCELERATION;
-      }
-      if (dIsPressed) {
-         xAcceleration += Player.ACCELERATION;
-      }
-
-      if (xAcceleration === 0 && yAcceleration === 0) {
+      } else {
          this.acceleration = null;
          this.isMoving = false;
-      } else {
-         this.terminalVelocity = Player.TERMINAL_VELOCITY;
-         const acceleration = new Point(xAcceleration, yAcceleration).convertToVector();
-         this.acceleration = acceleration;
-         this.isMoving = true;
+         return;
       }
+
+      this.acceleration = new Vector(Player.ACCELERATION, this.rotation);
+      this.terminalVelocity = Player.TERMINAL_VELOCITY;
+      this.isMoving = true;
    }
 }
 

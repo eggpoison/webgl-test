@@ -1,7 +1,9 @@
 import Entity from "./entities/Entity";
+import Item from "./Item";
 
 class Chunk {
    private readonly entities = new Array<Entity>();
+   private readonly items = new Array<Item>();
 
    public readonly x: number;
    public readonly y: number;
@@ -22,6 +24,18 @@ class Chunk {
 
    public getEntities(): Array<Entity> {
       return this.entities;
+   }
+
+   public addItem(item: Item): void {
+      this.items.push(item);
+   }
+
+   public removeItem(item: Item): void {
+      this.items.splice(this.items.indexOf(item), 1);
+   }
+
+   public getItems(): ReadonlyArray<Item> {
+      return this.items;
    }
 }
 

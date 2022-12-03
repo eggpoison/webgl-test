@@ -1,7 +1,5 @@
 import { Point, SETTINGS, VisibleChunkBounds } from "webgl-test-shared";
-import { halfWindowHeight, halfWindowWidth, windowHeight, windowWidth } from ".";
-import Client from "./client/Client";
-import Player from "./entities/Player";
+import { halfWindowHeight, halfWindowWidth, windowHeight, windowWidth } from "./webgl";
 
 abstract class Camera {
    /** Larger = zoomed in, smaller = zoomed out */
@@ -23,26 +21,28 @@ abstract class Camera {
    }
 
    public static updateVisibleChunkBounds(): void {
-      const newVisibleChunkBounds = this.calculateVisibleChunkBounds();
-
-      // If the visible chunk bounds have changed, send them to the server
-      if (!newVisibleChunkBounds.every((value: number, idx: number) => value === this.visibleChunkBounds[idx])) {
-         Client.sendVisibleChunkBoundsPacket(newVisibleChunkBounds);
-      }
-
-      this.visibleChunkBounds = newVisibleChunkBounds;
+      this.visibleChunkBounds = this.calculateVisibleChunkBounds();
    }
 
    public static getVisibleChunkBounds(): VisibleChunkBounds {
       return this.visibleChunkBounds;
    }
 
-   public static updateCameraPosition(): void {
-      // Predict where the player is
-      this.position = Player.instance.renderPosition.copy();
+   public static setCameraPosition(position: Point): void {
+      this.position = position;
    }
 
-   public static getXPositionInScreen(x: number): number {
+   /** X position in the screen (0 = left, windowWidth = right) */
+   public static calculateXScreenPos(x: number): number {
+      return x - this.position.x + halfWindowWidth;
+   }
+
+   /** Y position in the screen (0 = bottom, windowHeight = top) */
+   public static calculateYScreenPos(y: number): number {
+      return y - this.position.y + halfWindowHeight;
+   }
+
+   public static calculateXCanvasPosition(x: number): number {
       // Account for the player position
       const screenX = x - this.position.x + halfWindowWidth;
 
@@ -50,7 +50,7 @@ abstract class Camera {
       return canvasX;
    }
    
-   public static getYPositionInScreen(y: number): number {
+   public static calculateYCanvasPosition(y: number): number {
       // Account for the player position
       const screenY = y - this.position.y + halfWindowHeight;
       
@@ -65,6 +65,14 @@ abstract class Camera {
       const pointChunkY = Math.floor(point.y / unitsInChunk);
 
       return pointChunkX >= this.visibleChunkBounds[0] && pointChunkX <= this.visibleChunkBounds[1] && pointChunkY >= this.visibleChunkBounds[2] && pointChunkY <= this.visibleChunkBounds[3];
+   }
+
+   public static calculateVisibleTileBounds(): [minTileX: number, maxTileX: number, minTileY: number, maxTileY: number] {
+      const minX = Math.max(Math.floor((this.position.x - windowWidth / 2) / SETTINGS.TILE_SIZE), 0);
+      const maxX = Math.min(Math.ceil((this.position.x + windowWidth / 2) / SETTINGS.TILE_SIZE), SETTINGS.BOARD_DIMENSIONS - 1);
+      const minY = Math.max(Math.floor((this.position.y - windowHeight / 2) / SETTINGS.TILE_SIZE), 0);
+      const maxY = Math.min(Math.ceil((this.position.y + windowHeight / 2) / SETTINGS.TILE_SIZE), SETTINGS.BOARD_DIMENSIONS - 1);
+      return [minX, maxX, minY, maxY];
    }
 }
 

@@ -49,15 +49,8 @@ export function addChatMessage(senderName: string, message: string): void {
    addChatMessageReference(senderName, message);
 }
 
-let focusChatboxReference: () => void;
-export function focusChatbox(): void {
-   focusChatboxReference();
-}
-
-let chatboxIsFocusedReference: () => boolean;
-export function chatboxIsFocused(): boolean {
-   return chatboxIsFocusedReference();
-}
+export let focusChatbox: () => void = () => {};
+export let chatboxIsFocused: () => boolean = () => false;
 
 const ChatBox = () => {
    const chatboxRef = useRef<HTMLDivElement | null>(null);
@@ -86,12 +79,6 @@ const ChatBox = () => {
 
       setChatMessages(newChatMessages);
    }, [chatMessages, isFocused]);
-
-   const focusChatbox = useCallback((): void => {
-      const inputBox = inputBoxRef.current!;
-      inputBox.focus();
-      setIsFocused(true);
-   }, []);
 
    const closeChatbox = useCallback(() => {
       setIsFocused(false);
@@ -128,7 +115,7 @@ const ChatBox = () => {
 
             if (chatMessage !== "") {
                Client.sendChatMessage(chatMessage);
-               addChatMessage(Player.instance.displayName, chatMessage);
+               addChatMessage(Player.instance!.displayName, chatMessage);
             }
 
             closeChatbox();
@@ -139,7 +126,7 @@ const ChatBox = () => {
    }
 
    useEffect(() => {
-      chatboxIsFocusedReference = () => isFocused;
+      chatboxIsFocused = () => isFocused;
 
       if (!isFocused) {
          inputBoxRef.current!.value = "";
@@ -151,8 +138,11 @@ const ChatBox = () => {
    }, [addChatMessage]);
 
    useEffect(() => {
-      focusChatboxReference = focusChatbox;
-   }, [focusChatbox]);
+      focusChatbox = (): void => {
+         inputBoxRef.current!.focus();
+         setIsFocused(true);
+      };
+   }, []);
 
    return (
       <div id="chat-box" className={`${!isFocused ? "idle" : ""}`} ref={chatboxRef}>

@@ -9,16 +9,17 @@
 }
 
 #pause-screen .main {
-   font-family: "Inconsolata";
-   background-color: #333;
-   padding: 0.2rem 5rem;
-   border-radius: 5px;
+   background-color: #666;
+   padding: 0.2rem 2rem;
    position: absolute;
    top: 50%;
    left: 50%;
    transform: translate(-50%, -50%);
    z-index: 1;
-   box-shadow: 0 0 5px 2px rgba(0, 0, 0, 0.3);
+   border: 3px solid #000;
+}
+#pause-screen .main * {
+   font-family: "Inconsolata";
 }
 #pause-screen .main h1 {
    color: #fff;
@@ -26,6 +27,7 @@
    font-weight: 700;
    margin: 0;
    white-space: pre;
+   text-shadow: 3px 3px #000;
 }
 #pause-screen .main h1 span {
    color: #bbb;
@@ -33,9 +35,11 @@
    animation: 1.75s ghostWiggle ease-in-out infinite;
 }
 #pause-screen .main p {
+   width: 100%;
    color: #fff;
    text-align: center;
    margin: 0.5rem 0;
+   text-shadow: 2px 2px #000;
 }
 
 @keyframes ghostWiggle {

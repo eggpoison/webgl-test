@@ -1,76 +1,56 @@
-import { gl } from ".";
-import Camera from "./Camera";
 import { isDev } from "./utils";
 
-/** Number of triangles to create when drawing a circle */
-const CIRCLE_DETAIL = 25;
+let canvas: HTMLCanvasElement;
+export let gl: WebGLRenderingContext;
 
-let program: WebGLProgram;
+export let windowWidth = window.innerWidth;
+export let windowHeight = window.innerHeight;
+export let halfWindowWidth = windowWidth / 2;
+export let halfWindowHeight = windowHeight / 2;
 
-export function createCircleShaders(): void {
+export let MAX_ACTIVE_TEXTURE_UNITS = 8;
+
+export function resizeCanvas(): void {
+   if (typeof canvas === "undefined") return;
+
+   // Update the size of the canvas
+   canvas.width = window.innerWidth;
+   canvas.height = window.innerHeight;
+
+   windowWidth = window.innerWidth;
+   windowHeight = window.innerHeight;
+
+   halfWindowWidth = windowWidth / 2;
+   halfWindowHeight = windowHeight / 2;
+
+   gl.viewport(0, 0, windowWidth, windowHeight);
+
+   const textCanvas = document.getElementById("text-canvas") as HTMLCanvasElement;
+   textCanvas.width = windowWidth;
+   textCanvas.height = windowHeight;
 }
 
-/**
- * Draws a circle
- * @param x X position of the center of the circle
- * @param y Y position of the center of the circle
- * @param radius Radius of the circle
- */
-export function drawCircle(x: number, y: number, radius: number, rgba: [number, number, number, number]): void {
-   const triangleVertices = new Array<number>();
+// Run the resizeCanvas function whenever the window is resize
+window.addEventListener("resize", resizeCanvas);
 
-   // Add the center point
-   const centerX = Camera.getXPositionInScreen(x);
-   const centerY = Camera.getYPositionInScreen(y);
-   triangleVertices.push(centerX, centerY, ...rgba);
+export function createWebGLContext(): void {
+   canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
+   const glAttempt = canvas.getContext("webgl", { alpha: false });
 
-   const step = 2 * Math.PI / CIRCLE_DETAIL;
-
-   // Add the outer vertices
-   let n = 0;
-   for (let radians = 0; n <= CIRCLE_DETAIL; radians += step) {
-      // Trig shenanigans to get x and y coords
-      const worldX = Math.cos(radians) * radius + x;
-      const worldY = Math.sin(radians) * radius + y;
-      
-      const screenX = Camera.getXPositionInScreen(worldX);
-      const screenY = Camera.getYPositionInScreen(worldY);
-      
-      triangleVertices.push(screenX, screenY, ...rgba);
-
-      n++;
+   if (glAttempt === null) {
+      alert("Your browser does not support WebGL.");
+      throw new Error("Your browser does not support WebGL.");
    }
+   gl = glAttempt;
 
-   const triangleVertexBufferObject = gl.createBuffer();
-   gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexBufferObject);
-   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(triangleVertices), gl.STATIC_DRAW);
+   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
-   const positionAttribLocation = gl.getAttribLocation(program, "vertPosition");
-   const colourAttribLocation = gl.getAttribLocation(program, "vertColour");
-   
-   gl.vertexAttribPointer(
-      positionAttribLocation, // Attribute location
-      2, // Number of elements per attribute
-      gl.FLOAT, // Type of elements
-      false,
-      6 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
-      0 // Offset from the beginning of a single vertex to this attribute
-   );
-   gl.vertexAttribPointer(
-      colourAttribLocation, // Attribute location
-      4, // Number of elements per attribute
-      gl.FLOAT, // Type of elements
-      false,
-      6 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
-      2 * Float32Array.BYTES_PER_ELEMENT // Offset from the beginning of a single vertex to this attribute
-   );
+   MAX_ACTIVE_TEXTURE_UNITS = gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS);
+}
 
-   // Enable the attributes
-   gl.enableVertexAttribArray(positionAttribLocation);
-   gl.enableVertexAttribArray(colourAttribLocation);
-
-   // Draw the tile
-   gl.drawArrays(gl.TRIANGLE_FAN, 0, CIRCLE_DETAIL + 2);
+export function clearCanvas(): void {
+   gl.clearColor(1, 1, 1, 1);
+   gl.clear(gl.COLOR_BUFFER_BIT);
 }
 
 export function createWebGLProgram(vertexShaderText: string, fragmentShaderText: string): WebGLProgram {

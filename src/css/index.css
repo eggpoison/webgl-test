@@ -7,8 +7,7 @@ html, body {
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
 #game-canvas, #text-canvas {
@@ -36,4 +35,9 @@ code {
 .game-message button {
    margin-left: 50%;
    transform: translateX(-50%);
+}
+
+#canvas-wrapper.hidden {
+   opacity: 0;
+   pointer-events: none;
 }
