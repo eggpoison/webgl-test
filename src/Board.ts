@@ -458,7 +458,7 @@ class Board {
       gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 5);
    }
 
-   public drawBorder(): void {
+   public renderBorder(): void {
       const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
 
       const BORDER_WIDTH = 20;

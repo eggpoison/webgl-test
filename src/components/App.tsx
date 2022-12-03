@@ -70,6 +70,8 @@ function App() {
          <canvas id="game-canvas"></canvas>
          <canvas id="text-canvas"></canvas>
       </div>
+
+      <div id="time"></div>
    </>;
 }
 

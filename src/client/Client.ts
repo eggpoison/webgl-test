@@ -119,12 +119,15 @@ abstract class Client {
          this.socket.off("initial_game_data");
          this.socket.on("initial_game_data", (gameTicks: number, serverTileDataArray: ReadonlyArray<ReadonlyArray<ServerTileData>>, playerID: number) => {
             const tiles = parseServerTileDataArray(serverTileDataArray);
+
+            Game.setTicks(gameTicks);
             
             const gameData: GameData = {
                gameTicks: gameTicks,
                tiles: tiles,
                playerID: playerID
             };
+
             resolve(gameData);
          });
       });
@@ -140,6 +143,8 @@ abstract class Client {
    }
 
    private static unloadGameDataPacket(gameDataPacket: GameDataPacket): void {
+      Game.setTicks(gameDataPacket.serverTicks);
+      
       this.updateEntities(gameDataPacket.serverEntityDataArray);
       this.updateItems(gameDataPacket.serverItemDataArray);
       this.registerTileUpdates(gameDataPacket.tileUpdates);

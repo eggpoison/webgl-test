@@ -48,11 +48,6 @@ export function createWebGLContext(): void {
    MAX_ACTIVE_TEXTURE_UNITS = gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS);
 }
 
-export function clearCanvas(): void {
-   gl.clearColor(1, 1, 1, 1);
-   gl.clear(gl.COLOR_BUFFER_BIT);
-}
-
 export function createWebGLProgram(vertexShaderText: string, fragmentShaderText: string): WebGLProgram {
    // Create shaders
    const vertexShader = gl.createShader(gl.VERTEX_SHADER)!;
