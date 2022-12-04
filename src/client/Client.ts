@@ -1,10 +1,10 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, ServerAttackData, ServerEntityData, ServerItemEntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, InitialPlayerDataPacket } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, ServerEntityData, ServerItemEntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, InitialPlayerDataPacket } from "webgl-test-shared";
 import Camera from "../Camera";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
-import Game, { ClientAttackInfo as AttackInfo } from "../Game";
+import Game from "../Game";
 import Item from "../Item";
 import { Tile } from "../Tile";
 
@@ -34,20 +34,6 @@ const parseServerTileDataArray = (serverTileDataArray: ReadonlyArray<ReadonlyArr
    }
 
    return tiles;
-}
-
-const parseServerAttackDataArray = (serverAttackInfoArray: ReadonlyArray<ServerAttackData>): ReadonlyArray<AttackInfo> => {
-   // Don't consider attacks where the target entity isn't visible
-   const filteredServerAttackInfoArray = serverAttackInfoArray.filter(serverAttackInfo => {
-      return Game.board.entities.hasOwnProperty(serverAttackInfo.targetEntityID);
-   });
-
-   return filteredServerAttackInfoArray.map(serverAttackInfo => {
-      return {
-         targetEntity: Game.board.entities[serverAttackInfo.targetEntityID],
-         progress: serverAttackInfo.progress
-      };
-   });
 }
 
 abstract class Client {
@@ -148,7 +134,6 @@ abstract class Client {
       this.updateEntities(gameDataPacket.serverEntityDataArray);
       this.updateItems(gameDataPacket.serverItemDataArray);
       this.registerTileUpdates(gameDataPacket.tileUpdates);
-      this.addNewAttacks(gameDataPacket.serverAttackDataArray);
    }
 
    /**
@@ -218,17 +203,12 @@ abstract class Client {
       }
    }
 
-   private static addNewAttacks(serverAttackDataArray: ReadonlyArray<ServerAttackData>): void {
-      const attackInfoArray = parseServerAttackDataArray(serverAttackDataArray);
-      Game.loadAttackDataArray(attackInfoArray);
-   }
-
    public static createEntityFromData(entityData: ServerEntityData): void {
       const position = Point.unpackage(entityData.position);
 
       // Create the entity
       const entityConstructor = ENTITY_CLASS_RECORD[entityData.type]() as EntityClassType<typeof entityData.type>;
-      const entity = new entityConstructor(position, entityData.id, ...entityData.clientArgs);
+      const entity = new entityConstructor(position, entityData.id, entityData.secondsSinceLastHit, ...entityData.clientArgs);
       
       entity.velocity = entityData.velocity !== null ? Vector.unpackage(entityData.velocity) : null;
       entity.acceleration = entityData.acceleration !== null ? Vector.unpackage(entityData.acceleration) : null

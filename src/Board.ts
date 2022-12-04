@@ -668,7 +668,7 @@ class Board {
       const itemVertexRecord: { [textureSrc: string]: Array<number> } = {};
 
       for (const item of Object.values(this.items)) {
-         const textureSrc = CLIENT_ITEM_INFO_RECORD[item.itemID].textureSrc;
+         const textureSrc = CLIENT_ITEM_INFO_RECORD[item.itemType].textureSrc;
 
          if (!itemVertexRecord.hasOwnProperty(textureSrc)) {
             itemVertexRecord[textureSrc] = new Array<number>();

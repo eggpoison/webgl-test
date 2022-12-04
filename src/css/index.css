@@ -1,5 +1,4 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;700;900&display=swap');
 
 html, body {
    overflow: hidden;
@@ -41,17 +40,4 @@ code {
 #canvas-wrapper.hidden {
    opacity: 0;
    pointer-events: none;
-}
-
-#time {
-   position: absolute;
-   z-index: 999;
-   left: 50%;
-   top: 25%;
-   transform: translate(-50%, -50%);
-   color: #fff;
-   text-shadow: 0 0 5px #000, 0 0 3px #000, 0 0 1px #000;
-   font-family: "Inconsolata";
-   font-size: 2rem;
-   font-weight: bold;
 }

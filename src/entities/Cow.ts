@@ -1,6 +1,7 @@
 import { CowSpecies, Point } from "webgl-test-shared";
-import { RenderPartInfo } from "../render-parts/RenderPart";
-import Entity, { sortRenderParts } from "./Entity";
+import ImageRenderPart from "../render-parts/ImageRenderPart";
+import RenderPart, { RenderPartInfo } from "../render-parts/RenderPart";
+import Entity from "./Entity";
 
 class Cow extends Entity {
    private static readonly HEAD_SIZE = 64;
@@ -11,38 +12,29 @@ class Cow extends Entity {
    private static readonly BODY_WIDTH = 64;
    private static readonly BODY_HEIGHT = 96;
 
-   // private static readonly a = m;
-
-   private static readonly RENDER_PARTS: { [key in CowSpecies]: ReadonlyArray<RenderPartInfo> } = (Object.values(CowSpecies).filter((_, i, arr) => i >= arr.length / 2) as ReadonlyArray<CowSpecies>).reduce((previousValue, currentValue) => {
-      const num = currentValue === CowSpecies.brown ? 1 : 2;
-
-      const newObject: Partial<{ [key in CowSpecies]: ReadonlyArray<RenderPartInfo> }> = Object.assign({}, previousValue);
-      newObject[currentValue] = sortRenderParts([
-         // Head
-         {
-            type: "image",
-            width: Cow.HEAD_IMAGE_WIDTH,
-            height: Cow.HEAD_IMAGE_HEIGHT,
-            textureSrc: `cow/cow-head-${num}.png`,
-            offset: new Point(0, (Cow.BODY_HEIGHT - Cow.HEAD_OVERLAP) / 2),
-            zIndex: 2
-         },
+   constructor(position: Point, id: number, secondsSinceLastHit: number | null, species: CowSpecies) {
+      const cowNum = species === CowSpecies.brown ? 1 : 2;
+      
+      const renderParts: ReadonlyArray<RenderPart<RenderPartInfo>> = [
          // Body
-         {
+         new ImageRenderPart({
             type: "image",
             width: Cow.BODY_WIDTH,
             height: Cow.BODY_HEIGHT,
-            textureSrc: `cow/cow-body-${num}.png`,
-            offset: new Point(0, -(Cow.HEAD_SIZE - Cow.HEAD_OVERLAP) / 2),
-            zIndex: 1
-         }
-      ]);
-      return newObject;
-   }, {}) as { [key in CowSpecies]: ReadonlyArray<RenderPartInfo>};
-
-   constructor(position: Point, id: number, species: CowSpecies) {
-      const renderParts = Cow.RENDER_PARTS[species];
-      super(position, id, "cow", renderParts);
+            textureSrc: `cow/cow-body-${cowNum}.png`,
+            offset: new Point(0, -(Cow.HEAD_SIZE - Cow.HEAD_OVERLAP) / 2)
+         }),
+         // Head
+         new ImageRenderPart({
+            type: "image",
+            width: Cow.HEAD_IMAGE_WIDTH,
+            height: Cow.HEAD_IMAGE_HEIGHT,
+            textureSrc: `cow/cow-head-${cowNum}.png`,
+            offset: new Point(0, (Cow.BODY_HEIGHT - Cow.HEAD_OVERLAP) / 2)
+         })
+      ];
+      
+      super(position, id, "cow", secondsSinceLastHit, renderParts);
    }
 
    /*

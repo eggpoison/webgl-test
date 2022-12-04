@@ -1,10 +1,10 @@
-import { ItemID } from "webgl-test-shared";
+import { ItemType } from "webgl-test-shared";
 
 export type ClientItemInfo = {
    readonly textureSrc: string;
 }
 
-const CLIENT_ITEM_INFO_RECORD: Record<ItemID, ClientItemInfo> = {
+const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
    wooden_sword: {
       textureSrc: "raw-beef.png"
    },

@@ -3,8 +3,9 @@ import Camera from "../Camera";
 import Client from "../client/Client";
 import Game from "../Game";
 import { keyIsPressed } from "../keyboard-input";
-import { RenderPartInfo } from "../render-parts/RenderPart";
-import Entity, { sortRenderParts } from "./Entity";
+import CircleRenderPart from "../render-parts/CircleRenderPart";
+import RenderPart, { RenderPartInfo } from "../render-parts/RenderPart";
+import Entity from "./Entity";
 
 class Player extends Entity {
    public static instance: Player | null = null;
@@ -19,17 +20,16 @@ class Player extends Entity {
    private static readonly ACCELERATION = 1000;
    private static readonly TERMINAL_VELOCITY = 300;
 
-   private static readonly RENDER_PARTS: ReadonlyArray<RenderPartInfo> = sortRenderParts([
-      {
+   private static readonly RENDER_PARTS: ReadonlyArray<RenderPart<RenderPartInfo>> = [
+      new CircleRenderPart({
          type: "circle",
          radius: 32,
-         rgba: [255, 0, 0, 1],
-         zIndex: 1
-      }
-   ]);
+         rgba: [255, 0, 0, 1]
+      })
+   ];
 
-   constructor(position: Point, id: number, displayName: string) {
-      super(position, id, "player", Player.RENDER_PARTS);
+   constructor(position: Point, id: number, secondsSinceLastHit: number | null, displayName: string) {
+      super(position, id, "player", secondsSinceLastHit, Player.RENDER_PARTS);
 
       this.displayName = displayName;
 

@@ -1,4 +1,3 @@
-import Entity from "../entities/Entity";
 import RenderPart, { RenderPartInfo } from "./RenderPart";
 
 interface ImageRenderPartInfo extends RenderPartInfo {
@@ -14,8 +13,8 @@ class ImageRenderPart extends RenderPart<ImageRenderPartInfo> implements ImageRe
    public readonly height: number;
    public readonly textureSrc: string;
 
-   constructor(renderPartInfo: ImageRenderPartInfo, entity: Entity, arrayIdx: number) {
-      super(renderPartInfo, entity, arrayIdx);
+   constructor(renderPartInfo: ImageRenderPartInfo) {
+      super(renderPartInfo);
 
       this.width = renderPartInfo.width;
       this.height = renderPartInfo.height;

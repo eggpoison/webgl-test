@@ -1,4 +1,4 @@
-import { BaseItemInfo, ItemID, ITEM_INFO_RECORD, Point } from "webgl-test-shared";
+import { BaseItemInfo, ItemType, ITEM_INFO_RECORD, Point } from "webgl-test-shared";
 import Chunk from "./Chunk";
 import Game from "./Game";
 
@@ -12,18 +12,18 @@ class Item implements BaseItemInfo {
 
    public readonly rotation: number;
 
-   public readonly itemID: ItemID;
+   public readonly itemType: ItemType;
    public readonly name: string;
 
-   constructor(id: number, position: Point, containingChunks: ReadonlyArray<Chunk>, itemID: ItemID, count: number, rotation: number) {
+   constructor(id: number, position: Point, containingChunks: ReadonlyArray<Chunk>, itemType: ItemType, count: number, rotation: number) {
       this.id = id;
       this.position = position;
       this.count = count;
-      this.itemID = itemID;
+      this.itemType = itemType;
 
       this.rotation = rotation;
 
-      const itemInfo = ITEM_INFO_RECORD[itemID];
+      const itemInfo = ITEM_INFO_RECORD[itemType];
       this.name = itemInfo.name;
 
       // Add to containing chunks

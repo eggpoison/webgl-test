@@ -4,8 +4,8 @@ import { isDev } from "./utils";
 import { renderPlayerNames, createTextCanvasContext } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/ChatBox";
-import { lerp, Point, randInt, roundNum, SETTINGS } from "webgl-test-shared";
-import Entity, { calculateEntityRenderValues, setFrameProgress } from "./entities/Entity";
+import { lerp, Point, randInt, SETTINGS } from "webgl-test-shared";
+import { calculateEntityRenderValues, setFrameProgress } from "./entities/Entity";
 import { createEntityShaders, renderEntities } from "./entity-rendering";
 import Client, { GameData } from "./client/Client";
 import { calculateCursorWorldPosition, handleMouseMovement, renderCursorTooltip } from "./mouse";
@@ -35,11 +35,6 @@ void main() {
    gl_FragColor = vec4(0.0, 0.0, 0.0, u_darkenFactor);
 }
 `;
-
-export type ClientAttackInfo = {
-   readonly targetEntity: Entity;
-   readonly progress: number;
-}
 
 let listenersHaveBeenCreated = false;
 
@@ -90,8 +85,6 @@ abstract class Game {
 
    public static cursorPosition: Point | null;
 
-   private static attackInfoRecord: { [id: number]: ClientAttackInfo } = {};
-
    private static nightProgram: WebGLProgram;
    private static nightProgramVertPosAttribLocation: GLint;
    private static nightProgramDarkenFactorUniformLocation: WebGLUniformLocation;
@@ -99,7 +92,6 @@ abstract class Game {
    public static setTicks(ticks: number): void {
       this.ticks = ticks;
       this.time = (this.ticks * SETTINGS.TIME_PASS_RATE / SETTINGS.TPS / 60) % 24;
-      document.getElementById("time")!.innerHTML = "Time: " + roundNum(this.time, 1) + (roundNum(this.time, 1).toString().includes(".") ? "" : ".0");
    }
 
    /** Starts the game */
@@ -151,7 +143,7 @@ abstract class Game {
       const x = randInt(0, SETTINGS.BOARD_SIZE * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
       const y = randInt(0, SETTINGS.BOARD_SIZE * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
       const playerSpawnPosition = new Point(x, y);
-      new Player(playerSpawnPosition, gameData.playerID, username);
+      new Player(playerSpawnPosition, gameData.playerID, null, username);
 
       createEntityShaders();
       
@@ -262,21 +254,6 @@ abstract class Game {
       if (this.isRunning) {
          requestAnimationFrame(() => this.main());
       }
-   }
-
-   public static loadAttackDataArray(clientAttacks: ReadonlyArray<ClientAttackInfo>): void {
-      const attackInfoRecord: { [id: number]: ClientAttackInfo } = {};
-      for (const attack of clientAttacks) {
-         attackInfoRecord[attack.targetEntity.id] = attack;
-      }
-      this.attackInfoRecord = attackInfoRecord;
-   }
-
-   public static getClientAttack(targetID: number): ClientAttackInfo | null {
-      if (this.attackInfoRecord.hasOwnProperty(targetID)) {
-         return this.attackInfoRecord[targetID];
-      }
-      return null;
    }
 }
 

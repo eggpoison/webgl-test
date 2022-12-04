@@ -4,26 +4,8 @@ import Game from "../Game";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import Hitbox from "../hitboxes/Hitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import CircleRenderPart from "../render-parts/CircleRenderPart";
-import ImageRenderPart from "../render-parts/ImageRenderPart";
 import RenderPart, { RenderPartInfo } from "../render-parts/RenderPart";
 import { Tile } from "../Tile";
-
-// Sort render parts from lowest z-index to highest z-index
-export function sortRenderParts<T extends RenderPartInfo>(unsortedRenderParts: ReadonlyArray<T>): ReadonlyArray<T> {
-   const sortedRenderParts = unsortedRenderParts.slice();
-   for (let i = 0; i < unsortedRenderParts.length - 1; i++) {
-      for (let j = i; j < unsortedRenderParts.length - 1; j++) {
-         if (sortedRenderParts[j].zIndex > sortedRenderParts[j + 1].zIndex) {
-            const temp = sortedRenderParts[j + 1];
-            sortedRenderParts[j + 1] = sortedRenderParts[j];
-            sortedRenderParts[j] = temp;
-         }
-      }
-   }
-
-   return sortedRenderParts;
-}
 
 let frameProgress: number;
 export function setFrameProgress(newFrameProgress: number): void {
@@ -128,26 +110,29 @@ abstract class Entity {
 
    public chunks: Array<Chunk>;
 
+   public secondsSinceLastHit: number | null;
+
    public special?: ServerEntitySpecialData;
 
-   constructor(position: Point, id: number, type: EntityType, renderPartInfo: ReadonlyArray<RenderPartInfo>) {
+   constructor(position: Point, id: number, type: EntityType, secondsSinceLastHit: number | null, renderParts: ReadonlyArray<RenderPart<RenderPartInfo>>) {
       this.id = id;
+      this.secondsSinceLastHit = secondsSinceLastHit;
 
       // Create render parts
-      const renderParts = new Array<RenderPart<RenderPartInfo>>();
-      for (let i = 0; i < renderPartInfo.length; i++) {
-         const info = renderPartInfo[i];
-         switch (info.type) {
-            case "image": {
-               renderParts.push(new ImageRenderPart(info as ImageRenderPart, this, i))
-               break;
-            }
-            case "circle": {
-               renderParts.push(new CircleRenderPart(info as CircleRenderPart, this, i))
-               break;
-            }
-         }
-      }
+      // const renderParts = new Array<RenderPart<RenderPartInfo>>();
+      // for (let i = 0; i < renderPartInfo.length; i++) {
+      //    const info = renderPartInfo[i];
+      //    switch (info.type) {
+      //       case "image": {
+      //          renderParts.push(new ImageRenderPart(info as ImageRenderPart));
+      //          break;
+      //       }
+      //       case "circle": {
+      //          renderParts.push(new CircleRenderPart(info as CircleRenderPart));
+      //          break;
+      //       }
+      //    }
+      // }
       this.renderParts = renderParts;
       
       // Create hitbox using hitbox info
@@ -327,6 +312,7 @@ abstract class Entity {
       this.acceleration = entityData.acceleration !== null ? Vector.unpackage(entityData.acceleration) : null;
       this.terminalVelocity = entityData.terminalVelocity;
       this.rotation = entityData.rotation;
+      this.secondsSinceLastHit = entityData.secondsSinceLastHit;
       this.special = entityData.special;
 
       this.updateChunks(entityData.chunkCoordinates.map(([x, y]) => Game.board.getChunk(x, y)));

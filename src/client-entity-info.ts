@@ -10,10 +10,14 @@ const CLIENT_ENTITY_INFO_RECORD: Record<EntityType, ClientEntityInfo> = {
       name: "Cow",
       description: "Mmm, beef..."
    },
+   zombie: {
+      name: "Zombie",
+      description: ""
+   },
    player: {
       name: "Player",
-      description: "That's you."
+      description: "That's you!"
    }
 };
 
-export default CLIENT_ENTITY_INFO_RECORD
+export default CLIENT_ENTITY_INFO_RECORD;

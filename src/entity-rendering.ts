@@ -1,4 +1,4 @@
-import { Point, rotatePoint } from "webgl-test-shared";
+import { EntityType, Point, rotatePoint } from "webgl-test-shared";
 import Camera from "./Camera";
 import CLIENT_SETTINGS from "./client-settings";
 import Entity from "./entities/Entity";
@@ -7,7 +7,6 @@ import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import OPTIONS from "./options";
 import CircleRenderPart from "./render-parts/CircleRenderPart";
 import ImageRenderPart from "./render-parts/ImageRenderPart";
-import RenderPart, { RenderPartInfo } from "./render-parts/RenderPart";
 import { getTexture } from "./textures";
 import { createWebGLProgram, gl, MAX_ACTIVE_TEXTURE_UNITS, windowHeight, windowWidth } from "./webgl";
 
@@ -171,8 +170,8 @@ const calculateVisibleEntities = (): ReadonlyArray<Entity> => {
    return visibleEntities;
 }
 
-const calculateImageRenderPartCornerPositions = (renderPart: ImageRenderPart): [tl: Point, tr: Point, bl: Point, br: Point] => {
-   let renderPartPosition = renderPart.entity.renderPosition.copy();
+const calculateImageRenderPartCornerPositions = (entity: Entity, renderPart: ImageRenderPart): [tl: Point, tr: Point, bl: Point, br: Point] => {
+   let renderPartPosition = entity.renderPosition.copy();
    
    // Add any offset
    if (typeof renderPart.offset !== "undefined") {
@@ -193,10 +192,10 @@ const calculateImageRenderPartCornerPositions = (renderPart: ImageRenderPart): [
    let bottomRight = new Point(renderPartPosition.x + renderPart.width / 2, renderPartPosition.y - renderPart.height / 2);
    
    // Rotate the corners
-   topLeft = rotatePoint(topLeft, renderPart.entity.renderPosition, renderPart.entity.rotation);
-   topRight = rotatePoint(topRight, renderPart.entity.renderPosition, renderPart.entity.rotation);
-   bottomLeft = rotatePoint(bottomLeft, renderPart.entity.renderPosition, renderPart.entity.rotation);
-   bottomRight = rotatePoint(bottomRight, renderPart.entity.renderPosition, renderPart.entity.rotation);
+   topLeft = rotatePoint(topLeft, entity.renderPosition, entity.rotation);
+   topRight = rotatePoint(topRight, entity.renderPosition, entity.rotation);
+   bottomLeft = rotatePoint(bottomLeft, entity.renderPosition, entity.rotation);
+   bottomRight = rotatePoint(bottomRight, entity.renderPosition, entity.rotation);
 
    // Convert the corners to screen space
    topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));
@@ -232,88 +231,107 @@ const calculateCircleVertices = (position: Point, radius: number, rgba: [number,
    return triangleVertices;
 }
 
-type TexturedRenderPartCollection<T extends RenderPart<RenderPartInfo>> = {
-   [zIndex: number]: {
-      [textureSource: string]: Array<T>;
-   }
-};
-type RenderPartCollection<T extends RenderPart<RenderPartInfo>> = {
-   [zIndex: number]: Array<T>;
-};
-type CategorisedEntityRenderParts = {
-   readonly imageRenderParts: TexturedRenderPartCollection<ImageRenderPart>;
-   readonly circleRenderParts: RenderPartCollection<CircleRenderPart>;
-};
+type ImageRenderPartCornerPositions = Partial<{
+   [T in EntityType]: {
+      [renderPartIndexInArray: number]: {
+         [textureSource: string]: {
+            [entityID: number]: [tl: Point, tr: Point, bl: Point, br: Point];
+         };
+      };
+   };
+}>;
 
-type ImageRenderPartCornerPositions = {
-   [entityID: number]: {
-      [renderPartIdx: number]: [tl: Point, tr: Point, bl: Point, br: Point];
-   }
-}
+// BURN IT WITH FIRE
+type CategorisedImageRenderParts = Partial<{
+   [T in EntityType]: Array<{
+      [textureSource: string]: {
+         [entityID: number]: ImageRenderPart;
+      };
+   }>;
+}>;
+
+type CategorisedRenderParts = {
+   readonly imageRenderParts: CategorisedImageRenderParts;
+   readonly circleRenderParts: Array<[Entity, CircleRenderPart]>;
+};
 
 export function renderEntities(): void {
+   // Find visible entities
    const visibleEntities = calculateVisibleEntities();
 
    // Classify all render parts into their different major features
-   const categorisedEntities = categoriseEntitiesByRenderPart(visibleEntities);
+   const categorisedRenderParts = categoriseEntitiesByRenderPart(visibleEntities);
 
+   // Six nested for loops... oops
    // Calculate the corner positions for all image render parts
    const imageRenderPartCornerPositionsRecord: ImageRenderPartCornerPositions = {};
-   for (const zIndexedImageRenderPartArray of Object.values(categorisedEntities.imageRenderParts)) {
-      const texturedImageRenderPartArray = Object.values(zIndexedImageRenderPartArray);
-      for (const imageRenderPartArray of texturedImageRenderPartArray) {
-         for (const imageRenderPart of imageRenderPartArray) {
+   for (const [ entityType, indexedRenderParts ] of Object.entries(categorisedRenderParts.imageRenderParts)) {
+      imageRenderPartCornerPositionsRecord[entityType as EntityType] = {};
+      
+      for (let renderPartIndexInArray = 0; renderPartIndexInArray < indexedRenderParts.length; renderPartIndexInArray++) {
+         imageRenderPartCornerPositionsRecord[entityType as EntityType]![renderPartIndexInArray] = {};
+
+         const textureRecord = indexedRenderParts[renderPartIndexInArray];
+         for (const [textureSource, imageRenderParts] of Object.entries(textureRecord)) {
+            imageRenderPartCornerPositionsRecord[entityType as EntityType]![renderPartIndexInArray][textureSource] = {};
             
-            if (!imageRenderPartCornerPositionsRecord.hasOwnProperty(imageRenderPart.entity.id)) {
-               imageRenderPartCornerPositionsRecord[imageRenderPart.entity.id] = {};
+            for (const [entityID, imageRenderPart] of Object.entries(imageRenderParts) as unknown as ReadonlyArray<[number, ImageRenderPart]>) {
+               const entity = Game.board.entities[entityID];
+               const cornerPositions = calculateImageRenderPartCornerPositions(entity, imageRenderPart);
+               imageRenderPartCornerPositionsRecord[entityType as EntityType]![renderPartIndexInArray][textureSource][entityID] = cornerPositions;
             }
-            
-            const cornerPositions = calculateImageRenderPartCornerPositions(imageRenderPart);
-            imageRenderPartCornerPositionsRecord[imageRenderPart.entity.id][imageRenderPart.arrayIdx] = cornerPositions;
          }
       }
    }
 
-   renderImageRenderParts(categorisedEntities.imageRenderParts, imageRenderPartCornerPositionsRecord);
-   renderCircleRenderParts(categorisedEntities.circleRenderParts);
+   renderImageRenderParts(categorisedRenderParts.imageRenderParts, imageRenderPartCornerPositionsRecord);
+   renderCircleRenderParts(categorisedRenderParts.circleRenderParts);
 
    if (OPTIONS.showEntityHitboxes) {
       renderEntityHitboxes();
    }
 }
 
-/** Sort the render parts into their textures */
-const categoriseEntitiesByRenderPart = (visibleEntities: ReadonlyArray<Entity>): CategorisedEntityRenderParts => {
-   const categorisedEntities: CategorisedEntityRenderParts = {
-      imageRenderParts: [],
+/** Sort the render parts based on their textures */
+const categoriseEntitiesByRenderPart = (visibleEntities: ReadonlyArray<Entity>): CategorisedRenderParts => {
+   const categorisedEntities: CategorisedRenderParts = {
+      imageRenderParts: {},
       circleRenderParts: []
    };
 
    for (const entity of visibleEntities) {
-      for (const renderPart of entity.renderParts) {
+      let imageRenderPartIndexInArray = 0;
+      for (let idx = 0; idx < entity.renderParts.length; idx++) {
+         const renderPart = entity.renderParts[idx];
          switch (renderPart.type) {
             case "circle": {
-               // If the z-index hasn't been created yet
-               if (!categorisedEntities.circleRenderParts.hasOwnProperty(renderPart.zIndex)) {
-                  categorisedEntities.circleRenderParts[renderPart.zIndex] = new Array<CircleRenderPart>();
-               }
-      
-               categorisedEntities.circleRenderParts[renderPart.zIndex].push(renderPart as CircleRenderPart);
+               categorisedEntities.circleRenderParts.push([entity, renderPart as CircleRenderPart]);
                break;
             }
             case "image": {
-               // If the z-index hasn't been created yet
-               if (!categorisedEntities.imageRenderParts.hasOwnProperty(renderPart.zIndex)) {
-                  categorisedEntities.imageRenderParts[renderPart.zIndex] = {};
+               // If the entity is of a new entity type, add it to the record
+               if (!categorisedEntities.imageRenderParts.hasOwnProperty(entity.type)) {
+                  categorisedEntities.imageRenderParts[entity.type] = new Array<{ [textureSource: string]: Array<ImageRenderPart>; }>();
                }
-      
-               // If there isn't a record for the render part's texture yet
+
+               const renderParts = categorisedEntities.imageRenderParts[entity.type]!;
+
+               // Create the indexed array element if it isn't present
+               if (typeof renderParts[imageRenderPartIndexInArray] === "undefined") {
+                  renderParts[imageRenderPartIndexInArray] = {};
+               }
+
+               // Create the texture source index if it isn't present
                const textureSource = (renderPart as ImageRenderPart).textureSrc;
-               if (!categorisedEntities.imageRenderParts[renderPart.zIndex].hasOwnProperty(textureSource)) {
-                  categorisedEntities.imageRenderParts[renderPart.zIndex][textureSource] = new Array<ImageRenderPart>();
+               if (!renderParts[imageRenderPartIndexInArray].hasOwnProperty(textureSource)) {
+                  renderParts[imageRenderPartIndexInArray][textureSource] = {};
                }
-      
-               categorisedEntities.imageRenderParts[renderPart.zIndex][textureSource].push(renderPart as ImageRenderPart);
+
+               // Add render part
+               renderParts[imageRenderPartIndexInArray][textureSource][entity.id] = renderPart as ImageRenderPart;
+
+               imageRenderPartIndexInArray++;
+               
                break;
             }
          }
@@ -323,21 +341,38 @@ const categoriseEntitiesByRenderPart = (visibleEntities: ReadonlyArray<Entity>):
    return categorisedEntities;
 }
 
-const renderImageRenderParts = (imageRenderParts: TexturedRenderPartCollection<ImageRenderPart>, cornerPositionsRecord: ImageRenderPartCornerPositions): void => {
-   // 
-   // Calculate vertices
-   // 
-   let numTextureUnits: number = 0;
-   const renderPartArrays = new Array<Array<ImageRenderPart>>();
-   for (const texturedRenderPartRecord of Object.values(imageRenderParts)) {
-      for (const renderPartArray of Object.values(texturedRenderPartRecord)) {
-         numTextureUnits++;
-         renderPartArrays.push(renderPartArray);
+/** Amount of seconds that the hit flash occurs for */
+const ATTACK_HIT_FLASH_DURATION = 0.4;
+const MAX_REDNESS = 0.85;
+
+/** Calculates how red the entity should be if in an attack */
+const calculateEntityRedness = (entity: Entity): number => {
+   if (entity.secondsSinceLastHit === null || entity.secondsSinceLastHit > ATTACK_HIT_FLASH_DURATION) return 0;
+
+   return MAX_REDNESS * (1 - entity.secondsSinceLastHit / ATTACK_HIT_FLASH_DURATION);
+}
+
+const renderImageRenderParts = (imageRenderParts: CategorisedImageRenderParts, cornerPositionsRecord: ImageRenderPartCornerPositions): void => {
+   let numTextureUnits = 0;
+   const renderPartArrays = new Array<[entityType: EntityType, renderPartIndexInArray: number, textureSource: string, renderParts: { [entityID: number]: ImageRenderPart }]>();
+   for (const [entityType, indexedRenderParts] of Object.entries(imageRenderParts)) {
+      for (let renderPartIndexInArray = 0; renderPartIndexInArray < indexedRenderParts.length; renderPartIndexInArray++) {
+         const textureRecord = indexedRenderParts[renderPartIndexInArray];
+
+         for (const [textureSource, renderPartsRecord] of Object.entries(textureRecord)) {
+            numTextureUnits++;
+   
+            renderPartArrays.push([entityType as EntityType, renderPartIndexInArray, textureSource, renderPartsRecord]);
+         }
       }
    }
 
+   // Don't render if there's nothing to render
    if (numTextureUnits === 0) return;
 
+   // 
+   // Calculate vertices
+   // 
    const verticesArray = new Array<Array<number>>();
    const textureSourcesArray = new Array<Array<string>>();
 
@@ -345,21 +380,22 @@ const renderImageRenderParts = (imageRenderParts: TexturedRenderPartCollection<I
       const vertices = new Array<number>();
       const textureSources = new Array<string>();
 
+      // j = current texture unit
       for (let j = i * MAX_ACTIVE_TEXTURE_UNITS; j < Math.min((i + 1) * MAX_ACTIVE_TEXTURE_UNITS, numTextureUnits); j++) {
-         const renderParts = renderPartArrays[j];
+         const [entityType, renderPartIndexInArray, textureSource, renderParts] = renderPartArrays[j];
 
-         // Texture source
-         textureSources.push(renderPartArrays[j][0].textureSrc);
+         // Add texture source
+         textureSources.push(textureSource);
          const textureIdx = textureSources.length - 1;
 
-         for (const renderPart of renderParts) {
+         for (const entityID of Object.keys(renderParts) as unknown as ReadonlyArray<number>) {
+            const entity = Game.board.entities[entityID];
+
             // Redness
-            const attackInfo = Game.getClientAttack(renderPart.entity.id);
-            const redness = attackInfo !== null ? 0.85 * (1 - attackInfo.progress) : 0;
+            const redness = calculateEntityRedness(entity);
 
-            const [tl, tr, bl, br] = cornerPositionsRecord[renderPart.entity.id][renderPart.arrayIdx];
-
-            vertices.push(
+            const [tl, tr, bl, br] = cornerPositionsRecord[entityType]![renderPartIndexInArray][textureSource][entity.id];
+            vertices.push( 
                bl.x, bl.y, 0, 0, redness, textureIdx,
                br.x, br.y, 1, 0, redness, textureIdx,
                tl.x, tl.y, 0, 1, redness, textureIdx,
@@ -429,7 +465,6 @@ const renderImageRenderParts = (imageRenderParts: TexturedRenderPartCollection<I
       gl.enableVertexAttribArray(imageRenderingProgramRednessAttribLocation);
       gl.enableVertexAttribArray(imageRenderingProgramTextureIdxAttribLocation);
       
-      
       // Set all texture units
       for (let i = 0; i < indexedTextureSources.length; i++) {
          const textureSource = indexedTextureSources[i];
@@ -446,45 +481,43 @@ const renderImageRenderParts = (imageRenderParts: TexturedRenderPartCollection<I
    gl.blendFunc(gl.ONE, gl.ZERO);
 }
 
-const renderCircleRenderParts = (renderPartCollection: RenderPartCollection<CircleRenderPart>): void => {
+const renderCircleRenderParts = (renderParts: ReadonlyArray<[Entity, CircleRenderPart]>): void => {
    gl.useProgram(circleProgram);
 
    // Calculate vertices
-   for (const renderPartArray of Object.values(renderPartCollection)) {
-      for (const renderPart of renderPartArray) {
-         const vertices = calculateCircleVertices(renderPart.entity.renderPosition, renderPart.radius, renderPart.rgba);
+   for (const [entity, renderPart] of renderParts) {
+      const vertices = calculateCircleVertices(entity.renderPosition, renderPart.radius, renderPart.rgba);
 
-         const buffer = gl.createBuffer();
-         gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+      const buffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+   
+      const positionAttribLocation = gl.getAttribLocation(circleProgram, "vertPosition");
+      const colourAttribLocation = gl.getAttribLocation(circleProgram, "vertColour");
       
-         const positionAttribLocation = gl.getAttribLocation(circleProgram, "vertPosition");
-         const colourAttribLocation = gl.getAttribLocation(circleProgram, "vertColour");
-         
-         gl.vertexAttribPointer(
-            positionAttribLocation, // Attribute location
-            2, // Number of elements per attribute
-            gl.FLOAT, // Type of elements
-            false,
-            6 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
-            0 // Offset from the beginning of a single vertex to this attribute
-         );
-         gl.vertexAttribPointer(
-            colourAttribLocation, // Attribute location
-            4, // Number of elements per attribute
-            gl.FLOAT, // Type of elements
-            false,
-            6 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
-            2 * Float32Array.BYTES_PER_ELEMENT // Offset from the beginning of a single vertex to this attribute
-         );
-      
-         // Enable the attributes
-         gl.enableVertexAttribArray(positionAttribLocation);
-         gl.enableVertexAttribArray(colourAttribLocation);
-      
-         // Draw the tile
-         gl.drawArrays(gl.TRIANGLE_FAN, 0, CLIENT_SETTINGS.CIRCLE_DETAIL + 2);
-      }     
+      gl.vertexAttribPointer(
+         positionAttribLocation, // Attribute location
+         2, // Number of elements per attribute
+         gl.FLOAT, // Type of elements
+         false,
+         6 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
+         0 // Offset from the beginning of a single vertex to this attribute
+      );
+      gl.vertexAttribPointer(
+         colourAttribLocation, // Attribute location
+         4, // Number of elements per attribute
+         gl.FLOAT, // Type of elements
+         false,
+         6 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
+         2 * Float32Array.BYTES_PER_ELEMENT // Offset from the beginning of a single vertex to this attribute
+      );
+   
+      // Enable the attributes
+      gl.enableVertexAttribArray(positionAttribLocation);
+      gl.enableVertexAttribArray(colourAttribLocation);
+   
+      // Draw the tile
+      gl.drawArrays(gl.TRIANGLE_FAN, 0, CLIENT_SETTINGS.CIRCLE_DETAIL + 2);
    }
 }
 

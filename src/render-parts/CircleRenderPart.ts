@@ -1,4 +1,3 @@
-import Entity from "../entities/Entity";
 import RenderPart, { RenderPartInfo } from "./RenderPart";
 
 interface CircleRenderPartInfo extends RenderPartInfo {
@@ -11,8 +10,8 @@ class CircleRenderPart extends RenderPart<CircleRenderPartInfo> {
    public readonly type = "circle";
    public readonly rgba: [number, number, number, number];
    public readonly radius: number;
-   constructor(renderPartInfo: CircleRenderPartInfo, entity: Entity, arrayIdx: number) {
-      super(renderPartInfo, entity, arrayIdx);
+   constructor(renderPartInfo: CircleRenderPartInfo) {
+      super(renderPartInfo);
 
       this.rgba = renderPartInfo.rgba;
       this.radius = renderPartInfo.radius;
