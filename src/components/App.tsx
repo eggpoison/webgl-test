@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import GameScreen from "./GameScreen";
+import GameScreen from "./game/GameScreen";
 import LoadingScreen, { LoadingScreenStatus } from "./LoadingScreen";
 import MainMenu from "./MainMenu";
 

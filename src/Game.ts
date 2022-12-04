@@ -13,7 +13,7 @@ import { updateDevEntityViewer } from "./components/DevEntityViewer";
 import OPTIONS from "./options";
 import { createWebGLContext, createWebGLProgram, gl, resizeCanvas } from "./webgl";
 import { loadTextures } from "./textures";
-import { hidePauseScreen, showPauseScreen, toggleSettingsMenu } from "./components/GameScreen";
+import { hidePauseScreen, showPauseScreen, toggleSettingsMenu } from "./components/game/GameScreen";
 import { getGameState } from "./components/App";
 import { clearPressedKeys } from "./keyboard-input";
 

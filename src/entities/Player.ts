@@ -1,6 +1,7 @@
-import { AttackPacket, Point, SETTINGS, Vector } from "webgl-test-shared";
+import { AttackPacket, HitData, Point, SETTINGS, Vector } from "webgl-test-shared";
 import Camera from "../Camera";
 import Client from "../client/Client";
+import { updateHealthBar } from "../components/game/HealthBar";
 import Game from "../Game";
 import { keyIsPressed } from "../keyboard-input";
 import CircleRenderPart from "../render-parts/CircleRenderPart";
@@ -9,6 +10,9 @@ import Entity from "./Entity";
 
 class Player extends Entity {
    public static instance: Player | null = null;
+
+   /** Health of the instance player */
+   public static health = 20;
 
    public readonly displayName: string;
 
@@ -135,7 +139,7 @@ class Player extends Entity {
       if (rotation !== null) {
          this.rotation = rotation;
       } else {
-         this.acceleration = null;
+          this.acceleration = null;
          this.isMoving = false;
          return;
       }
@@ -143,6 +147,23 @@ class Player extends Entity {
       this.acceleration = new Vector(Player.ACCELERATION, this.rotation);
       this.terminalVelocity = Player.TERMINAL_VELOCITY;
       this.isMoving = true;
+   }
+
+   /** Registers a server-side hit for the client */
+   public static registerHit(hitData: HitData) {
+      if (this.instance === null) return;
+
+      this.health -= hitData.damage;
+      
+      updateHealthBar(this.health);
+
+      // Add force
+      if (hitData.angleFromDamageSource !== null) {
+         if (this.instance.velocity !== null) {
+            this.instance.velocity.magnitude *= 0.5;
+         }
+         this.instance.addVelocity(200, hitData.angleFromDamageSource);
+      }
    }
 }
 

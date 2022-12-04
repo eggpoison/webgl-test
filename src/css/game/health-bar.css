@@ -1,0 +1,131 @@
+@import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;700;900&display=swap');
+
+#health-bar {
+   --max-health: 20;
+   --current-health: 20;
+   --previous-health: 20;
+   --width: 25rem;
+   --height: 1.5rem;
+   width: var(--width);
+   height: var(--height);
+   border: 5px solid #000;
+   border-radius: 4px;
+   background-color: #333;
+   position: absolute;
+   left: 50%;
+   bottom: 5rem;
+   transform: translateX(-50%);
+   z-index: 2;
+   box-shadow: 0 0 7px 0 rgba(0, 0, 0, 0.7) inset;
+}
+
+#health-bar .health-slider {
+   background-color: #f00;
+   position: absolute;
+   top: 0;
+   right: 0;
+   bottom: 0;
+   left: 0;
+   z-index: 0;
+   box-shadow: 2px 2px 5px 1px rgba(255, 255, 255, 0.5) inset, -2px -2px 5px 0 rgba(0, 0, 0, 0.5) inset;
+}
+#health-bar.animated .health-slider {
+   animation: HealthSliderSlide 1s cubic-bezier(0, 0.5, 0.5, 1) forwards,
+      HealthSliderFlash 0.7s linear forwards;
+}
+
+#health-bar .health-icon {
+   --size: 20px;
+   width: var(--size);
+   height: var(--size);
+   position: absolute;
+   left: 50%;
+   top: 0;
+   transform: translate(-50%, -50%);
+   z-index: 1;
+}
+
+#health-bar .health-icon img {
+   --scale-factor: 1.75;
+   --flash-scale-factor: 2.25;
+   width: calc(var(--size) * var(--scale-factor));
+   height: calc(var(--size) * var(--scale-factor));
+   image-rendering: pixelated;
+   position: absolute;
+   top: 50%;
+   left: 50%;
+   transform: translate(-50%, -50%);
+}
+
+#health-bar.animated .health-icon img {
+   animation: HealthIconFlash 0.6s cubic-bezier(.22,.49,.56,.77) forwards;
+}
+
+#health-bar .health-icon .health-counter {
+   --offset-y: 0.25rem;
+   color: #fff;
+   font-family: "Inconsolata";
+   font-size: 1.15rem;
+   font-weight: 700;
+   text-shadow: 0 0 1px #000, 0 0 2px #000, 0 0 3px #000;
+   position: absolute;
+   top: calc(50% - var(--offset-y));
+   left: 50%;
+   transform: translate(-50%, -50%);
+   z-index: 2;
+}
+
+#health-bar .notches {
+   position: absolute;
+   top: 0;
+   right: 0;
+   bottom: 0;
+   left: 0;
+   display: flex;
+   justify-content: space-evenly;
+   align-items: center;
+}
+#health-bar .notches .notch {
+   --padding: 0.15rem;
+   width: 3px;
+   height: calc(var(--height) - var(--padding) * 2);
+}
+#health-bar .notches .notch-major {
+   height: calc(var(--height) - var(--padding) * 2);
+   background-color: rgba(0, 0, 0, 0.5);
+}
+#health-bar .notches .notch-minor {
+   height: calc(var(--height) - var(--padding) * 4);
+   background-color: rgba(0, 0, 0, 0.3);
+}
+
+@keyframes HealthSliderSlide {
+   0% {
+      width: calc(var(--width) * (var(--previous-health) / var(--max-health)));
+   }
+   100% {
+      width: calc(var(--width) * (var(--current-health) / var(--max-health)));
+   }
+}
+
+@keyframes HealthSliderFlash {
+   0% {
+      background-color: rgb(255, 118, 147);
+   }
+   100% {
+      background-color: #f00;
+   }
+}
+
+@keyframes HealthIconFlash {
+   0% {
+      width: calc(var(--size) * var(--flash-scale-factor));
+      height: calc(var(--size) * var(--flash-scale-factor));
+      filter: brightness(1.5);
+   }
+   100% {
+      width: calc(var(--size) * var(--scale-factor));
+      height: calc(var(--size) * var(--scale-factor));
+      filter: brightness(1);
+   }
+}

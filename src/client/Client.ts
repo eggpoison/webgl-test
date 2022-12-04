@@ -134,6 +134,11 @@ abstract class Client {
       this.updateEntities(gameDataPacket.serverEntityDataArray);
       this.updateItems(gameDataPacket.serverItemDataArray);
       this.registerTileUpdates(gameDataPacket.tileUpdates);
+
+      // Register hits
+      for (const hitData of gameDataPacket.hitsTaken) {
+         Player.registerHit(hitData);
+      }
    }
 
    /**

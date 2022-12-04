@@ -10,6 +10,7 @@ import "./css/game/settings.css";
 import "./css/game/pause-screen.css";
 import "./css/game/cursor-tooltip.css";
 import "./css/game/dev-entity-viewer.css";
+import "./css/game/health-bar.css";
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement

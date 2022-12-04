@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import Game from "../Game";
-import ChatBox from "./ChatBox";
-import CursorTooltip from "./CursorTooltip";
-import DevEntityViewer from "./DevEntityViewer";
+import Game from "../../Game";
+import ChatBox from "../ChatBox";
+import CursorTooltip from "../CursorTooltip";
+import DevEntityViewer from "../DevEntityViewer";
+import HealthBar from "./HealthBar";
 import PauseScreen from "./PauseScreen";
 import Settings from "./Settings";
 
@@ -52,6 +53,8 @@ const GameScreen = () => {
       <CursorTooltip />
 
       <DevEntityViewer />
+
+      <HealthBar />
 
       {settingsIsOpen ? <Settings /> : null}
 
