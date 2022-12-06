@@ -14,6 +14,10 @@ const CLIENT_ENTITY_INFO_RECORD: Record<EntityType, ClientEntityInfo> = {
       name: "Zombie",
       description: ""
    },
+   tombstone: {
+      name: "Tombstone",
+      description: ""
+   },
    player: {
       name: "Player",
       description: "That's you!"

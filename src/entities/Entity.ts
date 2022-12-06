@@ -118,21 +118,6 @@ abstract class Entity {
       this.id = id;
       this.secondsSinceLastHit = secondsSinceLastHit;
 
-      // Create render parts
-      // const renderParts = new Array<RenderPart<RenderPartInfo>>();
-      // for (let i = 0; i < renderPartInfo.length; i++) {
-      //    const info = renderPartInfo[i];
-      //    switch (info.type) {
-      //       case "image": {
-      //          renderParts.push(new ImageRenderPart(info as ImageRenderPart));
-      //          break;
-      //       }
-      //       case "circle": {
-      //          renderParts.push(new CircleRenderPart(info as CircleRenderPart));
-      //          break;
-      //       }
-      //    }
-      // }
       this.renderParts = renderParts;
       
       // Create hitbox using hitbox info

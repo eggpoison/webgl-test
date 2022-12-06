@@ -13,6 +13,9 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/zombie/zombie1.png",
    "entities/zombie/zombie2.png",
    "entities/zombie/zombie3.png",
+   "entities/tombstone1.png",
+   "entities/tombstone2.png",
+   "entities/tombstone3.png",
    "entities/boulder.png",
    "entities/yeti.png",
    "entities/snowberry-bush.png"

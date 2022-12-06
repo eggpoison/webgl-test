@@ -91,7 +91,7 @@ abstract class Game {
 
    public static setTicks(ticks: number): void {
       this.ticks = ticks;
-      this.time = (this.ticks * SETTINGS.TIME_PASS_RATE / SETTINGS.TPS / 60) % 24;
+      this.time = (this.ticks * SETTINGS.TIME_PASS_RATE / SETTINGS.TPS / 3600) % 24;
    }
 
    /** Starts the game */
