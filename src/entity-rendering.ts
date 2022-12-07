@@ -8,7 +8,7 @@ import OPTIONS from "./options";
 import CircleRenderPart from "./render-parts/CircleRenderPart";
 import ImageRenderPart from "./render-parts/ImageRenderPart";
 import { getTexture } from "./textures";
-import { createWebGLProgram, gl, MAX_ACTIVE_TEXTURE_UNITS, windowHeight, windowWidth } from "./webgl";
+import { createShaderString, createWebGLProgram, gl, MAX_ACTIVE_TEXTURE_UNITS, windowHeight, windowWidth } from "./webgl";
 
 // 
 // Image shaders
@@ -33,20 +33,20 @@ void main() {
    v_redness = a_redness;
 }
 `;
-const entityRenderingFragmentShaderText = `
-#define maxNumTextures ${MAX_ACTIVE_TEXTURE_UNITS}
 
+let entityRenderingFragmentShaderText: string;
+createShaderString(`
 precision mediump float;
 
-uniform sampler2D u_textures[maxNumTextures];
+uniform sampler2D u_textures[__MAX_ACTIVE_TEXTURE_UNITS__];
 
 varying vec2 v_texCoord;
 varying float v_redness;
 varying float v_textureIdx;
     
-vec4 getSampleFromArray(sampler2D textures[maxNumTextures], int ndx, vec2 uv) {
+vec4 getSampleFromArray(sampler2D textures[__MAX_ACTIVE_TEXTURE_UNITS__], int ndx, vec2 uv) {
    vec4 color = vec4(0);
-   for (int i = 0; i < maxNumTextures; i++) {
+   for (int i = 0; i < __MAX_ACTIVE_TEXTURE_UNITS__; i++) {
       vec4 c = texture2D(u_textures[i], uv);
       if (i == ndx) {
          color += c;
@@ -63,7 +63,9 @@ void main() {
    fragColour.b = fragColour.b * (1.0 - v_redness);
    gl_FragColor = fragColour;
 }
-`;
+`, (shaderString: string) => {
+   entityRenderingFragmentShaderText = shaderString
+});
 
 // 
 // Circle shaders
@@ -156,10 +158,11 @@ const calculateVisibleEntities = (): ReadonlyArray<Entity> => {
             break;
          }
          case "rectangular": {
-            if (!(screenXPos + (entity.hitbox as RectangularHitbox).halfDiagonalLength / 2 < 0 ||
-               screenXPos - (entity.hitbox as RectangularHitbox).halfDiagonalLength >= windowWidth ||
-               screenYPos + (entity.hitbox as RectangularHitbox).halfDiagonalLength < 0 ||
-               screenYPos - (entity.hitbox as RectangularHitbox).halfDiagonalLength >= windowHeight)) {
+            const halfDiagonalLength = (entity.hitbox as RectangularHitbox).halfDiagonalLength;
+            if (screenXPos >= -halfDiagonalLength && 
+            screenXPos < windowWidth + halfDiagonalLength &&
+            screenYPos >= -halfDiagonalLength &&
+            screenYPos < windowHeight + halfDiagonalLength) {
                visibleEntities.push(entity);
             }
             break;
@@ -233,7 +236,7 @@ const calculateCircleVertices = (position: Point, radius: number, rgba: [number,
 
 type ImageRenderPartCornerPositions = Partial<{
    [T in EntityType]: {
-      [renderPartIndexInArray: number]: {
+      [zIndex: number]: {
          [textureSource: string]: {
             [entityID: number]: [tl: Point, tr: Point, bl: Point, br: Point];
          };
@@ -259,26 +262,28 @@ export function renderEntities(): void {
    // Find visible entities
    const visibleEntities = calculateVisibleEntities();
 
+   if (visibleEntities.length === 0) return;
+
    // Classify all render parts into their different major features
    const categorisedRenderParts = categoriseEntitiesByRenderPart(visibleEntities);
 
-   // Six nested for loops... oops
+   // Four nested for loops... oops
    // Calculate the corner positions for all image render parts
    const imageRenderPartCornerPositionsRecord: ImageRenderPartCornerPositions = {};
    for (const [ entityType, indexedRenderParts ] of Object.entries(categorisedRenderParts.imageRenderParts)) {
       imageRenderPartCornerPositionsRecord[entityType as EntityType] = {};
       
-      for (let renderPartIndexInArray = 0; renderPartIndexInArray < indexedRenderParts.length; renderPartIndexInArray++) {
-         imageRenderPartCornerPositionsRecord[entityType as EntityType]![renderPartIndexInArray] = {};
+      for (let zIndex = 0; zIndex < indexedRenderParts.length; zIndex++) {
+         imageRenderPartCornerPositionsRecord[entityType as EntityType]![zIndex] = {};
 
-         const textureRecord = indexedRenderParts[renderPartIndexInArray];
+         const textureRecord = indexedRenderParts[zIndex];
          for (const [textureSource, imageRenderParts] of Object.entries(textureRecord)) {
-            imageRenderPartCornerPositionsRecord[entityType as EntityType]![renderPartIndexInArray][textureSource] = {};
+            imageRenderPartCornerPositionsRecord[entityType as EntityType]![zIndex][textureSource] = {};
             
             for (const [entityID, imageRenderPart] of Object.entries(imageRenderParts) as unknown as ReadonlyArray<[number, ImageRenderPart]>) {
                const entity = Game.board.entities[entityID];
                const cornerPositions = calculateImageRenderPartCornerPositions(entity, imageRenderPart);
-               imageRenderPartCornerPositionsRecord[entityType as EntityType]![renderPartIndexInArray][textureSource][entityID] = cornerPositions;
+               imageRenderPartCornerPositionsRecord[entityType as EntityType]![zIndex][textureSource][entityID] = cornerPositions;
             }
          }
       }
@@ -353,111 +358,73 @@ const calculateEntityRedness = (entity: Entity): number => {
 }
 
 const renderImageRenderParts = (imageRenderParts: CategorisedImageRenderParts, cornerPositionsRecord: ImageRenderPartCornerPositions): void => {
-   let numTextureUnits = 0;
-   const renderPartArrays = new Array<[entityType: EntityType, renderPartIndexInArray: number, textureSource: string, renderParts: { [entityID: number]: ImageRenderPart }]>();
-   for (const [entityType, indexedRenderParts] of Object.entries(imageRenderParts)) {
-      for (let renderPartIndexInArray = 0; renderPartIndexInArray < indexedRenderParts.length; renderPartIndexInArray++) {
-         const textureRecord = indexedRenderParts[renderPartIndexInArray];
-
-         for (const [textureSource, renderPartsRecord] of Object.entries(textureRecord)) {
-            numTextureUnits++;
-   
-            renderPartArrays.push([entityType as EntityType, renderPartIndexInArray, textureSource, renderPartsRecord]);
-         }
-      }
-   }
-
-   // Don't render if there's nothing to render
-   if (numTextureUnits === 0) return;
-
    // 
    // Calculate vertices
    // 
-   const verticesArray = new Array<Array<number>>();
-   const textureSourcesArray = new Array<Array<string>>();
 
-   for (let i = 0; i <= Math.floor(numTextureUnits / MAX_ACTIVE_TEXTURE_UNITS); i++) {
-      const vertices = new Array<number>();
-      const textureSources = new Array<string>();
+   let numTextureUnitsUsed = 0;
+   const vertexArrays = new Array<Array<number>>();
+   const textureSources = new Array<string>();
+   for (const [entityType, indexedArray] of Object.entries(imageRenderParts) as ReadonlyArray<[EntityType, Array<{ [textureSource: string]: { [entityID: number]: ImageRenderPart; }; }>]>) {
+      for (let zIndex = 0; zIndex < indexedArray.length; zIndex++) {
+         const textureRecord = indexedArray[zIndex];
+         for (const [textureSource, renderParts] of Object.entries(textureRecord)) {
+            // Add texture source
+            textureSources.push(textureSource);
+            const textureIdx = numTextureUnitsUsed % MAX_ACTIVE_TEXTURE_UNITS;
+            
+            // Calculate vertices for all render parts in the record
+            const vertices = new Array<number>();
+            for (const [entityID, renderPart] of Object.entries(renderParts) as unknown as ReadonlyArray<[number, ImageRenderPart]>) {
+               const entity = Game.board.entities[entityID];
+               
+               const redness = calculateEntityRedness(entity);
 
-      // j = current texture unit
-      for (let j = i * MAX_ACTIVE_TEXTURE_UNITS; j < Math.min((i + 1) * MAX_ACTIVE_TEXTURE_UNITS, numTextureUnits); j++) {
-         const [entityType, renderPartIndexInArray, textureSource, renderParts] = renderPartArrays[j];
-
-         // Add texture source
-         textureSources.push(textureSource);
-         const textureIdx = textureSources.length - 1;
-
-         for (const entityID of Object.keys(renderParts) as unknown as ReadonlyArray<number>) {
-            const entity = Game.board.entities[entityID];
-
-            // Redness
-            const redness = calculateEntityRedness(entity);
-
-            const [tl, tr, bl, br] = cornerPositionsRecord[entityType]![renderPartIndexInArray][textureSource][entity.id];
-            vertices.push( 
-               bl.x, bl.y, 0, 0, redness, textureIdx,
-               br.x, br.y, 1, 0, redness, textureIdx,
-               tl.x, tl.y, 0, 1, redness, textureIdx,
-               tl.x, tl.y, 0, 1, redness, textureIdx,
-               br.x, br.y, 1, 0, redness, textureIdx,
-               tr.x, tr.y, 1, 1, redness, textureIdx
-            );
+               // Find the render part's corresponding corner positions
+               const [tl, tr, bl, br] = cornerPositionsRecord[entityType]![zIndex][textureSource][entityID];
+               vertices.push( 
+                  bl.x, bl.y, 0, 0, redness, textureIdx,
+                  br.x, br.y, 1, 0, redness, textureIdx,
+                  tl.x, tl.y, 0, 1, redness, textureIdx,
+                  tl.x, tl.y, 0, 1, redness, textureIdx,
+                  br.x, br.y, 1, 0, redness, textureIdx,
+                  tr.x, tr.y, 1, 1, redness, textureIdx
+               );
+            }
+            vertexArrays.push(vertices);
+            numTextureUnitsUsed++;
          }
       }
-
-      verticesArray.push(vertices);
-      textureSourcesArray.push(textureSources);
    }
+
+   // 
+   // Render vertices
+   // 
    
    gl.useProgram(imageRenderingProgram);
 
    gl.enable(gl.BLEND);
    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-   for (let i = 0; i < verticesArray.length; i++) {
-      const vertices = verticesArray[i];
-      const indexedTextureSources = textureSourcesArray[i];
-
+   for (let currentDrawCall = 0; currentDrawCall < Math.ceil(numTextureUnitsUsed / MAX_ACTIVE_TEXTURE_UNITS); currentDrawCall++) {
+      let vertices = new Array<number>();
+      const usedTextureSources = new Array<string>();
+      for (let idx = currentDrawCall * MAX_ACTIVE_TEXTURE_UNITS; idx <= Math.min((currentDrawCall + 1) * MAX_ACTIVE_TEXTURE_UNITS - 1, numTextureUnitsUsed - 1); idx++) {
+         vertices = vertices.concat(vertexArrays[idx]);
+         usedTextureSources.push(textureSources[idx]);
+      }
+      
       // Create tile buffer
       const tileBuffer = gl.createBuffer()!;
       gl.bindBuffer(gl.ARRAY_BUFFER, tileBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
-      gl.vertexAttribPointer(
-         imageRenderingProgramPosAttribLocation, // Attribute location
-         2, // Number of elements per attribute
-         gl.FLOAT, // Type of elements
-         false,
-         6 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
-         0 // Offset from the beginning of a single vertex to this attribute
-      );
-      gl.vertexAttribPointer(
-         imageRenderingProgramTexCoordAttribLocation, // Attribute location
-         2, // Number of elements per attribute
-         gl.FLOAT, // Type of elements
-         false,
-         6 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
-         2 * Float32Array.BYTES_PER_ELEMENT // Offset from the beginning of a single vertex to this attribute
-      );
-      gl.vertexAttribPointer(
-         imageRenderingProgramRednessAttribLocation, // Attribute location
-         1, // Number of elements per attribute
-         gl.FLOAT, // Type of elements
-         false,
-         6 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
-         4 * Float32Array.BYTES_PER_ELEMENT // Offset from the beginning of a single vertex to this attribute
-      );
-      gl.vertexAttribPointer(
-         imageRenderingProgramTextureIdxAttribLocation, // Attribute location
-         1, // Number of elements per attribute
-         gl.FLOAT, // Type of elements
-         false,
-         6 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
-         5 * Float32Array.BYTES_PER_ELEMENT // Offset from the beginning of a single vertex to this attribute
-      );
+      gl.vertexAttribPointer(imageRenderingProgramPosAttribLocation, 2, gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 0);
+      gl.vertexAttribPointer(imageRenderingProgramTexCoordAttribLocation, 2, gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(imageRenderingProgramRednessAttribLocation, 1, gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(imageRenderingProgramTextureIdxAttribLocation, 1, gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
 
-      gl.uniform1iv(imageRenderingProgramTexturesUniformLocation, indexedTextureSources.map((_, idx) => idx));
+      gl.uniform1iv(imageRenderingProgramTexturesUniformLocation, usedTextureSources.map((_, idx) => idx));
       
       // Enable the attributes
       gl.enableVertexAttribArray(imageRenderingProgramPosAttribLocation);
@@ -466,8 +433,8 @@ const renderImageRenderParts = (imageRenderParts: CategorisedImageRenderParts, c
       gl.enableVertexAttribArray(imageRenderingProgramTextureIdxAttribLocation);
       
       // Set all texture units
-      for (let i = 0; i < indexedTextureSources.length; i++) {
-         const textureSource = indexedTextureSources[i];
+      for (let i = 0; i < usedTextureSources.length; i++) {
+         const textureSource = usedTextureSources[i];
          const texture = getTexture("entities/" + textureSource);
          gl.activeTexture(gl.TEXTURE0 + i);
          gl.bindTexture(gl.TEXTURE_2D, texture);

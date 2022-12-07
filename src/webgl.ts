@@ -45,7 +45,24 @@ export function createWebGLContext(): void {
 
    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
-   MAX_ACTIVE_TEXTURE_UNITS = gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS);
+   MAX_ACTIVE_TEXTURE_UNITS = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
+}
+
+const shaderStrings = new Array<string>();
+const shaderStringCallbacks = new Array<(shaderString: string) => void>();
+
+export function createShaderString(shaderString: string, callback: (shaderString: string) => void): void {
+   shaderStrings.push(shaderString);
+   shaderStringCallbacks.push(callback);
+}
+
+export function createShaderStrings(): void {
+   for (let i = 0; i < shaderStrings.length; i++) {
+      const unprocessedShaderString = shaderStrings[i];
+      // Replace all instances of "__MAX_ACTIVE_TEXTURE_UNITS__" with the actual max active texture units.
+      const shaderString = unprocessedShaderString.split("__MAX_ACTIVE_TEXTURE_UNITS__").join(MAX_ACTIVE_TEXTURE_UNITS.toString());
+      shaderStringCallbacks[i](shaderString);
+   }
 }
 
 export function createWebGLProgram(vertexShaderText: string, fragmentShaderText: string): WebGLProgram {

@@ -11,7 +11,7 @@ import Client, { GameData } from "./client/Client";
 import { calculateCursorWorldPosition, handleMouseMovement, renderCursorTooltip } from "./mouse";
 import { updateDevEntityViewer } from "./components/DevEntityViewer";
 import OPTIONS from "./options";
-import { createWebGLContext, createWebGLProgram, gl, resizeCanvas } from "./webgl";
+import { createShaderStrings, createWebGLContext, createWebGLProgram, gl, resizeCanvas } from "./webgl";
 import { loadTextures } from "./textures";
 import { hidePauseScreen, showPauseScreen, toggleSettingsMenu } from "./components/game/GameScreen";
 import { getGameState } from "./components/App";
@@ -134,6 +134,7 @@ abstract class Game {
     */
    public static async initialise(gameData: GameData, username: string): Promise<void> {
       createWebGLContext();
+      createShaderStrings();
       createTextCanvasContext();
       
       this.board = new Board(gameData.tiles);
