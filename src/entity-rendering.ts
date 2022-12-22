@@ -1,12 +1,10 @@
 import { EntityType, Point, rotatePoint } from "webgl-test-shared";
 import Camera from "./Camera";
-import CLIENT_SETTINGS from "./client-settings";
 import Entity from "./entities/Entity";
 import Game from "./Game";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import OPTIONS from "./options";
-import CircleRenderPart from "./render-parts/CircleRenderPart";
-import ImageRenderPart from "./render-parts/ImageRenderPart";
+import RenderPart from "./render-parts/RenderPart";
 import { getTexture } from "./textures";
 import { createShaderString, createWebGLProgram, gl, MAX_ACTIVE_TEXTURE_UNITS, windowHeight, windowWidth } from "./webgl";
 
@@ -68,32 +66,6 @@ void main() {
 });
 
 // 
-// Circle shaders
-// 
-const circleVertexShaderText = `
-precision mediump float;
-
-attribute vec2 vertPosition;
-attribute vec4 vertColour;
-
-varying vec4 fragColour;
-
-void main() {
-   fragColour = vertColour;
-   gl_Position = vec4(vertPosition, 0, 1);
-}
-`;
-const circleFragmentShaderText = `
-precision mediump float;
-
-varying vec4 fragColour;
-
-void main() {
-   gl_FragColor = fragColour;
-}
-`;
-
-// 
 // Hitbox shaders
 // 
 const hitboxVertexShaderText = `
@@ -115,7 +87,6 @@ void main() {
 
 let imageRenderingProgram: WebGLProgram;
 let hitboxProgram: WebGLProgram;
-let circleProgram: WebGLProgram;
 
 let imageRenderingProgramTexturesUniformLocation: WebGLUniformLocation;
 let imageRenderingProgramPosAttribLocation: GLint;
@@ -126,7 +97,6 @@ let imageRenderingProgramTextureIdxAttribLocation: GLint;
 export function createEntityShaders(): void {
    imageRenderingProgram = createWebGLProgram(entityRenderingVertexShaderText, entityRenderingFragmentShaderText);
    hitboxProgram = createWebGLProgram(hitboxVertexShaderText, hitboxFragmentShaderText);
-   circleProgram = createWebGLProgram(circleVertexShaderText, circleFragmentShaderText);
 
    imageRenderingProgramTexturesUniformLocation = gl.getUniformLocation(imageRenderingProgram, "u_textures")!;
    imageRenderingProgramPosAttribLocation = gl.getAttribLocation(imageRenderingProgram, "a_position");
@@ -139,41 +109,43 @@ export function createEntityShaders(): void {
  * Calculates all entities which are visible to the screen to increase efficiency
  * NOTE: Not perfectly accurate sometimes entities which are just not visible to the screen are rendered
 */
-const calculateVisibleEntities = (): ReadonlyArray<Entity> => {
-   const visibleEntities = new Array<Entity>();
+const calculateVisibleEntities = (): Set<Entity> => {
+   const visibleEntities = new Set<Entity>();
 
    for (const entity of Object.values(Game.board.entities)) {
       const screenXPos = Camera.calculateXScreenPos(entity.renderPosition.x);
       const screenYPos = Camera.calculateYScreenPos(entity.renderPosition.y);
       
-      switch (entity.hitbox.info.type) {
-         case "circular": {
-            if (!(screenXPos + entity.hitbox.info.radius < 0 ||
-               screenXPos - entity.hitbox.info.radius >= windowWidth ||
-               screenYPos + entity.hitbox.info.radius < 0 ||
-               screenYPos - entity.hitbox.info.radius >= windowHeight)) {
-               visibleEntities.push(entity);
+      for (const hitbox of entity.hitboxes) {
+         switch (hitbox.info.type) {
+            case "circular": {
+               if (!(screenXPos + hitbox.info.radius < 0 ||
+                  screenXPos - hitbox.info.radius >= windowWidth ||
+                  screenYPos + hitbox.info.radius < 0 ||
+                  screenYPos - hitbox.info.radius >= windowHeight)) {
+                  visibleEntities.add(entity);
+               }
+               
+               break;
             }
-            
-            break;
-         }
-         case "rectangular": {
-            const halfDiagonalLength = (entity.hitbox as RectangularHitbox).halfDiagonalLength;
-            if (screenXPos >= -halfDiagonalLength && 
-            screenXPos < windowWidth + halfDiagonalLength &&
-            screenYPos >= -halfDiagonalLength &&
-            screenYPos < windowHeight + halfDiagonalLength) {
-               visibleEntities.push(entity);
+            case "rectangular": {
+               const halfDiagonalLength = (hitbox as RectangularHitbox).halfDiagonalLength;
+               if (screenXPos >= -halfDiagonalLength && 
+               screenXPos < windowWidth + halfDiagonalLength &&
+               screenYPos >= -halfDiagonalLength &&
+               screenYPos < windowHeight + halfDiagonalLength) {
+                  visibleEntities.add(entity);
+               }
+               break;
             }
-            break;
-         }
+         } 
       }
    }
 
    return visibleEntities;
 }
 
-const calculateImageRenderPartCornerPositions = (entity: Entity, renderPart: ImageRenderPart): [tl: Point, tr: Point, bl: Point, br: Point] => {
+const calculateRenderPartCornerPositions = (entity: Entity, renderPart: RenderPart): [tl: Point, tr: Point, bl: Point, br: Point] => {
    let renderPartPosition = entity.renderPosition.copy();
    
    // Add any offset
@@ -184,8 +156,7 @@ const calculateImageRenderPartCornerPositions = (entity: Entity, renderPart: Ima
       } else {
          offset = renderPart.offset;
       }
-
-      renderPartPosition = renderPartPosition.add(offset);
+      renderPartPosition.add(offset);
    }
 
    // Calculate the positions of the corners
@@ -209,31 +180,6 @@ const calculateImageRenderPartCornerPositions = (entity: Entity, renderPart: Ima
    return [topLeft, topRight, bottomLeft, bottomRight];
 }
 
-const calculateCircleVertices = (position: Point, radius: number, rgba: [number, number, number, number]): Array<number> => {
-   const triangleVertices = new Array<number>();
-
-   // Add the center point
-   const centerX = Camera.calculateXCanvasPosition(position.x);
-   const centerY = Camera.calculateYCanvasPosition(position.y);
-   triangleVertices.push(centerX, centerY, ...rgba);
-
-   // Add the outer vertices
-   for (let n = 0; n <= CLIENT_SETTINGS.CIRCLE_DETAIL; n++) {
-      const radians = 2 * Math.PI / CLIENT_SETTINGS.CIRCLE_DETAIL * n;
-
-      // Trig shenanigans to get x and y coords
-      const worldX = Math.cos(radians) * radius + position.x;
-      const worldY = Math.sin(radians) * radius + position.y;
-      
-      const screenX = Camera.calculateXCanvasPosition(worldX);
-      const screenY = Camera.calculateYCanvasPosition(worldY);
-      
-      triangleVertices.push(screenX, screenY, ...rgba);
-   }
-
-   return triangleVertices;
-}
-
 type ImageRenderPartCornerPositions = Partial<{
    [T in EntityType]: {
       [zIndex: number]: {
@@ -245,32 +191,26 @@ type ImageRenderPartCornerPositions = Partial<{
 }>;
 
 // BURN IT WITH FIRE
-type CategorisedImageRenderParts = Partial<{
+type CategorisedRenderParts = Partial<{
    [T in EntityType]: Array<{
       [textureSource: string]: {
-         [entityID: number]: ImageRenderPart;
+         [entityID: number]: RenderPart;
       };
    }>;
 }>;
 
-type CategorisedRenderParts = {
-   readonly imageRenderParts: CategorisedImageRenderParts;
-   readonly circleRenderParts: Array<[Entity, CircleRenderPart]>;
-};
-
 export function renderEntities(): void {
    // Find visible entities
    const visibleEntities = calculateVisibleEntities();
+   if (visibleEntities.size === 0) return;
 
-   if (visibleEntities.length === 0) return;
-
-   // Classify all render parts into their different major features
+   // Classify all render parts
    const categorisedRenderParts = categoriseEntitiesByRenderPart(visibleEntities);
 
    // Four nested for loops... oops
    // Calculate the corner positions for all image render parts
    const imageRenderPartCornerPositionsRecord: ImageRenderPartCornerPositions = {};
-   for (const [ entityType, indexedRenderParts ] of Object.entries(categorisedRenderParts.imageRenderParts)) {
+   for (const [ entityType, indexedRenderParts ] of Object.entries(categorisedRenderParts)) {
       imageRenderPartCornerPositionsRecord[entityType as EntityType] = {};
       
       for (let zIndex = 0; zIndex < indexedRenderParts.length; zIndex++) {
@@ -280,17 +220,16 @@ export function renderEntities(): void {
          for (const [textureSource, imageRenderParts] of Object.entries(textureRecord)) {
             imageRenderPartCornerPositionsRecord[entityType as EntityType]![zIndex][textureSource] = {};
             
-            for (const [entityID, imageRenderPart] of Object.entries(imageRenderParts) as unknown as ReadonlyArray<[number, ImageRenderPart]>) {
+            for (const [entityID, imageRenderPart] of Object.entries(imageRenderParts) as unknown as ReadonlyArray<[number, RenderPart]>) {
                const entity = Game.board.entities[entityID];
-               const cornerPositions = calculateImageRenderPartCornerPositions(entity, imageRenderPart);
+               const cornerPositions = calculateRenderPartCornerPositions(entity, imageRenderPart);
                imageRenderPartCornerPositionsRecord[entityType as EntityType]![zIndex][textureSource][entityID] = cornerPositions;
             }
          }
       }
    }
 
-   renderImageRenderParts(categorisedRenderParts.imageRenderParts, imageRenderPartCornerPositionsRecord);
-   renderCircleRenderParts(categorisedRenderParts.circleRenderParts);
+   renderRenderParts(categorisedRenderParts, imageRenderPartCornerPositionsRecord);
 
    if (OPTIONS.showEntityHitboxes) {
       renderEntityHitboxes();
@@ -298,52 +237,39 @@ export function renderEntities(): void {
 }
 
 /** Sort the render parts based on their textures */
-const categoriseEntitiesByRenderPart = (visibleEntities: ReadonlyArray<Entity>): CategorisedRenderParts => {
-   const categorisedEntities: CategorisedRenderParts = {
-      imageRenderParts: {},
-      circleRenderParts: []
-   };
+const categoriseEntitiesByRenderPart = (visibleEntities: ReadonlySet<Entity>): CategorisedRenderParts => {
+   const categorisedRenderParts: CategorisedRenderParts = {};
 
    for (const entity of visibleEntities) {
-      let imageRenderPartIndexInArray = 0;
+      let renderPartIndexInArray = 0;
       for (let idx = 0; idx < entity.renderParts.length; idx++) {
          const renderPart = entity.renderParts[idx];
-         switch (renderPart.type) {
-            case "circle": {
-               categorisedEntities.circleRenderParts.push([entity, renderPart as CircleRenderPart]);
-               break;
-            }
-            case "image": {
-               // If the entity is of a new entity type, add it to the record
-               if (!categorisedEntities.imageRenderParts.hasOwnProperty(entity.type)) {
-                  categorisedEntities.imageRenderParts[entity.type] = new Array<{ [textureSource: string]: Array<ImageRenderPart>; }>();
-               }
-
-               const renderParts = categorisedEntities.imageRenderParts[entity.type]!;
-
-               // Create the indexed array element if it isn't present
-               if (typeof renderParts[imageRenderPartIndexInArray] === "undefined") {
-                  renderParts[imageRenderPartIndexInArray] = {};
-               }
-
-               // Create the texture source index if it isn't present
-               const textureSource = (renderPart as ImageRenderPart).textureSrc;
-               if (!renderParts[imageRenderPartIndexInArray].hasOwnProperty(textureSource)) {
-                  renderParts[imageRenderPartIndexInArray][textureSource] = {};
-               }
-
-               // Add render part
-               renderParts[imageRenderPartIndexInArray][textureSource][entity.id] = renderPart as ImageRenderPart;
-
-               imageRenderPartIndexInArray++;
-               
-               break;
-            }
+         
+         // If the entity is of a new entity type, add it to the record
+         if (!categorisedRenderParts.hasOwnProperty(entity.type)) {
+            categorisedRenderParts[entity.type] = new Array<{ [textureSource: string]: Array<RenderPart>; }>();
          }
+
+         const renderParts = categorisedRenderParts[entity.type]!;
+
+         // Create the indexed array element if it isn't present
+         if (typeof renderParts[renderPartIndexInArray] === "undefined") {
+            renderParts[renderPartIndexInArray] = {};
+         }
+
+         // Create the texture source index if it isn't present
+         if (!renderParts[renderPartIndexInArray].hasOwnProperty(renderPart.textureSource)) {
+            renderParts[renderPartIndexInArray][renderPart.textureSource] = {};
+         }
+
+         // Add render part
+         renderParts[renderPartIndexInArray][renderPart.textureSource][entity.id] = renderPart;
+
+         renderPartIndexInArray++;
       }
    }
 
-   return categorisedEntities;
+   return categorisedRenderParts;
 }
 
 /** Amount of seconds that the hit flash occurs for */
@@ -357,7 +283,7 @@ const calculateEntityRedness = (entity: Entity): number => {
    return MAX_REDNESS * (1 - entity.secondsSinceLastHit / ATTACK_HIT_FLASH_DURATION);
 }
 
-const renderImageRenderParts = (imageRenderParts: CategorisedImageRenderParts, cornerPositionsRecord: ImageRenderPartCornerPositions): void => {
+const renderRenderParts = (renderParts: CategorisedRenderParts, cornerPositionsRecord: ImageRenderPartCornerPositions): void => {
    // 
    // Calculate vertices
    // 
@@ -365,7 +291,7 @@ const renderImageRenderParts = (imageRenderParts: CategorisedImageRenderParts, c
    let numTextureUnitsUsed = 0;
    const vertexArrays = new Array<Array<number>>();
    const textureSources = new Array<string>();
-   for (const [entityType, indexedArray] of Object.entries(imageRenderParts) as ReadonlyArray<[EntityType, Array<{ [textureSource: string]: { [entityID: number]: ImageRenderPart; }; }>]>) {
+   for (const [entityType, indexedArray] of Object.entries(renderParts) as ReadonlyArray<[EntityType, Array<{ [textureSource: string]: { [entityID: number]: RenderPart; }; }>]>) {
       for (let zIndex = 0; zIndex < indexedArray.length; zIndex++) {
          const textureRecord = indexedArray[zIndex];
          for (const [textureSource, renderParts] of Object.entries(textureRecord)) {
@@ -375,7 +301,7 @@ const renderImageRenderParts = (imageRenderParts: CategorisedImageRenderParts, c
             
             // Calculate vertices for all render parts in the record
             const vertices = new Array<number>();
-            for (const [entityID, renderPart] of Object.entries(renderParts) as unknown as ReadonlyArray<[number, ImageRenderPart]>) {
+            for (const entityID of Object.keys(renderParts) as unknown as ReadonlyArray<number>) {
                const entity = Game.board.entities[entityID];
                
                const redness = calculateEntityRedness(entity);
@@ -448,115 +374,77 @@ const renderImageRenderParts = (imageRenderParts: CategorisedImageRenderParts, c
    gl.blendFunc(gl.ONE, gl.ZERO);
 }
 
-const renderCircleRenderParts = (renderParts: ReadonlyArray<[Entity, CircleRenderPart]>): void => {
-   gl.useProgram(circleProgram);
-
-   // Calculate vertices
-   for (const [entity, renderPart] of renderParts) {
-      const vertices = calculateCircleVertices(entity.renderPosition, renderPart.radius, renderPart.rgba);
-
-      const buffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-   
-      const positionAttribLocation = gl.getAttribLocation(circleProgram, "vertPosition");
-      const colourAttribLocation = gl.getAttribLocation(circleProgram, "vertColour");
-      
-      gl.vertexAttribPointer(
-         positionAttribLocation, // Attribute location
-         2, // Number of elements per attribute
-         gl.FLOAT, // Type of elements
-         false,
-         6 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
-         0 // Offset from the beginning of a single vertex to this attribute
-      );
-      gl.vertexAttribPointer(
-         colourAttribLocation, // Attribute location
-         4, // Number of elements per attribute
-         gl.FLOAT, // Type of elements
-         false,
-         6 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
-         2 * Float32Array.BYTES_PER_ELEMENT // Offset from the beginning of a single vertex to this attribute
-      );
-   
-      // Enable the attributes
-      gl.enableVertexAttribArray(positionAttribLocation);
-      gl.enableVertexAttribArray(colourAttribLocation);
-   
-      // Draw the tile
-      gl.drawArrays(gl.TRIANGLE_FAN, 0, CLIENT_SETTINGS.CIRCLE_DETAIL + 2);
-   }
-}
-
 const renderEntityHitboxes = (): void => {
    gl.useProgram(hitboxProgram);
 
    // Calculate vertices
    const vertices = new Array<number>();
    for (const entity of Object.values(Game.board.entities)) {
-      switch (entity.hitbox.info.type) {
-         case "rectangular": {
-            const x1 = entity.renderPosition.x - entity.hitbox.info.width / 2;
-            const x2 = entity.renderPosition.x + entity.hitbox.info.width / 2;
-            const y1 = entity.renderPosition.y - entity.hitbox.info.height / 2;
-            const y2 = entity.renderPosition.y + entity.hitbox.info.height / 2;
-
-            let topLeft = new Point(x1, y2);
-            let topRight = new Point(x2, y2);
-            let bottomRight = new Point(x2, y1);
-            let bottomLeft = new Point(x1, y1);
-
-            // Rotate the points to match the entity's rotation
-            topLeft = rotatePoint(topLeft, entity.renderPosition, entity.rotation);
-            topRight = rotatePoint(topRight, entity.renderPosition, entity.rotation);
-            bottomRight = rotatePoint(bottomRight, entity.renderPosition, entity.rotation);
-            bottomLeft = rotatePoint(bottomLeft, entity.renderPosition, entity.rotation);
-
-            topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));
-            topRight = new Point(Camera.calculateXCanvasPosition(topRight.x), Camera.calculateYCanvasPosition(topRight.y));
-            bottomRight = new Point(Camera.calculateXCanvasPosition(bottomRight.x), Camera.calculateYCanvasPosition(bottomRight.y));
-            bottomLeft = new Point(Camera.calculateXCanvasPosition(bottomLeft.x), Camera.calculateYCanvasPosition(bottomLeft.y));
-
-            vertices.push(
-               topLeft.x, topLeft.y,
-               topRight.x, topRight.y,
-               topRight.x, topRight.y,
-               bottomRight.x, bottomRight.y,
-               bottomRight.x, bottomRight.y,
-               bottomLeft.x, bottomLeft.y,
-               bottomLeft.x, bottomLeft.y,
-               topLeft.x, topLeft.y
-            );
-            break;
-         }
-         case "circular": {
-            const CIRCLE_VERTEX_COUNT = 10;
-
-            const step = 2 * Math.PI / CIRCLE_VERTEX_COUNT;
-
-            let previousX: number;
-            let previousY: number;
-         
-            // Add the outer vertices
-            for (let radians = 0, n = 0; n <= CIRCLE_VERTEX_COUNT; radians += step, n++) {
-               if (n > 1) {
-                  vertices.push(previousX!, previousY!);
-               }
-
-               // Trig shenanigans to get x and y coords
-               const worldX = Math.cos(radians) * entity.hitbox.info.radius + entity.renderPosition.x;
-               const worldY = Math.sin(radians) * entity.hitbox.info.radius + entity.renderPosition.y;
-               
-               const screenX = Camera.calculateXCanvasPosition(worldX);
-               const screenY = Camera.calculateYCanvasPosition(worldY);
-               
-               vertices.push(screenX, screenY);
-
-               previousX = screenX;
-               previousY = screenY;
+      for (const hitbox of entity.hitboxes) {
+         switch (hitbox.info.type) {
+            case "rectangular": {
+               const x1 = entity.renderPosition.x - hitbox.info.width / 2;
+               const x2 = entity.renderPosition.x + hitbox.info.width / 2;
+               const y1 = entity.renderPosition.y - hitbox.info.height / 2;
+               const y2 = entity.renderPosition.y + hitbox.info.height / 2;
+   
+               let topLeft = new Point(x1, y2);
+               let topRight = new Point(x2, y2);
+               let bottomRight = new Point(x2, y1);
+               let bottomLeft = new Point(x1, y1);
+   
+               // Rotate the points to match the entity's rotation
+               topLeft = rotatePoint(topLeft, entity.renderPosition, entity.rotation);
+               topRight = rotatePoint(topRight, entity.renderPosition, entity.rotation);
+               bottomRight = rotatePoint(bottomRight, entity.renderPosition, entity.rotation);
+               bottomLeft = rotatePoint(bottomLeft, entity.renderPosition, entity.rotation);
+   
+               topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));
+               topRight = new Point(Camera.calculateXCanvasPosition(topRight.x), Camera.calculateYCanvasPosition(topRight.y));
+               bottomRight = new Point(Camera.calculateXCanvasPosition(bottomRight.x), Camera.calculateYCanvasPosition(bottomRight.y));
+               bottomLeft = new Point(Camera.calculateXCanvasPosition(bottomLeft.x), Camera.calculateYCanvasPosition(bottomLeft.y));
+   
+               vertices.push(
+                  topLeft.x, topLeft.y,
+                  topRight.x, topRight.y,
+                  topRight.x, topRight.y,
+                  bottomRight.x, bottomRight.y,
+                  bottomRight.x, bottomRight.y,
+                  bottomLeft.x, bottomLeft.y,
+                  bottomLeft.x, bottomLeft.y,
+                  topLeft.x, topLeft.y
+               );
+               break;
             }
-
-            break;
+            case "circular": {
+               const CIRCLE_VERTEX_COUNT = 10;
+   
+               const step = 2 * Math.PI / CIRCLE_VERTEX_COUNT;
+   
+               let previousX: number;
+               let previousY: number;
+            
+               // Add the outer vertices
+               for (let radians = 0, n = 0; n <= CIRCLE_VERTEX_COUNT; radians += step, n++) {
+                  if (n > 1) {
+                     vertices.push(previousX!, previousY!);
+                  }
+   
+                  // Trig shenanigans to get x and y coords
+                  const worldX = Math.cos(radians) * hitbox.info.radius + entity.renderPosition.x;
+                  const worldY = Math.sin(radians) * hitbox.info.radius + entity.renderPosition.y;
+                  
+                  const screenX = Camera.calculateXCanvasPosition(worldX);
+                  const screenY = Camera.calculateYCanvasPosition(worldY);
+                  
+                  vertices.push(screenX, screenY);
+   
+                  previousX = screenX;
+                  previousY = screenY;
+               }
+   
+               break;
+            }
          }
       }
    }

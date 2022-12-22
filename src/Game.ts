@@ -1,21 +1,24 @@
 import Board from "./Board";
 import Player from "./entities/Player";
-import { isDev } from "./utils";
+import { isDev, sleep } from "./utils";
 import { renderPlayerNames, createTextCanvasContext } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/ChatBox";
-import { lerp, Point, randInt, SETTINGS } from "webgl-test-shared";
+import { HitboxType, InitialGameDataPacket, lerp, Point, SETTINGS } from "webgl-test-shared";
 import { calculateEntityRenderValues, setFrameProgress } from "./entities/Entity";
 import { createEntityShaders, renderEntities } from "./entity-rendering";
-import Client, { GameData } from "./client/Client";
+import Client from "./client/Client";
 import { calculateCursorWorldPosition, handleMouseMovement, renderCursorTooltip } from "./mouse";
-import { updateDevEntityViewer } from "./components/DevEntityViewer";
+import { updateDevEntityViewer } from "./components/game/DevEntityViewer";
 import OPTIONS from "./options";
 import { createShaderStrings, createWebGLContext, createWebGLProgram, gl, resizeCanvas } from "./webgl";
 import { loadTextures } from "./textures";
 import { hidePauseScreen, showPauseScreen, toggleSettingsMenu } from "./components/game/GameScreen";
 import { getGameState } from "./components/App";
 import { clearPressedKeys } from "./keyboard-input";
+import Hitbox from "./hitboxes/Hitbox";
+import CircularHitbox from "./hitboxes/CircularHitbox";
+import { updateDebugScreenCurrentTime, updateDebugScreenFPS, updateDebugScreenTicks } from "./components/game/DebugScreen";
 
 const nightVertexShaderText = `
 precision mediump float;
@@ -63,6 +66,9 @@ const createEventListeners = (): void => {
    window.addEventListener("mousedown", () => Player.attack());
 }
 
+let lastRenderTime = Math.floor(new Date().getTime() / 1000);
+let numRenders = 0;
+
 abstract class Game {
    private static readonly NIGHT_DARKNESS = 0.6;
 
@@ -92,10 +98,17 @@ abstract class Game {
    public static setTicks(ticks: number): void {
       this.ticks = ticks;
       this.time = (this.ticks * SETTINGS.TIME_PASS_RATE / SETTINGS.TPS / 3600) % 24;
+
+      if (typeof updateDebugScreenCurrentTime !== "undefined") {
+         updateDebugScreenCurrentTime(this.time);
+      }
+      if (typeof updateDebugScreenTicks !== "undefined") {
+         updateDebugScreenTicks(this.ticks);
+      }
    }
 
    /** Starts the game */
-   public static async start(): Promise<void> {
+   public static start(): void {
       this.nightProgram = createWebGLProgram(nightVertexShaderText, nightFragmentShaderText);
       this.nightProgramVertPosAttribLocation = gl.getAttribLocation(this.nightProgram, "a_vertPosition");
       this.nightProgramDarkenFactorUniformLocation = gl.getUniformLocation(this.nightProgram, "u_darkenFactor")!;
@@ -132,23 +145,30 @@ abstract class Game {
    /**
     * Prepares the game to be played. Called once just before the game starts.
     */
-   public static async initialise(gameData: GameData, username: string): Promise<void> {
+   public static async initialise(initialGameDataPacket: InitialGameDataPacket, username: string): Promise<void> {
       createWebGLContext();
       createShaderStrings();
       createTextCanvasContext();
-      
-      this.board = new Board(gameData.tiles);
+
+      const tiles = Client.parseServerTileDataArray(initialGameDataPacket.tiles);
+      this.board = new Board(tiles);
 
       // Spawn the player
       Player.instance = null;
-      const x = randInt(0, SETTINGS.BOARD_SIZE * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
-      const y = randInt(0, SETTINGS.BOARD_SIZE * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE);
-      const playerSpawnPosition = new Point(x, y);
-      new Player(playerSpawnPosition, gameData.playerID, null, username);
+      const playerSpawnPosition = new Point(initialGameDataPacket.spawnPosition[0], initialGameDataPacket.spawnPosition[1]);
+      const hitboxes = new Set<Hitbox<HitboxType>>([
+         new CircularHitbox({
+            type: "circular",
+            radius: 32
+         })
+      ]);
+      new Player(playerSpawnPosition, hitboxes, initialGameDataPacket.playerID, null, username);
 
       createEntityShaders();
       
       await loadTextures();
+
+      Client.unloadGameDataPacket(initialGameDataPacket);
    }
 
    private static update(): void {
@@ -165,6 +185,14 @@ abstract class Game {
     * @param frameProgress How far the game is into the current frame (0 = frame just started, 0.99 means frame is about to end)
     */
    private static render(frameProgress: number): void {
+      const currentRenderTime = Math.floor(new Date().getTime() / 1000);
+      numRenders++;
+      if (currentRenderTime !== lastRenderTime) {
+         updateDebugScreenFPS(numRenders);
+         numRenders = 0;
+      }
+      lastRenderTime = currentRenderTime;
+
       // Clear the canvas
       gl.clearColor(1, 1, 1, 1);
       gl.clear(gl.COLOR_BUFFER_BIT);
@@ -228,32 +256,24 @@ abstract class Game {
          const currentTime = new Date().getTime();
          const deltaTime = currentTime - this.lastTime;
          this.lastTime = currentTime;
-
-         // Send client info
-         let shouldSendClientInfo = false;
-         this.clientInformationTimer -= deltaTime;
-         while (this.clientInformationTimer < 0) {
-            shouldSendClientInfo = true;
-            this.clientInformationTimer += 1 / SETTINGS.TPS;
-         }
-         if (shouldSendClientInfo) {
-            Client.sendPlayerDataPacket();
-         }
          
          // Update
          this.lag += deltaTime;
          while (this.lag >= 1000 / SETTINGS.TPS) {
             this.update();
+            Client.sendPlayerDataPacket();
             this.lag -= 1000 / SETTINGS.TPS;
          }
          
-         // Render the game and extrapolate positions using the amount of lag (frame progress)
          const frameProgress = this.lag / 1000 * SETTINGS.TPS;
          this.render(frameProgress);
       }
 
       if (this.isRunning) {
-         requestAnimationFrame(() => this.main());
+         // Can't use setTimeout as it is unreasonably slow when called lots of times
+         sleep(3).then(() => {
+            this.main();
+         });
       }
    }
 }

@@ -1,7 +1,7 @@
 import { useEffect, useReducer, useState } from "react";
 import { roundNum } from "webgl-test-shared";
-import CLIENT_ENTITY_INFO_RECORD from "../client-entity-info";
-import Entity from "../entities/Entity";
+import CLIENT_ENTITY_INFO_RECORD from "../../client-entity-info";
+import Entity from "../../entities/Entity";
 
 export let updateDevEntityViewer: (entity?: Entity | null) => void;
 
@@ -11,10 +11,6 @@ const DevEntityViewer = () => {
 
    useEffect(() => {
       updateDevEntityViewer = (entity?: Entity | null): void => {
-         if (typeof entity !== "undefined" && entity !== null && entity.velocity !== null) {
-            // console.log(entity);
-         }
-
          if (typeof entity !== "undefined") {
             setEntity(entity);
          } else {
@@ -33,7 +29,21 @@ const DevEntityViewer = () => {
    const displayVelocityMagnitude = entity.velocity !== null ? roundNum(entity.velocity.magnitude, 0) : 0;
    const displayAccelerationMagnitude = entity.acceleration !== null ? roundNum(entity.acceleration.magnitude, 0) : 0;
 
-   const chunks = entity.chunks.map(chunk => `${chunk.x} ${chunk.y}`);
+   const chunks = Array.from(entity.chunks).map(chunk => `${chunk.x}-${chunk.y}`);
+   const chunkDisplayText = chunks.reduce((previousValue, chunk, idx) => {
+      const newItems = previousValue.slice();
+      newItems.push(
+         <span key={idx} className="highlight">{chunk}</span>
+      );
+
+      if (idx < chunks.length - 1) {
+         newItems.push(
+            ", "
+         );
+      }
+
+      return newItems;
+   }, [] as Array<JSX.Element | string>);
 
    return <div id="dev-entity-viewer">
       <div className="title">{clientEntityInfo.name}<span className="id">#{entity.id}</span></div>
@@ -43,7 +53,7 @@ const DevEntityViewer = () => {
       <p>Velocity: <span className="highlight">{displayVelocityMagnitude}</span></p>
       <p>Acceleration: <span className="highlight">{displayAccelerationMagnitude}</span></p>
 
-      <p>Chunks: <span className="highlight">{chunks.join(", ")}</span></p>
+      <p>Chunks: {chunkDisplayText}</p>
 
       {typeof entity.special !== "undefined" ? <>
          <br />

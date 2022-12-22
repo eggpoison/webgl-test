@@ -3,7 +3,7 @@ import { Point } from "webgl-test-shared";
 import CLIENT_ENTITY_INFO_RECORD from "../client-entity-info";
 import Entity from "../entities/Entity";
 import { isDev } from "../utils";
-import { updateDevEntityViewer } from "./DevEntityViewer";
+import { updateDevEntityViewer } from "./game/DevEntityViewer";
 
 export let updateCursorTooltipTarget: (entity: Entity | null, screenPosition: Point | null) => void;
 

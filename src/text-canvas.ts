@@ -1,12 +1,11 @@
 import Camera from "./Camera";
 import Player from "./entities/Player";
 import Game from "./Game";
-import CircularHitbox from "./hitboxes/CircularHitbox";
 import { halfWindowHeight, halfWindowWidth, windowHeight, windowWidth } from "./webgl";
 
 let ctx: CanvasRenderingContext2D;
 
-const NAMETAG_Y_OFFSET = 5;
+const NAMETAG_Y_OFFSET = 21;
 
 export function createTextCanvasContext(): void {
    const textCanvas = document.getElementById("text-canvas") as HTMLCanvasElement;
@@ -31,7 +30,7 @@ export function renderPlayerNames(): void {
       if (entity instanceof Player && entity !== Player.instance) {
          // Calculate the position of the text
          let drawPosition = entity.renderPosition.copy();
-         drawPosition.y += (entity.hitbox as CircularHitbox).info.radius + NAMETAG_Y_OFFSET;
+         drawPosition.y += NAMETAG_Y_OFFSET;
 
          // Calculate position in camera
          const cameraX = getXPosInCamera(drawPosition.x);

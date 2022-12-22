@@ -1,16 +1,23 @@
 import { Point } from "webgl-test-shared";
 
 export interface RenderPartInfo {
-   readonly type: "image" | "circle";
    readonly offset?: Point | (() => Point);
+   readonly width: number;
+   readonly height: number;
+   readonly textureSource: string;
 }
 
-abstract class RenderPart<T extends RenderPartInfo> implements RenderPartInfo {
-   public abstract readonly type: "image" | "circle";
+class RenderPart implements RenderPartInfo {
    public readonly offset?: Point | (() => Point);
+   public readonly width: number;
+   public readonly height: number;
+   public readonly textureSource: string;
    
-   constructor(renderPartInfo: T) {
+   constructor(renderPartInfo: RenderPartInfo) {
       this.offset = renderPartInfo.offset;
+      this.width = renderPartInfo.width;
+      this.height = renderPartInfo.height;
+      this.textureSource = renderPartInfo.textureSource;
    }
 }
 

@@ -65,7 +65,7 @@ export function createShaderStrings(): void {
    }
 }
 
-export function createWebGLProgram(vertexShaderText: string, fragmentShaderText: string): WebGLProgram {
+export function createWebGLProgram(vertexShaderText: string, fragmentShaderText: string, attrib0Name?: string): WebGLProgram {
    // Create shaders
    const vertexShader = gl.createShader(gl.VERTEX_SHADER)!;
    const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER)!;
@@ -83,10 +83,19 @@ export function createWebGLProgram(vertexShaderText: string, fragmentShaderText:
       throw new Error("ERROR compiling fragment shader! " + gl.getShaderInfoLog(fragmentShader));
    }
 
-   // Create a program and attach the shaders to the program
+   // 
+   // Create the program and attach shaders to the program
+   // 
+
    const program = gl.createProgram()!;
+
    gl.attachShader(program, vertexShader);
    gl.attachShader(program, fragmentShader);
+
+   if (typeof attrib0Name !== "undefined") {
+      gl.bindAttribLocation(program, 0, attrib0Name);
+   }
+
    gl.linkProgram(program);
    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
       throw new Error("ERROR linking program! " + gl.getProgramInfoLog(program));

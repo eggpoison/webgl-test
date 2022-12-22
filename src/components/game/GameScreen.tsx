@@ -1,17 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Game from "../../Game";
+import { addKeyListener } from "../../keyboard-input";
+import { isDev } from "../../utils";
 import ChatBox from "../ChatBox";
 import CursorTooltip from "../CursorTooltip";
-import DevEntityViewer from "../DevEntityViewer";
+import DevEntityViewer from "./DevEntityViewer";
+import DebugScreen from "./DebugScreen";
 import HealthBar from "./HealthBar";
 import PauseScreen from "./PauseScreen";
-import Settings from "./Settings";
-
-// type GameMessageIdentifier = "server_disconnect";
-
-// const GAME_MESSAGE_IDENTIFIERS: Record<GameMessageIdentifier, JSX.Element> = {
-   
-// };
+import Settings from "./menus/Settings";
+import Hotbar from "./Hotbar";
 
 export let showPauseScreen: () => void;
 export let hidePauseScreen: () => void;
@@ -25,10 +23,12 @@ const GameScreen = () => {
    const hasLoaded = useRef<boolean>(false);
    const [isPaused, setIsPaused] = useState(false);
    const [settingsIsOpen, setSettingsIsOpen] = useState(false);
+   const [devViewIsEnabled, setDevViewIsEnabled] = useState(isDev());
 
    useEffect(() => {
       if (!hasLoaded.current) {
          hasLoaded.current = true;
+
          showPauseScreen = (): void => setIsPaused(true);
          hidePauseScreen = (): void => setIsPaused(false);
          
@@ -38,6 +38,16 @@ const GameScreen = () => {
          Game.start();
       }
    }, []);
+
+   useEffect(() => {
+      addKeyListener("`", () => {
+         setDevViewIsEnabled(!devViewIsEnabled);
+      }, "dev_view_is_enabled");
+   }, [devViewIsEnabled]);
+
+   useEffect(() => {
+      
+   }, [devViewIsEnabled]);
 
    togglePauseScreen = useCallback(() => {
       isPaused ? hidePauseScreen() : hidePauseScreen();
@@ -50,11 +60,14 @@ const GameScreen = () => {
    return <>
       <ChatBox />
 
-      <CursorTooltip />
-
-      <DevEntityViewer />
-
       <HealthBar />
+      <Hotbar />
+
+      {devViewIsEnabled ? <>
+         <DevEntityViewer />
+         <DebugScreen />
+         <CursorTooltip />
+      </> : null}
 
       {settingsIsOpen ? <Settings /> : null}
 

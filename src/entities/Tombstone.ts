@@ -1,20 +1,21 @@
-import { Point } from "webgl-test-shared";
-import ImageRenderPart from "../render-parts/ImageRenderPart";
-import RenderPart, { RenderPartInfo } from "../render-parts/RenderPart";
+import { HitboxType, Point } from "webgl-test-shared";
+import Hitbox from "../hitboxes/Hitbox";
+import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 
 class Tombstone extends Entity {
-   constructor(position: Point, id: number, secondsSinceLastHit: number | null, tombstoneType: number) {
-      const renderParts: ReadonlyArray<RenderPart<RenderPartInfo>> = [
-         new ImageRenderPart({
-            type: "image",
+   public readonly type = "tombstone";
+   
+   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, tombstoneType: number) {
+      super(position, hitboxes, id, secondsSinceLastHit);
+
+      this.addRenderParts([
+         new RenderPart({
             width: 64,
             height: 96,
-            textureSrc: `tombstone${tombstoneType + 1}.png`
+            textureSource: `tombstone${tombstoneType + 1}.png`
          })
-      ];
-      
-      super(position, id, "tombstone", secondsSinceLastHit, renderParts);
+      ]);
    }
 }
 

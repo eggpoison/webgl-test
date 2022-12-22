@@ -1,46 +1,13 @@
-import { BaseItemInfo, ItemType, ITEM_INFO_RECORD, Point } from "webgl-test-shared";
-import Chunk from "./Chunk";
-import Game from "./Game";
+import { ItemType } from "webgl-test-shared";
 
-class Item implements BaseItemInfo {
-   public readonly id: number;
+class Item {
+   public readonly type: ItemType;
 
-   public readonly position: Point;
-   /** Containing chunks */
-   public readonly chunks: ReadonlyArray<Chunk>;
    public count: number;
 
-   public readonly rotation: number;
-
-   public readonly itemType: ItemType;
-   public readonly name: string;
-
-   constructor(id: number, position: Point, containingChunks: ReadonlyArray<Chunk>, itemType: ItemType, count: number, rotation: number) {
-      this.id = id;
-      this.position = position;
+   constructor(itemType: ItemType, count: number) {
+      this.type = itemType;
       this.count = count;
-      this.itemType = itemType;
-
-      this.rotation = rotation;
-
-      const itemInfo = ITEM_INFO_RECORD[itemType];
-      this.name = itemInfo.name;
-
-      // Add to containing chunks
-      this.chunks = containingChunks;
-      for (const chunk of this.chunks) {
-         chunk.addItem(this);
-      }
-
-      Game.board.items[this.id] = this;
-   }
-
-   public remove(): void {
-      for (const chunk of this.chunks) {
-         chunk.removeItem(this);
-      }
-
-      delete Game.board.items[this.id];
    }
 }
 

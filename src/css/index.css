@@ -41,3 +41,17 @@ code {
    opacity: 0;
    pointer-events: none;
 }
+
+
+.item-slot {
+   --size: 4.2rem;
+   width: var(--size);
+   height: var(--size);
+   background-color: blue;
+   margin: 0.25rem;
+}
+
+.inventory-container {
+   background-color: #000;
+   padding: 0.25rem;
+}

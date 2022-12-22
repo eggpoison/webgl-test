@@ -21,6 +21,14 @@ const CLIENT_ENTITY_INFO_RECORD: Record<EntityType, ClientEntityInfo> = {
    player: {
       name: "Player",
       description: "That's you!"
+   },
+   tree: {
+      name: "Tree",
+      description: ""
+   },
+   workbench: {
+      name: "Workbench",
+      description: ""
    }
 };
 

@@ -1,6 +1,6 @@
-import { Point } from "webgl-test-shared";
-import ImageRenderPart from "../render-parts/ImageRenderPart";
-import RenderPart, { RenderPartInfo } from "../render-parts/RenderPart";
+import { HitboxType, Point } from "webgl-test-shared";
+import Hitbox from "../hitboxes/Hitbox";
+import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 
 const ZOMBIE_TEXTURE_SOURCES: { [zombieType: number]: string } = {
@@ -10,17 +10,18 @@ const ZOMBIE_TEXTURE_SOURCES: { [zombieType: number]: string } = {
 }
 
 class Zombie extends Entity {
-   constructor(position: Point, id: number, secondsSinceLastHit: number | null, zombieType: number) {
-      const renderParts: ReadonlyArray<RenderPart<RenderPartInfo>> = [
-         new ImageRenderPart({
-            type: "image",
+   public readonly type = "zombie";
+   
+   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, zombieType: number) {
+      super(position, hitboxes, id, secondsSinceLastHit);
+
+      this.addRenderParts([
+         new RenderPart({
             width: 64,
             height: 64,
-            textureSrc: "zombie/" + ZOMBIE_TEXTURE_SOURCES[zombieType]
+            textureSource: "zombie/" + ZOMBIE_TEXTURE_SOURCES[zombieType]
          })
-      ];
-      
-      super(position, id, "zombie", secondsSinceLastHit, renderParts);
+      ]);
    }
 }
 

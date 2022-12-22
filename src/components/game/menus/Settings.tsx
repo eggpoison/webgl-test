@@ -1,6 +1,6 @@
 import { useCallback, useReducer, useState } from "react";
-import OPTIONS from "../../options";
-import { closeSettingsMenu } from "./GameScreen";
+import OPTIONS from "../../../options";
+import { closeSettingsMenu } from "../GameScreen";
 
 type BaseSettingsButton = {
    readonly type: string;

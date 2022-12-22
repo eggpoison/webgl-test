@@ -1,0 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;700;900&display=swap');
+
+#debug-screen {
+   padding: 0.5rem;
+   position: absolute;
+   top: 0;
+   right: 0;
+   bottom: 0;
+   left: 0;
+   z-index: 2;
+}
+#debug-screen * {
+   font-family: "Inconsolata";
+   font-weight: 700;
+   user-select: none;
+   pointer-events: none;
+}
+#debug-screen p {
+   color: #000;
+   margin: 0.5rem 0;
+}

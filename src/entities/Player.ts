@@ -1,19 +1,26 @@
-import { AttackPacket, HitData, Point, SETTINGS, Vector } from "webgl-test-shared";
+import { AttackPacket, HitboxType, HitData, Point, SETTINGS, Vector } from "webgl-test-shared";
 import Camera from "../Camera";
 import Client from "../client/Client";
 import { updateHealthBar } from "../components/game/HealthBar";
 import Game from "../Game";
+import Hitbox from "../hitboxes/Hitbox";
+import Item from "../Item";
 import { keyIsPressed } from "../keyboard-input";
-import CircleRenderPart from "../render-parts/CircleRenderPart";
-import RenderPart, { RenderPartInfo } from "../render-parts/RenderPart";
+import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
+
+export type Inventory = { [itemSlot: number]: Item };
 
 class Player extends Entity {
    public static instance: Player | null = null;
 
+   public static inventory: Inventory = {};
+
    /** Health of the instance player */
    public static health = 20;
 
+   public readonly type = "player";
+   
    public readonly displayName: string;
 
    /** How far away from the entity the attack is done */
@@ -24,16 +31,16 @@ class Player extends Entity {
    private static readonly ACCELERATION = 1000;
    private static readonly TERMINAL_VELOCITY = 300;
 
-   private static readonly RENDER_PARTS: ReadonlyArray<RenderPart<RenderPartInfo>> = [
-      new CircleRenderPart({
-         type: "circle",
-         radius: 32,
-         rgba: [255, 0, 0, 1]
-      })
-   ];
+   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, displayName: string) {
+      super(position, hitboxes, id, secondsSinceLastHit);
 
-   constructor(position: Point, id: number, secondsSinceLastHit: number | null, displayName: string) {
-      super(position, id, "player", secondsSinceLastHit, Player.RENDER_PARTS);
+      this.addRenderParts([
+         new RenderPart({
+            width: 64,
+            height: 64,
+            textureSource: "player.png"
+         })
+      ]);
 
       this.displayName = displayName;
 
@@ -60,7 +67,8 @@ class Player extends Entity {
 
    private static getAttackTargets(): ReadonlyArray<Entity> {
       const offset = new Vector(this.ATTACK_OFFSET, Player.instance!.rotation);
-      const attackPosition = Player.instance!.position.add(offset.convertToPoint());
+      const attackPosition = Player.instance!.position.copy();
+      attackPosition.add(offset.convertToPoint());
 
       const minChunkX = Math.max(Math.min(Math.floor((attackPosition.x - this.ATTACK_TEST_RADIUS) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
       const maxChunkX = Math.max(Math.min(Math.floor((attackPosition.x + this.ATTACK_TEST_RADIUS) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
@@ -162,8 +170,18 @@ class Player extends Entity {
          if (this.instance.velocity !== null) {
             this.instance.velocity.magnitude *= 0.5;
          }
-         this.instance.addVelocity(200, hitData.angleFromDamageSource);
+
+         const pushForce = new Vector(200, hitData.angleFromDamageSource);
+         if (this.instance.velocity !== null) {
+            this.instance.velocity.add(pushForce);
+         } else {
+            this.instance.velocity = pushForce;
+         }
       }
+   }
+
+   public static setInventory(inventory: Inventory): void {
+      this.inventory = inventory;
    }
 }
 

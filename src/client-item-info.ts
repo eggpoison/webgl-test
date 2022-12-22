@@ -5,6 +5,9 @@ export type ClientItemInfo = {
 }
 
 const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
+   wood: {
+      textureSrc: "wood.png"
+   },
    wooden_sword: {
       textureSrc: "raw-beef.png"
    },
@@ -16,6 +19,9 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
    },
    cooked_beef: {
       textureSrc: "raw-beef.png"
+   },
+   workbench: {
+      textureSrc: "workbench.png"
    }
 };
 

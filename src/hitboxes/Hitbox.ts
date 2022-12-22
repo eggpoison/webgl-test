@@ -5,13 +5,16 @@ export type HitboxBounds = [minX: number, maxX: number, minY: number, maxY: numb
 
 abstract class Hitbox<T extends HitboxType> {
    public info: HitboxInfo<T>;
-   public entity: Entity;
+   public entity!: Entity;
 
    /** The bounds of the hitbox since the last physics update */
    public bounds!: HitboxBounds;
 
-   constructor(hitboxInfo: HitboxInfo<T>, entity: Entity) {
+   constructor(hitboxInfo: HitboxInfo<T>) {
       this.info = hitboxInfo;
+   }
+
+   public setEntity(entity: Entity): void {
       this.entity = entity;
    }
 

@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { InitialPlayerDataPacket } from "webgl-test-shared";
-import Camera from "../Camera";
-import Client, { GameData } from "../client/Client";
-import Player from "../entities/Player";
+import { InitialGameDataPacket } from "webgl-test-shared";
+import Client from "../client/Client";
 import Game from "../Game";
 import { setGameState, setLoadingScreenInitialStatus } from "./App";
 
-export type LoadingScreenStatus = "establishing_connection" | "receiving_game_data" | "sending_player_data" | "initialising_game" | "connection_error";
+export type LoadingScreenStatus = "establishing_connection" | "sending_player_data" | "receiving_game_data" | "initialising_game" | "connection_error";
 
 interface LoadingScreenProps {
    readonly username: string;
@@ -14,7 +12,7 @@ interface LoadingScreenProps {
 }
 const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
    const [status, setStatus] = useState<LoadingScreenStatus>(initialStatus);
-   const gameDataRef = useRef<GameData | null>(null);
+   const initialGameDataPacketRef = useRef<InitialGameDataPacket | null>(null);
    const hasStarted = useRef(false);
 
    const openMainMenu = (): void => {
@@ -38,7 +36,7 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
                (async () => {
                   const connectionWasSuccessful = await Client.connectToServer();
                   if (connectionWasSuccessful) {
-                     setStatus("receiving_game_data");
+                     setStatus("sending_player_data");
                   } else {
                      setStatus("connection_error");
                   }
@@ -47,9 +45,16 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
 
             break;
          }
+         case "sending_player_data": {
+            Client.sendInitialPlayerData(username);
+
+            setStatus("receiving_game_data");
+            
+            break;
+         }
          case "receiving_game_data": {
             (async () => {
-               gameDataRef.current = await Client.requestGameData();
+               initialGameDataPacketRef.current = await Client.requestInitialGameData();
 
                setStatus("initialising_game");
             })();
@@ -58,24 +63,12 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
          }
          case "initialising_game": {
             (async () => {
-               await Game.initialise(gameDataRef.current!, username);
+               // Make the tile array out of the server tile data array
+               
+               await Game.initialise(initialGameDataPacketRef.current!, username);
 
-               setStatus("sending_player_data");
+               setGameState("game");
             })();
-
-            break;
-         }
-         case "sending_player_data": {
-            const visibleChunkBounds = Camera.calculateVisibleChunkBounds();
-            
-            const initialPlayerDataPacket: InitialPlayerDataPacket = {
-               username: username,
-               position: Player.instance!.position.package(),
-               visibleChunkBounds: visibleChunkBounds
-            };
-            Client.sendInitialPlayerData(initialPlayerDataPacket);
-
-            setGameState("game");
 
             break;
          }
