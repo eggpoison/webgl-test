@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, ServerEntityData, ServerItemEntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, ServerInventoryData, ServerItemData } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, ServerEntityData, ServerItemEntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, ServerInventoryData, ServerItemData, CraftingRecipe, PlayerInventoryType, PlaceablePlayerInventoryType } from "webgl-test-shared";
 import Camera from "../Camera";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player, { Inventory } from "../entities/Player";
@@ -128,7 +128,9 @@ abstract class Client {
       
       this.updateEntities(gameDataPacket.serverEntityDataArray);
       this.updateItemEntities(gameDataPacket.serverItemEntityDataArray);
-      this.updatePlayerInventory(gameDataPacket.playerInventory);
+      this.updatePlayerHotbar(gameDataPacket.hotbarInventory);
+      this.updateCraftingOutputItem(gameDataPacket.craftingOutputItem);
+      this.updateHeldItem(gameDataPacket.heldItem);
       this.registerTileUpdates(gameDataPacket.tileUpdates);
 
       // Register hits
@@ -188,13 +190,31 @@ abstract class Client {
       new ItemEntity(serverItemEntityData.id, position, containingChunks, serverItemEntityData.itemID, serverItemEntityData.rotation);
    }
 
-   private static updatePlayerInventory(serverInventoryData: ServerInventoryData): void {
+   private static updatePlayerHotbar(serverHotbarInventoryData: ServerInventoryData): void {
       const inventory: Inventory = {};
-      for (const [itemSlot, serverItemData] of Object.entries(serverInventoryData) as unknown as ReadonlyArray<[number, ServerItemData]>) {
+      for (const [itemSlot, serverItemData] of Object.entries(serverHotbarInventoryData) as unknown as ReadonlyArray<[number, ServerItemData]>) {
          const item = new Item(serverItemData.type, serverItemData.count);
          inventory[itemSlot] = item;
       }
-      Player.setInventory(inventory);
+      Player.setHotbarInventory(inventory);
+   }
+
+   private static updateCraftingOutputItem(serverCraftingOutputItemData: ServerItemData | null): void {
+      if (serverCraftingOutputItemData === null) {
+         Player.setCraftingOutputItem(null);
+      } else {
+         const craftingOutputItem = new Item(serverCraftingOutputItemData.type, serverCraftingOutputItemData.count);
+         Player.setCraftingOutputItem(craftingOutputItem);
+      }
+   }
+
+   private static updateHeldItem(serverHeldItemData: ServerItemData | null): void {
+      if (serverHeldItemData === null) {
+         Player.setHeldItem(null);
+      } else {
+         const heldItem = new Item(serverHeldItemData.type, serverHeldItemData.count);
+         Player.setHeldItem(heldItem);
+      }
    }
    
    private static registerTileUpdates(tileUpdates: ReadonlyArray<ServerTileUpdateData>): void {
@@ -269,6 +289,24 @@ abstract class Client {
    public static sendAttackPacket(attackPacket: AttackPacket): void {
       if (Game.isRunning && this.socket !== null) {
          this.socket.emit("attack_packet", attackPacket);
+      }
+   }
+
+   public static sendCraftingPacket(craftingRecipe: CraftingRecipe): void {
+      if (Game.isRunning && this.socket !== null) {
+         this.socket.emit("crafting_packet", craftingRecipe);
+      }
+   }
+
+   public static sendItemHoldPacket(inventory: PlayerInventoryType, itemSlot: number): void {
+      if (Game.isRunning && this.socket !== null) {
+         this.socket.emit("item_hold_packet", inventory, itemSlot);
+      }
+   }
+
+   public static sendItemReleasePacket(inventory: PlaceablePlayerInventoryType, itemSlot: number): void {
+      if (Game.isRunning && this.socket !== null) {
+         this.socket.emit("item_release_packet", inventory, itemSlot);
       }
    }
 }

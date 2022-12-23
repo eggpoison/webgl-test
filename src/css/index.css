@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;700;900&display=swap');
 
 html, body {
    overflow: hidden;
@@ -43,15 +44,63 @@ code {
 }
 
 
-.item-slot {
-   --size: 4.2rem;
-   width: var(--size);
-   height: var(--size);
-   background-color: blue;
-   margin: 0.25rem;
-}
+/* Inventory interfaces */
 
 .inventory-container {
-   background-color: #000;
-   padding: 0.25rem;
+   background-color: #333;
+   border: 5px solid #000;
+   border-radius: 5px;
+}
+
+.item-slot {
+   --slot-size: 4rem;
+   --image-fill-size: 0.7;
+   width: var(--slot-size);
+   height: var(--slot-size);
+   background-image: url("../images/miscellaneous/item-slot.png");
+   background-size: 100%;
+   image-rendering: pixelated;
+   margin: 0.05rem;
+   position: relative;
+}
+
+.item-slot.selected {
+   background-image: url("../images/miscellaneous/item-slot-selected.png");
+}
+
+.item-slot img {
+   width: calc(var(--slot-size) * var(--image-fill-size));
+   height: calc(var(--slot-size) * var(--image-fill-size));
+   image-rendering: pixelated;
+   position: absolute;
+   top: 50%;
+   left: 50%;
+   transform: translate(-50%, -50%);
+}
+
+.item-slot .item-count {
+   color: #fff;
+   font-family: "Inconsolata";
+   font-size: 1.2rem;
+   font-weight: bold;
+   text-shadow: 0 0 1px #000, 0 0 2px #000, 0 0 3px #000;
+   position: absolute;
+   left: calc(50% + var(--slot-size) * var(--image-fill-size) / 2.3);
+   top: calc(50% + var(--slot-size) * var(--image-fill-size) / 2.3);
+   transform: translate(-50%, -75%);
+}
+
+
+/* Held item */
+
+#held-item {
+   position: absolute;
+   pointer-events: none;
+   z-index: 3;
+}
+#held-item img {
+   --size: 2.5rem;
+   width: var(--size);
+   height: var(--size);
+   image-rendering: pixelated;
 }

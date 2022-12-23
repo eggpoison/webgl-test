@@ -13,7 +13,7 @@ class Workbench extends Entity {
          new RenderPart({
             width: 50,
             height: 50,
-            textureSource: "workbench.png"
+            textureSource: "workbench/workbench.png"
          })
       ]);
    }

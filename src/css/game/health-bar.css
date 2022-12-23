@@ -13,7 +13,7 @@
    background-color: #333;
    position: absolute;
    left: 50%;
-   bottom: 6rem;
+   bottom: 5.75rem;
    transform: translateX(-50%);
    z-index: 2;
    box-shadow: 0 0 7px 0 rgba(0, 0, 0, 0.7) inset;

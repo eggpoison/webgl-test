@@ -10,6 +10,8 @@ import HealthBar from "./HealthBar";
 import PauseScreen from "./PauseScreen";
 import Settings from "./menus/Settings";
 import Hotbar from "./Hotbar";
+import CraftingMenu from "./menus/CraftingMenu";
+import HeldItem from "./HeldItem";
 
 export let showPauseScreen: () => void;
 export let hidePauseScreen: () => void;
@@ -62,6 +64,9 @@ const GameScreen = () => {
 
       <HealthBar />
       <Hotbar />
+
+      <CraftingMenu />
+      <HeldItem />
 
       {devViewIsEnabled ? <>
          <DevEntityViewer />
