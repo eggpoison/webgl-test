@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CraftingRecipe, ItemType } from "webgl-test-shared";
+import { canCraftRecipe, CraftingRecipe, CraftingStation, ItemType, SETTINGS } from "webgl-test-shared";
 import CLIENT_ITEM_INFO_RECORD from "../../../client-item-info";
 import Client from "../../../client/Client";
 import Player from "../../../entities/Player";
-import Item from "../../../Item";
+import Item from "../../../items/Item";
 import { addKeyListener } from "../../../keyboard-input";
 import { windowHeight } from "../../../webgl";
 import { setHeldItemVisualPosition } from "../HeldItem";
 import ItemSlot from "../ItemSlot";
+
+const CRAFTING_STATION_TEXTURE_SOURCE_RECORD: Record<CraftingStation, string> = {
+   workbench: "workbench.png"
+}
 
 interface RecipeViewerProps {
    readonly recipe: CraftingRecipe | null;
@@ -52,7 +56,7 @@ const RECIPE_BROWSER_WIDTH = 3;
 const MIN_RECIPE_BROWSER_HEIGHT = 6;
 
 export let setCraftingMenuAvailableRecipes: (craftingRecipes: Array<CraftingRecipe>) => void;
-export let setCraftingMenuCraftableRecipes: (recipes: Array<CraftingRecipe>) => void;
+export let setCraftingMenuAvailableCraftingStations: (craftingStations: Set<CraftingStation>) => void;
 export let setCraftingMenuOutputItem: (craftingOutputItem: Item | null) => void;
 
 export let craftingMenuIsOpen: () => boolean;
@@ -61,22 +65,33 @@ let toggleCraftingMenu: () => void;
 
 const CraftingMenu = () => {
    const [isVisible, setIsVisible] = useState(false);
-   const [availableRecipes, setAvailableRecipes] = useState<Array<CraftingRecipe>>([]);
-   const [craftableRecipes, setCraftableRecipes] = useState<Array<CraftingRecipe>>([]);
+
+   const [availableRecipes, setAvailableRecipes] = useState(new Array<CraftingRecipe>());
+   const [availableCraftingStations, setAvailableCraftingStations] = useState(new Set<CraftingStation>());
    const [craftingOutputItem, setCraftingOutputItem] = useState<Item | null>(null);
+
    const [selectedRecipe, setSelectedRecipe] = useState<CraftingRecipe | null>(null);
+   
+   const craftableRecipes = useRef<Array<CraftingRecipe>>([]);
    const [hoveredRecipe, setHoveredRecipe] = useState<CraftingRecipe | null>(null);
    const [hoverPosition, setHoverPosition] = useState<[number, number] | null>(null);
    const hasLoaded = useRef(false);
    const craftingMenuRef = useRef<HTMLDivElement | null>(null);
    const craftingMenuHeightRef = useRef<number | null>(null);
 
+   const onCraftingMenuRefChange = useCallback((node: HTMLDivElement | null) => {
+      if (node !== null) {
+         craftingMenuRef.current = node;
+         craftingMenuHeightRef.current = craftingMenuRef.current.offsetHeight;
+      }
+   }, []);
+
    const selectRecipe = (recipe: CraftingRecipe): void => {
       setSelectedRecipe(recipe);
    }
 
    const craftRecipe = useCallback((): void => {
-      if (selectedRecipe === null || !craftableRecipes.includes(selectedRecipe)) {
+      if (selectedRecipe === null || !craftableRecipes.current.includes(selectedRecipe)) {
          return;
       }
 
@@ -108,6 +123,24 @@ const CraftingMenu = () => {
       setHeldItemVisualPosition(e.clientX, e.clientY);
    }
 
+   // Find which of the available recipes can be crafted
+   useEffect(() => {
+      const craftableRecipesArray = new Array<CraftingRecipe>();
+      for (const recipe of availableRecipes) {
+         if (canCraftRecipe(Player.hotbarInventory, recipe, SETTINGS.PLAYER_HOTBAR_SIZE)) {
+            craftableRecipesArray.push(recipe);
+         }
+      }
+
+      craftableRecipes.current = craftableRecipesArray;
+   }, [availableRecipes]);
+
+   useEffect(() => {
+      if (selectedRecipe !== null && !availableRecipes.includes(selectedRecipe)) {
+         setSelectedRecipe(null);
+      }
+   }, [availableRecipes, selectedRecipe]);
+
    useEffect(() => {
       if (!hasLoaded.current) {
          // Create the key listener for opening the crafting menu
@@ -116,16 +149,12 @@ const CraftingMenu = () => {
          hasLoaded.current = true;
       }
 
-      if (craftingMenuRef.current !== null) {
-         craftingMenuHeightRef.current = craftingMenuRef.current.offsetHeight;
+      setCraftingMenuAvailableRecipes = (recipes: Array<CraftingRecipe>): void => {
+         setAvailableRecipes(recipes);
       }
 
-      setCraftingMenuAvailableRecipes = (craftingRecipes: Array<CraftingRecipe>): void => {
-         setAvailableRecipes(craftingRecipes);
-      }
-
-      setCraftingMenuCraftableRecipes = (craftingRecipes: Array<CraftingRecipe>): void => {
-         setCraftableRecipes(craftingRecipes);
+      setCraftingMenuAvailableCraftingStations = (craftingStations: Set<CraftingStation>): void => {
+         setAvailableCraftingStations(craftingStations);
       }
 
       setCraftingMenuOutputItem = (craftingOutputItem: Item | null): void => {
@@ -162,14 +191,14 @@ const CraftingMenu = () => {
 
          if (itemSlotIndex <= availableRecipes.length - 1) {
             const recipe = availableRecipes[itemSlotIndex];
-            const isCraftable = craftableRecipes.includes(recipe);
+            const isCraftable = craftableRecipes.current.includes(recipe);
             
             itemSlots.push(
                <ItemSlot onMouseOver={(e) => hoverRecipe(recipe, e)} onMouseOut={() => unhoverRecipe()} onMouseMove={e => mouseMove(e)} className={isCraftable ? "craftable" : undefined} isSelected={recipe === selectedRecipe} onClick={() => selectRecipe(recipe)} picturedItemType={recipe.product} itemCount={recipe.productCount !== 1 ? recipe.productCount : undefined} key={j} />
             );
          } else {
             itemSlots.push(
-               <ItemSlot isSelected={false} key={j} />
+               <ItemSlot className="empty" isSelected={false} key={j} />
             );
          }
       }
@@ -182,7 +211,13 @@ const CraftingMenu = () => {
       );
    }
    
-   return <div id="crafting-menu" className="inventory-container" ref={craftingMenuRef}>
+   return <div id="crafting-menu" className="inventory-container" ref={onCraftingMenuRefChange}>
+      <div className="available-crafting-stations">
+         {Array.from(availableCraftingStations).map((craftingStationType: CraftingStation, i: number) => {
+            return <img className="crafting-station-image" src={require("../../../images/items/" + CRAFTING_STATION_TEXTURE_SOURCE_RECORD[craftingStationType])} key={i} alt="" />
+         })}
+      </div>
+      
       <div className="recipe-browser">
          {recipeBrowser}
       </div>
@@ -212,14 +247,16 @@ const CraftingMenu = () => {
             </div>
 
             <div className="bottom">
-               <button onClick={() => craftRecipe()} className={`craft-button${craftableRecipes.includes(selectedRecipe) ? " craftable" : ""}`}>CRAFT</button>
+               <button onClick={() => craftRecipe()} className={`craft-button${craftableRecipes.current.includes(selectedRecipe) ? " craftable" : ""}`}>CRAFT</button>
                {craftingOutputItem !== null ? (
                   <ItemSlot onClick={e => pickUpCraftingOutputItem(e)} picturedItemType={craftingOutputItem.type} itemCount={craftingOutputItem.count} className="crafting-output" isSelected={false} />
                ) : (
                   <ItemSlot className="crafting-output" isSelected={false} />
                )}
             </div>
-         </> : null}
+         </> : <>
+            <div className="select-message">&#40;Select a recipe to view&#41;</div>
+         </>}
       </div>
 
       <RecipeViewer recipe={hoveredRecipe} hoverPosition={hoverPosition!} craftingMenuHeight={craftingMenuHeightRef.current!} />

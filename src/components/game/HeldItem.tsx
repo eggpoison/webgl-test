@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import CLIENT_ITEM_INFO_RECORD from "../../client-item-info";
-import Item from "../../Item";
+import Item from "../../items/Item";
 
 export let setHeldItemVisual: (heldItem: Item | null) => void;
 

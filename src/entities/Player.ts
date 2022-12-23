@@ -1,14 +1,14 @@
-import { AttackPacket, canCraftRecipe, CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitboxType, HitData, ItemType, Point, SETTINGS, Vector } from "webgl-test-shared";
+import { AttackPacket, CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitboxType, HitData, ItemType, Point, SETTINGS, Vector } from "webgl-test-shared";
 import Camera from "../Camera";
 import Client from "../client/Client";
 import { updateHealthBar } from "../components/game/HealthBar";
 import { setHeldItemVisual } from "../components/game/HeldItem";
 import { setHotbarInventory, setHotbarSelectedItemSlot } from "../components/game/Hotbar";
-import { setCraftingMenuAvailableRecipes, setCraftingMenuCraftableRecipes, setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
+import { setCraftingMenuAvailableRecipes, setCraftingMenuAvailableCraftingStations, setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
 import Game from "../Game";
 import Hitbox from "../hitboxes/Hitbox";
-import Item from "../Item";
-import { addKeyListener, keyIsPressed } from "../keyboard-input";
+import Item from "../items/Item";
+import { addKeyListener, clearPressedKeys, keyIsPressed } from "../keyboard-input";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 
@@ -99,24 +99,12 @@ class Player extends Entity {
          Camera.position = this.position;
 
          Player.createKeyListeners();
+
+         Player.createItemUseListeners();
       }
    }
 
-   public static attack(): void {
-      if (typeof this.instance === "undefined") return;
-
-      const targets = this.getAttackTargets();
-      if (targets.length > 0) {
-         // Send attack packet
-         const attackPacket: AttackPacket = {
-            targetEntities: targets.map(target => target.id),
-            heldItem: null
-         }
-         Client.sendAttackPacket(attackPacket);
-      }
-   }
-
-   private static getAttackTargets(): ReadonlyArray<Entity> {
+   public static calculateAttackTargets(): ReadonlyArray<Entity> {
       const offset = new Vector(this.ATTACK_OFFSET, Player.instance!.rotation);
       const attackPosition = Player.instance!.position.copy();
       attackPosition.add(offset.convertToPoint());
@@ -242,9 +230,7 @@ class Player extends Entity {
 
    public static setCraftingOutputItem(craftingOutputItem: Item | null): void {
       this.craftingOutputItem = craftingOutputItem;
-      // console.log(craftingOutputItem);
       if (typeof setCraftingMenuOutputItem !== "undefined") {
-         // console.log(craftingOutputItem);
          setCraftingMenuOutputItem(this.craftingOutputItem);
       }
    }
@@ -285,10 +271,14 @@ class Player extends Entity {
          for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
             const chunk = Game.board.getChunk(chunkX, chunkY);
             for (const entity of chunk.getEntities()) {
-               switch (entity.type) {
-                  case "workbench": {
-                     if (!availableCraftingStations.has("workbench")) {
-                        availableCraftingRecipes = availableCraftingRecipes.concat(CRAFTING_RECIPE_RECORD.workbench.slice());
+               const distance = this.instance!.position.calculateDistanceBetween(entity.position);
+               if (distance <= Player.MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION) {
+                  switch (entity.type) {
+                     case "workbench": {
+                        if (!availableCraftingStations.has("workbench")) {
+                           availableCraftingRecipes = availableCraftingRecipes.concat(CRAFTING_RECIPE_RECORD.workbench.slice());
+                           availableCraftingStations.add("workbench");
+                        }
                      }
                   }
                }
@@ -298,19 +288,7 @@ class Player extends Entity {
 
       // Send that information to the crafting menu
       setCraftingMenuAvailableRecipes(availableCraftingRecipes);
-
-      // 
-      // Find which of the available recipes can be crafted
-      // 
-
-      const craftableRecipes = new Array<CraftingRecipe>();
-      for (const recipe of availableCraftingRecipes) {
-         if (canCraftRecipe(this.hotbarInventory, recipe, SETTINGS.PLAYER_HOTBAR_SIZE)) {
-            craftableRecipes.push(recipe);
-         }
-      }
-
-      setCraftingMenuCraftableRecipes(craftableRecipes);
+      setCraftingMenuAvailableCraftingStations(availableCraftingStations);
    }
 
    public static getNumItemType(itemType: ItemType): number {
@@ -322,6 +300,50 @@ class Player extends Entity {
       }
 
       return numItems;
+   }
+
+   private static createItemUseListeners(): void {
+      document.addEventListener("mousedown", e => {
+         // Only attempt to use an item if the game canvas was clicked
+         if ((e.target as HTMLElement).id !== "game-canvas") {
+            clearPressedKeys();
+            return;
+         }
+
+         const selectedItem = this.hotbarInventory[this.selectedHotbarItemSlot];
+
+         // Attack with an empty hand
+         if (typeof selectedItem === "undefined") {
+            if (e.button === 0) {
+               this.attackWithHand();
+            }
+            return;
+         }
+
+         if (e.button === 0) {
+            // Left click
+            selectedItem.onLeftClick();
+         } else if (e.button === 2) {
+            // Right click
+            selectedItem.onRightClick();
+         }
+      });
+
+      // Stop the context menu from appearing
+      document.addEventListener("contextmenu", e => {
+         if ((e.target as HTMLElement).id === "game-canvas") {
+            e.preventDefault();
+         }
+      });
+   }
+
+   private static attackWithHand(): void {
+      const attackTargets = this.calculateAttackTargets();
+      const attackPacket: AttackPacket = {
+         itemSlot: this.selectedHotbarItemSlot,
+         targetEntities: attackTargets.map(entity => entity.id)
+      };
+      Client.sendAttackPacket(attackPacket);
    }
 }
 

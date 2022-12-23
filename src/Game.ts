@@ -15,10 +15,10 @@ import { createShaderStrings, createWebGLContext, createWebGLProgram, gl, resize
 import { loadTextures } from "./textures";
 import { hidePauseScreen, showPauseScreen, toggleSettingsMenu } from "./components/game/GameScreen";
 import { getGameState } from "./components/App";
-import { clearPressedKeys } from "./keyboard-input";
 import Hitbox from "./hitboxes/Hitbox";
 import CircularHitbox from "./hitboxes/CircularHitbox";
 import { updateDebugScreenCurrentTime, updateDebugScreenFPS, updateDebugScreenTicks } from "./components/game/DebugScreen";
+import Item from "./items/Item";
 
 const nightVertexShaderText = `
 precision mediump float;
@@ -44,8 +44,6 @@ let listenersHaveBeenCreated = false;
 const createEventListeners = (): void => {
    if (listenersHaveBeenCreated) return;
    listenersHaveBeenCreated = true;
-   
-   window.addEventListener("contextmenu", clearPressedKeys);
 
    window.addEventListener("keydown", (e: KeyboardEvent) => {
       if (e.key === "Escape" && getGameState() === "game") {
@@ -61,9 +59,6 @@ const createEventListeners = (): void => {
    });
 
    window.addEventListener("mousemove", handleMouseMovement);
-
-   // Has to be arrow function as otherwise it has the wrong scope
-   window.addEventListener("mousedown", () => Player.attack());
 }
 
 let lastRenderTime = Math.floor(new Date().getTime() / 1000);
@@ -173,6 +168,8 @@ abstract class Game {
 
    private static update(): void {
       updateSpamFilter();
+
+      Item.decrementGlobalItemSwitchDelay();
 
       this.board.tickEntities();
       this.board.resolveCollisions();

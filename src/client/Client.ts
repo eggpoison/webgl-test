@@ -8,7 +8,7 @@ import Game from "../Game";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import Hitbox from "../hitboxes/Hitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import Item from "../Item";
+import Item from "../items/Item";
 import ItemEntity from "../ItemEntity";
 import { Tile } from "../Tile";
 import { windowHeight, windowWidth } from "../webgl";
@@ -286,12 +286,6 @@ abstract class Client {
       }
    }
 
-   public static sendAttackPacket(attackPacket: AttackPacket): void {
-      if (Game.isRunning && this.socket !== null) {
-         this.socket.emit("attack_packet", attackPacket);
-      }
-   }
-
    public static sendCraftingPacket(craftingRecipe: CraftingRecipe): void {
       if (Game.isRunning && this.socket !== null) {
          this.socket.emit("crafting_packet", craftingRecipe);
@@ -307,6 +301,18 @@ abstract class Client {
    public static sendItemReleasePacket(inventory: PlaceablePlayerInventoryType, itemSlot: number): void {
       if (Game.isRunning && this.socket !== null) {
          this.socket.emit("item_release_packet", inventory, itemSlot);
+      }
+   }
+
+   public static sendAttackPacket(attackPacket: AttackPacket): void {
+      if (Game.isRunning && this.socket !== null) {
+         this.socket.emit("attack_packet", attackPacket);
+      }
+   }
+
+   public static sendItemUsePacket(itemSlot: number) {
+      if (Game.isRunning && this.socket !== null) {
+         this.socket.emit("item_use_packet", itemSlot);
       }
    }
 }

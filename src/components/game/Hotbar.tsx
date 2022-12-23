@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { SETTINGS } from "webgl-test-shared";
 import Client from "../../client/Client";
 import Player, { Inventory } from "../../entities/Player";
-import Item from "../../Item";
+import Item from "../../items/Item";
 import { setHeldItemVisualPosition } from "./HeldItem";
 import ItemSlot from "./ItemSlot";
 import { craftingMenuIsOpen } from "./menus/CraftingMenu";
