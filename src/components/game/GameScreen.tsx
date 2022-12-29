@@ -12,10 +12,10 @@ import Settings from "./menus/Settings";
 import Hotbar from "./Hotbar";
 import CraftingMenu from "./menus/CraftingMenu";
 import HeldItem from "./HeldItem";
+import DeathScreen from "./DeathScreen";
 
 export let showPauseScreen: () => void;
 export let hidePauseScreen: () => void;
-export let togglePauseScreen: () => void;
 
 export let openSettingsMenu: () => void;
 export let closeSettingsMenu: () => void;
@@ -51,10 +51,6 @@ const GameScreen = () => {
       
    }, [devViewIsEnabled]);
 
-   togglePauseScreen = useCallback(() => {
-      isPaused ? hidePauseScreen() : hidePauseScreen();
-   }, [isPaused]);
-
    toggleSettingsMenu = useCallback(() => {
       settingsIsOpen ? closeSettingsMenu() : openSettingsMenu();
    }, [settingsIsOpen]);
@@ -67,6 +63,8 @@ const GameScreen = () => {
 
       <CraftingMenu />
       <HeldItem />
+
+      <DeathScreen />
 
       {devViewIsEnabled ? <>
          <DevEntityViewer />

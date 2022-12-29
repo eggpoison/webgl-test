@@ -39,6 +39,7 @@
    top: -10px;
    transform: translate(-50%, -100%);
    display: flex;
+   opacity: 0.5;
 }
 #crafting-menu .crafting-station-image {
    --size: 32px;
@@ -67,17 +68,35 @@
 #crafting-menu .recipe-browser .item-slot:not(.empty):not(.selected) {
    cursor: pointer;
 }
+#crafting-menu .recipe-browser .item-slot.craftable::after {
+   content: "";
+   background-image: radial-gradient(circle at center, #555 0%, transparent 50%);
+   position: absolute;
+   top: 0;
+   right: 0;
+   bottom: 0;
+   left: 0;
+}
+
+#crafting-menu .recipe-browser .item-slot.craftable:not(.selected):hover img {
+   filter: brightness(1.1);
+}
+#crafting-menu .recipe-browser .item-slot.craftable:not(.selected):active img {
+   filter: brightness(0.9);
+}
 
 /* Recipe viewer */
 
 #crafting-menu .recipe-viewer {
    min-width: 15rem;
-   background-color: #888;
-   border: 5px solid #000;
+   background-color: #aaa;
+   padding: 2px;
+   border: 5px solid #333;
+   border-radius: 5px;
    position: absolute;
    left: -5px;
    transform: translate(-100%, -50%);
-   box-shadow: 0 0 5px 3px rgba(0, 0, 0, 0.3) inset;
+   box-shadow: 0 0 5px 5px rgba(0, 0, 0, 0.3) inset;
 }
 #crafting-menu .recipe-viewer * {
    font-family: "Inconsolata";
@@ -91,7 +110,6 @@
    --size: 32px;
    width: var(--size);
    height: var(--size);
-   margin-right: 0.5rem;
    image-rendering: pixelated;
 }
 #crafting-menu .recipe-viewer .header .recipe-product-name {
@@ -100,6 +118,7 @@
    font-weight: bold;
    letter-spacing: 0.05rem;
    text-shadow: 2px 2px 0 #000;
+   margin-left: 0.75rem;
 }
 #crafting-menu .recipe-viewer .ingredients {
    margin: 0.2rem 0 1rem 0.5rem;
@@ -112,7 +131,7 @@
 }
 #crafting-menu .recipe-viewer .caption {
    color: #000;
-   text-shadow: 2px 2px rgba(255, 255, 255, 0.2);
+   font-weight: bold;
    text-align: center;
    margin: 0.2rem;
 }
@@ -216,4 +235,12 @@
    left: 50%;
    transform: translate(-50%, -50%);
    white-space: pre;
+}
+
+#crafting-menu .crafting-area .crafting-output:not(.empty) {
+   cursor: pointer;
+}
+
+#crafting-menu .crafting-area .crafting-output:not(.empty):hover img {
+   filter: brightness(1.1);
 }

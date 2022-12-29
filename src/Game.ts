@@ -1,6 +1,6 @@
 import Board from "./Board";
 import Player from "./entities/Player";
-import { isDev, sleep } from "./utils";
+import { isDev } from "./utils";
 import { renderPlayerNames, createTextCanvasContext } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/ChatBox";
@@ -19,6 +19,7 @@ import Hitbox from "./hitboxes/Hitbox";
 import CircularHitbox from "./hitboxes/CircularHitbox";
 import { updateDebugScreenCurrentTime, updateDebugScreenFPS, updateDebugScreenTicks } from "./components/game/DebugScreen";
 import Item from "./items/Item";
+import { createPlaceableItemProgram, renderGhostPlaceableItem } from "./items/PlaceableItem";
 
 const nightVertexShaderText = `
 precision mediump float;
@@ -78,15 +79,14 @@ abstract class Game {
    /** If the game has recevied up-to-date game data from the server. Set to false when paused */
    public static isSynced: boolean = true;
 
-   private static lastTime: number;
+   private static lastTime: number = 0;
    /** Amount of time the game is through the current frame */
    private static lag: number = 0;
-
-   private static clientInformationTimer: number = 1 / SETTINGS.TPS;
 
    public static cursorPosition: Point | null;
 
    private static nightProgram: WebGLProgram;
+   private static nightBuffer: WebGLBuffer;
    private static nightProgramVertPosAttribLocation: GLint;
    private static nightProgramDarkenFactorUniformLocation: WebGLUniformLocation;
 
@@ -104,18 +104,32 @@ abstract class Game {
 
    /** Starts the game */
    public static start(): void {
-      this.nightProgram = createWebGLProgram(nightVertexShaderText, nightFragmentShaderText);
+      this.nightProgram = createWebGLProgram(nightVertexShaderText, nightFragmentShaderText, "a_vertPosition");
       this.nightProgramVertPosAttribLocation = gl.getAttribLocation(this.nightProgram, "a_vertPosition");
       this.nightProgramDarkenFactorUniformLocation = gl.getUniformLocation(this.nightProgram, "u_darkenFactor")!;
+      this.createNightBuffer();
 
       createEventListeners();
       resizeCanvas();
-
-      Game.lastTime = new Date().getTime();
                
       // Start the game loop
       this.isRunning = true;
-      this.main();
+      requestAnimationFrame(time => this.main(time));
+   }
+
+   private static createNightBuffer(): void {
+      const vertices = [
+         -1, -1,
+         1, 1,
+         -1, 1,
+         -1, -1,
+         1, -1,
+         1, 1
+      ];
+      
+      this.nightBuffer = gl.createBuffer()!;
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.nightBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
    }
 
    public static pause(): void {
@@ -123,17 +137,21 @@ abstract class Game {
       showPauseScreen();
 
       this.isSynced = false;
+
+      Client.sendDeactivatePacket();
    }
    public static unpause(): void {
       this.isPaused = false;
       hidePauseScreen();
+
+      Client.sendActivatePacket();
    }
    public static getIsPaused(): boolean {
       return this.isPaused;
    }
    
    public static sync(): void {
-      Game.lastTime = new Date().getTime();
+      Game.lastTime = performance.now();
       this.isSynced = true;
    }
    
@@ -160,6 +178,8 @@ abstract class Game {
       new Player(playerSpawnPosition, hitboxes, initialGameDataPacket.playerID, null, username);
 
       createEntityShaders();
+
+      createPlaceableItemProgram();
       
       await loadTextures();
 
@@ -182,6 +202,9 @@ abstract class Game {
     * @param frameProgress How far the game is into the current frame (0 = frame just started, 0.99 means frame is about to end)
     */
    private static render(frameProgress: number): void {
+      // Player rotation is updated each render, but only sent each update
+      Player.updateRotation();
+      
       const currentRenderTime = Math.floor(new Date().getTime() / 1000);
       numRenders++;
       if (currentRenderTime !== lastRenderTime) {
@@ -198,8 +221,10 @@ abstract class Game {
       calculateEntityRenderValues();
 
       // Update the camera
-      Camera.setCameraPosition(Player.instance!.renderPosition);
-      Camera.updateVisibleChunkBounds();
+      if (Player.instance !== null) {
+         Camera.setCameraPosition(Player.instance.renderPosition);
+         Camera.updateVisibleChunkBounds();
+      }
 
       renderPlayerNames();
 
@@ -211,49 +236,19 @@ abstract class Game {
       }
       renderEntities();
 
+      renderGhostPlaceableItem();
+
       this.cursorPosition = calculateCursorWorldPosition();
       renderCursorTooltip();
 
-      // Draw nighttime
-      if (this.time < 6 || this.time >= 18) {
-         let darkenFactor: number;
-         if (this.time >= 18 && this.time < 20) {
-            darkenFactor = lerp(0, this.NIGHT_DARKNESS, (this.time - 18) / 2);
-         } else if (this.time >= 4 && this.time < 6) {
-            darkenFactor = lerp(0, this.NIGHT_DARKNESS, (6 - this.time) / 2);
-         } else {
-            darkenFactor = this.NIGHT_DARKNESS;
-         }
-
-         const vertices = [-1, -1, 1, 1, -1, 1, -1, -1, 1, -1, 1, 1];
-
-         gl.enable(gl.BLEND);
-         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-
-         gl.useProgram(this.nightProgram);
-
-         gl.vertexAttribPointer(this.nightProgramVertPosAttribLocation, 2, gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
-         gl.enableVertexAttribArray(this.nightProgramVertPosAttribLocation);
-
-         gl.uniform1f(this.nightProgramDarkenFactorUniformLocation, darkenFactor);
-
-         const buffer = gl.createBuffer();
-         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-         gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-
-         gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-         gl.disable(gl.BLEND);
-         gl.blendFunc(gl.ONE, gl.ZERO);
-      }
+      this.renderNight();
    }
 
-   public static main(): void {
+   public static main(currentTime: number): void {
       if (this.isSynced) {
-         const currentTime = new Date().getTime();
          const deltaTime = currentTime - this.lastTime;
          this.lastTime = currentTime;
-         
+
          // Update
          this.lag += deltaTime;
          while (this.lag >= 1000 / SETTINGS.TPS) {
@@ -261,17 +256,45 @@ abstract class Game {
             Client.sendPlayerDataPacket();
             this.lag -= 1000 / SETTINGS.TPS;
          }
-         
+
          const frameProgress = this.lag / 1000 * SETTINGS.TPS;
          this.render(frameProgress);
       }
 
       if (this.isRunning) {
-         // Can't use setTimeout as it is unreasonably slow when called lots of times
-         sleep(3).then(() => {
-            this.main();
-         });
+         requestAnimationFrame(time => this.main(time));
       }
+   }
+
+   private static renderNight(): void {
+      // Don't render nighttime if it is day
+      if (this.time >= 6 && this.time < 18) return;
+
+      let darkenFactor: number;
+      if (this.time >= 18 && this.time < 20) {
+         darkenFactor = lerp(0, this.NIGHT_DARKNESS, (this.time - 18) / 2);
+      } else if (this.time >= 4 && this.time < 6) {
+         darkenFactor = lerp(0, this.NIGHT_DARKNESS, (6 - this.time) / 2);
+      } else {
+         darkenFactor = this.NIGHT_DARKNESS;
+      }
+
+      gl.useProgram(this.nightProgram);
+
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.nightBuffer);
+
+      gl.vertexAttribPointer(this.nightProgramVertPosAttribLocation, 2, gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
+      gl.enableVertexAttribArray(this.nightProgramVertPosAttribLocation);
+
+      gl.uniform1f(this.nightProgramDarkenFactorUniformLocation, darkenFactor);
+
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+      gl.disable(gl.BLEND);
+      gl.blendFunc(gl.ONE, gl.ZERO);
    }
 }
 

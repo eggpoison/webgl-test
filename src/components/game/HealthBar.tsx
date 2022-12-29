@@ -8,18 +8,20 @@ const HealthBar = () => {
    const [health, setHealth] = useState(20);
    
    useEffect(() => {
-      updateHealthBar = (newHealth: number): void => {
-         const previousHealth = health;
-         setHealth(newHealth);
-
-         const healthBar = healthBarRef.current!;
-         healthBar.style.setProperty("--current-health", newHealth.toString());
-         healthBar.style.setProperty("--previous-health", previousHealth.toString());
-
-         healthBar.classList.remove("animated");
-         // Trigger reflow
-         void(healthBar.offsetHeight);
-         healthBar.classList.add("animated");
+      updateHealthBar = (newHealth: number) => {
+         if (healthBarRef.current !== null) {
+            const previousHealth = health;
+            setHealth(newHealth);
+      
+            const healthBar = healthBarRef.current!;
+            healthBar.style.setProperty("--current-health", newHealth.toString());
+            healthBar.style.setProperty("--previous-health", previousHealth.toString());
+      
+            healthBar.classList.remove("animated");
+            // Trigger reflow
+            void(healthBar.offsetHeight);
+            healthBar.classList.add("animated");
+         }
       }
    }, [health]);
 

@@ -58,7 +58,6 @@ code {
 
 .item-slot {
    --slot-size: 4rem;
-   --image-fill-size: 0.7;
    width: var(--slot-size);
    height: var(--slot-size);
    background-image: url("../images/miscellaneous/item-slot.png");
@@ -66,32 +65,46 @@ code {
    image-rendering: pixelated;
    margin: 0.05rem;
    position: relative;
+   user-select: none;
 }
 
 .item-slot.selected {
    background-image: url("../images/miscellaneous/item-slot-selected.png");
 }
+.item-slot:not(.empty)::after {
+   content: "";
+   position: absolute;
+   top: 0;
+   right: 0;
+   bottom: 0;
+   left: 0;
+   z-index: 0;
+}
 
 .item-slot img {
-   width: calc(var(--slot-size) * var(--image-fill-size));
-   height: calc(var(--slot-size) * var(--image-fill-size));
+   --item-image-size: 48px;
+   width: var(--item-image-size);
+   height: var(--item-image-size);
    image-rendering: pixelated;
    position: absolute;
    top: 50%;
    left: 50%;
    transform: translate(-50%, -50%);
+   z-index: 1;
 }
 
 .item-slot .item-count {
    color: #fff;
    font-family: "Inconsolata";
-   font-size: 1.2rem;
+   font-size: 1.3rem;
    font-weight: bold;
-   text-shadow: 0 0 1px #000, 0 0 2px #000, 0 0 3px #000;
+   text-shadow: 0 0 1px #000, 0 0 2px #000, 0 0 3px #000, 0 0 4px #000;
+   text-align: right;
    position: absolute;
-   left: calc(50% + var(--slot-size) * var(--image-fill-size) / 2.3);
-   top: calc(50% + var(--slot-size) * var(--image-fill-size) / 2.3);
-   transform: translate(-50%, -75%);
+   right: 25%;
+   bottom: 25%;
+   transform: translate(50%, 50%);
+   z-index: 2;
 }
 
 
@@ -101,9 +114,10 @@ code {
    position: absolute;
    pointer-events: none;
    z-index: 3;
+   user-select: none;
 }
 #held-item img {
-   --size: 2.5rem;
+   --size: 48px;
    width: var(--size);
    height: var(--size);
    image-rendering: pixelated;

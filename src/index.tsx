@@ -7,6 +7,7 @@ import "./css/main-menu.css";
 import "./css/loading-screen.css";
 import "./css/game/chatbox.css";
 import "./css/game/menus/settings.css";
+import "./css/game/death-screen.css";
 import "./css/game/pause-screen.css";
 import "./css/game/cursor-tooltip.css";
 import "./css/game/dev-entity-viewer.css";

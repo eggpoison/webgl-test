@@ -247,11 +247,6 @@ class Board {
    public renderTiles(): void {
       const visibleTiles = this.categoriseVisibleTiles();
 
-      // Calculate and render solid tiles
-      // const solidTileRenderInfo = this.calculateSolidTileRenderInfo(visibleTiles.solidTiles);
-      // for (const { vertices, textureSource } of solidTileRenderInfo) {
-      //    this.renderSolidTiles(vertices, textureSource);
-      // }
       this.renderSolidTiles();
       
       const liquidTileVertices = this.calculateLiquidTileVertices(visibleTiles.liquidTiles);
@@ -302,7 +297,7 @@ class Board {
             2 * Float32Array.BYTES_PER_ELEMENT // Offset from the beginning of a single vertex to this attribute
          );
    
-         gl.uniform2f(this.solidTileProgramPlayerPosUniformLocation, Player.instance!.renderPosition.x, Player.instance!.renderPosition.y);
+         gl.uniform2f(this.solidTileProgramPlayerPosUniformLocation, Camera.position.x, Camera.position.y);
          gl.uniform2f(this.solidTileProgramHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
       
          // Enable the attributes

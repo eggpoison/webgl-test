@@ -85,8 +85,6 @@ export function calculateEntityRenderValues(): void {
 }
 
 abstract class Entity {
-   private static readonly MAX_ENTITY_COLLISION_PUSH_FORCE = 200;
-
    public readonly id: number;
    public abstract readonly type: EntityType;
 
@@ -110,8 +108,6 @@ abstract class Entity {
    public terminalVelocity: number = 0;
 
    public readonly renderParts = new Array<RenderPart>();
-
-   public isMoving: boolean = true;
 
    public chunks: Set<Chunk>;
 
@@ -330,7 +326,7 @@ abstract class Entity {
          forceMultiplier = curveWeight(forceMultiplier, 2, 0.2);
 
          // Push both entities away from each other
-         const force = Entity.MAX_ENTITY_COLLISION_PUSH_FORCE / SETTINGS.TPS;
+         const force = SETTINGS.ENTITY_PUSH_FORCE / SETTINGS.TPS * forceMultiplier;
          const angle = this.position.calculateAngleBetween(entity.position);
 
          // No need to apply force to other entity as they will do it themselves

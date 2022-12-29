@@ -1,6 +1,7 @@
 import { AttackPacket, CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitboxType, HitData, ItemType, Point, SETTINGS, Vector } from "webgl-test-shared";
 import Camera from "../Camera";
 import Client from "../client/Client";
+import { showDeathScreen } from "../components/game/DeathScreen";
 import { updateHealthBar } from "../components/game/HealthBar";
 import { setHeldItemVisual } from "../components/game/HeldItem";
 import { setHotbarInventory, setHotbarSelectedItemSlot } from "../components/game/Hotbar";
@@ -9,7 +10,9 @@ import Game from "../Game";
 import Hitbox from "../hitboxes/Hitbox";
 import Item from "../items/Item";
 import { addKeyListener, clearPressedKeys, keyIsPressed } from "../keyboard-input";
+import { cursorX, cursorY } from "../mouse";
 import RenderPart from "../render-parts/RenderPart";
+import { halfWindowHeight, halfWindowWidth } from "../webgl";
 import Entity from "./Entity";
 
 export type Inventory = { [itemSlot: number]: Item };
@@ -59,11 +62,13 @@ class Player extends Entity {
    public static instance: Player | null = null;
 
    public static hotbarInventory: Inventory = {};
-   public static selectedHotbarItemSlot: number;
+   public static selectedHotbarItemSlot = 1;
 
    public static craftingOutputItem: Item | null = null;
 
    public static heldItem: Item | null = null;
+
+   public readonly isInstance: boolean = false;
 
    /** Health of the instance player */
    public static health = 20;
@@ -95,13 +100,24 @@ class Player extends Entity {
 
       if (Player.instance === null) {
          Player.instance = this;
+         this.isInstance = true;
 
          Camera.position = this.position;
 
          Player.createKeyListeners();
-
          Player.createItemUseListeners();
       }
+   }
+
+   /** Updates the rotation of the player to match the cursor position */
+   public static updateRotation(): void {
+      if (Player.instance === null || cursorX === null || cursorY === null) return;
+
+      const relativeCursorX = cursorX - halfWindowWidth;
+      const relativeCursorY = -cursorY + halfWindowHeight;
+
+      const cursorDirection = Math.atan2(relativeCursorY, relativeCursorX);
+      Player.instance.rotation = cursorDirection;
    }
 
    public static calculateAttackTargets(): ReadonlyArray<Entity> {
@@ -185,25 +201,40 @@ class Player extends Entity {
       }
 
       if (rotation !== null) {
-         this.rotation = rotation;
+         this.acceleration = new Vector(Player.ACCELERATION, rotation);
+         this.terminalVelocity = Player.TERMINAL_VELOCITY;
       } else {
-          this.acceleration = null;
-         this.isMoving = false;
-         return;
+         this.acceleration = null;
+      }
+   }
+
+   public static setHealth(health: number): void {
+      const healthHasChanged = health !== this.health;
+
+      this.health = health;
+
+      if (healthHasChanged && typeof updateHealthBar !== "undefined") {
+         updateHealthBar(this.health);
       }
 
-      this.acceleration = new Vector(Player.ACCELERATION, this.rotation);
-      this.terminalVelocity = Player.TERMINAL_VELOCITY;
-      this.isMoving = true;
+      if (this.health <= 0) {
+         this.die();
+      }
+   }
+
+   private static die(): void {
+      if (this.instance === null) return;
+      
+      showDeathScreen();
+
+      // Remove the player from the game
+      delete Game.board.entities[this.instance.id];
+      this.instance = null;
    }
 
    /** Registers a server-side hit for the client */
    public static registerHit(hitData: HitData) {
       if (this.instance === null) return;
-
-      this.health -= hitData.damage;
-      
-      updateHealthBar(this.health);
 
       // Add force
       if (hitData.angleFromDamageSource !== null) {
@@ -244,7 +275,18 @@ class Player extends Entity {
    }
 
    private static selectItemSlot(itemSlot: number): void {
+      // Deselect any previous item
+      if (this.hotbarInventory.hasOwnProperty(this.selectedHotbarItemSlot)) {
+         this.hotbarInventory[this.selectedHotbarItemSlot]!.deselect();
+      }
+
       this.selectedHotbarItemSlot = itemSlot;
+
+      // Select any new item
+      if (this.hotbarInventory.hasOwnProperty(itemSlot)) {
+         this.hotbarInventory[itemSlot]!.select();
+      }
+      
       setHotbarSelectedItemSlot(itemSlot);
    }
 
@@ -338,12 +380,23 @@ class Player extends Entity {
    }
 
    private static attackWithHand(): void {
+      if (this.instance === null) return;
+      
       const attackTargets = this.calculateAttackTargets();
       const attackPacket: AttackPacket = {
          itemSlot: this.selectedHotbarItemSlot,
+         attackDirection: this.instance.rotation,
          targetEntities: attackTargets.map(entity => entity.id)
       };
       Client.sendAttackPacket(attackPacket);
+   }
+
+   public static getSelectedItem(): Item | null {
+      if (this.instance === null) return null;
+
+      const item = this.hotbarInventory[this.selectedHotbarItemSlot];
+      if (typeof item === "undefined") return null;
+      return item;
    }
 }
 

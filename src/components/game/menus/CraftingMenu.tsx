@@ -115,6 +115,8 @@ const CraftingMenu = () => {
       // Items can only be picked up while the crafting menu is open
       if (!craftingMenuIsOpen()) return;
 
+      if (e.button !== 0) return;
+
       // Don't pick up the item if there is already a held item
       if (Player.heldItem !== null) return;
 
@@ -198,7 +200,7 @@ const CraftingMenu = () => {
             );
          } else {
             itemSlots.push(
-               <ItemSlot className="empty" isSelected={false} key={j} />
+               <ItemSlot isSelected={false} key={j} />
             );
          }
       }
@@ -249,7 +251,7 @@ const CraftingMenu = () => {
             <div className="bottom">
                <button onClick={() => craftRecipe()} className={`craft-button${craftableRecipes.current.includes(selectedRecipe) ? " craftable" : ""}`}>CRAFT</button>
                {craftingOutputItem !== null ? (
-                  <ItemSlot onClick={e => pickUpCraftingOutputItem(e)} picturedItemType={craftingOutputItem.type} itemCount={craftingOutputItem.count} className="crafting-output" isSelected={false} />
+                  <ItemSlot onMouseDown={e => pickUpCraftingOutputItem(e)} picturedItemType={craftingOutputItem.type} itemCount={craftingOutputItem.count} className="crafting-output" isSelected={false} />
                ) : (
                   <ItemSlot className="crafting-output" isSelected={false} />
                )}

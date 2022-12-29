@@ -3,18 +3,18 @@ import { halfWindowHeight, halfWindowWidth } from "./webgl";
 import CLIENT_SETTINGS from "./client-settings";
 import { updateCursorTooltipTarget } from "./components/CursorTooltip";
 import Entity from "./entities/Entity";
-import Player from "./entities/Player";
 import Game from "./Game";
+import Camera from "./Camera";
 
-let cursorX: number;
-let cursorY: number;
+export let cursorX: number | null = null;
+export let cursorY: number | null = null;
 
 export function calculateCursorWorldPosition(): Point | null {
    if (Game.getIsPaused()) return null;
-   if (typeof cursorX === "undefined" || typeof cursorY === "undefined") return null;
+   if (cursorX === null || cursorY === null) return null;
 
-   const worldX = cursorX - halfWindowWidth + Player.instance!.renderPosition.x;
-   const worldY = -cursorY + halfWindowHeight + Player.instance!.renderPosition.y;
+   const worldX = cursorX - halfWindowWidth + Camera.position.x;
+   const worldY = -cursorY + halfWindowHeight + Camera.position.y;
 
    // If out of bounds return null;
    if (worldX < 0 || worldX >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE || worldY < 0 || worldY >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
@@ -54,8 +54,8 @@ const calculateCursorTooltipTargetEntity = (cursorPosition: Point): Entity | nul
 }
 
 const calculateEntityScreenPosition = (entity: Entity): Point => {
-   const x = entity.renderPosition.x - Player.instance!.renderPosition.x + halfWindowWidth;
-   const y = -entity.renderPosition.y + Player.instance!.renderPosition.y + halfWindowHeight;
+   const x = entity.renderPosition.x - Camera.position.x + halfWindowWidth;
+   const y = -entity.renderPosition.y + Camera.position.y + halfWindowHeight;
 
    return new Point(x, y);
 }

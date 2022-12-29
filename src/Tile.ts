@@ -5,15 +5,15 @@ export class Tile implements TileInfo {
    public readonly y: number;
 
    public type: TileType;
-   public biome: BiomeName;
+   public biomeName: BiomeName;
    public isWall: boolean;
 
-   constructor(x: number, y: number, { type, biome, isWall }: TileInfo) {
+   constructor(x: number, y: number, tileInfo: TileInfo) {
       this.x = x;
       this.y = y;
 
-      this.type = type;
-      this.biome = biome;
-      this.isWall = isWall;
+      this.type = tileInfo.type;
+      this.biomeName = tileInfo.biomeName;
+      this.isWall = tileInfo.isWall;
    }
 }

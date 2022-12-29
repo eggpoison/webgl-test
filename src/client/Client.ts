@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, ServerEntityData, ServerItemEntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, ServerInventoryData, ServerItemData, CraftingRecipe, PlayerInventoryType, PlaceablePlayerInventoryType } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, ServerEntityData, ServerItemEntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, ServerInventoryData, ServerItemData, CraftingRecipe, PlayerInventoryType, PlaceablePlayerInventoryType, GameDataSyncPacket } from "webgl-test-shared";
 import Camera from "../Camera";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player, { Inventory } from "../entities/Player";
@@ -8,10 +8,10 @@ import Game from "../Game";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import Hitbox from "../hitboxes/Hitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import Item from "../items/Item";
 import ItemEntity from "../ItemEntity";
 import { Tile } from "../Tile";
 import { windowHeight, windowWidth } from "../webgl";
+import { createItem } from "../items/item-creation";
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -51,28 +51,27 @@ abstract class Client {
          });
          // If couldn't connect to server, return false
          this.socket.on("connect_error", () => {
+            console.log("badness");
             resolve(false);
          });
          
          if (!socketAlreadyExists) {
             this.socket.on("game_data_packet", gameDataPacket => {
                // Only unload game packets when the game is running
-               if (Game.getIsPaused() || !Game.isRunning) return;
+               if (Game.getIsPaused() || !Game.isRunning || !Game.isSynced) return;
    
                this.unloadGameDataPacket(gameDataPacket);
-   
-               if (!Game.isSynced) {
-                  Game.sync();
-               }
+            });
+
+            this.socket.on("game_data_sync_packet", (gameDataSyncPacket: GameDataSyncPacket) => {
+               this.registerGameDataSyncPacket(gameDataSyncPacket);
             });
    
             // When the connection to the server fails
-            this.socket.on("disconnect", () => {
+            this.socket.on("disconnect", (a) => {
+               console.log("very bad cringe");
+               console.log(a);
                Game.isRunning = false;
-   
-               if (this.socket !== null) {
-                  this.socket.disconnect();
-               }
    
                setLoadingScreenInitialStatus("connection_error");
                setGameState("loading");
@@ -86,6 +85,7 @@ abstract class Client {
          if (this.socket === null) throw new Error("Socket hadn't been created when requesting game data")
 
          this.socket.emit("initial_game_data_request");
+         console.log("initial_game_data_request");
          
          this.socket.off("initial_game_data_packet");
          this.socket.on("initial_game_data_packet", (initialGameDataPacket: InitialGameDataPacket) => {
@@ -113,7 +113,7 @@ abstract class Client {
             const serverTileData = serverTileDataArray[y][x];
             const tileInfo: TileInfo = {
                type: serverTileData.type,
-               biome: serverTileData.biome,
+               biomeName: serverTileData.biomeName,
                isWall: serverTileData.isWall
             }
             tiles[y][x] = new Tile(serverTileData.x, serverTileData.y, tileInfo);
@@ -128,15 +128,17 @@ abstract class Client {
       
       this.updateEntities(gameDataPacket.serverEntityDataArray);
       this.updateItemEntities(gameDataPacket.serverItemEntityDataArray);
-      this.updatePlayerHotbar(gameDataPacket.hotbarInventory);
+      this.updatePlayerHotbar(gameDataPacket.playerHotbarInventory);
       this.updateCraftingOutputItem(gameDataPacket.craftingOutputItem);
-      this.updateHeldItem(gameDataPacket.heldItem);
+      this.updateHeldItem(gameDataPacket.playerHeldItem);
       this.registerTileUpdates(gameDataPacket.tileUpdates);
 
       // Register hits
       for (const hitData of gameDataPacket.hitsTaken) {
          Player.registerHit(hitData);
       }
+
+      Player.setHealth(gameDataPacket.playerHealth);
    }
 
    /**
@@ -193,7 +195,7 @@ abstract class Client {
    private static updatePlayerHotbar(serverHotbarInventoryData: ServerInventoryData): void {
       const inventory: Inventory = {};
       for (const [itemSlot, serverItemData] of Object.entries(serverHotbarInventoryData) as unknown as ReadonlyArray<[number, ServerItemData]>) {
-         const item = new Item(serverItemData.type, serverItemData.count);
+         const item = createItem(serverItemData.type, serverItemData.count);
          inventory[itemSlot] = item;
       }
       Player.setHotbarInventory(inventory);
@@ -203,7 +205,7 @@ abstract class Client {
       if (serverCraftingOutputItemData === null) {
          Player.setCraftingOutputItem(null);
       } else {
-         const craftingOutputItem = new Item(serverCraftingOutputItemData.type, serverCraftingOutputItemData.count);
+         const craftingOutputItem = createItem(serverCraftingOutputItemData.type, serverCraftingOutputItemData.count);
          Player.setCraftingOutputItem(craftingOutputItem);
       }
    }
@@ -212,7 +214,7 @@ abstract class Client {
       if (serverHeldItemData === null) {
          Player.setHeldItem(null);
       } else {
-         const heldItem = new Item(serverHeldItemData.type, serverHeldItemData.count);
+         const heldItem = createItem(serverHeldItemData.type, serverHeldItemData.count);
          Player.setHeldItem(heldItem);
       }
    }
@@ -253,6 +255,20 @@ abstract class Client {
       entity.special = entityData.special;
    }
 
+   private static registerGameDataSyncPacket(gameDataSyncPacket: GameDataSyncPacket): void {
+      if (!Game.isRunning || Player.instance === null) return;
+
+      Player.instance.position = Point.unpackage(gameDataSyncPacket.position);
+      Player.instance.velocity = gameDataSyncPacket.velocity !== null ? Vector.unpackage(gameDataSyncPacket.velocity) : null;
+      Player.instance.acceleration = gameDataSyncPacket.acceleration !== null ? Vector.unpackage(gameDataSyncPacket.acceleration) : null;
+      Player.instance.rotation = gameDataSyncPacket.rotation;
+      Player.instance.terminalVelocity = gameDataSyncPacket.terminalVelocity;
+      Player.setHealth(gameDataSyncPacket.health);
+      this.updatePlayerHotbar(gameDataSyncPacket.playerHotbarInventory);
+
+      Game.sync();
+   }
+
    /**
     * Sends a message to all players in the server.
     * @param message The message to send to the other players
@@ -261,6 +277,7 @@ abstract class Client {
       // Send the chat message to the server
       if (this.socket !== null) {
          this.socket.emit("chat_message", message);
+         console.log("chat_message");
       }
    }
 
@@ -268,51 +285,73 @@ abstract class Client {
       // Send player data to the server
       if (this.socket !== null) {
          this.socket.emit("initial_player_data", username, windowWidth, windowHeight);
+         console.log("initial_player_data");
       }
    }
 
    public static sendPlayerDataPacket(): void {
-      if (Game.isRunning && this.socket !== null) {
+      if (Game.isRunning && this.socket !== null && Player.instance !== null) {
          const packet: PlayerDataPacket = {
-            position: Player.instance!.position.package(),
-            velocity: Player.instance!.velocity?.package() || null,
-            acceleration: Player.instance!.acceleration?.package() || null,
-            terminalVelocity: Player.instance!.terminalVelocity,
-            rotation: Player.instance!.rotation,
+            position: Player.instance.position.package(),
+            velocity: Player.instance.velocity?.package() || null,
+            acceleration: Player.instance.acceleration?.package() || null,
+            terminalVelocity: Player.instance.terminalVelocity,
+            rotation: Player.instance.rotation,
             visibleChunkBounds: Camera.getVisibleChunkBounds()
          };
 
          this.socket.emit("player_data_packet", packet);
+         // console.log("player_data_packet");
+         console.log(packet);
       }
    }
 
    public static sendCraftingPacket(craftingRecipe: CraftingRecipe): void {
       if (Game.isRunning && this.socket !== null) {
          this.socket.emit("crafting_packet", craftingRecipe);
+         console.log("crafting_packet");
       }
    }
 
    public static sendItemHoldPacket(inventory: PlayerInventoryType, itemSlot: number): void {
       if (Game.isRunning && this.socket !== null) {
          this.socket.emit("item_hold_packet", inventory, itemSlot);
+         console.log("item_hold_packet");
       }
    }
 
    public static sendItemReleasePacket(inventory: PlaceablePlayerInventoryType, itemSlot: number): void {
       if (Game.isRunning && this.socket !== null) {
          this.socket.emit("item_release_packet", inventory, itemSlot);
+         console.log("item_release_packet");
       }
    }
 
    public static sendAttackPacket(attackPacket: AttackPacket): void {
       if (Game.isRunning && this.socket !== null) {
          this.socket.emit("attack_packet", attackPacket);
+         console.log("attack_packet");
       }
    }
 
-   public static sendItemUsePacket(itemSlot: number) {
+   public static sendItemUsePacket(itemSlot: number): void {
       if (Game.isRunning && this.socket !== null) {
          this.socket.emit("item_use_packet", itemSlot);
+         console.log("item_use_packet");
+      }
+   }
+
+   public static sendDeactivatePacket(): void {
+      if (Game.isRunning && this.socket !== null) {
+         this.socket.emit("deactivate");
+         console.log("deactivate");
+      }
+   }
+
+   public static sendActivatePacket(): void {
+      if (Game.isRunning && this.socket !== null) {
+         this.socket.emit("activate");
+         console.log("activate");
       }
    }
 }

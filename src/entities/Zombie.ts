@@ -6,7 +6,8 @@ import Entity from "./Entity";
 const ZOMBIE_TEXTURE_SOURCES: { [zombieType: number]: string } = {
    0: "zombie1.png",
    1: "zombie2.png",
-   2: "zombie3.png"
+   2: "zombie3.png",
+   3: "zombie-golden.png"
 }
 
 class Zombie extends Entity {

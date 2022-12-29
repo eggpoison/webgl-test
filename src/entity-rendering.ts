@@ -12,7 +12,7 @@ import { createShaderString, createWebGLProgram, gl, MAX_ACTIVE_TEXTURE_UNITS, w
 // Image shaders
 // 
 const entityRenderingVertexShaderText = `
-precision mediump float;
+precision highp float;
 
 attribute vec2 a_position;
 attribute float a_redness;
@@ -34,7 +34,7 @@ void main() {
 
 let entityRenderingFragmentShaderText: string;
 createShaderString(`
-precision mediump float;
+precision highp float;
 
 uniform sampler2D u_textures[__MAX_ACTIVE_TEXTURE_UNITS__];
 
@@ -52,7 +52,7 @@ vec4 getSampleFromArray(sampler2D textures[__MAX_ACTIVE_TEXTURE_UNITS__], int nd
    }
    return color;
 }
- 
+
 void main() {
    vec4 fragColour = getSampleFromArray(u_textures, int(v_textureIdx + 0.5), v_texCoord);
 
@@ -341,7 +341,7 @@ const renderRenderParts = (renderParts: CategorisedRenderParts, cornerPositionsR
       }
       
       // Create tile buffer
-      const tileBuffer = gl.createBuffer()!;
+      const tileBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, tileBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
