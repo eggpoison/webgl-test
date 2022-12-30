@@ -68,8 +68,6 @@ class Player extends Entity {
 
    public static heldItem: Item | null = null;
 
-   public readonly isInstance: boolean = false;
-
    /** Health of the instance player */
    public static health = 20;
 
@@ -100,7 +98,6 @@ class Player extends Entity {
 
       if (Player.instance === null) {
          Player.instance = this;
-         this.isInstance = true;
 
          Camera.position = this.position;
 

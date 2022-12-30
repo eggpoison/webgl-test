@@ -4,8 +4,6 @@ import { randItem } from "webgl-test-shared";
 const DEATH_TIPS: ReadonlyArray<string> = [
    "Always make sure your monitor is on, as otherwise it will not be on.",
    "Cyberbullying is a quick and effective way to get back at people after losing.",
-   "Water is fast and sneaky, do not trust it.",
-   "Press the Alt + f3 keys together to open the help menu.",
    "Have you tried not dying?"
 ];
 

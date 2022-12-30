@@ -27,7 +27,7 @@ export function renderPlayerNames(): void {
 
    for (const entity of Object.values(Game.board.entities)) {
       // If the entity is a player, render a nametag for it
-      if (entity instanceof Player && !entity.isInstance) {
+      if (entity instanceof Player && entity !== Player.instance) {
          // Calculate the position of the text
          let drawPosition = entity.renderPosition.copy();
          drawPosition.y += NAMETAG_Y_OFFSET;

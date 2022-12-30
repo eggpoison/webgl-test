@@ -11,16 +11,18 @@
 }
 
 #death-screen .bg {
-   background-color: rgba(0, 0, 0, 0.3);
+   background-color: rgba(0, 0, 0, 0.5);
    position: absolute;
    top: 0;
    right: 0;
    bottom: 0;
    left: 0;
    z-index: 1;
+   backdrop-filter: blur(2px);
 }
 
 #death-screen .content {
+   width: 75%;
    position: absolute;
    left: 50%;
    top: 50%;
@@ -29,15 +31,20 @@
 }
 
 #death-screen .content .title {
+   color: rgb(255, 0, 0);
    text-align: center;
+   text-shadow: 0 0 1px #000, 0 0 2px #000, 0 0 3px #000, 0 0 4px #000, 0 0 5px #000;
    font-family: "PT Serif";
-   font-size: 2.75rem;
+   font-size: 3rem;
    font-weight: 700;
+   margin: 0;
 }
 
 #death-screen .content .tip {
-   color: #fff;
-   font-family: "Inconsolata";
-   font-size: 1.1rem;
+   color: rgb(255, 176, 176);
+   font-family: "Calibri";
+   font-size: 1.2rem;
+   text-align: center;
    text-shadow: 0 0 1px #000, 0 0 2px #000, 0 0 3px #000, 0 0 4px #000, 0 0 5px #000;
+   margin: 0.5rem 0;
 }

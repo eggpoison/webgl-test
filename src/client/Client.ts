@@ -51,7 +51,6 @@ abstract class Client {
          });
          // If couldn't connect to server, return false
          this.socket.on("connect_error", () => {
-            console.log("badness");
             resolve(false);
          });
          
@@ -69,8 +68,6 @@ abstract class Client {
    
             // When the connection to the server fails
             this.socket.on("disconnect", (a) => {
-               console.log("very bad cringe");
-               console.log(a);
                Game.isRunning = false;
    
                setLoadingScreenInitialStatus("connection_error");
@@ -85,7 +82,6 @@ abstract class Client {
          if (this.socket === null) throw new Error("Socket hadn't been created when requesting game data")
 
          this.socket.emit("initial_game_data_request");
-         console.log("initial_game_data_request");
          
          this.socket.off("initial_game_data_packet");
          this.socket.on("initial_game_data_packet", (initialGameDataPacket: InitialGameDataPacket) => {
@@ -148,7 +144,9 @@ abstract class Client {
       const clientKnownEntityIDs: Array<number> = Object.keys(Game.board.entities).map(idString => Number(idString));
 
       // Remove the player from the list of known entities so the player isn't removed
-      clientKnownEntityIDs.splice(clientKnownEntityIDs.indexOf(Player.instance!.id), 1);
+      if (Player.instance !== null) {
+         clientKnownEntityIDs.splice(clientKnownEntityIDs.indexOf(Player.instance.id), 1);
+      }
 
       // Update the game entities
       for (const entityData of entityDataArray) {
@@ -256,15 +254,17 @@ abstract class Client {
    }
 
    private static registerGameDataSyncPacket(gameDataSyncPacket: GameDataSyncPacket): void {
-      if (!Game.isRunning || Player.instance === null) return;
+      if (!Game.isRunning) return;
 
-      Player.instance.position = Point.unpackage(gameDataSyncPacket.position);
-      Player.instance.velocity = gameDataSyncPacket.velocity !== null ? Vector.unpackage(gameDataSyncPacket.velocity) : null;
-      Player.instance.acceleration = gameDataSyncPacket.acceleration !== null ? Vector.unpackage(gameDataSyncPacket.acceleration) : null;
-      Player.instance.rotation = gameDataSyncPacket.rotation;
-      Player.instance.terminalVelocity = gameDataSyncPacket.terminalVelocity;
-      Player.setHealth(gameDataSyncPacket.health);
-      this.updatePlayerHotbar(gameDataSyncPacket.playerHotbarInventory);
+      if (Player.instance !== null) {
+         Player.instance.position = Point.unpackage(gameDataSyncPacket.position);
+         Player.instance.velocity = gameDataSyncPacket.velocity !== null ? Vector.unpackage(gameDataSyncPacket.velocity) : null;
+         Player.instance.acceleration = gameDataSyncPacket.acceleration !== null ? Vector.unpackage(gameDataSyncPacket.acceleration) : null;
+         Player.instance.rotation = gameDataSyncPacket.rotation;
+         Player.instance.terminalVelocity = gameDataSyncPacket.terminalVelocity;
+         Player.setHealth(gameDataSyncPacket.health);
+         this.updatePlayerHotbar(gameDataSyncPacket.playerHotbarInventory);
+      }
 
       Game.sync();
    }
@@ -277,7 +277,6 @@ abstract class Client {
       // Send the chat message to the server
       if (this.socket !== null) {
          this.socket.emit("chat_message", message);
-         console.log("chat_message");
       }
    }
 
@@ -285,7 +284,6 @@ abstract class Client {
       // Send player data to the server
       if (this.socket !== null) {
          this.socket.emit("initial_player_data", username, windowWidth, windowHeight);
-         console.log("initial_player_data");
       }
    }
 
@@ -301,57 +299,48 @@ abstract class Client {
          };
 
          this.socket.emit("player_data_packet", packet);
-         // console.log("player_data_packet");
-         console.log(packet);
       }
    }
 
    public static sendCraftingPacket(craftingRecipe: CraftingRecipe): void {
       if (Game.isRunning && this.socket !== null) {
          this.socket.emit("crafting_packet", craftingRecipe);
-         console.log("crafting_packet");
       }
    }
 
    public static sendItemHoldPacket(inventory: PlayerInventoryType, itemSlot: number): void {
       if (Game.isRunning && this.socket !== null) {
          this.socket.emit("item_hold_packet", inventory, itemSlot);
-         console.log("item_hold_packet");
       }
    }
 
    public static sendItemReleasePacket(inventory: PlaceablePlayerInventoryType, itemSlot: number): void {
       if (Game.isRunning && this.socket !== null) {
          this.socket.emit("item_release_packet", inventory, itemSlot);
-         console.log("item_release_packet");
       }
    }
 
    public static sendAttackPacket(attackPacket: AttackPacket): void {
       if (Game.isRunning && this.socket !== null) {
          this.socket.emit("attack_packet", attackPacket);
-         console.log("attack_packet");
       }
    }
 
    public static sendItemUsePacket(itemSlot: number): void {
       if (Game.isRunning && this.socket !== null) {
          this.socket.emit("item_use_packet", itemSlot);
-         console.log("item_use_packet");
       }
    }
 
    public static sendDeactivatePacket(): void {
       if (Game.isRunning && this.socket !== null) {
          this.socket.emit("deactivate");
-         console.log("deactivate");
       }
    }
 
    public static sendActivatePacket(): void {
       if (Game.isRunning && this.socket !== null) {
          this.socket.emit("activate");
-         console.log("activate");
       }
    }
 }
