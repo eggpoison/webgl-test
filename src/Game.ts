@@ -4,7 +4,7 @@ import { isDev } from "./utils";
 import { renderPlayerNames, createTextCanvasContext } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/ChatBox";
-import { HitboxType, InitialGameDataPacket, lerp, Point, SETTINGS } from "webgl-test-shared";
+import { lerp, Point, SETTINGS } from "webgl-test-shared";
 import { calculateEntityRenderValues, setFrameProgress } from "./entities/Entity";
 import { createEntityShaders, renderEntities } from "./entity-rendering";
 import Client from "./client/Client";
@@ -15,11 +15,10 @@ import { createShaderStrings, createWebGLContext, createWebGLProgram, gl, resize
 import { loadTextures } from "./textures";
 import { hidePauseScreen, showPauseScreen, toggleSettingsMenu } from "./components/game/GameScreen";
 import { getGameState } from "./components/App";
-import Hitbox from "./hitboxes/Hitbox";
-import CircularHitbox from "./hitboxes/CircularHitbox";
 import { updateDebugScreenCurrentTime, updateDebugScreenFPS, updateDebugScreenTicks } from "./components/game/DebugScreen";
 import Item from "./items/Item";
 import { createPlaceableItemProgram, renderGhostPlaceableItem } from "./items/PlaceableItem";
+import { clearPressedKeys } from "./keyboard-input";
 
 const nightVertexShaderText = `
 precision mediump float;
@@ -79,6 +78,8 @@ abstract class Game {
    /** If the game has recevied up-to-date game data from the server. Set to false when paused */
    public static isSynced: boolean = true;
 
+   public static hasInitialised = false;
+
    private static lastTime: number = 0;
    /** Amount of time the game is through the current frame */
    private static lag: number = 0;
@@ -113,8 +114,13 @@ abstract class Game {
       resizeCanvas();
                
       // Start the game loop
+      this.isSynced = true;
       this.isRunning = true;
       requestAnimationFrame(time => this.main(time));
+   }
+
+   public static stop(): void {
+      this.isRunning = false;
    }
 
    private static createNightBuffer(): void {
@@ -138,6 +144,8 @@ abstract class Game {
 
       this.isSynced = false;
 
+      clearPressedKeys();
+
       Client.sendDeactivatePacket();
    }
    public static unpause(): void {
@@ -158,32 +166,23 @@ abstract class Game {
    /**
     * Prepares the game to be played. Called once just before the game starts.
     */
-   public static async initialise(initialGameDataPacket: InitialGameDataPacket, username: string): Promise<void> {
-      createWebGLContext();
-      createShaderStrings();
-      createTextCanvasContext();
+   public static async initialise(): Promise<void> {
+      return new Promise(async resolve => {
 
-      const tiles = Client.parseServerTileDataArray(initialGameDataPacket.tiles);
-      this.board = new Board(tiles);
+         createWebGLContext();
+         createShaderStrings();
+         createTextCanvasContext();
+         
+         createEntityShaders();
+         
+         createPlaceableItemProgram();
+         
+         await loadTextures();
 
-      // Spawn the player
-      Player.instance = null;
-      const playerSpawnPosition = new Point(initialGameDataPacket.spawnPosition[0], initialGameDataPacket.spawnPosition[1]);
-      const hitboxes = new Set<Hitbox<HitboxType>>([
-         new CircularHitbox({
-            type: "circular",
-            radius: 32
-         })
-      ]);
-      new Player(playerSpawnPosition, hitboxes, initialGameDataPacket.playerID, null, username);
+         this.hasInitialised = true;
 
-      createEntityShaders();
-
-      createPlaceableItemProgram();
-      
-      await loadTextures();
-
-      Client.unloadGameDataPacket(initialGameDataPacket);
+         resolve();
+      })
    }
 
    private static update(): void {
@@ -229,7 +228,7 @@ abstract class Game {
       renderPlayerNames();
 
       this.board.renderTiles();
-      this.board.renderItems();
+      this.board.renderItemEntities();
       this.board.renderBorder();
       if (OPTIONS.showChunkBorders) {
          this.board.drawChunkBorders();

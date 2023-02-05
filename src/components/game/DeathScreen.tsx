@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { randItem } from "webgl-test-shared";
+import Client from "../../client/Client";
+import Game from "../../Game";
+import { resetUsername, setGameState, setLoadingScreenInitialStatus } from "../App";
 
 const DEATH_TIPS: ReadonlyArray<string> = [
    "Always make sure your monitor is on, as otherwise it will not be on.",
@@ -7,10 +10,23 @@ const DEATH_TIPS: ReadonlyArray<string> = [
    "Have you tried not dying?"
 ];
 
-export let showDeathScreen: () => void;
+interface DeathScreenProps {
+   readonly isDead: boolean;
+}
 
-const DeathScreen = () => {
-   const [isVisible, setIsVisible] = useState<boolean>(false);
+const respawnPlayer = (): void => {
+   Client.sendRespawnRequest();
+}
+
+const quitGame = (): void => {
+   resetUsername();
+   setLoadingScreenInitialStatus("establishing_connection");
+   setGameState("main_menu");
+   Game.stop();
+   Client.disconnect();
+}
+
+const DeathScreen = ({ isDead }: DeathScreenProps) => {
    const [tip, setTip] = useState<string>("");
 
    const randomiseTip = (): void => {
@@ -20,13 +36,9 @@ const DeathScreen = () => {
 
    useEffect(() => {
       randomiseTip();
-
-      showDeathScreen = (): void => {
-         setIsVisible(true);
-      }
    }, []);
 
-   if (!isVisible) return null;
+   if (!isDead) return null;
    
    return <div id="death-screen">
       <div className="content">
@@ -35,8 +47,8 @@ const DeathScreen = () => {
          <p className="tip">Tip: {tip}</p>
 
          <div className="button-container">
-            <button>Respawn</button>
-            <button>Quit</button>
+            <button onClick={respawnPlayer}>Respawn</button>
+            <button onClick={quitGame}>Quit</button>
          </div>
       </div>
 

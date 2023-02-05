@@ -10,6 +10,8 @@ export let getGameState: () => GameState;
 
 export let setLoadingScreenInitialStatus: (newStatus: LoadingScreenStatus) => void;
 
+export let resetUsername: () => void;
+
 function App() {
    const [gameSection, setGameSection] = useState<GameState>("main_menu");
    const gameStateUpdateCallbacks = useRef(new Array<() => void>());
@@ -21,6 +23,10 @@ function App() {
    const hideCanvas = (): void => setCanvasVisiblity(false);
  
    useEffect(() => {
+      resetUsername = (): void => {
+         usernameRef.current = null;
+      }
+      
       setGameState = (gameState: GameState): Promise<void> => {
          return new Promise(resolve => {
             gameStateUpdateCallbacks.current.push(resolve);

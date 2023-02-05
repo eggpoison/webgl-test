@@ -21,11 +21,14 @@ export let openSettingsMenu: () => void;
 export let closeSettingsMenu: () => void;
 export let toggleSettingsMenu: () => void;
 
+export let gameScreenSetIsDead: (isDead: boolean) => void;
+
 const GameScreen = () => {
    const hasLoaded = useRef<boolean>(false);
    const [isPaused, setIsPaused] = useState(false);
    const [settingsIsOpen, setSettingsIsOpen] = useState(false);
    const [devViewIsEnabled, setDevViewIsEnabled] = useState(isDev());
+   const [isDead, setIsDead] = useState(false);
 
    useEffect(() => {
       if (!hasLoaded.current) {
@@ -36,6 +39,10 @@ const GameScreen = () => {
          
          openSettingsMenu = (): void => setSettingsIsOpen(true);
          closeSettingsMenu = (): void => setSettingsIsOpen(false);
+
+         gameScreenSetIsDead = (isDead: boolean): void => {
+            setIsDead(isDead);
+         }
          
          Game.start();
       }
@@ -64,7 +71,7 @@ const GameScreen = () => {
       <CraftingMenu />
       <HeldItem />
 
-      <DeathScreen />
+      <DeathScreen isDead={isDead} />
 
       {devViewIsEnabled ? <>
          <DevEntityViewer />
@@ -74,7 +81,7 @@ const GameScreen = () => {
 
       {settingsIsOpen ? <Settings /> : null}
 
-      {isPaused ? <PauseScreen /> : null}
+      {isPaused && !isDead ? <PauseScreen /> : null}
    </>;
 }
 

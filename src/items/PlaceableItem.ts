@@ -153,6 +153,10 @@ export function createPlaceableItemProgram(): void {
    programTexCoordAttribLocation = gl.getAttribLocation(program, "a_texCoord");
 }
 
-class PlaceableItem extends Item {}
+class PlaceableItem extends Item {
+   public onRightMouseButtonDown(): void {
+      super.use();
+   }
+}
 
 export default PlaceableItem;

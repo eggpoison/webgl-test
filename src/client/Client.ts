@@ -1,17 +1,19 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, ServerEntityData, ServerItemEntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, ServerInventoryData, ServerItemData, CraftingRecipe, PlayerInventoryType, PlaceablePlayerInventoryType, GameDataSyncPacket } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, ServerEntityData, ServerItemEntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, ServerInventoryData, ServerItemData, CraftingRecipe, PlayerInventoryType, PlaceablePlayerInventoryType, GameDataSyncPacket, RespawnDataPacket } from "webgl-test-shared";
 import Camera from "../Camera";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
-import Player, { Inventory } from "../entities/Player";
+import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
 import Game from "../Game";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import Hitbox from "../hitboxes/Hitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import ItemEntity from "../ItemEntity";
+import ItemEntity from "../items/ItemEntity";
 import { Tile } from "../Tile";
 import { windowHeight, windowWidth } from "../webgl";
 import { createItem } from "../items/item-creation";
+import { gameScreenSetIsDead } from "../components/game/GameScreen";
+import Chunk from "../Chunk";
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -61,17 +63,26 @@ abstract class Client {
    
                this.unloadGameDataPacket(gameDataPacket);
             });
+   
+            // When the connection to the server fails
+            this.socket.on("disconnect", disconnectReason => {
+               // Don't show a connection error if the socket was disconnected manually
+               if (disconnectReason === "io client disconnect") return;
+
+               Game.isRunning = false;
+               
+               setLoadingScreenInitialStatus("connection_error");
+               setGameState("loading");
+
+               Player.instance = null;
+            });
 
             this.socket.on("game_data_sync_packet", (gameDataSyncPacket: GameDataSyncPacket) => {
                this.registerGameDataSyncPacket(gameDataSyncPacket);
             });
-   
-            // When the connection to the server fails
-            this.socket.on("disconnect", (a) => {
-               Game.isRunning = false;
-   
-               setLoadingScreenInitialStatus("connection_error");
-               setGameState("loading");
+
+            this.socket.on("respawn_data_packet", (respawnDataPacket: RespawnDataPacket): void => {
+               this.respawnPlayer(respawnDataPacket);
             });
          }
       });
@@ -97,6 +108,15 @@ abstract class Client {
          autoConnect: false,
          reconnection: false
       });
+   }
+
+   public static disconnect(): void {
+      if (this.socket === null) {
+         throw new Error("Tried to disconnect a socket which doesn't exist");
+      }
+
+      this.socket.disconnect();
+      this.socket = null;
    }
 
    /** Parses the server tile data array into an array of client tiles */
@@ -134,6 +154,12 @@ abstract class Client {
          Player.registerHit(hitData);
       }
 
+      if (Player.instance !== null) {
+         if (gameDataPacket.hitsTaken.length >= 1) {
+            Player.instance.secondsSinceLastHit = 0;
+         }
+      }
+
       Player.setHealth(gameDataPacket.playerHealth);
    }
 
@@ -167,12 +193,19 @@ abstract class Client {
    }
 
    private static updateItemEntities(serverItemEntityDataArray: ReadonlyArray<ServerItemEntityData>): void {
-      const knownItemEntityIDs = Object.keys(Game.board.items).map(stringID => Number(stringID));
+      const knownItemEntityIDs = Object.keys(Game.board.itemEntities).map(stringID => Number(stringID));
 
       for (const serverItemData of serverItemEntityDataArray) {
          if (!knownItemEntityIDs.includes(serverItemData.id)) {
             // New item
             this.createItemFromServerItemData(serverItemData);
+         } else {
+            // Otherwise update it
+            if (Game.board.itemEntities.hasOwnProperty(serverItemData.id)) {
+               const itemEntity = Game.board.itemEntities[serverItemData.id];
+               itemEntity.updateFromData(serverItemData);
+            }
+            
          }
 
          knownItemEntityIDs.splice(knownItemEntityIDs.indexOf(serverItemData.id), 1);
@@ -180,23 +213,43 @@ abstract class Client {
 
       // Thus the remaining known item IDs have had their items removed
       for (const itemID of knownItemEntityIDs) {
-         Game.board.items[itemID].remove();
+         Game.board.itemEntities[itemID].remove();
       }
    }
 
    private static createItemFromServerItemData(serverItemEntityData: ServerItemEntityData): void {
       const position = Point.unpackage(serverItemEntityData.position); 
-      const containingChunks = serverItemEntityData.chunkCoordinates.map(([x, y]) => Game.board.getChunk(x, y));
-      new ItemEntity(serverItemEntityData.id, position, containingChunks, serverItemEntityData.itemID, serverItemEntityData.rotation);
+      const velocity = serverItemEntityData.velocity !== null ? Vector.unpackage(serverItemEntityData.velocity) : null;
+
+      const containingChunks = new Set<Chunk>();
+      for (const [chunkX, chunkY] of serverItemEntityData.chunkCoordinates) {
+         const chunk = Game.board.getChunk(chunkX, chunkY);
+         containingChunks.add(chunk);
+      }
+
+      new ItemEntity(serverItemEntityData.id, position, velocity, containingChunks, serverItemEntityData.itemID, serverItemEntityData.rotation);
    }
 
    private static updatePlayerHotbar(serverHotbarInventoryData: ServerInventoryData): void {
-      const inventory: Inventory = {};
-      for (const [itemSlot, serverItemData] of Object.entries(serverHotbarInventoryData) as unknown as ReadonlyArray<[number, ServerItemData]>) {
-         const item = createItem(serverItemData.type, serverItemData.count);
-         inventory[itemSlot] = item;
+      for (let itemSlot = 0; itemSlot < SETTINGS.PLAYER_HOTBAR_SIZE; itemSlot++) {
+         const clientItem = Player.hotbarInventory[itemSlot];
+         const serverItem = serverHotbarInventoryData[itemSlot];
+
+         if (typeof serverItem !== "undefined") {
+            // If the item is of a new type, make a new item
+            if (typeof clientItem === "undefined" || clientItem.type !== serverItem.type) {
+               const item = createItem(serverItem.type, serverItem.count);
+               Player.hotbarInventory[itemSlot] = item;
+            } else {
+               // Otherwise just update the existing item
+               clientItem.count = serverItem.count;
+            }
+         } else if (typeof clientItem !== "undefined") {
+            delete Player.hotbarInventory[itemSlot];
+         }
       }
-      Player.setHotbarInventory(inventory);
+
+      Player.updateHotbar();
    }
 
    private static updateCraftingOutputItem(serverCraftingOutputItemData: ServerItemData | null): void {
@@ -269,6 +322,15 @@ abstract class Client {
       Game.sync();
    }
 
+   private static respawnPlayer(respawnDataPacket: RespawnDataPacket): void {
+      Player.setHealth(Player.MAX_HEALTH);
+      
+      const spawnPosition = Point.unpackage(respawnDataPacket.spawnPosition);
+      new Player(spawnPosition, new Set(Player.HITBOXES), respawnDataPacket.playerID, null, Player.username, true);
+
+      gameScreenSetIsDead(false);
+   }
+
    /**
     * Sends a message to all players in the server.
     * @param message The message to send to the other players
@@ -332,6 +394,12 @@ abstract class Client {
       }
    }
 
+   public static sendThrowHeldItemPacket(throwDirection: number): void {
+      if (Game.isRunning && this.socket !== null) {
+         this.socket.emit("throw_held_item_packet", throwDirection);
+      }
+   }
+
    public static sendDeactivatePacket(): void {
       if (Game.isRunning && this.socket !== null) {
          this.socket.emit("deactivate");
@@ -341,6 +409,12 @@ abstract class Client {
    public static sendActivatePacket(): void {
       if (Game.isRunning && this.socket !== null) {
          this.socket.emit("activate");
+      }
+   }
+
+   public static sendRespawnRequest(): void {
+      if (Game.isRunning && this.socket !== null) {
+         this.socket.emit("respawn");
       }
    }
 }

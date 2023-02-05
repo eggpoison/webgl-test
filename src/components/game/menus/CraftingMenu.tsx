@@ -125,6 +125,12 @@ const CraftingMenu = () => {
       setHeldItemVisualPosition(e.clientX, e.clientY);
    }
 
+   const throwHeldItem = (): void => {
+      if (Player.instance !== null) {
+         Client.sendThrowHeldItemPacket(Player.instance.rotation);
+      }
+   }
+
    // Find which of the available recipes can be crafted
    useEffect(() => {
       const craftableRecipesArray = new Array<CraftingRecipe>();
@@ -167,10 +173,17 @@ const CraftingMenu = () => {
    useEffect(() => {
       toggleCraftingMenu = (): void => {
          if (isVisible) {
+            // Hide the crafting menu
             setIsVisible(false);
             setHoveredRecipe(null);
             setHoverPosition(null);
+
+            // If there is a held item, throw it out
+            if (Player.heldItem !== null) {
+               throwHeldItem();
+            }
          } else {
+            // Show the crafting menu
             setIsVisible(true);
          }
       }
@@ -196,7 +209,7 @@ const CraftingMenu = () => {
             const isCraftable = craftableRecipes.current.includes(recipe);
             
             itemSlots.push(
-               <ItemSlot onMouseOver={(e) => hoverRecipe(recipe, e)} onMouseOut={() => unhoverRecipe()} onMouseMove={e => mouseMove(e)} className={isCraftable ? "craftable" : undefined} isSelected={recipe === selectedRecipe} onClick={() => selectRecipe(recipe)} picturedItemType={recipe.product} itemCount={recipe.productCount !== 1 ? recipe.productCount : undefined} key={j} />
+               <ItemSlot onMouseOver={(e) => hoverRecipe(recipe, e)} onMouseOut={() => unhoverRecipe()} onMouseMove={e => mouseMove(e)} className={isCraftable ? "craftable" : undefined} isSelected={recipe === selectedRecipe} onClick={() => selectRecipe(recipe)} picturedItemType={recipe.product} itemCount={recipe.yield !== 1 ? recipe.yield : undefined} key={j} />
             );
          } else {
             itemSlots.push(

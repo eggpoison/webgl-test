@@ -1,12 +1,13 @@
 import { AttackPacket, CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitboxType, HitData, ItemType, Point, SETTINGS, Vector } from "webgl-test-shared";
 import Camera from "../Camera";
 import Client from "../client/Client";
-import { showDeathScreen } from "../components/game/DeathScreen";
+import { gameScreenSetIsDead } from "../components/game/GameScreen";
 import { updateHealthBar } from "../components/game/HealthBar";
 import { setHeldItemVisual } from "../components/game/HeldItem";
 import { setHotbarInventory, setHotbarSelectedItemSlot } from "../components/game/Hotbar";
 import { setCraftingMenuAvailableRecipes, setCraftingMenuAvailableCraftingStations, setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
 import Game from "../Game";
+import CircularHitbox from "../hitboxes/CircularHitbox";
 import Hitbox from "../hitboxes/Hitbox";
 import Item from "../items/Item";
 import { addKeyListener, clearPressedKeys, keyIsPressed } from "../keyboard-input";
@@ -31,35 +32,14 @@ for (const craftingRecipe of CRAFTING_RECIPES) {
    }
 }
 
-const inventoriesAreTheSame = (inventory1: Inventory, inventory2: Inventory, inventorySize: number): boolean => {
-   for (let itemSlot = 1; itemSlot <= inventorySize; itemSlot++) {
-      const item1 = inventory1[itemSlot];
-      const item2 = inventory2[itemSlot];
-
-      const item1IsUndefined = typeof item1 === "undefined";
-      const item2IsUndefined = typeof item2 === "undefined";
-
-      // If one slot is empty and the other isn't, the inventories aren't the same
-      if ((!item1IsUndefined && item2IsUndefined) || (item1IsUndefined && !item2IsUndefined)) {
-         return false;
-      }
-
-      if (item1IsUndefined || item2IsUndefined) {
-         continue;
-      }
-
-      if (item1.type !== item2.type || item1.count !== item2.count) {
-         return false;
-      }
-   }
-
-   return true;
-}
-
 class Player extends Entity {
    private static readonly MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION: number = 250;
+
+   public static readonly MAX_HEALTH = 20;
    
    public static instance: Player | null = null;
+
+   public static username: string;
 
    public static hotbarInventory: Inventory = {};
    public static selectedHotbarItemSlot = 1;
@@ -83,20 +63,31 @@ class Player extends Entity {
    private static readonly ACCELERATION = 1000;
    private static readonly TERMINAL_VELOCITY = 300;
 
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, displayName: string) {
+   public static readonly HITBOXES: ReadonlySet<Hitbox<HitboxType>> = new Set<Hitbox<HitboxType>>([
+      new CircularHitbox({
+         type: "circular",
+         radius: 32
+      })
+   ]);
+
+   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, displayName: string, isInstance: boolean = false) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
       this.addRenderParts([
          new RenderPart({
             width: 64,
             height: 64,
-            textureSource: "player.png"
+            textureSource: "human/human1.png"
          })
       ]);
 
       this.displayName = displayName;
 
-      if (Player.instance === null) {
+      if (isInstance) {
+         if (Player.instance !== null) {
+            throw new Error("Tried to create a new player main instance when one already existed!");
+         }
+         
          Player.instance = this;
 
          Camera.position = this.position;
@@ -160,6 +151,12 @@ class Player extends Entity {
       if (this === Player.instance) {
          this.detectMovement();
          Player.updateCraftingRecipes();
+
+         Player.tickItems();
+
+         if (this.secondsSinceLastHit !== null) {
+            this.secondsSinceLastHit += 1 / SETTINGS.TPS;
+         }
       }
    }
 
@@ -222,7 +219,7 @@ class Player extends Entity {
    private static die(): void {
       if (this.instance === null) return;
       
-      showDeathScreen();
+      gameScreenSetIsDead(true);
 
       // Remove the player from the game
       delete Game.board.entities[this.instance.id];
@@ -245,14 +242,6 @@ class Player extends Entity {
          } else {
             this.instance.velocity = pushForce;
          }
-      }
-   }
-
-   public static setHotbarInventory(inventory: Inventory): void {
-      const previousHotbar = this.hotbarInventory;
-      this.hotbarInventory = inventory;
-      if (typeof setHotbarInventory !== "undefined" && !inventoriesAreTheSame(this.hotbarInventory, previousHotbar, SETTINGS.PLAYER_HOTBAR_SIZE)) {
-         setHotbarInventory(this.hotbarInventory);
       }
    }
 
@@ -285,6 +274,13 @@ class Player extends Entity {
       }
       
       setHotbarSelectedItemSlot(itemSlot);
+   }
+
+   public static updateHotbar(): void {
+      if (typeof setHotbarInventory !== "undefined") {
+         const hotbarInventoryCopy = Object.assign({}, this.hotbarInventory);
+         setHotbarInventory(hotbarInventoryCopy);
+      }
    }
 
    private static createKeyListeners(): void {
@@ -345,7 +341,6 @@ class Player extends Entity {
       document.addEventListener("mousedown", e => {
          // Only attempt to use an item if the game canvas was clicked
          if ((e.target as HTMLElement).id !== "game-canvas") {
-            clearPressedKeys();
             return;
          }
 
@@ -364,7 +359,29 @@ class Player extends Entity {
             selectedItem.onLeftClick();
          } else if (e.button === 2) {
             // Right click
-            selectedItem.onRightClick();
+            if (typeof selectedItem.onRightMouseButtonDown !== "undefined") {
+               selectedItem.onRightMouseButtonDown();
+            }
+         }
+      });
+
+      document.addEventListener("mouseup", e => {
+         // Only attempt to use an item if the game canvas was clicked
+         if ((e.target as HTMLElement).id !== "game-canvas") {
+            return;
+         }
+
+         const selectedItem = this.hotbarInventory[this.selectedHotbarItemSlot];
+
+         if (typeof selectedItem === "undefined") {
+            return;
+         }
+
+         if (e.button === 2) {
+            // Right mouse button up
+            if (typeof selectedItem.onRightMouseButtonUp !== "undefined") {
+               selectedItem.onRightMouseButtonUp();
+            }
          }
       });
 
@@ -372,6 +389,8 @@ class Player extends Entity {
       document.addEventListener("contextmenu", e => {
          if ((e.target as HTMLElement).id === "game-canvas") {
             e.preventDefault();
+         } else {
+            clearPressedKeys();
          }
       });
    }
@@ -394,6 +413,14 @@ class Player extends Entity {
       const item = this.hotbarInventory[this.selectedHotbarItemSlot];
       if (typeof item === "undefined") return null;
       return item;
+   }
+
+   private static tickItems(): void {
+      for (const item of Object.values(this.hotbarInventory)) {
+         if (typeof item.tick !== "undefined") {
+            item.tick();
+         }
+      }
    }
 }
 

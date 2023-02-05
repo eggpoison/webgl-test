@@ -11,7 +11,7 @@ export function setFrameProgress(newFrameProgress: number): void {
    frameProgress = newFrameProgress;
 }
 
-export function calculateRenderPosition(position: Point, velocity: Vector | null): Point {
+export function calculateItemEntityRenderPosition(position: Point, velocity: Vector | null): Point {
    let entityRenderPosition = position.copy();
    
    // Account for frame progress
@@ -63,7 +63,6 @@ const calculateEntityRenderPosition = (entity: Entity): Point => {
             frameVelocity.magnitude = terminalVelocity;
          }
       // Decelerate
-      } else if (entity.velocity !== null) {
       }
 
       // Apply the frame velocity to the entity's position
@@ -228,7 +227,7 @@ abstract class Entity {
          }
       // Friction
       } else if (this.velocity !== null) {
-         this.velocity.magnitude -= 50 * tileTypeInfo.friction / SETTINGS.TPS;
+         this.velocity.magnitude -= SETTINGS.FRICTION_CONSTANT * tileTypeInfo.friction / SETTINGS.TPS;
          if (this.velocity.magnitude <= 0) {
             this.velocity = null;
          }

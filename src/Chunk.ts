@@ -1,5 +1,5 @@
 import Entity from "./entities/Entity";
-import ItemEntity from "./ItemEntity";
+import ItemEntity from "./items/ItemEntity";
 
 class Chunk {
    private readonly entities = new Array<Entity>();

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { InitialGameDataPacket } from "webgl-test-shared";
+import { InitialGameDataPacket, Point } from "webgl-test-shared";
+import Board from "../Board";
 import Client from "../client/Client";
+import Player from "../entities/Player";
 import Game from "../Game";
 import { setGameState, setLoadingScreenInitialStatus } from "./App";
 
@@ -63,9 +65,21 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
          }
          case "initialising_game": {
             (async () => {
-               // Make the tile array out of the server tile data array
-               
-               await Game.initialise(initialGameDataPacketRef.current!, username);
+               const initialGameDataPacket =initialGameDataPacketRef.current!;
+
+               if (!Game.hasInitialised) {
+                  await Game.initialise();
+               }
+
+               const tiles = Client.parseServerTileDataArray(initialGameDataPacket.tiles);
+               Game.board = new Board(tiles);
+
+               // Spawn the player
+               Player.username = username;
+               const playerSpawnPosition = new Point(initialGameDataPacket.spawnPosition[0], initialGameDataPacket.spawnPosition[1]);
+               new Player(playerSpawnPosition, new Set(Player.HITBOXES), initialGameDataPacket.playerID, null, username, true);
+
+               Client.unloadGameDataPacket(initialGameDataPacket);
 
                setGameState("game");
             })();

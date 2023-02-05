@@ -29,6 +29,10 @@ const CLIENT_ENTITY_INFO_RECORD: Record<EntityType, ClientEntityInfo> = {
    workbench: {
       name: "Workbench",
       description: ""
+   },
+   boulder: {
+      name: "Boulder",
+      description: ""
    }
 };
 

@@ -1,15 +1,14 @@
-import Entity from "./entities/Entity";
+import Entity, { calculateItemEntityRenderPosition } from "./entities/Entity";
 import { getTexture } from "./textures";
 import { SETTINGS, Point, Vector, ServerTileUpdateData, rotatePoint, TILE_TYPE_INFO_RECORD, } from "webgl-test-shared";
 import Camera from "./Camera";
 import { LiquidTileTypeRenderInfo, SolidTileTypeRenderInfo, TILE_TYPE_RENDER_INFO_RECORD } from "./tile-type-render-info";
 import { createWebGLProgram, gl, halfWindowHeight, halfWindowWidth } from "./webgl";
 import Chunk from "./Chunk";
-import ItemEntity from "./ItemEntity";
+import ItemEntity from "./items/ItemEntity";
 import CLIENT_ITEM_INFO_RECORD from "./client-item-info";
 import { Tile } from "./Tile";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
-import Player from "./entities/Player";
 
 // 
 // Solid Tile Shaders
@@ -152,13 +151,13 @@ class Board {
    private chunks: Array<Array<Chunk>>;
 
    public entities: Record<number, Entity> = {};
-   public items: Record<number, ItemEntity> = {};
+   public itemEntities: Record<number, ItemEntity> = {};
 
    private solidTileProgram: WebGLProgram;
    private liquidTileProgram: WebGLProgram;
    private borderProgram: WebGLProgram;
    private chunkBorderProgram: WebGLProgram;
-   private itemProgram: WebGLProgram;
+   private itemEntityProgram: WebGLProgram;
 
    private solidTileProgramPlayerPosUniformLocation: WebGLUniformLocation;
    private solidTileProgramHalfWindowSizeUniformLocation: WebGLUniformLocation;
@@ -189,7 +188,7 @@ class Board {
       this.liquidTileProgram = createWebGLProgram(liquidTileVertexShaderText, liquidTileFragmentShaderText);
       this.borderProgram = createWebGLProgram(borderVertexShaderText, borderFragmentShaderText);
       this.chunkBorderProgram = createWebGLProgram(chunkBorderVertexShaderText, chunkBorderFragmentShaderText);
-      this.itemProgram = createWebGLProgram(itemVertexShaderText, itemFragmentShaderText);
+      this.itemEntityProgram = createWebGLProgram(itemVertexShaderText, itemFragmentShaderText);
 
       this.solidTileProgramPlayerPosUniformLocation = gl.getUniformLocation(this.solidTileProgram, "u_playerPos")!;
       this.solidTileProgramHalfWindowSizeUniformLocation = gl.getUniformLocation(this.solidTileProgram, "u_halfWindowSize")!;
@@ -600,21 +599,21 @@ class Board {
       return minDist;
    }
 
-   public renderItems(): void {
-      gl.useProgram(this.itemProgram);
+   public renderItemEntities(): void {
+      gl.useProgram(this.itemEntityProgram);
 
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-      const itemVertexRecord = this.calculateItemVertices();
+      const itemVertexRecord = this.calculateItemEntityVertices();
 
       for (const [textureSrc, vertices] of Object.entries(itemVertexRecord)) {
          const buffer = gl.createBuffer()!;
          gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
-         const positionAttribLocation = gl.getAttribLocation(this.itemProgram, "vertPosition");
-         const texCoordAttribLocation = gl.getAttribLocation(this.itemProgram, "vertTexCoord");
+         const positionAttribLocation = gl.getAttribLocation(this.itemEntityProgram, "vertPosition");
+         const texCoordAttribLocation = gl.getAttribLocation(this.itemEntityProgram, "vertTexCoord");
          gl.vertexAttribPointer(
             positionAttribLocation,
             2,
@@ -646,20 +645,23 @@ class Board {
       gl.blendFunc(gl.ONE, gl.ZERO);
    }
 
-   private calculateItemVertices(): { [textureSrc: string]: ReadonlyArray<number> } {
+   private calculateItemEntityVertices(): { [textureSrc: string]: ReadonlyArray<number> } {
       const itemVertexRecord: { [textureSrc: string]: Array<number> } = {};
 
-      for (const item of Object.values(this.items)) {
-         const textureSrc = CLIENT_ITEM_INFO_RECORD[item.type].textureSrc;
+      for (const itemEntity of Object.values(this.itemEntities)) {
+         const textureSrc = CLIENT_ITEM_INFO_RECORD[itemEntity.type].textureSrc;
 
          if (!itemVertexRecord.hasOwnProperty(textureSrc)) {
             itemVertexRecord[textureSrc] = new Array<number>();
          }
 
-         const x1 = item.position.x - SETTINGS.ITEM_SIZE;
-         const x2 = item.position.x + SETTINGS.ITEM_SIZE;
-         const y1 = item.position.y - SETTINGS.ITEM_SIZE;
-         const y2 = item.position.y + SETTINGS.ITEM_SIZE;
+         const itemEntityRenderPosition = calculateItemEntityRenderPosition(itemEntity.position, itemEntity.velocity);
+         // const itemEntityRenderPosition = itemEntity.position;
+
+         const x1 = itemEntityRenderPosition.x - SETTINGS.ITEM_SIZE;
+         const x2 = itemEntityRenderPosition.x + SETTINGS.ITEM_SIZE;
+         const y1 = itemEntityRenderPosition.y - SETTINGS.ITEM_SIZE;
+         const y2 = itemEntityRenderPosition.y + SETTINGS.ITEM_SIZE;
 
          let topLeft = new Point(x1, y2);
          let topRight = new Point(x2, y2);
@@ -667,10 +669,10 @@ class Board {
          let bottomLeft = new Point(x1, y1);
 
          // Rotate
-         topLeft = rotatePoint(topLeft, item.position, item.rotation);
-         topRight = rotatePoint(topRight, item.position, item.rotation);
-         bottomRight = rotatePoint(bottomRight, item.position, item.rotation);
-         bottomLeft = rotatePoint(bottomLeft, item.position, item.rotation);
+         topLeft = rotatePoint(topLeft, itemEntityRenderPosition, itemEntity.rotation);
+         topRight = rotatePoint(topRight, itemEntityRenderPosition, itemEntity.rotation);
+         bottomRight = rotatePoint(bottomRight, itemEntityRenderPosition, itemEntity.rotation);
+         bottomLeft = rotatePoint(bottomLeft, itemEntityRenderPosition, itemEntity.rotation);
 
          topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));
          topRight = new Point(Camera.calculateXCanvasPosition(topRight.x), Camera.calculateYCanvasPosition(topRight.y));

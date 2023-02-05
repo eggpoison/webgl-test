@@ -1,5 +1,4 @@
-import { AttackPacket, BaseItemInfo, ItemType, SETTINGS } from "webgl-test-shared";
-import CLIENT_ITEM_INFO_RECORD from "../client-item-info";
+import { AttackPacket, ItemType, SETTINGS } from "webgl-test-shared";
 import Client from "../client/Client";
 import Player from "../entities/Player";
 
@@ -13,15 +12,13 @@ class Item {
 
    public count: number;
 
-   private readonly canBeUsed: boolean;
-
    // eslint-disable-next-line no-empty-pattern
-   constructor(itemType: ItemType, count: number, {}: BaseItemInfo) {
+   constructor(itemType: ItemType, count: number) {
       this.type = itemType;
       this.count = count;
-
-      this.canBeUsed = CLIENT_ITEM_INFO_RECORD[itemType].canBeUsed;
    }
+
+   public tick?(): void;
 
    public static decrementGlobalItemSwitchDelay(): void {
       this.globalAttackDelayTimer -= 1 / SETTINGS.TPS;
@@ -40,12 +37,6 @@ class Item {
       this.attack();
    }
 
-   public onRightClick(): void {
-      if (this.canBeUsed) {
-         this.useItem();
-      }
-   }
-
    private attack(): void {
       if (Player.instance === null) return;
       
@@ -58,7 +49,10 @@ class Item {
       Client.sendAttackPacket(attackPacket);
    }
 
-   private useItem(): void {
+   public onRightMouseButtonDown?(): void;
+   public onRightMouseButtonUp?(): void;
+
+   protected use(): void {
       Client.sendItemUsePacket(Player.selectedHotbarItemSlot);
    }
 

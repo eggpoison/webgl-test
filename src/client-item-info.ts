@@ -4,51 +4,68 @@ export type ClientItemInfo = {
    readonly textureSrc: string;
    readonly name: string;
    readonly description: string;
-   readonly canBeUsed: boolean;
 }
 
 const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
    wood: {
       textureSrc: "wood.png",
       name: "Wood",
-      description: "A common material used in crafting many things.",
-      canBeUsed: false
+      description: "A common material used in crafting many things."
    },
    wooden_sword: {
       textureSrc: "wooden-sword.png",
       name: "Wooden Sword",
-      description: "The splinters hurt you as much as the blade hurts the enemy.",
-      canBeUsed: false
+      description: "The splinters hurt you as much as the blade hurts the enemy."
    },
    wooden_axe: {
       textureSrc: "wooden-axe.png",
       name: "Wooden Axe",
-      description: "",
-      canBeUsed: false
+      description: ""
+   },
+   wooden_pickaxe: {
+      textureSrc: "wooden-pickaxe.png",
+      name: "Wooden Pickaxe",
+      description: ""
    },
    berry: {
       textureSrc: "raw-beef.png",
       name: "Berry",
-      description: "Provides little sustenance, but can be used in a pinch.",
-      canBeUsed: true
+      description: "Provides little sustenance, but can be used in a pinch."
    },
    raw_beef: {
       textureSrc: "raw-beef.png",
       name: "Raw Beef",
-      description: "The raw mutilated flesh of a deceased cow - would not recommend eating.",
-      canBeUsed: true
+      description: "The raw mutilated flesh of a deceased cow - would not recommend eating."
    },
    cooked_beef: {
       textureSrc: "raw-beef.png",
       name: "Cooked Beef",
-      description: "A hearty meal. Could use some seasoning.",
-      canBeUsed: true
+      description: "A hearty meal. Could use some seasoning."
    },
    workbench: {
       textureSrc: "workbench.png",
       name: "Workbench",
-      description: "The first crafting station available, able to craft many more complex recipes.",
-      canBeUsed: true
+      description: "The first crafting station available, able to craft many more complex recipes."
+   },
+   rock: {
+      textureSrc: "rock.png",
+      name: "Rock",
+      description: "This Grug rock. No hurt or face wrath of Grug."
+   },
+   stone_sword: {
+      textureSrc: "wooden-axe.png",
+      name: "Stone Sword",
+      description: ""
+   },
+   stone_axe: {
+      textureSrc: "stone-axe.png",
+      name: "Stone Axe",
+      description: ""
+   },
+   stone_pickaxe: {
+      textureSrc: "stone-pickaxe.png",
+      name: "Stone Pickaxe",
+      description: ""
    }
 };
 
