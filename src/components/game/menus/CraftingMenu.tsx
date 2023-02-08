@@ -172,6 +172,8 @@ const CraftingMenu = () => {
 
    useEffect(() => {
       toggleCraftingMenu = (): void => {
+         if (Player.isDead()) return;
+
          if (isVisible) {
             // Hide the crafting menu
             setIsVisible(false);

@@ -53,7 +53,7 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       description: "This Grug rock. No hurt or face wrath of Grug."
    },
    stone_sword: {
-      textureSrc: "wooden-axe.png",
+      textureSrc: "stone-sword.png",
       name: "Stone Sword",
       description: ""
    },

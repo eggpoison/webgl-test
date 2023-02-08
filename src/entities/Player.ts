@@ -11,7 +11,6 @@ import CircularHitbox from "../hitboxes/CircularHitbox";
 import Hitbox from "../hitboxes/Hitbox";
 import Item from "../items/Item";
 import { addKeyListener, clearPressedKeys, keyIsPressed } from "../keyboard-input";
-import { cursorX, cursorY } from "../mouse";
 import RenderPart from "../render-parts/RenderPart";
 import { halfWindowHeight, halfWindowWidth } from "../webgl";
 import Entity from "./Entity";
@@ -98,7 +97,7 @@ class Player extends Entity {
    }
 
    /** Updates the rotation of the player to match the cursor position */
-   public static updateRotation(): void {
+   public static updateRotation(cursorX: number, cursorY: number): void {
       if (Player.instance === null || cursorX === null || cursorY === null) return;
 
       const relativeCursorX = cursorX - halfWindowWidth;
@@ -224,6 +223,10 @@ class Player extends Entity {
       // Remove the player from the game
       delete Game.board.entities[this.instance.id];
       this.instance = null;
+   }
+
+   public static isDead(): boolean {
+      return this.health <= 0;
    }
 
    /** Registers a server-side hit for the client */
