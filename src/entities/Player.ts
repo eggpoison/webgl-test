@@ -4,8 +4,8 @@ import Client from "../client/Client";
 import { gameScreenSetIsDead } from "../components/game/GameScreen";
 import { updateHealthBar } from "../components/game/HealthBar";
 import { setHeldItemVisual } from "../components/game/HeldItem";
-import { setHotbarInventory, setHotbarSelectedItemSlot } from "../components/game/Hotbar";
-import { setCraftingMenuAvailableRecipes, setCraftingMenuAvailableCraftingStations, setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
+import { Hotbar_setHotbarSelectedItemSlot, Hotbar_updateBackpackItemSlot, Hotbar_updateHotbarInventory } from "../components/game/Hotbar";
+import { setCraftingMenuAvailableRecipes, setCraftingMenuAvailableCraftingStations, CraftingMenu_setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
 import Game from "../Game";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import Hitbox from "../hitboxes/Hitbox";
@@ -35,6 +35,16 @@ class Player extends Entity {
    private static readonly MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION: number = 250;
 
    public static readonly MAX_HEALTH = 20;
+
+   /** How far away from the entity the attack is done */
+   private static readonly ATTACK_OFFSET = 80;
+   /** Max distance from the attack position that the attack will be registered from */
+   private static readonly ATTACK_TEST_RADIUS = 48;
+
+   private static readonly ACCELERATION = 1000;
+   private static readonly TERMINAL_VELOCITY = 300;
+
+   private static readonly SLOW_TERMINAL_VELOCITY = 150;
    
    public static instance: Player | null = null;
 
@@ -42,6 +52,8 @@ class Player extends Entity {
 
    public static hotbarInventory: Inventory = {};
    public static selectedHotbarItemSlot = 1;
+
+   public static backpackItemSlot: Item | null = null;
 
    public static craftingOutputItem: Item | null = null;
 
@@ -54,13 +66,8 @@ class Player extends Entity {
    
    public readonly displayName: string;
 
-   /** How far away from the entity the attack is done */
-   private static readonly ATTACK_OFFSET = 80;
-   /** Max distance from the attack position that the attack will be registered from */
-   private static readonly ATTACK_TEST_RADIUS = 48;
-
-   private static readonly ACCELERATION = 1000;
-   private static readonly TERMINAL_VELOCITY = 300;
+   public static isEating = false;
+   public static isPlacingEntity = false;
 
    public static readonly HITBOXES: ReadonlySet<Hitbox<HitboxType>> = new Set<Hitbox<HitboxType>>([
       new CircularHitbox({
@@ -195,10 +202,18 @@ class Player extends Entity {
 
       if (rotation !== null) {
          this.acceleration = new Vector(Player.ACCELERATION, rotation);
-         this.terminalVelocity = Player.TERMINAL_VELOCITY;
+         this.terminalVelocity = Player.getTerminalVelocity();
       } else {
          this.acceleration = null;
       }
+   }
+
+   private static getTerminalVelocity(): number {
+      if (Player.isEating || Player.isPlacingEntity) {
+         return Player.SLOW_TERMINAL_VELOCITY;
+      }
+
+      return Player.TERMINAL_VELOCITY;
    }
 
    public static setHealth(health: number): void {
@@ -248,13 +263,6 @@ class Player extends Entity {
       }
    }
 
-   public static setCraftingOutputItem(craftingOutputItem: Item | null): void {
-      this.craftingOutputItem = craftingOutputItem;
-      if (typeof setCraftingMenuOutputItem !== "undefined") {
-         setCraftingMenuOutputItem(this.craftingOutputItem);
-      }
-   }
-
    public static setHeldItem(heldItem: Item | null): void {
       const previousHeldItem = this.heldItem;
       this.heldItem = heldItem;
@@ -276,13 +284,32 @@ class Player extends Entity {
          this.hotbarInventory[itemSlot]!.select();
       }
       
-      setHotbarSelectedItemSlot(itemSlot);
+      Hotbar_setHotbarSelectedItemSlot(itemSlot);
    }
 
-   public static updateHotbar(): void {
-      if (typeof setHotbarInventory !== "undefined") {
-         const hotbarInventoryCopy = Object.assign({}, this.hotbarInventory);
-         setHotbarInventory(hotbarInventoryCopy);
+   public static updateHotbarInventory(hotbarInventory: Inventory): void {
+      Player.hotbarInventory = hotbarInventory;
+
+      if (typeof Hotbar_updateHotbarInventory !== "undefined") {
+         // Create a copy of the inventory object as to not cause same-pointer shenanigans
+         const hotbarInventoryCopy = Object.assign({}, hotbarInventory);
+         Hotbar_updateHotbarInventory(hotbarInventoryCopy);
+      }
+   }
+
+   public static updateCraftingOutputItem(craftingOutputItem: Item | null): void {
+      Player.craftingOutputItem = craftingOutputItem;
+
+      if (typeof CraftingMenu_setCraftingMenuOutputItem !== "undefined") {
+         CraftingMenu_setCraftingMenuOutputItem(this.craftingOutputItem);
+      }
+   }
+
+   public static updateBackpackItemSlot(backpackItemSlot: Item | null): void {
+      Player.backpackItemSlot = backpackItemSlot;
+
+      if (typeof Hotbar_updateBackpackItemSlot !== "undefined") {
+         Hotbar_updateBackpackItemSlot(backpackItemSlot);
       }
    }
 

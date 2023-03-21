@@ -116,7 +116,6 @@ abstract class Game {
       // Set the player's initial rotation
       const cursorX = getCursorX();
       const cursorY = getCursorY();
-      console.log(cursorX, cursorY);
       if (cursorX !== null && cursorY !== null) {
          Player.updateRotation(cursorX, cursorY);
       }

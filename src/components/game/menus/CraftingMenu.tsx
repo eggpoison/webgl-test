@@ -57,7 +57,7 @@ const MIN_RECIPE_BROWSER_HEIGHT = 6;
 
 export let setCraftingMenuAvailableRecipes: (craftingRecipes: Array<CraftingRecipe>) => void;
 export let setCraftingMenuAvailableCraftingStations: (craftingStations: Set<CraftingStation>) => void;
-export let setCraftingMenuOutputItem: (craftingOutputItem: Item | null) => void;
+export let CraftingMenu_setCraftingMenuOutputItem: (craftingOutputItem: Item | null) => void;
 
 export let craftingMenuIsOpen: () => boolean;
 
@@ -165,7 +165,7 @@ const CraftingMenu = () => {
          setAvailableCraftingStations(craftingStations);
       }
 
-      setCraftingMenuOutputItem = (craftingOutputItem: Item | null): void => {
+      CraftingMenu_setCraftingMenuOutputItem = (craftingOutputItem: Item | null): void => {
          setCraftingOutputItem(craftingOutputItem);
       }
    }, []);
@@ -210,8 +210,9 @@ const CraftingMenu = () => {
             const recipe = availableRecipes[itemSlotIndex];
             const isCraftable = craftableRecipes.current.includes(recipe);
             
+            const imageSrc = require("../../../images/items/" + CLIENT_ITEM_INFO_RECORD[recipe.product].textureSrc);
             itemSlots.push(
-               <ItemSlot onMouseOver={(e) => hoverRecipe(recipe, e)} onMouseOut={() => unhoverRecipe()} onMouseMove={e => mouseMove(e)} className={isCraftable ? "craftable" : undefined} isSelected={recipe === selectedRecipe} onClick={() => selectRecipe(recipe)} picturedItemType={recipe.product} itemCount={recipe.yield !== 1 ? recipe.yield : undefined} key={j} />
+               <ItemSlot onMouseOver={(e) => hoverRecipe(recipe, e)} onMouseOut={() => unhoverRecipe()} onMouseMove={e => mouseMove(e)} className={isCraftable ? "craftable" : undefined} isSelected={recipe === selectedRecipe} onClick={() => selectRecipe(recipe)} picturedItemImageSrc={imageSrc} itemCount={recipe.yield !== 1 ? recipe.yield : undefined} key={j} />
             );
          } else {
             itemSlots.push(
@@ -266,7 +267,7 @@ const CraftingMenu = () => {
             <div className="bottom">
                <button onClick={() => craftRecipe()} className={`craft-button${craftableRecipes.current.includes(selectedRecipe) ? " craftable" : ""}`}>CRAFT</button>
                {craftingOutputItem !== null ? (
-                  <ItemSlot onMouseDown={e => pickUpCraftingOutputItem(e)} picturedItemType={craftingOutputItem.type} itemCount={craftingOutputItem.count} className="crafting-output" isSelected={false} />
+                  <ItemSlot onMouseDown={e => pickUpCraftingOutputItem(e)} picturedItemImageSrc={require("../../../images/items/" + CLIENT_ITEM_INFO_RECORD[craftingOutputItem.type].textureSrc)} itemCount={craftingOutputItem.count} className="crafting-output" isSelected={false} />
                ) : (
                   <ItemSlot className="crafting-output" isSelected={false} />
                )}

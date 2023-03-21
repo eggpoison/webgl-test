@@ -47,67 +47,6 @@ code {
    pointer-events: none;
 }
 
-
-/* Inventory interfaces */
-
-.inventory-container {
-   background-color: #333;
-   border: 5px solid #000;
-   border-radius: 5px;
-}
-
-.item-slot {
-   --slot-size: 4rem;
-   width: var(--slot-size);
-   height: var(--slot-size);
-   background-image: url("../images/miscellaneous/item-slot.png");
-   background-size: 100%;
-   image-rendering: pixelated;
-   margin: 0.05rem;
-   position: relative;
-   user-select: none;
-}
-
-.item-slot.selected {
-   background-image: url("../images/miscellaneous/item-slot-selected.png");
-}
-.item-slot:not(.empty)::after {
-   content: "";
-   position: absolute;
-   top: 0;
-   right: 0;
-   bottom: 0;
-   left: 0;
-   z-index: 0;
-}
-
-.item-slot img {
-   --item-image-size: 48px;
-   width: var(--item-image-size);
-   height: var(--item-image-size);
-   image-rendering: pixelated;
-   position: absolute;
-   top: 50%;
-   left: 50%;
-   transform: translate(-50%, -50%);
-   z-index: 1;
-}
-
-.item-slot .item-count {
-   color: #fff;
-   font-family: "Inconsolata";
-   font-size: 1.3rem;
-   font-weight: bold;
-   text-shadow: 0 0 1px #000, 0 0 2px #000, 0 0 3px #000, 0 0 4px #000;
-   text-align: right;
-   position: absolute;
-   right: 25%;
-   bottom: 25%;
-   transform: translate(50%, 50%);
-   z-index: 2;
-}
-
-
 /* Held item */
 
 #held-item {

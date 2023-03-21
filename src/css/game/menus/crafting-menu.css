@@ -56,13 +56,10 @@
 #crafting-menu .item-row {
    display: flex;
 }
-#crafting-menu .recipe-browser .item-slot:not(.craftable):not(.selected) img {
+#crafting-menu .recipe-browser .item-slot:not(.craftable) img {
    opacity: 0.5;
 }
-#crafting-menu .recipe-browser .item-slot:not(.empty):not(.selected):not(.craftable):hover img {
-   opacity: 1;
-}
-#crafting-menu .recipe-browser .item-slot:not(.empty):not(.selected):not(.craftable):active img {
+#crafting-menu .recipe-browser .item-slot:not(.empty):not(.selected):not(.craftable):hover:not(:active) img {
    opacity: 0.8;
 }
 #crafting-menu .recipe-browser .item-slot:not(.empty):not(.selected) {

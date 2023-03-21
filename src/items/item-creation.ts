@@ -15,7 +15,9 @@ const ITEM_CLASS_RECORD: { [T in ItemType]: () => new (itemType: T, count: numbe
    rock: () => Item,
    stone_sword: () => Item,
    stone_axe: () => Item,
-   stone_pickaxe: () => Item
+   stone_pickaxe: () => Item,
+   leather: () => Item,
+   leather_backpack: () => Item
 };
 
 export function createItem(itemType: ItemType, count: number): Item {

@@ -13,7 +13,7 @@ import "./css/game/cursor-tooltip.css";
 import "./css/game/dev-entity-viewer.css";
 import "./css/game/health-bar.css";
 import "./css/game/debug-screen.css";
-import "./css/game/hotbar.css";
+import "./css/game/inventory.css";
 import "./css/game/menus/crafting-menu.css";
 
 const root = ReactDOM.createRoot(

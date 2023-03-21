@@ -1,8 +1,8 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, ServerEntityData, ServerItemEntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, ServerInventoryData, ServerItemData, CraftingRecipe, PlayerInventoryType, PlaceablePlayerInventoryType, GameDataSyncPacket, RespawnDataPacket } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, ServerEntityData, ServerItemEntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, CraftingRecipe, PlayerInventoryType, PlaceablePlayerInventoryType, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, ItemData } from "webgl-test-shared";
 import Camera from "../Camera";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
-import Player from "../entities/Player";
+import Player, { Inventory } from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
 import Game from "../Game";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -144,9 +144,7 @@ abstract class Client {
       
       this.updateEntities(gameDataPacket.serverEntityDataArray);
       this.updateItemEntities(gameDataPacket.serverItemEntityDataArray);
-      this.updatePlayerHotbar(gameDataPacket.playerHotbarInventory);
-      this.updateCraftingOutputItem(gameDataPacket.craftingOutputItem);
-      this.updateHeldItem(gameDataPacket.playerHeldItem);
+      this.updatePlayerInventory(gameDataPacket.inventory);
       this.registerTileUpdates(gameDataPacket.tileUpdates);
 
       // Register hits
@@ -217,6 +215,39 @@ abstract class Client {
       }
    }
 
+   private static updatePlayerInventory(playerInventoryData: PlayerInventoryData) {
+      // Hotbar
+      const hotbarInventory: Inventory = {};
+      for (const [itemSlot, item] of Object.entries(playerInventoryData.hotbar) as unknown as ReadonlyArray<[number, ItemData]>) {
+         hotbarInventory[itemSlot] = createItem(item.type, item.count);
+      }
+      Player.updateHotbarInventory(hotbarInventory);
+
+      // Crafting output item
+      if (playerInventoryData.craftingOutputItemSlot !== null) {
+         const craftingOutputItem = createItem(playerInventoryData.craftingOutputItemSlot.type, playerInventoryData.craftingOutputItemSlot.count);
+         Player.updateCraftingOutputItem(craftingOutputItem);
+      } else {
+         Player.updateCraftingOutputItem(null);
+      }
+
+      // Backpack slot
+      if (playerInventoryData.backpackItemSlot !== null) {
+         const craftingOutputItem = createItem(playerInventoryData.backpackItemSlot.type, playerInventoryData.backpackItemSlot.count);
+         Player.updateBackpackItemSlot(craftingOutputItem);
+      } else {
+         Player.updateBackpackItemSlot(null);
+      }
+
+      // Held item
+      if (playerInventoryData.heldItemSlot === null) {
+         Player.setHeldItem(null);
+      } else {
+         const heldItem = createItem(playerInventoryData.heldItemSlot.type, playerInventoryData.heldItemSlot.count);
+         Player.setHeldItem(heldItem);
+      }
+   }
+
    private static createItemFromServerItemData(serverItemEntityData: ServerItemEntityData): void {
       const position = Point.unpackage(serverItemEntityData.position); 
       const velocity = serverItemEntityData.velocity !== null ? Vector.unpackage(serverItemEntityData.velocity) : null;
@@ -228,46 +259,6 @@ abstract class Client {
       }
 
       new ItemEntity(serverItemEntityData.id, position, velocity, containingChunks, serverItemEntityData.itemID, serverItemEntityData.rotation);
-   }
-
-   private static updatePlayerHotbar(serverHotbarInventoryData: ServerInventoryData): void {
-      for (let itemSlot = 0; itemSlot < SETTINGS.PLAYER_HOTBAR_SIZE; itemSlot++) {
-         const clientItem = Player.hotbarInventory[itemSlot];
-         const serverItem = serverHotbarInventoryData[itemSlot];
-
-         if (typeof serverItem !== "undefined") {
-            // If the item is of a new type, make a new item
-            if (typeof clientItem === "undefined" || clientItem.type !== serverItem.type) {
-               const item = createItem(serverItem.type, serverItem.count);
-               Player.hotbarInventory[itemSlot] = item;
-            } else {
-               // Otherwise just update the existing item
-               clientItem.count = serverItem.count;
-            }
-         } else if (typeof clientItem !== "undefined") {
-            delete Player.hotbarInventory[itemSlot];
-         }
-      }
-
-      Player.updateHotbar();
-   }
-
-   private static updateCraftingOutputItem(serverCraftingOutputItemData: ServerItemData | null): void {
-      if (serverCraftingOutputItemData === null) {
-         Player.setCraftingOutputItem(null);
-      } else {
-         const craftingOutputItem = createItem(serverCraftingOutputItemData.type, serverCraftingOutputItemData.count);
-         Player.setCraftingOutputItem(craftingOutputItem);
-      }
-   }
-
-   private static updateHeldItem(serverHeldItemData: ServerItemData | null): void {
-      if (serverHeldItemData === null) {
-         Player.setHeldItem(null);
-      } else {
-         const heldItem = createItem(serverHeldItemData.type, serverHeldItemData.count);
-         Player.setHeldItem(heldItem);
-      }
    }
    
    private static registerTileUpdates(tileUpdates: ReadonlyArray<ServerTileUpdateData>): void {
@@ -316,7 +307,7 @@ abstract class Client {
          Player.instance.rotation = gameDataSyncPacket.rotation;
          Player.instance.terminalVelocity = gameDataSyncPacket.terminalVelocity;
          Player.setHealth(gameDataSyncPacket.health);
-         this.updatePlayerHotbar(gameDataSyncPacket.playerHotbarInventory);
+         this.updatePlayerInventory(gameDataSyncPacket.inventory)
       }
 
       Game.sync();
