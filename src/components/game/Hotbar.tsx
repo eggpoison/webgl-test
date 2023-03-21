@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ItemType, SETTINGS } from "webgl-test-shared";
+import { BackpackItemInfo, ItemType, ITEM_INFO_RECORD, SETTINGS } from "webgl-test-shared";
 import CLIENT_ITEM_INFO_RECORD from "../../client-item-info";
 import Client from "../../client/Client";
 import Player, { Inventory } from "../../entities/Player";
@@ -17,6 +17,7 @@ export let Hotbar_setHotbarSelectedItemSlot: (itemSlot: number) => void;
 const backpackItemTypes: ReadonlyArray<ItemType> = ["leather_backpack"];
 
 const Hotbar = () => {
+   const [hotbarSize, setHotbarSize] = useState(SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE);
    const [hotbarInventory, setHotbarInventory] = useState<Inventory>({});
    const [backpackItemSlot, setBackpackItemSlot] = useState<Item | null>(null);
    const [selectedItemSlot, setSelectedItemSlot] = useState(1);
@@ -44,7 +45,25 @@ const Hotbar = () => {
       }
    }, [hotbarInventory]);
 
+   const equipBackpack = (backpack: Item): void => {
+      const backpackItemInfo = (ITEM_INFO_RECORD[backpack.type] as BackpackItemInfo)
+      
+      const newPlayerHotbarSize = SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE + backpackItemInfo.numExtraItemSlots;
+      Player.setHotbarSize(newPlayerHotbarSize);
+      setHotbarSize(newPlayerHotbarSize);
+      console.log(newPlayerHotbarSize);
+   }
+   
+   const unequipBackpack = (): void => {
+      Player.setHotbarSize(SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE);
+      setHotbarSize(SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE);
+      console.log(SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE);
+   }
+
    const clickBackpackItemSlot = useCallback((e: MouseEvent): void => {
+      // Item slots can only be interacted with while the crafting menu is open
+      if (!craftingMenuIsOpen()) return;
+      
       if (backpackItemSlot !== null) {
          // There is an item in the backpack item slot
 
@@ -53,6 +72,8 @@ const Hotbar = () => {
             Client.sendItemHoldPacket("backpackItemSlot", -1);
       
             setHeldItemVisualPosition(e.clientX, e.clientY);
+
+            unequipBackpack();
          }
       } else {
          // There is no backpack in the backpack item slot
@@ -60,6 +81,12 @@ const Hotbar = () => {
          // Attempt to put a backpack in the slot if there is a held item
          if (Player.heldItem !== null && backpackItemTypes.includes(Player.heldItem.type)) {
             Client.sendItemReleasePacket("backpackItemSlot", -1);
+
+            // Note: at this point in time, the server hasn't registered that the player has equipped the backpack into the backpack item slot and so we need to get the item from the held item
+            const backpack = Player.heldItem;
+            if (backpack !== null) {
+               equipBackpack(backpack);
+            }
          }
       }
    }, [backpackItemSlot]);
@@ -80,7 +107,7 @@ const Hotbar = () => {
 
    // Create the item slots
    const hotbarItemSlots = new Array<JSX.Element>();
-   for (let itemSlot = 1; itemSlot <= SETTINGS.PLAYER_HOTBAR_SIZE; itemSlot++) {
+   for (let itemSlot = 1; itemSlot <= hotbarSize; itemSlot++) {
       const item: Item | undefined = hotbarInventory[itemSlot];
       
       if (typeof item !== "undefined") {

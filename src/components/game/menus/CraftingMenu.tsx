@@ -135,7 +135,7 @@ const CraftingMenu = () => {
    useEffect(() => {
       const craftableRecipesArray = new Array<CraftingRecipe>();
       for (const recipe of availableRecipes) {
-         if (canCraftRecipe(Player.hotbarInventory, recipe, SETTINGS.PLAYER_HOTBAR_SIZE)) {
+         if (canCraftRecipe(Player.hotbarInventory, recipe, SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE)) {
             craftableRecipesArray.push(recipe);
          }
       }

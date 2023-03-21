@@ -52,6 +52,7 @@ class Player extends Entity {
 
    public static hotbarInventory: Inventory = {};
    public static selectedHotbarItemSlot = 1;
+   private static hotbarSize = SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE;
 
    public static backpackItemSlot: Item | null = null;
 
@@ -98,7 +99,7 @@ class Player extends Entity {
 
          Camera.position = this.position;
 
-         Player.createKeyListeners();
+         Player.createHotbarKeyListeners();
          Player.createItemUseListeners();
       }
    }
@@ -313,8 +314,8 @@ class Player extends Entity {
       }
    }
 
-   private static createKeyListeners(): void {
-      for (let itemSlot = 1; itemSlot <= SETTINGS.PLAYER_HOTBAR_SIZE; itemSlot++) {
+   private static createHotbarKeyListeners(): void {
+      for (let itemSlot = 1; itemSlot <= SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE; itemSlot++) {
          addKeyListener(itemSlot.toString(), () => this.selectItemSlot(itemSlot));
       }
    }
@@ -451,6 +452,14 @@ class Player extends Entity {
             item.tick();
          }
       }
+   }
+
+   public static setHotbarSize(newSize: number): void {
+      this.hotbarSize = newSize;
+   }
+
+   public static getHotbarSize(): number {
+      return this.hotbarSize;
    }
 }
 
