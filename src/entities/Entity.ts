@@ -1,4 +1,4 @@
-import { ServerEntityData, EntityType, Point, SETTINGS, TILE_TYPE_INFO_RECORD, Vector, HitboxType, ServerEntitySpecialData, curveWeight } from "webgl-test-shared";
+import { EntityData, EntityType, Point, SETTINGS, TILE_TYPE_INFO_RECORD, Vector, HitboxType, ServerEntitySpecialData, curveWeight } from "webgl-test-shared";
 import Chunk from "../Chunk";
 import Game from "../Game";
 import Hitbox from "../hitboxes/Hitbox";
@@ -296,7 +296,7 @@ abstract class Entity {
       return Game.board.getChunk(x, y);
    }
 
-   public updateFromData(entityData: ServerEntityData): void {
+   public updateFromData(entityData: EntityData): void {
       this.position = Point.unpackage(entityData.position);
       this.velocity = entityData.velocity !== null ? Vector.unpackage(entityData.velocity) : null;
       this.acceleration = entityData.acceleration !== null ? Vector.unpackage(entityData.acceleration) : null;

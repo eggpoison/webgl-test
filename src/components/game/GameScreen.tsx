@@ -13,6 +13,7 @@ import Hotbar from "./Hotbar";
 import CraftingMenu from "./menus/CraftingMenu";
 import HeldItem from "./HeldItem";
 import DeathScreen from "./DeathScreen";
+import BackpackInventoryMenu from "./menus/BackpackInventory";
 
 export let showPauseScreen: () => void;
 export let hidePauseScreen: () => void;
@@ -68,7 +69,10 @@ const GameScreen = () => {
       <HealthBar />
       <Hotbar />
 
+      {/* Note: BackpackInventoryMenu must be exactly before CraftingMenu because of CSS hijinks */}
+      <BackpackInventoryMenu />
       <CraftingMenu />
+
       <HeldItem />
 
       <DeathScreen isDead={isDead} />

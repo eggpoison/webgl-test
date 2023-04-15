@@ -2,13 +2,15 @@ import { useCallback, useEffect, useState } from "react";
 import { BackpackItemInfo, ItemType, ITEM_INFO_RECORD, SETTINGS } from "webgl-test-shared";
 import CLIENT_ITEM_INFO_RECORD from "../../client-item-info";
 import Client from "../../client/Client";
-import Player, { Inventory } from "../../entities/Player";
+import Player, { ItemSlots } from "../../entities/Player";
 import Item from "../../items/Item";
 import { setHeldItemVisualPosition } from "./HeldItem";
 import ItemSlot from "./ItemSlot";
-import { craftingMenuIsOpen } from "./menus/CraftingMenu";
+import { inventoryIsOpen } from "./menus/CraftingMenu";
+import { BackpackInventoryMenu_setBackpackItemInfo } from "./menus/BackpackInventory";
+import { leftClickItemSlot, rightClickItemSlot } from "../../inventory-manipulation";
 
-export let Hotbar_updateHotbarInventory: (inventory: Inventory) => void;
+export let Hotbar_updateHotbarInventory: (inventory: ItemSlots) => void;
 
 export let Hotbar_updateBackpackItemSlot: (backpack: Item | null) => void;
 
@@ -18,52 +20,32 @@ const backpackItemTypes: ReadonlyArray<ItemType> = ["leather_backpack"];
 
 const Hotbar = () => {
    const [hotbarSize, setHotbarSize] = useState(SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE);
-   const [hotbarInventory, setHotbarInventory] = useState<Inventory>({});
+   const [hotbarInventory, setHotbarInventory] = useState<ItemSlots>({});
    const [backpackItemSlot, setBackpackItemSlot] = useState<Item | null>(null);
    const [selectedItemSlot, setSelectedItemSlot] = useState(1);
 
-   const clickItemSlot = useCallback((e: MouseEvent, itemSlot: number): void => {
-      // Item slots can only be interacted with while the crafting menu is open
-      if (!craftingMenuIsOpen()) return;
+   const leftClickHotbarItemSlot = useCallback((e: MouseEvent, itemSlot: number): void => {
+      leftClickItemSlot(e, hotbarInventory, itemSlot, "hotbar");
+   }, [hotbarInventory]);
 
-      if (hotbarInventory.hasOwnProperty(itemSlot)) {
-         // There is an item in the item slot
-
-         // Attempt to pick up the item if there isn't a held item
-         if (Player.heldItem === null) {
-            Client.sendItemHoldPacket("hotbar", itemSlot);
-      
-            setHeldItemVisualPosition(e.clientX, e.clientY);
-         }
-      } else {
-         // There is no item in the item slot
-
-         // Attempt to release the held item into the item slot if there is a held item
-         if (Player.heldItem !== null) {
-            Client.sendItemReleasePacket("hotbar", itemSlot);
-         }
-      }
+   const rightClickHotbarItemSlot = useCallback((e: MouseEvent, itemSlot: number): void => {
+      rightClickItemSlot(e, hotbarInventory, itemSlot, "hotbar");
    }, [hotbarInventory]);
 
    const equipBackpack = (backpack: Item): void => {
-      const backpackItemInfo = (ITEM_INFO_RECORD[backpack.type] as BackpackItemInfo)
-      
-      const newPlayerHotbarSize = SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE + backpackItemInfo.numExtraItemSlots;
-      Player.setHotbarSize(newPlayerHotbarSize);
-      setHotbarSize(newPlayerHotbarSize);
-      console.log(newPlayerHotbarSize);
+      const backpackItemInfo = (ITEM_INFO_RECORD[backpack.type] as BackpackItemInfo);
+
+      BackpackInventoryMenu_setBackpackItemInfo(backpackItemInfo);
    }
    
    const unequipBackpack = (): void => {
-      Player.setHotbarSize(SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE);
-      setHotbarSize(SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE);
-      console.log(SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE);
+      BackpackInventoryMenu_setBackpackItemInfo(null);
    }
 
    const clickBackpackItemSlot = useCallback((e: MouseEvent): void => {
       // Item slots can only be interacted with while the crafting menu is open
-      if (!craftingMenuIsOpen()) return;
-      
+      if (!inventoryIsOpen()) return;
+
       if (backpackItemSlot !== null) {
          // There is an item in the backpack item slot
 
@@ -92,7 +74,7 @@ const Hotbar = () => {
    }, [backpackItemSlot]);
 
    useEffect(() => {
-      Hotbar_updateHotbarInventory = (inventory: Inventory): void => {
+      Hotbar_updateHotbarInventory = (inventory: ItemSlots): void => {
          setHotbarInventory(inventory);
       }
 
@@ -113,11 +95,11 @@ const Hotbar = () => {
       if (typeof item !== "undefined") {
          const imageSrc = require("../../images/items/" + CLIENT_ITEM_INFO_RECORD[item.type].textureSrc);
          hotbarItemSlots.push(
-            <ItemSlot onClick={e => clickItemSlot(e, itemSlot)} isSelected={itemSlot === selectedItemSlot} picturedItemImageSrc={imageSrc} itemCount={item.count} key={itemSlot} />
+            <ItemSlot onClick={e => leftClickHotbarItemSlot(e, itemSlot)} onContextMenu={e => rightClickHotbarItemSlot(e, itemSlot)} isSelected={itemSlot === selectedItemSlot} picturedItemImageSrc={imageSrc} itemCount={item.count} key={itemSlot} />
          );
       } else {
          hotbarItemSlots.push(
-            <ItemSlot onClick={e => clickItemSlot(e, itemSlot)} isSelected={itemSlot === selectedItemSlot} key={itemSlot} />
+            <ItemSlot onClick={e => leftClickHotbarItemSlot(e, itemSlot)} isSelected={itemSlot === selectedItemSlot} key={itemSlot} />
          );
       }
    }

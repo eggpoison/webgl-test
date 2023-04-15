@@ -7,8 +7,9 @@ html, body {
    padding: 0;
 }
 
-code {
-   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+:root {
+   --item-slot-size: 4rem;
+   --item-image-size: 3rem;
 }
 
 #game-canvas, #text-canvas {
@@ -50,14 +51,21 @@ code {
 /* Held item */
 
 #held-item {
+   width: var(--item-slot-size);
+   height: var(--item-slot-size);
    position: absolute;
    pointer-events: none;
    z-index: 3;
    user-select: none;
 }
 #held-item img {
-   --size: 48px;
-   width: var(--size);
-   height: var(--size);
+   width: var(--item-image-size);
+   height: var(--item-image-size);
    image-rendering: pixelated;
+   position: absolute;
+   top: 50%;
+   left: 50%;
+   transform: translate(-50%, -50%);
+   z-index: 1;
 }
+/* NOTE: The held item count style is defined in inventory.css file. */

@@ -4,14 +4,13 @@ import CLIENT_ITEM_INFO_RECORD from "../../../client-item-info";
 import Client from "../../../client/Client";
 import Player from "../../../entities/Player";
 import Item from "../../../items/Item";
-import { addKeyListener } from "../../../keyboard-input";
 import { windowHeight } from "../../../webgl";
 import { setHeldItemVisualPosition } from "../HeldItem";
 import ItemSlot from "../ItemSlot";
 
 const CRAFTING_STATION_TEXTURE_SOURCE_RECORD: Record<CraftingStation, string> = {
    workbench: "workbench.png"
-}
+};
 
 interface RecipeViewerProps {
    readonly recipe: CraftingRecipe | null;
@@ -52,16 +51,72 @@ const RecipeViewer = ({ recipe, hoverPosition, craftingMenuHeight }: RecipeViewe
    </div>;
 }
 
+interface IngredientProps {
+   readonly ingredientType: ItemType;
+   readonly amountRequiredForRecipe: number;
+}
+/**
+ * An ingredient in an item's recipe.
+ */
+const Ingredient = ({ ingredientType, amountRequiredForRecipe }: IngredientProps) => {
+   const [tooltipIsShown, setTooltipIsShown] = useState(false);
+   
+   const itemIconSource = require("../../../images/items/" + CLIENT_ITEM_INFO_RECORD[ingredientType].textureSrc);
+
+   // Find whether the player has enough available ingredients to craft the recipe
+   const numIngredientsAvailableToPlayer = Player.getNumItemType(ingredientType);
+   const playerHasEnoughIngredients = numIngredientsAvailableToPlayer >= amountRequiredForRecipe;
+
+   const showIngredientTooltip = () => {
+      setTooltipIsShown(true);
+   }
+   
+   const hideIngredientTooltip = () => {
+      setTooltipIsShown(false);
+   }
+
+   return <li className="ingredient">
+      <div className="ingredient-icon-wrapper" onMouseEnter={showIngredientTooltip} onMouseLeave={hideIngredientTooltip}>
+         <img src={itemIconSource} className="ingredient-icon" alt="" />
+
+         {tooltipIsShown ? (
+            <div className="ingredient-tooltip">
+               <span>{CLIENT_ITEM_INFO_RECORD[ingredientType].name}</span>
+            </div>
+         ) : null}
+      </div>
+      <span className={`ingredient-count${!playerHasEnoughIngredients ? " not-enough" : ""}`}>x{amountRequiredForRecipe}</span>
+   </li>;
+};
+
+interface IngredientsProps {
+   readonly recipe: CraftingRecipe;
+}
+/**
+ * The list of ingredients in a recipe required to craft it.
+ */
+const Ingredients = ({ recipe }: IngredientsProps) => {
+   const ingredientElements = new Array<JSX.Element>();
+   for (let i = 0; i < Object.keys(recipe.ingredients).length; i++) {
+      const [ingredientType, ingredientCount] = (Object.entries(recipe.ingredients) as ReadonlyArray<[ItemType, number]>)[i];
+
+      ingredientElements[i] = <Ingredient ingredientType={ingredientType} amountRequiredForRecipe={ingredientCount} key={i} />
+   }
+
+   return <ul className="ingredients">
+      {ingredientElements}
+   </ul>
+}
+
 const RECIPE_BROWSER_WIDTH = 3;
 const MIN_RECIPE_BROWSER_HEIGHT = 6;
 
 export let setCraftingMenuAvailableRecipes: (craftingRecipes: Array<CraftingRecipe>) => void;
 export let setCraftingMenuAvailableCraftingStations: (craftingStations: Set<CraftingStation>) => void;
 export let CraftingMenu_setCraftingMenuOutputItem: (craftingOutputItem: Item | null) => void;
+export let CraftingMenu_setIsVisible: (newIsVisible: boolean) => void;
 
-export let craftingMenuIsOpen: () => boolean;
-
-let toggleCraftingMenu: () => void;
+export let inventoryIsOpen: () => boolean;
 
 const CraftingMenu = () => {
    const [isVisible, setIsVisible] = useState(false);
@@ -75,7 +130,6 @@ const CraftingMenu = () => {
    const craftableRecipes = useRef<Array<CraftingRecipe>>([]);
    const [hoveredRecipe, setHoveredRecipe] = useState<CraftingRecipe | null>(null);
    const [hoverPosition, setHoverPosition] = useState<[number, number] | null>(null);
-   const hasLoaded = useRef(false);
    const craftingMenuRef = useRef<HTMLDivElement | null>(null);
    const craftingMenuHeightRef = useRef<number | null>(null);
 
@@ -113,7 +167,7 @@ const CraftingMenu = () => {
 
    const pickUpCraftingOutputItem = (e: MouseEvent): void => {
       // Items can only be picked up while the crafting menu is open
-      if (!craftingMenuIsOpen()) return;
+      if (!inventoryIsOpen()) return;
 
       if (e.button !== 0) return;
 
@@ -125,17 +179,11 @@ const CraftingMenu = () => {
       setHeldItemVisualPosition(e.clientX, e.clientY);
    }
 
-   const throwHeldItem = (): void => {
-      if (Player.instance !== null) {
-         Client.sendThrowHeldItemPacket(Player.instance.rotation);
-      }
-   }
-
    // Find which of the available recipes can be crafted
    useEffect(() => {
       const craftableRecipesArray = new Array<CraftingRecipe>();
       for (const recipe of availableRecipes) {
-         if (canCraftRecipe(Player.hotbarInventory, recipe, SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE)) {
+         if (canCraftRecipe([Player.hotbarInventory, Player.backpackInventory], recipe, SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE)) {
             craftableRecipesArray.push(recipe);
          }
       }
@@ -150,13 +198,6 @@ const CraftingMenu = () => {
    }, [availableRecipes, selectedRecipe]);
 
    useEffect(() => {
-      if (!hasLoaded.current) {
-         // Create the key listener for opening the crafting menu
-         addKeyListener("e", () => toggleCraftingMenu());
-
-         hasLoaded.current = true;
-      }
-
       setCraftingMenuAvailableRecipes = (recipes: Array<CraftingRecipe>): void => {
          setAvailableRecipes(recipes);
       }
@@ -168,29 +209,19 @@ const CraftingMenu = () => {
       CraftingMenu_setCraftingMenuOutputItem = (craftingOutputItem: Item | null): void => {
          setCraftingOutputItem(craftingOutputItem);
       }
+
+      CraftingMenu_setIsVisible = (newIsVisible: boolean): void => {
+         setIsVisible(newIsVisible);
+
+         if (newIsVisible) {
+            setHoveredRecipe(null);
+            setHoverPosition(null);
+         }
+      }
    }, []);
 
    useEffect(() => {
-      toggleCraftingMenu = (): void => {
-         if (Player.isDead()) return;
-
-         if (isVisible) {
-            // Hide the crafting menu
-            setIsVisible(false);
-            setHoveredRecipe(null);
-            setHoverPosition(null);
-
-            // If there is a held item, throw it out
-            if (Player.heldItem !== null) {
-               throwHeldItem();
-            }
-         } else {
-            // Show the crafting menu
-            setIsVisible(true);
-         }
-      }
-
-      craftingMenuIsOpen = (): boolean => {
+      inventoryIsOpen = (): boolean => {
          return isVisible;
       }
    }, [isVisible]);
@@ -251,17 +282,8 @@ const CraftingMenu = () => {
                <div className="recipe-product-description">{CLIENT_ITEM_INFO_RECORD[selectedRecipe.product].description}</div>
 
                <div className="ingredients-title">INGREDIENTS</div>
-               <ul className="ingredients">
-                  {(Object.entries(selectedRecipe.ingredients) as Array<[ItemType, number]>).map(([ingredientType, ingredientCount]: [ItemType, number], i: number) => {
-                     const numIngredientsAvailable = Player.getNumItemType(ingredientType);
-                     const hasEnoughIngredients = numIngredientsAvailable >= selectedRecipe.ingredients[ingredientType]!;
-                     
-                     return <li className="ingredient" key={i}>
-                        <img src={require("../../../images/items/" + CLIENT_ITEM_INFO_RECORD[ingredientType].textureSrc)} className="ingredient-icon" alt="" />
-                        <span className={`ingredient-count${!hasEnoughIngredients ? " not-enough" : ""}`}>x{ingredientCount}</span>
-                     </li>;
-                  })}
-               </ul>
+               
+               <Ingredients recipe={selectedRecipe} />
             </div>
 
             <div className="bottom">

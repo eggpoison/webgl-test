@@ -1,8 +1,7 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, ServerEntityData, ServerItemEntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, CraftingRecipe, PlayerInventoryType, PlaceablePlayerInventoryType, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, ItemData } from "webgl-test-shared";
-import Camera from "../Camera";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ItemEntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, CraftingRecipe, PlayerInventoryType, PlaceablePlayerInventoryType, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, ItemData } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
-import Player, { Inventory } from "../entities/Player";
+import Player, { ItemSlots } from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
 import Game from "../Game";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -10,7 +9,6 @@ import Hitbox from "../hitboxes/Hitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import ItemEntity from "../items/ItemEntity";
 import { Tile } from "../Tile";
-import { windowHeight, windowWidth } from "../webgl";
 import { createItem } from "../items/item-creation";
 import { gameScreenSetIsDead } from "../components/game/GameScreen";
 import Chunk from "../Chunk";
@@ -142,8 +140,8 @@ abstract class Client {
    public static unloadGameDataPacket(gameDataPacket: GameDataPacket): void {
       Game.setTicks(gameDataPacket.serverTicks);
       
-      this.updateEntities(gameDataPacket.serverEntityDataArray);
-      this.updateItemEntities(gameDataPacket.serverItemEntityDataArray);
+      this.updateEntities(gameDataPacket.entityDataArray);
+      this.updateItemEntities(gameDataPacket.itemEntityDataArray);
       this.updatePlayerInventory(gameDataPacket.inventory);
       this.registerTileUpdates(gameDataPacket.tileUpdates);
 
@@ -164,7 +162,7 @@ abstract class Client {
    /**
     * Updates the client's entities to match those in the server
     */
-   private static updateEntities(entityDataArray: ReadonlyArray<ServerEntityData>): void {
+   private static updateEntities(entityDataArray: ReadonlyArray<EntityData>): void {
       const clientKnownEntityIDs: Array<number> = Object.keys(Game.board.entities).map(idString => Number(idString));
 
       // Remove the player from the list of known entities so the player isn't removed
@@ -190,7 +188,7 @@ abstract class Client {
       }
    }
 
-   private static updateItemEntities(serverItemEntityDataArray: ReadonlyArray<ServerItemEntityData>): void {
+   private static updateItemEntities(serverItemEntityDataArray: ReadonlyArray<ItemEntityData>): void {
       const knownItemEntityIDs = Object.keys(Game.board.itemEntities).map(stringID => Number(stringID));
 
       for (const serverItemData of serverItemEntityDataArray) {
@@ -217,11 +215,18 @@ abstract class Client {
 
    private static updatePlayerInventory(playerInventoryData: PlayerInventoryData) {
       // Hotbar
-      const hotbarInventory: Inventory = {};
+      const hotbarInventory: ItemSlots = {};
       for (const [itemSlot, item] of Object.entries(playerInventoryData.hotbar) as unknown as ReadonlyArray<[number, ItemData]>) {
          hotbarInventory[itemSlot] = createItem(item.type, item.count);
       }
       Player.updateHotbarInventory(hotbarInventory);
+
+      // Backpack inventory
+      const backpackInventory: ItemSlots = {};
+      for (const [itemSlot, item] of Object.entries(playerInventoryData.backpackInventory) as unknown as ReadonlyArray<[number, ItemData]>) {
+         backpackInventory[itemSlot] = createItem(item.type, item.count);
+      }
+      Player.updateBackpackInventory(backpackInventory);
 
       // Crafting output item
       if (playerInventoryData.craftingOutputItemSlot !== null) {
@@ -248,7 +253,7 @@ abstract class Client {
       }
    }
 
-   private static createItemFromServerItemData(serverItemEntityData: ServerItemEntityData): void {
+   private static createItemFromServerItemData(serverItemEntityData: ItemEntityData): void {
       const position = Point.unpackage(serverItemEntityData.position); 
       const velocity = serverItemEntityData.velocity !== null ? Vector.unpackage(serverItemEntityData.velocity) : null;
 
@@ -269,7 +274,7 @@ abstract class Client {
       }
    }
 
-   public static createEntityFromData(entityData: ServerEntityData): void {
+   public static createEntityFromData(entityData: EntityData): void {
       const position = Point.unpackage(entityData.position);
 
       // Create the hitboxes
@@ -336,7 +341,7 @@ abstract class Client {
    public static sendInitialPlayerData(username: string): void {
       // Send player data to the server
       if (this.socket !== null) {
-         this.socket.emit("initial_player_data", username, windowWidth, windowHeight);
+         this.socket.emit("initial_player_data", username);
       }
    }
 
@@ -347,8 +352,7 @@ abstract class Client {
             velocity: Player.instance.velocity?.package() || null,
             acceleration: Player.instance.acceleration?.package() || null,
             terminalVelocity: Player.instance.terminalVelocity,
-            rotation: Player.instance.rotation,
-            visibleChunkBounds: Camera.getVisibleChunkBounds()
+            rotation: Player.instance.rotation
          };
 
          this.socket.emit("player_data_packet", packet);

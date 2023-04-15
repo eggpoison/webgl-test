@@ -7,9 +7,8 @@
 }
 
 .item-slot {
-   --slot-size: 4rem;
-   width: var(--slot-size);
-   height: var(--slot-size);
+   width: var(--item-slot-size);
+   height: var(--item-slot-size);
    background-image: url("../../images/miscellaneous/item-slot.png");
    background-size: 100%;
    image-rendering: pixelated;
@@ -32,7 +31,6 @@
 }
 
 .item-slot img {
-   --item-image-size: 48px;
    width: var(--item-image-size);
    height: var(--item-image-size);
    image-rendering: pixelated;
@@ -43,7 +41,7 @@
    z-index: 1;
 }
 
-.item-slot .item-count {
+.item-slot .item-count, #held-item .held-item-count {
    color: #fff;
    font-family: "Inconsolata";
    font-size: 1.3rem;

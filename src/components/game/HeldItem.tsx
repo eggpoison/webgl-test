@@ -52,9 +52,12 @@ const HeldItem = () => {
    }, [mousePosition]);
 
    if (heldItem === null) return null;
+
+   const heldItemDisplayCount = heldItem.count > 1 ? heldItem.count : "";
    
    return <div id="held-item" ref={onRefChange}>
-      <img src={require("../../images/items/" + CLIENT_ITEM_INFO_RECORD[heldItem.type].textureSrc)} alt="" />
+      <img className="held-item-icon" src={require("../../images/items/" + CLIENT_ITEM_INFO_RECORD[heldItem.type].textureSrc)} alt="" />
+      <div className="held-item-count">{heldItemDisplayCount}</div>
    </div>;
 }
 

@@ -5,7 +5,7 @@ import { gameScreenSetIsDead } from "../components/game/GameScreen";
 import { updateHealthBar } from "../components/game/HealthBar";
 import { setHeldItemVisual } from "../components/game/HeldItem";
 import { Hotbar_setHotbarSelectedItemSlot, Hotbar_updateBackpackItemSlot, Hotbar_updateHotbarInventory } from "../components/game/Hotbar";
-import { setCraftingMenuAvailableRecipes, setCraftingMenuAvailableCraftingStations, CraftingMenu_setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
+import { setCraftingMenuAvailableRecipes, setCraftingMenuAvailableCraftingStations, CraftingMenu_setCraftingMenuOutputItem, CraftingMenu_setIsVisible } from "../components/game/menus/CraftingMenu";
 import Game from "../Game";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import Hitbox from "../hitboxes/Hitbox";
@@ -14,8 +14,9 @@ import { addKeyListener, clearPressedKeys, keyIsPressed } from "../keyboard-inpu
 import RenderPart from "../render-parts/RenderPart";
 import { halfWindowHeight, halfWindowWidth } from "../webgl";
 import Entity from "./Entity";
+import { BackpackInventoryMenu_setBackpackItemSlots, BackpackInventoryMenu_setIsVisible } from "../components/game/menus/BackpackInventory";
 
-export type Inventory = { [itemSlot: number]: Item };
+export type ItemSlots = { [itemSlot: number]: Item };
 
 const CRAFTING_RECIPE_RECORD: Record<CraftingStation | "hand", Array<CraftingRecipe>> = {
    hand: [],
@@ -31,6 +32,12 @@ for (const craftingRecipe of CRAFTING_RECIPES) {
    }
 }
 
+const throwHeldItem = (): void => {
+   if (Player.instance !== null) {
+      Client.sendThrowHeldItemPacket(Player.instance.rotation);
+   }
+}
+
 class Player extends Entity {
    private static readonly MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION: number = 250;
 
@@ -41,24 +48,26 @@ class Player extends Entity {
    /** Max distance from the attack position that the attack will be registered from */
    private static readonly ATTACK_TEST_RADIUS = 48;
 
-   private static readonly ACCELERATION = 1000;
    private static readonly TERMINAL_VELOCITY = 300;
+   private static readonly ACCELERATION = 1000;
 
    private static readonly SLOW_TERMINAL_VELOCITY = 150;
+   private static readonly SLOW_ACCELERATION = 600;
    
    public static instance: Player | null = null;
 
    public static username: string;
 
-   public static hotbarInventory: Inventory = {};
+   public static hotbarInventory: ItemSlots = {};
+   public static backpackInventory: ItemSlots = {};
+   public static backpackItemSlot: Item | null = null;
+   public static craftingOutputItem: Item | null = null;
+   public static heldItem: Item | null = null;
+
+   public static inventoryIsOpen = false;
+   
    public static selectedHotbarItemSlot = 1;
    private static hotbarSize = SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE;
-
-   public static backpackItemSlot: Item | null = null;
-
-   public static craftingOutputItem: Item | null = null;
-
-   public static heldItem: Item | null = null;
 
    /** Health of the instance player */
    public static health = 20;
@@ -99,8 +108,7 @@ class Player extends Entity {
 
          Camera.position = this.position;
 
-         Player.createHotbarKeyListeners();
-         Player.createItemUseListeners();
+         Player.health = Player.MAX_HEALTH;
       }
    }
 
@@ -202,7 +210,7 @@ class Player extends Entity {
       }
 
       if (rotation !== null) {
-         this.acceleration = new Vector(Player.ACCELERATION, rotation);
+         this.acceleration = new Vector(Player.getAcceleration(), rotation);
          this.terminalVelocity = Player.getTerminalVelocity();
       } else {
          this.acceleration = null;
@@ -215,6 +223,14 @@ class Player extends Entity {
       }
 
       return Player.TERMINAL_VELOCITY;
+   }
+
+   private static getAcceleration(): number {
+      if (Player.isEating || Player.isPlacingEntity) {
+         return Player.SLOW_ACCELERATION;
+      }
+
+      return Player.ACCELERATION;
    }
 
    public static setHealth(health: number): void {
@@ -235,6 +251,9 @@ class Player extends Entity {
       if (this.instance === null) return;
       
       gameScreenSetIsDead(true);
+
+      // If the player's inventory is open, close it
+      Player.updateInventoryIsOpen(false);
 
       // Remove the player from the game
       delete Game.board.entities[this.instance.id];
@@ -288,13 +307,23 @@ class Player extends Entity {
       Hotbar_setHotbarSelectedItemSlot(itemSlot);
    }
 
-   public static updateHotbarInventory(hotbarInventory: Inventory): void {
+   public static updateHotbarInventory(hotbarInventory: ItemSlots): void {
       Player.hotbarInventory = hotbarInventory;
 
       if (typeof Hotbar_updateHotbarInventory !== "undefined") {
          // Create a copy of the inventory object as to not cause same-pointer shenanigans
          const hotbarInventoryCopy = Object.assign({}, hotbarInventory);
          Hotbar_updateHotbarInventory(hotbarInventoryCopy);
+      }
+   }
+
+   public static updateBackpackInventory(backpackInventory: ItemSlots): void {
+      Player.backpackInventory = backpackInventory;
+
+      if (typeof BackpackInventoryMenu_setBackpackItemSlots !== "undefined") {
+         // Create a copy of the inventory object as to not cause same-pointer shenanigans
+         const backpackInventoryCopy = Object.assign({}, backpackInventory);
+         BackpackInventoryMenu_setBackpackItemSlots(backpackInventoryCopy);
       }
    }
 
@@ -311,12 +340,6 @@ class Player extends Entity {
 
       if (typeof Hotbar_updateBackpackItemSlot !== "undefined") {
          Hotbar_updateBackpackItemSlot(backpackItemSlot);
-      }
-   }
-
-   private static createHotbarKeyListeners(): void {
-      for (let itemSlot = 1; itemSlot <= SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE; itemSlot++) {
-         addKeyListener(itemSlot.toString(), () => this.selectItemSlot(itemSlot));
       }
    }
 
@@ -368,8 +391,16 @@ class Player extends Entity {
       return numItems;
    }
 
+   private static createHotbarKeyListeners(): void {
+      for (let itemSlot = 1; itemSlot <= SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE; itemSlot++) {
+         addKeyListener(itemSlot.toString(), () => this.selectItemSlot(itemSlot));
+      }
+   }
+
    private static createItemUseListeners(): void {
       document.addEventListener("mousedown", e => {
+         if (Player.instance === null || Player.isDead()) return;
+
          // Only attempt to use an item if the game canvas was clicked
          if ((e.target as HTMLElement).id !== "game-canvas") {
             return;
@@ -397,6 +428,8 @@ class Player extends Entity {
       });
 
       document.addEventListener("mouseup", e => {
+         if (Player.instance === null || Player.isDead()) return;
+
          // Only attempt to use an item if the game canvas was clicked
          if ((e.target as HTMLElement).id !== "game-canvas") {
             return;
@@ -423,6 +456,12 @@ class Player extends Entity {
          } else {
             clearPressedKeys();
          }
+      });
+   }
+
+   private static createInventoryToggleListener(): void {
+      addKeyListener("e", () => {
+         Player.updateInventoryIsOpen(!this.inventoryIsOpen);
       });
    }
 
@@ -460,6 +499,27 @@ class Player extends Entity {
 
    public static getHotbarSize(): number {
       return this.hotbarSize;
+   }
+
+   public static updateInventoryIsOpen(inventoryIsOpen: boolean): void {
+      this.inventoryIsOpen = inventoryIsOpen;
+      
+      CraftingMenu_setIsVisible(inventoryIsOpen);
+      BackpackInventoryMenu_setIsVisible(inventoryIsOpen);
+
+      // If the player is holding an item when their inventory is closed, throw the item out
+      if (!inventoryIsOpen) {
+         // If there is a held item, throw it out
+         if (Player.heldItem !== null) {
+            throwHeldItem();
+         }
+      }
+   }
+
+   public static createPlayerEventListeners(): void {
+      Player.createInventoryToggleListener();
+      Player.createItemUseListeners();
+      Player.createHotbarKeyListeners();
    }
 }
 
