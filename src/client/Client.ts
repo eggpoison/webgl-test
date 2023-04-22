@@ -365,15 +365,15 @@ abstract class Client {
       }
    }
 
-   public static sendItemHoldPacket(inventory: PlayerInventoryType, itemSlot: number): void {
+   public static sendItemPickupPacket(inventory: PlayerInventoryType, itemSlot: number, amount: number): void {
       if (Game.isRunning && this.socket !== null) {
-         this.socket.emit("item_hold_packet", inventory, itemSlot);
+         this.socket.emit("item_pickup_packet", inventory, itemSlot, amount);
       }
    }
 
-   public static sendItemReleasePacket(inventory: PlaceablePlayerInventoryType, itemSlot: number): void {
+   public static sendItemReleasePacket(inventory: PlaceablePlayerInventoryType, itemSlot: number, amount: number): void {
       if (Game.isRunning && this.socket !== null) {
-         this.socket.emit("item_release_packet", inventory, itemSlot);
+         this.socket.emit("item_release_packet", inventory, itemSlot, amount);
       }
    }
 

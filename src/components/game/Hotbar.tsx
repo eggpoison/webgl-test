@@ -51,7 +51,7 @@ const Hotbar = () => {
 
          // Attempt to pick the backpack up if there isn't a held item
          if (Player.heldItem === null) {
-            Client.sendItemHoldPacket("backpackItemSlot", -1);
+            Client.sendItemPickupPacket("backpackItemSlot", -1, 1);
       
             setHeldItemVisualPosition(e.clientX, e.clientY);
 
@@ -62,7 +62,7 @@ const Hotbar = () => {
 
          // Attempt to put a backpack in the slot if there is a held item
          if (Player.heldItem !== null && backpackItemTypes.includes(Player.heldItem.type)) {
-            Client.sendItemReleasePacket("backpackItemSlot", -1);
+            Client.sendItemReleasePacket("backpackItemSlot", -1, 1);
 
             // Note: at this point in time, the server hasn't registered that the player has equipped the backpack into the backpack item slot and so we need to get the item from the held item
             const backpack = Player.heldItem;
@@ -99,7 +99,7 @@ const Hotbar = () => {
          );
       } else {
          hotbarItemSlots.push(
-            <ItemSlot onClick={e => leftClickHotbarItemSlot(e, itemSlot)} isSelected={itemSlot === selectedItemSlot} key={itemSlot} />
+            <ItemSlot onClick={e => leftClickHotbarItemSlot(e, itemSlot)} onContextMenu={e => rightClickHotbarItemSlot(e, itemSlot)} isSelected={itemSlot === selectedItemSlot} key={itemSlot} />
          );
       }
    }

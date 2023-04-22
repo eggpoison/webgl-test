@@ -16,6 +16,7 @@ import "./css/game/debug-screen.css";
 import "./css/game/inventory.css";
 import "./css/game/menus/crafting-menu.css";
 import "./css/game/menus/backpack-inventory.css";
+import "./css/game/menus/terminal.css";
 import Player from './entities/Player';
 
 const root = ReactDOM.createRoot(

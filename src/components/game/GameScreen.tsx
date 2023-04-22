@@ -14,6 +14,7 @@ import CraftingMenu from "./menus/CraftingMenu";
 import HeldItem from "./HeldItem";
 import DeathScreen from "./DeathScreen";
 import BackpackInventoryMenu from "./menus/BackpackInventory";
+import Terminal from "./menus/Terminal";
 
 export let showPauseScreen: () => void;
 export let hidePauseScreen: () => void;
@@ -79,6 +80,7 @@ const GameScreen = () => {
 
       {devViewIsEnabled ? <>
          <DevEntityViewer />
+         <Terminal />
          <DebugScreen />
          <CursorTooltip />
       </> : null}

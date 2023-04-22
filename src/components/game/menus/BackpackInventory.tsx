@@ -57,7 +57,7 @@ const BackpackInventoryMenu = () => {
             );
          } else {
             rowItemSlots.push(
-               <ItemSlot key={x} onClick={e => leftClickBackpackItemSlot(e, itemSlot)} isSelected={false} />
+               <ItemSlot key={x} onClick={e => leftClickBackpackItemSlot(e, itemSlot)} onContextMenu={e => rightClickBackpackItemSlot(e, itemSlot)} isSelected={false} />
             );
          }
       }

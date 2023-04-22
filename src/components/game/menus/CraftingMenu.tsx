@@ -174,7 +174,10 @@ const CraftingMenu = () => {
       // Don't pick up the item if there is already a held item
       if (Player.heldItem !== null) return;
 
-      Client.sendItemHoldPacket("craftingOutput", 1);
+      if (Player.craftingOutputItem === null) throw new Error("Tried to pickup the crafting output item when none existed!")
+
+      const numItemsInCraftingOutput = Player.craftingOutputItem.count;
+      Client.sendItemPickupPacket("craftingOutput", 1, numItemsInCraftingOutput);
       
       setHeldItemVisualPosition(e.clientX, e.clientY);
    }

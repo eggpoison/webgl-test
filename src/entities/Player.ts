@@ -1,4 +1,4 @@
-import { AttackPacket, CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitboxType, HitData, ItemType, Point, SETTINGS, Vector } from "webgl-test-shared";
+import { AttackPacket, CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitboxType, HitData, ItemType, Point, SETTINGS, Vector, lerp } from "webgl-test-shared";
 import Camera from "../Camera";
 import Client from "../client/Client";
 import { gameScreenSetIsDead } from "../components/game/GameScreen";
@@ -67,7 +67,6 @@ class Player extends Entity {
    public static inventoryIsOpen = false;
    
    public static selectedHotbarItemSlot = 1;
-   private static hotbarSize = SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE;
 
    /** Health of the instance player */
    public static health = 20;
@@ -189,32 +188,47 @@ class Player extends Entity {
       const hash = (wIsPressed ? 1 : 0) + (aIsPressed ? 2 : 0) + (sIsPressed ? 4 : 0) + (dIsPressed ? 8 : 0)
       
       // Update rotation
-      let rotation!: number | null;
+      let moveDirection!: number | null;
       switch (hash) {
-         case 0:  rotation = null;          break;
-         case 1:  rotation = Math.PI / 2;   break;
-         case 2:  rotation = Math.PI;       break;
-         case 3:  rotation = Math.PI * 3/4; break;
-         case 4:  rotation = Math.PI * 3/2; break;
-         case 5:  rotation = null;          break;
-         case 6:  rotation = Math.PI * 5/4; break;
-         case 7:  rotation = Math.PI;       break;
-         case 8:  rotation = 0;             break;
-         case 9:  rotation = Math.PI / 4;   break;
-         case 10: rotation = null;          break;
-         case 11: rotation = Math.PI / 2;   break;
-         case 12: rotation = Math.PI * 7/4; break;
-         case 13: rotation = 0;             break;
-         case 14: rotation = Math.PI * 3/2; break;
-         case 15: rotation = null;          break;
+         case 0:  moveDirection = null;          break;
+         case 1:  moveDirection = Math.PI / 2;   break;
+         case 2:  moveDirection = Math.PI;       break;
+         case 3:  moveDirection = Math.PI * 3/4; break;
+         case 4:  moveDirection = Math.PI * 3/2; break;
+         case 5:  moveDirection = null;          break;
+         case 6:  moveDirection = Math.PI * 5/4; break;
+         case 7:  moveDirection = Math.PI;       break;
+         case 8:  moveDirection = 0;             break;
+         case 9:  moveDirection = Math.PI / 4;   break;
+         case 10: moveDirection = null;          break;
+         case 11: moveDirection = Math.PI / 2;   break;
+         case 12: moveDirection = Math.PI * 7/4; break;
+         case 13: moveDirection = 0;             break;
+         case 14: moveDirection = Math.PI * 3/2; break;
+         case 15: moveDirection = null;          break;
       }
 
-      if (rotation !== null) {
-         this.acceleration = new Vector(Player.getAcceleration(), rotation);
-         this.terminalVelocity = Player.getTerminalVelocity();
+      if (moveDirection !== null) {
+         const movementMultiplier = Player.calculateMovementMultiplier(moveDirection, Player.instance!.rotation);
+         
+         this.acceleration = new Vector(Player.getAcceleration(), moveDirection);
+         this.terminalVelocity = Player.getTerminalVelocity() * movementMultiplier;
       } else {
          this.acceleration = null;
       }
+   }
+
+   /**
+    * Calculates the factor which player terminal velocity is multiplied by based on their direction
+    */
+   private static calculateMovementMultiplier(moveDirection: number, rotation: number): number {
+      // If the player is placing an entity, they are already moving slower and do not need a further slow.
+      if (this.isPlacingEntity) return 1;
+      
+      const MIN_MOVEMENT_MULTIPLIER = 0.6;
+      
+      const rawFactor = (Math.cos(moveDirection - rotation) + 1) / 2;
+      return lerp(MIN_MOVEMENT_MULTIPLIER, 1, rawFactor);
    }
 
    private static getTerminalVelocity(): number {
@@ -451,11 +465,19 @@ class Player extends Entity {
 
       // Stop the context menu from appearing
       document.addEventListener("contextmenu", e => {
+         for (const element of e.composedPath()) {
+            if ((element as HTMLElement).id === "inventory") {
+               e.preventDefault();
+               return;
+            }
+         }
+         
          if ((e.target as HTMLElement).id === "game-canvas") {
             e.preventDefault();
-         } else {
-            clearPressedKeys();
+            return;
          }
+
+         clearPressedKeys();
       });
    }
 
@@ -491,14 +513,6 @@ class Player extends Entity {
             item.tick();
          }
       }
-   }
-
-   public static setHotbarSize(newSize: number): void {
-      this.hotbarSize = newSize;
-   }
-
-   public static getHotbarSize(): number {
-      return this.hotbarSize;
    }
 
    public static updateInventoryIsOpen(inventoryIsOpen: boolean): void {
