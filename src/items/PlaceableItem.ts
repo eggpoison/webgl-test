@@ -156,6 +156,23 @@ export function createPlaceableItemProgram(): void {
 class PlaceableItem extends Item {
    public onRightMouseButtonDown(): void {
       super.use();
+
+      // If the item would be consumed when used, clear the isPlacingEntity flag
+      if (this.count === 1) {
+         Player.isPlacingEntity = false;
+      }
+   }
+
+   public onRightMouseButtonUp(): void {
+      Player.isPlacingEntity = false;
+   }
+
+   protected onSelect(): void {
+      Player.isPlacingEntity = true;
+   }
+
+   protected onDeselect(): void {
+      Player.isPlacingEntity = false;
    }
 }
 

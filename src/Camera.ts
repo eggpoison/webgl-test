@@ -1,5 +1,7 @@
-import { Point, SETTINGS, VisibleChunkBounds } from "webgl-test-shared";
+import { Point, SETTINGS } from "webgl-test-shared";
 import { halfWindowHeight, halfWindowWidth, windowHeight, windowWidth } from "./webgl";
+
+export type VisibleChunkBounds = [minX: number, maxX: number, minY: number, maxY: number];
 
 abstract class Camera {
    /** Larger = zoomed in, smaller = zoomed out */

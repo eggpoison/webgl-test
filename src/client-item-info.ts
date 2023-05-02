@@ -53,7 +53,7 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       description: "This Grug rock. No hurt or face wrath of Grug."
    },
    stone_sword: {
-      textureSrc: "wooden-axe.png",
+      textureSrc: "stone-sword.png",
       name: "Stone Sword",
       description: ""
    },
@@ -65,6 +65,16 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
    stone_pickaxe: {
       textureSrc: "stone-pickaxe.png",
       name: "Stone Pickaxe",
+      description: ""
+   },
+   leather: {
+      textureSrc: "leather.png",
+      name: "Leather",
+      description: ""
+   },
+   leather_backpack: {
+      textureSrc: "leather-backpack.png",
+      name: "Leather Backpack",
       description: ""
    }
 };

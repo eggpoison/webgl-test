@@ -1,22 +1,22 @@
-import { AttackPacket, CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitboxType, HitData, ItemType, Point, SETTINGS, Vector } from "webgl-test-shared";
+import { AttackPacket, CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitboxType, HitData, ItemType, Point, SETTINGS, Vector, lerp } from "webgl-test-shared";
 import Camera from "../Camera";
 import Client from "../client/Client";
 import { gameScreenSetIsDead } from "../components/game/GameScreen";
 import { updateHealthBar } from "../components/game/HealthBar";
 import { setHeldItemVisual } from "../components/game/HeldItem";
-import { setHotbarInventory, setHotbarSelectedItemSlot } from "../components/game/Hotbar";
-import { setCraftingMenuAvailableRecipes, setCraftingMenuAvailableCraftingStations, setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
+import { Hotbar_setHotbarSelectedItemSlot, Hotbar_updateBackpackItemSlot, Hotbar_updateHotbarInventory } from "../components/game/Hotbar";
+import { setCraftingMenuAvailableRecipes, setCraftingMenuAvailableCraftingStations, CraftingMenu_setCraftingMenuOutputItem, CraftingMenu_setIsVisible } from "../components/game/menus/CraftingMenu";
 import Game from "../Game";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import Hitbox from "../hitboxes/Hitbox";
 import Item from "../items/Item";
 import { addKeyListener, clearPressedKeys, keyIsPressed } from "../keyboard-input";
-import { cursorX, cursorY } from "../mouse";
 import RenderPart from "../render-parts/RenderPart";
 import { halfWindowHeight, halfWindowWidth } from "../webgl";
 import Entity from "./Entity";
+import { BackpackInventoryMenu_setBackpackItemSlots, BackpackInventoryMenu_setIsVisible } from "../components/game/menus/BackpackInventory";
 
-export type Inventory = { [itemSlot: number]: Item };
+export type ItemSlots = { [itemSlot: number]: Item };
 
 const CRAFTING_RECIPE_RECORD: Record<CraftingStation | "hand", Array<CraftingRecipe>> = {
    hand: [],
@@ -32,21 +32,41 @@ for (const craftingRecipe of CRAFTING_RECIPES) {
    }
 }
 
+const throwHeldItem = (): void => {
+   if (Player.instance !== null) {
+      Client.sendThrowHeldItemPacket(Player.instance.rotation);
+   }
+}
+
 class Player extends Entity {
    private static readonly MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION: number = 250;
 
    public static readonly MAX_HEALTH = 20;
+
+   /** How far away from the entity the attack is done */
+   private static readonly ATTACK_OFFSET = 80;
+   /** Max distance from the attack position that the attack will be registered from */
+   private static readonly ATTACK_TEST_RADIUS = 48;
+
+   private static readonly TERMINAL_VELOCITY = 300;
+   private static readonly ACCELERATION = 1000;
+
+   private static readonly SLOW_TERMINAL_VELOCITY = 150;
+   private static readonly SLOW_ACCELERATION = 600;
    
    public static instance: Player | null = null;
 
    public static username: string;
 
-   public static hotbarInventory: Inventory = {};
-   public static selectedHotbarItemSlot = 1;
-
+   public static hotbarInventory: ItemSlots = {};
+   public static backpackInventory: ItemSlots = {};
+   public static backpackItemSlot: Item | null = null;
    public static craftingOutputItem: Item | null = null;
-
    public static heldItem: Item | null = null;
+
+   public static inventoryIsOpen = false;
+   
+   public static selectedHotbarItemSlot = 1;
 
    /** Health of the instance player */
    public static health = 20;
@@ -55,13 +75,8 @@ class Player extends Entity {
    
    public readonly displayName: string;
 
-   /** How far away from the entity the attack is done */
-   private static readonly ATTACK_OFFSET = 80;
-   /** Max distance from the attack position that the attack will be registered from */
-   private static readonly ATTACK_TEST_RADIUS = 48;
-
-   private static readonly ACCELERATION = 1000;
-   private static readonly TERMINAL_VELOCITY = 300;
+   public static isEating = false;
+   public static isPlacingEntity = false;
 
    public static readonly HITBOXES: ReadonlySet<Hitbox<HitboxType>> = new Set<Hitbox<HitboxType>>([
       new CircularHitbox({
@@ -92,13 +107,12 @@ class Player extends Entity {
 
          Camera.position = this.position;
 
-         Player.createKeyListeners();
-         Player.createItemUseListeners();
+         Player.health = Player.MAX_HEALTH;
       }
    }
 
    /** Updates the rotation of the player to match the cursor position */
-   public static updateRotation(): void {
+   public static updateRotation(cursorX: number, cursorY: number): void {
       if (Player.instance === null || cursorX === null || cursorY === null) return;
 
       const relativeCursorX = cursorX - halfWindowWidth;
@@ -174,32 +188,63 @@ class Player extends Entity {
       const hash = (wIsPressed ? 1 : 0) + (aIsPressed ? 2 : 0) + (sIsPressed ? 4 : 0) + (dIsPressed ? 8 : 0)
       
       // Update rotation
-      let rotation!: number | null;
+      let moveDirection!: number | null;
       switch (hash) {
-         case 0:  rotation = null;          break;
-         case 1:  rotation = Math.PI / 2;   break;
-         case 2:  rotation = Math.PI;       break;
-         case 3:  rotation = Math.PI * 3/4; break;
-         case 4:  rotation = Math.PI * 3/2; break;
-         case 5:  rotation = null;          break;
-         case 6:  rotation = Math.PI * 5/4; break;
-         case 7:  rotation = Math.PI;       break;
-         case 8:  rotation = 0;             break;
-         case 9:  rotation = Math.PI / 4;   break;
-         case 10: rotation = null;          break;
-         case 11: rotation = Math.PI / 2;   break;
-         case 12: rotation = Math.PI * 7/4; break;
-         case 13: rotation = 0;             break;
-         case 14: rotation = Math.PI * 3/2; break;
-         case 15: rotation = null;          break;
+         case 0:  moveDirection = null;          break;
+         case 1:  moveDirection = Math.PI / 2;   break;
+         case 2:  moveDirection = Math.PI;       break;
+         case 3:  moveDirection = Math.PI * 3/4; break;
+         case 4:  moveDirection = Math.PI * 3/2; break;
+         case 5:  moveDirection = null;          break;
+         case 6:  moveDirection = Math.PI * 5/4; break;
+         case 7:  moveDirection = Math.PI;       break;
+         case 8:  moveDirection = 0;             break;
+         case 9:  moveDirection = Math.PI / 4;   break;
+         case 10: moveDirection = null;          break;
+         case 11: moveDirection = Math.PI / 2;   break;
+         case 12: moveDirection = Math.PI * 7/4; break;
+         case 13: moveDirection = 0;             break;
+         case 14: moveDirection = Math.PI * 3/2; break;
+         case 15: moveDirection = null;          break;
       }
 
-      if (rotation !== null) {
-         this.acceleration = new Vector(Player.ACCELERATION, rotation);
-         this.terminalVelocity = Player.TERMINAL_VELOCITY;
+      if (moveDirection !== null) {
+         const movementMultiplier = Player.calculateMovementMultiplier(moveDirection, Player.instance!.rotation);
+         
+         this.acceleration = new Vector(Player.getAcceleration(), moveDirection);
+         this.terminalVelocity = Player.getTerminalVelocity() * movementMultiplier;
       } else {
          this.acceleration = null;
       }
+   }
+
+   /**
+    * Calculates the factor which player terminal velocity is multiplied by based on their direction
+    */
+   private static calculateMovementMultiplier(moveDirection: number, rotation: number): number {
+      // If the player is placing an entity, they are already moving slower and do not need a further slow.
+      if (this.isPlacingEntity) return 1;
+      
+      const MIN_MOVEMENT_MULTIPLIER = 0.6;
+      
+      const rawFactor = (Math.cos(moveDirection - rotation) + 1) / 2;
+      return lerp(MIN_MOVEMENT_MULTIPLIER, 1, rawFactor);
+   }
+
+   private static getTerminalVelocity(): number {
+      if (Player.isEating || Player.isPlacingEntity) {
+         return Player.SLOW_TERMINAL_VELOCITY;
+      }
+
+      return Player.TERMINAL_VELOCITY;
+   }
+
+   private static getAcceleration(): number {
+      if (Player.isEating || Player.isPlacingEntity) {
+         return Player.SLOW_ACCELERATION;
+      }
+
+      return Player.ACCELERATION;
    }
 
    public static setHealth(health: number): void {
@@ -221,9 +266,16 @@ class Player extends Entity {
       
       gameScreenSetIsDead(true);
 
+      // If the player's inventory is open, close it
+      Player.updateInventoryIsOpen(false);
+
       // Remove the player from the game
       delete Game.board.entities[this.instance.id];
       this.instance = null;
+   }
+
+   public static isDead(): boolean {
+      return this.health <= 0;
    }
 
    /** Registers a server-side hit for the client */
@@ -242,13 +294,6 @@ class Player extends Entity {
          } else {
             this.instance.velocity = pushForce;
          }
-      }
-   }
-
-   public static setCraftingOutputItem(craftingOutputItem: Item | null): void {
-      this.craftingOutputItem = craftingOutputItem;
-      if (typeof setCraftingMenuOutputItem !== "undefined") {
-         setCraftingMenuOutputItem(this.craftingOutputItem);
       }
    }
 
@@ -273,19 +318,42 @@ class Player extends Entity {
          this.hotbarInventory[itemSlot]!.select();
       }
       
-      setHotbarSelectedItemSlot(itemSlot);
+      Hotbar_setHotbarSelectedItemSlot(itemSlot);
    }
 
-   public static updateHotbar(): void {
-      if (typeof setHotbarInventory !== "undefined") {
-         const hotbarInventoryCopy = Object.assign({}, this.hotbarInventory);
-         setHotbarInventory(hotbarInventoryCopy);
+   public static updateHotbarInventory(hotbarInventory: ItemSlots): void {
+      Player.hotbarInventory = hotbarInventory;
+
+      if (typeof Hotbar_updateHotbarInventory !== "undefined") {
+         // Create a copy of the inventory object as to not cause same-pointer shenanigans
+         const hotbarInventoryCopy = Object.assign({}, hotbarInventory);
+         Hotbar_updateHotbarInventory(hotbarInventoryCopy);
       }
    }
 
-   private static createKeyListeners(): void {
-      for (let itemSlot = 1; itemSlot <= SETTINGS.PLAYER_HOTBAR_SIZE; itemSlot++) {
-         addKeyListener(itemSlot.toString(), () => this.selectItemSlot(itemSlot));
+   public static updateBackpackInventory(backpackInventory: ItemSlots): void {
+      Player.backpackInventory = backpackInventory;
+
+      if (typeof BackpackInventoryMenu_setBackpackItemSlots !== "undefined") {
+         // Create a copy of the inventory object as to not cause same-pointer shenanigans
+         const backpackInventoryCopy = Object.assign({}, backpackInventory);
+         BackpackInventoryMenu_setBackpackItemSlots(backpackInventoryCopy);
+      }
+   }
+
+   public static updateCraftingOutputItem(craftingOutputItem: Item | null): void {
+      Player.craftingOutputItem = craftingOutputItem;
+
+      if (typeof CraftingMenu_setCraftingMenuOutputItem !== "undefined") {
+         CraftingMenu_setCraftingMenuOutputItem(this.craftingOutputItem);
+      }
+   }
+
+   public static updateBackpackItemSlot(backpackItemSlot: Item | null): void {
+      Player.backpackItemSlot = backpackItemSlot;
+
+      if (typeof Hotbar_updateBackpackItemSlot !== "undefined") {
+         Hotbar_updateBackpackItemSlot(backpackItemSlot);
       }
    }
 
@@ -337,8 +405,16 @@ class Player extends Entity {
       return numItems;
    }
 
+   private static createHotbarKeyListeners(): void {
+      for (let itemSlot = 1; itemSlot <= SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE; itemSlot++) {
+         addKeyListener(itemSlot.toString(), () => this.selectItemSlot(itemSlot));
+      }
+   }
+
    private static createItemUseListeners(): void {
       document.addEventListener("mousedown", e => {
+         if (Player.instance === null || Player.isDead()) return;
+
          // Only attempt to use an item if the game canvas was clicked
          if ((e.target as HTMLElement).id !== "game-canvas") {
             return;
@@ -366,6 +442,8 @@ class Player extends Entity {
       });
 
       document.addEventListener("mouseup", e => {
+         if (Player.instance === null || Player.isDead()) return;
+
          // Only attempt to use an item if the game canvas was clicked
          if ((e.target as HTMLElement).id !== "game-canvas") {
             return;
@@ -387,11 +465,25 @@ class Player extends Entity {
 
       // Stop the context menu from appearing
       document.addEventListener("contextmenu", e => {
+         for (const element of e.composedPath()) {
+            if ((element as HTMLElement).id === "inventory") {
+               e.preventDefault();
+               return;
+            }
+         }
+         
          if ((e.target as HTMLElement).id === "game-canvas") {
             e.preventDefault();
-         } else {
-            clearPressedKeys();
+            return;
          }
+
+         clearPressedKeys();
+      });
+   }
+
+   private static createInventoryToggleListener(): void {
+      addKeyListener("e", () => {
+         Player.updateInventoryIsOpen(!this.inventoryIsOpen);
       });
    }
 
@@ -421,6 +513,27 @@ class Player extends Entity {
             item.tick();
          }
       }
+   }
+
+   public static updateInventoryIsOpen(inventoryIsOpen: boolean): void {
+      this.inventoryIsOpen = inventoryIsOpen;
+      
+      CraftingMenu_setIsVisible(inventoryIsOpen);
+      BackpackInventoryMenu_setIsVisible(inventoryIsOpen);
+
+      // If the player is holding an item when their inventory is closed, throw the item out
+      if (!inventoryIsOpen) {
+         // If there is a held item, throw it out
+         if (Player.heldItem !== null) {
+            throwHeldItem();
+         }
+      }
+   }
+
+   public static createPlayerEventListeners(): void {
+      Player.createInventoryToggleListener();
+      Player.createItemUseListeners();
+      Player.createHotbarKeyListeners();
    }
 }
 

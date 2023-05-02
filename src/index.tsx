@@ -13,8 +13,11 @@ import "./css/game/cursor-tooltip.css";
 import "./css/game/dev-entity-viewer.css";
 import "./css/game/health-bar.css";
 import "./css/game/debug-screen.css";
-import "./css/game/hotbar.css";
+import "./css/game/inventory.css";
 import "./css/game/menus/crafting-menu.css";
+import "./css/game/menus/backpack-inventory.css";
+import "./css/game/menus/terminal.css";
+import Player from './entities/Player';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -24,3 +27,7 @@ root.render(
       <App />
   </React.StrictMode>
 );
+
+window.addEventListener("load", () => {
+   Player.createPlayerEventListeners();
+});

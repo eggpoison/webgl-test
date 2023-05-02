@@ -29,6 +29,11 @@ class FoodItem extends Item implements FoodItemInfo {
          if (this.eatTimer <= 0) {
             this.eatTimer = this.eatTime;
             this.use();
+
+            // If all the food has been eaten, stop the player from eating
+            if (this.count === 1) {
+               Player.isEating = false;
+            }
          }
       }
    }
@@ -40,10 +45,14 @@ class FoodItem extends Item implements FoodItemInfo {
    public onRightMouseButtonDown(): void {
       this.eatTimer = this.eatTime;
       this.isEating = true;
+
+      Player.isEating = true;
    }
 
    public onRightMouseButtonUp(): void {
       this.isEating = false;
+
+      Player.isEating = false;
    }
 
    protected onDeselect(): void {

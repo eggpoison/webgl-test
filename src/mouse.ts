@@ -6,8 +6,16 @@ import Entity from "./entities/Entity";
 import Game from "./Game";
 import Camera from "./Camera";
 
-export let cursorX: number | null = null;
-export let cursorY: number | null = null;
+let cursorX: number | null = null;
+let cursorY: number | null = null;
+
+export function getCursorX(): number | null {
+   return cursorX;
+}
+
+export function getCursorY(): number | null {
+   return cursorY;
+}
 
 export function calculateCursorWorldPosition(): Point | null {
    if (Game.getIsPaused()) return null;

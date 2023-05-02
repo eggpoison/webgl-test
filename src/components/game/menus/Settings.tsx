@@ -51,11 +51,6 @@ const BASE_MENU: SettingsMenu = {
          {
             type: "openMenu",
             text: "Miscellaneous"
-         },
-         {
-            type: "openMenu",
-            text: "Devtools",
-            menuName: "Devtools"
          }
       ],
       [
@@ -64,31 +59,6 @@ const BASE_MENU: SettingsMenu = {
             text: "Escape"
          }
       ]
-   ],
-   submenus: [
-      {
-         name: "Devtools",
-         buttons: [
-            [
-               {
-                  type: "option",
-                  text: "Show Hitboxes",
-                  option: "showEntityHitboxes"
-               },
-               {
-                  type: "option",
-                  text: "Show Chunk Borders",
-                  option: "showChunkBorders"
-               }
-            ],
-            [
-               {
-                  type: "close",
-                  text: "Back"
-               }
-            ]
-         ]
-      }
    ]
 }
 

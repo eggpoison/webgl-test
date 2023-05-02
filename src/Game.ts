@@ -8,7 +8,7 @@ import { lerp, Point, SETTINGS } from "webgl-test-shared";
 import { calculateEntityRenderValues, setFrameProgress } from "./entities/Entity";
 import { createEntityShaders, renderEntities } from "./entity-rendering";
 import Client from "./client/Client";
-import { calculateCursorWorldPosition, handleMouseMovement, renderCursorTooltip } from "./mouse";
+import { calculateCursorWorldPosition, getCursorX, getCursorY, handleMouseMovement, renderCursorTooltip } from "./mouse";
 import { updateDevEntityViewer } from "./components/game/DevEntityViewer";
 import OPTIONS from "./options";
 import { createShaderStrings, createWebGLContext, createWebGLProgram, gl, resizeCanvas } from "./webgl";
@@ -112,6 +112,13 @@ abstract class Game {
 
       createEventListeners();
       resizeCanvas();
+
+      // Set the player's initial rotation
+      const cursorX = getCursorX();
+      const cursorY = getCursorY();
+      if (cursorX !== null && cursorY !== null) {
+         Player.updateRotation(cursorX, cursorY);
+      }
                
       // Start the game loop
       this.isSynced = true;
@@ -168,7 +175,6 @@ abstract class Game {
     */
    public static async initialise(): Promise<void> {
       return new Promise(async resolve => {
-
          createWebGLContext();
          createShaderStrings();
          createTextCanvasContext();
@@ -202,7 +208,11 @@ abstract class Game {
     */
    private static render(frameProgress: number): void {
       // Player rotation is updated each render, but only sent each update
-      Player.updateRotation();
+      const cursorX = getCursorX();
+      const cursorY = getCursorY();
+      if (cursorX !== null && cursorY !== null) {
+         Player.updateRotation(cursorX, cursorY);
+      }
       
       const currentRenderTime = Math.floor(new Date().getTime() / 1000);
       numRenders++;
