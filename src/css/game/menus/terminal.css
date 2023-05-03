@@ -4,7 +4,7 @@
    --border-width: 3px;
    --border-colour: #999;
    --line-height: 1.5rem;
-   width: 50%;
+   width: max(50%, 40rem);
    background-color: #000;
    border: var(--border-width) solid var(--border-colour);
    border-radius: 5px;
