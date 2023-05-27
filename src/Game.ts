@@ -1,3 +1,8 @@
+const x = 1, y = 1, width = 1, height = 1;
+const ctx = "" as unknown as CanvasRenderingContext2D;
+
+ctx.drawImage(document.getElementById("player") as HTMLImageElement, x, y, width, height);
+
 import Board from "./Board";
 import Player from "./entities/Player";
 import { isDev } from "./utils";
