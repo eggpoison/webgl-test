@@ -103,19 +103,12 @@ const createItemUseListeners = (): void => {
 
       const selectedItem = Game.definiteGameState.hotbarItemSlots[Game.latencyGameState.selectedHotbarItemSlot];
 
-      // Attack with an empty hand
-      // if (typeof selectedItem === "undefined") {
-      //    if (e.button === 0) {
-      //       attackWithHand();
-      //    }
-      //    return;
-      // }
-
       if (e.button === 0) {
          // Left click
          if (typeof selectedItem !== "undefined") {
             selectedItem.resetAttackSwitchDelay();
          }
+
          attack();
       } else if (e.button === 2) {
          // Right click

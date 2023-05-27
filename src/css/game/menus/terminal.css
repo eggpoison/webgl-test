@@ -32,6 +32,14 @@
    position: relative;
 }
 
+#terminal .line-reader input {
+   width: 0;
+   background-color: #000;
+   border: none;
+   caret-color: transparent;
+   outline: none;
+}
+
 #terminal .caret {
    width: 0.4rem;
    height: 1rem;
