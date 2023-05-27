@@ -33,7 +33,26 @@ const Terminal = () => {
 
          const numCharacters = lineInputRef.current.value.length;
          lineInputRef.current.style.width = numCharacters + "ch";
-      });
+      }, 5);
+   }
+
+   const enterCommand = (): void => {
+      if (lineInputRef.current === null) return;
+
+      // Execute the command
+      const command = lineInputRef.current.value;
+      console.log(command);
+
+      // Clear the line input
+      lineInputRef.current.value = "";
+   }
+
+   const enterLineCharacter = (e: KeyboardEvent): void => {
+      if (e.key === "Enter") {
+         enterCommand();
+      }
+
+      updateLineInputLength();
    }
 
    useEffect(() => {
@@ -71,7 +90,7 @@ const Terminal = () => {
 
       <div className="line-reader">
          <span>&gt;</span>
-         <input ref={lineInputRef} type="text" className="line-input" onKeyDown={updateLineInputLength} />
+         <input ref={lineInputRef} type="text" className="line-input" onKeyDown={e => enterLineCharacter(e.nativeEvent)} />
          {isInFocus ? <div className="caret"></div> : null}
       </div>
    </div>;
