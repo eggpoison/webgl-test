@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
 
+/**
+ * Checks whether the player is using the terminal or not.
+ */
+export let playerIsUsingTerminal: () => boolean = () => false;
+
 const Terminal = () => {
    const [isInFocus, setIsInFocus] = useState(false);
    
@@ -10,6 +15,12 @@ const Terminal = () => {
    const unfocusTerminal = (): void => {
       setIsInFocus(false);
    }
+
+   useEffect(() => {
+      playerIsUsingTerminal = (): boolean => {
+         return isInFocus;
+      }
+   }, [isInFocus]);
 
    useEffect(() => {
       const checkForTerminalUnfocus = (e: MouseEvent): void => {
@@ -40,6 +51,7 @@ const Terminal = () => {
 
       <div className="line-reader">
          <span>&gt;</span>
+         <input type="text" className="line-input" />
          {isInFocus ? <div className="caret"></div> : null}
       </div>
    </div>;

@@ -8,11 +8,14 @@ import ItemSlot from "./ItemSlot";
 import { inventoryIsOpen } from "./menus/CraftingMenu";
 import { BackpackInventoryMenu_setBackpackItemInfo } from "./menus/BackpackInventory";
 import { leftClickItemSlot, rightClickItemSlot } from "../../inventory-manipulation";
-import definiteGameState from "../../game-state/definite-game-state";
+import Game from "../../Game";
 
 export let Hotbar_updateHotbarInventory: (inventory: ItemSlots) => void;
 
-export let Hotbar_updateBackpackItemSlot: (backpack: Item | null) => void;
+/**
+ * Updates the backpack item slot shown in the hotbar.
+ */
+export let Hotbar_updateBackpackItemSlot: (backpack: Item | null) => void = () => {};
 
 export let Hotbar_setHotbarSelectedItemSlot: (itemSlot: number) => void;
 
@@ -50,7 +53,7 @@ const Hotbar = () => {
          // There is an item in the backpack item slot
 
          // Attempt to pick the backpack up if there isn't a held item
-         if (definiteGameState.heldItemSlot === null) {
+         if (Game.definiteGameState.heldItemSlot === null) {
             Client.sendItemPickupPacket("backpackItemSlot", -1, 1);
       
             setHeldItemVisualPosition(e.clientX, e.clientY);
@@ -61,11 +64,11 @@ const Hotbar = () => {
          // There is no backpack in the backpack item slot
 
          // Attempt to put a backpack in the slot if there is a held item
-         if (definiteGameState.heldItemSlot !== null && backpackItemTypes.includes(definiteGameState.heldItemSlot.type)) {
+         if (Game.definiteGameState.heldItemSlot !== null && backpackItemTypes.includes(Game.definiteGameState.heldItemSlot.type)) {
             Client.sendItemReleasePacket("backpackItemSlot", -1, 1);
 
             // Note: at this point in time, the server hasn't registered that the player has equipped the backpack into the backpack item slot and so we need to get the item from the held item
-            const backpack = definiteGameState.heldItemSlot;
+            const backpack = Game.definiteGameState.heldItemSlot;
             if (backpack !== null) {
                equipBackpack(backpack);
             }
@@ -106,7 +109,9 @@ const Hotbar = () => {
 
    let backpackItemSlotElement: JSX.Element;
    if (backpackItemSlot !== null) {
-      const imageSrc = require("../../images/items/" + CLIENT_ITEM_INFO_RECORD[backpackItemSlot.type].textureSrc);
+      const backpackItemInfo = CLIENT_ITEM_INFO_RECORD[backpackItemSlot.type];
+      
+      const imageSrc = require("../../images/items/" + backpackItemInfo.textureSrc);
       backpackItemSlotElement = <ItemSlot onClick={e => clickBackpackItemSlot(e)} isSelected={false} picturedItemImageSrc={imageSrc} />
    } else {
       const imageSrc = require("../../images/miscellaneous/backpack-wireframe.png");

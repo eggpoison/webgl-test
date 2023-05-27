@@ -5,7 +5,7 @@ import Entity from "../entities/Entity";
 import { isDev } from "../utils";
 import { updateDevEntityViewer } from "./game/DevEntityViewer";
 
-export let updateCursorTooltipTarget: (entity: Entity | null, screenPosition: Point | null) => void;
+export let updateCursorTooltipTarget: (entity: Entity | null, screenPosition: Point | null) => void = () => {};
 
 const CursorTooltip = () => {
    const [target, setTarget] = useState<Entity | null>(null);

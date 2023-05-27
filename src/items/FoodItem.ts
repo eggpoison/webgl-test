@@ -1,8 +1,7 @@
 import { FoodItemInfo, ItemType, SETTINGS } from "webgl-test-shared";
 import Player from "../entities/Player";
 import Item from "./Item";
-import LatencyGameState from "../game-state/latency-game-state";
-import DefiniteGameState from "../game-state/definite-game-state";
+import Game from "../Game";
 
 class FoodItem extends Item implements FoodItemInfo {
    public readonly stackSize: number;
@@ -34,27 +33,27 @@ class FoodItem extends Item implements FoodItemInfo {
 
             // If all the food has been eaten, stop the player from eating
             if (this.count === 1) {
-               LatencyGameState.playerIsEating = false;
+               Game.latencyGameState.playerIsEating = false;
             }
          }
       }
    }
 
    private shouldEat(): boolean {
-      return this.isEating && DefiniteGameState.playerHealth < Player.MAX_HEALTH;
+      return this.isEating && Game.definiteGameState.playerHealth < Player.MAX_HEALTH;
    }
 
    public onRightMouseButtonDown(): void {
       this.eatTimer = this.eatTime;
       this.isEating = true;
 
-      LatencyGameState.playerIsEating = true;
+      Game.latencyGameState.playerIsEating = true;
    }
 
    public onRightMouseButtonUp(): void {
       this.isEating = false;
 
-      LatencyGameState.playerIsEating = false;
+      Game.latencyGameState.playerIsEating = false;
    }
 
    protected onDeselect(): void {

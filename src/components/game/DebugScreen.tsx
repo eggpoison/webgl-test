@@ -4,7 +4,7 @@ import Game from "../../Game";
 
 export let updateDebugScreenCurrentTime: (time: number) => void;
 export let updateDebugScreenTicks: (time: number) => void;
-export let updateDebugScreenFPS: (fps: number) => void;
+export let updateDebugScreenFPS: (fps: number) => void = () => {};
 
 const DebugScreen = () => {
    const [currentTime, setCurrentTime] = useState(0);

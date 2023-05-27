@@ -4,8 +4,6 @@ import { BackpackInventoryMenu_setIsVisible } from "./components/game/menus/Back
 import { CraftingMenu_setIsVisible } from "./components/game/menus/CraftingMenu";
 import Player from "./entities/Player";
 import Client from "./client/Client";
-import LatencyGameState from "./game-state/latency-game-state";
-import DefiniteGameState from "./game-state/definite-game-state";
 import Entity from "./entities/Entity";
 import Game from "./Game";
 import { Hotbar_setHotbarSelectedItemSlot } from "./components/game/Hotbar";
@@ -87,7 +85,7 @@ const attack = (): void => {
       
    const attackTargets = calculatePlayerAttackTargets();
    const attackPacket: AttackPacket = {
-      itemSlot: LatencyGameState.selectedHotbarItemSlot,
+      itemSlot: Game.latencyGameState.selectedHotbarItemSlot,
       attackDirection: Player.instance.rotation,
       targetEntities: attackTargets.map(entity => entity.id)
    };
@@ -96,14 +94,14 @@ const attack = (): void => {
 
 const createItemUseListeners = (): void => {
    document.addEventListener("mousedown", e => {
-      if (Player.instance === null || DefiniteGameState.playerIsDead()) return;
+      if (Player.instance === null || Game.definiteGameState.playerIsDead()) return;
 
       // Only attempt to use an item if the game canvas was clicked
       if ((e.target as HTMLElement).id !== "game-canvas") {
          return;
       }
 
-      const selectedItem = DefiniteGameState.hotbarItemSlots[LatencyGameState.selectedHotbarItemSlot];
+      const selectedItem = Game.definiteGameState.hotbarItemSlots[Game.latencyGameState.selectedHotbarItemSlot];
 
       // Attack with an empty hand
       // if (typeof selectedItem === "undefined") {
@@ -121,21 +119,21 @@ const createItemUseListeners = (): void => {
          attack();
       } else if (e.button === 2) {
          // Right click
-         if (typeof selectedItem.onRightMouseButtonDown !== "undefined") {
+         if (typeof selectedItem !== "undefined" && typeof selectedItem.onRightMouseButtonDown !== "undefined") {
             selectedItem.onRightMouseButtonDown();
          }
       }
    });
 
    document.addEventListener("mouseup", e => {
-      if (Player.instance === null || DefiniteGameState.playerIsDead()) return;
+      if (Player.instance === null || Game.definiteGameState.playerIsDead()) return;
 
       // Only attempt to use an item if the game canvas was clicked
       if ((e.target as HTMLElement).id !== "game-canvas") {
          return;
       }
 
-      const selectedItem = DefiniteGameState.hotbarItemSlots[LatencyGameState.selectedHotbarItemSlot];
+      const selectedItem = Game.definiteGameState.hotbarItemSlots[Game.latencyGameState.selectedHotbarItemSlot];
 
       if (typeof selectedItem === "undefined") {
          return;
@@ -170,15 +168,15 @@ const createItemUseListeners = (): void => {
 
 const selectItemSlot = (itemSlot: number): void => {
    // If an item was seleted before switching, deselect it
-   if (itemSlot !== LatencyGameState.selectedHotbarItemSlot && DefiniteGameState.hotbarItemSlots.hasOwnProperty(LatencyGameState.selectedHotbarItemSlot)) {
-      DefiniteGameState.hotbarItemSlots[LatencyGameState.selectedHotbarItemSlot]!.deselect();
+   if (itemSlot !== Game.latencyGameState.selectedHotbarItemSlot && Game.definiteGameState.hotbarItemSlots.hasOwnProperty(Game.latencyGameState.selectedHotbarItemSlot)) {
+      Game.definiteGameState.hotbarItemSlots[Game.latencyGameState.selectedHotbarItemSlot]!.deselect();
    }
 
-   LatencyGameState.selectedHotbarItemSlot = itemSlot;
+   Game.latencyGameState.selectedHotbarItemSlot = itemSlot;
 
    // Select any new item
-   if (DefiniteGameState.hotbarItemSlots.hasOwnProperty(itemSlot)) {
-      DefiniteGameState.hotbarItemSlots[itemSlot]!.select();
+   if (Game.definiteGameState.hotbarItemSlots.hasOwnProperty(itemSlot)) {
+      Game.definiteGameState.hotbarItemSlots[itemSlot]!.select();
    }
    
    Hotbar_setHotbarSelectedItemSlot(itemSlot);
@@ -203,7 +201,7 @@ export function updateInventoryIsOpen(inventoryIsOpen: boolean): void {
    BackpackInventoryMenu_setIsVisible(_inventoryIsOpen);
 
    // If the player is holding an item when their inventory is closed, throw the item out
-   if (!_inventoryIsOpen && DefiniteGameState.heldItemSlot !== null) {
+   if (!_inventoryIsOpen && Game.definiteGameState.heldItemSlot !== null) {
       throwHeldItem();
    }
 }
@@ -227,7 +225,7 @@ export function createPlayerInputListeners(): void {
  */
 const calculatePlayerMovementMultiplier = (moveDirection: number, rotation: number): number => {
    // If the player is placing an entity, they are already moving slower and do not need a further slow.
-   if (LatencyGameState.playerIsPlacingEntity) return 1;
+   if (Game.latencyGameState.playerIsPlacingEntity) return 1;
    
    const MIN_MOVEMENT_MULTIPLIER = 0.6;
    
@@ -236,7 +234,7 @@ const calculatePlayerMovementMultiplier = (moveDirection: number, rotation: numb
 }
 
 const getPlayerTerminalVelocity = (): number => {
-   if (LatencyGameState.playerIsEating || LatencyGameState.playerIsPlacingEntity) {
+   if (Game.latencyGameState.playerIsEating || Game.latencyGameState.playerIsPlacingEntity) {
       return PLAYER_SLOW_TERMINAL_VELOCITY;
    }
 
@@ -244,7 +242,7 @@ const getPlayerTerminalVelocity = (): number => {
 }
 
 const getPlayerAcceleration = (): number => {
-   if (LatencyGameState.playerIsEating || LatencyGameState.playerIsPlacingEntity) {
+   if (Game.latencyGameState.playerIsEating || Game.latencyGameState.playerIsPlacingEntity) {
       return PLAYER_SLOW_ACCELERATION;
    }
 

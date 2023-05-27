@@ -2,12 +2,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { canCraftRecipe, CraftingRecipe, CraftingStation, ItemType, SETTINGS } from "webgl-test-shared";
 import CLIENT_ITEM_INFO_RECORD from "../../../client-item-info";
 import Client from "../../../client/Client";
-import Player from "../../../entities/Player";
 import Item from "../../../items/Item";
 import { windowHeight } from "../../../webgl";
 import { setHeldItemVisualPosition } from "../HeldItem";
 import ItemSlot from "../ItemSlot";
-import definiteGameState from "../../../game-state/definite-game-state";
+import Game from "../../../Game";
 
 const CRAFTING_STATION_TEXTURE_SOURCE_RECORD: Record<CraftingStation, string> = {
    workbench: "workbench.png"
@@ -54,7 +53,7 @@ const RecipeViewer = ({ recipe, hoverPosition, craftingMenuHeight }: RecipeViewe
 
 const getNumItemsOfType = (itemType: ItemType): number => {
    let numItems = 0;
-   for (const item of Object.values(definiteGameState.hotbarItemSlots)) {
+   for (const item of Object.values(Game.definiteGameState.hotbarItemSlots)) {
       if (item.type === itemType) {
          numItems += item.count;
       }
@@ -184,14 +183,14 @@ const CraftingMenu = () => {
       if (e.button !== 0) return;
 
       // Don't pick up the item if there is already a held item
-      if (definiteGameState.heldItemSlot !== null) return;
+      if (Game.definiteGameState.heldItemSlot !== null) return;
 
       // Make sure there exists a crafting output item to pick up
-      if (definiteGameState.craftingOutputItemSlot === null) {
+      if (Game.definiteGameState.craftingOutputItemSlot === null) {
          throw new Error("Tried to pickup the crafting output item when none existed!");
       }
 
-      const numItemsInCraftingOutput = definiteGameState.craftingOutputItemSlot.count;
+      const numItemsInCraftingOutput = Game.definiteGameState.craftingOutputItemSlot.count;
       Client.sendItemPickupPacket("craftingOutput", 1, numItemsInCraftingOutput);
       
       setHeldItemVisualPosition(e.clientX, e.clientY);
@@ -201,7 +200,7 @@ const CraftingMenu = () => {
    useEffect(() => {
       const craftableRecipesArray = new Array<CraftingRecipe>();
       for (const recipe of availableRecipes) {
-         if (canCraftRecipe([definiteGameState.hotbarItemSlots, definiteGameState.backpackItemSlots], recipe, SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE)) {
+         if (canCraftRecipe([Game.definiteGameState.hotbarItemSlots, Game.definiteGameState.backpackItemSlots], recipe, SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE)) {
             craftableRecipesArray.push(recipe);
          }
       }

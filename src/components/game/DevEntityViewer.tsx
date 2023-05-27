@@ -3,7 +3,7 @@ import { roundNum } from "webgl-test-shared";
 import CLIENT_ENTITY_INFO_RECORD from "../../client-entity-info";
 import Entity from "../../entities/Entity";
 
-export let updateDevEntityViewer: (entity?: Entity | null) => void;
+export let updateDevEntityViewer: (entity?: Entity | null) => void = () => {};
 
 const DevEntityViewer = () => {
    const [entity, setEntity] = useState<Entity | null>(null);

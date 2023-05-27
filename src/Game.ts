@@ -21,7 +21,8 @@ import { createPlaceableItemProgram, renderGhostPlaceableItem } from "./items/Pl
 import { clearPressedKeys } from "./keyboard-input";
 import { renderEntityHitboxes } from "./rendering/hitbox-rendering";
 import { updatePlayerMovement } from "./player-input";
-import definiteGameState from "./game-state/definite-game-state";
+import DefiniteGameState from "./game-state/definite-game-state";
+import LatencyGameState from "./game-state/latency-game-state";
 
 const nightVertexShaderText = `
 precision mediump float;
@@ -93,6 +94,9 @@ abstract class Game {
    private static nightBuffer: WebGLBuffer;
    private static nightProgramVertPosAttribLocation: GLint;
    private static nightProgramDarkenFactorUniformLocation: WebGLUniformLocation;
+
+   public static definiteGameState = new DefiniteGameState();
+   public static latencyGameState = new LatencyGameState();
 
    public static setTicks(ticks: number): void {
       this.ticks = ticks;
@@ -212,7 +216,7 @@ abstract class Game {
    }
 
    private static tickPlayerItems(): void {
-      for (const item of Object.values(definiteGameState.hotbarItemSlots)) {
+      for (const item of Object.values(Game.definiteGameState.hotbarItemSlots)) {
          if (typeof item.tick !== "undefined") {
             item.tick();
          }

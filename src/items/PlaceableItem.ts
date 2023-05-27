@@ -3,7 +3,7 @@ import Player, { getPlayerSelectedItem } from "../entities/Player";
 import { getTexture } from "../textures";
 import { createWebGLProgram, gl, halfWindowHeight, halfWindowWidth } from "../webgl";
 import Item from "./Item";
-import LatencyGameState from "../game-state/latency-game-state";
+import Game from "../Game";
 
 type PlaceableEntityInfo = {
    readonly textureSource: string;
@@ -160,20 +160,20 @@ class PlaceableItem extends Item {
 
       // If the item would be consumed when used, clear the isPlacingEntity flag
       if (this.count === 1) {
-         LatencyGameState.playerIsPlacingEntity = false;
+         Game.latencyGameState.playerIsPlacingEntity = false;
       }
    }
 
    public onRightMouseButtonUp(): void {
-      LatencyGameState.playerIsPlacingEntity = false;
+      Game.latencyGameState.playerIsPlacingEntity = false;
    }
 
    protected onSelect(): void {
-      LatencyGameState.playerIsPlacingEntity = true;
+      Game.latencyGameState.playerIsPlacingEntity = true;
    }
 
    protected onDeselect(): void {
-      LatencyGameState.playerIsPlacingEntity = false;
+      Game.latencyGameState.playerIsPlacingEntity = false;
    }
 }
 

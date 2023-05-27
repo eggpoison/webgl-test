@@ -1,4 +1,5 @@
 import { chatboxIsFocused, focusChatbox } from "./components/ChatBox";
+import { playerIsUsingTerminal } from "./components/game/menus/Terminal";
 
 const keyListeners: { [key: string]: Array<() => void> } = {};
 
@@ -57,8 +58,7 @@ const getKey = (e: KeyboardEvent): string => {
 }
 
 const onKeyDown = (e: KeyboardEvent): void => {
-   // Don't do anything special if a chat message is being typed
-   if (chatboxIsFocused()) {
+   if (chatboxIsFocused() || playerIsUsingTerminal()) {
       return;
    }
 

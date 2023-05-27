@@ -29,7 +29,7 @@ const GameScreen = () => {
    const hasLoaded = useRef<boolean>(false);
    const [isPaused, setIsPaused] = useState(false);
    const [settingsIsOpen, setSettingsIsOpen] = useState(false);
-   const [devViewIsEnabled, setDevViewIsEnabled] = useState(isDev());
+   const [devViewIsEnabled, setDevViewIsEnabled] = useState(false); // The dev view always starts as disabled
    const [isDead, setIsDead] = useState(false);
 
    useEffect(() => {

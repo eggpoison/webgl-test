@@ -29,6 +29,7 @@
 #terminal .line-reader {
    height: var(--line-height);
    border-top: var(--border-width) solid var(--border-colour);
+   position: relative;
 }
 
 #terminal .caret {
@@ -38,6 +39,9 @@
    display: inline-block;
    animation: 1s CaretFlash infinite;
    animation-timing-function: step-end;
+   position: absolute;
+   top: 50%;
+   transform: translateY(-50%);
 }
 
 #terminal .lines {

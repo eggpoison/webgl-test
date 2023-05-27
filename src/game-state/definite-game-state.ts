@@ -11,18 +11,19 @@ const killPlayer = (): void => {
    Player.instance = null;
 }
 
-abstract class DefiniteGameState extends GameState {
+/** Stores the definite, 100% known correct information about the game state. */
+class DefiniteGameState extends GameState {
    /** Username of the player. Empty string if the player's name has not yet been assigned. */
-   public static playerUsername: string = "";
+   public playerUsername: string = "";
 
    /** Health of the instance player */
-   private static _playerHealth: number = Player.MAX_HEALTH;
+   private _playerHealth: number = Player.MAX_HEALTH;
 
-   public static get playerHealth(): number {
+   public get playerHealth(): number {
       return this._playerHealth;
    }
 
-   public static setPlayerHealth(newHealth: number): void {
+   public setPlayerHealth(newHealth: number): void {
       const healthHasChanged = newHealth !== this._playerHealth;
 
       this._playerHealth = newHealth;
@@ -36,14 +37,9 @@ abstract class DefiniteGameState extends GameState {
       }
    }
 
-   public static playerIsDead(): boolean {
+   public playerIsDead(): boolean {
       return this._playerHealth <= 0;
    }
 }
 
 export default DefiniteGameState;
-
-/** Stores the definite, 100% known correct information about the game state. */
-// const definiteGameState = new DefiniteGameState();
-
-// export default definiteGameState;

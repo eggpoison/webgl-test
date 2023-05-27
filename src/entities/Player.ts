@@ -8,8 +8,6 @@ import Item, { ItemSlot } from "../items/Item";
 import RenderPart from "../render-parts/RenderPart";
 import { halfWindowHeight, halfWindowWidth } from "../webgl";
 import Entity from "./Entity";
-import DefiniteGameState from "../game-state/definite-game-state";
-import LatencyGameState from "../game-state/latency-game-state";
 
 /** Maximum distance from a crafting station which will allow its recipes to be crafted. */
 const MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION = 250;
@@ -81,7 +79,7 @@ export function updateAvailableCraftingRecipes(): void {
 export function getPlayerSelectedItem(): ItemSlot {
    if (Player.instance === null) return null;
 
-   const item: Item | undefined = DefiniteGameState.hotbarItemSlots[LatencyGameState.selectedHotbarItemSlot];
+   const item: Item | undefined = Game.definiteGameState.hotbarItemSlots[Game.latencyGameState.selectedHotbarItemSlot];
    return item || null;
 }
 
@@ -136,7 +134,7 @@ class Player extends Entity {
 
       Camera.position = player.position;
 
-      DefiniteGameState.setPlayerHealth(Player.MAX_HEALTH);
+      Game.definiteGameState.setPlayerHealth(Player.MAX_HEALTH);
    }
 
    /** Registers a server-side hit for the client */

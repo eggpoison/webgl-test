@@ -16,7 +16,6 @@ class Item {
 
    public count: number;
 
-   // eslint-disable-next-line no-empty-pattern
    constructor(itemType: ItemType, count: number) {
       this.type = itemType;
       this.count = count;
