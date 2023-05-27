@@ -9,11 +9,13 @@ class Workbench extends Entity {
    constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
-      this.addRenderParts([
+      this.attachRenderParts([
          new RenderPart({
+            entity: this,
             width: 80,
             height: 80,
-            textureSource: "workbench/workbench.png"
+            textureSource: "workbench/workbench.png",
+            zIndex: 0
          })
       ]);
    }

@@ -2,13 +2,13 @@ import { useCallback, useEffect, useState } from "react";
 import { BackpackItemInfo, ItemType, ITEM_INFO_RECORD, SETTINGS } from "webgl-test-shared";
 import CLIENT_ITEM_INFO_RECORD from "../../client-item-info";
 import Client from "../../client/Client";
-import Player, { ItemSlots } from "../../entities/Player";
-import Item from "../../items/Item";
+import Item, { ItemSlots } from "../../items/Item";
 import { setHeldItemVisualPosition } from "./HeldItem";
 import ItemSlot from "./ItemSlot";
 import { inventoryIsOpen } from "./menus/CraftingMenu";
 import { BackpackInventoryMenu_setBackpackItemInfo } from "./menus/BackpackInventory";
 import { leftClickItemSlot, rightClickItemSlot } from "../../inventory-manipulation";
+import definiteGameState from "../../game-state/definite-game-state";
 
 export let Hotbar_updateHotbarInventory: (inventory: ItemSlots) => void;
 
@@ -50,7 +50,7 @@ const Hotbar = () => {
          // There is an item in the backpack item slot
 
          // Attempt to pick the backpack up if there isn't a held item
-         if (Player.heldItem === null) {
+         if (definiteGameState.heldItemSlot === null) {
             Client.sendItemPickupPacket("backpackItemSlot", -1, 1);
       
             setHeldItemVisualPosition(e.clientX, e.clientY);
@@ -61,11 +61,11 @@ const Hotbar = () => {
          // There is no backpack in the backpack item slot
 
          // Attempt to put a backpack in the slot if there is a held item
-         if (Player.heldItem !== null && backpackItemTypes.includes(Player.heldItem.type)) {
+         if (definiteGameState.heldItemSlot !== null && backpackItemTypes.includes(definiteGameState.heldItemSlot.type)) {
             Client.sendItemReleasePacket("backpackItemSlot", -1, 1);
 
             // Note: at this point in time, the server hasn't registered that the player has equipped the backpack into the backpack item slot and so we need to get the item from the held item
-            const backpack = Player.heldItem;
+            const backpack = definiteGameState.heldItemSlot;
             if (backpack !== null) {
                equipBackpack(backpack);
             }

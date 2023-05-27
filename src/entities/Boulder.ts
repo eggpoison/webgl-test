@@ -12,13 +12,15 @@ class Boulder extends Entity {
    constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, boulderType: number) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
-      this.addRenderParts([
+      this.attachRenderParts([
          new RenderPart({
+            entity: this,
             width: Boulder.WIDTH,
             height: Boulder.HEIGHT,
-            textureSource: `boulder/boulder${boulderType + 1}.png`
+            textureSource: `boulder/boulder${boulderType + 1}.png`,
+            zIndex: 0
          })
-      ])
+      ]);
    }
 }
 

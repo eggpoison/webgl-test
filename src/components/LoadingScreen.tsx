@@ -5,6 +5,7 @@ import Client from "../client/Client";
 import Player from "../entities/Player";
 import Game from "../Game";
 import { setGameState, setLoadingScreenInitialStatus } from "./App";
+import definiteGameState from "../game-state/definite-game-state";
 
 export type LoadingScreenStatus = "establishing_connection" | "sending_player_data" | "receiving_game_data" | "initialising_game" | "connection_error";
 
@@ -75,9 +76,10 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
                Game.board = new Board(tiles);
 
                // Spawn the player
-               Player.username = username;
+               definiteGameState.playerUsername = username;
                const playerSpawnPosition = new Point(initialGameDataPacket.spawnPosition[0], initialGameDataPacket.spawnPosition[1]);
-               new Player(playerSpawnPosition, new Set(Player.HITBOXES), initialGameDataPacket.playerID, null, username, true);
+               const player = new Player(playerSpawnPosition, new Set(Player.HITBOXES), initialGameDataPacket.playerID, null, username);
+               Player.setInstancePlayer(player);
 
                Client.unloadGameDataPacket(initialGameDataPacket);
 

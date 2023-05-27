@@ -14,11 +14,13 @@ class Tree extends Entity {
    constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, treeSize: TreeSize) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
-      this.addRenderParts([
+      this.attachRenderParts([
          new RenderPart({
+            entity: this,
             width: 80 + treeSize * 20,
             height: 80 + treeSize * 20,
-            textureSource: treeTextures[treeSize]
+            textureSource: treeTextures[treeSize],
+            zIndex: 0
          })
       ]);
    }

@@ -1,8 +1,9 @@
 import { ItemType, SETTINGS } from "webgl-test-shared";
-import Player from "../entities/Player";
+import Player, { getPlayerSelectedItem } from "../entities/Player";
 import { getTexture } from "../textures";
 import { createWebGLProgram, gl, halfWindowHeight, halfWindowWidth } from "../webgl";
 import Item from "./Item";
+import LatencyGameState from "../game-state/latency-game-state";
 
 type PlaceableEntityInfo = {
    readonly textureSource: string;
@@ -77,7 +78,7 @@ let programTexCoordAttribLocation: number;
 
 export function renderGhostPlaceableItem(): void {
    // Don't render a placeable item if there is no placeable item selected
-   const playerSelectedItem = Player.getSelectedItem();
+   const playerSelectedItem = getPlayerSelectedItem();
    if (playerSelectedItem === null || !PLACEABLE_ENTITY_INFO_RECORD.hasOwnProperty(playerSelectedItem.type)) return;
 
    // Don't render if there is no player
@@ -155,24 +156,24 @@ export function createPlaceableItemProgram(): void {
 
 class PlaceableItem extends Item {
    public onRightMouseButtonDown(): void {
-      super.use();
+      super.sendUsePacket();
 
       // If the item would be consumed when used, clear the isPlacingEntity flag
       if (this.count === 1) {
-         Player.isPlacingEntity = false;
+         LatencyGameState.playerIsPlacingEntity = false;
       }
    }
 
    public onRightMouseButtonUp(): void {
-      Player.isPlacingEntity = false;
+      LatencyGameState.playerIsPlacingEntity = false;
    }
 
    protected onSelect(): void {
-      Player.isPlacingEntity = true;
+      LatencyGameState.playerIsPlacingEntity = true;
    }
 
    protected onDeselect(): void {
-      Player.isPlacingEntity = false;
+      LatencyGameState.playerIsPlacingEntity = false;
    }
 }
 

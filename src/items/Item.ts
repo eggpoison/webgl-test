@@ -1,6 +1,10 @@
-import { AttackPacket, ItemType, SETTINGS } from "webgl-test-shared";
+import { ItemType, SETTINGS } from "webgl-test-shared";
 import Client from "../client/Client";
-import Player from "../entities/Player";
+
+export type ItemSlot = Item | null;
+
+/** Stores the items inside an inventory, indexed by their slot number. */
+export type ItemSlots = { [itemSlot: number]: Item };
 
 class Item {
    /** Amount of seconds of forced delay on when an item can be used when switching between items */
@@ -31,29 +35,16 @@ class Item {
       return this.globalAttackDelayTimer === 0;
    }
 
-   public onLeftClick(): void {
+   public resetAttackSwitchDelay(): void {
       Item.globalAttackDelayTimer = Item.GLOBAL_ATTACK_DELAY_ON_SWITCH;
-
-      this.attack();
-   }
-
-   private attack(): void {
-      if (Player.instance === null) return;
-      
-      const attackTargets = Player.calculateAttackTargets();
-      const attackPacket: AttackPacket = {
-         itemSlot: Player.selectedHotbarItemSlot,
-         attackDirection: Player.instance.rotation,
-         targetEntities: attackTargets.map(entity => entity.id)
-      };
-      Client.sendAttackPacket(attackPacket);
    }
 
    public onRightMouseButtonDown?(): void;
    public onRightMouseButtonUp?(): void;
 
-   protected use(): void {
-      Client.sendItemUsePacket(Player.selectedHotbarItemSlot);
+
+   protected sendUsePacket(): void {
+      Client.sendItemUsePacket();
    }
 
    public select(): void {

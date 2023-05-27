@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './components/App';
+import { createPlayerInputListeners } from './player-input';
 
 import "./css/index.css";
 import "./css/main-menu.css";
@@ -17,7 +18,6 @@ import "./css/game/inventory.css";
 import "./css/game/menus/crafting-menu.css";
 import "./css/game/menus/backpack-inventory.css";
 import "./css/game/menus/terminal.css";
-import Player from './entities/Player';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -29,5 +29,5 @@ root.render(
 );
 
 window.addEventListener("load", () => {
-   Player.createPlayerEventListeners();
+   createPlayerInputListeners();
 });

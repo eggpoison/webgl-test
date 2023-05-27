@@ -41,16 +41,16 @@ export function renderPlayerNames(): void {
          ctx.lineJoin = "round";
          ctx.miterLimit = 2;
 
-         const width = ctx.measureText(entity.displayName).width;
+         const width = ctx.measureText(entity.username).width;
 
          // Draw text outline
          ctx.lineWidth = 6;
          ctx.strokeStyle = "#000";
-         ctx.strokeText(entity.displayName, cameraX - width / 2, cameraY);
+         ctx.strokeText(entity.username, cameraX - width / 2, cameraY);
          
          // Draw text
          ctx.fillStyle = "#fff";
-         ctx.fillText(entity.displayName, cameraX - width / 2, cameraY);
+         ctx.fillText(entity.username, cameraX - width / 2, cameraY);
       }
    }
 }
