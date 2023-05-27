@@ -7,6 +7,7 @@ import Item from "../../../items/Item";
 import { windowHeight } from "../../../webgl";
 import { setHeldItemVisualPosition } from "../HeldItem";
 import ItemSlot from "../ItemSlot";
+import definiteGameState from "../../../game-state/definite-game-state";
 
 const CRAFTING_STATION_TEXTURE_SOURCE_RECORD: Record<CraftingStation, string> = {
    workbench: "workbench.png"
@@ -51,6 +52,17 @@ const RecipeViewer = ({ recipe, hoverPosition, craftingMenuHeight }: RecipeViewe
    </div>;
 }
 
+const getNumItemsOfType = (itemType: ItemType): number => {
+   let numItems = 0;
+   for (const item of Object.values(definiteGameState.hotbarItemSlots)) {
+      if (item.type === itemType) {
+         numItems += item.count;
+      }
+   }
+
+   return numItems;
+}
+
 interface IngredientProps {
    readonly ingredientType: ItemType;
    readonly amountRequiredForRecipe: number;
@@ -64,7 +76,7 @@ const Ingredient = ({ ingredientType, amountRequiredForRecipe }: IngredientProps
    const itemIconSource = require("../../../images/items/" + CLIENT_ITEM_INFO_RECORD[ingredientType].textureSrc);
 
    // Find whether the player has enough available ingredients to craft the recipe
-   const numIngredientsAvailableToPlayer = Player.getNumItemType(ingredientType);
+   const numIngredientsAvailableToPlayer = getNumItemsOfType(ingredientType);
    const playerHasEnoughIngredients = numIngredientsAvailableToPlayer >= amountRequiredForRecipe;
 
    const showIngredientTooltip = () => {
@@ -172,11 +184,14 @@ const CraftingMenu = () => {
       if (e.button !== 0) return;
 
       // Don't pick up the item if there is already a held item
-      if (Player.heldItem !== null) return;
+      if (definiteGameState.heldItemSlot !== null) return;
 
-      if (Player.craftingOutputItem === null) throw new Error("Tried to pickup the crafting output item when none existed!")
+      // Make sure there exists a crafting output item to pick up
+      if (definiteGameState.craftingOutputItemSlot === null) {
+         throw new Error("Tried to pickup the crafting output item when none existed!");
+      }
 
-      const numItemsInCraftingOutput = Player.craftingOutputItem.count;
+      const numItemsInCraftingOutput = definiteGameState.craftingOutputItemSlot.count;
       Client.sendItemPickupPacket("craftingOutput", 1, numItemsInCraftingOutput);
       
       setHeldItemVisualPosition(e.clientX, e.clientY);
@@ -186,7 +201,7 @@ const CraftingMenu = () => {
    useEffect(() => {
       const craftableRecipesArray = new Array<CraftingRecipe>();
       for (const recipe of availableRecipes) {
-         if (canCraftRecipe([Player.hotbarInventory, Player.backpackInventory], recipe, SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE)) {
+         if (canCraftRecipe([definiteGameState.hotbarItemSlots, definiteGameState.backpackItemSlots], recipe, SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE)) {
             craftableRecipesArray.push(recipe);
          }
       }

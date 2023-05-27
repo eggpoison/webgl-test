@@ -11,7 +11,7 @@
 }
 
 #backpack-inventory + #crafting-menu {
-   top: 40%;
+   margin-top: -15rem;
 }
 
 /* Ingredients */

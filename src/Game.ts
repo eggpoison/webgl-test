@@ -1,12 +1,12 @@
 import Board from "./Board";
-import Player from "./entities/Player";
+import Player, { tickPlayerInstanceTimeSinceHit, updateAvailableCraftingRecipes, updatePlayerRotation } from "./entities/Player";
 import { isDev } from "./utils";
 import { renderPlayerNames, createTextCanvasContext } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/ChatBox";
 import { lerp, Point, SETTINGS } from "webgl-test-shared";
 import { calculateEntityRenderValues, setFrameProgress } from "./entities/Entity";
-import { createEntityShaders, renderEntities } from "./entity-rendering";
+import { createEntityShaders, renderEntities } from "./rendering/entity-rendering";
 import Client from "./client/Client";
 import { calculateCursorWorldPosition, getCursorX, getCursorY, handleMouseMovement, renderCursorTooltip } from "./mouse";
 import { updateDevEntityViewer } from "./components/game/DevEntityViewer";
@@ -19,6 +19,9 @@ import { updateDebugScreenCurrentTime, updateDebugScreenFPS, updateDebugScreenTi
 import Item from "./items/Item";
 import { createPlaceableItemProgram, renderGhostPlaceableItem } from "./items/PlaceableItem";
 import { clearPressedKeys } from "./keyboard-input";
+import { renderEntityHitboxes } from "./rendering/hitbox-rendering";
+import { updatePlayerMovement } from "./player-input";
+import definiteGameState from "./game-state/definite-game-state";
 
 const nightVertexShaderText = `
 precision mediump float;
@@ -117,7 +120,7 @@ abstract class Game {
       const cursorX = getCursorX();
       const cursorY = getCursorY();
       if (cursorX !== null && cursorY !== null) {
-         Player.updateRotation(cursorX, cursorY);
+         updatePlayerRotation(cursorX, cursorY);
       }
                
       // Start the game loop
@@ -194,12 +197,26 @@ abstract class Game {
    private static update(): void {
       updateSpamFilter();
 
+      updatePlayerMovement();
+      tickPlayerInstanceTimeSinceHit();
+      updateAvailableCraftingRecipes();
+
+      this.tickPlayerItems();
+
       Item.decrementGlobalItemSwitchDelay();
 
       this.board.tickEntities();
       this.board.resolveCollisions();
 
       if (isDev()) updateDevEntityViewer();
+   }
+
+   private static tickPlayerItems(): void {
+      for (const item of Object.values(definiteGameState.hotbarItemSlots)) {
+         if (typeof item.tick !== "undefined") {
+            item.tick();
+         }
+      }
    }
 
    /**
@@ -211,7 +228,7 @@ abstract class Game {
       const cursorX = getCursorX();
       const cursorY = getCursorY();
       if (cursorX !== null && cursorY !== null) {
-         Player.updateRotation(cursorX, cursorY);
+         updatePlayerRotation(cursorX, cursorY);
       }
       
       const currentRenderTime = Math.floor(new Date().getTime() / 1000);
@@ -243,7 +260,12 @@ abstract class Game {
       if (OPTIONS.showChunkBorders) {
          this.board.drawChunkBorders();
       }
+
       renderEntities();
+
+      if (OPTIONS.showEntityHitboxes) {
+         renderEntityHitboxes();
+      }
 
       renderGhostPlaceableItem();
 

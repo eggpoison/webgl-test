@@ -106,6 +106,7 @@ abstract class Entity {
    /** Limit to how many units the entity can move in a second */
    public terminalVelocity: number = 0;
 
+   /** Stores all render parts attached to the entity, in ascending order of their z-indexes. */
    public readonly renderParts = new Array<RenderPart>();
 
    public chunks: Set<Chunk>;
@@ -143,9 +144,19 @@ abstract class Entity {
       }
    }
 
-   public addRenderParts(renderParts: ReadonlyArray<RenderPart>): void {
+   public attachRenderParts(renderParts: ReadonlyArray<RenderPart>): void {
       for (const renderPart of renderParts) {
-         this.renderParts.push(renderPart);
+         // Find an index for the render part
+         let idx = 0;
+         for (idx = 0; idx < this.renderParts.length; idx++) {
+            const currentRenderPart = this.renderParts[idx];
+            if (renderPart.zIndex <= currentRenderPart.zIndex) {
+               break;
+            }
+         }
+
+         // Insert the render part at the index
+         this.renderParts.splice(idx, 0, renderPart);
       }
    }
 

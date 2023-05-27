@@ -1,7 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ItemEntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, CraftingRecipe, PlayerInventoryType, PlaceablePlayerInventoryType, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, ItemData } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
-import Player, { ItemSlots } from "../entities/Player";
+import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
 import Game from "../Game";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -12,6 +12,14 @@ import { Tile } from "../Tile";
 import { createItem } from "../items/item-creation";
 import { gameScreenSetIsDead } from "../components/game/GameScreen";
 import Chunk from "../Chunk";
+import DefiniteGameState from "../game-state/definite-game-state";
+import { ItemSlots } from "../items/Item";
+import { updateInventoryIsOpen } from "../player-input";
+import { Hotbar_updateBackpackItemSlot, Hotbar_updateHotbarInventory } from "../components/game/Hotbar";
+import { BackpackInventoryMenu_setBackpackItemSlots } from "../components/game/menus/BackpackInventory";
+import { setHeldItemVisual } from "../components/game/HeldItem";
+import { CraftingMenu_setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
+import LatencyGameState from "../game-state/latency-game-state";
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -156,7 +164,13 @@ abstract class Client {
          }
       }
 
-      Player.setHealth(gameDataPacket.playerHealth);
+      DefiniteGameState.setPlayerHealth(gameDataPacket.playerHealth);
+      if (DefiniteGameState.playerIsDead()) {
+         gameScreenSetIsDead(true);
+      
+         // If the player's inventory is open, close it
+         updateInventoryIsOpen(false);
+      }
    }
 
    /**
@@ -215,42 +229,55 @@ abstract class Client {
 
    private static updatePlayerInventory(playerInventoryData: PlayerInventoryData) {
       // Hotbar
-      const hotbarInventory: ItemSlots = {};
+      const hotbarItemSlots: ItemSlots = {};
       for (const [itemSlot, item] of Object.entries(playerInventoryData.hotbar) as unknown as ReadonlyArray<[number, ItemData]>) {
-         hotbarInventory[itemSlot] = createItem(item.type, item.count);
+         hotbarItemSlots[itemSlot] = createItem(item.type, item.count);
       }
-      Player.updateHotbarInventory(hotbarInventory);
+      DefiniteGameState.hotbarItemSlots = hotbarItemSlots;
+      if (typeof Hotbar_updateHotbarInventory !== "undefined") {
+         Hotbar_updateHotbarInventory(Object.assign({}, hotbarItemSlots));
+      }
 
       // Backpack inventory
-      const backpackInventory: ItemSlots = {};
+      const backpackItemSlots: ItemSlots = {};
       for (const [itemSlot, item] of Object.entries(playerInventoryData.backpackInventory) as unknown as ReadonlyArray<[number, ItemData]>) {
-         backpackInventory[itemSlot] = createItem(item.type, item.count);
+         backpackItemSlots[itemSlot] = createItem(item.type, item.count);
       }
-      Player.updateBackpackInventory(backpackInventory);
+      DefiniteGameState.backpackItemSlots = backpackItemSlots;
+      if (typeof BackpackInventoryMenu_setBackpackItemSlots !== "undefined") {
+         BackpackInventoryMenu_setBackpackItemSlots(Object.assign({}, backpackItemSlots));
+      }
 
       // Crafting output item
       if (playerInventoryData.craftingOutputItemSlot !== null) {
          const craftingOutputItem = createItem(playerInventoryData.craftingOutputItemSlot.type, playerInventoryData.craftingOutputItemSlot.count);
-         Player.updateCraftingOutputItem(craftingOutputItem);
+         DefiniteGameState.craftingOutputItemSlot = craftingOutputItem;
       } else {
-         Player.updateCraftingOutputItem(null);
+         DefiniteGameState.craftingOutputItemSlot = null;
+      }
+      if (typeof CraftingMenu_setCraftingMenuOutputItem !== "undefined") {
+         CraftingMenu_setCraftingMenuOutputItem(DefiniteGameState.craftingOutputItemSlot);
       }
 
       // Backpack slot
       if (playerInventoryData.backpackItemSlot !== null) {
          const craftingOutputItem = createItem(playerInventoryData.backpackItemSlot.type, playerInventoryData.backpackItemSlot.count);
-         Player.updateBackpackItemSlot(craftingOutputItem);
+         DefiniteGameState.backpackItemSlot = craftingOutputItem;
       } else {
-         Player.updateBackpackItemSlot(null);
+         DefiniteGameState.backpackItemSlot = null;
+      }
+      if (typeof Hotbar_updateBackpackItemSlot !== "undefined") {
+         Hotbar_updateBackpackItemSlot(Object.assign({}, DefiniteGameState.backpackItemSlot));
       }
 
       // Held item
       if (playerInventoryData.heldItemSlot === null) {
-         Player.setHeldItem(null);
+         DefiniteGameState.heldItemSlot = null;
       } else {
          const heldItem = createItem(playerInventoryData.heldItemSlot.type, playerInventoryData.heldItemSlot.count);
-         Player.setHeldItem(heldItem);
+         DefiniteGameState.heldItemSlot = heldItem;
       }
+      setHeldItemVisual(DefiniteGameState.heldItemSlot);
    }
 
    private static createItemFromServerItemData(serverItemEntityData: ItemEntityData): void {
@@ -311,18 +338,25 @@ abstract class Client {
          Player.instance.acceleration = gameDataSyncPacket.acceleration !== null ? Vector.unpackage(gameDataSyncPacket.acceleration) : null;
          Player.instance.rotation = gameDataSyncPacket.rotation;
          Player.instance.terminalVelocity = gameDataSyncPacket.terminalVelocity;
-         Player.setHealth(gameDataSyncPacket.health);
-         this.updatePlayerInventory(gameDataSyncPacket.inventory)
+         DefiniteGameState.setPlayerHealth(gameDataSyncPacket.health);
+         this.updatePlayerInventory(gameDataSyncPacket.inventory);
+
+         if (DefiniteGameState.playerIsDead()) {
+            gameScreenSetIsDead(true);
+            
+            // If the player's inventory is open, close it
+            updateInventoryIsOpen(false);
+         }
       }
 
       Game.sync();
    }
 
    private static respawnPlayer(respawnDataPacket: RespawnDataPacket): void {
-      Player.setHealth(Player.MAX_HEALTH);
+      DefiniteGameState.setPlayerHealth(Player.MAX_HEALTH);
       
       const spawnPosition = Point.unpackage(respawnDataPacket.spawnPosition);
-      new Player(spawnPosition, new Set(Player.HITBOXES), respawnDataPacket.playerID, null, Player.username, true);
+      new Player(spawnPosition, new Set(Player.HITBOXES), respawnDataPacket.playerID, null, DefiniteGameState.playerUsername);
 
       gameScreenSetIsDead(false);
    }
@@ -383,8 +417,9 @@ abstract class Client {
       }
    }
 
-   public static sendItemUsePacket(itemSlot: number): void {
+   public static sendItemUsePacket(): void {
       if (Game.isRunning && this.socket !== null) {
+         const itemSlot = LatencyGameState.selectedHotbarItemSlot;
          this.socket.emit("item_use_packet", itemSlot);
       }
    }

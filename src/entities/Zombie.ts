@@ -16,11 +16,13 @@ class Zombie extends Entity {
    constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, zombieType: number) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
-      this.addRenderParts([
+      this.attachRenderParts([
          new RenderPart({
+            entity: this,
             width: 64,
             height: 64,
-            textureSource: "zombie/" + ZOMBIE_TEXTURE_SOURCES[zombieType]
+            textureSource: "zombie/" + ZOMBIE_TEXTURE_SOURCES[zombieType],
+            zIndex: 0
          })
       ]);
    }

@@ -1,12 +1,12 @@
 import { EntityType, Point, rotatePoint } from "webgl-test-shared";
-import Camera from "./Camera";
-import Entity from "./entities/Entity";
-import Game from "./Game";
-import RectangularHitbox from "./hitboxes/RectangularHitbox";
-import OPTIONS from "./options";
-import RenderPart from "./render-parts/RenderPart";
-import { getTexture } from "./textures";
-import { createShaderString, createWebGLProgram, gl, MAX_ACTIVE_TEXTURE_UNITS, windowHeight, windowWidth } from "./webgl";
+import Camera from "../Camera";
+import Entity from "../entities/Entity";
+import Game from "../Game";
+import RectangularHitbox from "../hitboxes/RectangularHitbox";
+import OPTIONS from "../options";
+import RenderPart from "../render-parts/RenderPart";
+import { getTexture } from "../textures";
+import { createShaderString, createWebGLProgram, gl, MAX_ACTIVE_TEXTURE_UNITS, windowHeight, windowWidth } from "../webgl";
 
 // 
 // Image shaders
@@ -109,7 +109,7 @@ export function createEntityShaders(): void {
  * Calculates all entities which are visible to the screen to increase efficiency
  * NOTE: Not perfectly accurate sometimes entities which are just not visible to the screen are rendered
 */
-const calculateVisibleEntities = (): Set<Entity> => {
+export function calculateVisibleEntities(): Set<Entity> {
    const visibleEntities = new Set<Entity>();
 
    for (const entity of Object.values(Game.board.entities)) {
