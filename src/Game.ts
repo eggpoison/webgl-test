@@ -25,6 +25,9 @@ import LatencyGameState from "./game-state/latency-game-state";
 import { updateDebugScreenCurrentTime, updateDebugScreenFPS, updateDebugScreenTicks } from "./components/game/nerd-vision/GameInfoDisplay";
 import { createItemEntityShaders, renderItemEntities } from "./rendering/item-entity-rendering";
 import { createWorldBorderShaders, renderWorldBorder } from "./rendering/world-border-rendering";
+import { createSolidTileShaders, renderSolidTiles, updateSolidTileRenderData } from "./rendering/solid-tile-rendering";
+import { createLiquidTileShaders } from "./rendering/liquid-tile-rendering";
+import { createChunkBorderShaders } from "./rendering/chunk-border-rendering";
 
 const nightVertexShaderText = `
 precision mediump float;
@@ -194,11 +197,15 @@ abstract class Game {
          createShaderStrings();
          createTextCanvasContext();
          
+         createSolidTileShaders();
+         createLiquidTileShaders();
          createEntityShaders();
          createItemEntityShaders();
          createWorldBorderShaders();
-         
          createPlaceableItemProgram();
+         createChunkBorderShaders();
+
+         updateSolidTileRenderData();
          
          await loadTextures();
 
@@ -268,11 +275,12 @@ abstract class Game {
 
       renderPlayerNames();
 
-      this.board.renderTiles();
+      renderSolidTiles();
+      // this.board.renderTiles();
       renderItemEntities();
       renderWorldBorder();
       if (OPTIONS.showChunkBorders) {
-         this.board.drawChunkBorders();
+         // this.board.drawChunkBorders();
       }
 
       renderEntities();

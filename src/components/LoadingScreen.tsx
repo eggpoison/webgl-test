@@ -67,12 +67,12 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
             (async () => {
                const initialGameDataPacket =initialGameDataPacketRef.current!;
 
+               const tiles = Client.parseServerTileDataArray(initialGameDataPacket.tiles);
+               Game.board = new Board(tiles);
+
                if (!Game.hasInitialised) {
                   await Game.initialise();
                }
-
-               const tiles = Client.parseServerTileDataArray(initialGameDataPacket.tiles);
-               Game.board = new Board(tiles);
 
                // Spawn the player
                Game.definiteGameState.playerUsername = username;
