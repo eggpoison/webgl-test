@@ -5,7 +5,7 @@ import Client from "../../../client/Client";
 import Item from "../../../items/Item";
 import { windowHeight } from "../../../webgl";
 import { setHeldItemVisualPosition } from "../HeldItem";
-import ItemSlot from "../ItemSlot";
+import ItemSlot from "../inventories/ItemSlot";
 import Game from "../../../Game";
 
 const CRAFTING_STATION_TEXTURE_SOURCE_RECORD: Record<CraftingStation, string> = {

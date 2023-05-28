@@ -14,10 +14,11 @@ import "./css/game/health-bar.css";
 import "./css/game/inventory.css";
 import "./css/game/menus/crafting-menu.css";
 import "./css/game/menus/backpack-inventory.css";
-import "./css/game/nerd-vision/terminal.css";
 import "./css/game/nerd-vision/nerd-vision.css";
 import "./css/game/nerd-vision/game-info-display.css";
 import "./css/game/nerd-vision/cursor-tooltip.css";
+import "./css/game/nerd-vision/terminal-button.css";
+import "./css/game/nerd-vision/terminal.css";
 import "./css/game/nerd-vision/entity-viewer.css";
 
 const root = ReactDOM.createRoot(

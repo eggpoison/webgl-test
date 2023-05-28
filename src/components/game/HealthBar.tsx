@@ -10,11 +10,14 @@ const HealthBar = () => {
    useEffect(() => {
       updateHealthBar = (newHealth: number) => {
          if (healthBarRef.current !== null) {
+            // Stop health from being negative
+            const clampedNewHealth = Math.max(newHealth, 0);
+            
             const previousHealth = health;
-            setHealth(newHealth);
+            setHealth(clampedNewHealth);
       
             const healthBar = healthBarRef.current!;
-            healthBar.style.setProperty("--current-health", newHealth.toString());
+            healthBar.style.setProperty("--current-health", clampedNewHealth.toString());
             healthBar.style.setProperty("--previous-health", previousHealth.toString());
       
             healthBar.classList.remove("animated");

@@ -1,6 +1,6 @@
 import { BackpackItemInfo } from "webgl-test-shared";
 import { useCallback, useEffect, useState } from "react";
-import ItemSlot from "../ItemSlot";
+import ItemSlot from "./ItemSlot";
 import CLIENT_ITEM_INFO_RECORD from "../../../client-item-info";
 import { leftClickItemSlot, rightClickItemSlot } from "../../../inventory-manipulation";
 import { ItemSlots } from "../../../items/Item";

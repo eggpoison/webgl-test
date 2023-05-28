@@ -1,12 +1,12 @@
 import { AttackPacket, SETTINGS, Vector, lerp } from "webgl-test-shared";
 import { addKeyListener, clearPressedKeys, keyIsPressed } from "./keyboard-input";
-import { BackpackInventoryMenu_setIsVisible } from "./components/game/menus/BackpackInventory";
+import { BackpackInventoryMenu_setIsVisible } from "./components/game/inventories/BackpackInventory";
 import { CraftingMenu_setIsVisible } from "./components/game/menus/CraftingMenu";
 import Player from "./entities/Player";
 import Client from "./client/Client";
 import Entity from "./entities/Entity";
 import Game from "./Game";
-import { Hotbar_setHotbarSelectedItemSlot } from "./components/game/Hotbar";
+import { Hotbar_setHotbarSelectedItemSlot } from "./components/game/inventories/Hotbar";
 
 /** How far away from the entity the attack is done */
 const PLAYER_ATTACK_OFFSET = 80;
@@ -67,18 +67,6 @@ export function calculatePlayerAttackTargets(): ReadonlyArray<Entity> {
 
    return attackedEntities;
 }
-
-// const attackWithHand = (): void => {
-//    if (Player.instance === null) return;
-   
-//    const attackTargets = calculatePlayerAttackTargets();
-//    const attackPacket: AttackPacket = {
-//       itemSlot: latencyGameState.selectedHotbarItemSlot,
-//       attackDirection: Player.instance.rotation,
-//       targetEntities: attackTargets.map(entity => entity.id)
-//    };
-//    Client.sendAttackPacket(attackPacket);
-// }
 
 const attack = (): void => {
    if (Player.instance === null) return;

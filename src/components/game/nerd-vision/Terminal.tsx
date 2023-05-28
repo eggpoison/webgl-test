@@ -66,6 +66,13 @@ const Terminal = () => {
       }
    }, [isInFocus]);
 
+   // When the terminal is closed, set isInFocus to false
+   useEffect(() => {
+      return () => {
+         playerIsUsingTerminal = () => false;
+      }
+   }, []);
+
    useEffect(() => {
       const checkForTerminalUnfocus = (e: MouseEvent): void => {
          let hasClickedOffTerminal = true;

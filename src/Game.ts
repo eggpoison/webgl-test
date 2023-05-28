@@ -3,7 +3,7 @@ import Player, { tickPlayerInstanceTimeSinceHit, updateAvailableCraftingRecipes,
 import { isDev } from "./utils";
 import { renderPlayerNames, createTextCanvasContext } from "./text-canvas";
 import Camera from "./Camera";
-import { updateSpamFilter } from "./components/ChatBox";
+import { updateSpamFilter } from "./components/game/ChatBox";
 import { lerp, Point, SETTINGS } from "webgl-test-shared";
 import { calculateEntityRenderValues, setFrameProgress } from "./entities/Entity";
 import { createEntityShaders, renderEntities } from "./rendering/entity-rendering";

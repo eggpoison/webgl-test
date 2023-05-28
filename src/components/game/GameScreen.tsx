@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Game from "../../Game";
-import ChatBox from "../ChatBox";
+import ChatBox from "./ChatBox";
 import NerdVisionOverlay from "./nerd-vision/NerdVisionOverlay";
 import HealthBar from "./HealthBar";
 import PauseScreen from "./PauseScreen";
 import Settings from "./menus/Settings";
-import Hotbar from "./Hotbar";
+import Hotbar from "./inventories/Hotbar";
 import CraftingMenu from "./menus/CraftingMenu";
 import HeldItem from "./HeldItem";
 import DeathScreen from "./DeathScreen";
-import BackpackInventoryMenu from "./menus/BackpackInventory";
+import BackpackInventoryMenu from "./inventories/BackpackInventory";
 
 export let showPauseScreen: () => void;
 export let hidePauseScreen: () => void;

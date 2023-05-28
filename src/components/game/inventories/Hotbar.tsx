@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { BackpackItemInfo, ItemType, ITEM_INFO_RECORD, SETTINGS } from "webgl-test-shared";
-import CLIENT_ITEM_INFO_RECORD from "../../client-item-info";
-import Client from "../../client/Client";
-import Item, { ItemSlots } from "../../items/Item";
-import { setHeldItemVisualPosition } from "./HeldItem";
+import CLIENT_ITEM_INFO_RECORD from "../../../client-item-info";
+import Client from "../../../client/Client";
+import Item, { ItemSlots } from "../../../items/Item";
+import { setHeldItemVisualPosition } from "../HeldItem";
 import ItemSlot from "./ItemSlot";
-import { inventoryIsOpen } from "./menus/CraftingMenu";
-import { BackpackInventoryMenu_setBackpackItemInfo } from "./menus/BackpackInventory";
-import { leftClickItemSlot, rightClickItemSlot } from "../../inventory-manipulation";
-import Game from "../../Game";
+import { inventoryIsOpen } from "../menus/CraftingMenu";
+import { BackpackInventoryMenu_setBackpackItemInfo } from "./BackpackInventory";
+import { leftClickItemSlot, rightClickItemSlot } from "../../../inventory-manipulation";
+import Game from "../../../Game";
 
 export let Hotbar_updateHotbarInventory: (inventory: ItemSlots) => void = () => {};
 
@@ -96,7 +96,7 @@ const Hotbar = () => {
       const item: Item | undefined = hotbarInventory[itemSlot];
       
       if (typeof item !== "undefined") {
-         const imageSrc = require("../../images/items/" + CLIENT_ITEM_INFO_RECORD[item.type].textureSrc);
+         const imageSrc = require("../../../images/items/" + CLIENT_ITEM_INFO_RECORD[item.type].textureSrc);
          hotbarItemSlots.push(
             <ItemSlot onClick={e => leftClickHotbarItemSlot(e, itemSlot)} onContextMenu={e => rightClickHotbarItemSlot(e, itemSlot)} isSelected={itemSlot === selectedItemSlot} picturedItemImageSrc={imageSrc} itemCount={item.count} key={itemSlot} />
          );
@@ -111,10 +111,10 @@ const Hotbar = () => {
    if (backpackItemSlot !== null) {
       const backpackItemInfo = CLIENT_ITEM_INFO_RECORD[backpackItemSlot.type];
       
-      const imageSrc = require("../../images/items/" + backpackItemInfo.textureSrc);
+      const imageSrc = require("../../../images/items/" + backpackItemInfo.textureSrc);
       backpackItemSlotElement = <ItemSlot onClick={e => clickBackpackItemSlot(e)} isSelected={false} picturedItemImageSrc={imageSrc} />
    } else {
-      const imageSrc = require("../../images/miscellaneous/backpack-wireframe.png");
+      const imageSrc = require("../../../images/miscellaneous/backpack-wireframe.png");
       backpackItemSlotElement = <ItemSlot onClick={e => clickBackpackItemSlot(e)} isSelected={false} picturedItemImageSrc={imageSrc} />
    }
    

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SETTINGS } from "webgl-test-shared";
-import Client from "../client/Client";
-import Player from "../entities/Player";
+import Client from "../../client/Client";
+import Player from "../../entities/Player";
 
 interface SpamFilter {
    readonly testDuration: number;

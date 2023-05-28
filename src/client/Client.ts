@@ -14,10 +14,11 @@ import { gameScreenSetIsDead } from "../components/game/GameScreen";
 import Chunk from "../Chunk";
 import { ItemSlots } from "../items/Item";
 import { updateInventoryIsOpen } from "../player-input";
-import { Hotbar_updateBackpackItemSlot, Hotbar_updateHotbarInventory } from "../components/game/Hotbar";
-import { BackpackInventoryMenu_setBackpackItemSlots } from "../components/game/menus/BackpackInventory";
+import { Hotbar_updateBackpackItemSlot, Hotbar_updateHotbarInventory } from "../components/game/inventories/Hotbar";
+import { BackpackInventoryMenu_setBackpackItemSlots } from "../components/game/inventories/BackpackInventory";
 import { setHeldItemVisual } from "../components/game/HeldItem";
 import { CraftingMenu_setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
+import { updateHealthBar } from "../components/game/HealthBar";
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -346,9 +347,11 @@ abstract class Client {
 
    private static respawnPlayer(respawnDataPacket: RespawnDataPacket): void {
       Game.definiteGameState.setPlayerHealth(Player.MAX_HEALTH);
+      updateHealthBar(Player.MAX_HEALTH);
       
       const spawnPosition = Point.unpackage(respawnDataPacket.spawnPosition);
-      new Player(spawnPosition, new Set(Player.HITBOXES), respawnDataPacket.playerID, null, Game.definiteGameState.playerUsername);
+      const player = new Player(spawnPosition, new Set(Player.HITBOXES), respawnDataPacket.playerID, null, Game.definiteGameState.playerUsername);
+      Player.setInstancePlayer(player);
 
       gameScreenSetIsDead(false);
    }
