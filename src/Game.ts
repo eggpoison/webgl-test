@@ -73,8 +73,8 @@ let numRenders = 0;
 abstract class Game {
    private static readonly NIGHT_DARKNESS = 0.6;
 
-   public static ticks: number;
-   public static time: number;
+   public static _ticks: number;
+   public static _time: number;
 
    public static board: Board;
    
@@ -100,12 +100,22 @@ abstract class Game {
    public static definiteGameState = new DefiniteGameState();
    public static latencyGameState = new LatencyGameState();
 
-   public static setTicks(ticks: number): void {
-      this.ticks = ticks;
-      this.time = (this.ticks * SETTINGS.TIME_PASS_RATE / SETTINGS.TPS / 3600) % 24;
+   public static get ticks(): number {
+      return this._ticks;
+   }
 
-      updateDebugScreenCurrentTime(this.time);
-      updateDebugScreenTicks(this.ticks);
+   public static set ticks(ticks: number) {
+      this._ticks = ticks;
+      updateDebugScreenTicks(ticks);
+   }
+
+   public static get time(): number {
+      return this._time;
+   }
+
+   public static set time(time: number) {
+      this._time = time;
+      updateDebugScreenCurrentTime(time);
    }
 
    /** Starts the game */
@@ -195,7 +205,7 @@ abstract class Game {
          this.hasInitialised = true;
 
          resolve();
-      })
+      });
    }
 
    private static update(): void {

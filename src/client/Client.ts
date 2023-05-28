@@ -145,7 +145,8 @@ abstract class Client {
    }
 
    public static unloadGameDataPacket(gameDataPacket: GameDataPacket): void {
-      Game.setTicks(gameDataPacket.serverTicks);
+      Game.ticks = gameDataPacket.serverTicks;
+      Game.time = gameDataPacket.serverTime;
       
       this.updateEntities(gameDataPacket.entityDataArray);
       this.updateItemEntities(gameDataPacket.itemEntityDataArray);
