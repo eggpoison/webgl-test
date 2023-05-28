@@ -1,11 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Game from "../../Game";
-import { addKeyListener } from "../../keyboard-input";
-import { isDev } from "../../utils";
 import ChatBox from "../ChatBox";
-import CursorTooltip from "../CursorTooltip";
-import DevEntityViewer from "./DevEntityViewer";
-import DebugScreen from "./DebugScreen";
+import NerdVisionOverlay from "./nerd-vision/NerdVisionOverlay";
 import HealthBar from "./HealthBar";
 import PauseScreen from "./PauseScreen";
 import Settings from "./menus/Settings";
@@ -14,7 +10,6 @@ import CraftingMenu from "./menus/CraftingMenu";
 import HeldItem from "./HeldItem";
 import DeathScreen from "./DeathScreen";
 import BackpackInventoryMenu from "./menus/BackpackInventory";
-import Terminal from "./menus/Terminal";
 
 export let showPauseScreen: () => void;
 export let hidePauseScreen: () => void;
@@ -29,7 +24,6 @@ const GameScreen = () => {
    const hasLoaded = useRef<boolean>(false);
    const [isPaused, setIsPaused] = useState(false);
    const [settingsIsOpen, setSettingsIsOpen] = useState(false);
-   const [devViewIsEnabled, setDevViewIsEnabled] = useState(false); // The dev view always starts as disabled
    const [isDead, setIsDead] = useState(false);
 
    useEffect(() => {
@@ -50,16 +44,6 @@ const GameScreen = () => {
       }
    }, []);
 
-   useEffect(() => {
-      addKeyListener("`", () => {
-         setDevViewIsEnabled(!devViewIsEnabled);
-      }, "dev_view_is_enabled");
-   }, [devViewIsEnabled]);
-
-   useEffect(() => {
-      
-   }, [devViewIsEnabled]);
-
    toggleSettingsMenu = useCallback(() => {
       settingsIsOpen ? closeSettingsMenu() : openSettingsMenu();
    }, [settingsIsOpen]);
@@ -78,12 +62,7 @@ const GameScreen = () => {
 
       <DeathScreen isDead={isDead} />
 
-      {devViewIsEnabled ? <>
-         <DevEntityViewer />
-         <Terminal />
-         <DebugScreen />
-         <CursorTooltip />
-      </> : null}
+      <NerdVisionOverlay />
 
       {settingsIsOpen ? <Settings /> : null}
 

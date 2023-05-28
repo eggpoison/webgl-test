@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { CommandPermissions, commandIsValid } from "webgl-test-shared";
+import { isDev } from "../../../utils";
+import Client from "../../../client/Client";
 
 /**
  * Checks whether the player is using the terminal or not.
@@ -41,7 +44,9 @@ const Terminal = () => {
 
       // Execute the command
       const command = lineInputRef.current.value;
-      console.log(command);
+      if (commandIsValid(command, isDev() ? CommandPermissions.dev : CommandPermissions.player)) {
+         Client.sendCommand(command);
+      }
 
       // Clear the line input
       lineInputRef.current.value = "";

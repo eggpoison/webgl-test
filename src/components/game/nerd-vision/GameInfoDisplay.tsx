@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { roundNum } from "webgl-test-shared";
-import Game from "../../Game";
+import Game from "../../../Game";
 
-export let updateDebugScreenCurrentTime: (time: number) => void;
-export let updateDebugScreenTicks: (time: number) => void;
+export let updateDebugScreenCurrentTime: (time: number) => void = () => {};
+export let updateDebugScreenTicks: (time: number) => void = () => {};
 export let updateDebugScreenFPS: (fps: number) => void = () => {};
 
-const DebugScreen = () => {
+const GameInfoDisplay = () => {
    const [currentTime, setCurrentTime] = useState(0);
    const [ticks, setTicks] = useState(0);
    const [fps, setFPS] = useState(-1);
@@ -27,13 +27,11 @@ const DebugScreen = () => {
       }
    }, []);
    
-   return <div id="debug-screen">
-      <div className="server-info">
-         <p>Time: {roundNum(currentTime, 2)}</p>
-         <p>Ticks: {roundNum(ticks, 2)}</p>
-         <p>FPS: {fps}</p>
-      </div>
+   return <div id="game-info-display">
+      <p>Time: {roundNum(currentTime, 2)}</p>
+      <p>Ticks: {roundNum(ticks, 2)}</p>
+      <p>FPS: {fps}</p>
    </div>;
 }
 
-export default DebugScreen;
+export default GameInfoDisplay;

@@ -232,9 +232,7 @@ abstract class Client {
          hotbarItemSlots[itemSlot] = createItem(item.type, item.count);
       }
       Game.definiteGameState.hotbarItemSlots = hotbarItemSlots;
-      if (typeof Hotbar_updateHotbarInventory !== "undefined") {
-         Hotbar_updateHotbarInventory(Object.assign({}, hotbarItemSlots));
-      }
+      Hotbar_updateHotbarInventory(Object.assign({}, hotbarItemSlots));
 
       // Backpack inventory
       const backpackItemSlots: ItemSlots = {};
@@ -242,9 +240,7 @@ abstract class Client {
          backpackItemSlots[itemSlot] = createItem(item.type, item.count);
       }
       Game.definiteGameState.backpackItemSlots = backpackItemSlots;
-      if (typeof BackpackInventoryMenu_setBackpackItemSlots !== "undefined") {
-         BackpackInventoryMenu_setBackpackItemSlots(Object.assign({}, backpackItemSlots));
-      }
+      BackpackInventoryMenu_setBackpackItemSlots(Object.assign({}, backpackItemSlots));
 
       // Crafting output item
       if (playerInventoryData.craftingOutputItemSlot !== null) {
@@ -253,9 +249,7 @@ abstract class Client {
       } else {
          Game.definiteGameState.craftingOutputItemSlot = null;
       }
-      if (typeof CraftingMenu_setCraftingMenuOutputItem !== "undefined") {
-         CraftingMenu_setCraftingMenuOutputItem(Game.definiteGameState.craftingOutputItemSlot);
-      }
+      CraftingMenu_setCraftingMenuOutputItem(Game.definiteGameState.craftingOutputItemSlot);
 
       // Backpack slot
       if (playerInventoryData.backpackItemSlot !== null) {
@@ -443,6 +437,12 @@ abstract class Client {
    public static sendRespawnRequest(): void {
       if (Game.isRunning && this.socket !== null) {
          this.socket.emit("respawn");
+      }
+   }
+
+   public static sendCommand(command: string): void {
+      if (Game.isRunning && this.socket !== null) {
+         this.socket.emit("command", command);
       }
    }
 }

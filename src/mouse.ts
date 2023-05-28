@@ -1,7 +1,7 @@
 import { Point, SETTINGS } from "webgl-test-shared";
 import { halfWindowHeight, halfWindowWidth } from "./webgl";
 import CLIENT_SETTINGS from "./client-settings";
-import { updateCursorTooltipTarget } from "./components/CursorTooltip";
+import { updateCursorTooltipTarget } from "./components/game/nerd-vision/CursorTooltip";
 import Entity from "./entities/Entity";
 import Game from "./Game";
 import Camera from "./Camera";

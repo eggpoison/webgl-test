@@ -1,5 +1,5 @@
 import { chatboxIsFocused, focusChatbox } from "./components/ChatBox";
-import { playerIsUsingTerminal } from "./components/game/menus/Terminal";
+import { playerIsUsingTerminal } from "./components/game/nerd-vision/Terminal";
 
 const keyListeners: { [key: string]: Array<() => void> } = {};
 

@@ -1,11 +1,11 @@
 import { useEffect, useReducer, useState } from "react";
 import { roundNum } from "webgl-test-shared";
-import CLIENT_ENTITY_INFO_RECORD from "../../client-entity-info";
-import Entity from "../../entities/Entity";
+import CLIENT_ENTITY_INFO_RECORD from "../../../client-entity-info";
+import Entity from "../../../entities/Entity";
 
 export let updateDevEntityViewer: (entity?: Entity | null) => void = () => {};
 
-const DevEntityViewer = () => {
+const EntityViewer = () => {
    const [entity, setEntity] = useState<Entity | null>(null);
    const [, forceUpdate] = useReducer(x => x + 1, 0);
 
@@ -63,4 +63,4 @@ const DevEntityViewer = () => {
    </div>;
 }
 
-export default DevEntityViewer;
+export default EntityViewer;

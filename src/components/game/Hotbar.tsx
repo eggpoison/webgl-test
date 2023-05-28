@@ -10,14 +10,14 @@ import { BackpackInventoryMenu_setBackpackItemInfo } from "./menus/BackpackInven
 import { leftClickItemSlot, rightClickItemSlot } from "../../inventory-manipulation";
 import Game from "../../Game";
 
-export let Hotbar_updateHotbarInventory: (inventory: ItemSlots) => void;
+export let Hotbar_updateHotbarInventory: (inventory: ItemSlots) => void = () => {};
 
 /**
  * Updates the backpack item slot shown in the hotbar.
  */
 export let Hotbar_updateBackpackItemSlot: (backpack: Item | null) => void = () => {};
 
-export let Hotbar_setHotbarSelectedItemSlot: (itemSlot: number) => void;
+export let Hotbar_setHotbarSelectedItemSlot: (itemSlot: number) => void = () => {};
 
 const backpackItemTypes: ReadonlyArray<ItemType> = ["leather_backpack"];
 

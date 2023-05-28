@@ -9,13 +9,12 @@ import { calculateEntityRenderValues, setFrameProgress } from "./entities/Entity
 import { createEntityShaders, renderEntities } from "./rendering/entity-rendering";
 import Client from "./client/Client";
 import { calculateCursorWorldPosition, getCursorX, getCursorY, handleMouseMovement, renderCursorTooltip } from "./mouse";
-import { updateDevEntityViewer } from "./components/game/DevEntityViewer";
+import { updateDevEntityViewer } from "./components/game/nerd-vision/EntityViewer";
 import OPTIONS from "./options";
 import { createShaderStrings, createWebGLContext, createWebGLProgram, gl, resizeCanvas } from "./webgl";
 import { loadTextures } from "./textures";
 import { hidePauseScreen, showPauseScreen, toggleSettingsMenu } from "./components/game/GameScreen";
 import { getGameState } from "./components/App";
-import { updateDebugScreenCurrentTime, updateDebugScreenFPS, updateDebugScreenTicks } from "./components/game/DebugScreen";
 import Item from "./items/Item";
 import { createPlaceableItemProgram, renderGhostPlaceableItem } from "./items/PlaceableItem";
 import { clearPressedKeys } from "./keyboard-input";
@@ -23,6 +22,7 @@ import { renderEntityHitboxes } from "./rendering/hitbox-rendering";
 import { updatePlayerMovement } from "./player-input";
 import DefiniteGameState from "./game-state/definite-game-state";
 import LatencyGameState from "./game-state/latency-game-state";
+import { updateDebugScreenCurrentTime, updateDebugScreenFPS, updateDebugScreenTicks } from "./components/game/nerd-vision/GameInfoDisplay";
 
 const nightVertexShaderText = `
 precision mediump float;
@@ -102,12 +102,8 @@ abstract class Game {
       this.ticks = ticks;
       this.time = (this.ticks * SETTINGS.TIME_PASS_RATE / SETTINGS.TPS / 3600) % 24;
 
-      if (typeof updateDebugScreenCurrentTime !== "undefined") {
-         updateDebugScreenCurrentTime(this.time);
-      }
-      if (typeof updateDebugScreenTicks !== "undefined") {
-         updateDebugScreenTicks(this.ticks);
-      }
+      updateDebugScreenCurrentTime(this.time);
+      updateDebugScreenTicks(this.ticks);
    }
 
    /** Starts the game */
