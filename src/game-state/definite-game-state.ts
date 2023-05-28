@@ -1,5 +1,6 @@
 import Game from "../Game";
 import { updateHealthBar } from "../components/game/HealthBar";
+import { hideNerdVision } from "../components/game/nerd-vision/NerdVisionOverlay";
 import Player from "../entities/Player";
 import GameState from "./game-state";
 
@@ -9,6 +10,8 @@ const killPlayer = (): void => {
    // Remove the player from the game
    delete Game.board.entities[Player.instance.id];
    Player.instance = null;
+
+   hideNerdVision();
 }
 
 /** Stores the definite, 100% known correct information about the game state. */
