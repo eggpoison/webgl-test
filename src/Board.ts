@@ -1,4 +1,4 @@
-import Entity, { calculateItemEntityRenderPosition } from "./entities/Entity";
+import Entity from "./entities/Entity";
 import { getTexture } from "./textures";
 import { SETTINGS, Point, Vector, ServerTileUpdateData, rotatePoint, TILE_TYPE_INFO_RECORD, } from "webgl-test-shared";
 import Camera from "./Camera";
@@ -6,7 +6,6 @@ import { LiquidTileTypeRenderInfo, SolidTileTypeRenderInfo, TILE_TYPE_RENDER_INF
 import { createWebGLProgram, gl, halfWindowHeight, halfWindowWidth } from "./webgl";
 import Chunk from "./Chunk";
 import ItemEntity from "./items/ItemEntity";
-import CLIENT_ITEM_INFO_RECORD from "./client-item-info";
 import { Tile } from "./Tile";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
 
@@ -74,25 +73,6 @@ void main() {
 `;
 
 // 
-// Border shaders
-// 
-const borderVertexShaderText = `
-precision mediump float;
-
-attribute vec2 vertPosition;
-
-void main() {
-   gl_Position = vec4(vertPosition, 0.0, 1.0);
-}`;
-const borderFragmentShaderText = `
-precision mediump float;
-
-void main() {
-   gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
-}
-`;
-
-// 
 // Chunk border wireframe shaders
 // 
 const chunkBorderColour = "1.0, 0.0, 0.0";
@@ -112,35 +92,6 @@ void main() {
 }
 `;
 
-// 
-// Item shaders
-// 
-const itemVertexShaderText = `
-precision mediump float;
-
-attribute vec2 vertPosition;
-attribute vec2 vertTexCoord;
-
-varying vec2 fragTexCoord;
- 
-void main() {
-   gl_Position = vec4(vertPosition, 0.0, 1.0);
-
-   fragTexCoord = vertTexCoord;
-}
-`;
-const itemFragmentShaderText = `
-precision mediump float;
- 
-uniform sampler2D sampler;
- 
-varying vec2 fragTexCoord;
- 
-void main() {
-   gl_FragColor = texture2D(sampler, fragTexCoord);
-}
-`;
-
 export type EntityHitboxInfo = {
    readonly vertexPositions: readonly [Point, Point, Point, Point];
    readonly sideAxes: ReadonlyArray<Vector>
@@ -155,9 +106,7 @@ class Board {
 
    private solidTileProgram: WebGLProgram;
    private liquidTileProgram: WebGLProgram;
-   private borderProgram: WebGLProgram;
    private chunkBorderProgram: WebGLProgram;
-   private itemEntityProgram: WebGLProgram;
 
    private solidTileProgramPlayerPosUniformLocation: WebGLUniformLocation;
    private solidTileProgramHalfWindowSizeUniformLocation: WebGLUniformLocation;
@@ -186,9 +135,7 @@ class Board {
 
       this.solidTileProgram = createWebGLProgram(solidTileVertexShaderText, solidTileFragmentShaderText, "a_tilePos");
       this.liquidTileProgram = createWebGLProgram(liquidTileVertexShaderText, liquidTileFragmentShaderText);
-      this.borderProgram = createWebGLProgram(borderVertexShaderText, borderFragmentShaderText);
       this.chunkBorderProgram = createWebGLProgram(chunkBorderVertexShaderText, chunkBorderFragmentShaderText);
-      this.itemEntityProgram = createWebGLProgram(itemVertexShaderText, itemFragmentShaderText);
 
       this.solidTileProgramPlayerPosUniformLocation = gl.getUniformLocation(this.solidTileProgram, "u_playerPos")!;
       this.solidTileProgramHalfWindowSizeUniformLocation = gl.getUniformLocation(this.solidTileProgram, "u_halfWindowSize")!;
@@ -429,98 +376,6 @@ class Board {
       gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 5);
    }
 
-   public renderBorder(): void {
-      const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
-
-      const BORDER_WIDTH = 20;
-
-      gl.useProgram(this.borderProgram);
-
-      const positionAttribLocation = gl.getAttribLocation(this.borderProgram, "vertPosition");
-      gl.vertexAttribPointer(
-         positionAttribLocation,
-         2,
-         gl.FLOAT,
-         false,
-         2 * Float32Array.BYTES_PER_ELEMENT,
-         0
-      );
-   
-      // Enable the attributes
-      gl.enableVertexAttribArray(positionAttribLocation);
-
-      const minChunkXPos = minChunkX * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
-      const maxChunkXPos = (maxChunkX + 1) * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
-      const minChunkYPos = minChunkY * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
-      const maxChunkYPos = (maxChunkY + 1) * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
-
-      const vertices = new Array<number>();
-
-      const calculateAndAddVertices = (x1: number, x2: number, y1: number, y2: number): void => {
-         // Calculate screen positions
-         const screenX1 = Camera.calculateXCanvasPosition(x1);
-         const screenX2 = Camera.calculateXCanvasPosition(x2);
-         const screenY1 = Camera.calculateYCanvasPosition(y1);
-         const screenY2 = Camera.calculateYCanvasPosition(y2);
-
-         vertices.push(
-            screenX1, screenY1, // Bottom left
-            screenX2, screenY1, // Bottom right
-            screenX2, screenY2, // Top right
-
-            screenX1, screenY1, // Bottom left
-            screenX2, screenY2, // Top right
-            screenX1, screenY2 // Top left
-         );
-      }
-
-      // Left wall
-      if (minChunkX === 0) {
-         const x1 = -BORDER_WIDTH;
-         const x2 = 0;
-         const y1 = minChunkYPos - BORDER_WIDTH;
-         const y2 = maxChunkYPos + BORDER_WIDTH;
-
-         calculateAndAddVertices(x1, x2, y1, y2);
-      }
-
-      // Right wall
-      if (maxChunkX === SETTINGS.BOARD_SIZE - 1) {
-         const x1 = maxChunkXPos;
-         const x2 = maxChunkXPos + BORDER_WIDTH;
-         const y1 = minChunkYPos - BORDER_WIDTH;
-         const y2 = maxChunkYPos + BORDER_WIDTH;
-
-         calculateAndAddVertices(x1, x2, y1, y2);
-      }
-
-      // Bottom wall
-      if (minChunkY === 0) {
-         const x1 = minChunkXPos - BORDER_WIDTH;
-         const x2 = maxChunkXPos + BORDER_WIDTH;
-         const y1 = -BORDER_WIDTH;
-         const y2 = 0;
-
-         calculateAndAddVertices(x1, x2, y1, y2);
-      }
-
-      // Top wall
-      if (maxChunkY === SETTINGS.BOARD_SIZE - 1) {
-         const x1 = minChunkXPos - BORDER_WIDTH;
-         const x2 = maxChunkXPos + BORDER_WIDTH;
-         const y1 = maxChunkYPos;
-         const y2 = maxChunkYPos + BORDER_WIDTH;
-
-         calculateAndAddVertices(x1, x2, y1, y2);
-      }
-
-      const buffer = gl.createBuffer()!;
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-
-      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 2);
-   }
-
    public drawChunkBorders(): void {
       gl.useProgram(this.chunkBorderProgram);
       
@@ -597,99 +452,6 @@ class Board {
       }
 
       return minDist;
-   }
-
-   public renderItemEntities(): void {
-      gl.useProgram(this.itemEntityProgram);
-
-      gl.enable(gl.BLEND);
-      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-
-      const itemVertexRecord = this.calculateItemEntityVertices();
-
-      for (const [textureSrc, vertices] of Object.entries(itemVertexRecord)) {
-         const buffer = gl.createBuffer()!;
-         gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-
-         const positionAttribLocation = gl.getAttribLocation(this.itemEntityProgram, "vertPosition");
-         const texCoordAttribLocation = gl.getAttribLocation(this.itemEntityProgram, "vertTexCoord");
-         gl.vertexAttribPointer(
-            positionAttribLocation,
-            2,
-            gl.FLOAT,
-            false,
-            4 * Float32Array.BYTES_PER_ELEMENT,
-            0
-         );
-         gl.vertexAttribPointer(
-            texCoordAttribLocation,
-            2,
-            gl.FLOAT,
-            false,
-            4 * Float32Array.BYTES_PER_ELEMENT,
-            2 * Float32Array.BYTES_PER_ELEMENT
-         );
-
-         gl.enableVertexAttribArray(positionAttribLocation);
-         gl.enableVertexAttribArray(texCoordAttribLocation);
-         
-         const texture = getTexture(`items/${textureSrc}`);
-         gl.activeTexture(gl.TEXTURE0);
-         gl.bindTexture(gl.TEXTURE_2D, texture);
-
-         gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 4);
-      }
-
-      gl.disable(gl.BLEND);
-      gl.blendFunc(gl.ONE, gl.ZERO);
-   }
-
-   private calculateItemEntityVertices(): { [textureSrc: string]: ReadonlyArray<number> } {
-      const itemVertexRecord: { [textureSrc: string]: Array<number> } = {};
-
-      for (const itemEntity of Object.values(this.itemEntities)) {
-         const textureSrc = CLIENT_ITEM_INFO_RECORD[itemEntity.type].textureSrc;
-
-         if (!itemVertexRecord.hasOwnProperty(textureSrc)) {
-            itemVertexRecord[textureSrc] = new Array<number>();
-         }
-
-         const itemEntityRenderPosition = calculateItemEntityRenderPosition(itemEntity.position, itemEntity.velocity);
-         // const itemEntityRenderPosition = itemEntity.position;
-
-         const x1 = itemEntityRenderPosition.x - SETTINGS.ITEM_SIZE;
-         const x2 = itemEntityRenderPosition.x + SETTINGS.ITEM_SIZE;
-         const y1 = itemEntityRenderPosition.y - SETTINGS.ITEM_SIZE;
-         const y2 = itemEntityRenderPosition.y + SETTINGS.ITEM_SIZE;
-
-         let topLeft = new Point(x1, y2);
-         let topRight = new Point(x2, y2);
-         let bottomRight = new Point(x2, y1);
-         let bottomLeft = new Point(x1, y1);
-
-         // Rotate
-         topLeft = rotatePoint(topLeft, itemEntityRenderPosition, itemEntity.rotation);
-         topRight = rotatePoint(topRight, itemEntityRenderPosition, itemEntity.rotation);
-         bottomRight = rotatePoint(bottomRight, itemEntityRenderPosition, itemEntity.rotation);
-         bottomLeft = rotatePoint(bottomLeft, itemEntityRenderPosition, itemEntity.rotation);
-
-         topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));
-         topRight = new Point(Camera.calculateXCanvasPosition(topRight.x), Camera.calculateYCanvasPosition(topRight.y));
-         bottomRight = new Point(Camera.calculateXCanvasPosition(bottomRight.x), Camera.calculateYCanvasPosition(bottomRight.y));
-         bottomLeft = new Point(Camera.calculateXCanvasPosition(bottomLeft.x), Camera.calculateYCanvasPosition(bottomLeft.y));
-         
-         itemVertexRecord[textureSrc].push(
-            bottomLeft.x, bottomLeft.y, 0, 0,
-            bottomRight.x, bottomRight.y, 1, 0,
-            topLeft.x, topLeft.y, 0, 1,
-            topLeft.x, topLeft.y, 0, 1,
-            bottomRight.x, bottomRight.y, 1, 0,
-            topRight.x, topRight.y, 1, 1
-         );
-      }
-
-      return itemVertexRecord;
    }
 }
 

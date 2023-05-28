@@ -11,20 +11,8 @@ export function setFrameProgress(newFrameProgress: number): void {
    frameProgress = newFrameProgress;
 }
 
-export function calculateItemEntityRenderPosition(position: Point, velocity: Vector | null): Point {
-   let entityRenderPosition = position.copy();
-   
-   // Account for frame progress
-   if (velocity !== null) {
-      const frameVelocity = velocity.copy();
-      frameVelocity.magnitude *= frameProgress / SETTINGS.TPS;
-      
-      // Apply the frame velocity to the entity's position
-      const frameVelocityCartesian = frameVelocity.convertToPoint();
-      entityRenderPosition.add(frameVelocityCartesian);
-   }
-
-   return entityRenderPosition;
+export function getFrameProgress(): number {
+   return frameProgress;
 }
 
 const calculateEntityRenderPosition = (entity: Entity): Point => {
@@ -62,7 +50,6 @@ const calculateEntityRenderPosition = (entity: Entity): Point => {
          if (frameVelocity.magnitude > terminalVelocity && entity.velocity.magnitude > magnitudeBeforeAdd) {
             frameVelocity.magnitude = terminalVelocity;
          }
-      // Decelerate
       }
 
       // Apply the frame velocity to the entity's position

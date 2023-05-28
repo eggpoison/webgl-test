@@ -8,7 +8,7 @@ const killPlayer = (): void => {
    if (Player.instance === null) return;
 
    // Remove the player from the game
-   delete Game.board.entities[Player.instance.id];
+   Game.board.removeEntity(Player.instance);
    Player.instance = null;
 
    hideNerdVision();

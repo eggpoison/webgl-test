@@ -23,6 +23,8 @@ import { updatePlayerMovement } from "./player-input";
 import DefiniteGameState from "./game-state/definite-game-state";
 import LatencyGameState from "./game-state/latency-game-state";
 import { updateDebugScreenCurrentTime, updateDebugScreenFPS, updateDebugScreenTicks } from "./components/game/nerd-vision/GameInfoDisplay";
+import { createItemEntityShaders, renderItemEntities } from "./rendering/item-entity-rendering";
+import { createWorldBorderShaders, renderWorldBorder } from "./rendering/world-border-rendering";
 
 const nightVertexShaderText = `
 precision mediump float;
@@ -183,6 +185,8 @@ abstract class Game {
          createTextCanvasContext();
          
          createEntityShaders();
+         createItemEntityShaders();
+         createWorldBorderShaders();
          
          createPlaceableItemProgram();
          
@@ -255,8 +259,8 @@ abstract class Game {
       renderPlayerNames();
 
       this.board.renderTiles();
-      this.board.renderItemEntities();
-      this.board.renderBorder();
+      renderItemEntities();
+      renderWorldBorder();
       if (OPTIONS.showChunkBorders) {
          this.board.drawChunkBorders();
       }
