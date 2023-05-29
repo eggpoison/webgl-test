@@ -3,7 +3,9 @@ import FoodItem from "./FoodItem";
 import Item from "./Item";
 import PlaceableItem from "./PlaceableItem";
 
-const ITEM_CLASS_RECORD: { [T in ItemType]: () => new (itemType: T, count: number, iteminfo: ItemInfo<T>) => Item } = {
+type GenericItem<T extends ItemType> = new (itemType: T, count: number, id: number, itemInfo: ItemInfo<T>) => Item;
+
+const ITEM_CLASS_RECORD: { [T in ItemType]: () => GenericItem<T> } = {
    wood: () => Item,
    workbench: () => PlaceableItem,
    wooden_sword: () => Item,
@@ -20,9 +22,9 @@ const ITEM_CLASS_RECORD: { [T in ItemType]: () => new (itemType: T, count: numbe
    leather_backpack: () => Item
 };
 
-export function createItem(itemType: ItemType, count: number): Item {
+export function createItem(itemType: ItemType, count: number, id: number): Item {
    const itemInfoEntry = ITEM_INFO_RECORD[itemType];
 
-   const itemClass = ITEM_CLASS_RECORD[itemType]() as new (itemType: ItemType, count: number, itemInfo: ItemInfo<ItemType>) => Item;
-   return new itemClass(itemType, count, itemInfoEntry);
+   const itemClass = ITEM_CLASS_RECORD[itemType]() as GenericItem<ItemType>;
+   return new itemClass(itemType, count, id, itemInfoEntry);
 }

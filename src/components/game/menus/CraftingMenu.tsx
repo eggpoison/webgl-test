@@ -186,11 +186,11 @@ const CraftingMenu = () => {
       if (Game.definiteGameState.heldItemSlot !== null) return;
 
       // Make sure there exists a crafting output item to pick up
-      if (Game.definiteGameState.craftingOutputItemSlot === null) {
+      if (Game.definiteGameState.craftingOutputSlot === null) {
          throw new Error("Tried to pickup the crafting output item when none existed!");
       }
 
-      const numItemsInCraftingOutput = Game.definiteGameState.craftingOutputItemSlot.count;
+      const numItemsInCraftingOutput = Game.definiteGameState.craftingOutputSlot.count;
       Client.sendItemPickupPacket("craftingOutput", 1, numItemsInCraftingOutput);
       
       setHeldItemVisualPosition(e.clientX, e.clientY);

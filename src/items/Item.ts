@@ -1,4 +1,4 @@
-import { ItemType, SETTINGS } from "webgl-test-shared";
+import { ItemData, ItemType, SETTINGS } from "webgl-test-shared";
 import Client from "../client/Client";
 
 export type ItemSlot = Item | null;
@@ -11,14 +11,18 @@ class Item {
    private static readonly GLOBAL_ATTACK_DELAY_ON_SWITCH = 0.1;
 
    private static globalAttackDelayTimer = 0;
+
+   /** Unique identifier for the item */
+   public readonly id: number;
    
    public readonly type: ItemType;
 
    public count: number;
 
-   constructor(itemType: ItemType, count: number) {
+   constructor(itemType: ItemType, count: number, id: number) {
       this.type = itemType;
       this.count = count;
+      this.id = id;
    }
 
    public tick?(): void;
@@ -36,6 +40,10 @@ class Item {
 
    public resetAttackSwitchDelay(): void {
       Item.globalAttackDelayTimer = Item.GLOBAL_ATTACK_DELAY_ON_SWITCH;
+   }
+
+   public updateFromServerData(itemData: ItemData): void {
+      this.count = itemData.count;
    }
 
    public onRightMouseButtonDown?(): void;

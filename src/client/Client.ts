@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ItemEntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, CraftingRecipe, PlayerInventoryType, PlaceablePlayerInventoryType, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, ItemData } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ItemEntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, CraftingRecipe, PlayerInventoryType, PlaceablePlayerInventoryType, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, ItemData, InventoryData, ItemSlotData } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -12,7 +12,7 @@ import { Tile } from "../Tile";
 import { createItem } from "../items/item-creation";
 import { gameScreenSetIsDead } from "../components/game/GameScreen";
 import Chunk from "../Chunk";
-import { ItemSlots } from "../items/Item";
+import Item, { ItemSlot, ItemSlots } from "../items/Item";
 import { updateInventoryIsOpen } from "../player-input";
 import { Hotbar_updateBackpackItemSlot, Hotbar_updateHotbarInventory } from "../components/game/inventories/Hotbar";
 import { BackpackInventoryMenu_setBackpackItemSlots } from "../components/game/inventories/BackpackInventory";
@@ -227,50 +227,64 @@ abstract class Client {
       }
    }
 
+   private static updateItemSlotFromServerData(itemSlot: ItemSlot, itemSlotData: ItemSlotData): void {
+      // If the item is being removed, remove it
+      if (itemSlotData === null) {
+         itemSlot = null;
+         return;
+      }
+      
+      // If there is an item which will replace the existing item, replace it
+      if (itemSlot === null || itemSlot.id !== itemSlotData.id) {
+         itemSlot = createItem(itemSlotData.type, itemSlotData.count, itemSlotData.id);
+      } else {
+         // Otherwise update the existing item
+         itemSlot.updateFromServerData(itemSlotData);
+      }
+   }
+
+   private static updateInventoryFromServerData(itemSlots: ItemSlots, inventoryData: InventoryData): void {
+      // Remove any items which have been removed from the inventory
+      for (const [itemSlot, item] of Object.entries(itemSlots) as unknown as ReadonlyArray<[number, Item]>) {
+         // If it doesn't exist in the server data, remove it
+         if (!inventoryData.hasOwnProperty(itemSlot) || inventoryData[itemSlot].id !== item.id) {
+            delete itemSlots[itemSlot];
+         }
+      }
+
+      // Add all new items from the server data
+      for (const [itemSlot, itemData] of Object.entries(inventoryData) as unknown as ReadonlyArray<[number, ItemData]>) {
+         // If the item doesn't exist in the inventory, add it
+         if (!itemSlots.hasOwnProperty(itemSlot) || itemSlots[itemSlot].id !== itemData.id) {
+            console.log("new item!");
+            
+            itemSlots[itemSlot] = createItem(itemData.type, itemData.count, itemData.id);
+         } else {
+            // Otherwise the item needs to be updated with the new server data
+            itemSlots[itemSlot].updateFromServerData(itemData);
+         }
+      }
+   }
+
    private static updatePlayerInventory(playerInventoryData: PlayerInventoryData) {
       // Hotbar
-      const hotbarItemSlots: ItemSlots = {};
-      for (const [itemSlot, item] of Object.entries(playerInventoryData.hotbar) as unknown as ReadonlyArray<[number, ItemData]>) {
-         hotbarItemSlots[itemSlot] = createItem(item.type, item.count);
-      }
-      Game.definiteGameState.hotbarItemSlots = hotbarItemSlots;
-      Hotbar_updateHotbarInventory(Object.assign({}, hotbarItemSlots));
+      this.updateInventoryFromServerData(Game.definiteGameState.hotbarItemSlots, playerInventoryData.hotbar);
+      Hotbar_updateHotbarInventory(Game.definiteGameState.hotbarItemSlots);
 
       // Backpack inventory
-      const backpackItemSlots: ItemSlots = {};
-      for (const [itemSlot, item] of Object.entries(playerInventoryData.backpackInventory) as unknown as ReadonlyArray<[number, ItemData]>) {
-         backpackItemSlots[itemSlot] = createItem(item.type, item.count);
-      }
-      Game.definiteGameState.backpackItemSlots = backpackItemSlots;
-      BackpackInventoryMenu_setBackpackItemSlots(Object.assign({}, backpackItemSlots));
+      this.updateInventoryFromServerData(Game.definiteGameState.backpackItemSlots, playerInventoryData.backpackInventory);
+      BackpackInventoryMenu_setBackpackItemSlots(Object.assign({}, Game.definiteGameState.backpackItemSlots));
 
       // Crafting output item
-      if (playerInventoryData.craftingOutputItemSlot !== null) {
-         const craftingOutputItem = createItem(playerInventoryData.craftingOutputItemSlot.type, playerInventoryData.craftingOutputItemSlot.count);
-         Game.definiteGameState.craftingOutputItemSlot = craftingOutputItem;
-      } else {
-         Game.definiteGameState.craftingOutputItemSlot = null;
-      }
-      CraftingMenu_setCraftingMenuOutputItem(Game.definiteGameState.craftingOutputItemSlot);
+      this.updateItemSlotFromServerData(Game.definiteGameState.craftingOutputSlot, playerInventoryData.craftingOutputItemSlot);
+      CraftingMenu_setCraftingMenuOutputItem(Game.definiteGameState.craftingOutputSlot);
 
       // Backpack slot
-      if (playerInventoryData.backpackItemSlot !== null) {
-         const craftingOutputItem = createItem(playerInventoryData.backpackItemSlot.type, playerInventoryData.backpackItemSlot.count);
-
-         Game.definiteGameState.backpackItemSlot = craftingOutputItem;
-         Hotbar_updateBackpackItemSlot(Object.assign({}, Game.definiteGameState.backpackItemSlot));
-      } else {
-         Game.definiteGameState.backpackItemSlot = null;
-         Hotbar_updateBackpackItemSlot(null);
-      }
+      this.updateItemSlotFromServerData(Game.definiteGameState.backpackSlot, playerInventoryData.backpackSlot);
+      Hotbar_updateBackpackItemSlot(Game.definiteGameState.backpackSlot);
 
       // Held item
-      if (playerInventoryData.heldItemSlot === null) {
-         Game.definiteGameState.heldItemSlot = null;
-      } else {
-         const heldItem = createItem(playerInventoryData.heldItemSlot.type, playerInventoryData.heldItemSlot.count);
-         Game.definiteGameState.heldItemSlot = heldItem;
-      }
+      this.updateItemSlotFromServerData(Game.definiteGameState.heldItemSlot, playerInventoryData.heldItemSlot);
       setHeldItemVisual(Game.definiteGameState.heldItemSlot);
    }
 

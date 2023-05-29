@@ -4,11 +4,11 @@ import CLIENT_ITEM_INFO_RECORD from "../../../client-item-info";
 import Client from "../../../client/Client";
 import Item, { ItemSlots } from "../../../items/Item";
 import { setHeldItemVisualPosition } from "../HeldItem";
-import ItemSlot from "./ItemSlot";
 import { inventoryIsOpen } from "../menus/CraftingMenu";
 import { BackpackInventoryMenu_setBackpackItemInfo } from "./BackpackInventory";
 import { leftClickItemSlot, rightClickItemSlot } from "../../../inventory-manipulation";
 import Game from "../../../Game";
+import ItemSlot from "./ItemSlot";
 
 export let Hotbar_updateHotbarInventory: (inventory: ItemSlots) => void = () => {};
 
@@ -78,11 +78,17 @@ const Hotbar = () => {
 
    useEffect(() => {
       Hotbar_updateHotbarInventory = (inventory: ItemSlots): void => {
-         setHotbarInventory(inventory);
+         const inventoryCopy = Object.assign({}, inventory);
+         setHotbarInventory(inventoryCopy);
       }
 
       Hotbar_updateBackpackItemSlot = (backpack: Item | null): void => {
-         setBackpackItemSlot(backpack);
+         if (backpack === null) {
+            setBackpackItemSlot(backpack);
+         } else {
+            const backpackCopy = Object.assign({}, backpack);
+            setBackpackItemSlot(backpackCopy);
+         }
       }
 
       Hotbar_setHotbarSelectedItemSlot = (itemSlot: number): void => {
@@ -109,6 +115,7 @@ const Hotbar = () => {
 
    let backpackItemSlotElement: JSX.Element;
    if (backpackItemSlot !== null) {
+      console.log(backpackItemSlot);
       const backpackItemInfo = CLIENT_ITEM_INFO_RECORD[backpackItemSlot.type];
       
       const imageSrc = require("../../../images/items/" + backpackItemInfo.textureSrc);

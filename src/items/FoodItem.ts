@@ -10,11 +10,9 @@ class FoodItem extends Item implements FoodItemInfo {
 
    private eatTimer: number;
 
-   private isEating: boolean = false;
-
    // eslint-disable-next-line no-empty-pattern
-   constructor(itemType: ItemType, count: number, { stackSize, healAmount, eatTime }: FoodItemInfo) {
-      super(itemType, count);
+   constructor(itemType: ItemType, count: number, id: number, { stackSize, healAmount, eatTime }: FoodItemInfo) {
+      super(itemType, count, id);
 
       this.stackSize = stackSize;
       this.healAmount = healAmount;
@@ -25,9 +23,11 @@ class FoodItem extends Item implements FoodItemInfo {
    
    public tick(): void {
       if (this.shouldEat()) {
+         console.log("eating");
          this.eatTimer -= 1 / SETTINGS.TPS;
 
          if (this.eatTimer <= 0) {
+            console.log("EATEN THE NOM");
             this.eatTimer = this.eatTime;
             this.sendUsePacket();
 
@@ -40,24 +40,26 @@ class FoodItem extends Item implements FoodItemInfo {
    }
 
    private shouldEat(): boolean {
-      return this.isEating && Game.definiteGameState.playerHealth < Player.MAX_HEALTH;
+      return Game.latencyGameState.playerIsEating && Game.definiteGameState.playerHealth < Player.MAX_HEALTH;
    }
 
    public onRightMouseButtonDown(): void {
+      console.log("beginning eat");
       this.eatTimer = this.eatTime;
-      this.isEating = true;
 
       Game.latencyGameState.playerIsEating = true;
    }
 
    public onRightMouseButtonUp(): void {
-      this.isEating = false;
+      console.log("mouse button up");
 
       Game.latencyGameState.playerIsEating = false;
    }
 
    protected onDeselect(): void {
-      this.isEating = false;
+      console.log("deselect");
+
+      Game.latencyGameState.playerIsEating = false;
    }
 }
 

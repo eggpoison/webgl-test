@@ -17,11 +17,11 @@ abstract class GameState {
    /** Items in the player's backpack. */
    public backpackItemSlots: ItemSlots = {};
 
-   /** Item in the player's backpack item slot. */
-   public backpackItemSlot: ItemSlot = null;
+   /** Stores the item in the player's backpack item slot. */
+   public backpackSlot: ItemSlot = null;
 
    /** Item in the player's crafting output item slot. */
-   public craftingOutputItemSlot: ItemSlot = null;
+   public craftingOutputSlot: ItemSlot = null;
 
    /** Item held by the player. */
    public heldItemSlot: ItemSlot = null;
