@@ -23,11 +23,9 @@ class FoodItem extends Item implements FoodItemInfo {
    
    public tick(): void {
       if (this.shouldEat()) {
-         console.log("eating");
          this.eatTimer -= 1 / SETTINGS.TPS;
 
          if (this.eatTimer <= 0) {
-            console.log("EATEN THE NOM");
             this.eatTimer = this.eatTime;
             this.sendUsePacket();
 
@@ -44,21 +42,16 @@ class FoodItem extends Item implements FoodItemInfo {
    }
 
    public onRightMouseButtonDown(): void {
-      console.log("beginning eat");
       this.eatTimer = this.eatTime;
 
       Game.latencyGameState.playerIsEating = true;
    }
 
    public onRightMouseButtonUp(): void {
-      console.log("mouse button up");
-
       Game.latencyGameState.playerIsEating = false;
    }
 
    protected onDeselect(): void {
-      console.log("deselect");
-
       Game.latencyGameState.playerIsEating = false;
    }
 }

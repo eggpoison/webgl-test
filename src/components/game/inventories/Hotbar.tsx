@@ -19,7 +19,7 @@ export let Hotbar_updateBackpackItemSlot: (backpack: Item | null) => void = () =
 
 export let Hotbar_setHotbarSelectedItemSlot: (itemSlot: number) => void = () => {};
 
-const backpackItemTypes: ReadonlyArray<ItemType> = ["leather_backpack"];
+const backpackItemTypes: ReadonlyArray<ItemType> = ["leather_backpack", "raw_beef"];
 
 const Hotbar = () => {
    const [hotbarSize, setHotbarSize] = useState(SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE);
@@ -69,7 +69,7 @@ const Hotbar = () => {
 
             // Note: at this point in time, the server hasn't registered that the player has equipped the backpack into the backpack item slot and so we need to get the item from the held item
             const backpack = Game.definiteGameState.heldItemSlot;
-            if (backpack !== null) {
+            if (backpack !== null && backpack.type !== "raw_beef") {
                equipBackpack(backpack);
             }
          }
@@ -124,7 +124,7 @@ const Hotbar = () => {
       const imageSrc = require("../../../images/miscellaneous/backpack-wireframe.png");
       backpackItemSlotElement = <ItemSlot onClick={e => clickBackpackItemSlot(e)} isSelected={false} picturedItemImageSrc={imageSrc} />
    }
-   
+
    return <div id="inventory">
       <div className="flex-balancer inventory-container">
          <ItemSlot isSelected={false} />

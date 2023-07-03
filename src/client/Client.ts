@@ -227,19 +227,19 @@ abstract class Client {
       }
    }
 
-   private static updateItemSlotFromServerData(itemSlot: ItemSlot, itemSlotData: ItemSlotData): void {
+   private static updateItemSlotFromServerData(itemSlot: ItemSlot, itemSlotData: ItemSlotData): ItemSlot {
       // If the item is being removed, remove it
       if (itemSlotData === null) {
-         itemSlot = null;
-         return;
+         return null;
       }
       
       // If there is an item which will replace the existing item, replace it
       if (itemSlot === null || itemSlot.id !== itemSlotData.id) {
-         itemSlot = createItem(itemSlotData.type, itemSlotData.count, itemSlotData.id);
+         return createItem(itemSlotData.type, itemSlotData.count, itemSlotData.id);
       } else {
          // Otherwise update the existing item
          itemSlot.updateFromServerData(itemSlotData);
+         return itemSlot;
       }
    }
 
@@ -256,8 +256,6 @@ abstract class Client {
       for (const [itemSlot, itemData] of Object.entries(inventoryData) as unknown as ReadonlyArray<[number, ItemData]>) {
          // If the item doesn't exist in the inventory, add it
          if (!itemSlots.hasOwnProperty(itemSlot) || itemSlots[itemSlot].id !== itemData.id) {
-            console.log("new item!");
-            
             itemSlots[itemSlot] = createItem(itemData.type, itemData.count, itemData.id);
          } else {
             // Otherwise the item needs to be updated with the new server data
@@ -276,15 +274,15 @@ abstract class Client {
       BackpackInventoryMenu_setBackpackItemSlots(Object.assign({}, Game.definiteGameState.backpackItemSlots));
 
       // Crafting output item
-      this.updateItemSlotFromServerData(Game.definiteGameState.craftingOutputSlot, playerInventoryData.craftingOutputItemSlot);
+      Game.definiteGameState.craftingOutputSlot = this.updateItemSlotFromServerData(Game.definiteGameState.craftingOutputSlot, playerInventoryData.craftingOutputItemSlot);
       CraftingMenu_setCraftingMenuOutputItem(Game.definiteGameState.craftingOutputSlot);
 
       // Backpack slot
-      this.updateItemSlotFromServerData(Game.definiteGameState.backpackSlot, playerInventoryData.backpackSlot);
+      Game.definiteGameState.backpackSlot = this.updateItemSlotFromServerData(Game.definiteGameState.backpackSlot, playerInventoryData.backpackSlot);
       Hotbar_updateBackpackItemSlot(Game.definiteGameState.backpackSlot);
 
       // Held item
-      this.updateItemSlotFromServerData(Game.definiteGameState.heldItemSlot, playerInventoryData.heldItemSlot);
+      Game.definiteGameState.heldItemSlot = this.updateItemSlotFromServerData(Game.definiteGameState.heldItemSlot, playerInventoryData.heldItemSlot);
       setHeldItemVisual(Game.definiteGameState.heldItemSlot);
    }
 

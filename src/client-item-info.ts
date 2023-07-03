@@ -75,7 +75,7 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
    leather_backpack: {
       textureSrc: "leather-backpack.png",
       name: "Leather Backpack",
-      description: ""
+      description: "Allows you to hold more items."
    }
 };
 
