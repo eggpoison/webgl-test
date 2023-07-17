@@ -10,10 +10,6 @@ const DEATH_TIPS: ReadonlyArray<string> = [
    "Have you tried not dying?"
 ];
 
-interface DeathScreenProps {
-   readonly isDead: boolean;
-}
-
 const respawnPlayer = (): void => {
    Client.sendRespawnRequest();
 }
@@ -26,7 +22,7 @@ const quitGame = (): void => {
    Client.disconnect();
 }
 
-const DeathScreen = ({ isDead }: DeathScreenProps) => {
+const DeathScreen = () => {
    const [tip, setTip] = useState<string>("");
 
    const randomiseTip = (): void => {
@@ -37,8 +33,6 @@ const DeathScreen = ({ isDead }: DeathScreenProps) => {
    useEffect(() => {
       randomiseTip();
    }, []);
-
-   if (!isDead) return null;
    
    return <div id="death-screen">
       <div className="content">

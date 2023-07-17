@@ -60,7 +60,9 @@ const GameScreen = () => {
 
       <HeldItem />
 
-      <DeathScreen isDead={isDead} />
+      {isDead ? (
+         <DeathScreen />
+      ) : undefined}
 
       <NerdVisionOverlay />
 
