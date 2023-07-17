@@ -5,10 +5,10 @@ import { createWebGLProgram, gl } from "../webgl";
 const vertexShaderText = `
 precision mediump float;
 
-attribute vec2 vertPosition;
+attribute vec2 a_vertPosition;
 
 void main() {
-   gl_Position = vec4(vertPosition, 0.0, 1.0);
+   gl_Position = vec4(a_vertPosition, 0.0, 1.0);
 }`;
 
 const fragmentShaderText = `
@@ -21,29 +21,18 @@ void main() {
 
 let program: WebGLProgram;
 
+let vertPositionAttribLocation: GLint;
+
 export function createWorldBorderShaders(): void {
    program = createWebGLProgram(vertexShaderText, fragmentShaderText);
+
+   vertPositionAttribLocation = gl.getAttribLocation(program, "a_vertPosition");
 }
 
 export function renderWorldBorder(): void {
    const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
 
    const BORDER_WIDTH = 20;
-
-   gl.useProgram(program);
-
-   const positionAttribLocation = gl.getAttribLocation(program, "vertPosition");
-   gl.vertexAttribPointer(
-      positionAttribLocation,
-      2,
-      gl.FLOAT,
-      false,
-      2 * Float32Array.BYTES_PER_ELEMENT,
-      0
-   );
-
-   // Enable the attributes
-   gl.enableVertexAttribArray(positionAttribLocation);
 
    const minChunkXPos = minChunkX * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
    const maxChunkXPos = (maxChunkX + 1) * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
@@ -110,9 +99,26 @@ export function renderWorldBorder(): void {
       calculateAndAddVertices(x1, x2, y1, y2);
    }
 
-   const buffer = gl.createBuffer()!;
-   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+   if (vertices.length > 0) {
+      gl.useProgram(program);
 
-   gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 2);
+      const buffer = gl.createBuffer()!;
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+   
+      const positionAttribLocation = vertPositionAttribLocation;
+      gl.vertexAttribPointer(
+         positionAttribLocation,
+         2,
+         gl.FLOAT,
+         false,
+         2 * Float32Array.BYTES_PER_ELEMENT,
+         0
+      );
+   
+      // Enable the attributes
+      gl.enableVertexAttribArray(positionAttribLocation);
+   
+      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 2);
+   }
 }

@@ -26,7 +26,7 @@ export function createChunkBorderShaders(): void {
    program = createWebGLProgram(vertexShaderText, fragmentShaderText);
 }
 
-export function drawChunkBorders(): void {
+export function renderChunkBorders(): void {
    gl.useProgram(program);
    
    const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();

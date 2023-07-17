@@ -35,6 +35,8 @@ const messagePassesSpamFilter = (message: string): boolean => {
    return true;
 }
 
+const ALLOWED_KEYS_PAST_MAXIMUM: ReadonlyArray<string> = ["Enter", "Backspace", "Escape", "ArrowRight", "ArrowLeft"];
+
 const MAX_CHAT_MESSAGES = 50;
 
 const MAX_CHAR_COUNT = 128;
@@ -91,7 +93,7 @@ const ChatBox = () => {
       // Don't type past the max char count
       const chatMessage = inputBoxRef.current!.value;
       if (chatMessage.length >= MAX_CHAR_COUNT) {
-         const isAllowed = e.shiftKey || e.metaKey || ["Enter", "Backspace", "Escape", "ArrowRight", "ArrowLeft"].includes(e.key);
+         const isAllowed = e.shiftKey || e.metaKey || ALLOWED_KEYS_PAST_MAXIMUM.includes(e.key);
 
          if (!isAllowed) {
             e.preventDefault();

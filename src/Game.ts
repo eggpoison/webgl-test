@@ -27,7 +27,7 @@ import { createItemEntityShaders, renderItemEntities } from "./rendering/item-en
 import { createWorldBorderShaders, renderWorldBorder } from "./rendering/world-border-rendering";
 import { createSolidTileShaders, renderSolidTiles, updateSolidTileRenderData } from "./rendering/solid-tile-rendering";
 import { createLiquidTileShaders } from "./rendering/liquid-tile-rendering";
-import { createChunkBorderShaders } from "./rendering/chunk-border-rendering";
+import { createChunkBorderShaders, renderChunkBorders } from "./rendering/chunk-border-rendering";
 
 const nightVertexShaderText = `
 precision mediump float;
@@ -276,11 +276,10 @@ abstract class Game {
       renderPlayerNames();
 
       renderSolidTiles();
-      // this.board.renderTiles();
       renderItemEntities();
       renderWorldBorder();
       if (OPTIONS.showChunkBorders) {
-         // this.board.drawChunkBorders();
+         renderChunkBorders();
       }
 
       renderEntities();
