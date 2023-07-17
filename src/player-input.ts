@@ -1,4 +1,4 @@
-import { AttackPacket, SETTINGS, Vector, lerp } from "webgl-test-shared";
+import { AttackPacket, SETTINGS, Vector } from "webgl-test-shared";
 import { addKeyListener, clearPressedKeys, keyIsPressed } from "./keyboard-input";
 import { BackpackInventoryMenu_setIsVisible } from "./components/game/inventories/BackpackInventory";
 import { CraftingMenu_setIsVisible } from "./components/game/menus/CraftingMenu";
@@ -201,19 +201,6 @@ export function createPlayerInputListeners(): void {
    createInventoryToggleListener();
 }
 
-/**
- * Calculates the factor which player terminal velocity is multiplied by based on their direction
- */
-const calculatePlayerMovementMultiplier = (moveDirection: number, rotation: number): number => {
-   // If the player is placing an entity, they are already moving slower and do not need a further slow.
-   if (Game.latencyGameState.playerIsPlacingEntity) return 1;
-   
-   const MIN_MOVEMENT_MULTIPLIER = 0.6;
-   
-   const rawFactor = (Math.cos(moveDirection - rotation) + 1) / 2;
-   return lerp(MIN_MOVEMENT_MULTIPLIER, 1, rawFactor);
-}
-
 const getPlayerTerminalVelocity = (): number => {
    if (Game.latencyGameState.playerIsEating || Game.latencyGameState.playerIsPlacingEntity) {
       return PLAYER_SLOW_TERMINAL_VELOCITY;
@@ -265,10 +252,8 @@ export function updatePlayerMovement(): void {
    }
 
    if (moveDirection !== null) {
-      const movementMultiplier = calculatePlayerMovementMultiplier(moveDirection, Player.instance!.rotation);
-      
-      Player.instance.acceleration = new Vector(getPlayerAcceleration(), moveDirection);
-      Player.instance.terminalVelocity = getPlayerTerminalVelocity() * movementMultiplier;
+      Player.instance.acceleration = new Vector(PLAYER_ACCELERATION, moveDirection);
+      Player.instance.terminalVelocity = getPlayerTerminalVelocity();
    } else {
       Player.instance.acceleration = null;
    }

@@ -115,7 +115,6 @@ const Hotbar = () => {
 
    let backpackItemSlotElement: JSX.Element;
    if (backpackItemSlot !== null) {
-      console.log(backpackItemSlot);
       const backpackItemInfo = CLIENT_ITEM_INFO_RECORD[backpackItemSlot.type];
       
       const imageSrc = require("../../../images/items/" + backpackItemInfo.textureSrc);

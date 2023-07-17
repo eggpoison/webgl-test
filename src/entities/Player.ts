@@ -117,6 +117,7 @@ class Player extends Entity {
             entity: this,
             width: 64,
             height: 64,
+            // textureSource: "human/temp-player.png",
             textureSource: "human/human1.png",
             zIndex: 0
          })
