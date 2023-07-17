@@ -28,7 +28,7 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       description: ""
    },
    berry: {
-      textureSrc: "raw-beef.png",
+      textureSrc: "berry.png",
       name: "Berry",
       description: "Provides little sustenance, but can be used in a pinch."
    },

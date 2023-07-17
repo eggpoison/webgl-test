@@ -33,6 +33,10 @@ const CLIENT_ENTITY_INFO_RECORD: Record<EntityType, ClientEntityInfo> = {
    boulder: {
       name: "Boulder",
       description: ""
+   },
+   berry_bush: {
+      name: "Berry Bush",
+      description: ""
    }
 };
 
