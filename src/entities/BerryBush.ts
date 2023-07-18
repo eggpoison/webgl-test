@@ -20,14 +20,14 @@ class BerryBush extends Entity {
 
    private readonly renderPart: RenderPart;
 
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, numFruit: number) {
+   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, numBerries: number) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
       this.renderPart = new RenderPart({
          entity: this,
          width: BerryBush.WIDTH,
          height: BerryBush.HEIGHT,
-         textureSource: this.getTextureSourceFromNumFruit(numFruit),
+         textureSource: this.getTextureSourceFromNumBerries(numBerries),
          zIndex: 0
       });
       this.attachRenderParts([this.renderPart]);
@@ -36,12 +36,12 @@ class BerryBush extends Entity {
    public updateFromData(entityData: EntityData<"berry_bush">): void {
       super.updateFromData(entityData);
 
-      const numFruit = entityData.clientArgs[0];
-      this.renderPart.textureSource = this.getTextureSourceFromNumFruit(numFruit);
+      const numBerries = entityData.clientArgs[0];
+      this.renderPart.textureSource = this.getTextureSourceFromNumBerries(numBerries);
    }
 
-   private getTextureSourceFromNumFruit(numFruit: number): string {
-      return BerryBush.TEXTURE_SOURCES[numFruit];
+   private getTextureSourceFromNumBerries(numBerries: number): string {
+      return BerryBush.TEXTURE_SOURCES[numBerries];
    }
 }
 

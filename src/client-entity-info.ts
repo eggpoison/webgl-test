@@ -37,6 +37,10 @@ const CLIENT_ENTITY_INFO_RECORD: Record<EntityType, ClientEntityInfo> = {
    berry_bush: {
       name: "Berry Bush",
       description: ""
+   },
+   cactus: {
+      name: "Cactus",
+      description: ""
    }
 };
 

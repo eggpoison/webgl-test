@@ -133,18 +133,22 @@ abstract class Entity {
 
    public attachRenderParts(renderParts: ReadonlyArray<RenderPart>): void {
       for (const renderPart of renderParts) {
-         // Find an index for the render part
-         let idx = 0;
-         for (idx = 0; idx < this.renderParts.length; idx++) {
-            const currentRenderPart = this.renderParts[idx];
-            if (renderPart.zIndex <= currentRenderPart.zIndex) {
-               break;
-            }
-         }
-
-         // Insert the render part at the index
-         this.renderParts.splice(idx, 0, renderPart);
+         this.attachRenderPart(renderPart);
       }
+   }
+
+   public attachRenderPart(renderPart: RenderPart): void {
+      // Find an index for the render part
+      let idx = 0;
+      for (idx = 0; idx < this.renderParts.length; idx++) {
+         const currentRenderPart = this.renderParts[idx];
+         if (renderPart.zIndex <= currentRenderPart.zIndex) {
+            break;
+         }
+      }
+
+      // Insert the render part at the index
+      this.renderParts.splice(idx, 0, renderPart);
    }
 
    public tick?(): void;

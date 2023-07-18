@@ -76,6 +76,11 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       textureSrc: "leather-backpack.png",
       name: "Leather Backpack",
       description: "Allows you to hold more items."
+   },
+   cactus_spine: {
+      textureSrc: "cactus-spine.png",
+      name: "Cactus Spine",
+      description: "It's tough and spiky and gets everywhere."
    }
 };
 

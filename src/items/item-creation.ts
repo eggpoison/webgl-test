@@ -19,7 +19,8 @@ const ITEM_CLASS_RECORD: { [T in ItemType]: () => GenericItem<T> } = {
    stone_axe: () => Item,
    stone_pickaxe: () => Item,
    leather: () => Item,
-   leather_backpack: () => Item
+   leather_backpack: () => Item,
+   cactus_spine: () => Item
 };
 
 export function createItem(itemType: ItemType, count: number, id: number): Item {
