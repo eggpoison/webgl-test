@@ -22,29 +22,39 @@ class FoodItem extends Item implements FoodItemInfo {
    }
    
    public tick(): void {
-      if (this.shouldEat()) {
-         this.eatTimer -= 1 / SETTINGS.TPS;
-
-         if (this.eatTimer <= 0) {
-            this.eatTimer = this.eatTime;
-            this.sendUsePacket();
-
-            // If all the food has been eaten, stop the player from eating
-            if (this.count === 1) {
-               Game.latencyGameState.playerIsEating = false;
+      if (Game.latencyGameState.playerIsEating) {
+         if (this.canEat()) {
+            this.eatTimer -= 1 / SETTINGS.TPS;
+   
+            if (this.eatTimer <= 0) {
+               this.eatTimer = this.eatTime;
+               this.sendUsePacket();
+   
+               // If all the food has been eaten, stop the player from eating
+               if (this.count === 1) {
+                  Game.latencyGameState.playerIsEating = false;
+               }
             }
+         } else {
+            // If the player can no longer eat food without wasting it, stop eating
+            Game.latencyGameState.playerIsEating = false;
          }
       }
    }
 
-   private shouldEat(): boolean {
-      return Game.latencyGameState.playerIsEating && Game.definiteGameState.playerHealth < Player.MAX_HEALTH;
+   /**
+    * Calculates whether or not food can be eaten without wasting it.
+    */
+   private canEat(): boolean {
+      return Game.definiteGameState.playerHealth < Player.MAX_HEALTH;
    }
 
    public onRightMouseButtonDown(): void {
-      this.eatTimer = this.eatTime;
-
-      Game.latencyGameState.playerIsEating = true;
+      if (this.canEat()) {
+         this.eatTimer = this.eatTime;
+         
+         Game.latencyGameState.playerIsEating = true;
+      }
    }
 
    public onRightMouseButtonUp(): void {
