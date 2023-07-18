@@ -14,13 +14,13 @@ const getRandomFlavourText = (): string => {
 }
 
 const PauseScreen = () => {
-   const pauseFlavourText = useRef<string>(getRandomFlavourText());
+   const flavourText = useRef<string>(getRandomFlavourText());
 
    return <div id="pause-screen">
       <div className="main">
          <h1><span className="left">&gt;&gt;</span> Paused <span className="right">&lt;&lt;</span></h1>
 
-         <p>{pauseFlavourText.current}</p>
+         <p>{flavourText.current}</p>
       </div>
       
       <div className="bg"></div>

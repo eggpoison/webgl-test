@@ -26,25 +26,6 @@ const getCommandErrorMessage = (command: string): string => {
    }
 
    return "Invalid command! Mismatch of parameters.";
-   // See if there is a configuration of parameters which matches the command
-   // for (const configuration of commandSpecifications.configurations) {
-   //    // Skip if the user doesn't have the required permissions
-   //    if (!userHasCommandPermissions(configuration.permissions, CommandPermissions.dev)) continue;
-
-   //    let isValid = true;
-      
-   //    // Check each parameter in the command
-   //    for (const parameterID of configuration.parameterConfigurations) {
-   //       const parameterSpecifications = findParameterSpecifications(commandSpecifications, parameterID);
-   //       if (parameterSpecifications === null) throw new Error("Couldn't find the corresponding parameter!");
-
-   //       if (!commandComponentMatchesParameter(commandComponents[parameterID], parameterSpecifications)) {
-   //          isValid = false;
-   //          break;
-   //       }
-   //    }
-
-   //    if (isValid) return true;
 }
 
 const Terminal = () => {

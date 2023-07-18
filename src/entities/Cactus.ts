@@ -1,13 +1,10 @@
-import { EntityType, Point, HitboxType, CactusFlowerType, Vector, CactusFlowerPositions } from "webgl-test-shared";
+import { EntityType, Point, HitboxType, CactusFlowerType, Vector, CactusFlowerData } from "webgl-test-shared";
 import Hitbox from "../hitboxes/Hitbox";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 
 class Cactus extends Entity {
    private static readonly SIZE = 80;
-
-   /** Width and height of cactus flowers */
-   private static readonly FLOWER_SIZE = 20;
 
    private static readonly FLOWER_TEXTURE_SOURCES: Record<CactusFlowerType, string> = {
       [CactusFlowerType.pinkGreen]: "cactus/cactus-flower1.png",
@@ -19,7 +16,7 @@ class Cactus extends Entity {
 
    public type: EntityType = "cactus";
 
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, flowers: ReadonlyArray<CactusFlowerType>, flowerPositions: CactusFlowerPositions) {
+   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, flowers: ReadonlyArray<CactusFlowerData>) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
       this.attachRenderPart(
@@ -33,20 +30,19 @@ class Cactus extends Entity {
       );
 
       for (let i = 0; i < flowers.length; i++) {
-         const flower = flowers[i];
-         const [column, height] = flowerPositions[i];
+         const { type, column, height, size } = flowers[i];
          
          const offsetDirection = column * Math.PI / 4;
 
          // Calculate position offset
          const offsetVector = new Vector(Cactus.SIZE / 2 * height, offsetDirection).convertToPoint();
 
-         const textureSource = Cactus.FLOWER_TEXTURE_SOURCES[flower];
+         const textureSource = Cactus.FLOWER_TEXTURE_SOURCES[type];
          this.attachRenderPart(
             new RenderPart({
                entity: this,
-               width: Cactus.FLOWER_SIZE,
-               height: Cactus.FLOWER_SIZE,
+               width: size,
+               height: size,
                textureSource: textureSource,
                zIndex: 1,
                offset: () => offsetVector

@@ -3,6 +3,8 @@ import Camera from "../Camera";
 import { createWebGLProgram, gl } from "../webgl";
 import { calculateVisibleEntities } from "./entity-rendering";
 
+const CIRCLE_VERTEX_COUNT = 20;
+
 const vertexShaderText = `
 precision mediump float;
 
@@ -77,8 +79,6 @@ export function renderEntityHitboxes(): void {
                break;
             }
             case "circular": {
-               const CIRCLE_VERTEX_COUNT = 10;
-   
                const step = 2 * Math.PI / CIRCLE_VERTEX_COUNT;
    
                let previousX: number;

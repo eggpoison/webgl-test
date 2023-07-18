@@ -4,7 +4,6 @@ import ChatBox from "./ChatBox";
 import NerdVisionOverlay from "./nerd-vision/NerdVisionOverlay";
 import HealthBar from "./HealthBar";
 import PauseScreen from "./PauseScreen";
-import Settings from "./menus/Settings";
 import Hotbar from "./inventories/Hotbar";
 import CraftingMenu from "./menus/CraftingMenu";
 import HeldItem from "./HeldItem";
@@ -65,8 +64,6 @@ const GameScreen = () => {
       ) : undefined}
 
       <NerdVisionOverlay />
-
-      {settingsIsOpen ? <Settings /> : null}
 
       {isPaused && !isDead ? <PauseScreen /> : null}
    </>;

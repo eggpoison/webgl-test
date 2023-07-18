@@ -10,7 +10,6 @@ import { createEntityShaders, renderEntities } from "./rendering/entity-renderin
 import Client from "./client/Client";
 import { calculateCursorWorldPosition, getCursorX, getCursorY, handleMouseMovement, renderCursorTooltip } from "./mouse";
 import { updateDevEntityViewer } from "./components/game/nerd-vision/EntityViewer";
-import OPTIONS from "./options";
 import { createShaderStrings, createWebGLContext, createWebGLProgram, gl, resizeCanvas } from "./webgl";
 import { loadTextures } from "./textures";
 import { hidePauseScreen, showPauseScreen, toggleSettingsMenu } from "./components/game/GameScreen";
@@ -18,7 +17,7 @@ import { getGameState } from "./components/App";
 import Item from "./items/Item";
 import { createPlaceableItemProgram, renderGhostPlaceableItem } from "./items/PlaceableItem";
 import { clearPressedKeys } from "./keyboard-input";
-import { renderEntityHitboxes } from "./rendering/hitbox-rendering";
+import { createHitboxShaders, renderEntityHitboxes } from "./rendering/hitbox-rendering";
 import { updatePlayerMovement } from "./player-input";
 import DefiniteGameState from "./game-state/definite-game-state";
 import LatencyGameState from "./game-state/latency-game-state";
@@ -28,6 +27,7 @@ import { createWorldBorderShaders, renderWorldBorder } from "./rendering/world-b
 import { createSolidTileShaders, renderSolidTiles, updateSolidTileRenderData } from "./rendering/solid-tile-rendering";
 import { createLiquidTileShaders } from "./rendering/liquid-tile-rendering";
 import { createChunkBorderShaders, renderChunkBorders } from "./rendering/chunk-border-rendering";
+import { nerdVisionIsVisible } from "./components/game/nerd-vision/NerdVisionOverlay";
 
 const nightVertexShaderText = `
 precision mediump float;
@@ -204,6 +204,7 @@ abstract class Game {
          createWorldBorderShaders();
          createPlaceableItemProgram();
          createChunkBorderShaders();
+         createHitboxShaders();
 
          updateSolidTileRenderData();
          
@@ -278,13 +279,13 @@ abstract class Game {
       renderSolidTiles();
       renderItemEntities();
       renderWorldBorder();
-      if (OPTIONS.showChunkBorders) {
+      if (nerdVisionIsVisible()) {
          renderChunkBorders();
       }
 
       renderEntities();
 
-      if (OPTIONS.showEntityHitboxes) {
+      if (nerdVisionIsVisible()) {
          renderEntityHitboxes();
       }
 

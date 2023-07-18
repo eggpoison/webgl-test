@@ -9,6 +9,8 @@ import TerminalButton from "./TerminalButton";
 export let showNerdVision: () => void;
 export let hideNerdVision: () => void;
 
+export let nerdVisionIsVisible: () => boolean;
+
 const NerdVisionOverlay = () => {
    const [isEnabled, setIsEnabled] = useState(false); // Nerd vision always starts as disabled
    const [terminalIsVisible, setTerminalIsVisible] = useState(false);
@@ -23,6 +25,10 @@ const NerdVisionOverlay = () => {
          setIsEnabled(false);
       }
    }, []);
+
+   useEffect(() => {
+      nerdVisionIsVisible = () => isEnabled;
+   }, [isEnabled])
 
    const toggleTerminal = useCallback(() => {
       setTerminalIsVisible(!terminalIsVisible);

@@ -14,7 +14,8 @@ const PLAYER_ATTACK_OFFSET = 80;
 const PLAYER_ATTACK_TEST_RADIUS = 48;
 
 /** Terminal velocity of the player while moving without any modifiers. */
-const PLAYER_TERMINAL_VELOCITY = 250;
+// const PLAYER_TERMINAL_VELOCITY = 250;
+const PLAYER_TERMINAL_VELOCITY = 2500;
 /** Acceleration of the player while moving without any modifiers. */
 const PLAYER_ACCELERATION = 900;
 
@@ -188,9 +189,14 @@ export function updateInventoryIsOpen(inventoryIsOpen: boolean): void {
 }
 
 /** Creates the key listener to toggle the inventory on and off. */
-const createInventoryToggleListener = (): void => {
+const createInventoryToggleListeners = (): void => {
    addKeyListener("e", () => {
       updateInventoryIsOpen(!_inventoryIsOpen);
+   });
+   addKeyListener("escape", () => {
+      if (_inventoryIsOpen) {
+         updateInventoryIsOpen(false);
+      };
    });
 }
 
@@ -198,7 +204,7 @@ const createInventoryToggleListener = (): void => {
 export function createPlayerInputListeners(): void {
    createItemUseListeners();
    createHotbarKeyListeners();
-   createInventoryToggleListener();
+   createInventoryToggleListeners();
 }
 
 const getPlayerTerminalVelocity = (): number => {
@@ -252,7 +258,7 @@ export function updatePlayerMovement(): void {
    }
 
    if (moveDirection !== null) {
-      Player.instance.acceleration = new Vector(PLAYER_ACCELERATION, moveDirection);
+      Player.instance.acceleration = new Vector(getPlayerAcceleration(), moveDirection);
       Player.instance.terminalVelocity = getPlayerTerminalVelocity();
    } else {
       Player.instance.acceleration = null;
