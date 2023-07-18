@@ -34,6 +34,8 @@ class BerryBush extends Entity {
    }
 
    public updateFromData(entityData: EntityData<"berry_bush">): void {
+      super.updateFromData(entityData);
+
       const numFruit = entityData.clientArgs[0];
       this.renderPart.textureSource = this.getTextureSourceFromNumFruit(numFruit);
    }
