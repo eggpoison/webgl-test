@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ItemEntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, CraftingRecipe, PlayerInventoryType, PlaceablePlayerInventoryType, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, ItemData, InventoryData, ItemSlotData } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ItemEntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, CraftingRecipe, PlayerInventoryType, PlaceablePlayerInventoryType, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, ItemData, InventoryData, ItemSlotData, EntityType } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -176,7 +176,7 @@ abstract class Client {
    /**
     * Updates the client's entities to match those in the server
     */
-   private static updateEntities(entityDataArray: ReadonlyArray<EntityData>): void {
+   private static updateEntities(entityDataArray: ReadonlyArray<EntityData<EntityType>>): void {
       const clientKnownEntityIDs: Array<number> = Object.keys(Game.board.entities).map(idString => Number(idString));
 
       // Remove the player from the list of known entities so the player isn't removed
@@ -307,7 +307,7 @@ abstract class Client {
       }
    }
 
-   public static createEntityFromData(entityData: EntityData): void {
+   public static createEntityFromData(entityData: EntityData<EntityType>): void {
       const position = Point.unpackage(entityData.position);
 
       // Create the hitboxes

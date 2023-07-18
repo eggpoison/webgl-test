@@ -14,9 +14,9 @@ const PLAYER_ATTACK_OFFSET = 80;
 const PLAYER_ATTACK_TEST_RADIUS = 48;
 
 /** Terminal velocity of the player while moving without any modifiers. */
-const PLAYER_TERMINAL_VELOCITY = 300;
+const PLAYER_TERMINAL_VELOCITY = 250;
 /** Acceleration of the player while moving without any modifiers. */
-const PLAYER_ACCELERATION = 1000;
+const PLAYER_ACCELERATION = 900;
 
 /** Terminal velocity of the player while slowed. */
 const PLAYER_SLOW_TERMINAL_VELOCITY = 150;

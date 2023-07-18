@@ -294,7 +294,7 @@ abstract class Entity {
       return Game.board.getChunk(x, y);
    }
 
-   public updateFromData(entityData: EntityData): void {
+   public updateFromData(entityData: EntityData<EntityType>): void {
       this.position = Point.unpackage(entityData.position);
       this.velocity = entityData.velocity !== null ? Vector.unpackage(entityData.velocity) : null;
       this.acceleration = entityData.acceleration !== null ? Vector.unpackage(entityData.acceleration) : null;

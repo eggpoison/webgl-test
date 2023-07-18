@@ -20,7 +20,7 @@ class RenderPart implements RenderPartInfo {
    public readonly offset?: () => Point;
    public readonly width: number;
    public readonly height: number;
-   public readonly textureSource: string;
+   public textureSource: string;
    public readonly zIndex: number;
    
    constructor(renderPartInfo: RenderPartInfo) {
