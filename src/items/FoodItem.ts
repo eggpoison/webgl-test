@@ -10,7 +10,6 @@ class FoodItem extends Item implements FoodItemInfo {
 
    private eatTimer: number;
 
-   // eslint-disable-next-line no-empty-pattern
    constructor(itemType: ItemType, count: number, id: number, { stackSize, healAmount, eatTime }: FoodItemInfo) {
       super(itemType, count, id);
 

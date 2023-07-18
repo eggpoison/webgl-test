@@ -1,4 +1,4 @@
-import { EntityType, Point, HitboxType, CactusFlowerType, Vector, CactusFlowerData } from "webgl-test-shared";
+import { EntityType, Point, HitboxType, Vector, CactusFlowerData, CactusFlowerSize } from "webgl-test-shared";
 import Hitbox from "../hitboxes/Hitbox";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
@@ -6,13 +6,12 @@ import Entity from "./Entity";
 class Cactus extends Entity {
    private static readonly SIZE = 80;
 
-   private static readonly FLOWER_TEXTURE_SOURCES: Record<CactusFlowerType, string> = {
-      [CactusFlowerType.pinkGreen]: "cactus/cactus-flower1.png",
-      [CactusFlowerType.pinkRed]: "cactus/cactus-flower2.png",
-      [CactusFlowerType.white]: "cactus/cactus-flower3.png",
-      [CactusFlowerType.pinkYellow]: "cactus/cactus-flower4.png",
-      [CactusFlowerType.yellow]: "cactus/cactus-flower5.png"
-   }
+   private static readonly FLOWER_SIZES: Record<number, number> = {
+      0: 16,
+      1: 20,
+      2: 20,
+      3: 16
+   };
 
    public type: EntityType = "cactus";
 
@@ -29,21 +28,22 @@ class Cactus extends Entity {
          })
       );
 
+      // Attach flower render parts
       for (let i = 0; i < flowers.length; i++) {
          const { type, column, height, size } = flowers[i];
          
-         const offsetDirection = column * Math.PI / 4;
-
          // Calculate position offset
+         const offsetDirection = column * Math.PI / 4;
          const offsetVector = new Vector(Cactus.SIZE / 2 * height, offsetDirection).convertToPoint();
 
-         const textureSource = Cactus.FLOWER_TEXTURE_SOURCES[type];
+         const flowerSize = size === CactusFlowerSize.small ? 16 : 20;
+
          this.attachRenderPart(
             new RenderPart({
                entity: this,
-               width: size,
-               height: size,
-               textureSource: textureSource,
+               width: flowerSize,
+               height: flowerSize,
+               textureSource: `cactus/cactus-flower-${size === CactusFlowerSize.small ? "small" : "large"}-${type + 1}.png`,
                zIndex: 1,
                offset: () => offsetVector
             })

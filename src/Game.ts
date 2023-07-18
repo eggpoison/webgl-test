@@ -192,28 +192,32 @@ abstract class Game {
     * Prepares the game to be played. Called once just before the game starts.
     */
    public static async initialise(): Promise<void> {
-      return new Promise(async resolve => {
-         createWebGLContext();
-         createShaderStrings();
-         createTextCanvasContext();
-         
-         createSolidTileShaders();
-         createLiquidTileShaders();
-         createEntityShaders();
-         createItemEntityShaders();
-         createWorldBorderShaders();
-         createPlaceableItemProgram();
-         createChunkBorderShaders();
-         createHitboxShaders();
-
+      if (!Game.hasInitialised) {
+         return new Promise(async resolve => {
+            createWebGLContext();
+            createShaderStrings();
+            createTextCanvasContext();
+            
+            createSolidTileShaders();
+            createLiquidTileShaders();
+            createEntityShaders();
+            createItemEntityShaders();
+            createWorldBorderShaders();
+            createPlaceableItemProgram();
+            createChunkBorderShaders();
+            createHitboxShaders();
+   
+            updateSolidTileRenderData();
+            
+            await loadTextures();
+   
+            this.hasInitialised = true;
+   
+            resolve();
+         });
+      } else {
          updateSolidTileRenderData();
-         
-         await loadTextures();
-
-         this.hasInitialised = true;
-
-         resolve();
-      });
+      }
    }
 
    private static update(): void {
