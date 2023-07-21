@@ -21,11 +21,11 @@ import { createHitboxShaders, renderEntityHitboxes } from "./rendering/hitbox-re
 import { updatePlayerMovement } from "./player-input";
 import DefiniteGameState from "./game-state/definite-game-state";
 import LatencyGameState from "./game-state/latency-game-state";
-import { updateDebugScreenCurrentTime, updateDebugScreenFPS, updateDebugScreenTicks } from "./components/game/nerd-vision/GameInfoDisplay";
+import { clearServerTicks, updateDebugScreenCurrentTime, updateDebugScreenFPS, updateDebugScreenTicks } from "./components/game/nerd-vision/GameInfoDisplay";
 import { createItemEntityShaders, renderItemEntities } from "./rendering/item-entity-rendering";
 import { createWorldBorderShaders, renderWorldBorder } from "./rendering/world-border-rendering";
-import { createSolidTileShaders, renderSolidTiles, updateSolidTileRenderData } from "./rendering/solid-tile-rendering";
-import { createLiquidTileShaders } from "./rendering/liquid-tile-rendering";
+import { createRenderChunkBuffers, createSolidTileShaders, renderSolidTiles } from "./rendering/tile-rendering/solid-tile-rendering";
+import { createLiquidTileShaders } from "./rendering/tile-rendering/liquid-tile-rendering";
 import { createChunkBorderShaders, renderChunkBorders } from "./rendering/chunk-border-rendering";
 import { nerdVisionIsVisible } from "./components/game/nerd-vision/NerdVisionOverlay";
 
@@ -206,8 +206,8 @@ abstract class Game {
             createPlaceableItemProgram();
             createChunkBorderShaders();
             createHitboxShaders();
-   
-            updateSolidTileRenderData();
+
+            createRenderChunkBuffers();
             
             await loadTextures();
    
@@ -216,7 +216,7 @@ abstract class Game {
             resolve();
          });
       } else {
-         updateSolidTileRenderData();
+         createRenderChunkBuffers();
       }
    }
 
@@ -261,6 +261,7 @@ abstract class Game {
       numRenders++;
       if (currentRenderTime !== lastRenderTime) {
          updateDebugScreenFPS(numRenders);
+         clearServerTicks();
          numRenders = 0;
       }
       lastRenderTime = currentRenderTime;

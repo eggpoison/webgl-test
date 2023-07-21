@@ -1,7 +1,7 @@
 import { SETTINGS } from "webgl-test-shared";
-import { TILE_TYPE_RENDER_INFO_RECORD, LiquidTileTypeRenderInfo } from "../tile-type-render-info";
-import { createWebGLProgram, gl } from "../webgl";
-import Game from "../Game";
+import { TILE_TYPE_RENDER_INFO_RECORD, LiquidTileTypeRenderInfo } from "../../tile-type-render-info";
+import { createWebGLProgram, gl } from "../../webgl";
+import Game from "../../Game";
 
 const vertexShaderText = `
 precision mediump float;

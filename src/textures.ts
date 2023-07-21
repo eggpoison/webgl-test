@@ -40,6 +40,7 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/cactus/cactus-flower-large-2.png",
    "entities/cactus/cactus-flower-large-3.png",
    "entities/cactus/cactus-flower-large-4.png",
+   "entities/yeti.png",
 ]
 
 const textureSourceIsAlreadyIncluded = (src: string): boolean => {

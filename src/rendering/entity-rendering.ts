@@ -166,10 +166,12 @@ const calculateRenderPartCornerPositions = (entity: Entity, renderPart: RenderPa
    let bottomRight = new Point(renderPartPosition.x + renderPart.width / 2, renderPartPosition.y - renderPart.height / 2);
    
    // Rotate the corners
-   topLeft = rotatePoint(topLeft, entity.renderPosition, entity.rotation);
-   topRight = rotatePoint(topRight, entity.renderPosition, entity.rotation);
-   bottomLeft = rotatePoint(bottomLeft, entity.renderPosition, entity.rotation);
-   bottomRight = rotatePoint(bottomRight, entity.renderPosition, entity.rotation);
+   const extraRotation = typeof renderPart.rotation !== "undefined" ? renderPart.rotation : 0;
+   const rotation = entity.rotation + extraRotation;
+   topLeft = rotatePoint(topLeft, entity.renderPosition, rotation);
+   topRight = rotatePoint(topRight, entity.renderPosition, rotation);
+   bottomLeft = rotatePoint(bottomLeft, entity.renderPosition, rotation);
+   bottomRight = rotatePoint(bottomRight, entity.renderPosition, rotation);
 
    // Convert the corners to screen space
    topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));
@@ -230,10 +232,6 @@ export function renderEntities(): void {
    }
 
    renderRenderParts(categorisedRenderParts, imageRenderPartCornerPositionsRecord);
-
-   if (OPTIONS.showEntityHitboxes) {
-      renderEntityHitboxes();
-   }
 }
 
 /** Sort the render parts based on their textures */
@@ -372,91 +370,4 @@ const renderRenderParts = (renderParts: CategorisedRenderParts, cornerPositionsR
 
    gl.disable(gl.BLEND);
    gl.blendFunc(gl.ONE, gl.ZERO);
-}
-
-const renderEntityHitboxes = (): void => {
-   gl.useProgram(hitboxProgram);
-
-   // Calculate vertices
-   const vertices = new Array<number>();
-   for (const entity of Object.values(Game.board.entities)) {
-      for (const hitbox of entity.hitboxes) {
-         switch (hitbox.info.type) {
-            case "rectangular": {
-               const x1 = entity.renderPosition.x - hitbox.info.width / 2;
-               const x2 = entity.renderPosition.x + hitbox.info.width / 2;
-               const y1 = entity.renderPosition.y - hitbox.info.height / 2;
-               const y2 = entity.renderPosition.y + hitbox.info.height / 2;
-   
-               let topLeft = new Point(x1, y2);
-               let topRight = new Point(x2, y2);
-               let bottomRight = new Point(x2, y1);
-               let bottomLeft = new Point(x1, y1);
-   
-               // Rotate the points to match the entity's rotation
-               topLeft = rotatePoint(topLeft, entity.renderPosition, entity.rotation);
-               topRight = rotatePoint(topRight, entity.renderPosition, entity.rotation);
-               bottomRight = rotatePoint(bottomRight, entity.renderPosition, entity.rotation);
-               bottomLeft = rotatePoint(bottomLeft, entity.renderPosition, entity.rotation);
-   
-               topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));
-               topRight = new Point(Camera.calculateXCanvasPosition(topRight.x), Camera.calculateYCanvasPosition(topRight.y));
-               bottomRight = new Point(Camera.calculateXCanvasPosition(bottomRight.x), Camera.calculateYCanvasPosition(bottomRight.y));
-               bottomLeft = new Point(Camera.calculateXCanvasPosition(bottomLeft.x), Camera.calculateYCanvasPosition(bottomLeft.y));
-   
-               vertices.push(
-                  topLeft.x, topLeft.y,
-                  topRight.x, topRight.y,
-                  topRight.x, topRight.y,
-                  bottomRight.x, bottomRight.y,
-                  bottomRight.x, bottomRight.y,
-                  bottomLeft.x, bottomLeft.y,
-                  bottomLeft.x, bottomLeft.y,
-                  topLeft.x, topLeft.y
-               );
-               break;
-            }
-            case "circular": {
-               const CIRCLE_VERTEX_COUNT = 10;
-   
-               const step = 2 * Math.PI / CIRCLE_VERTEX_COUNT;
-   
-               let previousX: number;
-               let previousY: number;
-            
-               // Add the outer vertices
-               for (let radians = 0, n = 0; n <= CIRCLE_VERTEX_COUNT; radians += step, n++) {
-                  if (n > 1) {
-                     vertices.push(previousX!, previousY!);
-                  }
-   
-                  // Trig shenanigans to get x and y coords
-                  const worldX = Math.cos(radians) * hitbox.info.radius + entity.renderPosition.x;
-                  const worldY = Math.sin(radians) * hitbox.info.radius + entity.renderPosition.y;
-                  
-                  const screenX = Camera.calculateXCanvasPosition(worldX);
-                  const screenY = Camera.calculateYCanvasPosition(worldY);
-                  
-                  vertices.push(screenX, screenY);
-   
-                  previousX = screenX;
-                  previousY = screenY;
-               }
-   
-               break;
-            }
-         }
-      }
-   }
-
-   const buffer = gl.createBuffer();
-   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-
-   const positionAttribLocation = gl.getAttribLocation(hitboxProgram, "vertPosition");
-   gl.vertexAttribPointer(positionAttribLocation, 2, gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
-
-   gl.enableVertexAttribArray(positionAttribLocation);
-
-   gl.drawArrays(gl.LINES, 0, vertices.length / 2);
 }

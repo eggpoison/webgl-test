@@ -13,6 +13,8 @@ export interface RenderPartInfo {
    readonly textureSource: string;
    /** Render priority of the render part in relation to its entity's other render parts. */
    readonly zIndex: number;
+   /** Rotation of the render part in radians */
+   readonly rotation?: number;
 }
 
 class RenderPart implements RenderPartInfo {
@@ -22,14 +24,19 @@ class RenderPart implements RenderPartInfo {
    public readonly height: number;
    public textureSource: string;
    public readonly zIndex: number;
+   public readonly rotation?: number;
    
    constructor(renderPartInfo: RenderPartInfo) {
+      if (typeof renderPartInfo.textureSource === "undefined") {
+         throw new Error("undefined texture source!");
+      }
       this.entity = renderPartInfo.entity;
       this.offset = renderPartInfo.offset;
       this.width = renderPartInfo.width;
       this.height = renderPartInfo.height;
       this.textureSource = renderPartInfo.textureSource;
       this.zIndex = renderPartInfo.zIndex;
+      this.rotation = renderPartInfo.rotation;
    }
 }
 

@@ -45,7 +45,8 @@ class Cactus extends Entity {
                height: flowerSize,
                textureSource: `cactus/cactus-flower-${size === CactusFlowerSize.small ? "small" : "large"}-${type + 1}.png`,
                zIndex: 1,
-               offset: () => offsetVector
+               offset: () => offsetVector,
+               rotation: 2 * Math.PI * Math.random()
             })
          );
       }

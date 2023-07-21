@@ -10,6 +10,7 @@ import Zombie from "./entities/Zombie";
 import Hitbox from "./hitboxes/Hitbox";
 import BerryBush from "./entities/BerryBush";
 import Cactus from "./entities/Cactus";
+import Yeti from "./entities/Yeti";
 
 export type EntityClassType<T extends EntityType> = new (position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, ...clientParams: Parameters<EntityInfoClientArgs[T]>) => Entity;
 
@@ -22,7 +23,8 @@ const ENTITY_CLASS_RECORD: { [id in EntityType]: () => EntityClassType<id>} = {
    workbench: () => Workbench,
    boulder: () => Boulder,
    berry_bush: () => BerryBush,
-   cactus: () => Cactus
+   cactus: () => Cactus,
+   yeti: () => Yeti
 };
 
 export default ENTITY_CLASS_RECORD;

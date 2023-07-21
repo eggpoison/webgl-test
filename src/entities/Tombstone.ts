@@ -3,6 +3,15 @@ import Hitbox from "../hitboxes/Hitbox";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 
+const TOMBSTONE_DEATH_MESSAGES: ReadonlyArray<string> = [
+   "__NAME__ forgot their glasses when driving near a cliff.",
+   "__NAME__ tried to hug a yeti."
+];
+
+const NAMES: ReadonlyArray<string> = [
+   "James Wilson"
+];
+
 class Tombstone extends Entity {
    public readonly type = "tombstone";
    

@@ -1,5 +1,6 @@
 import { Point, SETTINGS } from "webgl-test-shared";
 import { halfWindowHeight, halfWindowWidth, windowHeight, windowWidth } from "./webgl";
+import { RENDER_CHUNK_SIZE, WORLD_RENDER_CHUNK_SIZE } from "./rendering/tile-rendering/solid-tile-rendering";
 
 export type VisibleChunkBounds = [minX: number, maxX: number, minY: number, maxY: number];
 
@@ -28,6 +29,17 @@ abstract class Camera {
 
    public static getVisibleChunkBounds(): VisibleChunkBounds {
       return this.visibleChunkBounds;
+   }
+
+   public static calculateVisibleRenderChunkBounds(): VisibleChunkBounds {
+      const unitsInChunk = SETTINGS.TILE_SIZE * RENDER_CHUNK_SIZE;
+
+      const minX = Math.max(Math.floor((this.position.x - windowWidth / 2) / unitsInChunk), 0);
+      const maxX = Math.min(Math.floor((this.position.x + windowWidth / 2) / unitsInChunk), WORLD_RENDER_CHUNK_SIZE - 1);
+      const minY = Math.max(Math.floor((this.position.y - windowHeight / 2) / unitsInChunk), 0);
+      const maxY = Math.min(Math.floor((this.position.y + windowHeight / 2) / unitsInChunk), WORLD_RENDER_CHUNK_SIZE - 1);
+
+      return [minX, maxX, minY, maxY];
    }
 
    public static setCameraPosition(position: Point): void {

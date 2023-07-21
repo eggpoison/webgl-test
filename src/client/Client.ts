@@ -19,6 +19,8 @@ import { BackpackInventoryMenu_setBackpackItemSlots } from "../components/game/i
 import { setHeldItemVisual } from "../components/game/HeldItem";
 import { CraftingMenu_setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
 import { updateHealthBar } from "../components/game/HealthBar";
+import { registerServerTick } from "../components/game/nerd-vision/GameInfoDisplay";
+import { updateRenderChunkFromTileBuffer } from "../rendering/tile-rendering/solid-tile-rendering";
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -65,6 +67,8 @@ abstract class Client {
             this.socket.on("game_data_packet", gameDataPacket => {
                // Only unload game packets when the game is running
                if (Game.getIsPaused() || !Game.isRunning || !Game.isSynced) return;
+
+               registerServerTick();
    
                this.unloadGameDataPacket(gameDataPacket);
             });
@@ -304,6 +308,8 @@ abstract class Client {
          const tile = Game.board.getTile(tileUpdate.x, tileUpdate.y);
          tile.type = tileUpdate.type;
          tile.isWall = tileUpdate.isWall;
+         
+         updateRenderChunkFromTileBuffer(tileUpdate);
       }
    }
 

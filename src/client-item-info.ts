@@ -81,6 +81,11 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       textureSrc: "cactus-spine.png",
       name: "Cactus Spine",
       description: "It's tough and spiky and gets everywhere."
+   },
+   yeti_hide: {
+      textureSrc: "yeti-hide.png",
+      name: "Yeti Hide",
+      description: "An extremely tough half-frost half-flesh hide."
    }
 };
 

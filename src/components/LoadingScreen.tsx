@@ -40,6 +40,7 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
                   if (connectionWasSuccessful) {
                      setStatus("sending_player_data");
                   } else {
+                     console.log("wasn't successful");
                      setStatus("connection_error");
                   }
                })();
