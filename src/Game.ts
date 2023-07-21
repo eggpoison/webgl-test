@@ -283,14 +283,10 @@ abstract class Game {
 
       renderSolidTiles();
       renderItemEntities();
+      // renderEntities();
       renderWorldBorder();
       if (nerdVisionIsVisible()) {
          renderChunkBorders();
-      }
-
-      renderEntities();
-
-      if (nerdVisionIsVisible()) {
          renderEntityHitboxes();
       }
 
