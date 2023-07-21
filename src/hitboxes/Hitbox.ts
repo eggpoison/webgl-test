@@ -1,4 +1,4 @@
-import { HitboxInfo, HitboxType } from "webgl-test-shared";
+import { HitboxInfo, HitboxType, Point } from "webgl-test-shared";
 import Entity from "../entities/Entity";
 
 export type HitboxBounds = [minX: number, maxX: number, minY: number, maxY: number];
@@ -9,6 +9,8 @@ abstract class Hitbox<T extends HitboxType> {
 
    /** The bounds of the hitbox since the last physics update */
    public bounds!: HitboxBounds;
+
+   public position!: Point;
 
    constructor(hitboxInfo: HitboxInfo<T>) {
       this.info = hitboxInfo;
@@ -22,6 +24,13 @@ abstract class Hitbox<T extends HitboxType> {
 
    public updateHitboxBounds(): void {
       this.bounds = this.calculateHitboxBounds();
+   }
+
+   public updatePosition(): void {
+      this.position = this.entity.position.copy();
+      if (typeof this.info.offset !== "undefined") {
+         this.position.add(this.info.offset);
+      }
    }
 
    public abstract isColliding(otherHitbox: Hitbox<HitboxType>): boolean;

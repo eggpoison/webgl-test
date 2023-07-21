@@ -1,4 +1,4 @@
-import { EntityType, Point, HitboxType, Vector, CactusFlowerData, CactusFlowerSize } from "webgl-test-shared";
+import { EntityType, Point, HitboxType, Vector, CactusFlowerSize, CactusBodyFlowerData, CactusLimbData, randFloat, lerp } from "webgl-test-shared";
 import Hitbox from "../hitboxes/Hitbox";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
@@ -6,16 +6,13 @@ import Entity from "./Entity";
 class Cactus extends Entity {
    private static readonly SIZE = 80;
 
-   private static readonly FLOWER_SIZES: Record<number, number> = {
-      0: 16,
-      1: 20,
-      2: 20,
-      3: 16
-   };
+   private static readonly LIMB_SIZE = 36;
+
+   private static readonly LIMB_PADDING = 10;
 
    public type: EntityType = "cactus";
 
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, flowers: ReadonlyArray<CactusFlowerData>) {
+   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, flowers: ReadonlyArray<CactusBodyFlowerData>, limbs: ReadonlyArray<CactusLimbData>) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
       this.attachRenderPart(
@@ -24,31 +21,77 @@ class Cactus extends Entity {
             width: Cactus.SIZE,
             height: Cactus.SIZE,
             textureSource: "cactus/cactus.png",
-            zIndex: 0
+            zIndex: 1
          })
       );
 
       // Attach flower render parts
       for (let i = 0; i < flowers.length; i++) {
-         const { type, column, height, size } = flowers[i];
+         const { type, size, column, height } = flowers[i];
          
          // Calculate position offset
          const offsetDirection = column * Math.PI / 4;
-         const offsetVector = new Vector(Cactus.SIZE / 2 * height, offsetDirection).convertToPoint();
+         const offsetVector = new Vector(lerp(10, Cactus.SIZE / 2 - Cactus.LIMB_PADDING, height), offsetDirection).convertToPoint();
 
-         const flowerSize = size === CactusFlowerSize.small ? 16 : 20;
+         let flowerSize = (type === 4 || size === CactusFlowerSize.large) ? 20 : 16;
 
          this.attachRenderPart(
             new RenderPart({
                entity: this,
                width: flowerSize,
                height: flowerSize,
-               textureSource: `cactus/cactus-flower-${size === CactusFlowerSize.small ? "small" : "large"}-${type + 1}.png`,
-               zIndex: 1,
+               textureSource: this.getFlowerTextureSource(type, size),
+               zIndex: 2,
                offset: () => offsetVector,
                rotation: 2 * Math.PI * Math.random()
             })
          );
+      }
+
+      // Limbs
+      for (let i = 0; i < limbs.length; i++) {
+         const { direction, flower } = limbs[i];
+
+         const offset = new Vector(Cactus.SIZE / 2, direction + Math.PI/2).convertToPoint();
+
+         this.attachRenderPart(
+            new RenderPart({
+               entity: this,
+               width: Cactus.LIMB_SIZE,
+               height: Cactus.LIMB_SIZE,
+               textureSource: "cactus/cactus-limb.png",
+               zIndex: 0,
+               offset: () => offset,
+               rotation: 2 * Math.PI * Math.random()
+            })
+         );
+         
+         if (typeof flower !== "undefined") {
+            const { type, height, direction } = flower;
+
+            const flowerOffset = new Vector(randFloat(6, 10) * height, direction).convertToPoint();
+            flowerOffset.add(offset);
+
+            this.attachRenderPart(
+               new RenderPart({
+                  entity: this,
+                  width: 16,
+                  height: 16,
+                  textureSource: this.getFlowerTextureSource(type, CactusFlowerSize.small),
+                  zIndex: 1,
+                  offset: () => flowerOffset,
+                  rotation: 2 * Math.PI * Math.random()
+               })
+            );
+         }
+      }
+   }
+
+   private getFlowerTextureSource(type: number, size: CactusFlowerSize): string {
+      if (type === 4) {
+         return "cactus/cactus-flower-5.png";
+      } else {
+         return `cactus/cactus-flower-${size === CactusFlowerSize.small ? "small" : "large"}-${type + 1}.png`;
       }
    }
 }

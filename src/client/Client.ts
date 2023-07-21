@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ItemEntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, CraftingRecipe, PlayerInventoryType, PlaceablePlayerInventoryType, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, ItemData, InventoryData, ItemSlotData, EntityType } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, CraftingRecipe, PlayerInventoryType, PlaceablePlayerInventoryType, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, ItemData, InventoryData, ItemSlotData, EntityType, HitboxData, HitboxInfo } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -151,9 +151,9 @@ abstract class Client {
    public static unloadGameDataPacket(gameDataPacket: GameDataPacket): void {
       Game.ticks = gameDataPacket.serverTicks;
       Game.time = gameDataPacket.serverTime;
-      
+
       this.updateEntities(gameDataPacket.entityDataArray);
-      this.updateItemEntities(gameDataPacket.itemEntityDataArray);
+      this.updateItemEntities(gameDataPacket.droppedItemDataArray);
       this.updatePlayerInventory(gameDataPacket.inventory);
       this.registerTileUpdates(gameDataPacket.tileUpdates);
 
@@ -206,7 +206,7 @@ abstract class Client {
       }
    }
 
-   private static updateItemEntities(serverItemEntityDataArray: ReadonlyArray<ItemEntityData>): void {
+   private static updateItemEntities(serverItemEntityDataArray: ReadonlyArray<DroppedItemData>): void {
       const knownItemEntityIDs = Object.keys(Game.board.itemEntities).map(stringID => Number(stringID));
 
       for (const serverItemData of serverItemEntityDataArray) {
@@ -290,7 +290,7 @@ abstract class Client {
       setHeldItemVisual(Game.definiteGameState.heldItemSlot);
    }
 
-   private static createItemFromServerItemData(serverItemEntityData: ItemEntityData): void {
+   private static createItemFromServerItemData(serverItemEntityData: DroppedItemData): void {
       const position = Point.unpackage(serverItemEntityData.position); 
       const velocity = serverItemEntityData.velocity !== null ? Vector.unpackage(serverItemEntityData.velocity) : null;
 
@@ -319,13 +319,15 @@ abstract class Client {
       // Create the hitboxes
       const hitboxes = new Set<Hitbox<HitboxType>>();
       for (const hitboxData of entityData.hitboxes) {
-         switch (hitboxData.type) {
+         const hitboxInfo = this.createHitboxInfo(hitboxData);
+         
+         switch (hitboxInfo.type) {
             case "circular": {
-               hitboxes.add(new CircularHitbox(hitboxData));
+               hitboxes.add(new CircularHitbox(hitboxInfo));
                break;
             }
             case "rectangular": {
-               hitboxes.add(new RectangularHitbox(hitboxData));
+               hitboxes.add(new RectangularHitbox(hitboxInfo));
                break;
             }
          }
@@ -339,6 +341,26 @@ abstract class Client {
       entity.acceleration = entityData.acceleration !== null ? Vector.unpackage(entityData.acceleration) : null
       entity.rotation = entityData.rotation;
       entity.special = entityData.special;
+   }
+
+   private static createHitboxInfo(hitboxData: HitboxData<HitboxType>): HitboxInfo<HitboxType> {
+      switch (hitboxData.type) {
+         case "circular": {
+            return {
+               type: "circular",
+               radius: hitboxData.radius,
+               offset: typeof hitboxData.offset !== "undefined" ? Point.unpackage(hitboxData.offset) : undefined
+            };
+         }
+         case "rectangular": {
+            return {
+               type: "rectangular",
+               width: hitboxData.width,
+               height: hitboxData.height,
+               offset: typeof hitboxData.offset !== "undefined" ? Point.unpackage(hitboxData.offset) : undefined
+            };
+         }
+      }
    }
 
    private static registerGameDataSyncPacket(gameDataSyncPacket: GameDataSyncPacket): void {

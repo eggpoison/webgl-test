@@ -31,6 +31,13 @@ class RectangularHitbox extends Hitbox<"rectangular"> {
       bottomLeft = rotatePoint(bottomLeft, this.entity.position, this.entity.rotation);
       bottomRight = rotatePoint(bottomRight, this.entity.position, this.entity.rotation);
 
+      if (typeof this.info.offset !== "undefined") {
+         topLeft.add(this.info.offset);
+         topRight.add(this.info.offset);
+         bottomLeft.add(this.info.offset);
+         bottomRight.add(this.info.offset);
+      }
+
       this.vertexPositions = [topLeft, topRight, bottomLeft, bottomRight];
    }
 

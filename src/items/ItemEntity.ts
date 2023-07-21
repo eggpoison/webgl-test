@@ -1,4 +1,4 @@
-import { BaseItemInfo, ItemType, Point, ItemEntityData, Vector } from "webgl-test-shared";
+import { BaseItemInfo, ItemType, Point, DroppedItemData, Vector } from "webgl-test-shared";
 import Chunk from "../Chunk";
 import Game from "../Game";
 
@@ -40,7 +40,7 @@ class ItemEntity implements BaseItemInfo {
       delete Game.board.itemEntities[this.id];
    }
 
-   public updateFromData(data: ItemEntityData): void {
+   public updateFromData(data: DroppedItemData): void {
       this.position = Point.unpackage(data.position);
       this.velocity = data.velocity !== null ? Vector.unpackage(data.velocity) : null;
 

@@ -3,7 +3,6 @@ import Camera from "../Camera";
 import Entity from "../entities/Entity";
 import Game from "../Game";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import OPTIONS from "../options";
 import RenderPart from "../render-parts/RenderPart";
 import { getTexture } from "../textures";
 import { createShaderString, createWebGLProgram, gl, MAX_ACTIVE_TEXTURE_UNITS, windowHeight, windowWidth } from "../webgl";
@@ -65,28 +64,7 @@ void main() {
    entityRenderingFragmentShaderText = shaderString
 });
 
-// 
-// Hitbox shaders
-// 
-const hitboxVertexShaderText = `
-precision mediump float;
-
-attribute vec2 vertPosition;
-
-void main() {
-   gl_Position = vec4(vertPosition, 0.0, 1.0);   
-}
-`;
-const hitboxFragmentShaderText = `
-precision mediump float;
-
-void main() {
-   gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);   
-}
-`;
-
 let imageRenderingProgram: WebGLProgram;
-let hitboxProgram: WebGLProgram;
 
 let imageRenderingProgramTexturesUniformLocation: WebGLUniformLocation;
 let imageRenderingProgramPosAttribLocation: GLint;
@@ -96,7 +74,6 @@ let imageRenderingProgramTextureIdxAttribLocation: GLint;
 
 export function createEntityShaders(): void {
    imageRenderingProgram = createWebGLProgram(entityRenderingVertexShaderText, entityRenderingFragmentShaderText);
-   hitboxProgram = createWebGLProgram(hitboxVertexShaderText, hitboxFragmentShaderText);
 
    imageRenderingProgramTexturesUniformLocation = gl.getUniformLocation(imageRenderingProgram, "u_textures")!;
    imageRenderingProgramPosAttribLocation = gl.getAttribLocation(imageRenderingProgram, "a_position");
@@ -147,6 +124,7 @@ export function calculateVisibleEntities(): Set<Entity> {
 
 const calculateRenderPartCornerPositions = (entity: Entity, renderPart: RenderPart): [tl: Point, tr: Point, bl: Point, br: Point] => {
    let renderPartPosition = entity.renderPosition.copy();
+   // let renderPartOffset!: Vector;
    
    // Add any offset
    if (typeof renderPart.offset !== "undefined") {
@@ -156,6 +134,7 @@ const calculateRenderPartCornerPositions = (entity: Entity, renderPart: RenderPa
       } else {
          offset = renderPart.offset;
       }
+      // renderPartOffset = offset.convertToVector();
       renderPartPosition.add(offset);
    }
 
@@ -165,13 +144,20 @@ const calculateRenderPartCornerPositions = (entity: Entity, renderPart: RenderPa
    let bottomLeft = new Point(renderPartPosition.x - renderPart.width / 2, renderPartPosition.y - renderPart.height / 2);
    let bottomRight = new Point(renderPartPosition.x + renderPart.width / 2, renderPartPosition.y - renderPart.height / 2);
    
-   // Rotate the corners
-   const extraRotation = typeof renderPart.rotation !== "undefined" ? renderPart.rotation : 0;
-   const rotation = entity.rotation + extraRotation;
-   topLeft = rotatePoint(topLeft, entity.renderPosition, rotation);
-   topRight = rotatePoint(topRight, entity.renderPosition, rotation);
-   bottomLeft = rotatePoint(bottomLeft, entity.renderPosition, rotation);
-   bottomRight = rotatePoint(bottomRight, entity.renderPosition, rotation);
+   // Rotate the corners into position
+   topLeft = rotatePoint(topLeft, entity.renderPosition, entity.rotation);
+   topRight = rotatePoint(topRight, entity.renderPosition, entity.rotation);
+   bottomLeft = rotatePoint(bottomLeft, entity.renderPosition, entity.rotation);
+   bottomRight = rotatePoint(bottomRight, entity.renderPosition, entity.rotation);
+   renderPartPosition = rotatePoint(renderPartPosition, entity.renderPosition, entity.rotation);
+
+   // Render part rotation
+   if (typeof renderPart.rotation !== "undefined") {
+      topLeft = rotatePoint(topLeft, renderPartPosition, renderPart.rotation);
+      topRight = rotatePoint(topRight, renderPartPosition, renderPart.rotation);
+      bottomLeft = rotatePoint(bottomLeft, renderPartPosition, renderPart.rotation);
+      bottomRight = rotatePoint(bottomRight, renderPartPosition, renderPart.rotation);
+   }
 
    // Convert the corners to screen space
    topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));

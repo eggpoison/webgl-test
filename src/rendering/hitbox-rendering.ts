@@ -43,12 +43,17 @@ export function renderEntityHitboxes(): void {
    const vertices = new Array<number>();
    for (const entity of entities) {
       for (const hitbox of entity.hitboxes) {
+         const hitboxRenderPosition = hitbox.entity.renderPosition.copy();
+         if (typeof hitbox.info.offset !== "undefined") {
+            hitboxRenderPosition.add(hitbox.info.offset);
+         }
+         
          switch (hitbox.info.type) {
             case "rectangular": {
-               const x1 = entity.renderPosition.x - hitbox.info.width / 2;
-               const x2 = entity.renderPosition.x + hitbox.info.width / 2;
-               const y1 = entity.renderPosition.y - hitbox.info.height / 2;
-               const y2 = entity.renderPosition.y + hitbox.info.height / 2;
+               const x1 = hitboxRenderPosition.x - hitbox.info.width / 2;
+               const x2 = hitboxRenderPosition.x + hitbox.info.width / 2;
+               const y1 = hitboxRenderPosition.y - hitbox.info.height / 2;
+               const y2 = hitboxRenderPosition.y + hitbox.info.height / 2;
    
                let topLeft = new Point(x1, y2);
                let topRight = new Point(x2, y2);
@@ -56,10 +61,10 @@ export function renderEntityHitboxes(): void {
                let bottomLeft = new Point(x1, y1);
    
                // Rotate the points to match the entity's rotation
-               topLeft = rotatePoint(topLeft, entity.renderPosition, entity.rotation);
-               topRight = rotatePoint(topRight, entity.renderPosition, entity.rotation);
-               bottomRight = rotatePoint(bottomRight, entity.renderPosition, entity.rotation);
-               bottomLeft = rotatePoint(bottomLeft, entity.renderPosition, entity.rotation);
+               topLeft = rotatePoint(topLeft, hitboxRenderPosition, entity.rotation);
+               topRight = rotatePoint(topRight, hitboxRenderPosition, entity.rotation);
+               bottomRight = rotatePoint(bottomRight, hitboxRenderPosition, entity.rotation);
+               bottomLeft = rotatePoint(bottomLeft, hitboxRenderPosition, entity.rotation);
    
                topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));
                topRight = new Point(Camera.calculateXCanvasPosition(topRight.x), Camera.calculateYCanvasPosition(topRight.y));
@@ -91,8 +96,8 @@ export function renderEntityHitboxes(): void {
                   }
    
                   // Trig shenanigans to get x and y coords
-                  const worldX = Math.cos(radians) * hitbox.info.radius + entity.renderPosition.x;
-                  const worldY = Math.sin(radians) * hitbox.info.radius + entity.renderPosition.y;
+                  const worldX = Math.cos(radians) * hitbox.info.radius + hitboxRenderPosition.x;
+                  const worldY = Math.sin(radians) * hitbox.info.radius + hitboxRenderPosition.y;
                   
                   const screenX = Camera.calculateXCanvasPosition(worldX);
                   const screenY = Camera.calculateYCanvasPosition(worldY);

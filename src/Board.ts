@@ -30,8 +30,10 @@ class Board {
       }
    }
 
-   public getTile(x: number, y: number): Tile {
-      return this.tiles[x][y];
+   public getTile(tileX: number, tileY: number): Tile {
+      if (tileX < 0 || tileX >= SETTINGS.BOARD_DIMENSIONS) throw new Error(`Tile x coordinate '${tileX}' is not a valid tile coordinate.`);
+      if (tileY < 0 || tileY >= SETTINGS.BOARD_DIMENSIONS) throw new Error(`Tile x coordinate '${tileY}' is not a valid tile coordinate.`);
+      return this.tiles[tileX][tileY];
    }
 
    public getChunk(x: number, y: number): Chunk {
@@ -50,6 +52,7 @@ class Board {
                (hitbox as RectangularHitbox).computeSideAxes();
             }
             hitbox.updateHitboxBounds();
+            hitbox.updatePosition();
          }
 
          // Update the entities' containing chunks

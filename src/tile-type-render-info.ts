@@ -50,5 +50,8 @@ export const TILE_TYPE_RENDER_INFO_RECORD: Record<TileType, TileTypeRenderInfo> 
    },
    lava: {
       textureSource: "grass.png"
+   },
+   permafrost: {
+      textureSource: "permafrost-1.png"
    }
 };

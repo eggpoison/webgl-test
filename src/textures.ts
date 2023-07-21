@@ -32,6 +32,7 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/berry-bush5.png",
    "entities/berry-bush6.png",
    "entities/cactus/cactus.png",
+   "entities/cactus/cactus-limb.png",
    "entities/cactus/cactus-flower-small-1.png",
    "entities/cactus/cactus-flower-small-2.png",
    "entities/cactus/cactus-flower-small-3.png",
@@ -40,6 +41,7 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/cactus/cactus-flower-large-2.png",
    "entities/cactus/cactus-flower-large-3.png",
    "entities/cactus/cactus-flower-large-4.png",
+   "entities/cactus/cactus-flower-5.png",
    "entities/yeti.png",
 ]
 
