@@ -15,7 +15,7 @@ class Yeti extends Entity {
          new RenderPart({
             width: Yeti.SIZE,
             height: Yeti.SIZE,
-            textureSource: "yeti.png",
+            textureSource: "entities/yeti.png",
             zIndex: 0
          }, this)
       );

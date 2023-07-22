@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, CraftingRecipe, PlayerInventoryType, PlaceablePlayerInventoryType, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, ItemData, InventoryData, ItemSlotData, EntityType, HitboxData, HitboxInfo } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, CraftingRecipe, PlayerInventoryType, PlaceablePlayerInventoryType, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, ItemData, InventoryData, ItemSlotData, EntityType, HitboxData, HitboxInfo, ProjectileData } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -21,6 +21,7 @@ import { CraftingMenu_setCraftingMenuOutputItem } from "../components/game/menus
 import { updateHealthBar } from "../components/game/HealthBar";
 import { registerServerTick } from "../components/game/nerd-vision/GameInfoDisplay";
 import { updateRenderChunkFromTileBuffer } from "../rendering/tile-rendering/solid-tile-rendering";
+import Projectile from "../Projectile";
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -154,9 +155,9 @@ abstract class Client {
       Game.ticks = gameDataPacket.serverTicks;
       Game.time = gameDataPacket.serverTime;
 
-      // this.updateGameObjects(gameDataPacket);
       this.updateEntities(gameDataPacket.entityDataArray);
       this.updateDroppedItems(gameDataPacket.droppedItemDataArray);
+      this.updateProjectiles(gameDataPacket.projectileDataArray);
       this.updatePlayerInventory(gameDataPacket.inventory);
       this.registerTileUpdates(gameDataPacket.tileUpdates);
 
@@ -180,23 +181,11 @@ abstract class Client {
       }
    }
 
-   // private static updateGameObjects(gameDataPacket: GameDataPacket): void {
-   //    const knownEntityIDs = new Set(Object.keys(Game.board.gameObjects).map(idString => Number(idString)));
-
-   //    // this.updateProjectiles(gameDataPacket.entityDataArray, knownEntityIDs);
-
-   //    // All known entity ids which haven't been removed are ones which are dead
-   //    for (const id of knownEntityIDs) {
-   //       Game.board.removeGameObject(Game.board.entities[id]);
-   //    }
-   // }
-
    /**
     * Updates the client's entities to match those in the server
     */
    private static updateEntities(entityDataArray: ReadonlyArray<EntityData<EntityType>>): void {
       const knownEntityIDs = new Set(Object.keys(Game.board.entities).map(idString => Number(idString)));
-      // const knownEntityIDs = new Set<number>();
       
       // Remove the player from the list of known entities so the player isn't removed
       if (Player.instance !== null) {
@@ -226,7 +215,6 @@ abstract class Client {
 
    private static updateDroppedItems(serverItemEntityDataArray: ReadonlyArray<DroppedItemData>): void {
       const ids = new Set(Object.keys(Game.board.droppedItems).map(idString => Number(idString)));
-      // const ids = new Set<number>();
 
       for (const serverItemData of serverItemEntityDataArray) {
          if (!ids.has(serverItemData.id)) {
@@ -249,6 +237,33 @@ abstract class Client {
             throw new Error("CRINGE2");
          }
          Game.board.removeGameObject(Game.board.droppedItems[id]);
+      }
+   }
+
+   private static updateProjectiles(projectilesDataArray: ReadonlyArray<ProjectileData>): void {
+      const ids = new Set(Object.keys(Game.board.projectiles).map(idString => Number(idString)));
+
+      for (const projectileData of projectilesDataArray) {
+         if (!ids.has(projectileData.id)) {
+            // New item
+            this.createProjectileFromServerData(projectileData);
+         } else {
+            // Otherwise update it
+            if (Game.board.droppedItems.hasOwnProperty(projectileData.id)) {
+               const projectile = Game.board.projectiles[projectileData.id];
+               projectile.updateFromData(projectileData);
+            }
+         }
+
+         ids.delete(projectileData.id);
+      }
+
+      // All known entity ids which haven't been removed are ones which are dead
+      for (const id of ids) {
+         if (typeof Game.board.projectiles[id] === "undefined") {
+            throw new Error("CRINGE3");
+         }
+         Game.board.removeGameObject(Game.board.projectiles[id]);
       }
    }
 
@@ -324,8 +339,21 @@ abstract class Client {
       const hitboxes = this.createHitboxesFromData(serverItemEntityData.hitboxes);
 
       const droppedItem = new DroppedItem(position, hitboxes, serverItemEntityData.id, velocity, serverItemEntityData.type);
-      // const droppedItem = new DroppedItem(position, hitboxes, serverItemEntityData.id);
       droppedItem.rotation = serverItemEntityData.rotation;
+   }
+
+   private static createProjectileFromServerData(projectileData: ProjectileData): void {
+      const position = Point.unpackage(projectileData.position); 
+
+      const containingChunks = new Set<Chunk>();
+      for (const [chunkX, chunkY] of projectileData.chunkCoordinates) {
+         const chunk = Game.board.getChunk(chunkX, chunkY);
+         containingChunks.add(chunk);
+      }
+
+      const hitboxes = this.createHitboxesFromData(projectileData.hitboxes);
+
+      new Projectile(position, hitboxes, projectileData.id, projectileData.type);
    }
    
    private static registerTileUpdates(tileUpdates: ReadonlyArray<ServerTileUpdateData>): void {

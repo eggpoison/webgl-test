@@ -4,8 +4,8 @@ import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 
 const treeTextures: { [T in TreeSize]: string } = {
-   [TreeSize.small]: "tree/tree-small.png",
-   [TreeSize.large]: "tree/tree-large.png"
+   [TreeSize.small]: "entities/tree/tree-small.png",
+   [TreeSize.large]: "entities/tree/tree-large.png"
 }
 
 class Tree extends Entity {

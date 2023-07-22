@@ -16,7 +16,7 @@ class Boulder extends Entity {
          new RenderPart({
             width: Boulder.WIDTH,
             height: Boulder.HEIGHT,
-            textureSource: `boulder/boulder${boulderType + 1}.png`,
+            textureSource: `entities/boulder/boulder${boulderType + 1}.png`,
             zIndex: 0
          }, this)
       ]);

@@ -19,7 +19,7 @@ class Cactus extends Entity {
          new RenderPart({
             width: Cactus.SIZE,
             height: Cactus.SIZE,
-            textureSource: "cactus/cactus.png",
+            textureSource: "entities/cactus/cactus.png",
             zIndex: 1
          }, this)
       );
@@ -56,7 +56,7 @@ class Cactus extends Entity {
             new RenderPart({
                width: Cactus.LIMB_SIZE,
                height: Cactus.LIMB_SIZE,
-               textureSource: "cactus/cactus-limb.png",
+               textureSource: "entities/cactus/cactus-limb.png",
                zIndex: 0,
                offset: () => offset,
                rotation: 2 * Math.PI * Math.random()
@@ -85,9 +85,9 @@ class Cactus extends Entity {
 
    private getFlowerTextureSource(type: number, size: CactusFlowerSize): string {
       if (type === 4) {
-         return "cactus/cactus-flower-5.png";
+         return "entities/cactus/cactus-flower-5.png";
       } else {
-         return `cactus/cactus-flower-${size === CactusFlowerSize.small ? "small" : "large"}-${type + 1}.png`;
+         return `entities/cactus/cactus-flower-${size === CactusFlowerSize.small ? "small" : "large"}-${type + 1}.png`;
       }
    }
 }

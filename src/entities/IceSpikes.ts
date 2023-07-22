@@ -16,8 +16,7 @@ class IceSpikes extends Entity {
          new RenderPart({
             width: IceSpikes.WIDTH,
             height: IceSpikes.HEIGHT,
-            // textureSource: `ice-spikes/ice-spikes-1.png`,
-            textureSource: "boulder/boulder1.png",
+            textureSource: `entities/ice-spikes/ice-spikes-1.png`,
             zIndex: 0
          }, this)
       ]);

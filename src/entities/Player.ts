@@ -117,7 +117,7 @@ class Player extends Entity {
          new RenderPart({
             width: 64,
             height: 64,
-            textureSource: "human/human1.png",
+            textureSource: "entities/human/human1.png",
             zIndex: 0
          }, this)
       ]);

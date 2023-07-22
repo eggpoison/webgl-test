@@ -5,7 +5,7 @@ import { renderPlayerNames, createTextCanvasContext } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/game/ChatBox";
 import { lerp, Point, SETTINGS } from "webgl-test-shared";
-import { createEntityShaders, renderGameObjects, updateGameObjectRenderPositions } from "./rendering/game-object-rendering";
+import { createEntityShaders, renderGameObjects } from "./rendering/game-object-rendering";
 import Client from "./client/Client";
 import { calculateCursorWorldPosition, getCursorX, getCursorY, handleMouseMovement, renderCursorTooltip } from "./mouse";
 import { updateDevEntityViewer } from "./components/game/nerd-vision/EntityViewer";
@@ -270,10 +270,10 @@ abstract class Game {
       gl.clear(gl.COLOR_BUFFER_BIT);
 
       setFrameProgress(frameProgress);
-      // calculateEntityRenderValues();
 
       // Update the camera
       if (Player.instance !== null) {
+         Player.instance.updateRenderPosition();
          Camera.setCameraPosition(Player.instance.renderPosition);
          Camera.updateVisibleChunkBounds();
       }
@@ -281,8 +281,6 @@ abstract class Game {
       renderPlayerNames();
 
       renderSolidTiles();
-      // renderItemEntities();
-      updateGameObjectRenderPositions();
       renderGameObjects();
       renderWorldBorder();
       if (nerdVisionIsVisible()) {

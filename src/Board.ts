@@ -5,6 +5,7 @@ import DroppedItem from "./items/DroppedItem";
 import { Tile } from "./Tile";
 import GameObject from "./GameObject";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
+import Projectile from "./Projectile";
 
 export type EntityHitboxInfo = {
    readonly vertexPositions: readonly [Point, Point, Point, Point];
@@ -15,10 +16,10 @@ class Board {
    private tiles: Array<Array<Tile>>;
    private chunks: Array<Array<Chunk>>;
 
-   public a: Record<number, GameObject> = {};
    public gameObjects: Record<number, GameObject> = {};
    public entities: Record<number, Entity> = {};
    public droppedItems: Record<number, DroppedItem> = {};
+   public projectiles: Record<number, Projectile> = {};
 
    constructor(tiles: Array<Array<Tile>>) {
       this.tiles = tiles;

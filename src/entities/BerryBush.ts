@@ -10,12 +10,12 @@ class BerryBush extends Entity {
    public readonly type: EntityType = "berry_bush";
 
    private static readonly TEXTURE_SOURCES = [
-      "berry-bush1.png",
-      "berry-bush2.png",
-      "berry-bush3.png",
-      "berry-bush4.png",
-      "berry-bush5.png",
-      "berry-bush6.png"
+      "entities/berry-bush1.png",
+      "entities/berry-bush2.png",
+      "entities/berry-bush3.png",
+      "entities/berry-bush4.png",
+      "entities/berry-bush5.png",
+      "entities/berry-bush6.png"
    ];
 
    private readonly renderPart: RenderPart;
@@ -32,12 +32,12 @@ class BerryBush extends Entity {
       this.attachRenderParts([this.renderPart]);
    }
 
-   // public updateFromData(entityData: EntityData<"berry_bush">): void {
-   //    super.updateFromData(entityData);
+   public updateFromData(entityData: EntityData<"berry_bush">): void {
+      super.updateFromData(entityData);
 
-   //    const numBerries = entityData.clientArgs[0];
-   //    this.renderPart.textureSource = this.getTextureSourceFromNumBerries(numBerries);
-   // }
+      const numBerries = entityData.clientArgs[0];
+      this.renderPart.textureSource = this.getTextureSourceFromNumBerries(numBerries);
+   }
 
    private getTextureSourceFromNumBerries(numBerries: number): string {
       return BerryBush.TEXTURE_SOURCES[numBerries];

@@ -1,9 +1,9 @@
-import { EntityType, Point, Vector, rotatePoint } from "webgl-test-shared";
+import { Point, rotatePoint } from "webgl-test-shared";
 import Camera from "../Camera";
 import Entity from "../entities/Entity";
 import Game from "../Game";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import RenderPart from "../render-parts/RenderPart";
+import RenderPart, { RenderObject } from "../render-parts/RenderPart";
 import { getTexture } from "../textures";
 import { createShaderString, createWebGLProgram, gl, MAX_ACTIVE_TEXTURE_UNITS, windowHeight, windowWidth } from "../webgl";
 import GameObject from "../GameObject";
@@ -88,8 +88,8 @@ export function createEntityShaders(): void {
 }
 
 /**
- * Calculates all entities which are visible to the screen to increase efficiency
- * NOTE: Not perfectly accurate sometimes entities which are just not visible to the screen are rendered
+ * Calculates all game objects which are visible to the screen to increase efficiency
+ * NOTE: Not perfectly accurate sometimes game objects which are just not visible to the screen are rendered
 */
 export function calculateVisibleGameObjects(): Set<GameObject> {
    const visibleGameObjects = new Set<GameObject>();
@@ -159,42 +159,14 @@ interface CategorisedRenderParts {
    }
 }
 
-export function updateGameObjectRenderPositions(): void {
-
-}
-
 export function renderGameObjects(): void {
-   // Find visible entities
    const visibleGameObjects = calculateVisibleGameObjects();
    if (visibleGameObjects.size === 0) return;
 
    // Classify all render parts
    const categorisedRenderParts = categoriseGameObjectsByRenderPart(visibleGameObjects);
 
-   // Four nested for loops... oops
-   // Calculate the corner positions for all image render parts
-   // const imageRenderPartCornerPositionsRecord: ImageRenderPartCornerPositions = {};
-   // for (const [ entityType, indexedRenderParts ] of Object.entries(categorisedRenderParts)) {
-   //    imageRenderPartCornerPositionsRecord[entityType as EntityType] = {};
-      
-   //    for (let zIndex = 0; zIndex < indexedRenderParts.length; zIndex++) {
-   //       imageRenderPartCornerPositionsRecord[entityType as EntityType]![zIndex] = {};
-
-   //       const textureRecord = indexedRenderParts[zIndex];
-   //       for (const [textureSource, imageRenderParts] of Object.entries(textureRecord)) {
-   //          imageRenderPartCornerPositionsRecord[entityType as EntityType]![zIndex][textureSource] = {};
-            
-   //          for (const [entityID, imageRenderPart] of Object.entries(imageRenderParts) as unknown as ReadonlyArray<[number, RenderPart]>) {
-   //             const entity = Game.board.entities[entityID];
-   //             const cornerPositions = calculateRenderPartCornerPositions(entity, imageRenderPart);
-   //             imageRenderPartCornerPositionsRecord[entityType as EntityType]![zIndex][textureSource][entityID] = cornerPositions;
-   //          }
-   //       }
-   //    }
-   // }
-
    renderRenderParts(categorisedRenderParts);
-   // renderRenderParts(categorisedRenderParts, imageRenderPartCornerPositionsRecord);
 }
 
 /** Sort the render parts based on their textures */
@@ -235,6 +207,9 @@ const categoriseGameObjectsByRenderPart = (visibleGameObjects: ReadonlySet<GameO
    }
 
    for (const gameObject of visibleGameObjects) {
+      if ((gameObject as any)["type"] === "ice_shards") {
+         console.log("found");
+      }
       gameObject.updateRenderPosition();
       
       totalRotation = gameObject.rotation;
@@ -245,35 +220,6 @@ const categoriseGameObjectsByRenderPart = (visibleGameObjects: ReadonlySet<GameO
    }
 
    return categorisedRenderParts;
-      // for (const renderPart of gameObject.renderParts) {
-
-      // }
-      // let renderPartIndexInArray = 0;
-      // for (let idx = 0; idx < entity.renderParts.length; idx++) {
-      //    const renderPart = entity.renderParts[idx];
-         
-      //    // If the entity is of a new entity type, add it to the record
-      //    // if (!categorisedRenderParts.hasOwnProperty(entity.type)) {
-      //    //    categorisedRenderParts[entity.type] = new Array<{ [textureSource: string]: Array<RenderPart>; }>();
-      //    // }
-
-      //    // const renderParts = categorisedRenderParts[entity.type]!;
-
-      //    // Create the indexed array element if it isn't present
-      //    if (typeof renderParts[renderPartIndexInArray] === "undefined") {
-      //       renderParts[renderPartIndexInArray] = {};
-      //    }
-
-      //    // Create the texture source index if it isn't present
-      //    if (!renderParts[renderPartIndexInArray].hasOwnProperty(renderPart.textureSource)) {
-      //       renderParts[renderPartIndexInArray][renderPart.textureSource] = {};
-      //    }
-
-      //    // Add render part
-      //    renderParts[renderPartIndexInArray][renderPart.textureSource][entity.id] = renderPart;
-
-      //    renderPartIndexInArray++;
-      // }
 }
 
 /** Amount of seconds that the hit flash occurs for */
@@ -303,8 +249,20 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
             // Add texture source
             
             // Calculate vertices for all render parts in the record
-            // const redness = calculateEntityRedness(entity);
-            const redness = 0;
+            let redness = 0;
+
+            // TODO: Remove this hacky bullshit
+            let entity: Entity | undefined;
+            let nextOneUp: RenderObject = renderInfo.renderPart;
+            while (nextOneUp instanceof RenderPart) {
+               nextOneUp = nextOneUp.parentRenderObject;
+            }
+            if (nextOneUp instanceof Entity) {
+               entity = nextOneUp;
+            }
+            if (typeof entity !== "undefined") {
+               redness = calculateEntityRedness(entity);
+            }
 
             // Calculate the corner positions of the render part
             const [tl, tr, bl, br] = calculateRenderPartVertexPositions(renderInfo.renderPart, renderInfo.totalRotation);
@@ -359,7 +317,7 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
       // Set all texture units
       for (let i = 0; i < usedTextureSources.length; i++) {
          const textureSource = usedTextureSources[i];
-         const texture = getTexture("entities/" + textureSource);
+         const texture = getTexture(textureSource);
          gl.activeTexture(gl.TEXTURE0 + i);
          gl.bindTexture(gl.TEXTURE_2D, texture);
       }

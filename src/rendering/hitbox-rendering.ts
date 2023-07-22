@@ -34,15 +34,15 @@ export function createHitboxShaders(): void {
 
 /** Renders all hitboxes of a specified set of entities */
 export function renderEntityHitboxes(): void {
-   const entities = calculateVisibleGameObjects();
-   if (entities.size === 0) return;
+   const gameObjects = calculateVisibleGameObjects();
+   if (gameObjects.size === 0) return;
    
    gl.useProgram(program);
 
    // Calculate vertices
    const vertices = new Array<number>();
-   for (const entity of entities) {
-      for (const hitbox of entity.hitboxes) {
+   for (const gameObject of gameObjects) {
+      for (const hitbox of gameObject.hitboxes) {
          const hitboxRenderPosition = hitbox.gameObject.renderPosition.copy();
          if (typeof hitbox.info.offset !== "undefined") {
             hitboxRenderPosition.add(hitbox.info.offset);
@@ -61,10 +61,10 @@ export function renderEntityHitboxes(): void {
                let bottomLeft = new Point(x1, y1);
    
                // Rotate the points to match the entity's rotation
-               topLeft = rotatePoint(topLeft, hitboxRenderPosition, entity.rotation);
-               topRight = rotatePoint(topRight, hitboxRenderPosition, entity.rotation);
-               bottomRight = rotatePoint(bottomRight, hitboxRenderPosition, entity.rotation);
-               bottomLeft = rotatePoint(bottomLeft, hitboxRenderPosition, entity.rotation);
+               topLeft = rotatePoint(topLeft, hitboxRenderPosition, gameObject.rotation);
+               topRight = rotatePoint(topRight, hitboxRenderPosition, gameObject.rotation);
+               bottomRight = rotatePoint(bottomRight, hitboxRenderPosition, gameObject.rotation);
+               bottomLeft = rotatePoint(bottomLeft, hitboxRenderPosition, gameObject.rotation);
    
                topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));
                topRight = new Point(Camera.calculateXCanvasPosition(topRight.x), Camera.calculateYCanvasPosition(topRight.y));
