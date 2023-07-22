@@ -1,4 +1,4 @@
-import { AttackPacket, SETTINGS, Vector } from "webgl-test-shared";
+import { AttackPacket, SETTINGS, STATUS_EFFECT_MODIFIERS, StatusEffectType, Vector } from "webgl-test-shared";
 import { addKeyListener, clearPressedKeys, keyIsPressed } from "./keyboard-input";
 import { BackpackInventoryMenu_setIsVisible } from "./components/game/inventories/BackpackInventory";
 import { CraftingMenu_setIsVisible } from "./components/game/menus/CraftingMenu";
@@ -223,6 +223,17 @@ const getPlayerAcceleration = (): number => {
    return PLAYER_ACCELERATION;
 }
 
+const getPlayerMoveSpeedMultiplier = (): number => {
+   let moveSpeedMultiplier = 1;
+
+   for (const statusEffect of Player.instance!.statusEffects) {
+      console.log(statusEffect);
+      moveSpeedMultiplier *= STATUS_EFFECT_MODIFIERS[statusEffect].moveSpeedMultiplier;
+   }
+
+   return moveSpeedMultiplier;
+}
+
 /** Updates the player's movement to match what keys are being pressed. */
 export function updatePlayerMovement(): void {
    // Don't update movement if the player doesn't exist
@@ -258,8 +269,9 @@ export function updatePlayerMovement(): void {
    }
 
    if (moveDirection !== null) {
-      Player.instance.acceleration = new Vector(getPlayerAcceleration(), moveDirection);
-      Player.instance.terminalVelocity = getPlayerTerminalVelocity();
+      const moveSpeedMultiplier = getPlayerMoveSpeedMultiplier();
+      Player.instance.acceleration = new Vector(getPlayerAcceleration() * moveSpeedMultiplier, moveDirection);
+      Player.instance.terminalVelocity = getPlayerTerminalVelocity() * moveSpeedMultiplier;
    } else {
       Player.instance.acceleration = null;
    }

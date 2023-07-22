@@ -35,7 +35,7 @@ export function createHitboxShaders(): void {
 /** Renders all hitboxes of a specified set of entities */
 export function renderEntityHitboxes(): void {
    const gameObjects = calculateVisibleGameObjects();
-   if (gameObjects.size === 0) return;
+   if (gameObjects.length === 0) return;
    
    gl.useProgram(program);
 

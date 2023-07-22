@@ -61,6 +61,18 @@ const calculateGameObjectRenderPosition = (gameObject: GameObject): Point => {
       }
    }
 
+   // Clamp the render position
+   if (renderPosition.x < 0) {
+      renderPosition.x = 0;
+   } else if (renderPosition.x >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
+      renderPosition.x = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE - 1;
+   }
+   if (renderPosition.y < 0) {
+      renderPosition.y = 0;
+   } else if (renderPosition.y >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
+      renderPosition.y = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE - 1;
+   }
+
    return renderPosition;
 }
 

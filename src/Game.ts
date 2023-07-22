@@ -234,7 +234,6 @@ abstract class Game {
       if (Player.instance !== null) {
          Player.resolveCollisions();
       }
-      // this.board.resolveCollisions();
 
       if (isDev()) updateDevEntityViewer();
    }

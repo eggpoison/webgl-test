@@ -171,7 +171,10 @@ abstract class Client {
          if (gameDataPacket.hitsTaken.length >= 1) {
             Player.instance.secondsSinceLastHit = 0;
          }
+
+         Player.instance.statusEffects = gameDataPacket.statusEffects;
       }
+
 
       Game.definiteGameState.setPlayerHealth(gameDataPacket.playerHealth);
       if (Game.definiteGameState.playerIsDead()) {

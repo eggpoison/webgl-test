@@ -2,10 +2,9 @@ import { Point, rotatePoint } from "webgl-test-shared";
 import Camera from "../Camera";
 import Entity from "../entities/Entity";
 import Game from "../Game";
-import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import RenderPart, { RenderObject } from "../render-parts/RenderPart";
 import { getTexture } from "../textures";
-import { createShaderString, createWebGLProgram, gl, MAX_ACTIVE_TEXTURE_UNITS, windowHeight, windowWidth } from "../webgl";
+import { createShaderString, createWebGLProgram, gl, MAX_ACTIVE_TEXTURE_UNITS } from "../webgl";
 import GameObject from "../GameObject";
 
 /*
@@ -87,48 +86,11 @@ export function createEntityShaders(): void {
    imageRenderingProgramTextureIdxAttribLocation = gl.getAttribLocation(imageRenderingProgram, "a_textureIdx");
 }
 
-/**
- * Calculates all game objects which are visible to the screen to increase efficiency
- * NOTE: Not perfectly accurate sometimes game objects which are just not visible to the screen are rendered
-*/
-export function calculateVisibleGameObjects(): Set<GameObject> {
-   const visibleGameObjects = new Set<GameObject>();
+export function calculateVisibleGameObjects(): Array<GameObject> {
+   const visibleGameObjects = new Array<GameObject>();
 
-   const visibleChunkBounds = Camera.getVisibleChunkBounds();
-
-   for (let chunkX = visibleChunkBounds[0]; chunkX <= visibleChunkBounds[1]; chunkX++) {
-      for (let chunkY = visibleChunkBounds[2]; chunkY <= visibleChunkBounds[3]; chunkY++) {
-         const chunk = Game.board.getChunk(chunkX, chunkY);
-         for (const gameObject of chunk.getGameObjects()) {
-            const screenXPos = Camera.calculateXScreenPos(gameObject.renderPosition.x);
-            const screenYPos = Camera.calculateYScreenPos(gameObject.renderPosition.y);
-            
-            for (const hitbox of gameObject.hitboxes) {
-               switch (hitbox.info.type) {
-                  case "circular": {
-                     if (!(screenXPos + hitbox.info.radius < 0 ||
-                        screenXPos - hitbox.info.radius >= windowWidth ||
-                        screenYPos + hitbox.info.radius < 0 ||
-                        screenYPos - hitbox.info.radius >= windowHeight)) {
-                        visibleGameObjects.add(gameObject);
-                     }
-                     
-                     break;
-                  }
-                  case "rectangular": {
-                     const halfDiagonalLength = (hitbox as RectangularHitbox).halfDiagonalLength;
-                     if (screenXPos >= -halfDiagonalLength && 
-                     screenXPos < windowWidth + halfDiagonalLength &&
-                     screenYPos >= -halfDiagonalLength &&
-                     screenYPos < windowHeight + halfDiagonalLength) {
-                        visibleGameObjects.add(gameObject);
-                     }
-                     break;
-                  }
-               } 
-            }
-         }
-      }
+   for (const gameObject of Object.values(Game.board.gameObjects)) {
+      visibleGameObjects.push(gameObject);
    }
 
    return visibleGameObjects;
@@ -168,7 +130,7 @@ interface CategorisedRenderParts {
 
 export function renderGameObjects(): void {
    const visibleGameObjects = calculateVisibleGameObjects();
-   if (visibleGameObjects.size === 0) return;
+   if (visibleGameObjects.length === 0) return;
 
    // Classify all render parts
    const categorisedRenderParts = categoriseGameObjectsByRenderPart(visibleGameObjects);
@@ -177,7 +139,7 @@ export function renderGameObjects(): void {
 }
 
 /** Sort the render parts based on their textures */
-const categoriseGameObjectsByRenderPart = (visibleGameObjects: ReadonlySet<GameObject>): CategorisedRenderParts => {
+const categoriseGameObjectsByRenderPart = (visibleGameObjects: ReadonlyArray<GameObject>): CategorisedRenderParts => {
    const categorisedRenderParts: CategorisedRenderParts = {};
 
    let totalRotation = 0;

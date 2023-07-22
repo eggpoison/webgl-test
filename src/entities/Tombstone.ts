@@ -5,7 +5,9 @@ import Entity from "./Entity";
 
 const TOMBSTONE_DEATH_MESSAGES: ReadonlyArray<string> = [
    "__NAME__ forgot their glasses when driving near a cliff.",
-   "__NAME__ tried to hug a yeti."
+   "__NAME__ tried to hug a yeti.",
+   "__NAME__'s brain exploded.",
+   "__NAME__ became too hydrated."
 ];
 
 const NAMES: ReadonlyArray<string> = [
