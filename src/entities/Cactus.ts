@@ -20,7 +20,7 @@ class Cactus extends Entity {
             width: Cactus.SIZE,
             height: Cactus.SIZE,
             textureSource: "entities/cactus/cactus.png",
-            zIndex: 1
+            zIndex: 2
          }, this)
       );
 
@@ -39,7 +39,7 @@ class Cactus extends Entity {
                width: flowerSize,
                height: flowerSize,
                textureSource: this.getFlowerTextureSource(type, size),
-               zIndex: 2,
+               zIndex: 3,
                offset: () => offsetVector,
                rotation: 2 * Math.PI * Math.random()
             }, this)

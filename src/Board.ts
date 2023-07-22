@@ -5,7 +5,7 @@ import DroppedItem from "./items/DroppedItem";
 import { Tile } from "./Tile";
 import GameObject from "./GameObject";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
-import Projectile from "./Projectile";
+import Projectile from "./projectiles/Projectile";
 
 export type EntityHitboxInfo = {
    readonly vertexPositions: readonly [Point, Point, Point, Point];

@@ -21,7 +21,7 @@ import { CraftingMenu_setCraftingMenuOutputItem } from "../components/game/menus
 import { updateHealthBar } from "../components/game/HealthBar";
 import { registerServerTick } from "../components/game/nerd-vision/GameInfoDisplay";
 import { updateRenderChunkFromTileBuffer } from "../rendering/tile-rendering/solid-tile-rendering";
-import Projectile from "../Projectile";
+import createProjectile from "../projectiles/projectile-creation";
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -353,7 +353,7 @@ abstract class Client {
 
       const hitboxes = this.createHitboxesFromData(projectileData.hitboxes);
 
-      new Projectile(position, hitboxes, projectileData.id, projectileData.type);
+      createProjectile(position, hitboxes, projectileData.id, projectileData.type);
    }
    
    private static registerTileUpdates(tileUpdates: ReadonlyArray<ServerTileUpdateData>): void {

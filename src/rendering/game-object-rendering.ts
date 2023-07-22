@@ -173,24 +173,22 @@ export function renderGameObjects(): void {
 const categoriseGameObjectsByRenderPart = (visibleGameObjects: ReadonlySet<GameObject>): CategorisedRenderParts => {
    const categorisedRenderParts: CategorisedRenderParts = {};
 
-   let zIndex = 0;
    let totalRotation = 0;
 
    const addRenderPart = (renderPart: RenderPart): void => {
       // Calculate the render position for the object
       renderPart.updateRenderPosition();
 
-      if (!categorisedRenderParts.hasOwnProperty(zIndex)) {
-         categorisedRenderParts[zIndex] = {};
+      if (!categorisedRenderParts.hasOwnProperty(renderPart.zIndex)) {
+         categorisedRenderParts[renderPart.zIndex] = {};
       }
 
-      const texturedRenderParts = categorisedRenderParts[zIndex];
+      const texturedRenderParts = categorisedRenderParts[renderPart.zIndex];
       if (!texturedRenderParts.hasOwnProperty(renderPart.textureSource)) {
          texturedRenderParts[renderPart.textureSource] = new Array<RenderInfo>();
       }
 
       totalRotation += renderPart.rotation;
-      zIndex++;
 
       texturedRenderParts[renderPart.textureSource].push({
          renderPart: renderPart,
@@ -203,7 +201,6 @@ const categoriseGameObjectsByRenderPart = (visibleGameObjects: ReadonlySet<GameO
       }
 
       totalRotation -= renderPart.rotation;
-      zIndex--;
    }
 
    for (const gameObject of visibleGameObjects) {
@@ -234,6 +231,10 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
    // Find which z-index layers are being rendered, in ascending order.
    const zIndexes = Object.keys(renderParts).map(zIndex => Number(zIndex)).sort((a, b) => a - b);
 
+   console.log("-==-=-=-=-=-=-=-=--=-=-=-=-=-=-=-");
+   console.log("-==-=-=-=-=-=-=-=--=-=-=-=-=-=-=-");
+   console.log("-==-=-=-=-=-=-=-=--=-=-=-=-=-=-=-");
+   
    // Calculate vertices
    let numTextureUnitsUsed = 0;
    const vertexArrays = new Array<Array<number>>();
@@ -243,6 +244,7 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
          const vertices = new Array<number>();
          const textureIdx = numTextureUnitsUsed % MAX_ACTIVE_TEXTURE_UNITS;
          for (const renderInfo of texturedRenderParts) {
+            console.log(renderInfo.renderPart.textureSource, zIndex);
             // Add texture source
             
             // Calculate vertices for all render parts in the record
