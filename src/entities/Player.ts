@@ -125,10 +125,6 @@ class Player extends Entity {
       this.username = username;
    }
 
-   // public tick(): void {
-   //    this.velocity = new Vector(200, 0);
-   // }
-
    public static setInstancePlayer(player: Player): void {
       if (Player.instance !== null) {
          throw new Error("Tried to create a new player main instance when one already existed!");

@@ -26,8 +26,7 @@ class Projectile extends GameObject {
             zIndex: 0
          }, this)
       );
-      // console.log("made projectile!");
-      // console.log(position);
+      // console.log("ma Kition);
    }
 
    public remove(): void {
