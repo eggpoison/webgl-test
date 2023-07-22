@@ -62,14 +62,6 @@ class Board {
          // Update the entities' containing chunks
          const newChunks = gameObject.calculateContainingChunks();
          gameObject.updateChunks(newChunks);
-         gameObject.updateChunks(newChunks);
-      }
-   }
-
-   public resolveCollisions(): void {
-      for (const gameObject of Object.values(this.gameObjects)) {
-         gameObject.resolveGameObjectCollisions();
-         gameObject.resolveWallCollisions();
       }
    }
 

@@ -231,7 +231,10 @@ abstract class Game {
       Item.decrementGlobalItemSwitchDelay();
 
       this.board.updateGameObjects();
-      this.board.resolveCollisions();
+      if (Player.instance !== null) {
+         Player.resolveCollisions();
+      }
+      // this.board.resolveCollisions();
 
       if (isDev()) updateDevEntityViewer();
    }

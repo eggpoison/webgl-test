@@ -1,4 +1,4 @@
-import { GameObjectData, HitboxType, Point, SETTINGS, TILE_TYPE_INFO_RECORD, Vector, curveWeight } from "webgl-test-shared";
+import { GameObjectData, HitboxType, Point, SETTINGS, TILE_TYPE_INFO_RECORD, Vector } from "webgl-test-shared";
 import RenderPart, { RenderObject } from "./render-parts/RenderPart";
 import Hitbox from "./hitboxes/Hitbox";
 import Chunk from "./Chunk";
@@ -174,48 +174,6 @@ abstract class GameObject extends RenderObject {
       }
    }
 
-   private stopXVelocity(): void {
-      if (this.velocity !== null) {
-         const pointVelocity = this.velocity.convertToPoint();
-         pointVelocity.x = 0;
-         this.velocity = pointVelocity.convertToVector();
-      }
-   }
-
-   private stopYVelocity(): void {
-      if (this.velocity !== null) {
-         const pointVelocity = this.velocity.convertToPoint();
-         pointVelocity.y = 0;
-         this.velocity = pointVelocity.convertToVector();
-      }
-   }
-
-   public resolveWallCollisions(): void {
-      const boardUnits = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE;
-
-      for (const hitbox of this.hitboxes) {
-         // Left wall
-         if (hitbox.bounds[0] < 0) {
-            this.stopXVelocity();
-            this.position.x -= hitbox.bounds[0];
-            // Right wall
-         } else if (hitbox.bounds[1] > boardUnits) {
-            this.position.x -= hitbox.bounds[1] - boardUnits;
-            this.stopXVelocity();
-         }
-         
-         // Bottom wall
-         if (hitbox.bounds[2] < 0) {
-            this.position.y -= hitbox.bounds[2];
-            this.stopYVelocity();
-            // Top wall
-         } else if (hitbox.bounds[3] > boardUnits) {
-            this.position.y -= hitbox.bounds[3] - boardUnits;
-            this.stopYVelocity();
-         }
-      }
-   }
-
    public findCurrentTile(): Tile {
       const tileX = Math.floor(this.position.x / SETTINGS.TILE_SIZE);
       const tileY = Math.floor(this.position.y / SETTINGS.TILE_SIZE);
@@ -247,90 +205,6 @@ abstract class GameObject extends RenderObject {
       }
 
       return chunks;
-   }
-
-   public resolveGameObjectCollisions(): void {
-      const collidingEntities = this.getCollidingGameObjects();
-
-      for (const gameObject of collidingEntities) {
-         // If the two entities are exactly on top of each other, don't do anything
-         if (gameObject.position.x === this.position.x && gameObject.position.y === this.position.y) {
-            continue;
-         }
-
-         // Calculate the force of the push
-         // Force gets greater the closer together the entities are
-         const distanceBetweenEntities = this.position.calculateDistanceBetween(gameObject.position);
-         const maxDistanceBetweenEntities = this.calculateMaxDistanceFromGameObject(gameObject);
-         let forceMultiplier = 1 - distanceBetweenEntities / maxDistanceBetweenEntities;
-         forceMultiplier = curveWeight(forceMultiplier, 2, 0.2);
-
-         // Push both entities away from each other
-         const force = SETTINGS.ENTITY_PUSH_FORCE / SETTINGS.TPS * forceMultiplier;
-         const angle = this.position.calculateAngleBetween(gameObject.position);
-
-         // No need to apply force to other object as they will do it themselves
-         const pushForce = new Vector(force, angle + Math.PI);
-         if (this.velocity !== null) {
-            this.velocity.add(pushForce);
-         } else {
-            this.velocity = pushForce;
-         }
-      }
-   }
-
-   private calculateMaxDistanceFromGameObject(gameObject: GameObject): number {
-      let maxDist = 0;
-
-      // Account for this object's hitboxes
-      for (const hitbox of this.hitboxes) {
-         switch (hitbox.info.type) {
-            case "circular": {
-               maxDist += hitbox.info.radius;
-               break;
-            }
-            case "rectangular": {
-               maxDist += (hitbox as RectangularHitbox).halfDiagonalLength;
-               break;
-            }
-         }
-      }
-
-      // Account for the other object's hitboxes
-      for (const hitbox of gameObject.hitboxes) {
-         switch (hitbox.info.type) {
-            case "circular": {
-               maxDist += hitbox.info.radius;
-               break;
-            }
-            case "rectangular": {
-               maxDist += (hitbox as RectangularHitbox).halfDiagonalLength;
-               break;
-            }
-         }
-      }
-      
-      return maxDist;
-   }
-
-   private getCollidingGameObjects(): ReadonlyArray<GameObject> {
-      const collidingGameObjects = new Array<GameObject>();
-
-      for (const chunk of this.chunks) {
-         for (const gameObject of chunk.getGameObjects()) {
-            if (gameObject === this) continue;
-
-            for (const hitbox of this.hitboxes) {
-               for (const otherHitbox of gameObject.hitboxes) {
-                  if (hitbox.isColliding(otherHitbox)) {
-                     collidingGameObjects.push(gameObject);
-                  }
-               }
-            }
-         }
-      }
-
-      return collidingGameObjects;
    }
 
    public updateChunks(newChunks: ReadonlySet<Chunk>): void {

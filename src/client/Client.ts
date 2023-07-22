@@ -22,6 +22,7 @@ import { updateHealthBar } from "../components/game/HealthBar";
 import { registerServerTick } from "../components/game/nerd-vision/GameInfoDisplay";
 import { updateRenderChunkFromTileBuffer } from "../rendering/tile-rendering/solid-tile-rendering";
 import createProjectile from "../projectiles/projectile-creation";
+import Camera from "../Camera";
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -245,14 +246,12 @@ abstract class Client {
 
       for (const projectileData of projectilesDataArray) {
          if (!ids.has(projectileData.id)) {
-            // New item
+            // New projectile
             this.createProjectileFromServerData(projectileData);
          } else {
             // Otherwise update it
-            if (Game.board.droppedItems.hasOwnProperty(projectileData.id)) {
-               const projectile = Game.board.projectiles[projectileData.id];
-               projectile.updateFromData(projectileData);
-            }
+            const projectile = Game.board.projectiles[projectileData.id];
+            projectile.updateFromData(projectileData);
          }
 
          ids.delete(projectileData.id);
@@ -479,7 +478,8 @@ abstract class Client {
             velocity: Player.instance.velocity?.package() || null,
             acceleration: Player.instance.acceleration?.package() || null,
             terminalVelocity: Player.instance.terminalVelocity,
-            rotation: Player.instance.rotation
+            rotation: Player.instance.rotation,
+            visibleChunkBounds: Camera.getVisibleChunkBounds()
          };
 
          this.socket.emit("player_data_packet", packet);

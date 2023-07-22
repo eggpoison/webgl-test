@@ -1,4 +1,4 @@
-import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitboxType, HitData, Point, SETTINGS, Vector } from "webgl-test-shared";
+import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitboxType, HitData, Point, SETTINGS, Vector, curveWeight } from "webgl-test-shared";
 import Camera from "../Camera";
 import { setCraftingMenuAvailableRecipes, setCraftingMenuAvailableCraftingStations } from "../components/game/menus/CraftingMenu";
 import Game from "../Game";
@@ -8,6 +8,8 @@ import Item, { ItemSlot } from "../items/Item";
 import RenderPart from "../render-parts/RenderPart";
 import { halfWindowHeight, halfWindowWidth } from "../webgl";
 import Entity from "./Entity";
+import GameObject from "../GameObject";
+import RectangularHitbox from "../hitboxes/RectangularHitbox";
 
 /** Maximum distance from a crafting station which will allow its recipes to be crafted. */
 const MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION = 250;
@@ -154,6 +156,142 @@ class Player extends Entity {
             this.instance.velocity = pushForce;
          }
       }
+   }
+
+   public static resolveCollisions(): void {
+      this.resolveWallCollisions();
+      this.resolveGameObjectCollisions();
+   }
+
+   private static stopXVelocity(): void {
+      if (Player.instance!.velocity !== null) {
+         const pointVelocity = Player.instance!.velocity.convertToPoint();
+         pointVelocity.x = 0;
+         Player.instance!.velocity = pointVelocity.convertToVector();
+      }
+   }
+
+   private static stopYVelocity(): void {
+      if (Player.instance!.velocity !== null) {
+         const pointVelocity = Player.instance!.velocity.convertToPoint();
+         pointVelocity.y = 0;
+         Player.instance!.velocity = pointVelocity.convertToVector();
+      }
+   }
+   
+   private static resolveWallCollisions(): void {
+      const boardUnits = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE;
+
+      for (const hitbox of Player.instance!.hitboxes) {
+         // Left wall
+         if (hitbox.bounds[0] < 0) {
+            this.stopXVelocity();
+            Player.instance!.position.x -= hitbox.bounds[0];
+            // Right wall
+         } else if (hitbox.bounds[1] > boardUnits) {
+            Player.instance!.position.x -= hitbox.bounds[1] - boardUnits;
+            this.stopXVelocity();
+         }
+         
+         // Bottom wall
+         if (hitbox.bounds[2] < 0) {
+            Player.instance!.position.y -= hitbox.bounds[2];
+            this.stopYVelocity();
+            // Top wall
+         } else if (hitbox.bounds[3] > boardUnits) {
+            Player.instance!.position.y -= hitbox.bounds[3] - boardUnits;
+            this.stopYVelocity();
+         }
+      }
+   }
+   
+   private static resolveGameObjectCollisions(): void {
+      if (Player.instance === null) throw new Error();
+      
+      const collidingEntities = this.getCollidingGameObjects();
+
+      for (const gameObject of collidingEntities) {
+         // If the two entities are exactly on top of each other, don't do anything
+         if (gameObject.position.x === Player.instance.position.x && gameObject.position.y === Player.instance.position.y) {
+            continue;
+         }
+
+         // Calculate the force of the push
+         // Force gets greater the closer together the entities are
+         const distanceBetweenEntities = Player.instance.position.calculateDistanceBetween(gameObject.position);
+         const maxDistanceBetweenEntities = this.calculateMaxDistanceFromGameObject(gameObject);
+         let forceMultiplier = 1 - distanceBetweenEntities / maxDistanceBetweenEntities;
+         forceMultiplier = curveWeight(forceMultiplier, 2, 0.2);
+
+         // Push both entities away from each other
+         const force = SETTINGS.ENTITY_PUSH_FORCE / SETTINGS.TPS * forceMultiplier;
+         const angle = Player.instance.position.calculateAngleBetween(gameObject.position);
+
+         // No need to apply force to other object as they will do it themselves
+         const pushForce = new Vector(force, angle + Math.PI);
+         if (Player.instance.velocity !== null) {
+            Player.instance.velocity.add(pushForce);
+         } else {
+            Player.instance.velocity = pushForce;
+         }
+      }
+   }
+
+   private static getCollidingGameObjects(): ReadonlyArray<GameObject> {
+      if (Player.instance === null) throw new Error();
+      
+      const collidingGameObjects = new Array<GameObject>();
+
+      for (const chunk of Player.instance.chunks) {
+         gameObjectLoop: for (const gameObject of chunk.getGameObjects()) {
+            if (gameObject === Player.instance) continue;
+
+            for (const hitbox of Player.instance.hitboxes) {
+               for (const otherHitbox of gameObject.hitboxes) {
+                  if (hitbox.isColliding(otherHitbox)) {
+                     collidingGameObjects.push(gameObject);
+                     continue gameObjectLoop;
+                  }
+               }
+            }
+         }
+      }
+
+      return collidingGameObjects;
+   }
+
+   private static calculateMaxDistanceFromGameObject(gameObject: GameObject): number {
+      let maxDist = 0;
+
+      // Account for this object's hitboxes
+      for (const hitbox of Player.instance!.hitboxes) {
+         switch (hitbox.info.type) {
+            case "circular": {
+               maxDist += hitbox.info.radius;
+               break;
+            }
+            case "rectangular": {
+               maxDist += (hitbox as RectangularHitbox).halfDiagonalLength;
+               break;
+            }
+         }
+      }
+
+      // Account for the other object's hitboxes
+      for (const hitbox of gameObject.hitboxes) {
+         switch (hitbox.info.type) {
+            case "circular": {
+               maxDist += hitbox.info.radius;
+               break;
+            }
+            case "rectangular": {
+               maxDist += (hitbox as RectangularHitbox).halfDiagonalLength;
+               break;
+            }
+         }
+      }
+      
+      return maxDist;
    }
 }
 

@@ -94,33 +94,40 @@ export function createEntityShaders(): void {
 export function calculateVisibleGameObjects(): Set<GameObject> {
    const visibleGameObjects = new Set<GameObject>();
 
-   for (const gameObject of Object.values(Game.board.gameObjects)) {
-      const screenXPos = Camera.calculateXScreenPos(gameObject.renderPosition.x);
-      const screenYPos = Camera.calculateYScreenPos(gameObject.renderPosition.y);
-      
-      for (const hitbox of gameObject.hitboxes) {
-         switch (hitbox.info.type) {
-            case "circular": {
-               if (!(screenXPos + hitbox.info.radius < 0 ||
-                  screenXPos - hitbox.info.radius >= windowWidth ||
-                  screenYPos + hitbox.info.radius < 0 ||
-                  screenYPos - hitbox.info.radius >= windowHeight)) {
-                  visibleGameObjects.add(gameObject);
-               }
-               
-               break;
+   const visibleChunkBounds = Camera.getVisibleChunkBounds();
+
+   for (let chunkX = visibleChunkBounds[0]; chunkX <= visibleChunkBounds[1]; chunkX++) {
+      for (let chunkY = visibleChunkBounds[2]; chunkY <= visibleChunkBounds[3]; chunkY++) {
+         const chunk = Game.board.getChunk(chunkX, chunkY);
+         for (const gameObject of chunk.getGameObjects()) {
+            const screenXPos = Camera.calculateXScreenPos(gameObject.renderPosition.x);
+            const screenYPos = Camera.calculateYScreenPos(gameObject.renderPosition.y);
+            
+            for (const hitbox of gameObject.hitboxes) {
+               switch (hitbox.info.type) {
+                  case "circular": {
+                     if (!(screenXPos + hitbox.info.radius < 0 ||
+                        screenXPos - hitbox.info.radius >= windowWidth ||
+                        screenYPos + hitbox.info.radius < 0 ||
+                        screenYPos - hitbox.info.radius >= windowHeight)) {
+                        visibleGameObjects.add(gameObject);
+                     }
+                     
+                     break;
+                  }
+                  case "rectangular": {
+                     const halfDiagonalLength = (hitbox as RectangularHitbox).halfDiagonalLength;
+                     if (screenXPos >= -halfDiagonalLength && 
+                     screenXPos < windowWidth + halfDiagonalLength &&
+                     screenYPos >= -halfDiagonalLength &&
+                     screenYPos < windowHeight + halfDiagonalLength) {
+                        visibleGameObjects.add(gameObject);
+                     }
+                     break;
+                  }
+               } 
             }
-            case "rectangular": {
-               const halfDiagonalLength = (hitbox as RectangularHitbox).halfDiagonalLength;
-               if (screenXPos >= -halfDiagonalLength && 
-               screenXPos < windowWidth + halfDiagonalLength &&
-               screenYPos >= -halfDiagonalLength &&
-               screenYPos < windowHeight + halfDiagonalLength) {
-                  visibleGameObjects.add(gameObject);
-               }
-               break;
-            }
-         } 
+         }
       }
    }
 
@@ -231,10 +238,6 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
    // Find which z-index layers are being rendered, in ascending order.
    const zIndexes = Object.keys(renderParts).map(zIndex => Number(zIndex)).sort((a, b) => a - b);
 
-   console.log("-==-=-=-=-=-=-=-=--=-=-=-=-=-=-=-");
-   console.log("-==-=-=-=-=-=-=-=--=-=-=-=-=-=-=-");
-   console.log("-==-=-=-=-=-=-=-=--=-=-=-=-=-=-=-");
-   
    // Calculate vertices
    let numTextureUnitsUsed = 0;
    const vertexArrays = new Array<Array<number>>();
@@ -244,7 +247,6 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
          const vertices = new Array<number>();
          const textureIdx = numTextureUnitsUsed % MAX_ACTIVE_TEXTURE_UNITS;
          for (const renderInfo of texturedRenderParts) {
-            console.log(renderInfo.renderPart.textureSource, zIndex);
             // Add texture source
             
             // Calculate vertices for all render parts in the record
@@ -273,7 +275,6 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
                br.x, br.y, 1, 0, redness, textureIdx,
                tr.x, tr.y, 1, 1, redness, textureIdx
             );
-   
          }
          
          vertexArrays.push(vertices);
