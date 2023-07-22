@@ -5,8 +5,7 @@ import { renderPlayerNames, createTextCanvasContext } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/game/ChatBox";
 import { lerp, Point, SETTINGS } from "webgl-test-shared";
-import { calculateEntityRenderValues, setFrameProgress } from "./entities/Entity";
-import { createEntityShaders, renderEntities } from "./rendering/entity-rendering";
+import { createEntityShaders, renderGameObjects, updateGameObjectRenderPositions } from "./rendering/game-object-rendering";
 import Client from "./client/Client";
 import { calculateCursorWorldPosition, getCursorX, getCursorY, handleMouseMovement, renderCursorTooltip } from "./mouse";
 import { updateDevEntityViewer } from "./components/game/nerd-vision/EntityViewer";
@@ -22,12 +21,12 @@ import { updatePlayerMovement } from "./player-input";
 import DefiniteGameState from "./game-state/definite-game-state";
 import LatencyGameState from "./game-state/latency-game-state";
 import { clearServerTicks, updateDebugScreenCurrentTime, updateDebugScreenFPS, updateDebugScreenTicks } from "./components/game/nerd-vision/GameInfoDisplay";
-import { createItemEntityShaders, renderItemEntities } from "./rendering/item-entity-rendering";
 import { createWorldBorderShaders, renderWorldBorder } from "./rendering/world-border-rendering";
 import { createRenderChunkBuffers, createSolidTileShaders, renderSolidTiles } from "./rendering/tile-rendering/solid-tile-rendering";
 import { createLiquidTileShaders } from "./rendering/tile-rendering/liquid-tile-rendering";
 import { createChunkBorderShaders, renderChunkBorders } from "./rendering/chunk-border-rendering";
 import { nerdVisionIsVisible } from "./components/game/nerd-vision/NerdVisionOverlay";
+import { setFrameProgress } from "./GameObject";
 
 const nightVertexShaderText = `
 precision mediump float;
@@ -201,7 +200,7 @@ abstract class Game {
             createSolidTileShaders();
             createLiquidTileShaders();
             createEntityShaders();
-            createItemEntityShaders();
+            // createItemEntityShaders();
             createWorldBorderShaders();
             createPlaceableItemProgram();
             createChunkBorderShaders();
@@ -231,7 +230,7 @@ abstract class Game {
 
       Item.decrementGlobalItemSwitchDelay();
 
-      this.board.tickEntities();
+      this.board.updateGameObjects();
       this.board.resolveCollisions();
 
       if (isDev()) updateDevEntityViewer();
@@ -271,7 +270,7 @@ abstract class Game {
       gl.clear(gl.COLOR_BUFFER_BIT);
 
       setFrameProgress(frameProgress);
-      calculateEntityRenderValues();
+      // calculateEntityRenderValues();
 
       // Update the camera
       if (Player.instance !== null) {
@@ -282,8 +281,9 @@ abstract class Game {
       renderPlayerNames();
 
       renderSolidTiles();
-      renderItemEntities();
-      renderEntities();
+      // renderItemEntities();
+      updateGameObjectRenderPositions();
+      renderGameObjects();
       renderWorldBorder();
       if (nerdVisionIsVisible()) {
          renderChunkBorders();

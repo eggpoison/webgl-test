@@ -86,6 +86,11 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       textureSrc: "yeti-hide.png",
       name: "Yeti Hide",
       description: "An extremely tough half-frost half-flesh hide."
+   },
+   frostcicle: {
+      textureSrc: "frostcicle.png",
+      name: "Frostcicle",
+      description: ""
    }
 };
 

@@ -1,8 +1,9 @@
 import Entity from "./entities/Entity";
 import { SETTINGS, Point, Vector, ServerTileUpdateData, rotatePoint } from "webgl-test-shared";
 import Chunk from "./Chunk";
-import ItemEntity from "./items/ItemEntity";
+import DroppedItem from "./items/DroppedItem";
 import { Tile } from "./Tile";
+import GameObject from "./GameObject";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
 
 export type EntityHitboxInfo = {
@@ -14,8 +15,10 @@ class Board {
    private tiles: Array<Array<Tile>>;
    private chunks: Array<Array<Chunk>>;
 
+   public a: Record<number, GameObject> = {};
+   public gameObjects: Record<number, GameObject> = {};
    public entities: Record<number, Entity> = {};
-   public itemEntities: Record<number, ItemEntity> = {};
+   public droppedItems: Record<number, DroppedItem> = {};
 
    constructor(tiles: Array<Array<Tile>>) {
       this.tiles = tiles;
@@ -40,13 +43,13 @@ class Board {
       return this.chunks[x][y];
    }
 
-   public tickEntities(): void {
-      for (const entity of Object.values(this.entities)) {
-         entity.applyPhysics();
-         if (typeof entity.tick !== "undefined") entity.tick();
+   public updateGameObjects(): void {
+      for (const gameObject of Object.values(this.gameObjects)) {
+         gameObject.applyPhysics();
+         if (typeof gameObject.tick !== "undefined") gameObject.tick();
 
          // Calculate the entity's new info
-         for (const hitbox of entity.hitboxes) {
+         for (const hitbox of gameObject.hitboxes) {
             if (hitbox.info.type === "rectangular") {
                (hitbox as RectangularHitbox).computeVertexPositions();
                (hitbox as RectangularHitbox).computeSideAxes();
@@ -56,16 +59,16 @@ class Board {
          }
 
          // Update the entities' containing chunks
-         const newChunks = entity.calculateContainingChunks();
-         entity.updateChunks(newChunks);
-         entity.updateChunks(newChunks);
+         const newChunks = gameObject.calculateContainingChunks();
+         gameObject.updateChunks(newChunks);
+         gameObject.updateChunks(newChunks);
       }
    }
 
    public resolveCollisions(): void {
-      for (const entity of Object.values(this.entities)) {
-         entity.resolveEntityCollisions();
-         entity.resolveWallCollisions();
+      for (const gameObject of Object.values(this.gameObjects)) {
+         gameObject.resolveGameObjectCollisions();
+         gameObject.resolveWallCollisions();
       }
    }
 
@@ -78,30 +81,38 @@ class Board {
       }
    }
 
-   public removeEntity(entity: Entity): void {
-      delete this.entities[entity.id];
-
-      for (const chunk of entity.chunks) {
-         chunk.removeEntity(entity);
+   public removeGameObject(gameObject: GameObject): void {
+      if (typeof gameObject === "undefined") {
+         throw new Error("Tried to remove an undefined game object.");
       }
+
+      if (typeof gameObject.remove !== "undefined") {
+         gameObject.remove();
+      }
+
+      for (const chunk of gameObject.chunks) {
+         chunk.removeGameObject(gameObject);
+      }
+
+      delete this.gameObjects[gameObject.id];
    }
 
-   public calculateDistanceBetweenPointAndEntity(position: Point, entity: Entity): number {
+   public calculateDistanceBetweenPointAndGameObject(position: Point, gameObject: GameObject): number {
       let minDist = Number.MAX_SAFE_INTEGER;
-      for (const hitbox of entity.hitboxes) {
+      for (const hitbox of gameObject.hitboxes) {
          let distance: number;
          switch (hitbox.info.type) {
             case "circular": {
-               const dist = position.calculateDistanceBetween(entity.position);
+               const dist = position.calculateDistanceBetween(gameObject.position);
                distance = dist - hitbox.info.radius;
                break;
             }
             case "rectangular": {
                // Rotate the objects to axis-align the rectangle
-               const rotatedPositon = rotatePoint(position, entity.position, -entity.rotation);
+               const rotatedPositon = rotatePoint(position, gameObject.position, -gameObject.rotation);
 
-               const distanceX = Math.max(Math.abs(rotatedPositon.x - entity.position.x) - hitbox.info.width / 2, 0);
-               const distanceY = Math.max(Math.abs(rotatedPositon.y - entity.position.y) - hitbox.info.height / 2, 0);
+               const distanceX = Math.max(Math.abs(rotatedPositon.x - gameObject.position.x) - hitbox.info.width / 2, 0);
+               const distanceY = Math.max(Math.abs(rotatedPositon.y - gameObject.position.y) - hitbox.info.height / 2, 0);
                distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
             }
          }

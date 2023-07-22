@@ -21,22 +21,20 @@ class Cow extends Entity {
       this.attachRenderParts([
          // Body
          new RenderPart({
-            entity: this,
             width: Cow.BODY_WIDTH,
             height: Cow.BODY_HEIGHT,
             textureSource: `cow/cow-body-${cowNum}.png`,
             offset: () => new Point(0, -(Cow.HEAD_SIZE - Cow.HEAD_OVERLAP) / 2),
             zIndex: 0
-         }),
+         }, this),
          // Head
          new RenderPart({
-            entity: this,
             width: Cow.HEAD_IMAGE_WIDTH,
             height: Cow.HEAD_IMAGE_HEIGHT,
             textureSource: `cow/cow-head-${cowNum}.png`,
             offset: () => new Point(0, (Cow.BODY_HEIGHT - Cow.HEAD_OVERLAP) / 2),
             zIndex: 1
-         })
+         }, this)
       ]);
    }
 }

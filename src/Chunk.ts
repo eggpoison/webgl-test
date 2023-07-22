@@ -1,9 +1,9 @@
+import GameObject from "./GameObject";
 import Entity from "./entities/Entity";
-import ItemEntity from "./items/ItemEntity";
 
 class Chunk {
+   private readonly gameObjects = new Array<GameObject>();
    private readonly entities = new Array<Entity>();
-   private readonly items = new Array<ItemEntity>();
 
    public readonly x: number;
    public readonly y: number;
@@ -13,29 +13,30 @@ class Chunk {
       this.y = y;
    }
 
+   public addGameObject(gameObject: GameObject): void {
+      this.gameObjects.push(gameObject);
+   }
+
+   public removeGameObject(gameObject: GameObject): void {
+      const idx = this.gameObjects.indexOf(gameObject);
+      this.gameObjects.splice(idx, 1);
+   }
+
+   public getGameObjects(): Array<GameObject> {
+      return this.gameObjects;
+   }
+
    public addEntity(entity: Entity): void {
-      this.entities.push(entity);
+      this.gameObjects.push(entity);
    }
 
    public removeEntity(entity: Entity): void {
-      const idx = this.entities.indexOf(entity);
-      this.entities.splice(idx, 1);
+      const idx = this.gameObjects.indexOf(entity);
+      this.gameObjects.splice(idx, 1);
    }
 
    public getEntities(): Array<Entity> {
       return this.entities;
-   }
-
-   public addItem(item: ItemEntity): void {
-      this.items.push(item);
-   }
-
-   public removeItem(item: ItemEntity): void {
-      this.items.splice(this.items.indexOf(item), 1);
-   }
-
-   public getItems(): ReadonlyArray<ItemEntity> {
-      return this.items;
    }
 }
 

@@ -18,12 +18,11 @@ class Zombie extends Entity {
 
       this.attachRenderParts([
          new RenderPart({
-            entity: this,
             width: 64,
             height: 64,
             textureSource: "zombie/" + ZOMBIE_TEXTURE_SOURCES[zombieType],
             zIndex: 0
-         })
+         }, this)
       ]);
    }
 }

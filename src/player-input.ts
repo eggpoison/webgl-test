@@ -4,9 +4,9 @@ import { BackpackInventoryMenu_setIsVisible } from "./components/game/inventorie
 import { CraftingMenu_setIsVisible } from "./components/game/menus/CraftingMenu";
 import Player from "./entities/Player";
 import Client from "./client/Client";
-import Entity from "./entities/Entity";
 import Game from "./Game";
 import { Hotbar_setHotbarSelectedItemSlot } from "./components/game/inventories/Hotbar";
+import GameObject from "./GameObject";
 
 /** How far away from the entity the attack is done */
 const PLAYER_ATTACK_OFFSET = 80;
@@ -28,7 +28,7 @@ const PLAYER_SLOW_ACCELERATION = 600;
 let _inventoryIsOpen = false;
 
 /** Calculates which entities would be the target of a player attack in the current game state. */
-export function calculatePlayerAttackTargets(): ReadonlyArray<Entity> {
+export function calculatePlayerAttackTargets(): ReadonlyArray<GameObject> {
    if (Player.instance === null) return [];
    
    const offset = new Vector(PLAYER_ATTACK_OFFSET, Player.instance.rotation);
@@ -41,32 +41,32 @@ export function calculatePlayerAttackTargets(): ReadonlyArray<Entity> {
    const maxChunkY = Math.max(Math.min(Math.floor((attackPosition.y + PLAYER_ATTACK_TEST_RADIUS) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
 
    // Find all attacked entities
-   const attackedEntities = new Array<Entity>();
+   const attackedGameObjects = new Array<GameObject>();
    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
          const chunk = Game.board.getChunk(chunkX, chunkY);
 
-         for (const entity of chunk.getEntities()) {
+         for (const gameObject of chunk.getGameObjects()) {
             // Skip entities that are already in the array
-            if (attackedEntities.includes(entity)) continue;
+            if (attackedGameObjects.includes(gameObject)) continue;
 
-            const dist = Game.board.calculateDistanceBetweenPointAndEntity(attackPosition, entity);
-            if (dist <= PLAYER_ATTACK_TEST_RADIUS) attackedEntities.push(entity);
+            const dist = Game.board.calculateDistanceBetweenPointAndGameObject(attackPosition, gameObject);
+            if (dist <= PLAYER_ATTACK_TEST_RADIUS) attackedGameObjects.push(gameObject);
          }
       }
    }
    
    // Don't attack yourself
    while (true) {
-      const idx = attackedEntities.indexOf(Player.instance);
+      const idx = attackedGameObjects.indexOf(Player.instance);
       if (idx !== -1) {
-         attackedEntities.splice(idx, 1);
+         attackedGameObjects.splice(idx, 1);
       } else {
          break;
       }
    }
 
-   return attackedEntities;
+   return attackedGameObjects;
 }
 
 const attack = (): void => {
@@ -234,26 +234,26 @@ export function updatePlayerMovement(): void {
    const sIsPressed = keyIsPressed("s") || keyIsPressed("S") || keyIsPressed("ArrowDown");
    const dIsPressed = keyIsPressed("d") || keyIsPressed("D") || keyIsPressed("ArrowRight");
 
-   const hash = (wIsPressed ? 1 : 0) + (aIsPressed ? 2 : 0) + (sIsPressed ? 4 : 0) + (dIsPressed ? 8 : 0)
-   
+   const hash = (wIsPressed ? 1 : 0) + (aIsPressed ? 2 : 0) + (sIsPressed ? 4 : 0) + (dIsPressed ? 8 : 0);
+
    // Update rotation
    let moveDirection!: number | null;
    switch (hash) {
       case 0:  moveDirection = null;          break;
-      case 1:  moveDirection = Math.PI / 2;   break;
-      case 2:  moveDirection = Math.PI;       break;
-      case 3:  moveDirection = Math.PI * 3/4; break;
-      case 4:  moveDirection = Math.PI * 3/2; break;
+      case 1:  moveDirection = 0;   break;
+      case 2:  moveDirection = Math.PI * 3/2;       break;
+      case 3:  moveDirection = Math.PI * 7/4; break;
+      case 4:  moveDirection = Math.PI; break;
       case 5:  moveDirection = null;          break;
       case 6:  moveDirection = Math.PI * 5/4; break;
-      case 7:  moveDirection = Math.PI;       break;
-      case 8:  moveDirection = 0;             break;
+      case 7:  moveDirection = Math.PI * 3/2;     break;
+      case 8:  moveDirection = Math.PI/2;             break;
       case 9:  moveDirection = Math.PI / 4;   break;
       case 10: moveDirection = null;          break;
-      case 11: moveDirection = Math.PI / 2;   break;
-      case 12: moveDirection = Math.PI * 7/4; break;
-      case 13: moveDirection = 0;             break;
-      case 14: moveDirection = Math.PI * 3/2; break;
+      case 11: moveDirection = 0;   break;
+      case 12: moveDirection = Math.PI * 3/4; break;
+      case 13: moveDirection = Math.PI/2;             break;
+      case 14: moveDirection = Math.PI; break;
       case 15: moveDirection = null;          break;
    }
 

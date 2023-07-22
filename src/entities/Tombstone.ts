@@ -20,12 +20,11 @@ class Tombstone extends Entity {
 
       this.attachRenderParts([
          new RenderPart({
-            entity: this,
             width: 64,
             height: 96,
             textureSource: `tombstone/tombstone${tombstoneType + 1}.png`,
             zIndex: 0
-         })
+         }, this)
       ]);
    }
 }

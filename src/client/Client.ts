@@ -7,7 +7,7 @@ import Game from "../Game";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import Hitbox from "../hitboxes/Hitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import ItemEntity from "../items/ItemEntity";
+import DroppedItem from "../items/DroppedItem";
 import { Tile } from "../Tile";
 import { createItem } from "../items/item-creation";
 import { gameScreenSetIsDead } from "../components/game/GameScreen";
@@ -77,6 +77,8 @@ abstract class Client {
             this.socket.on("disconnect", disconnectReason => {
                // Don't show a connection error if the socket was disconnected manually
                if (disconnectReason === "io client disconnect") return;
+
+               console.warn(disconnectReason);
 
                Game.isRunning = false;
                
@@ -152,8 +154,9 @@ abstract class Client {
       Game.ticks = gameDataPacket.serverTicks;
       Game.time = gameDataPacket.serverTime;
 
+      // this.updateGameObjects(gameDataPacket);
       this.updateEntities(gameDataPacket.entityDataArray);
-      this.updateItemEntities(gameDataPacket.droppedItemDataArray);
+      this.updateDroppedItems(gameDataPacket.droppedItemDataArray);
       this.updatePlayerInventory(gameDataPacket.inventory);
       this.registerTileUpdates(gameDataPacket.tileUpdates);
 
@@ -177,15 +180,27 @@ abstract class Client {
       }
    }
 
+   // private static updateGameObjects(gameDataPacket: GameDataPacket): void {
+   //    const knownEntityIDs = new Set(Object.keys(Game.board.gameObjects).map(idString => Number(idString)));
+
+   //    // this.updateProjectiles(gameDataPacket.entityDataArray, knownEntityIDs);
+
+   //    // All known entity ids which haven't been removed are ones which are dead
+   //    for (const id of knownEntityIDs) {
+   //       Game.board.removeGameObject(Game.board.entities[id]);
+   //    }
+   // }
+
    /**
     * Updates the client's entities to match those in the server
     */
    private static updateEntities(entityDataArray: ReadonlyArray<EntityData<EntityType>>): void {
-      const clientKnownEntityIDs: Array<number> = Object.keys(Game.board.entities).map(idString => Number(idString));
-
+      const knownEntityIDs = new Set(Object.keys(Game.board.entities).map(idString => Number(idString)));
+      // const knownEntityIDs = new Set<number>();
+      
       // Remove the player from the list of known entities so the player isn't removed
       if (Player.instance !== null) {
-         clientKnownEntityIDs.splice(clientKnownEntityIDs.indexOf(Player.instance.id), 1);
+         knownEntityIDs.delete(Player.instance.id);
       }
 
       // Update the game entities
@@ -197,37 +212,43 @@ abstract class Client {
             this.createEntityFromData(entityData);
          }
 
-         clientKnownEntityIDs.splice(clientKnownEntityIDs.indexOf(entityData.id), 1);
+         knownEntityIDs.delete(entityData.id);
       }
 
-      // All remaining known entities must then have been removed
-      for (const id of clientKnownEntityIDs) {
-         Game.board.removeEntity(Game.board.entities[id]);
+      // All known entity ids which haven't been removed are ones which are dead
+      for (const id of knownEntityIDs) {
+         if (typeof Game.board.entities[id] === "undefined") {
+            console.warn("CRINGE #1 DETECTED");
+         }
+         Game.board.removeGameObject(Game.board.entities[id]);
       }
    }
 
-   private static updateItemEntities(serverItemEntityDataArray: ReadonlyArray<DroppedItemData>): void {
-      const knownItemEntityIDs = Object.keys(Game.board.itemEntities).map(stringID => Number(stringID));
+   private static updateDroppedItems(serverItemEntityDataArray: ReadonlyArray<DroppedItemData>): void {
+      const ids = new Set(Object.keys(Game.board.droppedItems).map(idString => Number(idString)));
+      // const ids = new Set<number>();
 
       for (const serverItemData of serverItemEntityDataArray) {
-         if (!knownItemEntityIDs.includes(serverItemData.id)) {
+         if (!ids.has(serverItemData.id)) {
             // New item
             this.createItemFromServerItemData(serverItemData);
          } else {
             // Otherwise update it
-            if (Game.board.itemEntities.hasOwnProperty(serverItemData.id)) {
-               const itemEntity = Game.board.itemEntities[serverItemData.id];
+            if (Game.board.droppedItems.hasOwnProperty(serverItemData.id)) {
+               const itemEntity = Game.board.droppedItems[serverItemData.id];
                itemEntity.updateFromData(serverItemData);
             }
-            
          }
 
-         knownItemEntityIDs.splice(knownItemEntityIDs.indexOf(serverItemData.id), 1);
+         ids.delete(serverItemData.id);
       }
 
-      // Thus the remaining known item IDs have had their items removed
-      for (const itemID of knownItemEntityIDs) {
-         Game.board.itemEntities[itemID].remove();
+      // All known entity ids which haven't been removed are ones which are dead
+      for (const id of ids) {
+         if (typeof Game.board.droppedItems[id] === "undefined") {
+            throw new Error("CRINGE2");
+         }
+         Game.board.removeGameObject(Game.board.droppedItems[id]);
       }
    }
 
@@ -300,7 +321,11 @@ abstract class Client {
          containingChunks.add(chunk);
       }
 
-      new ItemEntity(serverItemEntityData.id, position, velocity, containingChunks, serverItemEntityData.itemID, serverItemEntityData.rotation);
+      const hitboxes = this.createHitboxesFromData(serverItemEntityData.hitboxes);
+
+      const droppedItem = new DroppedItem(position, hitboxes, serverItemEntityData.id, velocity, serverItemEntityData.type);
+      // const droppedItem = new DroppedItem(position, hitboxes, serverItemEntityData.id);
+      droppedItem.rotation = serverItemEntityData.rotation;
    }
    
    private static registerTileUpdates(tileUpdates: ReadonlyArray<ServerTileUpdateData>): void {
@@ -313,12 +338,9 @@ abstract class Client {
       }
    }
 
-   public static createEntityFromData(entityData: EntityData<EntityType>): void {
-      const position = Point.unpackage(entityData.position);
-
-      // Create the hitboxes
+   private static createHitboxesFromData(hitboxDataArray: ReadonlyArray<HitboxData<HitboxType>>): Set<Hitbox<HitboxType>> {
       const hitboxes = new Set<Hitbox<HitboxType>>();
-      for (const hitboxData of entityData.hitboxes) {
+      for (const hitboxData of hitboxDataArray) {
          const hitboxInfo = this.createHitboxInfo(hitboxData);
          
          switch (hitboxInfo.type) {
@@ -332,6 +354,13 @@ abstract class Client {
             }
          }
       }
+      return hitboxes;
+   }
+
+   public static createEntityFromData(entityData: EntityData<EntityType>): void {
+      const position = Point.unpackage(entityData.position);
+
+      const hitboxes = this.createHitboxesFromData(entityData.hitboxes);
 
       // Create the entity
       const entityConstructor = ENTITY_CLASS_RECORD[entityData.type]() as EntityClassType<typeof entityData.type>;

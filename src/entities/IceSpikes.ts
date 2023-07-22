@@ -1,23 +1,27 @@
-import { HitboxType, Point } from "webgl-test-shared";
+import { Point, HitboxType } from "webgl-test-shared";
 import Hitbox from "../hitboxes/Hitbox";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 
-class Workbench extends Entity {
-   public readonly type = "workbench";
-   
+class IceSpikes extends Entity {
+   public type = "ice_spikes" as const;
+
+   private static readonly WIDTH = 80;
+   private static readonly HEIGHT = 80;
+
    constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
       this.attachRenderParts([
          new RenderPart({
-            width: 80,
-            height: 80,
-            textureSource: "workbench/workbench.png",
+            width: IceSpikes.WIDTH,
+            height: IceSpikes.HEIGHT,
+            // textureSource: `ice-spikes/ice-spikes-1.png`,
+            textureSource: "boulder/boulder1.png",
             zIndex: 0
          }, this)
       ]);
    }
 }
 
-export default Workbench;
+export default IceSpikes;

@@ -16,12 +16,11 @@ class Tree extends Entity {
 
       this.attachRenderParts([
          new RenderPart({
-            entity: this,
             width: 80 + treeSize * 20,
             height: 80 + treeSize * 20,
             textureSource: treeTextures[treeSize],
             zIndex: 0
-         })
+         }, this)
       ]);
    }
 }

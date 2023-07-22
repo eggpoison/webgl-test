@@ -1,7 +1,7 @@
 import { Point, rotatePoint } from "webgl-test-shared";
 import Camera from "../Camera";
 import { createWebGLProgram, gl } from "../webgl";
-import { calculateVisibleEntities } from "./entity-rendering";
+import { calculateVisibleGameObjects } from "./game-object-rendering";
 
 const CIRCLE_VERTEX_COUNT = 20;
 
@@ -34,7 +34,7 @@ export function createHitboxShaders(): void {
 
 /** Renders all hitboxes of a specified set of entities */
 export function renderEntityHitboxes(): void {
-   const entities = calculateVisibleEntities();
+   const entities = calculateVisibleGameObjects();
    if (entities.size === 0) return;
    
    gl.useProgram(program);
@@ -43,7 +43,7 @@ export function renderEntityHitboxes(): void {
    const vertices = new Array<number>();
    for (const entity of entities) {
       for (const hitbox of entity.hitboxes) {
-         const hitboxRenderPosition = hitbox.entity.renderPosition.copy();
+         const hitboxRenderPosition = hitbox.gameObject.renderPosition.copy();
          if (typeof hitbox.info.offset !== "undefined") {
             hitboxRenderPosition.add(hitbox.info.offset);
          }

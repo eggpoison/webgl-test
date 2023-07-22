@@ -33,7 +33,8 @@ export function updatePlayerRotation(cursorX: number, cursorY: number): void {
    const relativeCursorX = cursorX - halfWindowWidth;
    const relativeCursorY = -cursorY + halfWindowHeight;
 
-   const cursorDirection = Math.atan2(relativeCursorY, relativeCursorX);
+   let cursorDirection = Math.atan2(relativeCursorY, relativeCursorX);
+   cursorDirection = Math.PI/2 - cursorDirection;
    Player.instance.rotation = cursorDirection;
 }
 
@@ -114,17 +115,19 @@ class Player extends Entity {
 
       this.attachRenderParts([
          new RenderPart({
-            entity: this,
             width: 64,
             height: 64,
-            // textureSource: "human/temp-player.png",
             textureSource: "human/human1.png",
             zIndex: 0
-         })
+         }, this)
       ]);
 
       this.username = username;
    }
+
+   // public tick(): void {
+   //    this.velocity = new Vector(200, 0);
+   // }
 
    public static setInstancePlayer(player: Player): void {
       if (Player.instance !== null) {

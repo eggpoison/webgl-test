@@ -14,12 +14,11 @@ class Boulder extends Entity {
 
       this.attachRenderParts([
          new RenderPart({
-            entity: this,
             width: Boulder.WIDTH,
             height: Boulder.HEIGHT,
             textureSource: `boulder/boulder${boulderType + 1}.png`,
             zIndex: 0
-         })
+         }, this)
       ]);
    }
 }

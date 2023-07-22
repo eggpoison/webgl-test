@@ -17,12 +17,11 @@ class Cactus extends Entity {
 
       this.attachRenderPart(
          new RenderPart({
-            entity: this,
             width: Cactus.SIZE,
             height: Cactus.SIZE,
             textureSource: "cactus/cactus.png",
             zIndex: 1
-         })
+         }, this)
       );
 
       // Attach flower render parts
@@ -37,14 +36,13 @@ class Cactus extends Entity {
 
          this.attachRenderPart(
             new RenderPart({
-               entity: this,
                width: flowerSize,
                height: flowerSize,
                textureSource: this.getFlowerTextureSource(type, size),
                zIndex: 2,
                offset: () => offsetVector,
                rotation: 2 * Math.PI * Math.random()
-            })
+            }, this)
          );
       }
 
@@ -52,18 +50,17 @@ class Cactus extends Entity {
       for (let i = 0; i < limbs.length; i++) {
          const { direction, flower } = limbs[i];
 
-         const offset = new Vector(Cactus.SIZE / 2, direction + Math.PI/2).convertToPoint();
+         const offset = new Vector(Cactus.SIZE / 2, direction).convertToPoint();
 
          this.attachRenderPart(
             new RenderPart({
-               entity: this,
                width: Cactus.LIMB_SIZE,
                height: Cactus.LIMB_SIZE,
                textureSource: "cactus/cactus-limb.png",
                zIndex: 0,
                offset: () => offset,
                rotation: 2 * Math.PI * Math.random()
-            })
+            }, this)
          );
          
          if (typeof flower !== "undefined") {
@@ -74,14 +71,13 @@ class Cactus extends Entity {
 
             this.attachRenderPart(
                new RenderPart({
-                  entity: this,
                   width: 16,
                   height: 16,
                   textureSource: this.getFlowerTextureSource(type, CactusFlowerSize.small),
                   zIndex: 1,
                   offset: () => flowerOffset,
                   rotation: 2 * Math.PI * Math.random()
-               })
+               }, this)
             );
          }
       }
