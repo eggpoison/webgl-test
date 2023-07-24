@@ -1,5 +1,7 @@
 import { isDev } from "./utils";
 
+export const CIRCLE_VERTEX_COUNT = 50;
+
 let canvas: HTMLCanvasElement;
 export let gl: WebGLRenderingContext;
 

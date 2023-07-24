@@ -141,15 +141,31 @@ abstract class GameObject extends RenderObject {
 
       const terminalVelocity = this.terminalVelocity * tileMoveSpeedMultiplier;
 
+      let tileFrictionReduceAmount: number;
+      
       // Friction
       if (this.velocity !== null) {
+         const amountBefore = this.velocity.magnitude
          this.velocity.magnitude /= 1 + 3 / SETTINGS.TPS * tileTypeInfo.friction;
+         tileFrictionReduceAmount = amountBefore - this.velocity.magnitude;
+      } else {
+         tileFrictionReduceAmount = 0;
       }
       
       // Accelerate
       if (this.acceleration !== null) {
          const acceleration = this.acceleration.copy();
          acceleration.magnitude *= tileTypeInfo.friction * tileMoveSpeedMultiplier / SETTINGS.TPS;
+
+         // Make acceleration slow as the game object reaches its terminal velocity
+         if (this.velocity !== null) {
+            const progressToTerminalVelocity = this.velocity.magnitude / terminalVelocity;
+            if (progressToTerminalVelocity < 1) {
+               acceleration.magnitude *= 1 - Math.pow(progressToTerminalVelocity * 1.1, 2);
+            }
+         }
+
+         acceleration.magnitude += tileFrictionReduceAmount;
 
          const magnitudeBeforeAdd = this.velocity?.magnitude || 0;
 

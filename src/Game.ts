@@ -4,7 +4,7 @@ import { isDev } from "./utils";
 import { renderPlayerNames, createTextCanvasContext } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/game/ChatBox";
-import { lerp, Point, SETTINGS } from "webgl-test-shared";
+import { GameObjectDebugData, lerp, Point, SETTINGS } from "webgl-test-shared";
 import { createEntityShaders, renderGameObjects } from "./rendering/game-object-rendering";
 import Client from "./client/Client";
 import { calculateCursorWorldPosition, getCursorX, getCursorY, handleMouseMovement, renderCursorTooltip } from "./mouse";
@@ -27,6 +27,7 @@ import { createLiquidTileShaders } from "./rendering/tile-rendering/liquid-tile-
 import { createChunkBorderShaders, renderChunkBorders } from "./rendering/chunk-border-rendering";
 import { nerdVisionIsVisible } from "./components/game/nerd-vision/NerdVisionOverlay";
 import { setFrameProgress } from "./GameObject";
+import { createDebugDataShaders, renderLineDebugData, renderTriangleDebugData } from "./rendering/debug-data-rendering";
 
 const nightVertexShaderText = `
 precision mediump float;
@@ -102,6 +103,8 @@ abstract class Game {
    public static definiteGameState = new DefiniteGameState();
    public static latencyGameState = new LatencyGameState();
 
+   private static gameObjectDebugData: GameObjectDebugData | null = null;
+
    public static get ticks(): number {
       return this._ticks;
    }
@@ -118,6 +121,14 @@ abstract class Game {
    public static set time(time: number) {
       this._time = time;
       updateDebugScreenCurrentTime(time);
+   }
+
+   public static setGameObjectDebugData(gameObjectDebugData: GameObjectDebugData | undefined): void {
+      if (typeof gameObjectDebugData === "undefined") {
+         this.gameObjectDebugData = null;
+      } else {
+         this.gameObjectDebugData = gameObjectDebugData;
+      }
    }
 
    /** Starts the game */
@@ -200,11 +211,11 @@ abstract class Game {
             createSolidTileShaders();
             createLiquidTileShaders();
             createEntityShaders();
-            // createItemEntityShaders();
             createWorldBorderShaders();
             createPlaceableItemProgram();
             createChunkBorderShaders();
             createHitboxShaders();
+            createDebugDataShaders();
 
             createRenderChunkBuffers();
             
@@ -283,11 +294,19 @@ abstract class Game {
       renderPlayerNames();
 
       renderSolidTiles();
-      renderGameObjects();
+      if (this.gameObjectDebugData !== null && Game.board.gameObjects.hasOwnProperty(this.gameObjectDebugData.gameObjectID)) {
+         renderTriangleDebugData(this.gameObjectDebugData);
+      }
       renderWorldBorder();
       if (nerdVisionIsVisible()) {
          renderChunkBorders();
+      }
+      renderGameObjects();
+      if (nerdVisionIsVisible()) {
          renderEntityHitboxes();
+      }
+      if (this.gameObjectDebugData !== null && Game.board.gameObjects.hasOwnProperty(this.gameObjectDebugData.gameObjectID)) {
+         renderLineDebugData(this.gameObjectDebugData);
       }
 
       renderGhostPlaceableItem();

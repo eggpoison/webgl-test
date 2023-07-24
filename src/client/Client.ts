@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, CraftingRecipe, PlayerInventoryType, PlaceablePlayerInventoryType, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, ItemData, InventoryData, ItemSlotData, EntityType, HitboxData, HitboxInfo, ProjectileData } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, CraftingRecipe, PlayerInventoryType, PlaceablePlayerInventoryType, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, ItemData, InventoryData, ItemSlotData, EntityType, HitboxData, HitboxInfo, ProjectileData, VisibleChunkBounds } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -23,6 +23,7 @@ import { registerServerTick } from "../components/game/nerd-vision/GameInfoDispl
 import { updateRenderChunkFromTileBuffer } from "../rendering/tile-rendering/solid-tile-rendering";
 import createProjectile from "../projectiles/projectile-creation";
 import Camera from "../Camera";
+import { isDev } from "../utils";
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -101,6 +102,19 @@ abstract class Client {
       });
    }
 
+   public static async requestSpawnPosition(): Promise<Point> {
+      return new Promise(resolve => {
+         if (this.socket === null) throw new Error("Socket hadn't been created when requesting game data")
+
+         this.socket.emit("spawn_position_request");
+         
+         this.socket.off("spawn_position");
+         this.socket.on("spawn_position", (spawnPositionPackaged: [number, number]) => {
+            resolve(Point.unpackage(spawnPositionPackaged));
+         });
+      });
+   }
+
    public static async requestInitialGameData(): Promise<InitialGameDataPacket> {
       return new Promise(resolve => {
          if (this.socket === null) throw new Error("Socket hadn't been created when requesting game data")
@@ -155,6 +169,10 @@ abstract class Client {
    public static unloadGameDataPacket(gameDataPacket: GameDataPacket): void {
       Game.ticks = gameDataPacket.serverTicks;
       Game.time = gameDataPacket.serverTime;
+
+      if (isDev()) {
+         Game.setGameObjectDebugData(gameDataPacket.gameObjectDebugData);
+      }
 
       this.updateEntities(gameDataPacket.entityDataArray);
       this.updateDroppedItems(gameDataPacket.droppedItemDataArray);
@@ -467,10 +485,10 @@ abstract class Client {
       }
    }
 
-   public static sendInitialPlayerData(username: string): void {
+   public static sendInitialPlayerData(username: string, visibleChunks: VisibleChunkBounds): void {
       // Send player data to the server
       if (this.socket !== null) {
-         this.socket.emit("initial_player_data", username);
+         this.socket.emit("initial_player_data", username, visibleChunks);
       }
    }
 

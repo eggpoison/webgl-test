@@ -5,8 +5,9 @@ import Client from "../client/Client";
 import Player from "../entities/Player";
 import Game from "../Game";
 import { setGameState, setLoadingScreenInitialStatus } from "./App";
+import Camera from "../Camera";
 
-export type LoadingScreenStatus = "establishing_connection" | "sending_player_data" | "receiving_game_data" | "initialising_game" | "connection_error";
+export type LoadingScreenStatus = "establishing_connection" | "receiving_spawn_position" | "sending_player_data" | "receiving_game_data" | "initialising_game" | "connection_error";
 
 interface LoadingScreenProps {
    readonly username: string;
@@ -15,6 +16,7 @@ interface LoadingScreenProps {
 const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
    const [status, setStatus] = useState<LoadingScreenStatus>(initialStatus);
    const initialGameDataPacketRef = useRef<InitialGameDataPacket | null>(null);
+   const spawnPositionRef = useRef<Point | null>(null);
    const hasStarted = useRef(false);
 
    const openMainMenu = (): void => {
@@ -38,7 +40,7 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
                (async () => {
                   const connectionWasSuccessful = await Client.connectToServer();
                   if (connectionWasSuccessful) {
-                     setStatus("sending_player_data");
+                     setStatus("receiving_spawn_position");
                   } else {
                      setStatus("connection_error");
                   }
@@ -47,8 +49,19 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
 
             break;
          }
+         case "receiving_spawn_position": {
+            (async () => {
+               spawnPositionRef.current = await Client.requestSpawnPosition();
+
+               setStatus("sending_player_data");
+            })();
+
+            break;
+         }
          case "sending_player_data": {
-            Client.sendInitialPlayerData(username);
+            Camera.setCameraPosition(spawnPositionRef.current!);
+            const visibleChunks = Camera.calculateVisibleChunkBounds();
+            Client.sendInitialPlayerData(username, visibleChunks);
 
             setStatus("receiving_game_data");
             
@@ -65,7 +78,7 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
          }
          case "initialising_game": {
             (async () => {
-               const initialGameDataPacket =initialGameDataPacketRef.current!;
+               const initialGameDataPacket = initialGameDataPacketRef.current!;
 
                const tiles = Client.parseServerTileDataArray(initialGameDataPacket.tiles);
                Game.board = new Board(tiles);
@@ -74,7 +87,7 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
 
                // Spawn the player
                Game.definiteGameState.playerUsername = username;
-               const playerSpawnPosition = new Point(initialGameDataPacket.spawnPosition[0], initialGameDataPacket.spawnPosition[1]);
+               const playerSpawnPosition = new Point(spawnPositionRef.current!.x, spawnPositionRef.current!.y);
                const player = new Player(playerSpawnPosition, new Set(Player.HITBOXES), initialGameDataPacket.playerID, null, username);
                Player.setInstancePlayer(player);
 

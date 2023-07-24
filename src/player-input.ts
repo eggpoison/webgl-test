@@ -25,7 +25,7 @@ const PLAYER_TERMINAL_VELOCITY = 300;
 const PLAYER_LIGHTSPEED_TERMINAL_VELOCITY = 5000;
 
 /** Acceleration of the player while moving without any modifiers. */
-const PLAYER_ACCELERATION = 900;
+const PLAYER_ACCELERATION = 700;
 
 const PLAYER_LIGHTSPEED_ACCELERATION = 15000;
 
