@@ -1,4 +1,4 @@
-import { Point, rotatePoint } from "webgl-test-shared";
+import { Point, lerp, rotatePoint } from "webgl-test-shared";
 import Camera from "../Camera";
 import Entity from "../entities/Entity";
 import Game from "../Game";
@@ -11,19 +11,16 @@ import GameObject from "../GameObject";
 - We only care about the draw orders within an entity, as game objects usually don't overlap.
 */
 
-// 
-// Image shaders
-// 
-const entityRenderingVertexShaderText = `
+const vertexShaderText = `
 precision highp float;
 
 attribute vec2 a_position;
-attribute float a_redness;
 attribute vec2 a_texCoord;
+attribute vec3 a_tint;
 attribute float a_textureIdx;
 
 varying vec2 v_texCoord;
-varying float v_redness;
+varying vec3 v_tint;
 varying float v_textureIdx;
  
 void main() {
@@ -31,7 +28,7 @@ void main() {
 
    v_texCoord = a_texCoord;
    v_textureIdx = a_textureIdx;
-   v_redness = a_redness;
+   v_tint = a_tint;
 }
 `;
 
@@ -42,7 +39,7 @@ precision highp float;
 uniform sampler2D u_textures[__MAX_ACTIVE_TEXTURE_UNITS__];
 
 varying vec2 v_texCoord;
-varying float v_redness;
+varying vec3 v_tint;
 varying float v_textureIdx;
     
 vec4 getSampleFromArray(sampler2D textures[__MAX_ACTIVE_TEXTURE_UNITS__], int ndx, vec2 uv) {
@@ -58,30 +55,46 @@ vec4 getSampleFromArray(sampler2D textures[__MAX_ACTIVE_TEXTURE_UNITS__], int nd
 
 void main() {
    vec4 fragColour = getSampleFromArray(u_textures, int(v_textureIdx + 0.5), v_texCoord);
+   
+   if (v_tint.r > 0.0) {
+      fragColour.r = mix(fragColour.r, 1.0, v_tint.r);
+   } else {
+      fragColour.r = mix(fragColour.r, 0.0, -v_tint.r);
+   }
+   if (v_tint.g > 0.0) {
+      fragColour.g = mix(fragColour.g, 1.0, v_tint.g);
+   } else {
+      fragColour.g = mix(fragColour.g, 0.0, -v_tint.g);
+   }
+   if (v_tint.b > 0.0) {
+      fragColour.b = mix(fragColour.b, 1.0, v_tint.b);
+   } else {
+      fragColour.b = mix(fragColour.b, 0.0, -v_tint.b);
+   }
 
-   fragColour.r = fragColour.r * (1.0 - v_redness) + 1.0 * v_redness;
-   fragColour.g = fragColour.g * (1.0 - v_redness);
-   fragColour.b = fragColour.b * (1.0 - v_redness);
    gl_FragColor = fragColour;
 }
 `, (shaderString: string) => {
    entityRenderingFragmentShaderText = shaderString
 });
+/*
+
+*/
 
 let imageRenderingProgram: WebGLProgram;
 
 let imageRenderingProgramTexturesUniformLocation: WebGLUniformLocation;
 let imageRenderingProgramPosAttribLocation: GLint;
-let imageRenderingProgramRednessAttribLocation: GLint;
+let imageRenderingProgramTintAttribLocation: GLint;
 let imageRenderingProgramTexCoordAttribLocation: GLint;
 let imageRenderingProgramTextureIdxAttribLocation: GLint;
 
 export function createEntityShaders(): void {
-   imageRenderingProgram = createWebGLProgram(entityRenderingVertexShaderText, entityRenderingFragmentShaderText);
+   imageRenderingProgram = createWebGLProgram(vertexShaderText, entityRenderingFragmentShaderText);
 
    imageRenderingProgramTexturesUniformLocation = gl.getUniformLocation(imageRenderingProgram, "u_textures")!;
    imageRenderingProgramPosAttribLocation = gl.getAttribLocation(imageRenderingProgram, "a_position");
-   imageRenderingProgramRednessAttribLocation = gl.getAttribLocation(imageRenderingProgram, "a_redness");
+   imageRenderingProgramTintAttribLocation = gl.getAttribLocation(imageRenderingProgram, "a_tint");
    imageRenderingProgramTexCoordAttribLocation = gl.getAttribLocation(imageRenderingProgram, "a_texCoord");
    imageRenderingProgramTextureIdxAttribLocation = gl.getAttribLocation(imageRenderingProgram, "a_textureIdx");
 }
@@ -212,7 +225,9 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
             // Add texture source
             
             // Calculate vertices for all render parts in the record
-            let redness = 0;
+            let redTint = 0;
+            let greenTint = 0;
+            let blueTint = 0;
 
             // TODO: Remove this hacky bullshit
             let entity: Entity | undefined;
@@ -224,18 +239,26 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
                entity = nextOneUp;
             }
             if (typeof entity !== "undefined") {
-               redness = calculateEntityRedness(entity);
+               if (entity.statusEffects.includes("freezing")) {
+                  blueTint += 0.5;
+                  redTint -= 0.15;
+               }
+
+               const redness = calculateEntityRedness(entity);
+               redTint = lerp(redTint, 1, redness);
+               greenTint = lerp(greenTint, -1, redness);
+               blueTint = lerp(blueTint, -1, redness);
             }
 
             // Calculate the corner positions of the render part
             const [tl, tr, bl, br] = calculateRenderPartVertexPositions(renderInfo.renderPart, renderInfo.totalRotation);
             vertices.push(
-               bl.x, bl.y, 0, 0, redness, textureIdx,
-               br.x, br.y, 1, 0, redness, textureIdx,
-               tl.x, tl.y, 0, 1, redness, textureIdx,
-               tl.x, tl.y, 0, 1, redness, textureIdx,
-               br.x, br.y, 1, 0, redness, textureIdx,
-               tr.x, tr.y, 1, 1, redness, textureIdx
+               bl.x, bl.y, 0, 0, redTint, greenTint, blueTint, textureIdx,
+               br.x, br.y, 1, 0, redTint, greenTint, blueTint, textureIdx,
+               tl.x, tl.y, 0, 1, redTint, greenTint, blueTint, textureIdx,
+               tl.x, tl.y, 0, 1, redTint, greenTint, blueTint, textureIdx,
+               br.x, br.y, 1, 0, redTint, greenTint, blueTint, textureIdx,
+               tr.x, tr.y, 1, 1, redTint, greenTint, blueTint, textureIdx
             );
          }
          
@@ -263,17 +286,17 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
       gl.bindBuffer(gl.ARRAY_BUFFER, tileBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
-      gl.vertexAttribPointer(imageRenderingProgramPosAttribLocation, 2, gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 0);
-      gl.vertexAttribPointer(imageRenderingProgramTexCoordAttribLocation, 2, gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(imageRenderingProgramRednessAttribLocation, 1, gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(imageRenderingProgramTextureIdxAttribLocation, 1, gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(imageRenderingProgramPosAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 0);
+      gl.vertexAttribPointer(imageRenderingProgramTexCoordAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(imageRenderingProgramTintAttribLocation, 3, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(imageRenderingProgramTextureIdxAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
 
       gl.uniform1iv(imageRenderingProgramTexturesUniformLocation, usedTextureSources.map((_, idx) => idx));
       
       // Enable the attributes
       gl.enableVertexAttribArray(imageRenderingProgramPosAttribLocation);
       gl.enableVertexAttribArray(imageRenderingProgramTexCoordAttribLocation);
-      gl.enableVertexAttribArray(imageRenderingProgramRednessAttribLocation);
+      gl.enableVertexAttribArray(imageRenderingProgramTintAttribLocation);
       gl.enableVertexAttribArray(imageRenderingProgramTextureIdxAttribLocation);
       
       // Set all texture units
@@ -285,7 +308,7 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
       }
 
       // Draw the vertices
-      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 6);
+      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 8);
    }
 
    gl.disable(gl.BLEND);

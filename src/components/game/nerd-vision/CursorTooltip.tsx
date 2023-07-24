@@ -26,14 +26,14 @@ const CursorTooltip = () => {
       }
    }, []);
 
-   let displayText: string;
+   let displayText: string | undefined;
    if (target !== null) {
       const name = CLIENT_ENTITY_INFO_RECORD[target.type].name;
       displayText = `${name}`;
    }
 
-   return target !== null ? <div id="cursor-tooltip" ref={cursorTooltipRef}>
-      {displayText!}
+   return typeof displayText !== "undefined" ? <div id="cursor-tooltip" ref={cursorTooltipRef}>
+      {displayText}
    </div> : null;
 }
 

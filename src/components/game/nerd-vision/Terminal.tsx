@@ -2,6 +2,17 @@ import { useEffect, useRef, useState } from "react";
 import { COMMANDS, CommandPermissions, CommandSpecifications, commandIsValid, parseCommand } from "webgl-test-shared";
 import { isDev } from "../../../utils";
 import Client from "../../../client/Client";
+import { setLightspeedIsActive } from "../../../player-input";
+import { setTerminalButtonOpened } from "./TerminalButton";
+
+const toggleLightspeed = (command: string): void => {
+   const param = command.split(" ")[1];
+   if (param === "on") {
+      setLightspeedIsActive(true);
+   } else if (param === "off") {
+      setLightspeedIsActive(false);
+   }
+}
 
 /**
  * Checks whether the player is using the terminal or not.
@@ -28,11 +39,58 @@ const getCommandErrorMessage = (command: string): string => {
    return "Invalid command! Mismatch of parameters.";
 }
 
-const Terminal = () => {
+export let setTerminalVisibility: (isVisible: boolean) => void;
+export let toggleTerminalVisiblity: () => void;
+export let forceTerminalFocus: () => void;
+
+interface TerminalParams {
+   readonly startingIsVisible: boolean;
+}
+
+const Terminal = ({ startingIsVisible }: TerminalParams) => {
    const lineInputRef = useRef<HTMLInputElement | null>(null);
    const caretRef = useRef<HTMLDivElement | null>(null);
-   const [isInFocus, setIsInFocus] = useState(false);
+   const [isVisible, setIsVisible] = useState(startingIsVisible);
+   const [isInFocus, setIsInFocus] = useState(startingIsVisible);
    const [lines, setLines] = useState<Array<string>>([]);
+
+   useEffect(() => {
+      if (startingIsVisible && lineInputRef.current !== null) {
+         lineInputRef.current.focus();
+      }
+   }, [startingIsVisible]);
+
+   useEffect(() => {
+      if (lineInputRef.current !== null) {
+         lineInputRef.current.focus();
+      }
+   }, [isInFocus]);
+   
+   useEffect(() => {
+      setTerminalVisibility = (isVisible: boolean): void => {
+         setIsInFocus(false);
+         setIsVisible(isVisible);
+         setTerminalButtonOpened(isVisible);
+      }
+
+      forceTerminalFocus = (): void => {
+         focusTerminal();
+      }
+   }, []);
+
+   useEffect(() => {
+      toggleTerminalVisiblity = (): void => {
+         const previousIsVisible = isVisible;
+         setTerminalVisibility(!previousIsVisible)
+      }
+   }, [isVisible]);
+
+   // useEffect(() => {
+   //    // Focus the line input
+   //    if (isInFocus && lineInputRef.current !== null) {
+   //       lineInputRef.current.focus();
+   //    }
+   // }, [isInFocus]);
 
    useEffect(() => {
       writeLineToTerminal = (line: string): void => {
@@ -40,13 +98,15 @@ const Terminal = () => {
       }
    }, [lines]);
    
-   const focusTerminal = (e: MouseEvent): void => {
+   const focusTerminal = (e?: MouseEvent): void => {
       setIsInFocus(true);
 
       // Focus the line input
       if (lineInputRef.current !== null) {
-         // Stop the click from registering so the focus is given to the line input
-         e.preventDefault();
+         if (typeof e !== "undefined") {
+            // Stop the click from registering so the focus is given to the line input
+            e.preventDefault();
+         }
          
          lineInputRef.current.focus();
       }
@@ -85,8 +145,13 @@ const Terminal = () => {
 
       // Execute the command
       const command = lineInputRef.current.value;
-      if (commandIsValid(command, isDev() ? CommandPermissions.dev : CommandPermissions.player)) {
-         Client.sendCommand(command);
+      const userPermissions = isDev() ? CommandPermissions.dev : CommandPermissions.player;
+      if (commandIsValid(command, userPermissions)) {
+         if (command.split(" ")[0] === "lightspeed") {
+            toggleLightspeed(command);
+         } else {
+            Client.sendCommand(command);
+         }
       } else {
          const errorMessage = getCommandErrorMessage(command);
          writeLineToTerminal(errorMessage);
@@ -101,6 +166,9 @@ const Terminal = () => {
    }
 
    const enterKey = (e: KeyboardEvent): void => {
+      if (e.key === "Escape") {
+         setTerminalVisibility(false);
+      }
       if (e.key === "Enter") {
          enterCommand();
          resetCaretPosition();
@@ -141,6 +209,8 @@ const Terminal = () => {
          window.removeEventListener("mousedown", checkForTerminalUnfocus);
       }
    }, []);
+
+   if (!isVisible) return null;
 
    return <div id="terminal" className={isInFocus ? "focused" : undefined} onMouseDown={e => focusTerminal(e.nativeEvent)}>
       <div className="lines">

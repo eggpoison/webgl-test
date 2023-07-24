@@ -11,7 +11,8 @@ const TOMBSTONE_DEATH_MESSAGES: ReadonlyArray<string> = [
 ];
 
 const NAMES: ReadonlyArray<string> = [
-   "James Wilson"
+   "James Wilson",
+   "Obama"
 ];
 
 class Tombstone extends Entity {

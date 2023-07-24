@@ -6,6 +6,7 @@
    background-color: #000;
    border: 2px solid #bbb;
    border-top: none;
+   z-index: 2;
    position: absolute;
    top: 0;
    left: 50%;

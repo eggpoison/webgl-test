@@ -90,7 +90,7 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
    frostcicle: {
       textureSrc: "frostcicle.png",
       name: "Frostcicle",
-      description: ""
+      description: "A perfectly preserved ice shard."
    }
 };
 

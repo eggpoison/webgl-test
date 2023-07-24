@@ -30,6 +30,9 @@ export const TILE_TYPE_RENDER_INFO_RECORD: Record<TileType, TileTypeRenderInfo> 
    sludge: {
       textureSource: "sludge.png"
    },
+   slime: {
+      textureSource: "rock.png"
+   },
    rock: {
       textureSource: "rock.png"
    },
@@ -52,6 +55,7 @@ export const TILE_TYPE_RENDER_INFO_RECORD: Record<TileType, TileTypeRenderInfo> 
       textureSource: "grass.png"
    },
    permafrost: {
-      textureSource: "permafrost-1.png"
+      textureSource: "permafrost-5.png"
+      // textureSource: "permafrost-4.png"
    }
 };

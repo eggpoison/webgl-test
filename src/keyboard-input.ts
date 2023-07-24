@@ -1,11 +1,11 @@
 import { chatboxIsFocused, focusChatbox } from "./components/game/ChatBox";
 import { playerIsUsingTerminal } from "./components/game/nerd-vision/Terminal";
 
-const keyListeners: { [key: string]: Array<() => void> } = {};
+const keyListeners: { [key: string]: Array<(e: KeyboardEvent) => void> } = {};
 
 type IDKeyListener = {
    readonly key: string;
-   readonly callback: () => void;
+   readonly callback: (e: KeyboardEvent) => void;
 }
 
 const idKeyListeners: { [id: string]: IDKeyListener } = {}; 
@@ -24,28 +24,28 @@ export function clearPressedKeys(): void {
    }
 }
 
-export function addKeyListener(key: string, callback: () => void, id?: string): void {
+export function addKeyListener(key: string, callback: (e: KeyboardEvent) => void, id?: string): void {
    if (typeof id !== "undefined") {
       idKeyListeners[id] = { key: key, callback: callback };
       return;
    }
    
    if (!keyListeners.hasOwnProperty(key)) {
-      keyListeners[key] = new Array<() => void>();
+      keyListeners[key] = [];
    }
    keyListeners[key].push(callback);
 }
 
-const callKeyListeners = (key: string): void => {
+const callKeyListeners = (key: string, e: KeyboardEvent): void => {
    if (keyListeners.hasOwnProperty(key)) {
       for (const callback of keyListeners[key]) {
-         callback();
+         callback(e);
       }
    }
 
    for (const { key: currentKey, callback } of Object.values(idKeyListeners)) {
       if (currentKey === key) {
-         callback();
+         callback(e);
       }
    }
 }
@@ -64,7 +64,7 @@ const onKeyDown = (e: KeyboardEvent): void => {
 
    const key = getKey(e);
 
-   callKeyListeners(key);
+   callKeyListeners(key, e);
 
    // Start a chat message
    if (key === "t") {

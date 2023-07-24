@@ -1,4 +1,4 @@
-import { AttackPacket, SETTINGS, STATUS_EFFECT_MODIFIERS, StatusEffectType, Vector } from "webgl-test-shared";
+import { AttackPacket, SETTINGS, STATUS_EFFECT_MODIFIERS, Vector } from "webgl-test-shared";
 import { addKeyListener, clearPressedKeys, keyIsPressed } from "./keyboard-input";
 import { BackpackInventoryMenu_setIsVisible } from "./components/game/inventories/BackpackInventory";
 import { CraftingMenu_setIsVisible } from "./components/game/menus/CraftingMenu";
@@ -8,16 +8,26 @@ import Game from "./Game";
 import { Hotbar_setHotbarSelectedItemSlot } from "./components/game/inventories/Hotbar";
 import GameObject from "./GameObject";
 
+let lightspeedIsActive = false;
+
+export function setLightspeedIsActive(isActive: boolean): void {
+   lightspeedIsActive = isActive;
+}
+
 /** How far away from the entity the attack is done */
 const PLAYER_ATTACK_OFFSET = 80;
 /** Max distance from the attack position that the attack will be registered from */
 const PLAYER_ATTACK_TEST_RADIUS = 48;
 
 /** Terminal velocity of the player while moving without any modifiers. */
-// const PLAYER_TERMINAL_VELOCITY = 250;
-const PLAYER_TERMINAL_VELOCITY = 2500;
+const PLAYER_TERMINAL_VELOCITY = 300;
+
+const PLAYER_LIGHTSPEED_TERMINAL_VELOCITY = 5000;
+
 /** Acceleration of the player while moving without any modifiers. */
 const PLAYER_ACCELERATION = 900;
+
+const PLAYER_LIGHTSPEED_ACCELERATION = 15000;
 
 /** Terminal velocity of the player while slowed. */
 const PLAYER_SLOW_TERMINAL_VELOCITY = 150;
@@ -227,7 +237,6 @@ const getPlayerMoveSpeedMultiplier = (): number => {
    let moveSpeedMultiplier = 1;
 
    for (const statusEffect of Player.instance!.statusEffects) {
-      console.log(statusEffect);
       moveSpeedMultiplier *= STATUS_EFFECT_MODIFIERS[statusEffect].moveSpeedMultiplier;
    }
 
@@ -269,9 +278,14 @@ export function updatePlayerMovement(): void {
    }
 
    if (moveDirection !== null) {
-      const moveSpeedMultiplier = getPlayerMoveSpeedMultiplier();
-      Player.instance.acceleration = new Vector(getPlayerAcceleration() * moveSpeedMultiplier, moveDirection);
-      Player.instance.terminalVelocity = getPlayerTerminalVelocity() * moveSpeedMultiplier;
+      if (lightspeedIsActive) {
+         Player.instance.acceleration = new Vector(PLAYER_LIGHTSPEED_ACCELERATION, moveDirection);
+         Player.instance.terminalVelocity = PLAYER_LIGHTSPEED_TERMINAL_VELOCITY;
+      } else {
+         const moveSpeedMultiplier = getPlayerMoveSpeedMultiplier();
+         Player.instance.acceleration = new Vector(getPlayerAcceleration() * moveSpeedMultiplier, moveDirection);
+         Player.instance.terminalVelocity = getPlayerTerminalVelocity() * moveSpeedMultiplier;
+      }
    } else {
       Player.instance.acceleration = null;
    }

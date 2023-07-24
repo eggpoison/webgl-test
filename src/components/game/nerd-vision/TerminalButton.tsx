@@ -1,10 +1,18 @@
-interface TerminalButtonProps {
-   readonly isOpened: boolean;
-   readonly onClick: () => void;
-}
+import { useEffect, useState } from "react";
+import { toggleTerminalVisiblity } from "./Terminal";
 
-const TerminalButton = ({ isOpened, onClick }: TerminalButtonProps) => {
-   return <button id="terminal-button" onClick={() => onClick()} className={isOpened ? "opened" : undefined}>
+export let setTerminalButtonOpened: (isOpened: boolean) => void;
+
+const TerminalButton = () => {
+   const [isOpened, setIsOpened] = useState(false);
+
+   useEffect(() => {
+      setTerminalButtonOpened = (isOpened: boolean): void => {
+         setIsOpened(isOpened);
+      }
+   }, []);
+
+   return <button id="terminal-button" onClick={() => toggleTerminalVisiblity()} className={isOpened ? "opened" : undefined}>
       Terminal
    </button>;
 }

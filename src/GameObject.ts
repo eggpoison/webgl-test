@@ -134,7 +134,6 @@ abstract class GameObject extends RenderObject {
    public tick?(): void;
 
    public applyPhysics(): void {
-
       const tile = this.findCurrentTile();
       const tileTypeInfo = TILE_TYPE_INFO_RECORD[tile.type];
 
@@ -144,7 +143,7 @@ abstract class GameObject extends RenderObject {
 
       // Friction
       if (this.velocity !== null) {
-         this.velocity.magnitude /= 1 + 1 / SETTINGS.TPS;
+         this.velocity.magnitude /= 1 + 3 / SETTINGS.TPS * tileTypeInfo.friction;
       }
       
       // Accelerate
@@ -171,7 +170,7 @@ abstract class GameObject extends RenderObject {
          }
       // Friction
       } else if (this.velocity !== null) {
-         this.velocity.magnitude -= SETTINGS.FRICTION_CONSTANT * tileTypeInfo.friction / SETTINGS.TPS;
+         this.velocity.magnitude -= 3 * SETTINGS.FRICTION_CONSTANT / SETTINGS.TPS * tileTypeInfo.friction;
          if (this.velocity.magnitude <= 0) {
             this.velocity = null;
          }
