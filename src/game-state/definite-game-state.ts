@@ -1,6 +1,6 @@
 import Game from "../Game";
 import { updateHealthBar } from "../components/game/HealthBar";
-import { hideNerdVision } from "../components/game/nerd-vision/NerdVisionOverlay";
+import { hideNerdVision } from "../components/game/nerd-vision/NerdVision";
 import Player from "../entities/Player";
 import GameState from "./game-state";
 
@@ -8,7 +8,7 @@ const killPlayer = (): void => {
    if (Player.instance === null) return;
 
    // Remove the player from the game
-   // Game.board.removeGameObject(Player.instance);
+   Game.board.removeGameObject(Player.instance);
    Player.instance = null;
 
    hideNerdVision();

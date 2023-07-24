@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Game from "../../Game";
 import ChatBox from "./ChatBox";
-import NerdVisionOverlay from "./nerd-vision/NerdVisionOverlay";
+import NerdVision from "./nerd-vision/NerdVision";
 import HealthBar from "./HealthBar";
 import PauseScreen from "./PauseScreen";
 import Hotbar from "./inventories/Hotbar";
@@ -63,7 +63,7 @@ const GameScreen = () => {
          <DeathScreen />
       ) : undefined}
 
-      <NerdVisionOverlay />
+      <NerdVision />
 
       {isPaused && !isDead ? <PauseScreen /> : null}
    </>;

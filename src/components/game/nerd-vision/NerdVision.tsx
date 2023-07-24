@@ -4,14 +4,14 @@ import CursorTooltip from "./CursorTooltip";
 import { useEffect, useState } from "react";
 import { addKeyListener } from "../../../keyboard-input";
 import GameInfoDisplay from "./GameInfoDisplay";
-import TerminalButton from "./TerminalButton";
+import TerminalButton, { setTerminalButtonOpened } from "./TerminalButton";
 
 export let showNerdVision: () => void;
 export let hideNerdVision: () => void;
 
 export let nerdVisionIsVisible: () => boolean;
 
-const NerdVisionOverlay = () => {
+const NerdVision = () => {
    const [terminalStartingVisibility, setTerminalStartingVisibility] = useState(false);
    const [isEnabled, setIsEnabled] = useState(false); // Nerd vision always starts as disabled
 
@@ -34,6 +34,7 @@ const NerdVisionOverlay = () => {
             setTerminalStartingVisibility(true);
             setTerminalVisibility(true);
             forceTerminalFocus();
+            setTerminalButtonOpened(true);
          } else {
             e.preventDefault();
             
@@ -60,10 +61,10 @@ const NerdVisionOverlay = () => {
    return <div id="nerd-vision-wrapper">
       <GameInfoDisplay />
       <EntityViewer />
-      <TerminalButton />
+      <TerminalButton startingIsOpened={terminalStartingVisibility} />
       <Terminal startingIsVisible={terminalStartingVisibility}/>
       <CursorTooltip />
    </div>;
 }
 
-export default NerdVisionOverlay;
+export default NerdVision;

@@ -25,7 +25,7 @@ import { createWorldBorderShaders, renderWorldBorder } from "./rendering/world-b
 import { createRenderChunkBuffers, createSolidTileShaders, renderSolidTiles } from "./rendering/tile-rendering/solid-tile-rendering";
 import { createLiquidTileShaders } from "./rendering/tile-rendering/liquid-tile-rendering";
 import { createChunkBorderShaders, renderChunkBorders } from "./rendering/chunk-border-rendering";
-import { nerdVisionIsVisible } from "./components/game/nerd-vision/NerdVisionOverlay";
+import { nerdVisionIsVisible } from "./components/game/nerd-vision/NerdVision";
 import { setFrameProgress } from "./GameObject";
 import { createDebugDataShaders, renderLineDebugData, renderTriangleDebugData } from "./rendering/debug-data-rendering";
 

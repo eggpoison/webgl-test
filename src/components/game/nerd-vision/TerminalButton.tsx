@@ -3,8 +3,12 @@ import { toggleTerminalVisiblity } from "./Terminal";
 
 export let setTerminalButtonOpened: (isOpened: boolean) => void;
 
-const TerminalButton = () => {
-   const [isOpened, setIsOpened] = useState(false);
+interface TerminalButtonProps {
+   readonly startingIsOpened: boolean;
+}
+
+const TerminalButton = ({ startingIsOpened }: TerminalButtonProps) => {
+   const [isOpened, setIsOpened] = useState(startingIsOpened);
 
    useEffect(() => {
       setTerminalButtonOpened = (isOpened: boolean): void => {
