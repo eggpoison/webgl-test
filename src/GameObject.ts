@@ -107,6 +107,9 @@ abstract class GameObject extends RenderObject {
       super();
       
       this.position = position;
+      if (this.position.x < 0 || this.position.x >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE || this.position.y < 0 || this.position.y >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
+         throw new Error("1");
+      }
       this.renderPosition = position;
 
       this.id = id;
@@ -198,6 +201,23 @@ abstract class GameObject extends RenderObject {
          velocity.magnitude /= SETTINGS.TPS;
          
          this.position.add(velocity.convertToPoint());
+
+         // Clamp the position
+         if (this.position.x < 0) {
+            this.position.x = 0;
+         } else if (this.position.x >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
+            this.position.x = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE - 1;
+         }
+         if (this.position.y < 0) {
+            this.position.y = 0;
+         } else if (this.position.y >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
+            this.position.y = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE - 1;
+         }
+         
+         if (this.position.x < 0 || this.position.x >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE || this.position.y < 0 || this.position.y >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
+            console.log("yamn");
+            throw new Error("8");
+         }
       }
    }
 
@@ -262,6 +282,9 @@ abstract class GameObject extends RenderObject {
       this.acceleration = data.acceleration !== null ? Vector.unpackage(data.acceleration) : null;
       this.terminalVelocity = data.terminalVelocity;
       this.rotation = data.rotation;
+      if (this.position.x < 0 || this.position.x >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE || this.position.y < 0 || this.position.y >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
+         throw new Error("2");
+      }
 
       this.updateChunks(new Set(data.chunkCoordinates.map(([x, y]) => Game.board.getChunk(x, y))));
    }
