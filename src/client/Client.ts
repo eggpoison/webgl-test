@@ -567,6 +567,12 @@ abstract class Client {
          this.socket.emit("command", command);
       }
    }
+
+   public static sendTrackGameObject(id: number | null): void {
+      if (Game.isRunning && this.socket !== null) {
+         this.socket.emit("track_game_object", id);
+      }
+   }
 }
 
 export default Client;

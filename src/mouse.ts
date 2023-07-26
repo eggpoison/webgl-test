@@ -37,11 +37,16 @@ export function handleMouseMovement(e: MouseEvent): void {
    cursorY = e.clientY;
 }
 
-const calculateCursorTooltipTargetEntity = (cursorPosition: Point): Entity | null => {
-   const minChunkX = Math.max(Math.min(Math.floor((cursorPosition.x - CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-   const maxChunkX = Math.max(Math.min(Math.floor((cursorPosition.x + CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-   const minChunkY = Math.max(Math.min(Math.floor((cursorPosition.y - CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-   const maxChunkY = Math.max(Math.min(Math.floor((cursorPosition.y + CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+/**
+ * Finds the entity the user is hovering over.
+ */
+export function getMouseTargetEntity(): Entity | null {
+   if (Game.cursorPosition === null) return null;
+   
+   const minChunkX = Math.max(Math.min(Math.floor((Game.cursorPosition.x - CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+   const maxChunkX = Math.max(Math.min(Math.floor((Game.cursorPosition.x + CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+   const minChunkY = Math.max(Math.min(Math.floor((Game.cursorPosition.y - CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+   const maxChunkY = Math.max(Math.min(Math.floor((Game.cursorPosition.y + CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
 
    let closestEntity: Entity | null = null;
    let minDistance = Number.MAX_SAFE_INTEGER;
@@ -50,7 +55,7 @@ const calculateCursorTooltipTargetEntity = (cursorPosition: Point): Entity | nul
          const chunk = Game.board.getChunk(chunkX, chunkY);
          for (const gameObject of chunk.getGameObjects()) {
             if (gameObject instanceof Entity) {
-               const distance = cursorPosition.calculateDistanceBetween(gameObject.renderPosition);
+               const distance = Game.cursorPosition.calculateDistanceBetween(gameObject.renderPosition);
                if (distance <= CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE && distance < minDistance) {
                   closestEntity = gameObject;
                   minDistance = distance;
@@ -78,7 +83,7 @@ export function renderCursorTooltip(): void {
       return;
    }
  
-   const targetEntity = calculateCursorTooltipTargetEntity(Game.cursorPosition);
+   const targetEntity = getMouseTargetEntity();
 
    // If there is no target, hide the tooltip
    if (targetEntity === null) {

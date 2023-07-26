@@ -7,7 +7,7 @@ import { updateSpamFilter } from "./components/game/ChatBox";
 import { GameObjectDebugData, lerp, Point, SETTINGS } from "webgl-test-shared";
 import { createEntityShaders, renderGameObjects } from "./rendering/game-object-rendering";
 import Client from "./client/Client";
-import { calculateCursorWorldPosition, getCursorX, getCursorY, handleMouseMovement, renderCursorTooltip } from "./mouse";
+import { calculateCursorWorldPosition, getCursorX, getCursorY, getMouseTargetEntity, handleMouseMovement, renderCursorTooltip } from "./mouse";
 import { updateDevEntityViewer } from "./components/game/nerd-vision/EntityViewer";
 import { createShaderStrings, createWebGLContext, createWebGLProgram, gl, resizeCanvas } from "./webgl";
 import { loadTextures } from "./textures";
@@ -305,8 +305,12 @@ abstract class Game {
       if (nerdVisionIsVisible()) {
          renderEntityHitboxes();
       }
-      if (this.gameObjectDebugData !== null && Game.board.gameObjects.hasOwnProperty(this.gameObjectDebugData.gameObjectID)) {
+      if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Game.board.gameObjects.hasOwnProperty(this.gameObjectDebugData.gameObjectID)) {
          renderLineDebugData(this.gameObjectDebugData);
+      }
+      if (isDev() && nerdVisionIsVisible()) {
+         const targettedEntity = getMouseTargetEntity();
+         Client.sendTrackGameObject(targettedEntity !== null ? targettedEntity.id : null);
       }
 
       renderGhostPlaceableItem();
