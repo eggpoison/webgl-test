@@ -11,7 +11,8 @@ export interface RenderPartInfo {
    /** Render priority of the render part in relation to its entity's other render parts. */
    readonly zIndex: number;
    /** Rotation of the render part in radians */
-   readonly rotation?: number;
+   readonly getRotation?: () => number;
+   readonly inheritParentRotation?: boolean;
 }
 
 /** A thing which is able to hold render parts */
@@ -39,16 +40,6 @@ export class RenderObject {
       // Insert the render part at the index
       this.renderParts.splice(idx, 0, renderPart);
    }
-
-   /** Update the render positions of all render parts associated with the render object */
-   public cascadeRenderPosition(): void {
-      for (const renderPart of this.renderParts) {
-         renderPart.updateRenderPosition();
-         
-         // Cascade the render parts attached to that render part
-         renderPart.cascadeRenderPosition();
-      }
-   }
 }
 
 class RenderPart extends RenderObject implements RenderPartInfo {
@@ -57,6 +48,8 @@ class RenderPart extends RenderObject implements RenderPartInfo {
    public readonly height: number;
    public textureSource: string;
    public readonly zIndex: number;
+   public readonly inheritParentRotation: boolean;
+   public readonly getRotation?: () => number;
 
    public readonly parentRenderObject: RenderObject;
    
@@ -72,7 +65,9 @@ class RenderPart extends RenderObject implements RenderPartInfo {
       this.height = renderPartInfo.height;
       this.textureSource = renderPartInfo.textureSource;
       this.zIndex = renderPartInfo.zIndex;
-      if (typeof renderPartInfo.rotation !== "undefined") this.rotation = renderPartInfo.rotation;
+      if (typeof renderPartInfo.getRotation !== "undefined") this.rotation = renderPartInfo.getRotation();
+      this.inheritParentRotation = typeof renderPartInfo.inheritParentRotation !== "undefined" ? renderPartInfo.inheritParentRotation : true;
+      this.getRotation = renderPartInfo.getRotation;
 
       this.parentRenderObject = parentRenderObject;
 
@@ -89,11 +84,11 @@ class RenderPart extends RenderObject implements RenderPartInfo {
          const offset = this.offset().convertToVector();
          offset.direction += this.parentRenderObject.rotation;
 
-         // if (typeof this.rotation !== "undefined") {
-         //    offset.direction += this.rotation;
-         // }
-
          this.renderPosition.add(offset.convertToPoint());
+      }
+
+      if (typeof this.getRotation !== "undefined") {
+         this.rotation = this.getRotation();
       }
    }
 }

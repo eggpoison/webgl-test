@@ -172,9 +172,10 @@ const categoriseGameObjectsByRenderPart = (visibleGameObjects: ReadonlyArray<Gam
 
       totalRotation += renderPart.rotation;
 
+      const renderPartRotation = renderPart.inheritParentRotation ? totalRotation : renderPart.rotation;
       texturedRenderParts[renderPart.textureSource].push({
          renderPart: renderPart,
-         totalRotation: totalRotation
+         totalRotation: renderPartRotation
       });
       
       // Add any child render parts

@@ -31,7 +31,7 @@ export const TILE_TYPE_RENDER_INFO_RECORD: Record<TileType, TileTypeRenderInfo> 
       textureSource: "sludge.png"
    },
    slime: {
-      textureSource: "rock.png"
+      textureSource: "slime.png"
    },
    rock: {
       textureSource: "rock.png"

@@ -34,6 +34,7 @@ class Cactus extends Entity {
 
          let flowerSize = (type === 4 || size === CactusFlowerSize.large) ? 20 : 16;
 
+         const flowerRotation = 2 * Math.PI * Math.random();
          this.attachRenderPart(
             new RenderPart({
                width: flowerSize,
@@ -41,7 +42,7 @@ class Cactus extends Entity {
                textureSource: this.getFlowerTextureSource(type, size),
                zIndex: 3,
                offset: () => offsetVector,
-               rotation: 2 * Math.PI * Math.random()
+               getRotation: () => flowerRotation
             }, this)
          );
       }
@@ -52,6 +53,7 @@ class Cactus extends Entity {
 
          const offset = new Vector(Cactus.SIZE / 2, direction).convertToPoint();
 
+         const limbRotation = 2 * Math.PI * Math.random();
          this.attachRenderPart(
             new RenderPart({
                width: Cactus.LIMB_SIZE,
@@ -59,7 +61,7 @@ class Cactus extends Entity {
                textureSource: "entities/cactus/cactus-limb.png",
                zIndex: 0,
                offset: () => offset,
-               rotation: 2 * Math.PI * Math.random()
+               getRotation: () => limbRotation
             }, this)
          );
          
@@ -69,6 +71,7 @@ class Cactus extends Entity {
             const flowerOffset = new Vector(randFloat(6, 10) * height, direction).convertToPoint();
             flowerOffset.add(offset);
 
+            const flowerRotation = 2 * Math.PI * Math.random();
             this.attachRenderPart(
                new RenderPart({
                   width: 16,
@@ -76,7 +79,7 @@ class Cactus extends Entity {
                   textureSource: this.getFlowerTextureSource(type, CactusFlowerSize.small),
                   zIndex: 1,
                   offset: () => flowerOffset,
-                  rotation: 2 * Math.PI * Math.random()
+                  getRotation: () => flowerRotation
                }, this)
             );
          }
