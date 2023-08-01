@@ -13,6 +13,7 @@ import Cactus from "./entities/Cactus";
 import Yeti from "./entities/Yeti";
 import IceSpikes from "./entities/IceSpikes";
 import Slime from "./entities/Slime";
+import Slimewisp from "./entities/Slimewisp";
 
 export type EntityClassType<T extends EntityType> = new (position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, ...clientParams: Parameters<EntityInfoClientArgs[T]>) => Entity;
 
@@ -28,7 +29,8 @@ const ENTITY_CLASS_RECORD: { [id in EntityType]: () => EntityClassType<id>} = {
    cactus: () => Cactus,
    yeti: () => Yeti,
    ice_spikes: () => IceSpikes,
-   slime: () => Slime
+   slime: () => Slime,
+   slimewisp: () => Slimewisp
 };
 
 export default ENTITY_CLASS_RECORD;

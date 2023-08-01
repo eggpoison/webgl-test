@@ -1,26 +1,25 @@
-import { Point, HitboxType } from "webgl-test-shared";
+import { EntityType, Point, HitboxType } from "webgl-test-shared";
 import Hitbox from "../hitboxes/Hitbox";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 
-class IceSpikes extends Entity {
-   public type = "ice_spikes" as const;
+class Slimewisp extends Entity {
+   private static readonly RADIUS = 16;
 
-   private static readonly WIDTH = 80;
-   private static readonly HEIGHT = 80;
+   public type: EntityType = "slimewisp";
 
    constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
       this.attachRenderParts([
          new RenderPart({
-            width: IceSpikes.WIDTH,
-            height: IceSpikes.HEIGHT,
-            textureSource: `entities/ice-spikes/ice-spikes.png`,
+            width: Slimewisp.RADIUS * 2,
+            height: Slimewisp.RADIUS * 2,
+            textureSource: `entities/slimewisp/slimewisp.png`,
             zIndex: 0
          }, this)
       ]);
    }
 }
 
-export default IceSpikes;
+export default Slimewisp;

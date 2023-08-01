@@ -53,6 +53,10 @@ const CLIENT_ENTITY_INFO_RECORD: Record<EntityType, ClientEntityInfo> = {
    slime: {
       name: "Slime",
       description: ""
+   },
+   slimewisp: {
+      name: "Slimewisp",
+      description: ""
    }
 };
 

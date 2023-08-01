@@ -144,12 +144,12 @@ class Player extends Entity {
       if (this.instance === null) return;
 
       // Add force
-      if (hitData.knockbackDirection !== null) {
+      if (hitData.hitDirection !== null) {
          if (this.instance.velocity !== null) {
             this.instance.velocity.magnitude *= 0.5;
          }
 
-         const pushForce = new Vector(hitData.knockback, hitData.knockbackDirection);
+         const pushForce = new Vector(hitData.knockback, hitData.hitDirection);
          if (this.instance.velocity !== null) {
             this.instance.velocity.add(pushForce);
          } else {
