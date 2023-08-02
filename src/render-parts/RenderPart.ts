@@ -13,6 +13,7 @@ export interface RenderPartInfo {
    /** Rotation of the render part in radians */
    readonly getRotation?: () => number;
    readonly inheritParentRotation?: boolean;
+   readonly opacity?: number;
 }
 
 /** A thing which is able to hold render parts */
@@ -50,6 +51,7 @@ class RenderPart extends RenderObject implements RenderPartInfo {
    public readonly zIndex: number;
    public readonly inheritParentRotation: boolean;
    public readonly getRotation?: () => number;
+   public readonly opacity: number;
 
    public readonly parentRenderObject: RenderObject;
    
@@ -68,6 +70,7 @@ class RenderPart extends RenderObject implements RenderPartInfo {
       if (typeof renderPartInfo.getRotation !== "undefined") this.rotation = renderPartInfo.getRotation();
       this.inheritParentRotation = typeof renderPartInfo.inheritParentRotation !== "undefined" ? renderPartInfo.inheritParentRotation : true;
       this.getRotation = renderPartInfo.getRotation;
+      this.opacity = renderPartInfo.opacity || 1;
 
       this.parentRenderObject = parentRenderObject;
 

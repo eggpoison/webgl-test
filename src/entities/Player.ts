@@ -1,4 +1,4 @@
-import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitboxType, HitData, Point, SETTINGS, Vector, curveWeight } from "webgl-test-shared";
+import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitboxType, HitData, Point, SETTINGS, Vector } from "webgl-test-shared";
 import Camera from "../Camera";
 import { setCraftingMenuAvailableRecipes, setCraftingMenuAvailableCraftingStations } from "../components/game/menus/CraftingMenu";
 import Game from "../Game";

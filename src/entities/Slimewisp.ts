@@ -16,7 +16,8 @@ class Slimewisp extends Entity {
             width: Slimewisp.RADIUS * 2,
             height: Slimewisp.RADIUS * 2,
             textureSource: `entities/slimewisp/slimewisp.png`,
-            zIndex: 0
+            zIndex: 0,
+            opacity: 0.8
          }, this)
       ]);
    }

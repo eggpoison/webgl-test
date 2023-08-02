@@ -28,12 +28,6 @@ class Slime extends Entity {
    constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, size: SlimeSize, _eyeRotation: number, orbs: ReadonlyArray<SlimeOrbData>) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
-      const a = 2 * Math.PI * Math.random();
-      const b = 2 * Math.PI * Math.random();
-
-      const c = 2 * Math.PI * Math.random();
-      const d = 2 * Math.PI * Math.random();
-
       const spriteSize = Slime.SIZES[size];
 
       const sizeString = Slime.SIZE_STRINGS[size];
@@ -94,22 +88,12 @@ class Slime extends Entity {
       const spriteSize = Slime.SIZES[this.size];
       const sizeString = Slime.SIZE_STRINGS[orbData.size];
       
-      const size = Slime.ORB_SIZES[this.size];
-
+      const orbSize = Slime.ORB_SIZES[orbData.size];
+      
       this.attachRenderPart(
-         // new RenderPart({
-         //    width: 20,
-         //    height: 20,
-         //    textureSource: `entities/slime/slime-orb-${sizeString}.png`,
-         //    // zIndex: 1,
-         //    zIndex: 99,
-         //    offset: () => new Vector(spriteSize / 4 - 3, offsetRotation).convertToPoint(),
-         //    // getRotation: () => orbData.rotation
-         //    getRotation: () => 2
-         // }, this)
          new RenderPart({
-            width: size,
-            height: size,
+            width: orbSize,
+            height: orbSize,
             textureSource: `entities/slime/slime-orb-${sizeString}.png`,
             zIndex: 1,
             offset: () => new Vector(spriteSize / 4 - 3, offsetRotation).convertToPoint(),
@@ -124,7 +108,7 @@ class Slime extends Entity {
       this.eyeRotation = entityData.clientArgs[1];
 
       for (let i = entityData.clientArgs[2].length; i > this.numOrbs; i--) {
-         const orb = entityData.clientArgs[2][i = 1];
+         const orb = entityData.clientArgs[2][i - 1];
          this.createOrbRenderPart(orb);
       }
       this.numOrbs = entityData.clientArgs[2].length;

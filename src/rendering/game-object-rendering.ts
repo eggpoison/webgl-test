@@ -18,10 +18,12 @@ attribute vec2 a_position;
 attribute vec2 a_texCoord;
 attribute vec3 a_tint;
 attribute float a_textureIdx;
+attribute float a_opacity;
 
 varying vec2 v_texCoord;
 varying vec3 v_tint;
 varying float v_textureIdx;
+varying float v_opacity;
  
 void main() {
    gl_Position = vec4(a_position, 0.0, 1.0);
@@ -29,6 +31,7 @@ void main() {
    v_texCoord = a_texCoord;
    v_textureIdx = a_textureIdx;
    v_tint = a_tint;
+   v_opacity = a_opacity;
 }
 `;
 
@@ -41,6 +44,7 @@ uniform sampler2D u_textures[__MAX_ACTIVE_TEXTURE_UNITS__];
 varying vec2 v_texCoord;
 varying vec3 v_tint;
 varying float v_textureIdx;
+varying float v_opacity;
     
 vec4 getSampleFromArray(sampler2D textures[__MAX_ACTIVE_TEXTURE_UNITS__], int ndx, vec2 uv) {
    vec4 color = vec4(0);
@@ -72,6 +76,8 @@ void main() {
       fragColour.b = mix(fragColour.b, 0.0, -v_tint.b);
    }
 
+   fragColour.a *= v_opacity;
+
    gl_FragColor = fragColour;
 }
 `, (shaderString: string) => {
@@ -88,6 +94,7 @@ let imageRenderingProgramPosAttribLocation: GLint;
 let imageRenderingProgramTintAttribLocation: GLint;
 let imageRenderingProgramTexCoordAttribLocation: GLint;
 let imageRenderingProgramTextureIdxAttribLocation: GLint;
+let imageRenderingProgramOpacityAttribLocation: GLint;
 
 export function createEntityShaders(): void {
    imageRenderingProgram = createWebGLProgram(vertexShaderText, entityRenderingFragmentShaderText);
@@ -97,6 +104,7 @@ export function createEntityShaders(): void {
    imageRenderingProgramTintAttribLocation = gl.getAttribLocation(imageRenderingProgram, "a_tint");
    imageRenderingProgramTexCoordAttribLocation = gl.getAttribLocation(imageRenderingProgram, "a_texCoord");
    imageRenderingProgramTextureIdxAttribLocation = gl.getAttribLocation(imageRenderingProgram, "a_textureIdx");
+   imageRenderingProgramOpacityAttribLocation = gl.getAttribLocation(imageRenderingProgram, "a_opacity");
 }
 
 export function calculateVisibleGameObjects(): Array<GameObject> {
@@ -254,12 +262,12 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
             // Calculate the corner positions of the render part
             const [tl, tr, bl, br] = calculateRenderPartVertexPositions(renderInfo.renderPart, renderInfo.totalRotation);
             vertices.push(
-               bl.x, bl.y, 0, 0, redTint, greenTint, blueTint, textureIdx,
-               br.x, br.y, 1, 0, redTint, greenTint, blueTint, textureIdx,
-               tl.x, tl.y, 0, 1, redTint, greenTint, blueTint, textureIdx,
-               tl.x, tl.y, 0, 1, redTint, greenTint, blueTint, textureIdx,
-               br.x, br.y, 1, 0, redTint, greenTint, blueTint, textureIdx,
-               tr.x, tr.y, 1, 1, redTint, greenTint, blueTint, textureIdx
+               bl.x, bl.y, 0, 0, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
+               br.x, br.y, 1, 0, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
+               tl.x, tl.y, 0, 1, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
+               tl.x, tl.y, 0, 1, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
+               br.x, br.y, 1, 0, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
+               tr.x, tr.y, 1, 1, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity
             );
          }
          
@@ -286,11 +294,13 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
       const tileBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, tileBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+      
 
-      gl.vertexAttribPointer(imageRenderingProgramPosAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 0);
-      gl.vertexAttribPointer(imageRenderingProgramTexCoordAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(imageRenderingProgramTintAttribLocation, 3, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(imageRenderingProgramTextureIdxAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(imageRenderingProgramPosAttribLocation, 2, gl.FLOAT, false, 9 * Float32Array.BYTES_PER_ELEMENT, 0);
+      gl.vertexAttribPointer(imageRenderingProgramTexCoordAttribLocation, 2, gl.FLOAT, false, 9 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(imageRenderingProgramTintAttribLocation, 3, gl.FLOAT, false, 9 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(imageRenderingProgramTextureIdxAttribLocation, 1, gl.FLOAT, false, 9 * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(imageRenderingProgramOpacityAttribLocation, 1, gl.FLOAT, false, 9 * Float32Array.BYTES_PER_ELEMENT, 8 * Float32Array.BYTES_PER_ELEMENT);
 
       gl.uniform1iv(imageRenderingProgramTexturesUniformLocation, usedTextureSources.map((_, idx) => idx));
       
@@ -299,6 +309,7 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
       gl.enableVertexAttribArray(imageRenderingProgramTexCoordAttribLocation);
       gl.enableVertexAttribArray(imageRenderingProgramTintAttribLocation);
       gl.enableVertexAttribArray(imageRenderingProgramTextureIdxAttribLocation);
+      gl.enableVertexAttribArray(imageRenderingProgramOpacityAttribLocation);
       
       // Set all texture units
       for (let i = 0; i < usedTextureSources.length; i++) {
@@ -309,7 +320,7 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
       }
 
       // Draw the vertices
-      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 8);
+      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 9);
    }
 
    gl.disable(gl.BLEND);

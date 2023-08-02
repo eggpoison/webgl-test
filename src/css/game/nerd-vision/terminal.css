@@ -53,13 +53,11 @@
    display: inline-block;
    animation: 1s CaretFlash infinite;
    animation-timing-function: step-end;
-   /* position: absolute;
-   top: 50%;
-   transform: translateY(-50%); */
 }
 
 #terminal .lines {
    height: calc(var(--line-height) * 10);
+   overflow-y: scroll;
 }
 
 @keyframes CaretFlash {

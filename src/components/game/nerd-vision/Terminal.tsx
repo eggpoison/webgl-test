@@ -14,6 +14,9 @@ const toggleLightspeed = (command: string): void => {
    }
 }
 
+const enteredCommands = new Array<string>();
+let selectedCommandIndex = 0;
+
 /**
  * Checks whether the player is using the terminal or not.
  */
@@ -53,7 +56,8 @@ const Terminal = ({ startingIsVisible }: TerminalParams) => {
    const [isVisible, setIsVisible] = useState(startingIsVisible);
    const [isInFocus, setIsInFocus] = useState(startingIsVisible);
    const [lines, setLines] = useState<Array<string>>([]);
-
+   const [lineInputValue, setLineInputValue] = useState("");
+   
    useEffect(() => {
       if (startingIsVisible && lineInputRef.current !== null) {
          lineInputRef.current.focus();
@@ -84,13 +88,6 @@ const Terminal = ({ startingIsVisible }: TerminalParams) => {
          setTerminalVisibility(!previousIsVisible)
       }
    }, [isVisible]);
-
-   // useEffect(() => {
-   //    // Focus the line input
-   //    if (isInFocus && lineInputRef.current !== null) {
-   //       lineInputRef.current.focus();
-   //    }
-   // }, [isInFocus]);
 
    useEffect(() => {
       writeLineToTerminal = (line: string): void => {
@@ -124,27 +121,29 @@ const Terminal = ({ startingIsVisible }: TerminalParams) => {
       caretRef.current.style.animation = "";
    }
 
-   const resetCaretPosition = (): void => {
-      if (lineInputRef.current !== null) {
-         lineInputRef.current.style.width = "0";
-      }
-
-      resetCaretFlicker();
-   }
-
    const updateCaretPosition = (): void => {
-      if (lineInputRef.current === null) return;
-
-      lineInputRef.current.style.width = lineInputRef.current.value.length + "ch";
-
       resetCaretFlicker();
    }
+
+   // Whenever the command input changes, update the input's length
+   useEffect(() => {
+      if (lineInputRef.current === null) return;
+      lineInputRef.current.style.width = lineInputValue.length + "ch";
+   }, [lineInputValue]);
 
    const enterCommand = (): void => {
       if (lineInputRef.current === null) return;
 
-      // Execute the command
       const command = lineInputRef.current.value;
+
+      writeLineToTerminal(">" + command);
+      enteredCommands.push(command);
+      
+      if (command.length === 0) {
+         return;
+      }
+
+      // Execute the command
       const userPermissions = isDev() ? CommandPermissions.dev : CommandPermissions.player;
       if (commandIsValid(command, userPermissions)) {
          if (command.split(" ")[0] === "lightspeed") {
@@ -158,22 +157,82 @@ const Terminal = ({ startingIsVisible }: TerminalParams) => {
       }
 
       // Clear the line input
-      lineInputRef.current.value = "";
+      setLineInputValue("");
+
+      selectedCommandIndex = enteredCommands.length;
    }
 
-   const enterLineCharacter = (): void => {
+   const enterLineCharacter = (e: React.ChangeEvent<HTMLInputElement>): void => {
+      selectedCommandIndex = enteredCommands.length;
+
+      setLineInputValue(e.target.value);
+      
       updateCaretPosition();
    }
 
    const enterKey = (e: KeyboardEvent): void => {
-      if (e.key === "Escape") {
-         setTerminalVisibility(false);
+      const resetCaretPosition = (): void => {
+         if (lineInputRef.current !== null) {
+            lineInputRef.current.style.width = "0";
+         }
+   
+         resetCaretFlicker();
       }
-      if (e.key === "Enter") {
-         enterCommand();
-         resetCaretPosition();
+
+      switch (e.key) {
+         case "Escape": {
+            setTerminalVisibility(false);
+            break;
+         }
+         case "Enter": {
+            enterCommand();
+            resetCaretPosition();
+            break;
+         }
+         case "ArrowUp": {
+            e.preventDefault();
+
+            // Don't reenter a command if no commands have been entered
+            if (enteredCommands.length === 0 || selectedCommandIndex === 0) {
+               break;
+            }
+
+            selectedCommandIndex--;
+            
+            const command = enteredCommands[selectedCommandIndex];
+            if (lineInputRef.current !== null) {
+               setLineInputValue(command);
+               updateCaretPosition();
+            }
+            break;
+         }
+         case "ArrowDown": {
+            e.preventDefault();
+
+            // Don't reenter a command if no commands have been entered
+            if (enteredCommands.length === 0 || selectedCommandIndex >= enteredCommands.length) {
+               break;
+            }
+
+            selectedCommandIndex++;
+
+            let command: string;
+            
+            // If the user returns to the original command, set it to be blank
+            if (selectedCommandIndex === enteredCommands.length) {
+               command = "";
+            } else {
+               command = enteredCommands[selectedCommandIndex];
+            }
+
+            if (lineInputRef.current !== null) {
+               setLineInputValue(command);
+               updateCaretPosition();
+            }
+            break;
+         }
       }
-   }
+   };
 
    useEffect(() => {
       playerIsUsingTerminal = (): boolean => {
@@ -225,7 +284,7 @@ const Terminal = ({ startingIsVisible }: TerminalParams) => {
          <span>&gt;</span>
 
          <div className="line-input-wrapper">
-            <input ref={lineInputRef} type="text" className="line-input" onInput={enterLineCharacter} onKeyDown={e => enterKey(e.nativeEvent)} />
+            <input ref={lineInputRef} type="text" className="line-input" value={lineInputValue} onChange={e => enterLineCharacter(e)} onKeyDown={e => enterKey(e.nativeEvent)} />
             <div className="dummy-line-input"></div>
          </div>
 

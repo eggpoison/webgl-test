@@ -210,11 +210,6 @@ abstract class GameObject extends RenderObject {
          } else if (this.position.y >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
             this.position.y = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE - 1;
          }
-         
-         if (this.position.x < 0 || this.position.x >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE || this.position.y < 0 || this.position.y >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
-            console.log("yamn");
-            throw new Error("8");
-         }
       }
    }
 

@@ -1,6 +1,6 @@
 import { GameObjectDebugData, Point, SETTINGS } from "webgl-test-shared";
 import Camera from "../Camera";
-import { CIRCLE_VERTEX_COUNT, createWebGLProgram, generateLine, generateThickCircleWireframeVertices, gl } from "../webgl";
+import { createWebGLProgram, generateLine, generateThickCircleWireframeVertices, gl } from "../webgl";
 import GameObject from "../GameObject";
 import Game from "../Game";
 
