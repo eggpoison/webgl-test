@@ -1,4 +1,4 @@
-import { EntityData, EntityType, HitboxType, Point, SlimeOrbData, SlimeSize, Vector } from "webgl-test-shared";
+import { EntityData, EntityType, HitboxType, Point, SlimeOrbData, SlimeSize, Vector, lerp } from "webgl-test-shared";
 import Hitbox from "../hitboxes/Hitbox";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
@@ -83,12 +83,15 @@ class Slime extends Entity {
    }
 
    private createOrbRenderPart(orbData: SlimeOrbData): void {
-      const offsetRotation = 2 * Math.PI * Math.random();
+      const rotation = 2 * Math.PI * Math.random();
       
-      const spriteSize = Slime.SIZES[this.size];
       const sizeString = Slime.SIZE_STRINGS[orbData.size];
       
       const orbSize = Slime.ORB_SIZES[orbData.size];
+      
+      // Calculate the orb's offset from the center of the slime
+      const spriteSize = Slime.SIZES[this.size];
+      const offsetMagnitude = spriteSize / 2 * lerp(0.3, 0.7, orbData.offset);
       
       this.attachRenderPart(
          new RenderPart({
@@ -96,8 +99,8 @@ class Slime extends Entity {
             height: orbSize,
             textureSource: `entities/slime/slime-orb-${sizeString}.png`,
             zIndex: 1,
-            offset: () => new Vector(spriteSize / 4 - 3, offsetRotation).convertToPoint(),
-            getRotation: () => orbData.rotation
+            offset: () => new Vector(offsetMagnitude, orbData.rotation).convertToPoint(),
+            getRotation: () => rotation
          }, this)
       );
    }

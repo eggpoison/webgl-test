@@ -8,7 +8,7 @@ abstract class Camera {
 
    public static position: Point;
 
-   private static visibleChunkBounds: VisibleChunkBounds = [0, 0, 0, 0];
+   private static visibleChunkBounds: VisibleChunkBounds = [-1, -1, -1, -1];
 
    public static calculateVisibleChunkBounds(): VisibleChunkBounds {
       const unitsInChunk = SETTINGS.TILE_SIZE * SETTINGS.CHUNK_SIZE;

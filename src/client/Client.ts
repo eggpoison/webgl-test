@@ -174,6 +174,7 @@ abstract class Client {
    }
 
    public static unloadGameDataPacket(gameDataPacket: GameDataPacket): void {
+      console.log("unloading data packet: " + gameDataPacket.entityDataArray.length + " entities");
       Game.ticks = gameDataPacket.serverTicks;
       Game.time = gameDataPacket.serverTime;
 
