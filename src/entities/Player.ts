@@ -220,15 +220,19 @@ class Player extends Entity {
          // Force gets greater the closer together the entities are
          const distanceBetweenEntities = Player.instance.position.calculateDistanceBetween(gameObject.position);
          const maxDistanceBetweenEntities = this.calculateMaxDistanceFromGameObject(gameObject);
-         let forceMultiplier = 1 - distanceBetweenEntities / maxDistanceBetweenEntities;
-         forceMultiplier = curveWeight(forceMultiplier, 2, 0.2);
+         const dist = Math.max(distanceBetweenEntities / maxDistanceBetweenEntities, 0.1);
+         // const forceMultiplier = 1 - dist;
+         // forceMultiplier = curveWeight(forceMultiplier, 2, 0.2);
+         // const forceMultiplier = 1;
+         let forceMultiplier = 1 / dist;
 
          // Push both entities away from each other
          const force = SETTINGS.ENTITY_PUSH_FORCE / SETTINGS.TPS * forceMultiplier;
-         const angle = Player.instance.position.calculateAngleBetween(gameObject.position);
+         // const force = Player.instance.velocity !== null ? Player.instance.velocity.magnitude / SETTINGS.TPS : 0;
+         const angle = Player.instance.position.calculateAngleBetween(gameObject.position) + Math.PI;
 
          // No need to apply force to other object as they will do it themselves
-         const pushForce = new Vector(force, angle + Math.PI);
+         const pushForce = new Vector(force, angle);
          if (Player.instance.velocity !== null) {
             Player.instance.velocity.add(pushForce);
          } else {

@@ -91,6 +91,11 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       textureSrc: "frostcicle.png",
       name: "Frostcicle",
       description: "A perfectly preserved ice shard."
+   },
+   slimeball: {
+      textureSrc: "slimeball.png",
+      name: "Slimeball",
+      description: ""
    }
 };
 
