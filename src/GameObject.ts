@@ -107,9 +107,6 @@ abstract class GameObject extends RenderObject {
       super();
       
       this.position = position;
-      if (this.position.x < 0 || this.position.x >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE || this.position.y < 0 || this.position.y >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
-         throw new Error("1");
-      }
       this.renderPosition = position;
 
       this.id = id;

@@ -56,6 +56,7 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/slime/slime-large-shading.png",
    "entities/slime/slime-orb-small.png",
    "entities/slime/slime-orb-medium.png",
+   "entities/slime/slime-orb-large.png",
    "entities/slimewisp/slimewisp.png"
 ];
 

@@ -1,6 +1,6 @@
-import { GameObjectDebugData, SETTINGS } from "webgl-test-shared";
+import { GameObjectDebugData, Point, SETTINGS } from "webgl-test-shared";
 import Camera from "../Camera";
-import { CIRCLE_VERTEX_COUNT, createWebGLProgram, gl } from "../webgl";
+import { CIRCLE_VERTEX_COUNT, createWebGLProgram, generateLine, generateThickCircleWireframeVertices, gl } from "../webgl";
 import GameObject from "../GameObject";
 import Game from "../Game";
 
@@ -76,43 +76,31 @@ export function createDebugDataShaders(): void {
 
 const addCircleVertices = (vertices: Array<number>, debugData: GameObjectDebugData, gameObject: GameObject): void => {
    for (const circle of debugData.circles) {
-      const step = 2 * Math.PI / CIRCLE_VERTEX_COUNT;
-   
-      let previousX: number;
-      let previousY: number;
-   
-      // Add the outer vertices
-      for (let radians = 0, n = 0; n <= CIRCLE_VERTEX_COUNT; radians += step, n++) {
-         if (n > 1) {
-            vertices.push(previousX!, previousY!, circle.colour[0], circle.colour[1], circle.colour[2]);
-         }
-
-         // Trig shenanigans to get x and y coords
-         const worldX = Math.cos(radians) * circle.radius + gameObject.renderPosition.x;
-         const worldY = Math.sin(radians) * circle.radius + gameObject.renderPosition.y;
-         
-         const screenX = Camera.calculateXCanvasPosition(worldX);
-         const screenY = Camera.calculateYCanvasPosition(worldY);
-         
-         vertices.push(screenX, screenY, circle.colour[0], circle.colour[1], circle.colour[2]);
-
-         previousX = screenX;
-         previousY = screenY;
-      }
+      vertices.push(
+         ...generateThickCircleWireframeVertices(gameObject.renderPosition, circle.radius, circle.thickness, circle.colour[0], circle.colour[1], circle.colour[2])
+      );
    }
 }
 
 const addLineVertices = (vertices: Array<number>, debugData: GameObjectDebugData, gameObject: GameObject): void => {
    for (const line of debugData.lines) {
-      const startX = Camera.calculateXCanvasPosition(gameObject.renderPosition.x);
-      const startY = Camera.calculateYCanvasPosition(gameObject.renderPosition.y);
-
-      const endX = Camera.calculateXCanvasPosition(line.targetPosition[0]);
-      const endY = Camera.calculateYCanvasPosition(line.targetPosition[1]);
+      const targetPosition = new Point(...line.targetPosition);
       vertices.push(
-         startX, startY, line.colour[0], line.colour[1], line.colour[2],
-         endX, endY, line.colour[0], line.colour[1], line.colour[2]
+         ...generateLine(gameObject.renderPosition, targetPosition, line.thickness, line.colour[0], line.colour[1], line.colour[2])
       );
+      // const startX = Camera.calculateXCanvasPosition(gameObject.renderPosition.x);
+      // const startY = Camera.calculateYCanvasPosition(gameObject.renderPosition.y);
+
+      // const endX = Camera.calculateXCanvasPosition(line.targetPosition[0]);
+      // const endY = Camera.calculateYCanvasPosition(line.targetPosition[1]);
+      // vertices.push(
+      //    startX, startY, line.colour[0], line.colour[1], line.colour[2],
+      //    endX, startY, line.colour[0], line.colour[1], line.colour[2],
+      //    startX, endY, line.colour[0], line.colour[1], line.colour[2],
+      //    startX, endY, line.colour[0], line.colour[1], line.colour[2],
+      //    endX, startY, line.colour[0], line.colour[1], line.colour[2],
+      //    endX, endY, line.colour[0], line.colour[1], line.colour[2]
+      // );
    }
 }
 
@@ -136,7 +124,7 @@ export function renderLineDebugData(debugData: GameObjectDebugData): void {
    gl.enableVertexAttribArray(lineProgramPositionAttribLocation);
    gl.enableVertexAttribArray(lineProgramColourAttribLocation);
 
-   gl.drawArrays(gl.LINES, 0, vertices.length / 5);
+   gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 5);
 }
 
 const addTileHighlightVertices = (vertices: Array<number>, debugData: GameObjectDebugData, gameObject: GameObject): void => {

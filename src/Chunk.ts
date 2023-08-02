@@ -15,24 +15,24 @@ class Chunk {
 
    public addGameObject(gameObject: GameObject): void {
       this.gameObjects.push(gameObject);
+
+      if (gameObject instanceof Entity) {
+         this.entities.push(gameObject);
+      }
    }
 
    public removeGameObject(gameObject: GameObject): void {
       const idx = this.gameObjects.indexOf(gameObject);
       this.gameObjects.splice(idx, 1);
+
+      if (gameObject instanceof Entity) {
+         const entityIdx = this.entities.indexOf(gameObject);
+         this.entities.splice(entityIdx, 1);
+      }
    }
 
    public getGameObjects(): Array<GameObject> {
       return this.gameObjects;
-   }
-
-   public addEntity(entity: Entity): void {
-      this.gameObjects.push(entity);
-   }
-
-   public removeEntity(entity: Entity): void {
-      const idx = this.gameObjects.indexOf(entity);
-      this.gameObjects.splice(idx, 1);
    }
 
    public getEntities(): Array<Entity> {
