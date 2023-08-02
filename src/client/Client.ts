@@ -98,6 +98,13 @@ abstract class Client {
             this.socket.on("respawn_data_packet", (respawnDataPacket: RespawnDataPacket): void => {
                this.respawnPlayer(respawnDataPacket);
             });
+
+            this.socket.on("force_position_update", (position: [number, number]): void => {
+               if (Player.instance !== null) {
+                  Player.instance.position.x = position[0];
+                  Player.instance.position.y = position[1];
+               }
+            })
          }
       });
    }

@@ -92,8 +92,8 @@ export function renderGhostPlaceableItem(): void {
    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
    // Calculate rotation
-   const xRotation = Math.cos(Player.instance.rotation);
-   const yRotation = Math.sin(Player.instance.rotation);
+   const xRotation = Math.cos(-Player.instance.rotation + Math.PI / 2);
+   const yRotation = Math.sin(-Player.instance.rotation + Math.PI / 2);
 
    // If a new type of placeable entity is being drawn, create a new buffer for it
    if (playerSelectedItem.type !== previousRenderedPlaceableItemType) {
