@@ -19,6 +19,8 @@ class Item {
 
    public count: number;
 
+   private _isActive: boolean = false;
+
    constructor(itemType: ItemType, count: number, id: number) {
       this.type = itemType;
       this.count = count;
@@ -32,6 +34,10 @@ class Item {
       if (this.globalAttackDelayTimer < 0) {
          this.globalAttackDelayTimer = 0;
       }
+   }
+
+   protected isActive(): boolean {
+      return this._isActive;
    }
 
    public static canAttack(): boolean {
@@ -55,12 +61,14 @@ class Item {
    }
 
    public select(): void {
+      this._isActive = true;
       if (typeof this.onSelect !== "undefined") {
          this.onSelect();
       }
    }
 
    public deselect(): void {
+      this._isActive = false;
       if (typeof this.onDeselect !== "undefined") {
          this.onDeselect();
       }

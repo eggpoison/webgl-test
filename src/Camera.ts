@@ -10,7 +10,7 @@ abstract class Camera {
 
    private static visibleChunkBounds: VisibleChunkBounds = [-1, -1, -1, -1];
 
-   public static calculateVisibleChunkBounds(): VisibleChunkBounds {
+   public static updateVisibleChunkBounds(): void {
       const unitsInChunk = SETTINGS.TILE_SIZE * SETTINGS.CHUNK_SIZE;
 
       const minX = Math.max(Math.floor((this.position.x - windowWidth / 2) / unitsInChunk), 0);
@@ -18,11 +18,7 @@ abstract class Camera {
       const minY = Math.max(Math.floor((this.position.y - windowHeight / 2) / unitsInChunk), 0);
       const maxY = Math.min(Math.floor((this.position.y + windowHeight / 2) / unitsInChunk), SETTINGS.BOARD_SIZE - 1);
 
-      return [minX, maxX, minY, maxY];
-   }
-
-   public static updateVisibleChunkBounds(): void {
-      this.visibleChunkBounds = this.calculateVisibleChunkBounds();
+      this.visibleChunkBounds = [minX, maxX, minY, maxY];
    }
 
    public static getVisibleChunkBounds(): VisibleChunkBounds {

@@ -14,6 +14,9 @@ const toggleLightspeed = (command: string): void => {
    }
 }
 
+/** All lines output by the terminal */
+const terminalLines = new Array<string>();
+/** Commands entered to the terminal */
 const enteredCommands = new Array<string>();
 let selectedCommandIndex = 0;
 
@@ -21,8 +24,6 @@ let selectedCommandIndex = 0;
  * Checks whether the player is using the terminal or not.
  */
 export let playerIsUsingTerminal: () => boolean = () => false;
-
-export let writeLineToTerminal: (line: string) => void = () => {};
 
 const getCommandErrorMessage = (command: string): string => {
    const commandComponents = parseCommand(command);
@@ -55,7 +56,6 @@ const Terminal = ({ startingIsVisible }: TerminalParams) => {
    const caretRef = useRef<HTMLDivElement | null>(null);
    const [isVisible, setIsVisible] = useState(startingIsVisible);
    const [isInFocus, setIsInFocus] = useState(startingIsVisible);
-   const [lines, setLines] = useState<Array<string>>([]);
    const [lineInputValue, setLineInputValue] = useState("");
    
    useEffect(() => {
@@ -88,12 +88,6 @@ const Terminal = ({ startingIsVisible }: TerminalParams) => {
          setTerminalVisibility(!previousIsVisible)
       }
    }, [isVisible]);
-
-   useEffect(() => {
-      writeLineToTerminal = (line: string): void => {
-         setLines(previousLines => previousLines.concat(line));
-      }
-   }, [lines]);
    
    const focusTerminal = (e?: MouseEvent): void => {
       setIsInFocus(true);
@@ -136,7 +130,7 @@ const Terminal = ({ startingIsVisible }: TerminalParams) => {
 
       const command = lineInputRef.current.value;
 
-      writeLineToTerminal(">" + command);
+      terminalLines.push(">" + command);
       enteredCommands.push(command);
       
       if (command.length === 0) {
@@ -153,7 +147,7 @@ const Terminal = ({ startingIsVisible }: TerminalParams) => {
          }
       } else {
          const errorMessage = getCommandErrorMessage(command);
-         writeLineToTerminal(errorMessage);
+         terminalLines.push(errorMessage);
       }
 
       // Clear the line input
@@ -273,7 +267,7 @@ const Terminal = ({ startingIsVisible }: TerminalParams) => {
 
    return <div id="terminal" className={isInFocus ? "focused" : undefined} onMouseDown={e => focusTerminal(e.nativeEvent)}>
       <div className="lines">
-         {lines.map((line: string, i: number) => {
+         {terminalLines.map((line: string, i: number) => {
             return <div className="line" key={i}>
                {line}
             </div>;
