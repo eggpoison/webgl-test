@@ -15,7 +15,7 @@ const toggleLightspeed = (command: string): void => {
 }
 
 /** All lines output by the terminal */
-const terminalLines = new Array<string>();
+let terminalLines = new Array<string>();
 /** Commands entered to the terminal */
 const enteredCommands = new Array<string>();
 let selectedCommandIndex = 0;
@@ -142,6 +142,8 @@ const Terminal = ({ startingIsVisible }: TerminalParams) => {
       if (commandIsValid(command, userPermissions)) {
          if (command.split(" ")[0] === "lightspeed") {
             toggleLightspeed(command);
+         } else if (command.split(" ")[0] === "clear") {
+            terminalLines = [];
          } else {
             Client.sendCommand(command);
          }
