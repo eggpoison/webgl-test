@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, CraftingRecipe, PlayerInventoryType, PlaceablePlayerInventoryType, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, ItemData, InventoryData, ItemSlotData, EntityType, HitboxData, HitboxInfo, ProjectileData, VisibleChunkBounds } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, CraftingRecipe, PlayerInventoryType, PlaceablePlayerInventoryType, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, InventoryData, ItemSlotData, EntityType, HitboxData, HitboxInfo, ProjectileData, VisibleChunkBounds } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -320,10 +320,13 @@ abstract class Client {
       }
 
       // Add all new items from the server data
-      for (const [itemSlot, itemData] of Object.entries(inventoryData) as unknown as ReadonlyArray<[number, ItemData]>) {
+      for (const [itemSlot, itemData] of Object.entries(inventoryData).map(([itemSlot, itemData]) => [Number(itemSlot), itemData] as const)) {
          // If the item doesn't exist in the inventory, add it
          if (!itemSlots.hasOwnProperty(itemSlot) || itemSlots[itemSlot].id !== itemData.id) {
             itemSlots[itemSlot] = createItem(itemData.type, itemData.count, itemData.id);
+            if (itemSlot === Game.latencyGameState.selectedHotbarItemSlot) {
+               itemSlots[itemSlot].setIsActive(true);
+            }
          } else {
             // Otherwise the item needs to be updated with the new server data
             itemSlots[itemSlot].updateFromServerData(itemData);

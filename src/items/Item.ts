@@ -40,6 +40,10 @@ class Item {
       return this._isActive;
    }
 
+   public setIsActive(isActive: boolean): void {
+      this._isActive = isActive;
+   }
+
    public static canAttack(): boolean {
       return this.globalAttackDelayTimer === 0;
    }
