@@ -30,6 +30,10 @@ const PARTICLE_INFO: Record<ParticleType, ParticleInfo> = {
    [ParticleType.cactusSpine]: {
       size: [4, 16],
       renderLayer: ParticleRenderLayer.high
+   },
+   [ParticleType.dirt]: {
+      size: [8, 8],
+      renderLayer: ParticleRenderLayer.low
    }
 };
 
