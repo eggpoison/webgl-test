@@ -4,7 +4,7 @@ import Game from "../Game";
 import { Tile } from "../Tile";
 import { createWebGLProgram, gl } from "../webgl";
 
-const BORDER_THICKNESS = 3;
+const BORDER_THICKNESS = 5;
 
 const vertexShaderText = `
 precision mediump float;
@@ -74,7 +74,6 @@ export function renderWallBorders(): void {
 
       // Top border
       if (topTile !== null && !topTile.isWall) {
-         
          const x1 = Camera.calculateXCanvasPosition(tile.x * SETTINGS.TILE_SIZE - leftOvershoot);
          const x2 = Camera.calculateXCanvasPosition((tile.x + 1) * SETTINGS.TILE_SIZE + rightOvershoot);
          const y1 = Camera.calculateYCanvasPosition((tile.y + 1) * SETTINGS.TILE_SIZE - BORDER_THICKNESS);

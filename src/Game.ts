@@ -30,6 +30,8 @@ import { setFrameProgress } from "./GameObject";
 import { createDebugDataShaders, renderLineDebugData, renderTriangleDebugData } from "./rendering/debug-data-rendering";
 import { createAmbientOcclusionShaders, renderAmbientOcclusion } from "./rendering/ambient-occlusion-rendering";
 import { createWallBorderShaders, renderWallBorders } from "./rendering/wall-border-rendering";
+import { createParticleShaders, renderParticles } from "./rendering/particle-rendering";
+import { ParticleRenderLayer } from "./Particle";
 
 const nightVertexShaderText = `
 precision mediump float;
@@ -223,6 +225,7 @@ abstract class Game {
             createHitboxShaders();
             createDebugDataShaders();
 
+            createParticleShaders();
             createWallBorderShaders();
             createAmbientOcclusionShaders();
             createRenderChunkBuffers();
@@ -311,21 +314,25 @@ abstract class Game {
       if (nerdVisionIsVisible()) {
          renderChunkBorders();
       }
+
+      renderParticles(ParticleRenderLayer.low);
+
       renderGameObjects(Object.values(this.board.droppedItems));
       renderGameObjects(Object.values(this.board.entities));
       renderGameObjects(Object.values(this.board.projectiles));
+
+      renderParticles(ParticleRenderLayer.high);
+
       if (nerdVisionIsVisible()) {
          renderEntityHitboxes();
       }
       if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Game.board.gameObjects.hasOwnProperty(this.gameObjectDebugData.gameObjectID)) {
          renderLineDebugData(this.gameObjectDebugData);
       }
+
       if (isDev() && nerdVisionIsVisible()) {
          const targettedEntity = getMouseTargetEntity();
          Client.sendTrackGameObject(targettedEntity !== null ? targettedEntity.id : null);
-         // if (targettedEntity !== null) {
-
-         // }
       }
 
       renderGhostPlaceableItem();

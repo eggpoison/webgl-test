@@ -2,6 +2,7 @@ import { gl } from "./webgl";
 import CLIENT_ITEM_INFO_RECORD from "./client-item-info";
 import { TILE_TYPE_RENDER_INFO_RECORD } from "./tile-type-render-info";
 import { imageIsLoaded } from "./utils";
+import { PARTICLE_TEXTURES } from "./rendering/particle-rendering";
 
 let TEXTURES: { [key: string]: WebGLTexture } = {};
 
@@ -84,6 +85,11 @@ export function loadTextures(): Promise<void> {
          if (!tileTypeInfo.isLiquid && !textureSourceIsAlreadyIncluded(tileTypeInfo.textureSource)) {
             TEXTURE_SOURCES.push(`tiles/${tileTypeInfo.textureSource}`);
          }
+      }
+
+      // Particle textures
+      for (const particleTexture of Object.values(PARTICLE_TEXTURES)) {
+         TEXTURE_SOURCES.push("particles/" + particleTexture);
       }
 
       // Add item textures

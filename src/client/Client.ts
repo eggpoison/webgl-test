@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, CraftingRecipe, PlayerInventoryType, PlaceablePlayerInventoryType, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, InventoryData, ItemSlotData, EntityType, HitboxData, HitboxInfo, ProjectileData, VisibleChunkBounds } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, CraftingRecipe, PlayerInventoryType, PlaceablePlayerInventoryType, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, InventoryData, ItemSlotData, EntityType, HitboxData, HitboxInfo, ProjectileData, VisibleChunkBounds, ParticleData } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -24,6 +24,7 @@ import { updateRenderChunkFromTileBuffer } from "../rendering/tile-rendering/sol
 import createProjectile from "../projectiles/projectile-creation";
 import Camera from "../Camera";
 import { isDev } from "../utils";
+import Particle from "../Particle";
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -184,6 +185,8 @@ abstract class Client {
       this.updateEntities(gameDataPacket.entityDataArray);
       this.updateDroppedItems(gameDataPacket.droppedItemDataArray);
       this.updateProjectiles(gameDataPacket.projectileDataArray);
+      this.updateParticles(gameDataPacket.particles);
+      
       this.updatePlayerInventory(gameDataPacket.inventory);
       this.registerTileUpdates(gameDataPacket.tileUpdates);
 
@@ -207,6 +210,32 @@ abstract class Client {
       
          // If the player's inventory is open, close it
          updateInventoryIsOpen(false);
+      }
+   }
+
+   private static updateParticles(particles: ReadonlyArray<ParticleData>): void {
+      const knownIDs = new Set(Object.keys(Game.board.particles).map(idString => Number(idString)));
+      
+      // Remove the player from the list of known entities so the player isn't removed
+      if (Player.instance !== null) {
+         knownIDs.delete(Player.instance.id);
+      }
+
+      // Update the game entities
+      for (const particleData of particles) {// If it already exists, update it
+         if (Game.board.particles.hasOwnProperty(particleData.id)) {
+            Game.board.particles[particleData.id].updateFromData(particleData);
+         } else {
+            const particle = new Particle(particleData);
+            Game.board.particles[particleData.id] = particle;
+         }
+
+         knownIDs.delete(particleData.id);
+      }
+
+      // All known entity ids which haven't been removed are ones which are dead
+      for (const id of knownIDs) {
+         delete Game.board.particles[id];
       }
    }
 
@@ -235,9 +264,6 @@ abstract class Client {
 
       // All known entity ids which haven't been removed are ones which are dead
       for (const id of knownEntityIDs) {
-         if (typeof Game.board.entities[id] === "undefined") {
-            console.warn("CRINGE #1 DETECTED");
-         }
          Game.board.removeGameObject(Game.board.entities[id]);
       }
    }
@@ -262,9 +288,6 @@ abstract class Client {
 
       // All known entity ids which haven't been removed are ones which are dead
       for (const id of ids) {
-         if (typeof Game.board.droppedItems[id] === "undefined") {
-            throw new Error("CRINGE2");
-         }
          Game.board.removeGameObject(Game.board.droppedItems[id]);
       }
    }
@@ -287,9 +310,6 @@ abstract class Client {
 
       // All known entity ids which haven't been removed are ones which are dead
       for (const id of ids) {
-         if (typeof Game.board.projectiles[id] === "undefined") {
-            throw new Error("CRINGE3");
-         }
          Game.board.removeGameObject(Game.board.projectiles[id]);
       }
    }
