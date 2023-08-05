@@ -10,7 +10,8 @@ export const PARTICLE_TEXTURES: Record<ParticleType, string> = {
    [ParticleType.bloodPoolSmall]: "blood-pool-small.png",
    [ParticleType.bloodPoolMedium]: "blood-pool-medium.png",
    [ParticleType.bloodPoolLarge]: "blood-pool-large.png",
-   [ParticleType.blood]: "blood.png"
+   [ParticleType.blood]: "blood.png",
+   [ParticleType.cactusSpine]: "cactus-spine.png",
 };
 
 const vertexShaderText = `
