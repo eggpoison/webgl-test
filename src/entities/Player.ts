@@ -1,4 +1,4 @@
-import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitboxType, HitData, Point, SETTINGS, Vector } from "webgl-test-shared";
+import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitboxType, HitData, Point, SETTINGS, Vector, clampToBoardDimensions } from "webgl-test-shared";
 import Camera from "../Camera";
 import { setCraftingMenuAvailableRecipes, setCraftingMenuAvailableCraftingStations } from "../components/game/menus/CraftingMenu";
 import Game from "../Game";
@@ -11,6 +11,7 @@ import Entity from "./Entity";
 import GameObject from "../GameObject";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import DroppedItem from "../items/DroppedItem";
+import { Tile } from "../Tile";
 
 /** Maximum distance from a crafting station which will allow its recipes to be crafted. */
 const MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION = 250;
@@ -96,8 +97,17 @@ export function tickPlayerInstanceTimeSinceHit(): void {
    }
 }
 
+enum TileCollisionAxis {
+   none = 0,
+   x = 1,
+   y = 2,
+   diagonal = 3
+}
+
 class Player extends Entity {
    public static readonly MAX_HEALTH = 20;
+
+   private static readonly RADIUS = 32;
    
    /** The player entity associated with the current player. */
    public static instance: Player | null = null;
@@ -109,7 +119,7 @@ class Player extends Entity {
    public static readonly HITBOXES: ReadonlySet<Hitbox<HitboxType>> = new Set<Hitbox<HitboxType>>([
       new CircularHitbox({
          type: "circular",
-         radius: 32
+         radius: Player.RADIUS
       })
    ]);
 
@@ -160,8 +170,99 @@ class Player extends Entity {
    }
 
    public static resolveCollisions(): void {
+      this.resolveWallTileCollisions();
       this.resolveWallCollisions();
       this.resolveGameObjectCollisions();
+   }
+
+   private static checkForTileCollision(tile: Tile): TileCollisionAxis {
+      // Get the distance between the player's position and the center of the tile
+      const xDist = Math.abs(Player.instance!.position.x - (tile.x + 0.5) * SETTINGS.TILE_SIZE);
+      const yDist = Math.abs(Player.instance!.position.y - (tile.y + 0.5) * SETTINGS.TILE_SIZE);
+
+      if (xDist <= Player.RADIUS) {
+         return TileCollisionAxis.y;
+      }
+      if (yDist <= Player.RADIUS) {
+         return TileCollisionAxis.x;
+      }
+
+      const cornerDistance = Math.sqrt(Math.pow(xDist, 2) + Math.pow(yDist, 2));
+
+      if (cornerDistance <= Math.sqrt(Math.pow(SETTINGS.TILE_SIZE, 2) / 2) + Player.RADIUS) {
+         return TileCollisionAxis.diagonal;
+      }
+
+      return TileCollisionAxis.none;
+   }
+
+   private static resolveXAxisTileCollision(tile: Tile): void {
+      const xDist = Player.instance!.position.x - tile.x * SETTINGS.TILE_SIZE;
+      const xDir = xDist >= 0 ? 1 : -1;
+      Player.instance!.position.x = tile.x * SETTINGS.TILE_SIZE + (0.5 + 0.5 * xDir) * SETTINGS.TILE_SIZE + Player.RADIUS * xDir;
+
+      this.stopXVelocity();
+   }
+
+   private static resolveYAxisTileCollision(tile: Tile): void {
+      const yDist = Player.instance!.position.y - tile.y * SETTINGS.TILE_SIZE;
+      const yDir = yDist >= 0 ? 1 : -1;
+      Player.instance!.position.y = tile.y * SETTINGS.TILE_SIZE + (0.5 + 0.5 * yDir) * SETTINGS.TILE_SIZE + Player.RADIUS * yDir;
+
+      this.stopYVelocity();
+   }
+
+   private static resolveDiagonalTileCollision(tile: Tile): void {
+      const xDist = Player.instance!.position.x - tile.x * SETTINGS.TILE_SIZE;
+      const yDist = Player.instance!.position.y - tile.y * SETTINGS.TILE_SIZE;
+
+      const xDir = xDist >= 0 ? 1 : -1;
+      const yDir = yDist >= 0 ? 1 : -1;
+
+      const xDistFromEdge = Math.abs(xDist - SETTINGS.TILE_SIZE/2);
+      const yDistFromEdge = Math.abs(yDist - SETTINGS.TILE_SIZE/2);
+
+      const moveAxis: "x" | "y" = yDistFromEdge >= xDistFromEdge ? "y" : "x";
+
+      if (moveAxis === "x") {
+         Player.instance!.position.x = (tile.x + 0.5 + 0.5 * xDir) * SETTINGS.TILE_SIZE + Player.RADIUS * xDir;
+         this.stopXVelocity();
+      } else {
+         Player.instance!.position.y = (tile.y + 0.5 + 0.5 * yDir) * SETTINGS.TILE_SIZE + Player.RADIUS * yDir;
+         this.stopYVelocity();
+      }
+   }
+
+   private static resolveWallTileCollisions(): void {
+      if (Player.instance === null) return;
+      
+      const minTileX = clampToBoardDimensions(Math.floor((Player.instance.position.x - Player.RADIUS) / SETTINGS.TILE_SIZE));
+      const maxTileX = clampToBoardDimensions(Math.floor((Player.instance.position.x + Player.RADIUS) / SETTINGS.TILE_SIZE));
+      const minTileY = clampToBoardDimensions(Math.floor((Player.instance.position.y - Player.RADIUS) / SETTINGS.TILE_SIZE));
+      const maxTileY = clampToBoardDimensions(Math.floor((Player.instance.position.y + Player.RADIUS) / SETTINGS.TILE_SIZE));
+
+      for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
+         for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
+            const tile = Game.board.getTile(tileX, tileY);
+            if (tile.isWall) {
+               const collisionAxis = this.checkForTileCollision(tile);
+               switch (collisionAxis) {
+                  case TileCollisionAxis.x: {
+                     this.resolveXAxisTileCollision(tile);
+                     break;
+                  }
+                  case TileCollisionAxis.y: {
+                     this.resolveYAxisTileCollision(tile);
+                     break;
+                  }
+                  case TileCollisionAxis.diagonal: {
+                     this.resolveDiagonalTileCollision(tile);
+                     break;
+                  }
+               }
+            }
+         }
+      }
    }
 
    private static stopXVelocity(): void {
