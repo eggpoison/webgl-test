@@ -10,6 +10,7 @@ import { halfWindowHeight, halfWindowWidth } from "../webgl";
 import Entity from "./Entity";
 import GameObject from "../GameObject";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
+import DroppedItem from "../items/DroppedItem";
 
 /** Maximum distance from a crafting station which will allow its recipes to be crafted. */
 const MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION = 250;
@@ -211,6 +212,10 @@ class Player extends Entity {
       const collidingEntities = this.getCollidingGameObjects();
 
       for (const gameObject of collidingEntities) {
+         if (gameObject instanceof DroppedItem) {
+            continue;
+         }
+         
          // If the two entities are exactly on top of each other, don't do anything
          if (gameObject.position.x === Player.instance.position.x && gameObject.position.y === Player.instance.position.y) {
             continue;
@@ -221,14 +226,10 @@ class Player extends Entity {
          const distanceBetweenEntities = Player.instance.position.calculateDistanceBetween(gameObject.position);
          const maxDistanceBetweenEntities = this.calculateMaxDistanceFromGameObject(gameObject);
          const dist = Math.max(distanceBetweenEntities / maxDistanceBetweenEntities, 0.1);
-         // const forceMultiplier = 1 - dist;
-         // forceMultiplier = curveWeight(forceMultiplier, 2, 0.2);
-         // const forceMultiplier = 1;
          let forceMultiplier = 1 / dist;
 
          // Push both entities away from each other
          const force = SETTINGS.ENTITY_PUSH_FORCE / SETTINGS.TPS * forceMultiplier;
-         // const force = Player.instance.velocity !== null ? Player.instance.velocity.magnitude / SETTINGS.TPS : 0;
          const angle = Player.instance.position.calculateAngleBetween(gameObject.position) + Math.PI;
 
          // No need to apply force to other object as they will do it themselves

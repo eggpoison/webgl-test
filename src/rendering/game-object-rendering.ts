@@ -149,12 +149,11 @@ interface CategorisedRenderParts {
    }
 }
 
-export function renderGameObjects(): void {
-   const visibleGameObjects = calculateVisibleGameObjects();
-   if (visibleGameObjects.length === 0) return;
+export function renderGameObjects(gameObjects: ReadonlyArray<GameObject>): void {
+   if (gameObjects.length === 0) return;
 
    // Classify all render parts
-   const categorisedRenderParts = categoriseGameObjectsByRenderPart(visibleGameObjects);
+   const categorisedRenderParts = categoriseGameObjectsByRenderPart(gameObjects);
 
    renderRenderParts(categorisedRenderParts);
 }

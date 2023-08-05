@@ -28,6 +28,7 @@ import { createChunkBorderShaders, renderChunkBorders } from "./rendering/chunk-
 import { nerdVisionIsVisible } from "./components/game/nerd-vision/NerdVision";
 import { setFrameProgress } from "./GameObject";
 import { createDebugDataShaders, renderLineDebugData, renderTriangleDebugData } from "./rendering/debug-data-rendering";
+import { createAmbientOcclusionShaders, renderAmbientOcclusion } from "./rendering/ambient-occlusion-rendering";
 
 const nightVertexShaderText = `
 precision mediump float;
@@ -131,6 +132,10 @@ abstract class Game {
       }
    }
 
+   public static getGameObjectDebugData(): GameObjectDebugData | null {
+      return this.gameObjectDebugData || null;
+   }
+
    /** Starts the game */
    public static start(): void {
       this.nightProgram = createWebGLProgram(nightVertexShaderText, nightFragmentShaderText, "a_vertPosition");
@@ -217,6 +222,7 @@ abstract class Game {
             createHitboxShaders();
             createDebugDataShaders();
 
+            createAmbientOcclusionShaders();
             createRenderChunkBuffers();
             
             await loadTextures();
@@ -294,6 +300,7 @@ abstract class Game {
       renderPlayerNames();
 
       renderSolidTiles();
+      renderAmbientOcclusion();
       if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Game.board.gameObjects.hasOwnProperty(this.gameObjectDebugData.gameObjectID)) {
          renderTriangleDebugData(this.gameObjectDebugData);
       }
@@ -301,7 +308,9 @@ abstract class Game {
       if (nerdVisionIsVisible()) {
          renderChunkBorders();
       }
-      renderGameObjects();
+      renderGameObjects(Object.values(this.board.droppedItems));
+      renderGameObjects(Object.values(this.board.entities));
+      renderGameObjects(Object.values(this.board.projectiles));
       if (nerdVisionIsVisible()) {
          renderEntityHitboxes();
       }
@@ -311,6 +320,9 @@ abstract class Game {
       if (isDev() && nerdVisionIsVisible()) {
          const targettedEntity = getMouseTargetEntity();
          Client.sendTrackGameObject(targettedEntity !== null ? targettedEntity.id : null);
+         // if (targettedEntity !== null) {
+
+         // }
       }
 
       renderGhostPlaceableItem();

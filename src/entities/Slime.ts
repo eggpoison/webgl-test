@@ -24,6 +24,7 @@ class Slime extends Entity {
    private readonly size: number;
 
    private numOrbs: number;
+   private readonly orbRotations = new Array<number>();
 
    constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, size: SlimeSize, _eyeRotation: number, orbs: ReadonlyArray<SlimeOrbData>) {
       super(position, hitboxes, id, secondsSinceLastHit);
@@ -55,36 +56,19 @@ class Slime extends Entity {
             height: spriteSize,
             textureSource: `entities/slime/slime-${sizeString}-shading.png`,
             zIndex: 0
-         }, this),
-         // new RenderPart({
-         //    width: 16,
-         //    height: 16,
-         //    textureSource: `entities/slime/slime-orb-small.png`,
-         //    zIndex: 1,
-         //    offset: () => new Vector(spriteSize / 4, a).convertToPoint(),
-         //    getRotation: () => c
-         // }, this),
-         // new RenderPart({
-         //    width: 20,
-         //    height: 20,
-         //    textureSource: `entities/slime/slime-orb-medium.png`,
-         //    zIndex: 1,
-         //    offset: () => new Vector(spriteSize / 4 - 3, b).convertToPoint(),
-         //    getRotation: () => d
-         // }, this)
+         }, this)
       ]);
 
       this.size = size;
 
       this.numOrbs = orbs.length;
-      for (const orb of orbs) {
-         this.createOrbRenderPart(orb);
+      for (let i = 0; i < orbs.length; i++) {
+         const orb = orbs[i];
+         this.createOrbRenderPart(orb, i);
       }
    }
 
-   private createOrbRenderPart(orbData: SlimeOrbData): void {
-      const rotation = 2 * Math.PI * Math.random();
-      
+   private createOrbRenderPart(orbData: SlimeOrbData, i: number): void {
       const sizeString = Slime.SIZE_STRINGS[orbData.size];
       
       const orbSize = Slime.ORB_SIZES[orbData.size];
@@ -92,17 +76,19 @@ class Slime extends Entity {
       // Calculate the orb's offset from the center of the slime
       const spriteSize = Slime.SIZES[this.size];
       const offsetMagnitude = spriteSize / 2 * lerp(0.3, 0.7, orbData.offset);
+
+      this.orbRotations.push(orbData.rotation);
+
+      const renderPart = new RenderPart({
+         width: orbSize,
+         height: orbSize,
+         textureSource: `entities/slime/slime-orb-${sizeString}.png`,
+         zIndex: 1,
+         offset: () => new Vector(offsetMagnitude, this.orbRotations[i]).convertToPoint(),
+         getRotation: () => orbData.rotation
+      }, this);
       
-      this.attachRenderPart(
-         new RenderPart({
-            width: orbSize,
-            height: orbSize,
-            textureSource: `entities/slime/slime-orb-${sizeString}.png`,
-            zIndex: 1,
-            offset: () => new Vector(offsetMagnitude, orbData.rotation).convertToPoint(),
-            getRotation: () => rotation
-         }, this)
-      );
+      this.attachRenderPart(renderPart);
    }
 
    public updateFromData(entityData: EntityData<"slime">): void {
@@ -110,10 +96,15 @@ class Slime extends Entity {
       
       this.eyeRotation = entityData.clientArgs[1];
 
-      for (let i = entityData.clientArgs[2].length; i > this.numOrbs; i--) {
-         const orb = entityData.clientArgs[2][i - 1];
-         this.createOrbRenderPart(orb);
+      for (let i = 0; i < entityData.clientArgs[2].length; i++) {
+         const orb = entityData.clientArgs[2][i];
+         if (i > this.numOrbs) {
+            this.createOrbRenderPart(orb, i);
+         } else {
+            this.orbRotations[i] = orb.rotation;
+         }
       }
+
       this.numOrbs = entityData.clientArgs[2].length;
    }
 }

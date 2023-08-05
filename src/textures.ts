@@ -6,6 +6,19 @@ import { imageIsLoaded } from "./utils";
 let TEXTURES: { [key: string]: WebGLTexture } = {};
 
 const TEXTURE_SOURCES: Array<string> = [
+   "ambient-occlusion/2edge1corner.png",
+   "ambient-occlusion/2edge-2.png",
+   "ambient-occlusion/1edge.png",
+   "ambient-occlusion/2edge.png",
+   "ambient-occlusion/1corner.png",
+   "ambient-occlusion/2corner.png",
+   "ambient-occlusion/3corner.png",
+   "ambient-occlusion/4corner.png",
+   "ambient-occlusion/1edge1corner.png",
+   "ambient-occlusion/1edge2corner.png",
+   "ambient-occlusion/2corner-2.png",
+   "ambient-occlusion/3edge.png",
+   "ambient-occlusion/4edge.png",
    "entities/cow/cow-body-1.png",
    "entities/cow/cow-head-1.png",
    "entities/cow/cow-body-2.png",

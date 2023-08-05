@@ -116,6 +116,10 @@ class Board {
 
       return minDist;
    }
+
+   public tileIsInBoard(tileX: number, tileY: number): boolean {
+      return tileX >= 0 && tileX < SETTINGS.BOARD_DIMENSIONS && tileY >= 0 && tileY < SETTINGS.BOARD_DIMENSIONS;
+   }
 }
 
 export default Board;

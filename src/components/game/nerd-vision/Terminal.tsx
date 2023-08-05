@@ -75,6 +75,9 @@ const Terminal = ({ startingIsVisible }: TerminalParams) => {
          setIsInFocus(false);
          setIsVisible(isVisible);
          setTerminalButtonOpened(isVisible);
+         if (!isVisible) {
+            setLineInputValue("");
+         }
       }
 
       forceTerminalFocus = (): void => {
