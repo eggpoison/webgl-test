@@ -29,6 +29,7 @@ import { nerdVisionIsVisible } from "./components/game/nerd-vision/NerdVision";
 import { setFrameProgress } from "./GameObject";
 import { createDebugDataShaders, renderLineDebugData, renderTriangleDebugData } from "./rendering/debug-data-rendering";
 import { createAmbientOcclusionShaders, renderAmbientOcclusion } from "./rendering/ambient-occlusion-rendering";
+import { createWallBorderShaders, renderWallBorders } from "./rendering/wall-border-rendering";
 
 const nightVertexShaderText = `
 precision mediump float;
@@ -222,6 +223,7 @@ abstract class Game {
             createHitboxShaders();
             createDebugDataShaders();
 
+            createWallBorderShaders();
             createAmbientOcclusionShaders();
             createRenderChunkBuffers();
             
@@ -301,6 +303,7 @@ abstract class Game {
 
       renderSolidTiles();
       renderAmbientOcclusion();
+      renderWallBorders();
       if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Game.board.gameObjects.hasOwnProperty(this.gameObjectDebugData.gameObjectID)) {
          renderTriangleDebugData(this.gameObjectDebugData);
       }

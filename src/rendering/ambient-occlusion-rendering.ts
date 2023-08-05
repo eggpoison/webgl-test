@@ -32,7 +32,6 @@ void main() {
    gl_FragColor = vec4(col.r, col.g, col.b, col.a * 0.3);
 }
 `;
-// gl_FragColor = texture2D(u_texture, v_texCoord);
 
 let program: WebGLProgram;
 
