@@ -34,6 +34,50 @@ const PARTICLE_INFO: Record<ParticleType, ParticleInfo> = {
    [ParticleType.dirt]: {
       size: [8, 8],
       renderLayer: ParticleRenderLayer.low
+   },
+   [ParticleType.leaf]: {
+      size: [28, 20],
+      renderLayer: ParticleRenderLayer.low
+   },
+   [ParticleType.rock]: {
+      size: [16, 16],
+      renderLayer: ParticleRenderLayer.low
+   },
+   [ParticleType.cactusFlower1]: {
+      size: [16, 16],
+      renderLayer: ParticleRenderLayer.low
+   },
+   [ParticleType.cactusFlower1_2]: {
+      size: [20, 20],
+      renderLayer: ParticleRenderLayer.low
+   },
+   [ParticleType.cactusFlower2]: {
+      size: [16, 16],
+      renderLayer: ParticleRenderLayer.low
+   },
+   [ParticleType.cactusFlower2_2]: {
+      size: [20, 20],
+      renderLayer: ParticleRenderLayer.low
+   },
+   [ParticleType.cactusFlower3]: {
+      size: [16, 16],
+      renderLayer: ParticleRenderLayer.low
+   },
+   [ParticleType.cactusFlower3_2]: {
+      size: [20, 20],
+      renderLayer: ParticleRenderLayer.low
+   },
+   [ParticleType.cactusFlower4]: {
+      size: [16, 16],
+      renderLayer: ParticleRenderLayer.low
+   },
+   [ParticleType.cactusFlower4_2]: {
+      size: [20, 20],
+      renderLayer: ParticleRenderLayer.low
+   },
+   [ParticleType.cactusFlower5]: {
+      size: [20, 20],
+      renderLayer: ParticleRenderLayer.low
    }
 };
 

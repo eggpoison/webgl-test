@@ -1,4 +1,4 @@
-import { EntityType, Point, HitboxType, Vector, CactusFlowerSize, CactusBodyFlowerData, CactusLimbData, randFloat, lerp } from "webgl-test-shared";
+import { EntityType, Point, HitboxType, Vector, CactusFlowerSize, CactusBodyFlowerData, CactusLimbData } from "webgl-test-shared";
 import Hitbox from "../hitboxes/Hitbox";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
@@ -7,8 +7,6 @@ class Cactus extends Entity {
    private static readonly SIZE = 80;
 
    private static readonly LIMB_SIZE = 36;
-
-   private static readonly LIMB_PADDING = 10;
 
    public type: EntityType = "cactus";
 
@@ -26,15 +24,14 @@ class Cactus extends Entity {
 
       // Attach flower render parts
       for (let i = 0; i < flowers.length; i++) {
-         const { type, size, column, height } = flowers[i];
+         const { type, size, column, height, rotation } = flowers[i];
          
          // Calculate position offset
          const offsetDirection = column * Math.PI / 4;
-         const offsetVector = new Vector(lerp(10, Cactus.SIZE / 2 - Cactus.LIMB_PADDING, height), offsetDirection).convertToPoint();
+         const offsetVector = new Vector(height, offsetDirection).convertToPoint();
 
          let flowerSize = (type === 4 || size === CactusFlowerSize.large) ? 20 : 16;
 
-         const flowerRotation = 2 * Math.PI * Math.random();
          this.attachRenderPart(
             new RenderPart({
                width: flowerSize,
@@ -42,7 +39,7 @@ class Cactus extends Entity {
                textureSource: this.getFlowerTextureSource(type, size),
                zIndex: 3,
                offset: () => offsetVector,
-               getRotation: () => flowerRotation
+               getRotation: () => rotation
             }, this)
          );
       }
@@ -66,12 +63,11 @@ class Cactus extends Entity {
          );
          
          if (typeof flower !== "undefined") {
-            const { type, height, direction } = flower;
+            const { type, height, direction, rotation } = flower;
 
-            const flowerOffset = new Vector(randFloat(6, 10) * height, direction).convertToPoint();
+            const flowerOffset = new Vector(height, direction).convertToPoint();
             flowerOffset.add(offset);
 
-            const flowerRotation = 2 * Math.PI * Math.random();
             this.attachRenderPart(
                new RenderPart({
                   width: 16,
@@ -79,7 +75,7 @@ class Cactus extends Entity {
                   textureSource: this.getFlowerTextureSource(type, CactusFlowerSize.small),
                   zIndex: 1,
                   offset: () => flowerOffset,
-                  getRotation: () => flowerRotation
+                  getRotation: () => rotation
                }, this)
             );
          }

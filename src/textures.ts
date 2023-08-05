@@ -89,7 +89,9 @@ export function loadTextures(): Promise<void> {
 
       // Particle textures
       for (const particleTexture of Object.values(PARTICLE_TEXTURES)) {
-         TEXTURE_SOURCES.push("particles/" + particleTexture);
+         if (!textureSourceIsAlreadyIncluded(particleTexture))  {
+            TEXTURE_SOURCES.push(particleTexture);
+         }
       }
 
       // Add item textures

@@ -7,12 +7,23 @@ import { getTexture } from "../textures";
 import { getFrameProgress } from "../GameObject";
 
 export const PARTICLE_TEXTURES: Record<ParticleType, string> = {
-   [ParticleType.bloodPoolSmall]: "blood-pool-small.png",
-   [ParticleType.bloodPoolMedium]: "blood-pool-medium.png",
-   [ParticleType.bloodPoolLarge]: "blood-pool-large.png",
-   [ParticleType.blood]: "blood.png",
-   [ParticleType.cactusSpine]: "cactus-spine.png",
-   [ParticleType.dirt]: "dirt.png"
+   [ParticleType.bloodPoolSmall]: "particles/blood-pool-small.png",
+   [ParticleType.bloodPoolMedium]: "particles/blood-pool-medium.png",
+   [ParticleType.bloodPoolLarge]: "particles/blood-pool-large.png",
+   [ParticleType.blood]: "particles/blood.png",
+   [ParticleType.cactusSpine]: "particles/cactus-spine.png",
+   [ParticleType.dirt]: "particles/dirt.png",
+   [ParticleType.leaf]: "particles/leaf.png",
+   [ParticleType.rock]: "particles/rock.png",
+   [ParticleType.cactusFlower1]: "entities/cactus/cactus-flower-small-1.png",
+   [ParticleType.cactusFlower1_2]: "entities/cactus/cactus-flower-large-1.png",
+   [ParticleType.cactusFlower2]: "entities/cactus/cactus-flower-small-2.png",
+   [ParticleType.cactusFlower2_2]: "entities/cactus/cactus-flower-large-2.png",
+   [ParticleType.cactusFlower3]: "entities/cactus/cactus-flower-small-3.png",
+   [ParticleType.cactusFlower3_2]: "entities/cactus/cactus-flower-large-3.png",
+   [ParticleType.cactusFlower4]: "entities/cactus/cactus-flower-small-4.png",
+   [ParticleType.cactusFlower4_2]: "entities/cactus/cactus-flower-large-4.png",
+   [ParticleType.cactusFlower5]: "entities/cactus/cactus-flower-5.png"
 };
 
 const vertexShaderText = `
@@ -187,7 +198,7 @@ export function renderParticles(renderLayer: ParticleRenderLayer): void {
 
       gl.uniform1i(textureUniformLocation, 0);
 
-      const texture = getTexture("particles/" + textureSource);
+      const texture = getTexture(textureSource);
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, texture);
 
