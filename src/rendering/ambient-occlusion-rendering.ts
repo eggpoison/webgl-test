@@ -169,17 +169,16 @@ const getKeyCombination = (key: string): string => {
 }
 
 const getTileAmbientOcclusionInfo = (tileX: number, tileY: number): TileAmbientOcclusionInfo | null => {
-   const minTileX = Math.max(tileX - 1, 0);
-   const maxTileX = Math.min(tileX + 1, SETTINGS.BOARD_DIMENSIONS - 1);
-   const minTileY = Math.max(tileY - 1, 0);
-   const maxTileY = Math.min(tileY + 1, SETTINGS.BOARD_DIMENSIONS - 1);
-   
    let key = "";
-   for (let y = maxTileY; y >= minTileY; y--) {
-      for (let x = minTileX; x <= maxTileX; x++) {
-         const tile = Game.board.getTile(x, y);
-         const symbol = getTileSymbol(tile);
-         key += symbol;
+   for (let y = tileY + 1; y >= tileY - 1; y--) {
+      for (let x = tileX - 1; x <= tileX + 1; x++) {
+         if (Game.board.tileIsInBoard(x, y)) {
+            const tile = Game.board.getTile(x, y);
+            const symbol = getTileSymbol(tile);
+            key += symbol;
+         } else {
+            key += "0";
+         }
       }
    }
 

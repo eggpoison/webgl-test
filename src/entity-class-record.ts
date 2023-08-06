@@ -14,6 +14,8 @@ import Yeti from "./entities/Yeti";
 import IceSpikes from "./entities/IceSpikes";
 import Slime from "./entities/Slime";
 import Slimewisp from "./entities/Slimewisp";
+import AITribesman from "./entities/AITribesman";
+import TribeTotem from "./entities/TribeTotem";
 
 export type EntityClassType<T extends EntityType> = new (position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, ...clientParams: Parameters<EntityInfoClientArgs[T]>) => Entity;
 
@@ -21,7 +23,6 @@ const ENTITY_CLASS_RECORD: { [id in EntityType]: () => EntityClassType<id>} = {
    cow: () => Cow,
    zombie: () => Zombie,
    tombstone: () => Tombstone,
-   player: () => Player,
    tree: () => Tree,
    workbench: () => Workbench,
    boulder: () => Boulder,
@@ -30,7 +31,10 @@ const ENTITY_CLASS_RECORD: { [id in EntityType]: () => EntityClassType<id>} = {
    yeti: () => Yeti,
    ice_spikes: () => IceSpikes,
    slime: () => Slime,
-   slimewisp: () => Slimewisp
+   slimewisp: () => Slimewisp,
+   ai_tribesman: () => AITribesman,
+   player: () => Player,
+   tribe_totem: () => TribeTotem
 };
 
 export default ENTITY_CLASS_RECORD;

@@ -25,7 +25,8 @@ const ITEM_CLASS_RECORD: { [T in ItemType]: () => GenericItem<T> } = {
    frostcicle: () => Item,
    slimeball: () => Item,
    eyeball: () => Item,
-   flesh_sword: () => Item
+   flesh_sword: () => Item,
+   tribe_totem: () => PlaceableItem
 };
 
 export function createItem(itemType: ItemType, count: number, id: number): Item {

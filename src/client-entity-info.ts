@@ -18,10 +18,6 @@ const CLIENT_ENTITY_INFO_RECORD: Record<EntityType, ClientEntityInfo> = {
       name: "Tombstone",
       description: ""
    },
-   player: {
-      name: "Player",
-      description: "That's you!"
-   },
    tree: {
       name: "Tree",
       description: ""
@@ -56,6 +52,18 @@ const CLIENT_ENTITY_INFO_RECORD: Record<EntityType, ClientEntityInfo> = {
    },
    slimewisp: {
       name: "Slimewisp",
+      description: ""
+   },
+   ai_tribesman: {
+      name: "AI Tribesman",
+      description: ""
+   },
+   player: {
+      name: "Player",
+      description: "That's you!"
+   },
+   tribe_totem: {
+      name: "Tribe Totem",
       description: ""
    }
 };

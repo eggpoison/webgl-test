@@ -106,6 +106,11 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       textureSource: "flesh-sword.png",
       name: "Flesh Sword",
       description: ""
+   },
+   tribe_totem: {
+      textureSource: "tribe-totem.png",
+      name: "Tribe Totem",
+      description: ""
    }
 };
 

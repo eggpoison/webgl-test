@@ -16,6 +16,11 @@ const PLACEABLE_ENTITY_INFO_RECORD: Partial<Record<ItemType, PlaceableEntityInfo
       textureSource: "workbench/workbench.png",
       width: 80,
       height: 80
+   },
+   tribe_totem: {
+      textureSource: "tribe-totem/tribe-totem.png",
+      width: 100,
+      height: 100
    }
 };
 

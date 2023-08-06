@@ -12,6 +12,7 @@ import GameObject from "../GameObject";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import DroppedItem from "../items/DroppedItem";
 import { Tile } from "../Tile";
+import TribeMember from "./TribeMember";
 
 /** Maximum distance from a crafting station which will allow its recipes to be crafted. */
 const MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION = 250;
@@ -113,7 +114,7 @@ enum TileCollisionAxis {
    diagonal = 3
 }
 
-class Player extends Entity {
+class Player extends TribeMember {
    public static readonly MAX_HEALTH = 20;
 
    private static readonly RADIUS = 32;
