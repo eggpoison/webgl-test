@@ -28,7 +28,7 @@ import { createChunkBorderShaders, renderChunkBorders } from "./rendering/chunk-
 import { nerdVisionIsVisible } from "./components/game/nerd-vision/NerdVision";
 import { setFrameProgress } from "./GameObject";
 import { createDebugDataShaders, renderLineDebugData, renderTriangleDebugData } from "./rendering/debug-data-rendering";
-import { createAmbientOcclusionShaders, renderAmbientOcclusion } from "./rendering/ambient-occlusion-rendering";
+import { createAmbientOcclusionShaders, recalculateAmbientOcclusion, renderAmbientOcclusion } from "./rendering/ambient-occlusion-rendering";
 import { createWallBorderShaders, renderWallBorders } from "./rendering/wall-border-rendering";
 import { createParticleShaders, renderParticles } from "./rendering/particle-rendering";
 import { ParticleRenderLayer } from "./Particle";
@@ -229,6 +229,8 @@ abstract class Game {
             createWallBorderShaders();
             createAmbientOcclusionShaders();
             createRenderChunkBuffers();
+
+            recalculateAmbientOcclusion();
             
             await loadTextures();
    

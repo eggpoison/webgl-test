@@ -25,6 +25,7 @@ import createProjectile from "../projectiles/projectile-creation";
 import Camera from "../Camera";
 import { isDev } from "../utils";
 import Particle from "../Particle";
+import { updateTileAmbientOcclusion } from "../rendering/ambient-occlusion-rendering";
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -413,6 +414,17 @@ abstract class Client {
          tile.isWall = tileUpdate.isWall;
          
          updateRenderChunkFromTileBuffer(tileUpdate);
+
+         // Update the ambient occlusion of nearby tiles
+         const minTileX = Math.max(tile.x - 1, 0);
+         const maxTileX = Math.min(tile.x + 1, SETTINGS.BOARD_DIMENSIONS - 1);
+         const minTileY = Math.max(tile.y - 1, 0);
+         const maxTileY = Math.min(tile.y + 1, SETTINGS.BOARD_DIMENSIONS - 1);
+         for (let tileY = maxTileY; tileY >= minTileY; tileY--) {
+            for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
+               updateTileAmbientOcclusion(tileX, tileY);
+            }
+         }
       }
    }
 

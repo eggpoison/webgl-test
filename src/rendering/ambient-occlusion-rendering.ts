@@ -5,55 +5,18 @@ import Camera from "../Camera";
 import { createWebGLProgram, gl } from "../webgl";
 import { getTexture } from "../textures";
 
-const vertexShaderText = `
-precision mediump float;
-
-attribute vec2 a_position;
-attribute vec2 a_texCoord;
-
-varying vec2 v_texCoord;
-
-void main() {
-   gl_Position = vec4(a_position, 0.0, 1.0);
-
-   v_texCoord = a_texCoord;
-}
-`;
-
-const fragmentShaderText = `
-precision mediump float;
-
-uniform sampler2D u_texture;
-
-varying vec2 v_texCoord;
- 
-void main() {
-   vec4 col = texture2D(u_texture, v_texCoord);
-   gl_FragColor = vec4(col.r, col.g, col.b, col.a * 0.3);
-}
-`;
-
-let program: WebGLProgram;
-
-let textureUniformLocation: WebGLUniformLocation;
-
-let positionAttribLocation: GLint;
-let texCoordAttribLocation: GLint;
-
-export function createAmbientOcclusionShaders(): void {
-   program = createWebGLProgram(vertexShaderText, fragmentShaderText);
-
-   textureUniformLocation = gl.getUniformLocation(program, "u_textures")!;
-   positionAttribLocation = gl.getAttribLocation(program, "a_position");
-   texCoordAttribLocation = gl.getAttribLocation(program, "a_texCoord");
-}
-
 /*
 Key:
 * = any
 1 = wall
 0 = ground
 */
+
+// interface AmbientOcclusionType {
+//    /** The combination of tile types required for this type of ambient occlusion to be rendered */
+//    readonly requiredCombination: string;
+//    readonly textureSource: string;
+// }
 
 const ATLAS: Record<string, string> = {
    // * 1 *
@@ -108,6 +71,49 @@ const ATLAS: Record<string, string> = {
    // 0 0 0
    // 1 0 1
    "*1*000101": "1edge2corner.png",
+};
+
+const vertexShaderText = `
+precision mediump float;
+
+attribute vec2 a_position;
+attribute vec2 a_texCoord;
+
+varying vec2 v_texCoord;
+
+void main() {
+   gl_Position = vec4(a_position, 0.0, 1.0);
+
+   v_texCoord = a_texCoord;
+}
+`;
+
+const fragmentShaderText = `
+precision mediump float;
+
+uniform sampler2D u_texture;
+
+varying vec2 v_texCoord;
+ 
+void main() {
+   vec4 col = texture2D(u_texture, v_texCoord);
+   gl_FragColor = vec4(col.r, col.g, col.b, col.a * 0.3);
+}
+`;
+
+let program: WebGLProgram;
+
+let textureUniformLocation: WebGLUniformLocation;
+
+let positionAttribLocation: GLint;
+let texCoordAttribLocation: GLint;
+
+export function createAmbientOcclusionShaders(): void {
+   program = createWebGLProgram(vertexShaderText, fragmentShaderText);
+
+   textureUniformLocation = gl.getUniformLocation(program, "u_textures")!;
+   positionAttribLocation = gl.getAttribLocation(program, "a_position");
+   texCoordAttribLocation = gl.getAttribLocation(program, "a_texCoord");
 }
 
 const getTileSymbol = (tile: Tile): string => {
@@ -162,7 +168,7 @@ const getKeyCombination = (key: string): string => {
    return "";
 }
 
-const getTileAmbientOcclusionInfo = (tileX: number, tileY: number): TileAmbientOcclusionInfo => {
+const getTileAmbientOcclusionInfo = (tileX: number, tileY: number): TileAmbientOcclusionInfo | null => {
    const minTileX = Math.max(tileX - 1, 0);
    const maxTileX = Math.min(tileX + 1, SETTINGS.BOARD_DIMENSIONS - 1);
    const minTileY = Math.max(tileY - 1, 0);
@@ -258,12 +264,31 @@ const getTileAmbientOcclusionInfo = (tileX: number, tileY: number): TileAmbientO
       };
    }
    
-   return {
-      tile: Game.board.getTile(tileX, tileY),
-      textureSource: "",
-      numRotations: -1,
-      isXFlipped: false
-   };
+   return null;
+}
+
+/** Stores the ambient occlusion index of every tile which has ambient occlusion */
+const ambientOcclusionRecord: Record<number, TileAmbientOcclusionInfo> = {};
+
+/** Updates the given tile's ambient occlusion */
+export function updateTileAmbientOcclusion(tileX: number, tileY: number): void {
+   const tileIndex = tileY * SETTINGS.BOARD_DIMENSIONS + tileX;
+   
+   const ambientOcclusionInfo = getTileAmbientOcclusionInfo(tileX, tileY);
+   if (ambientOcclusionInfo !== null) {
+      ambientOcclusionRecord[tileIndex] = ambientOcclusionInfo;
+   } else {
+      delete ambientOcclusionRecord[tileIndex];
+   }
+}
+
+/** Recalculates the ambient occlusion for all tiles */
+export function recalculateAmbientOcclusion(): void {
+   for (let tileX = 0; tileX < SETTINGS.BOARD_DIMENSIONS; tileX++) {
+      for (let tileY = 0; tileY < SETTINGS.BOARD_DIMENSIONS; tileY++) {
+         updateTileAmbientOcclusion(tileX, tileY);
+      }
+   }
 }
 
 const getVisibleTiles = (): ReadonlyArray<Tile> => {
@@ -296,8 +321,9 @@ const categoriseTiles = (visibleTiles: ReadonlyArray<Tile>): AmbientOcclusionInf
    }
 
    for (const tile of visibleTiles) {
-      const info = getTileAmbientOcclusionInfo(tile.x, tile.y);
-      if (info.textureSource !== "") {
+      const tileIndex = tile.y * SETTINGS.BOARD_DIMENSIONS + tile.x;
+      if (ambientOcclusionRecord.hasOwnProperty(tileIndex)) {
+         const info = ambientOcclusionRecord[tileIndex]!;
          ambientOcclusionInfo[info.textureSource].push(info);
       }
    }  
