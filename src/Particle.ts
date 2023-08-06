@@ -27,6 +27,10 @@ const PARTICLE_INFO: Record<ParticleType, ParticleInfo> = {
       size: [4, 4],
       renderLayer: ParticleRenderLayer.high
    },
+   [ParticleType.bloodLarge]: {
+      size: [8, 8],
+      renderLayer: ParticleRenderLayer.high
+   },
    [ParticleType.cactusSpine]: {
       size: [4, 16],
       renderLayer: ParticleRenderLayer.high

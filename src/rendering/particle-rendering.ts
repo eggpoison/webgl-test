@@ -11,6 +11,7 @@ export const PARTICLE_TEXTURES: Record<ParticleType, string> = {
    [ParticleType.bloodPoolMedium]: "particles/blood-pool-medium.png",
    [ParticleType.bloodPoolLarge]: "particles/blood-pool-large.png",
    [ParticleType.blood]: "particles/blood.png",
+   [ParticleType.bloodLarge]: "particles/blood-large.png",
    [ParticleType.cactusSpine]: "particles/cactus-spine.png",
    [ParticleType.dirt]: "particles/dirt.png",
    [ParticleType.leaf]: "particles/leaf.png",
