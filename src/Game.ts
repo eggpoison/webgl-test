@@ -32,6 +32,7 @@ import { createAmbientOcclusionShaders, recalculateAmbientOcclusion, renderAmbie
 import { createWallBorderShaders, renderWallBorders } from "./rendering/wall-border-rendering";
 import { createParticleShaders, renderParticles } from "./rendering/particle-rendering";
 import { ParticleRenderLayer } from "./Particle";
+import Tribe from "./Tribe";
 
 const nightVertexShaderText = `
 precision mediump float;
@@ -108,6 +109,8 @@ abstract class Game {
    public static latencyGameState = new LatencyGameState();
 
    private static gameObjectDebugData: GameObjectDebugData | null = null;
+
+   public static tribe: Tribe | null = null;
 
    public static get ticks(): number {
       return this._ticks;

@@ -1,6 +1,5 @@
 import { useEffect, useReducer, useState } from "react";
 import { roundNum } from "webgl-test-shared";
-import CLIENT_ENTITY_INFO_RECORD from "../../../client-entity-info";
 import Entity from "../../../entities/Entity";
 
 export let updateDevEntityViewer: (entity?: Entity | null) => void = () => {};
@@ -20,8 +19,6 @@ const EntityViewer = () => {
    }, []);
 
    if (entity === null) return null;
-
-   const clientEntityInfo = CLIENT_ENTITY_INFO_RECORD[entity.type];
 
    const displayX = roundNum(entity.position.x, 0);
    const displayY = roundNum(entity.position.y, 0);
@@ -46,7 +43,7 @@ const EntityViewer = () => {
    }, [] as Array<JSX.Element | string>);
 
    return <div id="dev-entity-viewer">
-      <div className="title">{clientEntityInfo.name}<span className="id">#{entity.id}</span></div>
+      <div className="title">{entity.type}<span className="id">#{entity.id}</span></div>
       
       <p>x: <span className="highlight">{displayX}</span>, y: <span className="highlight">{displayY}</span></p>
 

@@ -9,6 +9,8 @@ type PlaceableEntityInfo = {
    readonly textureSource: string;
    readonly width: number;
    readonly height: number;
+   /** Optionally defines extra criteria for being placed */
+   canPlace?(): boolean;
 }
 
 const PLACEABLE_ENTITY_INFO_RECORD: Partial<Record<ItemType, PlaceableEntityInfo>> = {
@@ -20,7 +22,22 @@ const PLACEABLE_ENTITY_INFO_RECORD: Partial<Record<ItemType, PlaceableEntityInfo
    tribe_totem: {
       textureSource: "tribe-totem/tribe-totem.png",
       width: 100,
-      height: 100
+      height: 100,
+      canPlace: (): boolean => {
+         // The player can only place a tribe totem if they aren't in a tribe
+         return Game.tribe === null;
+      }
+   },
+   tribe_hut: {
+      textureSource: "tribe-hut/tribe-hut.png",
+      width: 80,
+      height: 80,
+      canPlace: (): boolean => {
+         // The player can't place huts if they aren't in a tribe
+         if (Game.tribe === null) return false;
+
+         return Game.tribe.numHuts < Game.tribe.tribesmanCap;
+      }
    }
 };
 
@@ -161,6 +178,13 @@ export function createPlaceableItemProgram(): void {
 
 class PlaceableItem extends Item {
    public onRightMouseButtonDown(): void {
+      if (PLACEABLE_ENTITY_INFO_RECORD.hasOwnProperty(this.type)) {
+         const placeableInfo = PLACEABLE_ENTITY_INFO_RECORD[this.type]!;
+         if (typeof placeableInfo.canPlace !== "undefined" && !placeableInfo.canPlace()) {
+            return;
+         }
+      }
+      
       super.sendUsePacket();
 
       // If the item would be consumed when used, clear the isPlacingEntity flag

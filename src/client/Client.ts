@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, CraftingRecipe, PlayerInventoryType, PlaceablePlayerInventoryType, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, InventoryData, ItemSlotData, EntityType, HitboxData, HitboxInfo, ProjectileData, VisibleChunkBounds, ParticleData } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, CraftingRecipe, PlayerInventoryType, PlaceablePlayerInventoryType, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, InventoryData, ItemSlotData, EntityType, HitboxData, HitboxInfo, ProjectileData, VisibleChunkBounds, ParticleData, TribeType, TribeData } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -26,6 +26,7 @@ import Camera from "../Camera";
 import { isDev } from "../utils";
 import Particle from "../Particle";
 import { updateTileAmbientOcclusion } from "../rendering/ambient-occlusion-rendering";
+import Tribe from "../Tribe";
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -191,6 +192,8 @@ abstract class Client {
       this.updatePlayerInventory(gameDataPacket.inventory);
       this.registerTileUpdates(gameDataPacket.tileUpdates);
 
+      this.updateTribe(gameDataPacket.tribeData);
+
       // Register hits
       for (const hitData of gameDataPacket.hitsTaken) {
          Player.registerHit(hitData);
@@ -211,6 +214,20 @@ abstract class Client {
       
          // If the player's inventory is open, close it
          updateInventoryIsOpen(false);
+      }
+   }
+
+   private static updateTribe(tribeData: TribeData | null): void {
+      if (tribeData === null) {
+         Game.tribe = null;
+      } else {
+         if (Game.tribe === null) {
+            // Create tribe
+            Game.tribe = new Tribe(tribeData.tribeType, tribeData.numHuts)
+         } else {
+            // Update existing tribe
+            Game.tribe.numHuts = tribeData.numHuts;
+         }
       }
    }
 
@@ -510,7 +527,7 @@ abstract class Client {
       updateHealthBar(Player.MAX_HEALTH);
       
       const spawnPosition = Point.unpackage(respawnDataPacket.spawnPosition);
-      const player = new Player(spawnPosition, new Set(Player.HITBOXES), respawnDataPacket.playerID, null, Game.definiteGameState.playerUsername);
+      const player = new Player(spawnPosition, new Set(Player.HITBOXES), respawnDataPacket.playerID, null, TribeType.plainspeople, Game.definiteGameState.playerUsername);
       Player.setInstancePlayer(player);
 
       gameScreenSetIsDead(false);

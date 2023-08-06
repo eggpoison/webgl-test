@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { InitialGameDataPacket, Point } from "webgl-test-shared";
+import { InitialGameDataPacket, Point, TribeType } from "webgl-test-shared";
 import Board from "../Board";
 import Client from "../client/Client";
 import Player from "../entities/Player";
@@ -88,7 +88,7 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
                // Spawn the player
                Game.definiteGameState.playerUsername = username;
                const playerSpawnPosition = new Point(spawnPositionRef.current!.x, spawnPositionRef.current!.y);
-               const player = new Player(playerSpawnPosition, new Set(Player.HITBOXES), initialGameDataPacket.playerID, null, username);
+               const player = new Player(playerSpawnPosition, new Set(Player.HITBOXES), initialGameDataPacket.playerID, null, TribeType.plainspeople, username);
                Player.setInstancePlayer(player);
 
                Client.unloadGameDataPacket(initialGameDataPacket);

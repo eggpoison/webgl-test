@@ -111,6 +111,11 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       textureSource: "tribe-totem.png",
       name: "Tribe Totem",
       description: ""
+   },
+   tribe_hut: {
+      textureSource: "tribe-hut.png",
+      name: "Tribe Hut",
+      description: ""
    }
 };
 
