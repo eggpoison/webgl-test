@@ -36,6 +36,9 @@ export const TILE_TYPE_RENDER_INFO_RECORD: Record<TileType, TileTypeRenderInfo> 
    rock: {
       textureSource: "rock.png"
    },
+   darkRock: {
+      textureSource: "dark-rock.png"
+   },
    sand: {
       textureSource: "sand.png"
    },

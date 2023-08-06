@@ -16,7 +16,7 @@ class DroppedItem extends GameObject implements BaseItemInfo {
 
       Game.board.droppedItems[this.id] = this;
 
-      const itemTextureSource = CLIENT_ITEM_INFO_RECORD[itemType].textureSrc;
+      const itemTextureSource = CLIENT_ITEM_INFO_RECORD[itemType].textureSource;
 
       this.attachRenderPart(
          new RenderPart({

@@ -18,7 +18,8 @@ const MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION = 250;
 
 const CRAFTING_RECIPE_RECORD: Record<CraftingStation | "hand", Array<CraftingRecipe>> = {
    hand: [],
-   workbench: []
+   workbench: [],
+   slime: []
 };
 
 // Categorise the crafting recipes
@@ -69,6 +70,14 @@ export function updateAvailableCraftingRecipes(): void {
                         availableCraftingRecipes = availableCraftingRecipes.concat(CRAFTING_RECIPE_RECORD.workbench.slice());
                         availableCraftingStations.add("workbench");
                      }
+                     break;
+                  }
+                  case "slime": {
+                     if (!availableCraftingStations.has("slime")) {
+                        availableCraftingRecipes = availableCraftingRecipes.concat(CRAFTING_RECIPE_RECORD.slime.slice());
+                        availableCraftingStations.add("slime");
+                     }
+                     break;
                   }
                }
             }

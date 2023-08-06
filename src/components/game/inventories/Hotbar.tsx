@@ -102,7 +102,7 @@ const Hotbar = () => {
       const item: Item | undefined = hotbarInventory[itemSlot];
       
       if (typeof item !== "undefined") {
-         const imageSrc = require("../../../images/items/" + CLIENT_ITEM_INFO_RECORD[item.type].textureSrc);
+         const imageSrc = require("../../../images/items/" + CLIENT_ITEM_INFO_RECORD[item.type].textureSource);
          hotbarItemSlots.push(
             <ItemSlot onClick={e => leftClickHotbarItemSlot(e, itemSlot)} onContextMenu={e => rightClickHotbarItemSlot(e, itemSlot)} isSelected={itemSlot === selectedItemSlot} picturedItemImageSrc={imageSrc} itemCount={item.count} key={itemSlot} />
          );
@@ -117,7 +117,7 @@ const Hotbar = () => {
    if (backpackItemSlot !== null) {
       const backpackItemInfo = CLIENT_ITEM_INFO_RECORD[backpackItemSlot.type];
       
-      const imageSrc = require("../../../images/items/" + backpackItemInfo.textureSrc);
+      const imageSrc = require("../../../images/items/" + backpackItemInfo.textureSource);
       backpackItemSlotElement = <ItemSlot onClick={e => clickBackpackItemSlot(e)} isSelected={false} picturedItemImageSrc={imageSrc} />
    } else {
       const imageSrc = require("../../../images/miscellaneous/backpack-wireframe.png");

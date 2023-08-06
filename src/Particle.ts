@@ -44,6 +44,10 @@ const PARTICLE_INFO: Record<ParticleType, ParticleInfo> = {
       renderLayer: ParticleRenderLayer.low
    },
    [ParticleType.rock]: {
+      size: [12, 12],
+      renderLayer: ParticleRenderLayer.low
+   },
+   [ParticleType.rockLarge]: {
       size: [16, 16],
       renderLayer: ParticleRenderLayer.low
    },
@@ -89,6 +93,10 @@ const PARTICLE_INFO: Record<ParticleType, ParticleInfo> = {
    },
    [ParticleType.footprint]: {
       size: [16, 16],
+      renderLayer: ParticleRenderLayer.low
+   },
+   [ParticleType.poisonDroplet]: {
+      size: [12, 12],
       renderLayer: ParticleRenderLayer.low
    }
 };

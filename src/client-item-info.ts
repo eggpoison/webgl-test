@@ -1,100 +1,110 @@
 import { ItemType } from "webgl-test-shared";
 
 export type ClientItemInfo = {
-   readonly textureSrc: string;
+   readonly textureSource: string;
    readonly name: string;
    readonly description: string;
 }
 
 const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
    wood: {
-      textureSrc: "wood.png",
+      textureSource: "wood.png",
       name: "Wood",
       description: "A common material used in crafting many things."
    },
    wooden_sword: {
-      textureSrc: "wooden-sword.png",
+      textureSource: "wooden-sword.png",
       name: "Wooden Sword",
       description: "The splinters hurt you as much as the blade hurts the enemy."
    },
    wooden_axe: {
-      textureSrc: "wooden-axe.png",
+      textureSource: "wooden-axe.png",
       name: "Wooden Axe",
       description: ""
    },
    wooden_pickaxe: {
-      textureSrc: "wooden-pickaxe.png",
+      textureSource: "wooden-pickaxe.png",
       name: "Wooden Pickaxe",
       description: ""
    },
    berry: {
-      textureSrc: "berry.png",
+      textureSource: "berry.png",
       name: "Berry",
       description: "Provides little sustenance, but can be used in a pinch."
    },
    raw_beef: {
-      textureSrc: "raw-beef.png",
+      textureSource: "raw-beef.png",
       name: "Raw Beef",
       description: "The raw mutilated flesh of a deceased cow - would not recommend eating."
    },
    cooked_beef: {
-      textureSrc: "raw-beef.png",
+      textureSource: "raw-beef.png",
       name: "Cooked Beef",
       description: "A hearty meal. Could use some seasoning."
    },
    workbench: {
-      textureSrc: "workbench.png",
+      textureSource: "workbench.png",
       name: "Workbench",
       description: "The first crafting station available, able to craft many more complex recipes."
    },
    rock: {
-      textureSrc: "rock.png",
+      textureSource: "rock.png",
       name: "Rock",
       description: "This Grug rock. No hurt or face wrath of Grug."
    },
    stone_sword: {
-      textureSrc: "stone-sword.png",
+      textureSource: "stone-sword.png",
       name: "Stone Sword",
       description: ""
    },
    stone_axe: {
-      textureSrc: "stone-axe.png",
+      textureSource: "stone-axe.png",
       name: "Stone Axe",
       description: ""
    },
    stone_pickaxe: {
-      textureSrc: "stone-pickaxe.png",
+      textureSource: "stone-pickaxe.png",
       name: "Stone Pickaxe",
       description: ""
    },
    leather: {
-      textureSrc: "leather.png",
+      textureSource: "leather.png",
       name: "Leather",
       description: ""
    },
    leather_backpack: {
-      textureSrc: "leather-backpack.png",
+      textureSource: "leather-backpack.png",
       name: "Leather Backpack",
       description: "Allows you to hold more items."
    },
    cactus_spine: {
-      textureSrc: "cactus-spine.png",
+      textureSource: "cactus-spine.png",
       name: "Cactus Spine",
       description: "It's tough and spiky and gets everywhere."
    },
    yeti_hide: {
-      textureSrc: "yeti-hide.png",
+      textureSource: "yeti-hide.png",
       name: "Yeti Hide",
       description: "An extremely tough half-frost half-flesh hide."
    },
    frostcicle: {
-      textureSrc: "frostcicle.png",
+      textureSource: "frostcicle.png",
       name: "Frostcicle",
       description: "A perfectly preserved ice shard."
    },
    slimeball: {
-      textureSrc: "slimeball.png",
+      textureSource: "slimeball.png",
       name: "Slimeball",
+      description: ""
+   },
+   eyeball: {
+      textureSource: "eyeball.png",
+      name: "Eyeball",
+      description: ""
+   },
+   flesh_sword: {
+      textureSource: "flesh-sword.png",
+      name: "Flesh Sword",
       description: ""
    }
 };

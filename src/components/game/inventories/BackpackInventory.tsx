@@ -50,7 +50,7 @@ const BackpackInventoryMenu = () => {
          if (backpackInventory.hasOwnProperty(itemSlot)) {
             const item = backpackInventory[itemSlot];
 
-            const itemImageSrc = require(`../../../images/items/${CLIENT_ITEM_INFO_RECORD[item.type].textureSrc}`);
+            const itemImageSrc = require(`../../../images/items/${CLIENT_ITEM_INFO_RECORD[item.type].textureSource}`);
 
             rowItemSlots.push(
                <ItemSlot key={x} onClick={e => leftClickBackpackItemSlot(e, itemSlot)} onContextMenu={e => rightClickBackpackItemSlot(e, itemSlot)} picturedItemImageSrc={itemImageSrc} itemCount={item.count} isSelected={false} />
