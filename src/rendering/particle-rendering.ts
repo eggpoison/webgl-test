@@ -23,7 +23,9 @@ export const PARTICLE_TEXTURES: Record<ParticleType, string> = {
    [ParticleType.cactusFlower3_2]: "entities/cactus/cactus-flower-large-3.png",
    [ParticleType.cactusFlower4]: "entities/cactus/cactus-flower-small-4.png",
    [ParticleType.cactusFlower4_2]: "entities/cactus/cactus-flower-large-4.png",
-   [ParticleType.cactusFlower5]: "entities/cactus/cactus-flower-5.png"
+   [ParticleType.cactusFlower5]: "entities/cactus/cactus-flower-5.png",
+   [ParticleType.smoke]: "particles/smoke.png",
+   [ParticleType.footprint]: "particles/footprint.png"
 };
 
 const vertexShaderText = `
@@ -143,10 +145,13 @@ export function renderParticles(renderLayer: ParticleRenderLayer): void {
       for (const particle of particles) {
          const renderPosition = calculateParticleRenderPosition(particle);
 
-         let topLeft = new Point(renderPosition.x - particle.width/2, renderPosition.y + particle.height/2);
-         let topRight = new Point(renderPosition.x + particle.width/2, renderPosition.y + particle.height/2);
-         let bottomLeft = new Point(renderPosition.x - particle.width/2, renderPosition.y - particle.height/2);
-         let bottomRight = new Point(renderPosition.x + particle.width/2, renderPosition.y - particle.height/2);
+         const width = particle.width * particle.scale;
+         const height = particle.height * particle.scale;
+
+         let topLeft = new Point(renderPosition.x - width/2, renderPosition.y + height/2);
+         let topRight = new Point(renderPosition.x + width/2, renderPosition.y + height/2);
+         let bottomLeft = new Point(renderPosition.x - width/2, renderPosition.y - height/2);
+         let bottomRight = new Point(renderPosition.x + width/2, renderPosition.y - height/2);
          
          // Rotate the corners into position
          topLeft = rotatePoint(topLeft, renderPosition, particle.rotation);

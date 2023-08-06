@@ -78,6 +78,14 @@ const PARTICLE_INFO: Record<ParticleType, ParticleInfo> = {
    [ParticleType.cactusFlower5]: {
       size: [20, 20],
       renderLayer: ParticleRenderLayer.low
+   },
+   [ParticleType.smoke]: {
+      size: [32, 32],
+      renderLayer: ParticleRenderLayer.high
+   },
+   [ParticleType.footprint]: {
+      size: [16, 16],
+      renderLayer: ParticleRenderLayer.low
    }
 };
 
@@ -97,6 +105,7 @@ class Particle {
    public acceleration: Vector | null;
    public rotation: number;
    public opacity: number;
+   public scale: number;
 
    public readonly width: number;
    public readonly height: number;
@@ -113,6 +122,7 @@ class Particle {
       this.acceleration = data.acceleration !== null ? Vector.unpackage(data.acceleration) : null;
       this.rotation = data.rotation;
       this.opacity = data.opacity;
+      this.scale = data.scale;
 
       [this.width, this.height] = PARTICLE_INFO[data.type].size;
       this.renderLayer = PARTICLE_INFO[data.type].renderLayer;
@@ -128,6 +138,7 @@ class Particle {
       this.acceleration = data.acceleration !== null ? Vector.unpackage(data.acceleration) : null;
       this.rotation = data.rotation;
       this.opacity = data.opacity;
+      this.scale = data.scale;
    }
 }
 
