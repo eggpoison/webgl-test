@@ -98,6 +98,10 @@ const PARTICLE_INFO: Record<ParticleType, ParticleInfo> = {
    [ParticleType.poisonDroplet]: {
       size: [12, 12],
       renderLayer: ParticleRenderLayer.low
+   },
+   [ParticleType.slimePuddle]: {
+      size: [28, 28],
+      renderLayer: ParticleRenderLayer.low
    }
 };
 

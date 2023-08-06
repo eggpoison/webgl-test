@@ -28,7 +28,8 @@ export const PARTICLE_TEXTURES: Record<ParticleType, string> = {
    [ParticleType.cactusFlower5]: "entities/cactus/cactus-flower-5.png",
    [ParticleType.smoke]: "particles/smoke.png",
    [ParticleType.footprint]: "particles/footprint.png",
-   [ParticleType.poisonDroplet]: "particles/poison-droplet.png"
+   [ParticleType.poisonDroplet]: "particles/poison-droplet.png",
+   [ParticleType.slimePuddle]: "particles/slime-puddle.png",
 };
 
 const vertexShaderText = `
