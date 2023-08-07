@@ -38,6 +38,11 @@ const PLACEABLE_ENTITY_INFO_RECORD: Partial<Record<ItemType, PlaceableEntityInfo
 
          return Game.tribe.numHuts < Game.tribe.tribesmanCap;
       }
+   },
+   barrel: {
+      textureSource: "barrel/barrel.png",
+      width: 80,
+      height: 80
    }
 };
 

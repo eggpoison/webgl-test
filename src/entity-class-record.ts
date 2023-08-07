@@ -17,6 +17,7 @@ import Slimewisp from "./entities/Slimewisp";
 import Tribesman from "./entities/Tribesman";
 import TribeTotem from "./entities/TribeTotem";
 import TribeHut from "./entities/TribeHut";
+import Barrel from "./entities/Barrel";
 
 export type EntityClassType<T extends EntityType> = new (position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, ...clientParams: Parameters<EntityInfoClientArgs[T]>) => Entity;
 
@@ -36,7 +37,8 @@ const ENTITY_CLASS_RECORD: { [id in EntityType]: () => EntityClassType<id>} = {
    tribesman: () => Tribesman,
    player: () => Player,
    tribe_totem: () => TribeTotem,
-   tribe_hut: () => TribeHut
+   tribe_hut: () => TribeHut,
+   barrel: () => Barrel
 };
 
 export default ENTITY_CLASS_RECORD;
