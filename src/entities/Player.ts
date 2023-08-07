@@ -157,6 +157,13 @@ class Player extends TribeMember {
       Camera.position = player.position;
 
       Game.definiteGameState.setPlayerHealth(Player.MAX_HEALTH);
+      Game.definiteGameState.hotbar = {
+         itemSlots: {},
+         width: SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE,
+         height: 1,
+         entityID: player.id,
+         inventoryName: "hotbar"
+      };
    }
 
    /** Registers a server-side hit for the client */

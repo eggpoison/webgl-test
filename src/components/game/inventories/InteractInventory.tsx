@@ -1,19 +1,35 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useReducer, useState } from "react";
 import CLIENT_ITEM_INFO_RECORD from "../../../client-item-info";
 import { leftClickItemSlot, rightClickItemSlot } from "../../../inventory-manipulation";
 import { Inventory } from "../../../items/Item";
 import ItemSlot from "./ItemSlot";
 
 export let InteractInventory_setInventory: (inventory: Inventory | null) => void;
+export let InteractInventory_forceUpdate: () => void;
+
+export let interactInventoryIsOpen: () => boolean;
 
 const InteractInventory = () => {
    const [inventory, setInventory] = useState<Inventory | null>(null);
+   const [_, forceUpdate] = useReducer(x => x + 1, 0);
 
    useEffect(() => {
       InteractInventory_setInventory = (inventory: Inventory | null) => {
          setInventory(inventory);
       }
+
    }, []);
+   
+   useEffect(() => {
+      const isOpen = inventory !== null;
+      interactInventoryIsOpen = () => isOpen;
+
+      InteractInventory_forceUpdate = () => {
+         if (inventory !== null) {
+            forceUpdate();
+         }
+      }
+   }, [inventory]);
 
    const leftClickBackpackItemSlot = useCallback((e: MouseEvent, itemSlot: number): void => {
       if (inventory !== null) {

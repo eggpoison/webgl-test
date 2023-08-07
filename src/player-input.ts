@@ -37,7 +37,7 @@ const PLAYER_SLOW_TERMINAL_VELOCITY = 150;
 /** Acceleration of the player while slowed. */
 const PLAYER_SLOW_ACCELERATION = 600;
 
-const PLAYER_INTERACT_RANGE = 200;
+const PLAYER_INTERACT_RANGE = 150;
 
 /** Whether the inventory is open or not. */
 let _inventoryIsOpen = false;
@@ -236,17 +236,21 @@ const getInteractInventory = (): Inventory | null => {
    return closestInteractableInventory;
 }
 
-export function updateInteractInventory(isOpen: boolean, inventory: Inventory | null): void {
+export function updateInteractInventoryIsOpen(isOpen: boolean, inventory: Inventory | null): void {
    _interactInventoryIsOpen = isOpen;
 
    InteractInventory_setInventory(inventory);
+}
+
+export function updateInteractInventory(): void {
+   
 }
 
 /** Creates the key listener to toggle the inventory on and off. */
 const createInventoryToggleListeners = (): void => {
    addKeyListener("e", () => {
       if (_interactInventoryIsOpen) {
-         updateInteractInventory(false, null);
+         updateInteractInventoryIsOpen(false, null);
          return;
       }
 
@@ -260,11 +264,11 @@ const createInventoryToggleListeners = (): void => {
       }
       
       if (_interactInventoryIsOpen) {
-         updateInteractInventory(false, null);
+         updateInteractInventoryIsOpen(false, null);
       } else {
          const interactInventory = getInteractInventory();
          if (interactInventory !== null) {
-            updateInteractInventory(true, interactInventory);
+            updateInteractInventoryIsOpen(true, interactInventory);
          }
       }
    });

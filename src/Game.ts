@@ -33,6 +33,7 @@ import { createWallBorderShaders, renderWallBorders } from "./rendering/wall-bor
 import { createParticleShaders, renderParticles } from "./rendering/particle-rendering";
 import { ParticleRenderLayer } from "./Particle";
 import Tribe from "./Tribe";
+import { InteractInventory_forceUpdate } from "./components/game/inventories/InteractInventory";
 
 const nightVertexShaderText = `
 precision mediump float;
@@ -350,6 +351,8 @@ abstract class Game {
       renderCursorTooltip();
 
       this.renderNight();
+
+      InteractInventory_forceUpdate();
    }
 
    public static main(currentTime: number): void {

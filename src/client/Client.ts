@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, CraftingRecipe, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, ItemSlotsData, ItemSlotData, EntityType, HitboxData, HitboxInfo, ProjectileData, VisibleChunkBounds, ParticleData, TribeType, TribeData } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, CraftingRecipe, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, ItemSlotData, EntityType, HitboxData, HitboxInfo, ProjectileData, VisibleChunkBounds, ParticleData, TribeType, TribeData, InventoryData } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -12,7 +12,7 @@ import { Tile } from "../Tile";
 import { createItem } from "../items/item-creation";
 import { gameScreenSetIsDead } from "../components/game/GameScreen";
 import Chunk from "../Chunk";
-import Item, { Inventory, ItemSlot } from "../items/Item";
+import Item, { Inventory, ItemSlot, ItemSlots } from "../items/Item";
 import { updateInventoryIsOpen } from "../player-input";
 import { Hotbar_updateBackpackItemSlot, Hotbar_updateHotbarInventory } from "../components/game/inventories/Hotbar";
 import { BackpackInventoryMenu_setBackpackInventory } from "../components/game/inventories/BackpackInventory";
@@ -348,17 +348,17 @@ abstract class Client {
       }
    }
 
-   private static updateInventoryFromServerData(inventory: Inventory, inventoryData: ItemSlotsData): void {
+   private static updateInventoryFromServerData(inventory: Inventory, inventoryData: InventoryData): void {
       // Remove any items which have been removed from the inventory
       for (const [itemSlot, item] of Object.entries(inventory.itemSlots) as unknown as ReadonlyArray<[number, Item]>) {
          // If it doesn't exist in the server data, remove it
-         if (!inventoryData.hasOwnProperty(itemSlot) || inventoryData[itemSlot].id !== item.id) {
+         if (!inventoryData.itemSlots.hasOwnProperty(itemSlot) || inventoryData.itemSlots[itemSlot].id !== item.id) {
             delete inventory.itemSlots[itemSlot];
          }
       }
 
       // Add all new items from the server data
-      for (const [itemSlot, itemData] of Object.entries(inventoryData).map(([itemSlot, itemData]) => [Number(itemSlot), itemData] as const)) {
+      for (const [itemSlot, itemData] of Object.entries(inventoryData.itemSlots).map(([itemSlot, itemData]) => [Number(itemSlot), itemData] as const)) {
          // If the item doesn't exist in the inventory, add it
          if (!inventory.itemSlots.hasOwnProperty(itemSlot) || inventory.itemSlots[itemSlot].id !== itemData.id) {
             inventory.itemSlots[itemSlot] = createItem(itemData.type, itemData.count, itemData.id);
@@ -371,13 +371,37 @@ abstract class Client {
          }
       }
    }
+   
+   private static createInventoryFromServerData(inventoryData: InventoryData): Inventory {
+      const itemSlots: ItemSlots = {};
+
+      // Add all new items from the server data
+      for (const [itemSlot, itemData] of Object.entries(inventoryData.itemSlots).map(([itemSlot, itemData]) => [Number(itemSlot), itemData] as const)) {
+         // If the item doesn't exist in the inventory, add it
+         itemSlots[itemSlot] = createItem(itemData.type, itemData.count, itemData.id);
+         if (itemSlot === Game.latencyGameState.selectedHotbarItemSlot) {
+            itemSlots[itemSlot].setIsActive(true);
+         }
+      }
+      
+      const inventory: Inventory = {
+         itemSlots: itemSlots,
+         width: inventoryData.width,
+         height: inventoryData.height,
+         entityID: inventoryData.entityID,
+         inventoryName: inventoryData.inventoryName
+      };
+      return inventory;
+   }
 
    private static updatePlayerInventory(playerInventoryData: PlayerInventoryData) {
       // Hotbar
       if (Game.definiteGameState.hotbar !== null) {
          this.updateInventoryFromServerData(Game.definiteGameState.hotbar, playerInventoryData.hotbar);
-         Hotbar_updateHotbarInventory(Game.definiteGameState.hotbar);
+      } else {
+         Game.definiteGameState.hotbar = this.createInventoryFromServerData(playerInventoryData.hotbar);
       }
+      Hotbar_updateHotbarInventory(Game.definiteGameState.hotbar);
 
       // Backpack inventory
       if (Game.definiteGameState.backpack !== null) {
@@ -387,24 +411,26 @@ abstract class Client {
 
       // Crafting output item
       if (Game.definiteGameState.craftingOutputSlot !== null) {
-         const itemSlots: ItemSlotsData = playerInventoryData.craftingOutputItemSlot !== null ? { 1: playerInventoryData.craftingOutputItemSlot } : {};
-         this.updateInventoryFromServerData(Game.definiteGameState.craftingOutputSlot, itemSlots);
+         this.updateInventoryFromServerData(Game.definiteGameState.craftingOutputSlot, playerInventoryData.craftingOutputItemSlot);
          CraftingMenu_setCraftingMenuOutputItem(Game.definiteGameState.craftingOutputSlot.itemSlots[1]);
+      } else {
+         Game.definiteGameState.craftingOutputSlot = this.createInventoryFromServerData(playerInventoryData.craftingOutputItemSlot);
       }
+      CraftingMenu_setCraftingMenuOutputItem(Game.definiteGameState.craftingOutputSlot.itemSlots.hasOwnProperty(1) ? Game.definiteGameState.craftingOutputSlot.itemSlots[1] : null);
 
       // Backpack slot
       if (Game.definiteGameState.backpackSlot !== null) {
-         const itemSlots: ItemSlotsData = playerInventoryData.backpackSlot !== null ? { 1: playerInventoryData.backpackSlot } : {};
-         this.updateInventoryFromServerData(Game.definiteGameState.backpackSlot, itemSlots);
+         this.updateInventoryFromServerData(Game.definiteGameState.backpackSlot, playerInventoryData.backpackSlot);
          Hotbar_updateBackpackItemSlot(Game.definiteGameState.backpackSlot.itemSlots[1]);
       }
 
       // Held item
       if (Game.definiteGameState.heldItemSlot !== null) {
-         const itemSlots: ItemSlotsData = playerInventoryData.heldItemSlot !== null ? { 1: playerInventoryData.heldItemSlot } : {};
-         this.updateInventoryFromServerData(Game.definiteGameState.heldItemSlot, itemSlots);
-         setHeldItemVisual(Game.definiteGameState.heldItemSlot.itemSlots[1]);
+         this.updateInventoryFromServerData(Game.definiteGameState.heldItemSlot, playerInventoryData.heldItemSlot);
+      } else {
+         Game.definiteGameState.heldItemSlot = this.createInventoryFromServerData(playerInventoryData.heldItemSlot);
       }
+      setHeldItemVisual(Game.definiteGameState.heldItemSlot.itemSlots.hasOwnProperty(1) ? Game.definiteGameState.heldItemSlot.itemSlots[1] : null);
    }
 
    private static createItemFromServerItemData(serverItemEntityData: DroppedItemData): void {
@@ -483,7 +509,7 @@ abstract class Client {
       const hitboxes = this.createHitboxesFromData(entityData.hitboxes);
 
       // Create the entity
-      const entityConstructor = ENTITY_CLASS_RECORD[entityData.type]() as EntityClassType<typeof entityData.type>;
+      const entityConstructor = ENTITY_CLASS_RECORD[entityData.type]() as EntityClassType<EntityType>;
       const entity = new entityConstructor(position, hitboxes, entityData.id, entityData.secondsSinceLastHit, ...entityData.clientArgs);
       
       entity.velocity = entityData.velocity !== null ? Vector.unpackage(entityData.velocity) : null;

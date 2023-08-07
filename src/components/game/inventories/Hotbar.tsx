@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { BackpackItemInfo, ItemType, ITEM_INFO_RECORD } from "webgl-test-shared";
+import { ItemType } from "webgl-test-shared";
 import CLIENT_ITEM_INFO_RECORD from "../../../client-item-info";
 import Client from "../../../client/Client";
 import Item, { Inventory } from "../../../items/Item";
@@ -10,16 +10,7 @@ import Game from "../../../Game";
 import ItemSlot from "./ItemSlot";
 import Player from "../../../entities/Player";
 import { BackpackInventoryMenu_setBackpackInventory } from "./BackpackInventory";
-
-// const generateInitialHotbarInventory = (entityID: number): Inventory => {
-//    return {
-//       itemSlots: {},
-//       width: SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE,
-//       height: 1,
-//       entityID: entityID,
-//       inventoryName: "hotbar"
-//    };
-// }
+import { interactInventoryIsOpen } from "./InteractInventory";
 
 export let Hotbar_updateHotbarInventory: (inventory: Inventory) => void = () => {};
 
@@ -61,7 +52,7 @@ const Hotbar = () => {
 
    const clickBackpackItemSlot = useCallback((e: MouseEvent): void => {
       // Item slots can only be interacted with while the crafting menu is open
-      if (Player.instance === null || !inventoryIsOpen()) return;
+      if (Player.instance === null || (!inventoryIsOpen() && !interactInventoryIsOpen())) return;
 
       if (backpackItemSlot !== null) {
          // There is an item in the backpack item slot
