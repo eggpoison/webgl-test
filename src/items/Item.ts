@@ -6,6 +6,14 @@ export type ItemSlot = Item | null;
 /** Stores the items inside an inventory, indexed by their slot number. */
 export type ItemSlots = { [itemSlot: number]: Item };
 
+export interface Inventory {
+   itemSlots: ItemSlots;
+   readonly width: number;
+   readonly height: number;
+   readonly entityID: number;
+   readonly inventoryName: string;
+}
+
 class Item {
    /** Amount of seconds of forced delay on when an item can be used when switching between items */
    private static readonly GLOBAL_ATTACK_DELAY_ON_SWITCH = 0.1;

@@ -1,12 +1,15 @@
 import { AttackPacket, SETTINGS, STATUS_EFFECT_MODIFIERS, Vector } from "webgl-test-shared";
 import { addKeyListener, clearPressedKeys, keyIsPressed } from "./keyboard-input";
-import { BackpackInventoryMenu_setIsVisible } from "./components/game/inventories/BackpackInventory";
 import { CraftingMenu_setIsVisible } from "./components/game/menus/CraftingMenu";
 import Player from "./entities/Player";
 import Client from "./client/Client";
 import Game from "./Game";
 import { Hotbar_setHotbarSelectedItemSlot } from "./components/game/inventories/Hotbar";
 import GameObject from "./GameObject";
+import { InteractInventory_setInventory } from "./components/game/inventories/InteractInventory";
+import { Inventory } from "./items/Item";
+import Barrel from "./entities/Barrel";
+import { BackpackInventoryMenu_setIsVisible } from "./components/game/inventories/BackpackInventory";
 
 let lightspeedIsActive = false;
 
@@ -34,8 +37,11 @@ const PLAYER_SLOW_TERMINAL_VELOCITY = 150;
 /** Acceleration of the player while slowed. */
 const PLAYER_SLOW_ACCELERATION = 600;
 
+const PLAYER_INTERACT_RANGE = 200;
+
 /** Whether the inventory is open or not. */
 let _inventoryIsOpen = false;
+let _interactInventoryIsOpen = false;
 
 /** Calculates which entities would be the target of a player attack in the current game state. */
 export function calculatePlayerAttackTargets(): ReadonlyArray<GameObject> {
@@ -93,14 +99,14 @@ const attack = (): void => {
 
 const createItemUseListeners = (): void => {
    document.addEventListener("mousedown", e => {
-      if (Player.instance === null || Game.definiteGameState.playerIsDead()) return;
+      if (Player.instance === null || Game.definiteGameState.hotbar === null || Game.definiteGameState.playerIsDead()) return;
 
       // Only attempt to use an item if the game canvas was clicked
       if ((e.target as HTMLElement).id !== "game-canvas") {
          return;
       }
 
-      const selectedItem = Game.definiteGameState.hotbarItemSlots[Game.latencyGameState.selectedHotbarItemSlot];
+      const selectedItem = Game.definiteGameState.hotbar.itemSlots[Game.latencyGameState.selectedHotbarItemSlot];
 
       if (e.button === 0) {
          // Left click
@@ -118,14 +124,14 @@ const createItemUseListeners = (): void => {
    });
 
    document.addEventListener("mouseup", e => {
-      if (Player.instance === null || Game.definiteGameState.playerIsDead()) return;
+      if (Player.instance === null || Game.definiteGameState.hotbar === null || Game.definiteGameState.playerIsDead()) return;
 
       // Only attempt to use an item if the game canvas was clicked
       if ((e.target as HTMLElement).id !== "game-canvas") {
          return;
       }
 
-      const selectedItem = Game.definiteGameState.hotbarItemSlots[Game.latencyGameState.selectedHotbarItemSlot];
+      const selectedItem = Game.definiteGameState.hotbar.itemSlots[Game.latencyGameState.selectedHotbarItemSlot];
 
       if (typeof selectedItem === "undefined") {
          return;
@@ -159,16 +165,20 @@ const createItemUseListeners = (): void => {
 }
 
 const selectItemSlot = (itemSlot: number): void => {
+   if (Game.definiteGameState.hotbar === null) {
+      return;
+   }
+   
    // If an item was seleted before switching, deselect it
-   if (itemSlot !== Game.latencyGameState.selectedHotbarItemSlot && Game.definiteGameState.hotbarItemSlots.hasOwnProperty(Game.latencyGameState.selectedHotbarItemSlot)) {
-      Game.definiteGameState.hotbarItemSlots[Game.latencyGameState.selectedHotbarItemSlot]!.deselect();
+   if (itemSlot !== Game.latencyGameState.selectedHotbarItemSlot && Game.definiteGameState.hotbar.itemSlots.hasOwnProperty(Game.latencyGameState.selectedHotbarItemSlot)) {
+      Game.definiteGameState.hotbar.itemSlots[Game.latencyGameState.selectedHotbarItemSlot]!.deselect();
    }
 
    Game.latencyGameState.selectedHotbarItemSlot = itemSlot;
 
    // Select any new item
-   if (Game.definiteGameState.hotbarItemSlots.hasOwnProperty(itemSlot)) {
-      Game.definiteGameState.hotbarItemSlots[itemSlot]!.select();
+   if (Game.definiteGameState.hotbar.itemSlots.hasOwnProperty(itemSlot)) {
+      Game.definiteGameState.hotbar.itemSlots[itemSlot]!.select();
    }
    
    Hotbar_setHotbarSelectedItemSlot(itemSlot);
@@ -198,10 +208,65 @@ export function updateInventoryIsOpen(inventoryIsOpen: boolean): void {
    }
 }
 
+const getInteractInventory = (): Inventory | null => {
+   if (Player.instance === null) return null;
+   
+   const minChunkX = Math.max(Math.min(Math.floor((Player.instance.position.x - PLAYER_INTERACT_RANGE) / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+   const maxChunkX = Math.max(Math.min(Math.floor((Player.instance.position.x + PLAYER_INTERACT_RANGE) / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+   const minChunkY = Math.max(Math.min(Math.floor((Player.instance.position.y - PLAYER_INTERACT_RANGE) / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+   const maxChunkY = Math.max(Math.min(Math.floor((Player.instance.position.y + PLAYER_INTERACT_RANGE) / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+   
+   let minInteractionDistance = PLAYER_INTERACT_RANGE + Number.EPSILON;
+   let closestInteractableInventory: Inventory | null = null;
+   for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+      for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
+         const chunk = Game.board.getChunk(chunkX, chunkY);
+         for (const entity of chunk.getEntities()) {
+            if (entity instanceof Barrel) {
+               const distance = Player.instance.position.calculateDistanceBetween(entity.position);
+               if (distance < minInteractionDistance) {
+                  closestInteractableInventory = entity.inventory;
+                  minInteractionDistance = distance;
+               }
+            }
+         }
+      }
+   }
+
+   return closestInteractableInventory;
+}
+
+export function updateInteractInventory(isOpen: boolean, inventory: Inventory | null): void {
+   _interactInventoryIsOpen = isOpen;
+
+   InteractInventory_setInventory(inventory);
+}
+
 /** Creates the key listener to toggle the inventory on and off. */
 const createInventoryToggleListeners = (): void => {
    addKeyListener("e", () => {
+      if (_interactInventoryIsOpen) {
+         updateInteractInventory(false, null);
+         return;
+      }
+
       updateInventoryIsOpen(!_inventoryIsOpen);
+   });
+
+   addKeyListener("i", () => {
+      if (_inventoryIsOpen) {
+         updateInventoryIsOpen(false);
+         return;
+      }
+      
+      if (_interactInventoryIsOpen) {
+         updateInteractInventory(false, null);
+      } else {
+         const interactInventory = getInteractInventory();
+         if (interactInventory !== null) {
+            updateInteractInventory(true, interactInventory);
+         }
+      }
    });
    addKeyListener("escape", () => {
       if (_inventoryIsOpen) {

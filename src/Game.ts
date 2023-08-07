@@ -266,7 +266,11 @@ abstract class Game {
    }
 
    private static tickPlayerItems(): void {
-      for (const item of Object.values(Game.definiteGameState.hotbarItemSlots)) {
+      if (Game.definiteGameState.hotbar === null) {
+         return;
+      }
+      
+      for (const item of Object.values(Game.definiteGameState.hotbar)) {
          if (typeof item.tick !== "undefined") {
             item.tick();
          }

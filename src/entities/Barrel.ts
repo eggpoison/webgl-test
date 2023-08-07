@@ -1,14 +1,18 @@
-import { HitboxType, Point } from "webgl-test-shared";
+import { EntityData, HitboxType, InventoryData, Point } from "webgl-test-shared";
 import Hitbox from "../hitboxes/Hitbox";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
+import { Inventory, ItemSlots } from "../items/Item";
+import { createItem } from "../items/item-creation";
 
 class Barrel extends Entity {
    private static readonly RADIUS = 40;
 
    public type = "barrel" as const;
 
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null) {
+   public readonly inventory: Inventory;
+
+   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, inventoryData: InventoryData) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
       this.attachRenderParts([
@@ -19,6 +23,39 @@ class Barrel extends Entity {
             zIndex: 0
          }, this)
       ]);
+
+      this.inventory = this.createInventoryFromData(inventoryData);
+   }
+
+   private createInventoryFromData(inventoryData: InventoryData): Inventory {
+      const itemSlots: ItemSlots = {};
+      for (const [itemSlot, itemData] of Object.entries(inventoryData.itemSlots)) {
+         const item = createItem(itemData.type, itemData.count, itemData.id);
+         itemSlots[Number(itemSlot)] = item;
+      }
+      
+      const inventory: Inventory = {
+         itemSlots: itemSlots,
+         width: inventoryData.width,
+         height: inventoryData.height,
+         entityID: this.id,
+         inventoryName: "inventory"
+      };
+
+      return inventory;
+   }
+
+   public updateFromData(entityData: EntityData<"barrel">): void {
+      super.updateFromData(entityData);
+
+      // Update inventory from data
+      const inventoryData = entityData.clientArgs[0];
+      const itemSlots: ItemSlots = {};
+      for (const [itemSlot, itemData] of Object.entries(inventoryData.itemSlots)) {
+         const item = createItem(itemData.type, itemData.count, itemData.id);
+         itemSlots[Number(itemSlot)] = item;
+      }
+      this.inventory.itemSlots = itemSlots;
    }
 }
 

@@ -6,10 +6,14 @@
    border-radius: 5px;
 }
 
+.inventory-row {
+   display: flex;
+}
+
 .item-slot {
    width: var(--item-slot-size);
    height: var(--item-slot-size);
-   background-image: url("../../images/miscellaneous/item-slot.png");
+   background-image: url("../../../images/miscellaneous/item-slot.png");
    background-size: 100%;
    image-rendering: pixelated;
    margin: 0.05rem;
@@ -18,7 +22,7 @@
 }
 
 .item-slot.selected {
-   background-image: url("../../images/miscellaneous/item-slot-selected.png");
+   background-image: url("../../../images/miscellaneous/item-slot-selected.png");
 }
 .item-slot:not(.empty)::after {
    content: "";
@@ -53,29 +57,4 @@
    bottom: 25%;
    transform: translate(50%, 50%);
    z-index: 2;
-}
-
-/*
- * Player inventory
-*/
-
-#inventory {
-   width: 100%;
-   position: absolute;
-   bottom: 0.5rem;
-   z-index: 2;
-   display: flex;
-   justify-content: center;
-}
-
-#hotbar {
-   margin: 0 5rem;
-}
-
-#inventory .flex-balancer {
-   opacity: 0;
-}
-
-#inventory > * {
-   display: inline-flex;
 }

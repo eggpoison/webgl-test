@@ -1,4 +1,4 @@
-import { ItemSlot, ItemSlots } from "../items/Item";
+import { Inventory } from "../items/Item";
 
 /** Information about the game and player. */
 abstract class GameState {
@@ -12,19 +12,19 @@ abstract class GameState {
    public selectedHotbarItemSlot: number = 1;
 
    /** Items in the player's hotbar. */
-   public hotbarItemSlots: ItemSlots = {};
+   public hotbar: Inventory | null = null;
 
    /** Items in the player's backpack. */
-   public backpackItemSlots: ItemSlots = {};
+   public backpack: Inventory | null = null;
 
    /** Stores the item in the player's backpack item slot. */
-   public backpackSlot: ItemSlot = null;
+   public backpackSlot: Inventory | null = null;
 
    /** Item in the player's crafting output item slot. */
-   public craftingOutputSlot: ItemSlot = null;
+   public craftingOutputSlot: Inventory | null = null;
 
    /** Item held by the player. */
-   public heldItemSlot: ItemSlot = null;
+   public heldItemSlot: Inventory | null = null;
 }
 
 export default GameState;

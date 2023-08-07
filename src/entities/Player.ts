@@ -91,9 +91,9 @@ export function updateAvailableCraftingRecipes(): void {
 }
 
 export function getPlayerSelectedItem(): ItemSlot {
-   if (Player.instance === null) return null;
+   if (Player.instance === null || Game.definiteGameState.hotbar === null) return null;
 
-   const item: Item | undefined = Game.definiteGameState.hotbarItemSlots[Game.latencyGameState.selectedHotbarItemSlot];
+   const item: Item | undefined = Game.definiteGameState.hotbar.itemSlots[Game.latencyGameState.selectedHotbarItemSlot];
    return item || null;
 }
 

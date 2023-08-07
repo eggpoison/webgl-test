@@ -1,54 +1,50 @@
-import { BackpackItemInfo } from "webgl-test-shared";
 import { useCallback, useEffect, useState } from "react";
 import ItemSlot from "./ItemSlot";
 import CLIENT_ITEM_INFO_RECORD from "../../../client-item-info";
 import { leftClickItemSlot, rightClickItemSlot } from "../../../inventory-manipulation";
-import { ItemSlots } from "../../../items/Item";
+import { Inventory } from "../../../items/Item";
 
-export let BackpackInventoryMenu_setBackpackItemInfo: (newBackpackItemInfo: BackpackItemInfo | null) => void = () => {};
-export let BackpackInventoryMenu_setBackpackItemSlots: (newBackpackItemInfo: ItemSlots) => void = () => {};
-
-export let BackpackInventoryMenu_setIsVisible: (newIsVisible: boolean) => void = () => {};
+export let BackpackInventoryMenu_setIsVisible: (isVisible: boolean) => void = () => {};
+export let BackpackInventoryMenu_setBackpackInventory: (inventory: Inventory | null) => void = () => {};
 
 const BackpackInventoryMenu = () => {
    const [isVisible, setIsVisible] = useState(false);
-   const [backpackItemInfo, setBackpackItemInfo] = useState<BackpackItemInfo | null>(null);
-   const [backpackInventory, setBackpackInventory] = useState<ItemSlots>({});
+   const [backpackInventory, setBackpackInventory] = useState<Inventory | null>(null);
 
    const leftClickBackpackItemSlot = useCallback((e: MouseEvent, itemSlot: number): void => {
-      leftClickItemSlot(e, backpackInventory, itemSlot, "backpackInventory");
+      if (backpackInventory !== null) {
+         leftClickItemSlot(e, backpackInventory, itemSlot);
+      }
    }, [backpackInventory]);
 
    const rightClickBackpackItemSlot = useCallback((e: MouseEvent, itemSlot: number): void => {
-      rightClickItemSlot(e, backpackInventory, itemSlot, "backpackInventory");
+      if (backpackInventory !== null) {
+         rightClickItemSlot(e, backpackInventory, itemSlot);
+      }
    }, [backpackInventory]);
 
    useEffect(() => {
-      BackpackInventoryMenu_setBackpackItemInfo = (newBackpackItemInfo: BackpackItemInfo | null): void => {
-         setBackpackItemInfo(newBackpackItemInfo);
+      BackpackInventoryMenu_setIsVisible = (isVisible: boolean) => {
+         setIsVisible(isVisible);
       }
-
-      BackpackInventoryMenu_setBackpackItemSlots = (newBackpackItemSlots: ItemSlots): void => {
-         setBackpackInventory(newBackpackItemSlots);
-      }
-
-      BackpackInventoryMenu_setIsVisible = (newIsVisible: boolean): void => {
-         setIsVisible(newIsVisible);
+      
+      BackpackInventoryMenu_setBackpackInventory = (inventory: Inventory | null): void => {
+         setBackpackInventory(inventory);
       }
    }, []);
 
    // If the player doesn't have a backpack equipped or the menu isn't shown, don't show anything
-   if (backpackItemInfo === null || !isVisible) return null;
+   if (backpackInventory === null || !isVisible) return null;
 
    const itemSlots = new Array<JSX.Element>();
 
-   for (let y = 0; y < backpackItemInfo.inventoryHeight; y++) {
+   for (let y = 0; y < backpackInventory.height; y++) {
       const rowItemSlots = new Array<JSX.Element>();
-      for (let x = 0; x < backpackItemInfo.inventoryWidth; x++) {
-         const itemSlot = y * backpackItemInfo.inventoryWidth + x;
+      for (let x = 0; x < backpackInventory.width; x++) {
+         const itemSlot = y * backpackInventory.width + x;
 
-         if (backpackInventory.hasOwnProperty(itemSlot)) {
-            const item = backpackInventory[itemSlot];
+         if (backpackInventory.itemSlots.hasOwnProperty(itemSlot)) {
+            const item = backpackInventory.itemSlots[itemSlot];
 
             const itemImageSrc = require(`../../../images/items/${CLIENT_ITEM_INFO_RECORD[item.type].textureSource}`);
 
@@ -63,7 +59,7 @@ const BackpackInventoryMenu = () => {
       }
       
       itemSlots.push(
-         <div key={y} className="backpack-inventory-row">
+         <div key={y} className="inventory-row">
             {rowItemSlots}
          </div>
       );

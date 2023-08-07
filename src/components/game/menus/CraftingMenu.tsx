@@ -7,6 +7,7 @@ import { windowHeight } from "../../../webgl";
 import { setHeldItemVisualPosition } from "../HeldItem";
 import ItemSlot from "../inventories/ItemSlot";
 import Game from "../../../Game";
+import Player from "../../../entities/Player";
 
 const CRAFTING_STATION_TEXTURE_SOURCE_RECORD: Record<CraftingStation, string> = {
    workbench: "workbench.png",
@@ -53,8 +54,12 @@ const RecipeViewer = ({ recipe, hoverPosition, craftingMenuHeight }: RecipeViewe
 }
 
 const getNumItemsOfType = (itemType: ItemType): number => {
+   if (Game.definiteGameState.hotbar === null) {
+      return 0;
+   }
+
    let numItems = 0;
-   for (const item of Object.values(Game.definiteGameState.hotbarItemSlots)) {
+   for (const item of Object.values(Game.definiteGameState.hotbar.itemSlots)) {
       if (item.type === itemType) {
          numItems += item.count;
       }
@@ -179,7 +184,7 @@ const CraftingMenu = () => {
 
    const pickUpCraftingOutputItem = (e: MouseEvent): void => {
       // Items can only be picked up while the crafting menu is open
-      if (!inventoryIsOpen()) return;
+      if (Player.instance === null || !inventoryIsOpen()) return;
 
       if (e.button !== 0) return;
 
@@ -191,17 +196,21 @@ const CraftingMenu = () => {
          throw new Error("Tried to pickup the crafting output item when none existed!");
       }
 
-      const numItemsInCraftingOutput = Game.definiteGameState.craftingOutputSlot.count;
-      Client.sendItemPickupPacket("craftingOutput", 1, numItemsInCraftingOutput);
+      const numItemsInCraftingOutput = Game.definiteGameState.craftingOutputSlot.itemSlots[1].count;
+      Client.sendItemPickupPacket(Player.instance.id, "craftingOutput", 1, numItemsInCraftingOutput);
       
       setHeldItemVisualPosition(e.clientX, e.clientY);
    }
 
    // Find which of the available recipes can be crafted
    useEffect(() => {
+      if (Game.definiteGameState.hotbar === null || Game.definiteGameState.backpack === null) {
+         return;
+      }
+      
       const craftableRecipesArray = new Array<CraftingRecipe>();
       for (const recipe of availableRecipes) {
-         if (canCraftRecipe([Game.definiteGameState.hotbarItemSlots, Game.definiteGameState.backpackItemSlots], recipe, SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE)) {
+         if (canCraftRecipe([Game.definiteGameState.hotbar.itemSlots, Game.definiteGameState.backpack.itemSlots], recipe, SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE)) {
             craftableRecipesArray.push(recipe);
          }
       }

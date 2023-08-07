@@ -1,0 +1,20 @@
+#hotbar {
+   width: 100%;
+   position: absolute;
+   bottom: 0.5rem;
+   z-index: 2;
+   display: flex;
+   justify-content: center;
+}
+
+#hotbar .inventory-container {
+   margin: 0 5rem;
+}
+
+#hotbar .flex-balancer {
+   opacity: 0;
+}
+
+#hotbar > * {
+   display: inline-flex;
+}

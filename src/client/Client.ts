@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, CraftingRecipe, PlayerInventoryType, PlaceablePlayerInventoryType, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, InventoryData, ItemSlotData, EntityType, HitboxData, HitboxInfo, ProjectileData, VisibleChunkBounds, ParticleData, TribeType, TribeData } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, CraftingRecipe, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, ItemSlotsData, ItemSlotData, EntityType, HitboxData, HitboxInfo, ProjectileData, VisibleChunkBounds, ParticleData, TribeType, TribeData } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -12,10 +12,10 @@ import { Tile } from "../Tile";
 import { createItem } from "../items/item-creation";
 import { gameScreenSetIsDead } from "../components/game/GameScreen";
 import Chunk from "../Chunk";
-import Item, { ItemSlot, ItemSlots } from "../items/Item";
+import Item, { Inventory, ItemSlot } from "../items/Item";
 import { updateInventoryIsOpen } from "../player-input";
 import { Hotbar_updateBackpackItemSlot, Hotbar_updateHotbarInventory } from "../components/game/inventories/Hotbar";
-import { BackpackInventoryMenu_setBackpackItemSlots } from "../components/game/inventories/BackpackInventory";
+import { BackpackInventoryMenu_setBackpackInventory } from "../components/game/inventories/BackpackInventory";
 import { setHeldItemVisual } from "../components/game/HeldItem";
 import { CraftingMenu_setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
 import { updateHealthBar } from "../components/game/HealthBar";
@@ -348,50 +348,63 @@ abstract class Client {
       }
    }
 
-   private static updateInventoryFromServerData(itemSlots: ItemSlots, inventoryData: InventoryData): void {
+   private static updateInventoryFromServerData(inventory: Inventory, inventoryData: ItemSlotsData): void {
       // Remove any items which have been removed from the inventory
-      for (const [itemSlot, item] of Object.entries(itemSlots) as unknown as ReadonlyArray<[number, Item]>) {
+      for (const [itemSlot, item] of Object.entries(inventory.itemSlots) as unknown as ReadonlyArray<[number, Item]>) {
          // If it doesn't exist in the server data, remove it
          if (!inventoryData.hasOwnProperty(itemSlot) || inventoryData[itemSlot].id !== item.id) {
-            delete itemSlots[itemSlot];
+            delete inventory.itemSlots[itemSlot];
          }
       }
 
       // Add all new items from the server data
       for (const [itemSlot, itemData] of Object.entries(inventoryData).map(([itemSlot, itemData]) => [Number(itemSlot), itemData] as const)) {
          // If the item doesn't exist in the inventory, add it
-         if (!itemSlots.hasOwnProperty(itemSlot) || itemSlots[itemSlot].id !== itemData.id) {
-            itemSlots[itemSlot] = createItem(itemData.type, itemData.count, itemData.id);
+         if (!inventory.itemSlots.hasOwnProperty(itemSlot) || inventory.itemSlots[itemSlot].id !== itemData.id) {
+            inventory.itemSlots[itemSlot] = createItem(itemData.type, itemData.count, itemData.id);
             if (itemSlot === Game.latencyGameState.selectedHotbarItemSlot) {
-               itemSlots[itemSlot].setIsActive(true);
+               inventory.itemSlots[itemSlot].setIsActive(true);
             }
          } else {
             // Otherwise the item needs to be updated with the new server data
-            itemSlots[itemSlot].updateFromServerData(itemData);
+            inventory.itemSlots[itemSlot].updateFromServerData(itemData);
          }
       }
    }
 
    private static updatePlayerInventory(playerInventoryData: PlayerInventoryData) {
       // Hotbar
-      this.updateInventoryFromServerData(Game.definiteGameState.hotbarItemSlots, playerInventoryData.hotbar);
-      Hotbar_updateHotbarInventory(Game.definiteGameState.hotbarItemSlots);
+      if (Game.definiteGameState.hotbar !== null) {
+         this.updateInventoryFromServerData(Game.definiteGameState.hotbar, playerInventoryData.hotbar);
+         Hotbar_updateHotbarInventory(Game.definiteGameState.hotbar);
+      }
 
       // Backpack inventory
-      this.updateInventoryFromServerData(Game.definiteGameState.backpackItemSlots, playerInventoryData.backpackInventory);
-      BackpackInventoryMenu_setBackpackItemSlots(Object.assign({}, Game.definiteGameState.backpackItemSlots));
+      if (Game.definiteGameState.backpack !== null) {
+         this.updateInventoryFromServerData(Game.definiteGameState.backpack, playerInventoryData.backpackInventory);
+         BackpackInventoryMenu_setBackpackInventory(Object.assign({}, Game.definiteGameState.backpack));
+      }
 
       // Crafting output item
-      Game.definiteGameState.craftingOutputSlot = this.updateItemSlotFromServerData(Game.definiteGameState.craftingOutputSlot, playerInventoryData.craftingOutputItemSlot);
-      CraftingMenu_setCraftingMenuOutputItem(Game.definiteGameState.craftingOutputSlot);
+      if (Game.definiteGameState.craftingOutputSlot !== null) {
+         const itemSlots: ItemSlotsData = playerInventoryData.craftingOutputItemSlot !== null ? { 1: playerInventoryData.craftingOutputItemSlot } : {};
+         this.updateInventoryFromServerData(Game.definiteGameState.craftingOutputSlot, itemSlots);
+         CraftingMenu_setCraftingMenuOutputItem(Game.definiteGameState.craftingOutputSlot.itemSlots[1]);
+      }
 
       // Backpack slot
-      Game.definiteGameState.backpackSlot = this.updateItemSlotFromServerData(Game.definiteGameState.backpackSlot, playerInventoryData.backpackSlot);
-      Hotbar_updateBackpackItemSlot(Game.definiteGameState.backpackSlot);
+      if (Game.definiteGameState.backpackSlot !== null) {
+         const itemSlots: ItemSlotsData = playerInventoryData.backpackSlot !== null ? { 1: playerInventoryData.backpackSlot } : {};
+         this.updateInventoryFromServerData(Game.definiteGameState.backpackSlot, itemSlots);
+         Hotbar_updateBackpackItemSlot(Game.definiteGameState.backpackSlot.itemSlots[1]);
+      }
 
       // Held item
-      Game.definiteGameState.heldItemSlot = this.updateItemSlotFromServerData(Game.definiteGameState.heldItemSlot, playerInventoryData.heldItemSlot);
-      setHeldItemVisual(Game.definiteGameState.heldItemSlot);
+      if (Game.definiteGameState.heldItemSlot !== null) {
+         const itemSlots: ItemSlotsData = playerInventoryData.heldItemSlot !== null ? { 1: playerInventoryData.heldItemSlot } : {};
+         this.updateInventoryFromServerData(Game.definiteGameState.heldItemSlot, itemSlots);
+         setHeldItemVisual(Game.definiteGameState.heldItemSlot.itemSlots[1]);
+      }
    }
 
    private static createItemFromServerItemData(serverItemEntityData: DroppedItemData): void {
@@ -572,15 +585,15 @@ abstract class Client {
       }
    }
 
-   public static sendItemPickupPacket(inventory: PlayerInventoryType, itemSlot: number, amount: number): void {
+   public static sendItemPickupPacket(entityID: number, inventoryName: string, itemSlot: number, amount: number): void {
       if (Game.isRunning && this.socket !== null) {
-         this.socket.emit("item_pickup_packet", inventory, itemSlot, amount);
+         this.socket.emit("item_pickup_packet", entityID, inventoryName, itemSlot, amount);
       }
    }
 
-   public static sendItemReleasePacket(inventory: PlaceablePlayerInventoryType, itemSlot: number, amount: number): void {
+   public static sendItemReleasePacket(entityID: number, inventoryName: string, itemSlot: number, amount: number): void {
       if (Game.isRunning && this.socket !== null) {
-         this.socket.emit("item_release_packet", inventory, itemSlot, amount);
+         this.socket.emit("item_release_packet", entityID, inventoryName, itemSlot, amount);
       }
    }
 
