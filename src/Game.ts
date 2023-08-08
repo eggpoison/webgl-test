@@ -33,7 +33,6 @@ import { createWallBorderShaders, renderWallBorders } from "./rendering/wall-bor
 import { createParticleShaders, renderParticles } from "./rendering/particle-rendering";
 import { ParticleRenderLayer } from "./Particle";
 import Tribe from "./Tribe";
-import { InteractInventory_forceUpdate } from "./components/game/inventories/InteractInventory";
 
 const nightVertexShaderText = `
 precision mediump float;
@@ -271,7 +270,7 @@ abstract class Game {
          return;
       }
       
-      for (const item of Object.values(Game.definiteGameState.hotbar)) {
+      for (const item of Object.values(Game.definiteGameState.hotbar.itemSlots)) {
          if (typeof item.tick !== "undefined") {
             item.tick();
          }

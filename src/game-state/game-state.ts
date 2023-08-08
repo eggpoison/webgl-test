@@ -25,13 +25,11 @@ abstract class GameState {
 
    /** Item held by the player. */
    public heldItemSlot: Inventory | null = null;
-   // public heldItemSlot: Inventory = {
-   //    itemSlots: {},
-   //    width: 1,
-   //    height: 1,
-   //    entityID: -1,
-   //    inventoryName: "heldItemSlot"
-   // };
+
+   public resetFlags(): void {
+      this.playerIsEating = false;
+      this.playerIsPlacingEntity = false;
+   }
 }
 
 export default GameState;

@@ -174,18 +174,19 @@ const selectItemSlot = (itemSlot: number): void => {
    }
    
    // If an item was seleted before switching, deselect it
-   if (itemSlot !== Game.latencyGameState.selectedHotbarItemSlot && Game.definiteGameState.hotbar.itemSlots.hasOwnProperty(Game.latencyGameState.selectedHotbarItemSlot)) {
-      Game.definiteGameState.hotbar.itemSlots[Game.latencyGameState.selectedHotbarItemSlot]!.deselect();
-   }
+   // if (itemSlot !== Game.latencyGameState.selectedHotbarItemSlot && Game.definiteGameState.hotbar.itemSlots.hasOwnProperty(Game.latencyGameState.selectedHotbarItemSlot)) {
+   //    Game.definiteGameState.hotbar.itemSlots[Game.latencyGameState.selectedHotbarItemSlot]!.deselect();
+   // }
 
    Game.latencyGameState.selectedHotbarItemSlot = itemSlot;
 
    // Select any new item
-   if (Game.definiteGameState.hotbar.itemSlots.hasOwnProperty(itemSlot)) {
-      Game.definiteGameState.hotbar.itemSlots[itemSlot]!.select();
-   }
+   // if (Game.definiteGameState.hotbar.itemSlots.hasOwnProperty(itemSlot)) {
+   //    Game.definiteGameState.hotbar.itemSlots[itemSlot]!.select();
+   // }
    
    Hotbar_setHotbarSelectedItemSlot(itemSlot);
+   updateActiveItem();
 }
 
 const createHotbarKeyListeners = (): void => {
@@ -236,7 +237,7 @@ const getInteractInventory = (): [Entity, Inventory] | null => {
                }
             } else if (entity.type === "tribesman") {
                // Only interact with tribesman inventories if the player is of the same tribe
-               if ((entity as Tribesman).tribeID !== Player.instance.tribeID) {
+               if ((entity as Tribesman).tribeID === null || ((entity as Tribesman).tribeID) !== Player.instance.tribeID) {
                   continue;
                }
                
@@ -390,5 +391,20 @@ export function updatePlayerMovement(): void {
       }
    } else {
       Player.instance.acceleration = null;
+   }
+}
+
+export function updateActiveItem(): void {
+   if (Game.definiteGameState.hotbar === null) {
+      return;
+   }
+
+   for (let itemSlot = 1; itemSlot <= SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE; itemSlot++) {
+      if (Game.definiteGameState.hotbar.itemSlots.hasOwnProperty(itemSlot)) {
+         const isActive = itemSlot === Game.latencyGameState.selectedHotbarItemSlot;
+
+         const item = Game.definiteGameState.hotbar.itemSlots[itemSlot];
+         item.setIsActive(isActive);
+      }
    }
 }

@@ -91,6 +91,10 @@ const PARTICLE_INFO: Record<ParticleType, ParticleInfo> = {
       size: [32, 32],
       renderLayer: ParticleRenderLayer.high
    },
+   [ParticleType.ember]: {
+      size: [6, 6],
+      renderLayer: ParticleRenderLayer.high
+   },
    [ParticleType.footprint]: {
       size: [16, 16],
       renderLayer: ParticleRenderLayer.low

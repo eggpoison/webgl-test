@@ -35,8 +35,6 @@ class Item {
       this.id = id;
    }
 
-   public tick?(): void;
-
    public static decrementGlobalItemSwitchDelay(): void {
       this.globalAttackDelayTimer -= 1 / SETTINGS.TPS;
       if (this.globalAttackDelayTimer < 0) {
@@ -44,11 +42,25 @@ class Item {
       }
    }
 
+   public tick?(): void;
+
    protected isActive(): boolean {
       return this._isActive;
    }
 
    public setIsActive(isActive: boolean): void {
+      if (isActive !== this._isActive) {
+         if (isActive) {
+            if (typeof this.onSelect !== "undefined") {
+               this.onSelect();
+            }
+         } else {
+            if (typeof this.onDeselect !== "undefined") {
+               this.onDeselect();
+            }
+         }
+      }
+      
       this._isActive = isActive;
    }
 
@@ -67,24 +79,23 @@ class Item {
    public onRightMouseButtonDown?(): void;
    public onRightMouseButtonUp?(): void;
 
-
    protected sendUsePacket(): void {
       Client.sendItemUsePacket();
    }
 
-   public select(): void {
-      this._isActive = true;
-      if (typeof this.onSelect !== "undefined") {
-         this.onSelect();
-      }
-   }
+   // private select(): void {
+   //    this._isActive = true;
+   //    if (typeof this.onSelect !== "undefined") {
+   //       this.onSelect();
+   //    }
+   // }
 
-   public deselect(): void {
-      this._isActive = false;
-      if (typeof this.onDeselect !== "undefined") {
-         this.onDeselect();
-      }
-   }
+   // private deselect(): void {
+   //    this._isActive = false;
+   //    if (typeof this.onDeselect !== "undefined") {
+   //       this.onDeselect();
+   //    }
+   // }
 
    protected onSelect?(): void;
 

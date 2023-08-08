@@ -198,10 +198,6 @@ class PlaceableItem extends Item {
       }
    }
 
-   public onRightMouseButtonUp(): void {
-      Game.latencyGameState.playerIsPlacingEntity = false;
-   }
-
    protected onSelect(): void {
       Game.latencyGameState.playerIsPlacingEntity = true;
    }
