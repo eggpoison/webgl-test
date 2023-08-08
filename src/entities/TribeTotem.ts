@@ -4,11 +4,13 @@ import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 
 class TribeTotem extends Entity {
-   private static readonly RADIUS = 50;
+   private static readonly RADIUS = 60;
 
    public type = "tribe_totem" as const;
 
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null) {
+   public tribeID: number;
+
+   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, tribeID: number) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
       this.attachRenderParts([
@@ -19,6 +21,8 @@ class TribeTotem extends Entity {
             zIndex: 0
          }, this)
       ]);
+
+      this.tribeID = tribeID;
    }
 }
 

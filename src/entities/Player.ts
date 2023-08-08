@@ -132,8 +132,8 @@ class Player extends TribeMember {
       })
    ]);
 
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, tribeType: TribeType, username: string) {
-      super(position, hitboxes, id, secondsSinceLastHit, tribeType);
+   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, tribeType: TribeType, username: string) {
+      super(position, hitboxes, id, secondsSinceLastHit, tribeID, tribeType);
 
       this.attachRenderParts([
          new RenderPart({

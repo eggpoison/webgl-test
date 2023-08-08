@@ -1,13 +1,16 @@
-import { HitboxType, Point, TribeType } from "webgl-test-shared";
+import { EntityData, HitboxType, Point, TribeType } from "webgl-test-shared";
 import Entity from "./Entity";
 import Hitbox from "../hitboxes/Hitbox";
 
 abstract class TribeMember extends Entity {
    private readonly tribeType: TribeType;
+
+   public tribeID: number | null;
    
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, tribeType: TribeType) {
+   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, tribeType: TribeType) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
+      this.tribeID = tribeID;
       this.tribeType = tribeType;
    }
 
@@ -26,6 +29,12 @@ abstract class TribeMember extends Entity {
             return "entities/human/barbarian.png"
          }
       }
+   }
+
+   public updateFromData(entityData: EntityData<"player"> | EntityData<"tribesman">): void {
+      super.updateFromData(entityData);
+
+      this.tribeID = entityData.clientArgs[0];
    }
 }
 

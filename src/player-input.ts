@@ -235,6 +235,11 @@ const getInteractInventory = (): [Entity, Inventory] | null => {
                   minInteractionDistance = distance;
                }
             } else if (entity.type === "tribesman") {
+               // Only interact with tribesman inventories if the player is of the same tribe
+               if ((entity as Tribesman).tribeID !== Player.instance.tribeID) {
+                  continue;
+               }
+               
                const distance = Player.instance.position.calculateDistanceBetween(entity.position);
                if (distance < minInteractionDistance) {
                   closestInteractableEntity = entity;

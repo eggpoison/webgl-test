@@ -12,7 +12,9 @@ class Barrel extends Entity {
 
    public readonly inventory: Inventory;
 
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, inventoryData: InventoryData) {
+   public tribeID: number | null;
+
+   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, inventoryData: InventoryData) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
       this.attachRenderParts([
@@ -25,6 +27,8 @@ class Barrel extends Entity {
       ]);
 
       this.inventory = this.createInventoryFromData(inventoryData);
+
+      this.tribeID = tribeID;
    }
 
    private createInventoryFromData(inventoryData: InventoryData): Inventory {
@@ -48,8 +52,10 @@ class Barrel extends Entity {
    public updateFromData(entityData: EntityData<"barrel">): void {
       super.updateFromData(entityData);
 
+      this.tribeID = entityData.clientArgs[0];
+      
       // Update inventory from data
-      const inventoryData = entityData.clientArgs[0];
+      const inventoryData = entityData.clientArgs[1];
       const itemSlots: ItemSlots = {};
       for (const [itemSlot, itemData] of Object.entries(inventoryData.itemSlots)) {
          const item = createItem(itemData.type, itemData.count, itemData.id);

@@ -36,6 +36,11 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/workbench/workbench.png",
    "entities/human/human1.png",
    "entities/human/goblin.png",
+   "entities/human/goblin-ear-right.png",
+   "entities/human/goblin-ear-left.png",
+   "entities/human/goblin-warpaint-1.png",
+   "entities/human/goblin-warpaint-2.png",
+   "entities/human/goblin-warpaint-3.png",
    "entities/human/barbarian.png",
    "entities/human/frostling.png",
    "entities/boulder/boulder1.png",
@@ -59,6 +64,7 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/cactus/cactus-flower-large-4.png",
    "entities/cactus/cactus-flower-5.png",
    "entities/yeti.png",
+   "entities/yeti-paw.png",
    "entities/ice-spikes/ice-spikes.png",
    "projectiles/ice-shard.png",
    "entities/slime/slime-small-body.png",
@@ -76,6 +82,7 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/slimewisp/slimewisp.png",
    "entities/tribe-totem/tribe-totem.png",
    "entities/tribe-hut/tribe-hut.png",
+   "entities/tribe-hut/tribe-hut-door.png",
    "entities/barrel/barrel.png"
 ];
 

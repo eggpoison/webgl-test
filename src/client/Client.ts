@@ -221,6 +221,10 @@ abstract class Client {
       if (tribeData === null) {
          Game.tribe = null;
       } else {
+         if (Player.instance !== null) {
+            Player.instance.tribeID = tribeData.id;
+         }
+         
          if (Game.tribe === null) {
             // Create tribe
             Game.tribe = new Tribe(tribeData.tribeType, tribeData.numHuts)
@@ -566,7 +570,7 @@ abstract class Client {
       updateHealthBar(Player.MAX_HEALTH);
       
       const spawnPosition = Point.unpackage(respawnDataPacket.spawnPosition);
-      const player = new Player(spawnPosition, new Set(Player.HITBOXES), respawnDataPacket.playerID, null, TribeType.plainspeople, Game.definiteGameState.playerUsername);
+      const player = new Player(spawnPosition, new Set(Player.HITBOXES), respawnDataPacket.playerID, null, null, TribeType.plainspeople, Game.definiteGameState.playerUsername);
       Player.setInstancePlayer(player);
 
       gameScreenSetIsDead(false);
