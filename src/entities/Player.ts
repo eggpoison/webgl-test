@@ -139,7 +139,7 @@ class Player extends TribeMember {
          new RenderPart({
             width: 64,
             height: 64,
-            textureSource: "entities/human/human1.png",
+            textureSource: super.getTextureSource(tribeType),
             zIndex: 0
          }, this)
       ]);

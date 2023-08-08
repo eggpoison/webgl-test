@@ -4,10 +4,8 @@ import CLIENT_ITEM_INFO_RECORD from "../../../client-item-info";
 import Client from "../../../client/Client";
 import Item, { ItemSlots } from "../../../items/Item";
 import { windowHeight } from "../../../webgl";
-import { setHeldItemVisualPosition } from "../HeldItem";
 import ItemSlot from "../inventories/ItemSlot";
 import Game from "../../../Game";
-import Player from "../../../entities/Player";
 import { leftClickItemSlot } from "../../../inventory-manipulation";
 
 const CRAFTING_STATION_TEXTURE_SOURCE_RECORD: Record<CraftingStation, string> = {
@@ -185,23 +183,6 @@ const CraftingMenu = () => {
 
    const pickUpCraftingOutputItem = (e: MouseEvent): void => {
       leftClickItemSlot(e, Game.definiteGameState.craftingOutputSlot!, 1);
-      // Items can only be picked up while the crafting menu is open
-      // if (Player.instance === null || !inventoryIsOpen()) return;
-
-      // if (e.button !== 0) return;
-
-      // // Don't pick up the item if there is already a held item
-      // if (Game.definiteGameState.heldItemSlot !== null) return;
-
-      // // Make sure there exists a crafting output item to pick up
-      // if (Game.definiteGameState.craftingOutputSlot === null) {
-      //    throw new Error("Tried to pickup the crafting output item when none existed!");
-      // }
-
-      // const numItemsInCraftingOutput = Game.definiteGameState.craftingOutputSlot.itemSlots[1].count;
-      // Client.sendItemPickupPacket(Player.instance.id, "craftingOutput", 1, numItemsInCraftingOutput);
-      
-      // setHeldItemVisualPosition(e.clientX, e.clientY);
    }
 
    // Find which of the available recipes can be crafted

@@ -17,7 +17,7 @@ import Item from "./items/Item";
 import { createPlaceableItemProgram, renderGhostPlaceableItem } from "./items/PlaceableItem";
 import { clearPressedKeys } from "./keyboard-input";
 import { createHitboxShaders, renderEntityHitboxes } from "./rendering/hitbox-rendering";
-import { updatePlayerMovement } from "./player-input";
+import { updateInteractInventory, updatePlayerMovement } from "./player-input";
 import DefiniteGameState from "./game-state/definite-game-state";
 import LatencyGameState from "./game-state/latency-game-state";
 import { clearServerTicks, updateDebugScreenCurrentTime, updateDebugScreenFPS, updateDebugScreenTicks } from "./components/game/nerd-vision/GameInfoDisplay";
@@ -352,7 +352,7 @@ abstract class Game {
 
       this.renderNight();
 
-      InteractInventory_forceUpdate();
+      updateInteractInventory();
    }
 
    public static main(currentTime: number): void {

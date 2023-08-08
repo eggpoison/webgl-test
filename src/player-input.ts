@@ -6,10 +6,12 @@ import Client from "./client/Client";
 import Game from "./Game";
 import { Hotbar_setHotbarSelectedItemSlot } from "./components/game/inventories/Hotbar";
 import GameObject from "./GameObject";
-import { InteractInventory_setInventory } from "./components/game/inventories/InteractInventory";
+import { InteractInventory_forceUpdate, InteractInventory_setInventory } from "./components/game/inventories/InteractInventory";
 import { Inventory } from "./items/Item";
 import Barrel from "./entities/Barrel";
 import { BackpackInventoryMenu_setIsVisible } from "./components/game/inventories/BackpackInventory";
+import Entity from "./entities/Entity";
+import Tribesman from "./entities/Tribesman";
 
 let lightspeedIsActive = false;
 
@@ -41,7 +43,9 @@ const PLAYER_INTERACT_RANGE = 150;
 
 /** Whether the inventory is open or not. */
 let _inventoryIsOpen = false;
+
 let _interactInventoryIsOpen = false;
+let interactInventoryEntity: Entity | null = null;
 
 /** Calculates which entities would be the target of a player attack in the current game state. */
 export function calculatePlayerAttackTargets(): ReadonlyArray<GameObject> {
@@ -208,7 +212,7 @@ export function updateInventoryIsOpen(inventoryIsOpen: boolean): void {
    }
 }
 
-const getInteractInventory = (): Inventory | null => {
+const getInteractInventory = (): [Entity, Inventory] | null => {
    if (Player.instance === null) return null;
    
    const minChunkX = Math.max(Math.min(Math.floor((Player.instance.position.x - PLAYER_INTERACT_RANGE) / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
@@ -217,6 +221,7 @@ const getInteractInventory = (): Inventory | null => {
    const maxChunkY = Math.max(Math.min(Math.floor((Player.instance.position.y + PLAYER_INTERACT_RANGE) / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
    
    let minInteractionDistance = PLAYER_INTERACT_RANGE + Number.EPSILON;
+   let closestInteractableEntity: Entity | null = null;
    let closestInteractableInventory: Inventory | null = null;
    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
@@ -225,7 +230,15 @@ const getInteractInventory = (): Inventory | null => {
             if (entity instanceof Barrel) {
                const distance = Player.instance.position.calculateDistanceBetween(entity.position);
                if (distance < minInteractionDistance) {
+                  closestInteractableEntity = entity;
                   closestInteractableInventory = entity.inventory;
+                  minInteractionDistance = distance;
+               }
+            } else if (entity.type === "tribesman") {
+               const distance = Player.instance.position.calculateDistanceBetween(entity.position);
+               if (distance < minInteractionDistance) {
+                  closestInteractableEntity = entity;
+                  closestInteractableInventory = (entity as Tribesman).inventory;
                   minInteractionDistance = distance;
                }
             }
@@ -233,7 +246,8 @@ const getInteractInventory = (): Inventory | null => {
       }
    }
 
-   return closestInteractableInventory;
+   if (closestInteractableInventory === null || closestInteractableEntity === null) return null;
+   return [closestInteractableEntity, closestInteractableInventory];
 }
 
 export function updateInteractInventoryIsOpen(isOpen: boolean, inventory: Inventory | null): void {
@@ -243,7 +257,20 @@ export function updateInteractInventoryIsOpen(isOpen: boolean, inventory: Invent
 }
 
 export function updateInteractInventory(): void {
+   if (Player.instance === null) return;
    
+   if (_interactInventoryIsOpen) {
+      if (interactInventoryEntity === null) {
+         throw new Error("Interactable entity was null.");
+      }
+
+      const distanceToInteractEntity = Player.instance.position.calculateDistanceBetween(interactInventoryEntity.position);
+      if (distanceToInteractEntity <= PLAYER_INTERACT_RANGE) {
+         InteractInventory_forceUpdate();
+      } else {
+         updateInteractInventoryIsOpen(false, null);
+      }
+   }
 }
 
 /** Creates the key listener to toggle the inventory on and off. */
@@ -266,9 +293,10 @@ const createInventoryToggleListeners = (): void => {
       if (_interactInventoryIsOpen) {
          updateInteractInventoryIsOpen(false, null);
       } else {
-         const interactInventory = getInteractInventory();
-         if (interactInventory !== null) {
-            updateInteractInventoryIsOpen(true, interactInventory);
+         const interactInfo = getInteractInventory();
+         if (interactInfo !== null) {
+            interactInventoryEntity = interactInfo[0];
+            updateInteractInventoryIsOpen(true, interactInfo[1]);
          }
       }
    });

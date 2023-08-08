@@ -10,6 +10,23 @@ abstract class TribeMember extends Entity {
 
       this.tribeType = tribeType;
    }
+
+   protected getTextureSource(tribeType: TribeType): string {
+      switch (tribeType) {
+         case TribeType.plainspeople: {
+            return "entities/human/human1.png";
+         }
+         case TribeType.goblins: {
+            return "entities/human/goblin.png";
+         }
+         case TribeType.frostlings: {
+            return "entities/human/frostling.png"
+         }
+         case TribeType.barbarians: {
+            return "entities/human/barbarian.png"
+         }
+      }
+   }
 }
 
 export default TribeMember;
