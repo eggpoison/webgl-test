@@ -148,11 +148,11 @@ const Hotbar = () => {
          const imageSrc = require("../../../images/items/" + armourItemInfo.textureSource);
          armourItemSlotElement = <ItemSlot onClick={e => leftClickItemSlot(e, armourInventory, 1)} isSelected={false} picturedItemImageSrc={imageSrc} />
       } else {
-         const imageSrc = require("../../../images/miscellaneous/backpack-wireframe.png");
+         const imageSrc = require("../../../images/miscellaneous/armour-wireframe.png");
          armourItemSlotElement = <ItemSlot onClick={e => leftClickItemSlot(e, armourInventory, 1)} isSelected={false} picturedItemImageSrc={imageSrc} />
       }
    } else {
-      const imageSrc = require("../../../images/miscellaneous/backpack-wireframe.png");
+      const imageSrc = require("../../../images/miscellaneous/armour-wireframe.png");
       armourItemSlotElement = <ItemSlot isSelected={false} picturedItemImageSrc={imageSrc} />
    }
 

@@ -426,7 +426,9 @@ abstract class Client {
       }
       Hotbar_updateArmourItemSlot(Game.definiteGameState.armourSlot);
       if (Player.instance !== null) {
-         Player.instance.updateArmourRenderPart(Game.definiteGameState.armourSlot.itemSlots.hasOwnProperty(1) ? Game.definiteGameState.armourSlot.itemSlots[1].type : null);
+         const armourType = Game.definiteGameState.armourSlot.itemSlots.hasOwnProperty(1) ? Game.definiteGameState.armourSlot.itemSlots[1].type : null;
+         Player.instance.updateArmourRenderPart(armourType);
+         Player.instance.armourType = armourType;
       }
    }
 

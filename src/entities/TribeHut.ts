@@ -23,7 +23,7 @@ class TribeHut extends Entity {
          width: TribeHut.SIZE,
          height: TribeHut.SIZE,
          textureSource: "entities/tribe-hut/tribe-hut.png",
-         zIndex: 1
+         zIndex: 2
       }, this);
 
       const doorOffset = new Point(-TribeHut.SIZE/4, TribeHut.SIZE/2 + TribeHut.DOOR_HEIGHT/2);
@@ -34,7 +34,7 @@ class TribeHut extends Entity {
             width: TribeHut.DOOR_WIDTH,
             height: TribeHut.DOOR_HEIGHT,
             textureSource: "entities/tribe-hut/tribe-hut-door.png",
-            zIndex: 0,
+            zIndex: 1,
             // getRotation: () => -Math.PI / 2,
             offset: () => doorOffset
          }, this)
