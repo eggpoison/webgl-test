@@ -18,6 +18,7 @@ export let Hotbar_updateHotbarInventory: (inventory: Inventory) => void = () => 
  * Updates the backpack item slot shown in the hotbar.
  */
 export let Hotbar_updateBackpackItemSlot: (backpack: Item | null) => void = () => {};
+export let Hotbar_updateArmourItemSlot: (inventory: Inventory) => void = () => {};
 
 export let Hotbar_setHotbarSelectedItemSlot: (itemSlot: number) => void = () => {};
 
@@ -26,6 +27,7 @@ const backpackItemTypes: ReadonlyArray<ItemType> = ["leather_backpack", "raw_bee
 const Hotbar = () => {
    const [hotbarInventory, setHotbarInventory] = useState<Inventory | null>(null);
    const [backpackItemSlot, setBackpackItemSlot] = useState<Item | null>(null);
+   const [armourInventory, setArmourInventory] = useState<Inventory | null>(null);
    const [selectedItemSlot, setSelectedItemSlot] = useState(1);
 
    const leftClickHotbarItemSlot = useCallback((e: MouseEvent, itemSlot: number): void => {
@@ -99,6 +101,10 @@ const Hotbar = () => {
       Hotbar_setHotbarSelectedItemSlot = (itemSlot: number): void => {
          setSelectedItemSlot(itemSlot);
       }
+
+      Hotbar_updateArmourItemSlot = (inventory: Inventory): void => {
+         setArmourInventory(inventory);
+      }
    }, []);
 
    if (hotbarInventory === null) {
@@ -125,6 +131,7 @@ const Hotbar = () => {
    let backpackItemSlotElement: JSX.Element;
    if (backpackItemSlot !== null) {
       const backpackItemInfo = CLIENT_ITEM_INFO_RECORD[backpackItemSlot.type];
+      console.log(backpackItemSlot);
       
       const imageSrc = require("../../../images/items/" + backpackItemInfo.textureSource);
       backpackItemSlotElement = <ItemSlot onClick={e => clickBackpackItemSlot(e)} isSelected={false} picturedItemImageSrc={imageSrc} />
@@ -133,8 +140,25 @@ const Hotbar = () => {
       backpackItemSlotElement = <ItemSlot onClick={e => clickBackpackItemSlot(e)} isSelected={false} picturedItemImageSrc={imageSrc} />
    }
 
+   let armourItemSlotElement: JSX.Element;
+   if (armourInventory !== null) {
+      if (armourInventory.itemSlots.hasOwnProperty(1)) {
+         const armourItemInfo = CLIENT_ITEM_INFO_RECORD[armourInventory.itemSlots[1].type];
+         
+         const imageSrc = require("../../../images/items/" + armourItemInfo.textureSource);
+         armourItemSlotElement = <ItemSlot onClick={e => leftClickItemSlot(e, armourInventory, 1)} isSelected={false} picturedItemImageSrc={imageSrc} />
+      } else {
+         const imageSrc = require("../../../images/miscellaneous/backpack-wireframe.png");
+         armourItemSlotElement = <ItemSlot onClick={e => leftClickItemSlot(e, armourInventory, 1)} isSelected={false} picturedItemImageSrc={imageSrc} />
+      }
+   } else {
+      const imageSrc = require("../../../images/miscellaneous/backpack-wireframe.png");
+      armourItemSlotElement = <ItemSlot isSelected={false} picturedItemImageSrc={imageSrc} />
+   }
+
    return <div id="hotbar">
       <div className="flex-balancer inventory-container">
+         <ItemSlot isSelected={false} />
          <ItemSlot isSelected={false} />
       </div>
 
@@ -144,6 +168,7 @@ const Hotbar = () => {
 
       <div id="special-item-slots" className="inventory-container">
          {backpackItemSlotElement}
+         {armourItemSlotElement}
       </div>
    </div>;
 }

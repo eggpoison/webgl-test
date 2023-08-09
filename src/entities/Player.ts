@@ -1,4 +1,4 @@
-import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitboxType, HitData, Point, SETTINGS, Vector, clampToBoardDimensions, TribeType } from "webgl-test-shared";
+import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitboxType, HitData, Point, SETTINGS, Vector, clampToBoardDimensions, TribeType, ItemType } from "webgl-test-shared";
 import Camera from "../Camera";
 import { setCraftingMenuAvailableRecipes, setCraftingMenuAvailableCraftingStations } from "../components/game/menus/CraftingMenu";
 import Game from "../Game";
@@ -132,8 +132,8 @@ class Player extends TribeMember {
       })
    ]);
 
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, tribeType: TribeType, username: string) {
-      super(position, hitboxes, id, secondsSinceLastHit, tribeID, tribeType);
+   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, username: string) {
+      super(position, hitboxes, id, secondsSinceLastHit, tribeID, tribeType, armour);
 
       this.attachRenderParts([
          new RenderPart({

@@ -2,6 +2,7 @@ import { ItemInfo, ItemType, ITEM_INFO_RECORD } from "webgl-test-shared";
 import FoodItem from "./FoodItem";
 import Item from "./Item";
 import PlaceableItem from "./PlaceableItem";
+import ArmourItem from "./ArmourItem";
 
 type GenericItem<T extends ItemType> = new (itemType: T, count: number, id: number, itemInfo: ItemInfo<T>) => Item;
 
@@ -28,7 +29,8 @@ const ITEM_CLASS_RECORD: { [T in ItemType]: () => GenericItem<T> } = {
    flesh_sword: () => Item,
    tribe_totem: () => PlaceableItem,
    tribe_hut: () => PlaceableItem,
-   barrel: () => PlaceableItem
+   barrel: () => PlaceableItem,
+   frost_armour: () => ArmourItem
 };
 
 export function createItem(itemType: ItemType, count: number, id: number): Item {

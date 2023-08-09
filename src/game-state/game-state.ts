@@ -26,6 +26,8 @@ abstract class GameState {
    /** Item held by the player. */
    public heldItemSlot: Inventory | null = null;
 
+   public armourSlot: Inventory | null = null;
+
    public resetFlags(): void {
       this.playerIsEating = false;
       this.playerIsPlacingEntity = false;

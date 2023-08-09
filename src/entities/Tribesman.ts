@@ -1,4 +1,4 @@
-import { EntityData, HitboxType, InventoryData, Point, TribeType, Vector } from "webgl-test-shared";
+import { EntityData, HitboxType, InventoryData, ItemType, Point, TribeType, Vector } from "webgl-test-shared";
 import TribeMember from "./TribeMember";
 import Hitbox from "../hitboxes/Hitbox";
 import RenderPart from "../render-parts/RenderPart";
@@ -17,8 +17,8 @@ class Tribesman extends TribeMember {
 
    public readonly inventory: Inventory;
 
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, tribeType: TribeType, inventoryData: InventoryData) {
-      super(position, hitboxes, id, secondsSinceLastHit, tribeID, tribeType);
+   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, inventoryData: InventoryData) {
+      super(position, hitboxes, id, secondsSinceLastHit, tribeID, tribeType, armour);
 
       this.attachRenderParts([
          new RenderPart({
@@ -91,7 +91,7 @@ class Tribesman extends TribeMember {
       super.updateFromData(entityData);
 
       // Update inventory from data
-      const inventoryData = entityData.clientArgs[2];
+      const inventoryData = entityData.clientArgs[3];
       const itemSlots: ItemSlots = {};
       for (const [itemSlot, itemData] of Object.entries(inventoryData.itemSlots)) {
          const item = createItem(itemData.type, itemData.count, itemData.id);

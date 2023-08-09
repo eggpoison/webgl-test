@@ -81,9 +81,11 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/slime/slime-orb-large.png",
    "entities/slimewisp/slimewisp.png",
    "entities/tribe-totem/tribe-totem.png",
+   "entities/tribe-totem/goblin-banner.png",
    "entities/tribe-hut/tribe-hut.png",
    "entities/tribe-hut/tribe-hut-door.png",
-   "entities/barrel/barrel.png"
+   "entities/barrel/barrel.png",
+   "armour/frost-armour.png"
 ];
 
 const textureSourceIsAlreadyIncluded = (src: string): boolean => {

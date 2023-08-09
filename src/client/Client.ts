@@ -14,7 +14,7 @@ import { gameScreenSetIsDead } from "../components/game/GameScreen";
 import Chunk from "../Chunk";
 import Item, { Inventory, ItemSlots } from "../items/Item";
 import { updateActiveItem, updateInventoryIsOpen } from "../player-input";
-import { Hotbar_updateBackpackItemSlot, Hotbar_updateHotbarInventory } from "../components/game/inventories/Hotbar";
+import { Hotbar_updateArmourItemSlot, Hotbar_updateBackpackItemSlot, Hotbar_updateHotbarInventory } from "../components/game/inventories/Hotbar";
 import { BackpackInventoryMenu_setBackpackInventory } from "../components/game/inventories/BackpackInventory";
 import { setHeldItemVisual } from "../components/game/HeldItem";
 import { CraftingMenu_setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
@@ -405,8 +405,10 @@ abstract class Client {
       // Backpack slot
       if (Game.definiteGameState.backpackSlot !== null) {
          this.updateInventoryFromServerData(Game.definiteGameState.backpackSlot, playerInventoryData.backpackSlot);
-         Hotbar_updateBackpackItemSlot(Game.definiteGameState.backpackSlot.itemSlots[1]);
+      } else {
+         Game.definiteGameState.backpackSlot = this.createInventoryFromServerData(playerInventoryData.backpackSlot);
       }
+      Hotbar_updateBackpackItemSlot(Game.definiteGameState.backpackSlot.itemSlots.hasOwnProperty(1) ? Game.definiteGameState.backpackSlot.itemSlots[1] : null);
 
       // Held item
       if (Game.definiteGameState.heldItemSlot !== null) {
@@ -415,6 +417,17 @@ abstract class Client {
          Game.definiteGameState.heldItemSlot = this.createInventoryFromServerData(playerInventoryData.heldItemSlot);
       }
       setHeldItemVisual(Game.definiteGameState.heldItemSlot.itemSlots.hasOwnProperty(1) ? Game.definiteGameState.heldItemSlot.itemSlots[1] : null);
+
+      // Armour slot
+      if (Game.definiteGameState.armourSlot !== null) {
+         this.updateInventoryFromServerData(Game.definiteGameState.armourSlot, playerInventoryData.armourSlot);
+      } else {
+         Game.definiteGameState.armourSlot = this.createInventoryFromServerData(playerInventoryData.armourSlot);
+      }
+      Hotbar_updateArmourItemSlot(Game.definiteGameState.armourSlot);
+      if (Player.instance !== null) {
+         Player.instance.updateArmourRenderPart(Game.definiteGameState.armourSlot.itemSlots.hasOwnProperty(1) ? Game.definiteGameState.armourSlot.itemSlots[1].type : null);
+      }
    }
 
    private static createItemFromServerItemData(serverItemEntityData: DroppedItemData): void {
@@ -550,7 +563,7 @@ abstract class Client {
       updateHealthBar(Player.MAX_HEALTH);
       
       const spawnPosition = Point.unpackage(respawnDataPacket.spawnPosition);
-      const player = new Player(spawnPosition, new Set(Player.HITBOXES), respawnDataPacket.playerID, null, null, TribeType.plainspeople, Game.definiteGameState.playerUsername);
+      const player = new Player(spawnPosition, new Set(Player.HITBOXES), respawnDataPacket.playerID, null, null, TribeType.plainspeople, null, Game.definiteGameState.playerUsername);
       Player.setInstancePlayer(player);
 
       gameScreenSetIsDead(false);

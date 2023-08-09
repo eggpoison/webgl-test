@@ -41,6 +41,13 @@ export class RenderObject {
       // Insert the render part at the index
       this.renderParts.splice(idx, 0, renderPart);
    }
+
+   public removeRenderPart(renderPart: RenderPart): void {
+      const idx = this.renderParts.indexOf(renderPart);
+      if (idx !== -1) {
+         this.renderParts.splice(idx, 1);
+      }
+   }
 }
 
 class RenderPart extends RenderObject implements RenderPartInfo {
@@ -53,6 +60,9 @@ class RenderPart extends RenderObject implements RenderPartInfo {
    public readonly getRotation?: () => number;
    public readonly opacity: number;
 
+   /** Whether the render part is being rendered or not */
+   public isActive = true;
+   
    public readonly parentRenderObject: RenderObject;
    
    constructor(renderPartInfo: RenderPartInfo, parentRenderObject: RenderObject) {
