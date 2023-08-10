@@ -14,6 +14,7 @@ export interface RenderPartInfo {
    readonly getRotation?: () => number;
    readonly inheritParentRotation?: boolean;
    readonly opacity?: number;
+   readonly flipX?: boolean;
 }
 
 /** A thing which is able to hold render parts */
@@ -59,6 +60,7 @@ class RenderPart extends RenderObject implements RenderPartInfo {
    public readonly inheritParentRotation: boolean;
    public readonly getRotation?: () => number;
    public readonly opacity: number;
+   public readonly flipX: boolean;
 
    /** Whether the render part is being rendered or not */
    public isActive = true;
@@ -81,6 +83,7 @@ class RenderPart extends RenderObject implements RenderPartInfo {
       this.inheritParentRotation = typeof renderPartInfo.inheritParentRotation !== "undefined" ? renderPartInfo.inheritParentRotation : true;
       this.getRotation = renderPartInfo.getRotation;
       this.opacity = renderPartInfo.opacity || 1;
+      this.flipX = renderPartInfo.flipX || false; // Don't flip X by default
 
       this.parentRenderObject = parentRenderObject;
 

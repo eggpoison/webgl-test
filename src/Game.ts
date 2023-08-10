@@ -243,6 +243,7 @@ abstract class Game {
          });
       } else {
          createRenderChunkBuffers();
+         recalculateAmbientOcclusion();
       }
    }
 

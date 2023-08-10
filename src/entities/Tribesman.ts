@@ -41,24 +41,26 @@ class Tribesman extends TribeMember {
             }, this)
          );
 
-         // Ears
+         // Left ear
          const leftEarOffset = new Vector(Tribesman.RADIUS + Tribesman.GOBLIN_EAR_OFFSET, -Tribesman.GOBLIN_EAR_ANGLE).convertToPoint();
          this.attachRenderPart(
             new RenderPart({
                width: Tribesman.GOBLIN_EAR_WIDTH,
                height: Tribesman.GOBLIN_EAR_HEIGHT,
-               textureSource: "entities/human/goblin-ear-left.png",
+               textureSource: "entities/human/goblin-ear.png",
                offset: () => leftEarOffset,
                getRotation: () => Math.PI/2 - Tribesman.GOBLIN_EAR_ANGLE,
-               zIndex: 1
+               zIndex: 1,
+               flipX: true
             }, this)
          );
+         // Right ear
          const rightEarOffset = new Vector(Tribesman.RADIUS + Tribesman.GOBLIN_EAR_OFFSET, Tribesman.GOBLIN_EAR_ANGLE).convertToPoint();
          this.attachRenderPart(
             new RenderPart({
                width: Tribesman.GOBLIN_EAR_WIDTH,
                height: Tribesman.GOBLIN_EAR_HEIGHT,
-               textureSource: "entities/human/goblin-ear-right.png",
+               textureSource: "entities/human/goblin-ear.png",
                offset: () => rightEarOffset,
                getRotation: () => -Math.PI/2 + Tribesman.GOBLIN_EAR_ANGLE,
                zIndex: 1
@@ -81,7 +83,7 @@ class Tribesman extends TribeMember {
          width: inventoryData.width,
          height: inventoryData.height,
          entityID: this.id,
-         inventoryName: "inventory"
+         inventoryName: "hotbar"
       };
 
       return inventory;
