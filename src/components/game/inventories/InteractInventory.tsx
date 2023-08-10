@@ -1,81 +1,81 @@
-import { useCallback, useEffect, useReducer, useState } from "react";
-import CLIENT_ITEM_INFO_RECORD from "../../../client-item-info";
-import { leftClickItemSlot, rightClickItemSlot } from "../../../inventory-manipulation";
+import {  useEffect, useReducer, useState } from "react";
 import { Inventory } from "../../../items/Item";
-import ItemSlot from "./ItemSlot";
+import InventoryContainer from "./InventoryContainer";
 
-export let InteractInventory_setInventory: (inventory: Inventory | null) => void;
+export let InteractInventory_setInventories: (inventories: Array<Inventory> | null) => void;
 export let InteractInventory_forceUpdate: () => void;
 
 export let interactInventoryIsOpen: () => boolean;
 
 const InteractInventory = () => {
-   const [inventory, setInventory] = useState<Inventory | null>(null);
+   const [inventories, setInventories] = useState<Array<Inventory> | null>(null);
    const [_, forceUpdate] = useReducer(x => x + 1, 0);
 
    useEffect(() => {
-      InteractInventory_setInventory = (inventory: Inventory | null) => {
-         setInventory(inventory);
+      InteractInventory_setInventories = (inventories: Array<Inventory> | null) => {
+         setInventories(inventories);
       }
 
    }, []);
    
    useEffect(() => {
-      const isOpen = inventory !== null;
+      const isOpen = inventories !== null;
       interactInventoryIsOpen = () => isOpen;
 
       InteractInventory_forceUpdate = () => {
-         if (inventory !== null) {
+         if (inventories !== null) {
             forceUpdate();
          }
       }
-   }, [inventory]);
+   }, [inventories]);
 
-   const leftClickBackpackItemSlot = useCallback((e: MouseEvent, itemSlot: number): void => {
-      if (inventory !== null) {
-         leftClickItemSlot(e, inventory, itemSlot);
-      }
-   }, [inventory]);
+   // const leftClickBackpackItemSlot = useCallback((e: MouseEvent, itemSlot: number): void => {
+   //    if (inventories !== null) {
+   //       leftClickItemSlot(e, inventories, itemSlot);
+   //    }
+   // }, [inventories]);
 
-   const rightClickBackpackItemSlot = useCallback((e: MouseEvent, itemSlot: number): void => {
-      if (inventory !== null) {
-         rightClickItemSlot(e, inventory, itemSlot);
-      }
-   }, [inventory]);
+   // const rightClickBackpackItemSlot = useCallback((e: MouseEvent, itemSlot: number): void => {
+   //    if (inventories !== null) {
+   //       rightClickItemSlot(e, inventories, itemSlot);
+   //    }
+   // }, [inventories]);
 
-   if (inventory === null) return null;
+   if (inventories === null) return null;
    
-   const itemSlots = new Array<JSX.Element>();
+   // const itemSlots = new Array<JSX.Element>();
    
-   for (let y = 0; y < inventory.height; y++) {
-      const rowItemSlots = new Array<JSX.Element>();
-      for (let x = 0; x < inventory.width; x++) {
-         const itemSlot = y * inventory.width + x + 1;
+   // for (let y = 0; y < inventories.height; y++) {
+   //    const rowItemSlots = new Array<JSX.Element>();
+   //    for (let x = 0; x < inventories.width; x++) {
+   //       const itemSlot = y * inventories.width + x + 1;
 
-         if (inventory.itemSlots.hasOwnProperty(itemSlot)) {
-            const item = inventory.itemSlots[itemSlot];
+   //       if (inventories.itemSlots.hasOwnProperty(itemSlot)) {
+   //          const item = inventories.itemSlots[itemSlot];
 
-            const itemImageSrc = require(`../../../images/items/${CLIENT_ITEM_INFO_RECORD[item.type].textureSource}`);
+   //          const itemImageSrc = require(`../../../images/items/${CLIENT_ITEM_INFO_RECORD[item.type].textureSource}`);
 
-            rowItemSlots.push(
-               <ItemSlot key={x} onClick={e => leftClickBackpackItemSlot(e, itemSlot)} onContextMenu={e => rightClickBackpackItemSlot(e, itemSlot)} picturedItemImageSrc={itemImageSrc} itemCount={item.count} isSelected={false} />
-            );
-         } else {
-            rowItemSlots.push(
-               <ItemSlot key={x} onClick={e => leftClickBackpackItemSlot(e, itemSlot)} onContextMenu={e => rightClickBackpackItemSlot(e, itemSlot)} isSelected={false} />
-            );
-         }
-      }
+   //          rowItemSlots.push(
+   //             <ItemSlot key={x} onClick={e => leftClickBackpackItemSlot(e, itemSlot)} onContextMenu={e => rightClickBackpackItemSlot(e, itemSlot)} picturedItemImageSrc={itemImageSrc} itemCount={item.count} isSelected={false} />
+   //          );
+   //       } else {
+   //          rowItemSlots.push(
+   //             <ItemSlot key={x} onClick={e => leftClickBackpackItemSlot(e, itemSlot)} onContextMenu={e => rightClickBackpackItemSlot(e, itemSlot)} isSelected={false} />
+   //          );
+   //       }
+   //    }
       
-      itemSlots.push(
-         <div key={y} className="inventory-row">
-            {rowItemSlots}
-         </div>
-      );
-   }
+   //    itemSlots.push(
+   //       <div key={y} className="inventory-row">
+   //          {rowItemSlots}
+   //       </div>
+   //    );
+   // }
 
-   return <div id="interact-inventory" className="inventory-container">
-      {itemSlots}
+   return <div id="interact-inventory" className="inventory">
+      {inventories.map((inventory, i) => {
+         return <InventoryContainer inventory={inventory} key={i} />
+      })}
    </div>;
 }
 

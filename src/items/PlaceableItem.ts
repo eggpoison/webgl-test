@@ -43,6 +43,16 @@ const PLACEABLE_ENTITY_INFO_RECORD: Partial<Record<ItemType, PlaceableEntityInfo
       textureSource: "barrel/barrel.png",
       width: 80,
       height: 80
+   },
+   campfire: {
+      textureSource: "furnace/furnace.png",
+      width: 80,
+      height: 80
+   },
+   furnace: {
+      textureSource: "furnace/furnace.png",
+      width: 80,
+      height: 80
    }
 };
 

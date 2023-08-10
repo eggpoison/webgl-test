@@ -279,7 +279,7 @@ const CraftingMenu = () => {
       );
    }
    
-   return <div id="crafting-menu" className="inventory-container" ref={onCraftingMenuRefChange}>
+   return <div id="crafting-menu" className="inventory" ref={onCraftingMenuRefChange}>
       <div className="available-crafting-stations">
          {Array.from(availableCraftingStations).map((craftingStationType: CraftingStation, i: number) => {
             return <img className="crafting-station-image" src={require("../../../images/items/" + CRAFTING_STATION_TEXTURE_SOURCE_RECORD[craftingStationType])} key={i} alt="" />

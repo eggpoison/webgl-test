@@ -6,12 +6,14 @@ import Client from "./client/Client";
 import Game from "./Game";
 import { Hotbar_setHotbarSelectedItemSlot } from "./components/game/inventories/Hotbar";
 import GameObject from "./GameObject";
-import { InteractInventory_forceUpdate, InteractInventory_setInventory } from "./components/game/inventories/InteractInventory";
+import { InteractInventory_forceUpdate, InteractInventory_setInventories } from "./components/game/inventories/InteractInventory";
 import { Inventory } from "./items/Item";
 import Barrel from "./entities/Barrel";
 import { BackpackInventoryMenu_setIsVisible } from "./components/game/inventories/BackpackInventory";
 import Entity from "./entities/Entity";
 import Tribesman from "./entities/Tribesman";
+import Campfire from "./entities/Campfire";
+import Furnace from "./entities/Furnace";
 
 let lightspeedIsActive = false;
 
@@ -213,7 +215,12 @@ export function updateInventoryIsOpen(inventoryIsOpen: boolean): void {
    }
 }
 
-const getInteractInventory = (): [Entity, Inventory] | null => {
+interface InteractInventoryInfo {
+   readonly entity: Entity;
+   readonly inventories: Array<Inventory>;
+}
+
+const getInteractInventory = (): InteractInventoryInfo | null => {
    if (Player.instance === null) return null;
    
    const minChunkX = Math.max(Math.min(Math.floor((Player.instance.position.x - PLAYER_INTERACT_RANGE) / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
@@ -223,7 +230,7 @@ const getInteractInventory = (): [Entity, Inventory] | null => {
    
    let minInteractionDistance = PLAYER_INTERACT_RANGE + Number.EPSILON;
    let closestInteractableEntity: Entity | null = null;
-   let closestInteractableInventory: Inventory | null = null;
+   let closestInteractableInventories: Array<Inventory> | null = null;
    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
          const chunk = Game.board.getChunk(chunkX, chunkY);
@@ -232,7 +239,7 @@ const getInteractInventory = (): [Entity, Inventory] | null => {
                const distance = Player.instance.position.calculateDistanceBetween(entity.position);
                if (distance < minInteractionDistance) {
                   closestInteractableEntity = entity;
-                  closestInteractableInventory = entity.inventory;
+                  closestInteractableInventories = [entity.inventory];
                   minInteractionDistance = distance;
                }
             } else if (entity.type === "tribesman") {
@@ -244,7 +251,21 @@ const getInteractInventory = (): [Entity, Inventory] | null => {
                const distance = Player.instance.position.calculateDistanceBetween(entity.position);
                if (distance < minInteractionDistance) {
                   closestInteractableEntity = entity;
-                  closestInteractableInventory = (entity as Tribesman).inventory;
+                  closestInteractableInventories = [(entity as Tribesman).inventory];
+                  minInteractionDistance = distance;
+               }
+            } else if (entity.type === "campfire") {
+               const distance = Player.instance.position.calculateDistanceBetween(entity.position);
+               if (distance < minInteractionDistance) {
+                  closestInteractableEntity = entity;
+                  closestInteractableInventories = [(entity as Campfire).inventory];
+                  minInteractionDistance = distance;
+               }
+            } else if (entity.type === "furnace") {
+               const distance = Player.instance.position.calculateDistanceBetween(entity.position);
+               if (distance < minInteractionDistance) {
+                  closestInteractableEntity = entity;
+                  closestInteractableInventories = [(entity as Furnace).fuelInventory, (entity as Furnace).outputInventory];
                   minInteractionDistance = distance;
                }
             }
@@ -252,14 +273,17 @@ const getInteractInventory = (): [Entity, Inventory] | null => {
       }
    }
 
-   if (closestInteractableInventory === null || closestInteractableEntity === null) return null;
-   return [closestInteractableEntity, closestInteractableInventory];
+   if (closestInteractableInventories === null || closestInteractableEntity === null) return null;
+   return {
+      entity: closestInteractableEntity,
+      inventories: closestInteractableInventories
+   };
 }
 
-export function updateInteractInventoryIsOpen(isOpen: boolean, inventory: Inventory | null): void {
+export function updateInteractInventoryIsOpen(isOpen: boolean, inventories: Array<Inventory> | null): void {
    _interactInventoryIsOpen = isOpen;
 
-   InteractInventory_setInventory(inventory);
+   InteractInventory_setInventories(inventories);
 }
 
 export function updateInteractInventory(): void {
@@ -301,8 +325,8 @@ const createInventoryToggleListeners = (): void => {
       } else {
          const interactInfo = getInteractInventory();
          if (interactInfo !== null) {
-            interactInventoryEntity = interactInfo[0];
-            updateInteractInventoryIsOpen(true, interactInfo[1]);
+            interactInventoryEntity = interactInfo.entity;
+            updateInteractInventoryIsOpen(true, interactInfo.inventories);
          }
       }
    });

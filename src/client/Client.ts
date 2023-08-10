@@ -76,7 +76,12 @@ abstract class Client {
 
                registerServerTick();
    
-               this.unloadGameDataPacket(gameDataPacket);
+               try {
+                  this.unloadGameDataPacket(gameDataPacket);
+               } catch (error: unknown) {
+                  console.log(error);
+                  throw new Error("Error when trying to unload game data packet!");
+               }
             });
    
             // When the connection to the server fails

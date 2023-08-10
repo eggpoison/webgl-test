@@ -1,10 +1,13 @@
 /* Generic inventory interfaces */
 
-.inventory-container {
+.inventory {
    background-color: #333;
    border: 5px solid #000;
    border-radius: 5px;
 }
+
+/* .inventory-container {
+} */
 
 .inventory-row {
    display: flex;

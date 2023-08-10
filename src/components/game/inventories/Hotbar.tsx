@@ -157,16 +157,16 @@ const Hotbar = () => {
    }
 
    return <div id="hotbar">
-      <div className="flex-balancer inventory-container">
+      <div className="flex-balancer inventory">
          <ItemSlot isSelected={false} />
          <ItemSlot isSelected={false} />
       </div>
 
-      <div className="inventory-container">
+      <div className="inventory">
          {hotbarItemSlots}
       </div>
 
-      <div id="special-item-slots" className="inventory-container">
+      <div id="special-item-slots" className="inventory">
          {backpackItemSlotElement}
          {armourItemSlotElement}
       </div>
