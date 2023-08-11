@@ -310,8 +310,8 @@ abstract class Game {
       renderPlayerNames();
 
       renderSolidTiles();
-      renderAmbientOcclusion();
-      renderWallBorders();
+      // renderAmbientOcclusion();
+      // renderWallBorders();
       if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Game.board.gameObjects.hasOwnProperty(this.gameObjectDebugData.gameObjectID)) {
          renderTriangleDebugData(this.gameObjectDebugData);
       }
@@ -320,13 +320,13 @@ abstract class Game {
          renderChunkBorders();
       }
 
-      renderParticles(ParticleRenderLayer.low);
+      // renderParticles(ParticleRenderLayer.low);
 
       renderGameObjects(Object.values(this.board.droppedItems));
       renderGameObjects(Object.values(this.board.entities));
       renderGameObjects(Object.values(this.board.projectiles));
 
-      renderParticles(ParticleRenderLayer.high);
+      // renderParticles(ParticleRenderLayer.high);
 
       if (nerdVisionIsVisible()) {
          renderEntityHitboxes();

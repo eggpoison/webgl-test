@@ -4,7 +4,7 @@ import { RENDER_CHUNK_SIZE, WORLD_RENDER_CHUNK_SIZE } from "./rendering/tile-ren
 
 abstract class Camera {
    /** Larger = zoomed in, smaller = zoomed out */
-   public static zoom: number = 1;
+   public static readonly zoom: number = 1.4;
 
    public static position: Point;
 
@@ -42,17 +42,24 @@ abstract class Camera {
 
    /** X position in the screen (0 = left, windowWidth = right) */
    public static calculateXScreenPos(x: number): number {
-      return x - this.position.x + halfWindowWidth;
+      // Account for the player position
+      const playerRelativePosition = x - this.position.x;
+
+      // Account for zoom
+      return playerRelativePosition * this.zoom + halfWindowWidth;
    }
 
    /** Y position in the screen (0 = bottom, windowHeight = top) */
    public static calculateYScreenPos(y: number): number {
-      return y - this.position.y + halfWindowHeight;
+      // Account for the player position
+      const playerRelativePosition = y - this.position.y;
+
+      // Account for zoom
+      return playerRelativePosition * this.zoom + halfWindowHeight;
    }
 
    public static calculateXCanvasPosition(x: number): number {
-      // Account for the player position
-      const screenX = x - this.position.x + halfWindowWidth;
+      const screenX = this.calculateXScreenPos(x);
 
       const canvasX = screenX / windowWidth * 2 - 1;
       return canvasX;
@@ -60,7 +67,7 @@ abstract class Camera {
    
    public static calculateYCanvasPosition(y: number): number {
       // Account for the player position
-      const screenY = y - this.position.y + halfWindowHeight;
+      const screenY = this.calculateYScreenPos(y);
       
       const canvasY = screenY / windowHeight * 2 - 1;
       return canvasY;
@@ -83,5 +90,7 @@ abstract class Camera {
       return [minX, maxX, minY, maxY];
    }
 }
+
+document.documentElement.style.setProperty("--zoom", Camera.zoom.toString());
 
 export default Camera;

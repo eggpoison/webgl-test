@@ -11,6 +11,7 @@ precision mediump float;
 
 uniform vec2 u_playerPos;
 uniform vec2 u_halfWindowSize;
+uniform float u_zoom;
 
 attribute vec2 a_tilePos;
 attribute vec2 a_texCoord;
@@ -18,7 +19,7 @@ attribute vec2 a_texCoord;
 varying vec2 v_texCoord;
 
 void main() {
-   vec2 screenPos = a_tilePos - u_playerPos + u_halfWindowSize;
+   vec2 screenPos = (a_tilePos - u_playerPos) * u_zoom + u_halfWindowSize;
    vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
    gl_Position = vec4(clipSpacePos, 0.0, 1.0);
 
@@ -42,6 +43,7 @@ let program: WebGLProgram;
 
 let playerPosUniformLocation: WebGLUniformLocation;
 let halfWindowSizeUniformLocation: WebGLUniformLocation;
+let zoomUniformLocation: WebGLUniformLocation;
 let textureUniformLocation: WebGLUniformLocation;
 
 let tilePosAttribLocation: GLint;
@@ -160,8 +162,8 @@ export function createSolidTileShaders(): void {
 
    playerPosUniformLocation = gl.getUniformLocation(program, "u_playerPos")!;
    halfWindowSizeUniformLocation = gl.getUniformLocation(program, "u_halfWindowSize")!;
+   zoomUniformLocation = gl.getUniformLocation(program, "u_zoom")!;
    textureUniformLocation = gl.getUniformLocation(program, "u_texture")!;
-
    tilePosAttribLocation = gl.getAttribLocation(program, "a_tilePos");
    texCoordAttribLocation = gl.getAttribLocation(program, "a_texCoord");
 }
@@ -198,6 +200,7 @@ export function renderSolidTiles(): void {
       
             gl.uniform2f(playerPosUniformLocation, Camera.position.x, Camera.position.y);
             gl.uniform2f(halfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
+            gl.uniform1f(zoomUniformLocation, Camera.zoom);
          
             // Enable the attributes
             gl.enableVertexAttribArray(tilePosAttribLocation);

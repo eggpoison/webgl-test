@@ -28,7 +28,8 @@ export const TILE_TYPE_RENDER_INFO_RECORD: Record<TileType, TileTypeRenderInfo> 
       isLiquid: true
    },
    sludge: {
-      textureSource: "sludge.png"
+      // textureSource: "sludge.png"
+      textureSource: "sludge-old.png"
    },
    slime: {
       textureSource: "slime.png"
@@ -49,7 +50,8 @@ export const TILE_TYPE_RENDER_INFO_RECORD: Record<TileType, TileTypeRenderInfo> 
       textureSource: "snow.png"
    },
    ice: {
-      textureSource: "ice.png"
+      // textureSource: "ice.png"
+      textureSource: "ice-old.png"
    },
    magma: {
       textureSource: "grass.png"

@@ -2,13 +2,13 @@
 
 .inventory-container {
    background-color: #333;
-   border: 5px solid #000;
+   border: calc(5px * var(--zoom)) solid #000;
    border-radius: 5px;
 }
 
 .item-slot {
-   width: var(--item-slot-size);
-   height: var(--item-slot-size);
+   width: calc(var(--item-slot-size) * var(--zoom));
+   height: calc(var(--item-slot-size) * var(--zoom));
    background-image: url("../../images/miscellaneous/item-slot.png");
    background-size: 100%;
    image-rendering: pixelated;
@@ -31,8 +31,8 @@
 }
 
 .item-slot img {
-   width: var(--item-image-size);
-   height: var(--item-image-size);
+   width: calc(var(--item-image-size) * var(--zoom));
+   height: calc(var(--item-image-size) * var(--zoom));
    image-rendering: pixelated;
    position: absolute;
    top: 50%;
@@ -44,7 +44,7 @@
 .item-slot .item-count, #held-item .held-item-count {
    color: #fff;
    font-family: "Inconsolata";
-   font-size: 1.3rem;
+   font-size: calc(1.3rem * var(--zoom));
    font-weight: bold;
    text-shadow: 0 0 1px #000, 0 0 2px #000, 0 0 3px #000, 0 0 4px #000;
    text-align: right;

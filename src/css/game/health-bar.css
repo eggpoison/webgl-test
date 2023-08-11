@@ -6,14 +6,14 @@
    --previous-health: 20;
    --width: 25rem;
    --height: 1.5rem;
-   width: var(--width);
-   height: var(--height);
-   border: 5px solid #000;
-   border-radius: 4px;
+   width: calc(var(--width) * var(--zoom));
+   height: calc(var(--height) * var(--zoom));
+   border: calc(5px * var(--zoom)) solid #000;
+   border-radius: calc(4px * var(--zoom));
    background-color: #333;
    position: absolute;
    left: 50%;
-   bottom: 5.75rem;
+   bottom: calc(5.75rem * var(--zoom));
    transform: translateX(-50%);
    z-index: 2;
    box-shadow: 0 0 7px 0 rgba(0, 0, 0, 0.7) inset;
@@ -36,8 +36,8 @@
 
 #health-bar .health-icon {
    --size: 20px;
-   width: var(--size);
-   height: var(--size);
+   width: calc(var(--size) * var(--zoom));
+   height: calc(var(--size) * var(--zoom));
    position: absolute;
    left: 50%;
    top: 0;
@@ -48,8 +48,8 @@
 #health-bar .health-icon img {
    --scale-factor: 1.75;
    --flash-scale-factor: 2.25;
-   width: calc(var(--size) * var(--scale-factor));
-   height: calc(var(--size) * var(--scale-factor));
+   width: calc(var(--size) * var(--scale-factor) * var(--zoom));
+   height: calc(var(--size) * var(--scale-factor) * var(--zoom));
    image-rendering: pixelated;
    position: absolute;
    top: 50%;
@@ -65,7 +65,7 @@
    --offset-y: 0.25rem;
    color: #fff;
    font-family: "Inconsolata";
-   font-size: 1.15rem;
+   font-size: calc(1.15rem * var(--zoom));
    font-weight: 700;
    text-shadow: 0 0 1px #000, 0 0 2px #000, 0 0 3px #000;
    position: absolute;
@@ -87,24 +87,24 @@
 }
 #health-bar .notches .notch {
    --padding: 0.15rem;
-   width: 3px;
+   width: calc(3px * var(--zoom));
    height: calc(var(--height) - var(--padding) * 2);
 }
 #health-bar .notches .notch-major {
-   height: calc(var(--height) - var(--padding) * 2);
+   height: calc(var(--height) - var(--padding) * 2 * var(--zoom));
    background-color: rgba(0, 0, 0, 0.5);
 }
 #health-bar .notches .notch-minor {
-   height: calc(var(--height) - var(--padding) * 4);
+   height: calc(var(--height) - var(--padding) * 4 * var(--zoom));
    background-color: rgba(0, 0, 0, 0.3);
 }
 
 @keyframes HealthSliderSlide {
    0% {
-      width: calc(var(--width) * (var(--previous-health) / var(--max-health)));
+      width: calc(var(--width) * var(--zoom) * (var(--previous-health) / var(--max-health)));
    }
    100% {
-      width: calc(var(--width) * (var(--current-health) / var(--max-health)));
+      width: calc(var(--width) * var(--zoom) * (var(--current-health) / var(--max-health)));
    }
 }
 

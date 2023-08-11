@@ -179,7 +179,7 @@ class Player extends TribeMember {
    }
 
    public static resolveCollisions(): void {
-      this.resolveWallTileCollisions();
+      // this.resolveWallTileCollisions();
       this.resolveWallCollisions();
       this.resolveGameObjectCollisions();
    }
