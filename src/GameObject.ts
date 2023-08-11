@@ -131,13 +131,21 @@ abstract class GameObject extends RenderObject {
       Game.board.gameObjects[this.id] = this;
    }
 
+   protected overrideTileMoveSpeedMultiplier?(): number | null;
+
    public tick?(): void;
 
    public applyPhysics(): void {
       const tile = this.findCurrentTile();
       const tileTypeInfo = TILE_TYPE_INFO_RECORD[tile.type];
 
-      const tileMoveSpeedMultiplier = tileTypeInfo.moveSpeedMultiplier || 1;
+      let tileMoveSpeedMultiplier = tileTypeInfo.moveSpeedMultiplier || 1;
+      if (typeof this.overrideTileMoveSpeedMultiplier !== "undefined") {
+         const speed = this.overrideTileMoveSpeedMultiplier();
+         if (speed !== null) {
+            tileMoveSpeedMultiplier = speed;
+         }
+      }
 
       const terminalVelocity = this.terminalVelocity * tileMoveSpeedMultiplier;
 

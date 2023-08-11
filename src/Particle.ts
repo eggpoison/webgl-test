@@ -87,8 +87,20 @@ const PARTICLE_INFO: Record<ParticleType, ParticleInfo> = {
       size: [20, 20],
       renderLayer: ParticleRenderLayer.low
    },
-   [ParticleType.smoke]: {
+   [ParticleType.smokeBlack]: {
       size: [32, 32],
+      renderLayer: ParticleRenderLayer.high
+   },
+   [ParticleType.smokeWhite]: {
+      size: [32, 32],
+      renderLayer: ParticleRenderLayer.high
+   },
+   [ParticleType.emberRed]: {
+      size: [4, 4],
+      renderLayer: ParticleRenderLayer.high
+   },
+   [ParticleType.emberOrange]: {
+      size: [4, 4],
       renderLayer: ParticleRenderLayer.high
    },
    [ParticleType.footprint]: {

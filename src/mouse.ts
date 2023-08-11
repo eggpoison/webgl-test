@@ -97,6 +97,8 @@ export function renderCursorTooltip(): void {
          updateDevEntityViewer(null);
       }
       return;
+   } else {
+      updateDevEntityViewer(targetEntity);
    }
 
    // Update the cursor tooltip

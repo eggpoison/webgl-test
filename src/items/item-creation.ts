@@ -1,7 +1,9 @@
-import { ItemInfo, ItemType, ITEM_INFO_RECORD } from "webgl-test-shared";
+import { ItemInfo, ItemType, ITEM_INFO_RECORD, InventoryData } from "webgl-test-shared";
 import FoodItem from "./FoodItem";
-import Item from "./Item";
+import Item, { Inventory, ItemSlots } from "./Item";
 import PlaceableItem from "./PlaceableItem";
+import ArmourItem from "./ArmourItem";
+import Entity from "../entities/Entity";
 
 type GenericItem<T extends ItemType> = new (itemType: T, count: number, id: number, itemInfo: ItemInfo<T>) => Item;
 
@@ -28,7 +30,10 @@ const ITEM_CLASS_RECORD: { [T in ItemType]: () => GenericItem<T> } = {
    flesh_sword: () => Item,
    tribe_totem: () => PlaceableItem,
    tribe_hut: () => PlaceableItem,
-   barrel: () => PlaceableItem
+   barrel: () => PlaceableItem,
+   frost_armour: () => ArmourItem,
+   campfire: () => PlaceableItem,
+   furnace: () => PlaceableItem
 };
 
 export function createItem(itemType: ItemType, count: number, id: number): Item {
@@ -36,4 +41,22 @@ export function createItem(itemType: ItemType, count: number, id: number): Item 
 
    const itemClass = ITEM_CLASS_RECORD[itemType]() as GenericItem<ItemType>;
    return new itemClass(itemType, count, id, itemInfoEntry);
+}
+
+export function createInventoryFromData(entity: Entity, inventoryData: InventoryData): Inventory {
+   const itemSlots: ItemSlots = {};
+   for (const [itemSlot, itemData] of Object.entries(inventoryData.itemSlots)) {
+      const item = createItem(itemData.type, itemData.count, itemData.id);
+      itemSlots[Number(itemSlot)] = item;
+   }
+   
+   const inventory: Inventory = {
+      itemSlots: itemSlots,
+      width: inventoryData.width,
+      height: inventoryData.height,
+      entityID: entity.id,
+      inventoryName: inventoryData.inventoryName
+   };
+
+   return inventory;
 }

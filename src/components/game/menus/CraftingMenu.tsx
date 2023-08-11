@@ -2,11 +2,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { canCraftRecipe, CraftingRecipe, CraftingStation, ItemType, SETTINGS } from "webgl-test-shared";
 import CLIENT_ITEM_INFO_RECORD from "../../../client-item-info";
 import Client from "../../../client/Client";
-import Item from "../../../items/Item";
+import Item, { ItemSlots } from "../../../items/Item";
 import { windowHeight } from "../../../webgl";
-import { setHeldItemVisualPosition } from "../HeldItem";
 import ItemSlot from "../inventories/ItemSlot";
 import Game from "../../../Game";
+import { leftClickItemSlot } from "../../../inventory-manipulation";
 
 const CRAFTING_STATION_TEXTURE_SOURCE_RECORD: Record<CraftingStation, string> = {
    workbench: "workbench.png",
@@ -53,8 +53,12 @@ const RecipeViewer = ({ recipe, hoverPosition, craftingMenuHeight }: RecipeViewe
 }
 
 const getNumItemsOfType = (itemType: ItemType): number => {
+   if (Game.definiteGameState.hotbar === null) {
+      return 0;
+   }
+
    let numItems = 0;
-   for (const item of Object.values(Game.definiteGameState.hotbarItemSlots)) {
+   for (const item of Object.values(Game.definiteGameState.hotbar.itemSlots)) {
       if (item.type === itemType) {
          numItems += item.count;
       }
@@ -178,30 +182,27 @@ const CraftingMenu = () => {
    }
 
    const pickUpCraftingOutputItem = (e: MouseEvent): void => {
-      // Items can only be picked up while the crafting menu is open
-      if (!inventoryIsOpen()) return;
-
-      if (e.button !== 0) return;
-
-      // Don't pick up the item if there is already a held item
-      if (Game.definiteGameState.heldItemSlot !== null) return;
-
-      // Make sure there exists a crafting output item to pick up
-      if (Game.definiteGameState.craftingOutputSlot === null) {
-         throw new Error("Tried to pickup the crafting output item when none existed!");
-      }
-
-      const numItemsInCraftingOutput = Game.definiteGameState.craftingOutputSlot.count;
-      Client.sendItemPickupPacket("craftingOutput", 1, numItemsInCraftingOutput);
-      
-      setHeldItemVisualPosition(e.clientX, e.clientY);
+      leftClickItemSlot(e, Game.definiteGameState.craftingOutputSlot!, 1);
    }
 
    // Find which of the available recipes can be crafted
    useEffect(() => {
+      // Find which item slots are available for use in crafting
+      const availableItemSlots = new Array<ItemSlots>();
+      if (Game.definiteGameState.hotbar !== null) {
+         availableItemSlots.push(Game.definiteGameState.hotbar.itemSlots)
+      }
+      if (Game.definiteGameState.backpack !== null) {
+         availableItemSlots.push(Game.definiteGameState.backpack.itemSlots)
+      }
+      
+      if (availableItemSlots.length === 0) {
+         return;
+      }
+      
       const craftableRecipesArray = new Array<CraftingRecipe>();
       for (const recipe of availableRecipes) {
-         if (canCraftRecipe([Game.definiteGameState.hotbarItemSlots, Game.definiteGameState.backpackItemSlots], recipe, SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE)) {
+         if (canCraftRecipe(availableItemSlots, recipe, SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE)) {
             craftableRecipesArray.push(recipe);
          }
       }
@@ -278,7 +279,7 @@ const CraftingMenu = () => {
       );
    }
    
-   return <div id="crafting-menu" className="inventory-container" ref={onCraftingMenuRefChange}>
+   return <div id="crafting-menu" className="inventory" ref={onCraftingMenuRefChange}>
       <div className="available-crafting-stations">
          {Array.from(availableCraftingStations).map((craftingStationType: CraftingStation, i: number) => {
             return <img className="crafting-station-image" src={require("../../../images/items/" + CRAFTING_STATION_TEXTURE_SOURCE_RECORD[craftingStationType])} key={i} alt="" />

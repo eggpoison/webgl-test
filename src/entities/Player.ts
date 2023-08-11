@@ -1,4 +1,4 @@
-import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitboxType, HitData, Point, SETTINGS, Vector, clampToBoardDimensions, TribeType } from "webgl-test-shared";
+import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitboxType, HitData, Point, SETTINGS, Vector, clampToBoardDimensions, TribeType, ItemType } from "webgl-test-shared";
 import Camera from "../Camera";
 import { setCraftingMenuAvailableRecipes, setCraftingMenuAvailableCraftingStations } from "../components/game/menus/CraftingMenu";
 import Game from "../Game";
@@ -91,9 +91,9 @@ export function updateAvailableCraftingRecipes(): void {
 }
 
 export function getPlayerSelectedItem(): ItemSlot {
-   if (Player.instance === null) return null;
+   if (Player.instance === null || Game.definiteGameState.hotbar === null) return null;
 
-   const item: Item | undefined = Game.definiteGameState.hotbarItemSlots[Game.latencyGameState.selectedHotbarItemSlot];
+   const item: Item | undefined = Game.definiteGameState.hotbar.itemSlots[Game.latencyGameState.selectedHotbarItemSlot];
    return item || null;
 }
 
@@ -132,14 +132,14 @@ class Player extends TribeMember {
       })
    ]);
 
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, tribeType: TribeType, username: string) {
-      super(position, hitboxes, id, secondsSinceLastHit, tribeType);
+   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, username: string) {
+      super(position, hitboxes, id, secondsSinceLastHit, tribeID, tribeType, armour);
 
       this.attachRenderParts([
          new RenderPart({
             width: 64,
             height: 64,
-            textureSource: "entities/human/human1.png",
+            textureSource: super.getTextureSource(tribeType),
             zIndex: 0
          }, this)
       ]);
@@ -157,6 +157,13 @@ class Player extends TribeMember {
       Camera.position = player.position;
 
       Game.definiteGameState.setPlayerHealth(Player.MAX_HEALTH);
+      Game.definiteGameState.hotbar = {
+         itemSlots: {},
+         width: SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE,
+         height: 1,
+         entityID: player.id,
+         inventoryName: "hotbar"
+      };
    }
 
    /** Registers a server-side hit for the client */

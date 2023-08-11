@@ -1,12 +1,19 @@
 import { AttackPacket, SETTINGS, STATUS_EFFECT_MODIFIERS, Vector } from "webgl-test-shared";
 import { addKeyListener, clearPressedKeys, keyIsPressed } from "./keyboard-input";
-import { BackpackInventoryMenu_setIsVisible } from "./components/game/inventories/BackpackInventory";
 import { CraftingMenu_setIsVisible } from "./components/game/menus/CraftingMenu";
 import Player from "./entities/Player";
 import Client from "./client/Client";
 import Game from "./Game";
 import { Hotbar_setHotbarSelectedItemSlot } from "./components/game/inventories/Hotbar";
 import GameObject from "./GameObject";
+import { InteractInventoryInfo, InteractInventory_forceUpdate, InteractInventory_setElementClass, InteractInventory_setInventories } from "./components/game/inventories/InteractInventory";
+import { Inventory } from "./items/Item";
+import Barrel from "./entities/Barrel";
+import { BackpackInventoryMenu_setIsVisible } from "./components/game/inventories/BackpackInventory";
+import Entity from "./entities/Entity";
+import Tribesman from "./entities/Tribesman";
+import Campfire from "./entities/Campfire";
+import Furnace from "./entities/Furnace";
 
 let lightspeedIsActive = false;
 
@@ -34,8 +41,13 @@ const PLAYER_SLOW_TERMINAL_VELOCITY = 150;
 /** Acceleration of the player while slowed. */
 const PLAYER_SLOW_ACCELERATION = 600;
 
+const PLAYER_INTERACT_RANGE = 150;
+
 /** Whether the inventory is open or not. */
 let _inventoryIsOpen = false;
+
+let _interactInventoryIsOpen = false;
+let interactInventoryEntity: Entity | null = null;
 
 /** Calculates which entities would be the target of a player attack in the current game state. */
 export function calculatePlayerAttackTargets(): ReadonlyArray<GameObject> {
@@ -93,14 +105,14 @@ const attack = (): void => {
 
 const createItemUseListeners = (): void => {
    document.addEventListener("mousedown", e => {
-      if (Player.instance === null || Game.definiteGameState.playerIsDead()) return;
+      if (Player.instance === null || Game.definiteGameState.hotbar === null || Game.definiteGameState.playerIsDead()) return;
 
       // Only attempt to use an item if the game canvas was clicked
       if ((e.target as HTMLElement).id !== "game-canvas") {
          return;
       }
 
-      const selectedItem = Game.definiteGameState.hotbarItemSlots[Game.latencyGameState.selectedHotbarItemSlot];
+      const selectedItem = Game.definiteGameState.hotbar.itemSlots[Game.latencyGameState.selectedHotbarItemSlot];
 
       if (e.button === 0) {
          // Left click
@@ -118,14 +130,14 @@ const createItemUseListeners = (): void => {
    });
 
    document.addEventListener("mouseup", e => {
-      if (Player.instance === null || Game.definiteGameState.playerIsDead()) return;
+      if (Player.instance === null || Game.definiteGameState.hotbar === null || Game.definiteGameState.playerIsDead()) return;
 
       // Only attempt to use an item if the game canvas was clicked
       if ((e.target as HTMLElement).id !== "game-canvas") {
          return;
       }
 
-      const selectedItem = Game.definiteGameState.hotbarItemSlots[Game.latencyGameState.selectedHotbarItemSlot];
+      const selectedItem = Game.definiteGameState.hotbar.itemSlots[Game.latencyGameState.selectedHotbarItemSlot];
 
       if (typeof selectedItem === "undefined") {
          return;
@@ -142,7 +154,7 @@ const createItemUseListeners = (): void => {
    // Stop the context menu from appearing
    document.addEventListener("contextmenu", e => {
       for (const element of e.composedPath()) {
-         if ((element as HTMLElement).id === "inventory") {
+         if ((element as HTMLElement).id === "hotbar") {
             e.preventDefault();
             return;
          }
@@ -159,19 +171,14 @@ const createItemUseListeners = (): void => {
 }
 
 const selectItemSlot = (itemSlot: number): void => {
-   // If an item was seleted before switching, deselect it
-   if (itemSlot !== Game.latencyGameState.selectedHotbarItemSlot && Game.definiteGameState.hotbarItemSlots.hasOwnProperty(Game.latencyGameState.selectedHotbarItemSlot)) {
-      Game.definiteGameState.hotbarItemSlots[Game.latencyGameState.selectedHotbarItemSlot]!.deselect();
+   if (Game.definiteGameState.hotbar === null) {
+      return;
    }
 
    Game.latencyGameState.selectedHotbarItemSlot = itemSlot;
-
-   // Select any new item
-   if (Game.definiteGameState.hotbarItemSlots.hasOwnProperty(itemSlot)) {
-      Game.definiteGameState.hotbarItemSlots[itemSlot]!.select();
-   }
    
    Hotbar_setHotbarSelectedItemSlot(itemSlot);
+   updateActiveItem();
 }
 
 const createHotbarKeyListeners = (): void => {
@@ -198,10 +205,189 @@ export function updateInventoryIsOpen(inventoryIsOpen: boolean): void {
    }
 }
 
+const getInteractClassName = (entity: Entity): string | undefined => {
+   switch (entity.type) {
+      case "barrel": {
+         return undefined;
+      }
+      case "tribesman": {
+         return undefined;
+      }
+      case "campfire":
+      case "furnace": {
+         return "heating-inventory";
+      }
+      default: {
+         throw new Error(`No interact class name for entity type '${entity.type}'`);
+      }
+   }
+}
+
+const getInteractInventories = (entity: Entity): Array<InteractInventoryInfo> => {
+   if (Player.instance === null) {
+      throw new Error("Player was null.");
+   }
+
+   switch (entity.type) {
+      case "barrel": {
+         return [
+            {
+               inventory: (entity as Barrel).inventory
+            }
+         ];
+      }
+      case "tribesman": {
+         return [
+            {
+               inventory: (entity as Tribesman).inventory
+            }
+         ];
+      }
+      case "campfire": {
+         return [
+            {
+               inventory: (entity as Campfire).fuelInventory,
+               className: "fuel-inventory"
+            },
+            {
+               inventory: (entity as Campfire).ingredientInventory,
+               className: "ingredient-inventory"
+            },
+            {
+               inventory: (entity as Campfire).outputInventory,
+               className: "output-inventory"
+            }
+         ];
+      }
+      case "furnace": {
+         return [
+            {
+               inventory: (entity as Furnace).fuelInventory,
+               className: "fuel-inventory"
+            },
+            {
+               inventory: (entity as Furnace).ingredientInventory,
+               className: "ingredient-inventory"
+            },
+            {
+               inventory: (entity as Furnace).outputInventory,
+               className: "output-inventory"
+            }
+         ];
+      }
+      default: {
+         throw new Error(`Can't get interact inventories of entity type '${entity.type}'`);
+      }
+   }
+}
+
+const getInteractEntity = (): Entity | null => {
+   if (Player.instance === null) return null;
+   
+   const minChunkX = Math.max(Math.min(Math.floor((Player.instance.position.x - PLAYER_INTERACT_RANGE) / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+   const maxChunkX = Math.max(Math.min(Math.floor((Player.instance.position.x + PLAYER_INTERACT_RANGE) / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+   const minChunkY = Math.max(Math.min(Math.floor((Player.instance.position.y - PLAYER_INTERACT_RANGE) / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+   const maxChunkY = Math.max(Math.min(Math.floor((Player.instance.position.y + PLAYER_INTERACT_RANGE) / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+   
+   let minInteractionDistance = PLAYER_INTERACT_RANGE + Number.EPSILON;
+   let closestInteractableEntity: Entity | null = null;
+   for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+      for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
+         const chunk = Game.board.getChunk(chunkX, chunkY);
+         for (const entity of chunk.getEntities()) {
+            if (entity instanceof Barrel) {
+               const distance = Player.instance.position.calculateDistanceBetween(entity.position);
+               if (distance < minInteractionDistance) {
+                  closestInteractableEntity = entity;
+                  minInteractionDistance = distance;
+               }
+            } else if (entity.type === "tribesman") {
+               // Only interact with tribesman inventories if the player is of the same tribe
+               if ((entity as Tribesman).tribeID === null || ((entity as Tribesman).tribeID) !== Player.instance.tribeID) {
+                  continue;
+               }
+               
+               const distance = Player.instance.position.calculateDistanceBetween(entity.position);
+               if (distance < minInteractionDistance) {
+                  closestInteractableEntity = entity;
+                  minInteractionDistance = distance;
+               }
+            } else if (entity.type === "campfire") {
+               const distance = Player.instance.position.calculateDistanceBetween(entity.position);
+               if (distance < minInteractionDistance) {
+                  closestInteractableEntity = entity;
+                  minInteractionDistance = distance;
+               }
+            } else if (entity.type === "furnace") {
+               const distance = Player.instance.position.calculateDistanceBetween(entity.position);
+               if (distance < minInteractionDistance) {
+                  closestInteractableEntity = entity;
+                  minInteractionDistance = distance;
+               }
+            }
+         }
+      }
+   }
+
+   return closestInteractableEntity;
+}
+
+export function updateInteractInventoryIsOpen(isOpen: boolean, inventories: Array<InteractInventoryInfo> | null): void {
+   _interactInventoryIsOpen = isOpen;
+
+   InteractInventory_setInventories(inventories);
+}
+
+export function updateInteractInventory(): void {
+   if (Player.instance === null) return;
+   
+   if (_interactInventoryIsOpen) {
+      if (interactInventoryEntity === null) {
+         throw new Error("Interactable entity was null.");
+      }
+
+      const distanceToInteractEntity = Player.instance.position.calculateDistanceBetween(interactInventoryEntity.position);
+      if (distanceToInteractEntity <= PLAYER_INTERACT_RANGE) {
+         const inventories = getInteractInventories(interactInventoryEntity);
+         InteractInventory_setInventories(inventories);
+         InteractInventory_forceUpdate();
+
+         const className = getInteractClassName(interactInventoryEntity);
+         InteractInventory_setElementClass(className);
+      } else {
+         updateInteractInventoryIsOpen(false, null);
+      }
+   }
+}
+
 /** Creates the key listener to toggle the inventory on and off. */
 const createInventoryToggleListeners = (): void => {
    addKeyListener("e", () => {
+      if (_interactInventoryIsOpen) {
+         updateInteractInventoryIsOpen(false, null);
+         return;
+      }
+
       updateInventoryIsOpen(!_inventoryIsOpen);
+   });
+
+   addKeyListener("i", () => {
+      if (_inventoryIsOpen) {
+         updateInventoryIsOpen(false);
+         return;
+      }
+      
+      if (_interactInventoryIsOpen) {
+         updateInteractInventoryIsOpen(false, null);
+      } else {
+         const interactEntity = getInteractEntity();
+         if (interactEntity !== null) {
+            interactInventoryEntity = interactEntity;
+
+            const inventories = getInteractInventories(interactEntity);
+            updateInteractInventoryIsOpen(true, inventories);
+         }
+      }
    });
    addKeyListener("escape", () => {
       if (_inventoryIsOpen) {
@@ -288,5 +474,20 @@ export function updatePlayerMovement(): void {
       }
    } else {
       Player.instance.acceleration = null;
+   }
+}
+
+export function updateActiveItem(): void {
+   if (Game.definiteGameState.hotbar === null) {
+      return;
+   }
+
+   for (let itemSlot = 1; itemSlot <= SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE; itemSlot++) {
+      if (Game.definiteGameState.hotbar.itemSlots.hasOwnProperty(itemSlot)) {
+         const isActive = itemSlot === Game.latencyGameState.selectedHotbarItemSlot;
+
+         const item = Game.definiteGameState.hotbar.itemSlots[itemSlot];
+         item.setIsActive(isActive);
+      }
    }
 }

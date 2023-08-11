@@ -18,10 +18,12 @@ import Tribesman from "./entities/Tribesman";
 import TribeTotem from "./entities/TribeTotem";
 import TribeHut from "./entities/TribeHut";
 import Barrel from "./entities/Barrel";
+import Campfire from "./entities/Campfire";
+import Furnace from "./entities/Furnace";
 
 export type EntityClassType<T extends EntityType> = new (position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, ...clientParams: Parameters<EntityInfoClientArgs[T]>) => Entity;
 
-const ENTITY_CLASS_RECORD: { [id in EntityType]: () => EntityClassType<id>} = {
+const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
    cow: () => Cow,
    zombie: () => Zombie,
    tombstone: () => Tombstone,
@@ -38,7 +40,9 @@ const ENTITY_CLASS_RECORD: { [id in EntityType]: () => EntityClassType<id>} = {
    player: () => Player,
    tribe_totem: () => TribeTotem,
    tribe_hut: () => TribeHut,
-   barrel: () => Barrel
+   barrel: () => Barrel,
+   campfire: () => Campfire,
+   furnace: () => Furnace
 };
 
 export default ENTITY_CLASS_RECORD;

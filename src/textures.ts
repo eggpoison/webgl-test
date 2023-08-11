@@ -35,10 +35,17 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/tree/tree-large.png",
    "entities/workbench/workbench.png",
    "entities/human/human1.png",
+   "entities/human/goblin.png",
+   "entities/human/goblin-ear.png",
+   "entities/human/goblin-ear.png",
+   "entities/human/goblin-warpaint-1.png",
+   "entities/human/goblin-warpaint-2.png",
+   "entities/human/goblin-warpaint-3.png",
+   "entities/human/barbarian.png",
+   "entities/human/frostling.png",
    "entities/boulder/boulder1.png",
    "entities/boulder/boulder2.png",
    "entities/slime/slime.png",
-   "entities/human/temp-player.png",
    "entities/berry-bush1.png",
    "entities/berry-bush2.png",
    "entities/berry-bush3.png",
@@ -76,8 +83,16 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/slime/slime-orb-large.png",
    "entities/slimewisp/slimewisp.png",
    "entities/tribe-totem/tribe-totem.png",
+   "entities/tribe-totem/goblin-banner.png",
+   "entities/tribe-totem/barbarian-banner.png",
+   "entities/tribe-totem/plainspeople-banner.png",
+   "entities/tribe-totem/frostling-banner.png",
    "entities/tribe-hut/tribe-hut.png",
-   "entities/barrel/barrel.png"
+   "entities/tribe-hut/tribe-hut-door.png",
+   "entities/barrel/barrel.png",
+   "armour/frost-armour.png",
+   "entities/campfire/campfire.png",
+   "entities/furnace/furnace.png"
 ];
 
 const textureSourceIsAlreadyIncluded = (src: string): boolean => {

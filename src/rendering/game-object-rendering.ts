@@ -258,15 +258,18 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
                blueTint = lerp(blueTint, -1, redness);
             }
 
+            const u0 = renderInfo.renderPart.flipX ? 1 : 0;
+            const u1 = 1 - u0;
+
             // Calculate the corner positions of the render part
             const [tl, tr, bl, br] = calculateRenderPartVertexPositions(renderInfo.renderPart, renderInfo.totalRotation);
             vertices.push(
-               bl.x, bl.y, 0, 0, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
-               br.x, br.y, 1, 0, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
-               tl.x, tl.y, 0, 1, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
-               tl.x, tl.y, 0, 1, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
-               br.x, br.y, 1, 0, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
-               tr.x, tr.y, 1, 1, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity
+               bl.x, bl.y, u0, 0, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
+               br.x, br.y, u1, 0, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
+               tl.x, tl.y, u0, 1, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
+               tl.x, tl.y, u0, 1, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
+               br.x, br.y, u1, 0, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
+               tr.x, tr.y, u1, 1, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity
             );
          }
          

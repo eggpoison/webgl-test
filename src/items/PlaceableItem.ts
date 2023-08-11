@@ -21,8 +21,8 @@ const PLACEABLE_ENTITY_INFO_RECORD: Partial<Record<ItemType, PlaceableEntityInfo
    },
    tribe_totem: {
       textureSource: "tribe-totem/tribe-totem.png",
-      width: 100,
-      height: 100,
+      width: 120,
+      height: 120,
       canPlace: (): boolean => {
          // The player can only place a tribe totem if they aren't in a tribe
          return Game.tribe === null;
@@ -30,8 +30,8 @@ const PLACEABLE_ENTITY_INFO_RECORD: Partial<Record<ItemType, PlaceableEntityInfo
    },
    tribe_hut: {
       textureSource: "tribe-hut/tribe-hut.png",
-      width: 80,
-      height: 80,
+      width: 88,
+      height: 88,
       canPlace: (): boolean => {
          // The player can't place huts if they aren't in a tribe
          if (Game.tribe === null) return false;
@@ -41,6 +41,16 @@ const PLACEABLE_ENTITY_INFO_RECORD: Partial<Record<ItemType, PlaceableEntityInfo
    },
    barrel: {
       textureSource: "barrel/barrel.png",
+      width: 80,
+      height: 80
+   },
+   campfire: {
+      textureSource: "campfire/campfire.png",
+      width: 104,
+      height: 104
+   },
+   furnace: {
+      textureSource: "furnace/furnace.png",
       width: 80,
       height: 80
    }
@@ -196,10 +206,6 @@ class PlaceableItem extends Item {
       if (this.count === 1) {
          Game.latencyGameState.playerIsPlacingEntity = false;
       }
-   }
-
-   public onRightMouseButtonUp(): void {
-      Game.latencyGameState.playerIsPlacingEntity = false;
    }
 
    protected onSelect(): void {

@@ -11,6 +11,9 @@ const killPlayer = (): void => {
    Game.board.removeGameObject(Player.instance);
    Player.instance = null;
 
+   Game.latencyGameState.resetFlags();
+   Game.definiteGameState.resetFlags();
+
    hideNerdVision();
 }
 

@@ -17,7 +17,7 @@ import Item from "./items/Item";
 import { createPlaceableItemProgram, renderGhostPlaceableItem } from "./items/PlaceableItem";
 import { clearPressedKeys } from "./keyboard-input";
 import { createHitboxShaders, renderEntityHitboxes } from "./rendering/hitbox-rendering";
-import { updatePlayerMovement } from "./player-input";
+import { updateInteractInventory, updatePlayerMovement } from "./player-input";
 import DefiniteGameState from "./game-state/definite-game-state";
 import LatencyGameState from "./game-state/latency-game-state";
 import { clearServerTicks, updateDebugScreenCurrentTime, updateDebugScreenFPS, updateDebugScreenTicks } from "./components/game/nerd-vision/GameInfoDisplay";
@@ -243,6 +243,7 @@ abstract class Game {
          });
       } else {
          createRenderChunkBuffers();
+         recalculateAmbientOcclusion();
       }
    }
 
@@ -266,7 +267,11 @@ abstract class Game {
    }
 
    private static tickPlayerItems(): void {
-      for (const item of Object.values(Game.definiteGameState.hotbarItemSlots)) {
+      if (Game.definiteGameState.hotbar === null) {
+         return;
+      }
+      
+      for (const item of Object.values(Game.definiteGameState.hotbar.itemSlots)) {
          if (typeof item.tick !== "undefined") {
             item.tick();
          }
@@ -346,6 +351,8 @@ abstract class Game {
       renderCursorTooltip();
 
       this.renderNight();
+
+      updateInteractInventory();
    }
 
    public static main(currentTime: number): void {

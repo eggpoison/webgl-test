@@ -23,7 +23,7 @@ class Yeti extends Entity {
             width: Yeti.SIZE,
             height: Yeti.SIZE,
             textureSource: "entities/yeti.png",
-            zIndex: 0
+            zIndex: 1
          }, this)
       );
 
