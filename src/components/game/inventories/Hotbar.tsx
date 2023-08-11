@@ -146,7 +146,7 @@ const Hotbar = () => {
    return <div id="hotbar">
       <div className="flex-balancer inventory">
          <ItemSlot isSelected={false} />
-         <ItemSlot isSelected={false} />
+         {/* <ItemSlot isSelected={false} /> */}
       </div>
 
       <div className="inventory">
@@ -155,7 +155,7 @@ const Hotbar = () => {
 
       <div id="special-item-slots" className="inventory">
          {backpackItemSlotElement}
-         {armourItemSlotElement}
+         {/* {armourItemSlotElement} */}
       </div>
    </div>;
 }

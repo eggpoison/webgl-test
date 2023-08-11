@@ -23,7 +23,7 @@ import LatencyGameState from "./game-state/latency-game-state";
 import { clearServerTicks, updateDebugScreenCurrentTime, updateDebugScreenFPS, updateDebugScreenTicks } from "./components/game/nerd-vision/GameInfoDisplay";
 import { createWorldBorderShaders, renderWorldBorder } from "./rendering/world-border-rendering";
 import { createRenderChunkBuffers, createSolidTileShaders, renderSolidTiles } from "./rendering/tile-rendering/solid-tile-rendering";
-import { createLiquidTileShaders } from "./rendering/tile-rendering/liquid-tile-rendering";
+import { createLiquidTileShaders, renderLiquidTiles } from "./rendering/tile-rendering/liquid-tile-rendering";
 import { createChunkBorderShaders, renderChunkBorders } from "./rendering/chunk-border-rendering";
 import { nerdVisionIsVisible } from "./components/game/nerd-vision/NerdVision";
 import { setFrameProgress } from "./GameObject";
@@ -315,6 +315,7 @@ abstract class Game {
       renderPlayerNames();
 
       renderSolidTiles();
+      renderLiquidTiles();
       // renderAmbientOcclusion();
       // renderWallBorders();
       if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Game.board.gameObjects.hasOwnProperty(this.gameObjectDebugData.gameObjectID)) {

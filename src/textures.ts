@@ -103,7 +103,7 @@ export function loadTextures(): Promise<void> {
    return new Promise(async resolve => {
       // Add solid tile textures
       for (const tileTypeInfo of Object.values(TILE_TYPE_RENDER_INFO_RECORD)) {
-         if (!tileTypeInfo.isLiquid && !textureSourceIsAlreadyIncluded(tileTypeInfo.textureSource)) {
+         if (!textureSourceIsAlreadyIncluded(tileTypeInfo.textureSource)) {
             TEXTURE_SOURCES.push(`tiles/${tileTypeInfo.textureSource}`);
          }
       }

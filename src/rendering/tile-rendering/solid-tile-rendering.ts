@@ -49,10 +49,6 @@ let textureUniformLocation: WebGLUniformLocation;
 let tilePosAttribLocation: GLint;
 let texCoordAttribLocation: GLint;
 
-// let vertexCounts = new Array<number>();
-// let buffers = new Array<WebGLBuffer>();
-// let indexedTextureSources = new Array<string>();
-
 /** Width and height of a render chunk in tiles */
 export const RENDER_CHUNK_SIZE = 8;
 

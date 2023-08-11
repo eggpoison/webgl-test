@@ -2,16 +2,15 @@ import { TileType } from "webgl-test-shared";
 
 interface BaseTileTypeRenderInfo {
    readonly isLiquid?: boolean;
+   readonly textureSource: string;
 }
 
 export interface SolidTileTypeRenderInfo extends BaseTileTypeRenderInfo {
    readonly isLiquid?: false;
-   readonly textureSource: string;
 }
 
 export interface LiquidTileTypeRenderInfo extends BaseTileTypeRenderInfo {
    readonly isLiquid: true;
-   readonly colour: [number, number, number];
 }
 
 type TileTypeRenderInfo = SolidTileTypeRenderInfo | LiquidTileTypeRenderInfo;
@@ -24,8 +23,8 @@ export const TILE_TYPE_RENDER_INFO_RECORD: Record<TileType, TileTypeRenderInfo> 
       textureSource: "dirt.png"
    },
    water: {
-      colour: [0, 240, 228],
-      isLiquid: true
+      isLiquid: true,
+      textureSource: "water.png"
    },
    sludge: {
       // textureSource: "sludge.png"
