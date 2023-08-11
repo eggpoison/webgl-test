@@ -11,9 +11,10 @@ class Furnace extends Entity {
    public type: EntityType = "furnace";
 
    public fuelInventory: Inventory;
+   public ingredientInventory: Inventory;
    public outputInventory: Inventory;
 
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, fuelInventory: InventoryData, outputInventory: InventoryData) {
+   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
       this.attachRenderParts([
@@ -26,6 +27,7 @@ class Furnace extends Entity {
       ]);
 
       this.fuelInventory = createInventoryFromData(this, fuelInventory);
+      this.ingredientInventory = createInventoryFromData(this, ingredientInventory);
       this.outputInventory = createInventoryFromData(this, outputInventory);
    }
 
@@ -33,7 +35,8 @@ class Furnace extends Entity {
       super.updateFromData(entityData);
 
       this.fuelInventory = createInventoryFromData(this, entityData.clientArgs[0]);
-      this.outputInventory = createInventoryFromData(this, entityData.clientArgs[1]);
+      this.ingredientInventory = createInventoryFromData(this, entityData.clientArgs[1]);
+      this.outputInventory = createInventoryFromData(this, entityData.clientArgs[2]);
    }
 }
 

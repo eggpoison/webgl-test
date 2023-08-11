@@ -2,7 +2,6 @@ import { EntityData, HitboxType, ItemType, Point, TribeType } from "webgl-test-s
 import Entity from "./Entity";
 import Hitbox from "../hitboxes/Hitbox";
 import RenderPart from "../render-parts/RenderPart";
-import Player from "./Player";
 
 abstract class TribeMember extends Entity {
    private readonly tribeType: TribeType;
@@ -25,7 +24,7 @@ abstract class TribeMember extends Entity {
 
    protected overrideTileMoveSpeedMultiplier(): number | null {
       // If snow armour is equipped, move at normal speed on snow tiles
-      if (this.armourType === "frost_armour") {
+   if (this.armourType === "frost_armour") {
          if (this.findCurrentTile().type === "snow") {
             return 1;
          }
@@ -83,9 +82,6 @@ abstract class TribeMember extends Entity {
 
    public updateFromData(entityData: EntityData<"player"> | EntityData<"tribesman">): void {
       super.updateFromData(entityData);
-      if (this.id === Player.instance?.id) {
-         console.log(entityData.clientArgs[2]);
-      }
 
       this.tribeID = entityData.clientArgs[0];
       this.armourType = entityData.clientArgs[2];

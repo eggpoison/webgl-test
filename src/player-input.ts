@@ -6,7 +6,7 @@ import Client from "./client/Client";
 import Game from "./Game";
 import { Hotbar_setHotbarSelectedItemSlot } from "./components/game/inventories/Hotbar";
 import GameObject from "./GameObject";
-import { InteractInventory_forceUpdate, InteractInventory_setInventories } from "./components/game/inventories/InteractInventory";
+import { InteractInventoryInfo, InteractInventory_forceUpdate, InteractInventory_setElementClass, InteractInventory_setInventories } from "./components/game/inventories/InteractInventory";
 import { Inventory } from "./items/Item";
 import Barrel from "./entities/Barrel";
 import { BackpackInventoryMenu_setIsVisible } from "./components/game/inventories/BackpackInventory";
@@ -154,7 +154,7 @@ const createItemUseListeners = (): void => {
    // Stop the context menu from appearing
    document.addEventListener("contextmenu", e => {
       for (const element of e.composedPath()) {
-         if ((element as HTMLElement).id === "inventory") {
+         if ((element as HTMLElement).id === "hotbar") {
             e.preventDefault();
             return;
          }
@@ -174,18 +174,8 @@ const selectItemSlot = (itemSlot: number): void => {
    if (Game.definiteGameState.hotbar === null) {
       return;
    }
-   
-   // If an item was seleted before switching, deselect it
-   // if (itemSlot !== Game.latencyGameState.selectedHotbarItemSlot && Game.definiteGameState.hotbar.itemSlots.hasOwnProperty(Game.latencyGameState.selectedHotbarItemSlot)) {
-   //    Game.definiteGameState.hotbar.itemSlots[Game.latencyGameState.selectedHotbarItemSlot]!.deselect();
-   // }
 
    Game.latencyGameState.selectedHotbarItemSlot = itemSlot;
-
-   // Select any new item
-   // if (Game.definiteGameState.hotbar.itemSlots.hasOwnProperty(itemSlot)) {
-   //    Game.definiteGameState.hotbar.itemSlots[itemSlot]!.select();
-   // }
    
    Hotbar_setHotbarSelectedItemSlot(itemSlot);
    updateActiveItem();
@@ -215,12 +205,83 @@ export function updateInventoryIsOpen(inventoryIsOpen: boolean): void {
    }
 }
 
-interface InteractInventoryInfo {
-   readonly entity: Entity;
-   readonly inventories: Array<Inventory>;
+const getInteractClassName = (entity: Entity): string | undefined => {
+   switch (entity.type) {
+      case "barrel": {
+         return undefined;
+      }
+      case "tribesman": {
+         return undefined;
+      }
+      case "campfire":
+      case "furnace": {
+         return "heating-inventory";
+      }
+      default: {
+         throw new Error(`No interact class name for entity type '${entity.type}'`);
+      }
+   }
 }
 
-const getInteractInventory = (): InteractInventoryInfo | null => {
+const getInteractInventories = (entity: Entity): Array<InteractInventoryInfo> => {
+   if (Player.instance === null) {
+      throw new Error("Player was null.");
+   }
+
+   switch (entity.type) {
+      case "barrel": {
+         return [
+            {
+               inventory: (entity as Barrel).inventory
+            }
+         ];
+      }
+      case "tribesman": {
+         return [
+            {
+               inventory: (entity as Tribesman).inventory
+            }
+         ];
+      }
+      case "campfire": {
+         return [
+            {
+               inventory: (entity as Campfire).fuelInventory,
+               className: "fuel-inventory"
+            },
+            {
+               inventory: (entity as Campfire).ingredientInventory,
+               className: "ingredient-inventory"
+            },
+            {
+               inventory: (entity as Campfire).outputInventory,
+               className: "output-inventory"
+            }
+         ];
+      }
+      case "furnace": {
+         return [
+            {
+               inventory: (entity as Furnace).fuelInventory,
+               className: "fuel-inventory"
+            },
+            {
+               inventory: (entity as Furnace).ingredientInventory,
+               className: "ingredient-inventory"
+            },
+            {
+               inventory: (entity as Furnace).outputInventory,
+               className: "output-inventory"
+            }
+         ];
+      }
+      default: {
+         throw new Error(`Can't get interact inventories of entity type '${entity.type}'`);
+      }
+   }
+}
+
+const getInteractEntity = (): Entity | null => {
    if (Player.instance === null) return null;
    
    const minChunkX = Math.max(Math.min(Math.floor((Player.instance.position.x - PLAYER_INTERACT_RANGE) / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
@@ -230,7 +291,6 @@ const getInteractInventory = (): InteractInventoryInfo | null => {
    
    let minInteractionDistance = PLAYER_INTERACT_RANGE + Number.EPSILON;
    let closestInteractableEntity: Entity | null = null;
-   let closestInteractableInventories: Array<Inventory> | null = null;
    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
          const chunk = Game.board.getChunk(chunkX, chunkY);
@@ -239,7 +299,6 @@ const getInteractInventory = (): InteractInventoryInfo | null => {
                const distance = Player.instance.position.calculateDistanceBetween(entity.position);
                if (distance < minInteractionDistance) {
                   closestInteractableEntity = entity;
-                  closestInteractableInventories = [entity.inventory];
                   minInteractionDistance = distance;
                }
             } else if (entity.type === "tribesman") {
@@ -251,21 +310,18 @@ const getInteractInventory = (): InteractInventoryInfo | null => {
                const distance = Player.instance.position.calculateDistanceBetween(entity.position);
                if (distance < minInteractionDistance) {
                   closestInteractableEntity = entity;
-                  closestInteractableInventories = [(entity as Tribesman).inventory];
                   minInteractionDistance = distance;
                }
             } else if (entity.type === "campfire") {
                const distance = Player.instance.position.calculateDistanceBetween(entity.position);
                if (distance < minInteractionDistance) {
                   closestInteractableEntity = entity;
-                  closestInteractableInventories = [(entity as Campfire).inventory];
                   minInteractionDistance = distance;
                }
             } else if (entity.type === "furnace") {
                const distance = Player.instance.position.calculateDistanceBetween(entity.position);
                if (distance < minInteractionDistance) {
                   closestInteractableEntity = entity;
-                  closestInteractableInventories = [(entity as Furnace).fuelInventory, (entity as Furnace).outputInventory];
                   minInteractionDistance = distance;
                }
             }
@@ -273,14 +329,10 @@ const getInteractInventory = (): InteractInventoryInfo | null => {
       }
    }
 
-   if (closestInteractableInventories === null || closestInteractableEntity === null) return null;
-   return {
-      entity: closestInteractableEntity,
-      inventories: closestInteractableInventories
-   };
+   return closestInteractableEntity;
 }
 
-export function updateInteractInventoryIsOpen(isOpen: boolean, inventories: Array<Inventory> | null): void {
+export function updateInteractInventoryIsOpen(isOpen: boolean, inventories: Array<InteractInventoryInfo> | null): void {
    _interactInventoryIsOpen = isOpen;
 
    InteractInventory_setInventories(inventories);
@@ -296,7 +348,12 @@ export function updateInteractInventory(): void {
 
       const distanceToInteractEntity = Player.instance.position.calculateDistanceBetween(interactInventoryEntity.position);
       if (distanceToInteractEntity <= PLAYER_INTERACT_RANGE) {
+         const inventories = getInteractInventories(interactInventoryEntity);
+         InteractInventory_setInventories(inventories);
          InteractInventory_forceUpdate();
+
+         const className = getInteractClassName(interactInventoryEntity);
+         InteractInventory_setElementClass(className);
       } else {
          updateInteractInventoryIsOpen(false, null);
       }
@@ -323,10 +380,12 @@ const createInventoryToggleListeners = (): void => {
       if (_interactInventoryIsOpen) {
          updateInteractInventoryIsOpen(false, null);
       } else {
-         const interactInfo = getInteractInventory();
-         if (interactInfo !== null) {
-            interactInventoryEntity = interactInfo.entity;
-            updateInteractInventoryIsOpen(true, interactInfo.inventories);
+         const interactEntity = getInteractEntity();
+         if (interactEntity !== null) {
+            interactInventoryEntity = interactEntity;
+
+            const inventories = getInteractInventories(interactEntity);
+            updateInteractInventoryIsOpen(true, inventories);
          }
       }
    });

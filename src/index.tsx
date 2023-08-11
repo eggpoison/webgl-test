@@ -15,6 +15,7 @@ import "./css/game/inventories/inventory.css";
 import "./css/game/inventories/hotbar.css";
 import "./css/game/inventories/interact-inventory.css";
 import "./css/game/inventories/backpack-inventory.css";
+import "./css/game/inventories/heating-inventories.css";
 import "./css/game/menus/crafting-menu.css";
 import "./css/game/nerd-vision/nerd-vision.css";
 import "./css/game/nerd-vision/game-info-display.css";

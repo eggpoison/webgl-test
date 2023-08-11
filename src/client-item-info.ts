@@ -38,7 +38,7 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       description: "The raw mutilated flesh of a deceased cow - would not recommend eating."
    },
    cooked_beef: {
-      textureSource: "raw-beef.png",
+      textureSource: "cooked-beef.png",
       name: "Cooked Beef",
       description: "A hearty meal. Could use some seasoning."
    },
@@ -128,7 +128,7 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       description: ""
    },
    campfire: {
-      textureSource: "furnace.png",
+      textureSource: "campfire.png",
       name: "Campfire",
       description: ""
    },

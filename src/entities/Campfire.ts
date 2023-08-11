@@ -6,31 +6,37 @@ import { Inventory } from "../items/Item";
 import { createInventoryFromData } from "../items/item-creation";
 
 class Campfire extends Entity {
-   private static readonly SIZE = 80;
+   private static readonly SIZE = 104;
 
    public type: EntityType = "campfire";
 
-   public inventory: Inventory;
+   public fuelInventory: Inventory;
+   public ingredientInventory: Inventory;
+   public outputInventory: Inventory;
 
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, inventory: InventoryData) {
+   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
       this.attachRenderParts([
          new RenderPart({
             width: Campfire.SIZE,
             height: Campfire.SIZE,
-            textureSource: "entities/furnace/furnace.png",
+            textureSource: "entities/campfire/campfire.png",
             zIndex: 0
          }, this)
       ]);
 
-      this.inventory = createInventoryFromData(this, inventory);
+      this.fuelInventory = createInventoryFromData(this, fuelInventory);
+      this.ingredientInventory = createInventoryFromData(this, ingredientInventory);
+      this.outputInventory = createInventoryFromData(this, outputInventory);
    }
 
    public updateFromData(entityData: EntityData<"campfire">): void {
       super.updateFromData(entityData);
 
-      this.inventory = createInventoryFromData(this, entityData.clientArgs[0]);
+      this.fuelInventory = createInventoryFromData(this, entityData.clientArgs[0]);
+      this.ingredientInventory = createInventoryFromData(this, entityData.clientArgs[1]);
+      this.outputInventory = createInventoryFromData(this, entityData.clientArgs[2]);
    }
 }
 

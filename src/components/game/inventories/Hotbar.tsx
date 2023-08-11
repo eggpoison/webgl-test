@@ -30,18 +30,6 @@ const Hotbar = () => {
    const [armourInventory, setArmourInventory] = useState<Inventory | null>(null);
    const [selectedItemSlot, setSelectedItemSlot] = useState(1);
 
-   const leftClickHotbarItemSlot = useCallback((e: MouseEvent, itemSlot: number): void => {
-      if (hotbarInventory !== null) {
-         leftClickItemSlot(e, hotbarInventory, itemSlot);
-      }
-   }, [hotbarInventory]);
-
-   const rightClickHotbarItemSlot = useCallback((e: MouseEvent, itemSlot: number): void => {
-      if (hotbarInventory !== null) {
-         rightClickItemSlot(e, hotbarInventory, itemSlot);
-      }
-   }, [hotbarInventory]);
-
    const equipBackpack = (backpackInventory: Inventory): void => {
       if (Player.instance === null) return;
 
@@ -119,11 +107,11 @@ const Hotbar = () => {
       if (typeof item !== "undefined") {
          const imageSrc = require("../../../images/items/" + CLIENT_ITEM_INFO_RECORD[item.type].textureSource);
          hotbarItemSlots.push(
-            <ItemSlot onClick={e => leftClickHotbarItemSlot(e, itemSlot)} onContextMenu={e => rightClickHotbarItemSlot(e, itemSlot)} isSelected={itemSlot === selectedItemSlot} picturedItemImageSrc={imageSrc} itemCount={item.count} key={itemSlot} />
+            <ItemSlot onClick={e => leftClickItemSlot(e, hotbarInventory, itemSlot)} onContextMenu={e => rightClickItemSlot(e, hotbarInventory, itemSlot)} isSelected={itemSlot === selectedItemSlot} picturedItemImageSrc={imageSrc} itemCount={item.count} key={itemSlot} />
          );
       } else {
          hotbarItemSlots.push(
-            <ItemSlot onClick={e => leftClickHotbarItemSlot(e, itemSlot)} onContextMenu={e => rightClickHotbarItemSlot(e, itemSlot)} isSelected={itemSlot === selectedItemSlot} key={itemSlot} />
+            <ItemSlot onClick={e => leftClickItemSlot(e, hotbarInventory, itemSlot)} onContextMenu={e => rightClickItemSlot(e, hotbarInventory, itemSlot)} isSelected={itemSlot === selectedItemSlot} key={itemSlot} />
          );
       }
    }
@@ -131,7 +119,6 @@ const Hotbar = () => {
    let backpackItemSlotElement: JSX.Element;
    if (backpackItemSlot !== null) {
       const backpackItemInfo = CLIENT_ITEM_INFO_RECORD[backpackItemSlot.type];
-      console.log(backpackItemSlot);
       
       const imageSrc = require("../../../images/items/" + backpackItemInfo.textureSource);
       backpackItemSlotElement = <ItemSlot onClick={e => clickBackpackItemSlot(e)} isSelected={false} picturedItemImageSrc={imageSrc} />

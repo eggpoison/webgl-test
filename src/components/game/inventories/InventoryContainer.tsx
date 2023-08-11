@@ -5,9 +5,10 @@ import ItemSlot from "./ItemSlot";
 
 interface InventoryProps {
    readonly inventory: Inventory;
+   readonly className?: string;
 }
 
-const InventoryContainer = ({ inventory }: InventoryProps) => {
+const InventoryContainer = ({ inventory, className }: InventoryProps) => {
    const itemSlots = new Array<JSX.Element>();
    
    for (let y = 0; y < inventory.height; y++) {
@@ -37,7 +38,7 @@ const InventoryContainer = ({ inventory }: InventoryProps) => {
       );
    }
 
-   return <div className="inventory-container">
+   return <div className={className !== "undefined" ? `inventory-container ${className}` : undefined}>
       {itemSlots}
    </div>;
 }

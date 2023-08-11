@@ -1,0 +1,23 @@
+#interact-inventory.heating-inventory {
+   width: 20rem;
+   height: 12rem;
+   /* padding: 3rem; */
+}
+#interact-inventory.heating-inventory .fuel-inventory {
+   position: absolute;
+   left: 5rem;
+   top: 2rem;
+   transform: translateX(-50%);
+}
+#interact-inventory.heating-inventory .ingredient-inventory {
+   position: absolute;
+   left: 5rem;
+   bottom: 2rem;
+   transform: translateX(-50%);
+}
+#interact-inventory.heating-inventory .output-inventory {
+   position: absolute;
+   right: 5rem;
+   top: 50%;
+   transform: translate(50%, -50%);
+}

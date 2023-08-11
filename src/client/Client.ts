@@ -79,7 +79,7 @@ abstract class Client {
                try {
                   this.unloadGameDataPacket(gameDataPacket);
                } catch (error: unknown) {
-                  console.log(error);
+                  console.warn(error);
                   throw new Error("Error when trying to unload game data packet!");
                }
             });

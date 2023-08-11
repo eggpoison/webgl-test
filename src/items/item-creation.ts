@@ -44,9 +44,6 @@ export function createItem(itemType: ItemType, count: number, id: number): Item 
 }
 
 export function createInventoryFromData(entity: Entity, inventoryData: InventoryData): Inventory {
-   if (typeof inventoryData === "undefined") {
-      console.log("a");
-   }
    const itemSlots: ItemSlots = {};
    for (const [itemSlot, itemData] of Object.entries(inventoryData.itemSlots)) {
       const item = createItem(itemData.type, itemData.count, itemData.id);
@@ -58,7 +55,7 @@ export function createInventoryFromData(entity: Entity, inventoryData: Inventory
       width: inventoryData.width,
       height: inventoryData.height,
       entityID: entity.id,
-      inventoryName: "inventory"
+      inventoryName: inventoryData.inventoryName
    };
 
    return inventory;

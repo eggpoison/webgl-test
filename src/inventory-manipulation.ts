@@ -46,7 +46,7 @@ export function rightClickItemSlot(e: MouseEvent, inventory: Inventory, itemSlot
    if (inventory.itemSlots.hasOwnProperty(itemSlot)) {
       const clickedItem = inventory.itemSlots[itemSlot];
 
-      if (Game.definiteGameState.heldItemSlot === null) {
+      if (Game.definiteGameState.heldItemSlot === null || !Game.definiteGameState.heldItemSlot.itemSlots.hasOwnProperty(1)) {
          const numItemsInSlot = clickedItem.count;
          const pickupCount = Math.ceil(numItemsInSlot / 2);
 
