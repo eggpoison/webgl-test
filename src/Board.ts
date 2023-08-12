@@ -1,5 +1,5 @@
 import Entity from "./entities/Entity";
-import { SETTINGS, Point, Vector, ServerTileUpdateData, rotatePoint } from "webgl-test-shared";
+import { SETTINGS, Point, Vector, ServerTileUpdateData, rotatePoint, WaterRockData } from "webgl-test-shared";
 import Chunk from "./Chunk";
 import DroppedItem from "./items/DroppedItem";
 import { Tile } from "./Tile";
@@ -17,6 +17,8 @@ class Board {
    private readonly tiles: Array<Array<Tile>>;
    private readonly chunks: Array<Array<Chunk>>;
 
+   public readonly waterRocks: ReadonlyArray<WaterRockData>;
+
    public gameObjects: Record<number, GameObject> = {};
    public entities: Record<number, Entity> = {};
    public droppedItems: Record<number, DroppedItem> = {};
@@ -24,8 +26,9 @@ class Board {
 
    public particles: Record<number, Particle> = {};
 
-   constructor(tiles: Array<Array<Tile>>) {
+   constructor(tiles: Array<Array<Tile>>, waterRocks: ReadonlyArray<WaterRockData>) {
       this.tiles = tiles;
+      this.waterRocks = waterRocks;
       
       // Create the chunk array
       this.chunks = new Array<Array<Chunk>>();

@@ -1,21 +1,47 @@
-import { SETTINGS, Vector } from "webgl-test-shared";
+import { SETTINGS, TileType, Vector } from "webgl-test-shared";
 import { createWebGLProgram, gl } from "../../webgl";
 import Game from "../../Game";
 import { getTexture } from "../../textures";
 import Camera from "../../Camera";
 import { Tile } from "../../Tile";
-import Player from "../../entities/Player";
-// const SHALLOW_WATER_COLOUR = [95/255, 151/255, 196/255] as const;
+
 const SHALLOW_WATER_COLOUR = [118/255, 185/255, 242/255] as const;
-// const DEEP_WATER_COLOUR = [87/255, 87/255, 140/255] as const;
 const DEEP_WATER_COLOUR = [86/255, 141/255, 184/255] as const;
 
-const NEIGHBOURING_TILE_OFFSETS = [
+const ADJACENT_TILE_OFFSETS = [
    [0, 0],
    [-1, 0],
    [0, -1],
    [-1, -1]
 ];
+
+const NEIGHBOURING_TILE_OFFSETS = [
+   [1, 0],
+   [-1, 0],
+   [0, -1],
+   [-1, -1],
+   [1, 1],
+   [-1, 1],
+   [0, 1],
+   [1, -1]
+];
+
+const TRANSITION_TEXTURES: Record<TileType, string | null> = {
+   "grass": "tiles/gravel.png",
+   "dirt": "tiles/gravel.png",
+   "rock": "tiles/gravel.png",
+   "darkRock": null,
+   "ice": "tiles/gravel.png",
+   "lava": "tiles/gravel.png",
+   "permafrost": "tiles/gravel.png",
+   "sludge": "tiles/gravel.png",
+   "sandstone": "tiles/gravel.png",
+   "slime": "tiles/gravel.png",
+   "magma": "tiles/gravel.png",
+   "water": null, // Transitions can't occur between two water tiles
+   "snow": "tiles/gravel.png",
+   "sand": "tiles/gravel.png"
+}
 
 // Base shaders
 
@@ -73,6 +99,37 @@ void main() {
 }
 `;
 
+// Rock shaders
+
+const rockVertexShaderText = `
+precision mediump float;
+
+attribute vec2 a_position;
+attribute vec2 a_texCoord;
+
+varying vec2 v_texCoord;
+ 
+void main() {
+   gl_Position = vec4(a_position, 0.0, 1.0);
+
+   v_texCoord = a_texCoord;
+}
+`;
+
+const rockFragmentShaderText = `
+precision mediump float;
+ 
+uniform sampler2D u_texture;
+ 
+varying vec2 v_texCoord;
+ 
+void main() {
+   vec4 textureColour = texture2D(u_texture, v_texCoord);
+   textureColour.a *= 0.4;
+   gl_FragColor = textureColour;
+}
+`;
+
 // Noise shaders
 
 const noiseVertexShaderText = `
@@ -118,25 +175,150 @@ void main() {
 }
 `;
 
+// Transition shaders
+
+const transitionVertexShaderText = `
+precision mediump float;
+
+attribute vec2 a_position;
+attribute vec2 a_texCoord;
+attribute float a_topLeftMarker;
+attribute float a_topRightMarker;
+attribute float a_bottomLeftMarker;
+attribute float a_bottomRightMarker;
+attribute float a_topMarker;
+attribute float a_rightMarker;
+attribute float a_leftMarker;
+attribute float a_bottomMarker;
+
+varying vec2 v_texCoord;
+varying float v_topLeftMarker;
+varying float v_topRightMarker;
+varying float v_bottomLeftMarker;
+varying float v_bottomRightMarker;
+varying float v_topMarker;
+varying float v_rightMarker;
+varying float v_leftMarker;
+varying float v_bottomMarker;
+ 
+void main() {
+   gl_Position = vec4(a_position, 0.0, 1.0);
+
+   v_texCoord = a_texCoord;
+   v_topLeftMarker = a_topLeftMarker;
+   v_topRightMarker = a_topRightMarker;
+   v_bottomLeftMarker = a_bottomLeftMarker;
+   v_bottomRightMarker = a_bottomRightMarker;
+   v_topMarker = a_topMarker;
+   v_rightMarker = a_rightMarker;
+   v_leftMarker = a_leftMarker;
+   v_bottomMarker = a_bottomMarker;
+}
+`;
+
+const transitionFragmentShaderText = `
+precision mediump float;
+
+uniform sampler2D u_transitionTexture;
+ 
+varying vec2 v_texCoord;
+varying float v_topLeftMarker;
+varying float v_topRightMarker;
+varying float v_bottomLeftMarker;
+varying float v_bottomRightMarker;
+varying float v_topMarker;
+varying float v_rightMarker;
+varying float v_leftMarker;
+varying float v_bottomMarker;
+
+void main() {
+   float topLeftDist = 1.0 - (distance(vec2(0.0, 1.0), v_texCoord) * (1.0 - v_topLeftMarker));
+   float topRightDist = 1.0 - (distance(vec2(1.0, 1.0), v_texCoord) * (1.0 - v_topRightMarker));
+   float bottomLeftDist = 1.0 - (distance(vec2(0.0, 0.0), v_texCoord) * (1.0 - v_bottomLeftMarker));
+   float bottomRightDist = 1.0 - (distance(vec2(1.0, 0.0), v_texCoord) * (1.0 - v_bottomRightMarker));
+
+   float dist = 0.0;
+   if (v_topLeftMarker < 0.5) {
+      dist = max(dist, topLeftDist - 0.5);
+   }
+   if (v_topRightMarker < 0.5) {
+      dist = max(dist, topRightDist - 0.5);
+   }
+   if (v_bottomLeftMarker < 0.5) {
+      dist = max(dist, bottomLeftDist - 0.5);
+   }
+   if (v_bottomRightMarker < 0.5) {
+      dist = max(dist, bottomRightDist - 0.5);
+   }
+
+   float topDist = v_texCoord.y * (1.0 - v_topMarker);
+   float rightDist = (1.0 - v_texCoord.x) * (1.0 - v_rightMarker);
+   float leftDist = v_texCoord.x * (1.0 - v_leftMarker);
+   float bottomDist = (1.0 - v_texCoord.y) * (1.0 - v_bottomMarker);
+   if (v_topMarker < 0.5) {
+      dist = max(dist, topDist - 0.5);
+   }
+   if (v_rightMarker < 0.5) {
+      dist = max(dist, rightDist - 0.5);
+   }
+   if (v_leftMarker < 0.5) {
+      dist = max(dist, leftDist - 0.5);
+   }
+   if (v_bottomMarker < 0.5) {
+      dist = max(dist, bottomDist - 0.5);
+   }
+
+   dist = pow(dist, 0.3);
+   
+   vec4 textureColour = texture2D(u_transitionTexture, v_texCoord);
+   textureColour.a *= dist;
+   
+   gl_FragColor = textureColour;
+}
+`;
+/*
+
+*/
+
 let baseProgram: WebGLProgram;
+let rockProgram: WebGLProgram;
 let noiseProgram: WebGLProgram;
+let transitionProgram: WebGLProgram;
 
 let baseTextureUniformLocation: WebGLUniformLocation;
 let shallowWaterColourUniformLocation: WebGLUniformLocation;
 let deepWaterColourUniformLocation: WebGLUniformLocation;
 
+let rockProgramTextureUniformLocation: WebGLUniformLocation;
+
 let noiseTextureUniformLocation: WebGLUniformLocation;
+
+let transitionTextureUniformLocation: WebGLUniformLocation;
 
 let baseProgramPositionAttribLocation: GLint;
 let baseProgramCoordAttribLocation: GLint;
-let topLeftLandDistanceAttribLocation: GLint;
-let topRightLandDistanceAttribLocation: GLint;
-let bottomLeftLandDistanceAttribLocation: GLint;
-let bottomRightLandDistanceAttribLocation: GLint;
+let baseProgramTopLeftLandDistanceAttribLocation: GLint;
+let baseProgramTopRightLandDistanceAttribLocation: GLint;
+let baseProgramBottomLeftLandDistanceAttribLocation: GLint;
+let baseProgramBottomRightLandDistanceAttribLocation: GLint;
+
+let rockProgramPositionAttribLocation: GLint;
+let rockProgramCoordAttribLocation: GLint;
 
 let noiseProgramPositionAttribLocation: GLint;
 let noiseProgramTexCoordAttribLocation: GLint;
 let noiseOffsetAttribLocation: GLint;
+
+let transitionProgramPositionAttribLocation: GLint;
+let transitionProgramTexCoordAttribLocation: GLint;
+let transitionProgramTopLeftMarkerAttribLocation: GLint;
+let transitionProgramTopRightMarkerAttribLocation: GLint;
+let transitionProgramBottomLeftMarkerAttribLocation: GLint;
+let transitionProgramBottomRightMarkerAttribLocation: GLint;
+let transitionProgramTopMarkerAttribLocation: GLint;
+let transitionProgramRightMarkerAttribLocation: GLint;
+let transitionProgramLeftMarkerAttribLocation: GLint;
+let transitionProgramBottomMarkerAttribLocation: GLint;
 
 export function createWaterShaders(): void {
    // 
@@ -151,10 +333,21 @@ export function createWaterShaders(): void {
 
    baseProgramPositionAttribLocation = gl.getAttribLocation(baseProgram, "a_position");
    baseProgramCoordAttribLocation = gl.getAttribLocation(baseProgram, "a_coord");
-   topLeftLandDistanceAttribLocation = gl.getAttribLocation(baseProgram, "a_topLeftLandDistance");
-   topRightLandDistanceAttribLocation = gl.getAttribLocation(baseProgram, "a_topRightLandDistance");
-   bottomLeftLandDistanceAttribLocation = gl.getAttribLocation(baseProgram, "a_bottomLeftLandDistance");
-   bottomRightLandDistanceAttribLocation = gl.getAttribLocation(baseProgram, "a_bottomRightLandDistance");
+   baseProgramTopLeftLandDistanceAttribLocation = gl.getAttribLocation(baseProgram, "a_topLeftLandDistance");
+   baseProgramTopRightLandDistanceAttribLocation = gl.getAttribLocation(baseProgram, "a_topRightLandDistance");
+   baseProgramBottomLeftLandDistanceAttribLocation = gl.getAttribLocation(baseProgram, "a_bottomLeftLandDistance");
+   baseProgramBottomRightLandDistanceAttribLocation = gl.getAttribLocation(baseProgram, "a_bottomRightLandDistance");
+   
+   // 
+   // Rock program
+   // 
+
+   rockProgram = createWebGLProgram(rockVertexShaderText, rockFragmentShaderText);
+
+   rockProgramTextureUniformLocation = gl.getUniformLocation(rockProgram, "u_texture")!;
+
+   rockProgramPositionAttribLocation = gl.getAttribLocation(rockProgram, "a_position");
+   rockProgramCoordAttribLocation = gl.getAttribLocation(rockProgram, "a_texCoord");
    
    // 
    // Noise program
@@ -167,6 +360,25 @@ export function createWaterShaders(): void {
    noiseProgramPositionAttribLocation = gl.getAttribLocation(noiseProgram, "a_position");
    noiseProgramTexCoordAttribLocation = gl.getAttribLocation(noiseProgram, "a_texCoord");
    noiseOffsetAttribLocation = gl.getAttribLocation(noiseProgram, "a_noiseOffset");
+
+   // 
+   // Transition program
+   // 
+
+   transitionProgram = createWebGLProgram(transitionVertexShaderText, transitionFragmentShaderText);
+
+   transitionTextureUniformLocation = gl.getUniformLocation(transitionProgram, "u_transitionTexture")!;
+
+   transitionProgramPositionAttribLocation = gl.getAttribLocation(transitionProgram, "a_position");
+   transitionProgramTexCoordAttribLocation = gl.getAttribLocation(transitionProgram, "a_texCoord");
+   transitionProgramTopLeftMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_topLeftMarker");
+   transitionProgramTopRightMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_topRightMarker");
+   transitionProgramBottomLeftMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_bottomLeftMarker");
+   transitionProgramBottomRightMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_bottomRightMarker");
+   transitionProgramTopMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_topMarker");
+   transitionProgramRightMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_rightMarker");
+   transitionProgramLeftMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_leftMarker");
+   transitionProgramBottomMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_bottomMarker");
 }
 
 const calculateVisibleWaterTiles = (): ReadonlyArray<Tile> => {
@@ -191,7 +403,7 @@ const calculateVisibleWaterTiles = (): ReadonlyArray<Tile> => {
 
 const calculateDistanceToLand = (tileX: number, tileY: number): number => {
    // Check if any neighbouring tiles are land tiles
-   for (const offset of NEIGHBOURING_TILE_OFFSETS) {
+   for (const offset of ADJACENT_TILE_OFFSETS) {
       const x = tileX + offset[0];
       const y = tileY + offset[1];
       if (!Game.board.tileIsInBoard(x, y)) {
@@ -200,6 +412,24 @@ const calculateDistanceToLand = (tileX: number, tileY: number): number => {
 
       const tile = Game.board.getTile(x, y);
       if (tile.type !== "water") {
+         return 0;
+      }
+   }
+
+   return 1;
+}
+
+const calculateDistanceToWater = (tileX: number, tileY: number): number => {
+   // Check if any neighbouring tiles are water tiles
+   for (const offset of ADJACENT_TILE_OFFSETS) {
+      const x = tileX + offset[0];
+      const y = tileY + offset[1];
+      if (!Game.board.tileIsInBoard(x, y)) {
+         continue;
+      }
+
+      const tile = Game.board.getTile(x, y);
+      if (tile.type === "water") {
          return 0;
       }
    }
@@ -259,10 +489,11 @@ const calculateNoiseVertices = (tiles: ReadonlyArray<Tile>): ReadonlyArray<numbe
       const speed = 0.3;
       let offsetMagnitude: number;
       if (isDiagonal) {
-         offsetMagnitude = (Game.lastTime * speed / 1000 / Math.SQRT2) % 1;
+         offsetMagnitude = (Game.lastTime * speed / 1000 / Math.SQRT2 + tile.flowOffset) % 1;
       } else {
-         offsetMagnitude = (Game.lastTime * speed / 1000) % 1;
+         offsetMagnitude = (Game.lastTime * speed / 1000 + tile.flowOffset) % 1;
       }
+      
       let offsetVector: Vector;
       if (isDiagonal) {
          offsetVector = new Vector(offsetMagnitude * Math.SQRT2, tile.flowDirection!);
@@ -284,11 +515,119 @@ const calculateNoiseVertices = (tiles: ReadonlyArray<Tile>): ReadonlyArray<numbe
    return vertices;
 }
 
+const waterEdgeDist = (tileX: number, tileY: number): number => {
+   if (!Game.board.tileIsInBoard(tileX, tileY)) {
+      return 1;
+   }
+
+   const tile = Game.board.getTile(tileX, tileY);
+   if (tile.type === "water") {
+      return 0;
+   }
+   return 1;
+}
+
+const calculateTransitionVertices = (visibleTiles: ReadonlyArray<Tile>): Record<string, ReadonlyArray<number>> => {
+   const edgeTileIndexes = new Set<number>();
+
+   for (const tile of visibleTiles) {
+      for (const offset of NEIGHBOURING_TILE_OFFSETS) {
+         const tileX = tile.x + offset[0];
+         const tileY = tile.y + offset[1];
+         if (Game.board.tileIsInBoard(tileX, tileY)) {
+            const tile = Game.board.getTile(tileX, tileY);
+            if (tile.type !== "water") {
+               const tileIndex = tileY * SETTINGS.BOARD_DIMENSIONS + tileX;
+               edgeTileIndexes.add(tileIndex);
+            }
+         }
+      }
+   }
+
+   const vertexRecord: Record<string, Array<number>> = {};
+   
+   for (const tileIndex of edgeTileIndexes) {
+      const tileX = tileIndex % SETTINGS.BOARD_DIMENSIONS;
+      const tileY = Math.floor(tileIndex / SETTINGS.BOARD_DIMENSIONS);
+
+      const tile = Game.board.getTile(tileX, tileY);
+
+      const transitionTextureSource = TRANSITION_TEXTURES[tile.type];
+      if (transitionTextureSource === null) {
+         continue;
+      }
+      if (!vertexRecord.hasOwnProperty(transitionTextureSource)) {
+         vertexRecord[transitionTextureSource] = [];
+      }
+
+      let x1 = tile.x * SETTINGS.TILE_SIZE;
+      let x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
+      let y1 = tile.y * SETTINGS.TILE_SIZE;
+      let y2 = (tile.y + 1) * SETTINGS.TILE_SIZE;
+
+      x1 = Camera.calculateXCanvasPosition(x1);
+      x2 = Camera.calculateXCanvasPosition(x2);
+      y1 = Camera.calculateYCanvasPosition(y1);
+      y2 = Camera.calculateYCanvasPosition(y2);
+
+      const bottomLeftWaterDistance = calculateDistanceToWater(tile.x, tile.y);
+      const bottomRightWaterDistance = calculateDistanceToWater(tile.x + 1, tile.y);
+      const topLeftWaterDistance = calculateDistanceToWater(tile.x, tile.y + 1);
+      const topRightWaterDistance = calculateDistanceToWater(tile.x + 1, tile.y + 1);
+
+      const topMarker = waterEdgeDist(tile.x, tile.y + 1);
+      const rightMarker = waterEdgeDist(tile.x - 1, tile.y);
+      const leftMarker = waterEdgeDist(tile.x + 1, tile.y);
+      const bottomMarker = waterEdgeDist(tile.x, tile.y - 1);
+      
+      vertexRecord[transitionTextureSource].push(
+         x1, y1, 0, 0, bottomLeftWaterDistance, bottomRightWaterDistance, topLeftWaterDistance, topRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
+         x2, y1, 1, 0, bottomLeftWaterDistance, bottomRightWaterDistance, topLeftWaterDistance, topRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
+         x1, y2, 0, 1, bottomLeftWaterDistance, bottomRightWaterDistance, topLeftWaterDistance, topRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
+         x1, y2, 0, 1, bottomLeftWaterDistance, bottomRightWaterDistance, topLeftWaterDistance, topRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
+         x2, y1, 1, 0, bottomLeftWaterDistance, bottomRightWaterDistance, topLeftWaterDistance, topRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
+         x2, y2, 1, 1, bottomLeftWaterDistance, bottomRightWaterDistance, topLeftWaterDistance, topRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker
+      );
+   }
+
+   return vertexRecord;
+}
+
+const calculateRockVertices = (): ReadonlyArray<number> => {
+   const vertices = new Array<number>();
+   
+   for (const rockData of Game.board.waterRocks) {
+      console.log(rockData.position);
+      let x1 = (rockData.position[0] - 16);
+      let x2 = (rockData.position[0] + 16);
+      let y1 = (rockData.position[1] - 16);
+      let y2 = (rockData.position[1] + 16);
+
+      x1 = Camera.calculateXCanvasPosition(x1);
+      x2 = Camera.calculateXCanvasPosition(x2);
+      y1 = Camera.calculateYCanvasPosition(y1);
+      y2 = Camera.calculateYCanvasPosition(y2);
+
+      vertices.push(
+         x1, y1, 0, 0,
+         x2, y1, 1, 0,
+         x1, y2, 0, 1,
+         x1, y2, 0, 1,
+         x2, y1, 1, 0,
+         x2, y2, 1, 1
+      );
+   }
+
+   return vertices;
+}
+
 export function renderLiquidTiles(): void {
    const visibleTiles = calculateVisibleWaterTiles();
 
    const baseVertices = calculateBaseVertices(visibleTiles);
+   const rockVertices = calculateRockVertices();
    const noiseVertices = calculateNoiseVertices(visibleTiles);
+   const transitionVertexRecord = calculateTransitionVertices(visibleTiles);
    
    // 
    // Base program
@@ -304,18 +643,18 @@ export function renderLiquidTiles(): void {
    
       gl.vertexAttribPointer(baseProgramPositionAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 0);
       gl.vertexAttribPointer(baseProgramCoordAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(bottomLeftLandDistanceAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(bottomRightLandDistanceAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(topLeftLandDistanceAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(topRightLandDistanceAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(baseProgramBottomLeftLandDistanceAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(baseProgramBottomRightLandDistanceAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(baseProgramTopLeftLandDistanceAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(baseProgramTopRightLandDistanceAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
       
       // Enable the attributes
       gl.enableVertexAttribArray(baseProgramPositionAttribLocation);
       gl.enableVertexAttribArray(baseProgramCoordAttribLocation);
-      gl.enableVertexAttribArray(bottomLeftLandDistanceAttribLocation);
-      gl.enableVertexAttribArray(bottomRightLandDistanceAttribLocation);
-      gl.enableVertexAttribArray(topLeftLandDistanceAttribLocation);
-      gl.enableVertexAttribArray(topRightLandDistanceAttribLocation);
+      gl.enableVertexAttribArray(baseProgramBottomLeftLandDistanceAttribLocation);
+      gl.enableVertexAttribArray(baseProgramBottomRightLandDistanceAttribLocation);
+      gl.enableVertexAttribArray(baseProgramTopLeftLandDistanceAttribLocation);
+      gl.enableVertexAttribArray(baseProgramTopRightLandDistanceAttribLocation);
       
       gl.uniform1i(baseTextureUniformLocation, 0);
       gl.uniform3f(shallowWaterColourUniformLocation, ...SHALLOW_WATER_COLOUR);
@@ -330,13 +669,42 @@ export function renderLiquidTiles(): void {
    }
    
    // 
+   // Rock program
+   // 
+
+   gl.useProgram(rockProgram);
+
+   gl.enable(gl.BLEND);
+   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+   
+   {
+      // Create tile buffer
+      const buffer = gl.createBuffer()!;
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(rockVertices), gl.STATIC_DRAW);
+   
+      gl.vertexAttribPointer(rockProgramPositionAttribLocation, 2, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0);
+      gl.vertexAttribPointer(rockProgramCoordAttribLocation, 2, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+      
+      // Enable the attributes
+      gl.enableVertexAttribArray(rockProgramPositionAttribLocation);
+      gl.enableVertexAttribArray(rockProgramCoordAttribLocation);
+      
+      gl.uniform1i(rockProgramTextureUniformLocation, 0);
+
+      const texture = getTexture("tiles/water-rock.png");
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      
+      // Draw the tile
+      gl.drawArrays(gl.TRIANGLES, 0, rockVertices.length / 4);
+   }
+   
+   // 
    // Noise program
    // 
    
    gl.useProgram(noiseProgram);
-
-   gl.enable(gl.BLEND);
-   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
    {
       // Create tile buffer
@@ -362,6 +730,52 @@ export function renderLiquidTiles(): void {
    
       // Draw the tile
       gl.drawArrays(gl.TRIANGLES, 0, noiseVertices.length / 6);
+   }
+
+   // 
+   // Transition program
+   // 
+
+   gl.useProgram(transitionProgram);
+
+   for (const [textureSource, vertices] of Object.entries(transitionVertexRecord)) {
+      // Create tile buffer
+      const buffer = gl.createBuffer()!;
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+   
+      gl.vertexAttribPointer(transitionProgramPositionAttribLocation, 2, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 0);
+      gl.vertexAttribPointer(transitionProgramTexCoordAttribLocation, 2, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(transitionProgramBottomLeftMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(transitionProgramBottomRightMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(transitionProgramTopLeftMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(transitionProgramTopRightMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(transitionProgramTopMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 8 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(transitionProgramRightMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 9 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(transitionProgramLeftMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 10 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(transitionProgramBottomMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 11 * Float32Array.BYTES_PER_ELEMENT);
+   
+      // Enable the attributes
+      gl.enableVertexAttribArray(noiseProgramPositionAttribLocation);
+      gl.enableVertexAttribArray(noiseProgramTexCoordAttribLocation);
+      gl.enableVertexAttribArray(transitionProgramBottomLeftMarkerAttribLocation);
+      gl.enableVertexAttribArray(transitionProgramBottomRightMarkerAttribLocation);
+      gl.enableVertexAttribArray(transitionProgramTopLeftMarkerAttribLocation);
+      gl.enableVertexAttribArray(transitionProgramTopRightMarkerAttribLocation);
+      gl.enableVertexAttribArray(transitionProgramTopMarkerAttribLocation);
+      gl.enableVertexAttribArray(transitionProgramRightMarkerAttribLocation);
+      gl.enableVertexAttribArray(transitionProgramLeftMarkerAttribLocation);
+      gl.enableVertexAttribArray(transitionProgramBottomMarkerAttribLocation);
+      
+      gl.uniform1i(transitionTextureUniformLocation, 0);
+               
+      // Set transition texture
+      const transitionTexture = getTexture(textureSource);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, transitionTexture);
+   
+      // Draw the tile
+      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 12);
    }
 
    gl.disable(gl.BLEND);

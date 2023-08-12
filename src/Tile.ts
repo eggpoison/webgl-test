@@ -9,6 +9,7 @@ export class Tile implements TileInfo {
    public isWall: boolean;
 
    public flowDirection?: number;
+   public flowOffset = Math.random();
 
    constructor(x: number, y: number, tileInfo: TileInfo) {
       this.x = x;
