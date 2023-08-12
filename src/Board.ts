@@ -14,8 +14,8 @@ export type EntityHitboxInfo = {
 }
 
 class Board {
-   private tiles: Array<Array<Tile>>;
-   private chunks: Array<Array<Chunk>>;
+   private readonly tiles: Array<Array<Tile>>;
+   private readonly chunks: Array<Array<Chunk>>;
 
    public gameObjects: Record<number, GameObject> = {};
    public entities: Record<number, Entity> = {};

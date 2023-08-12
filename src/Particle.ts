@@ -114,6 +114,14 @@ const PARTICLE_INFO: Record<ParticleType, ParticleInfo> = {
    [ParticleType.slimePuddle]: {
       size: [28, 28],
       renderLayer: ParticleRenderLayer.low
+   },
+   [ParticleType.waterSplash]: {
+      size: [32, 32],
+      renderLayer: ParticleRenderLayer.low
+   },
+   [ParticleType.waterDroplet]: {
+      size: [6, 6],
+      renderLayer: ParticleRenderLayer.low
    }
 };
 

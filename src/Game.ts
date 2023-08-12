@@ -23,7 +23,7 @@ import LatencyGameState from "./game-state/latency-game-state";
 import { clearServerTicks, updateDebugScreenCurrentTime, updateDebugScreenFPS, updateDebugScreenTicks } from "./components/game/nerd-vision/GameInfoDisplay";
 import { createWorldBorderShaders, renderWorldBorder } from "./rendering/world-border-rendering";
 import { createRenderChunkBuffers, createSolidTileShaders, renderSolidTiles } from "./rendering/tile-rendering/solid-tile-rendering";
-import { createLiquidTileShaders, renderLiquidTiles } from "./rendering/tile-rendering/liquid-tile-rendering";
+import { createWaterShaders, renderLiquidTiles } from "./rendering/tile-rendering/water-rendering";
 import { createChunkBorderShaders, renderChunkBorders } from "./rendering/chunk-border-rendering";
 import { nerdVisionIsVisible } from "./components/game/nerd-vision/NerdVision";
 import { setFrameProgress } from "./GameObject";
@@ -94,9 +94,9 @@ abstract class Game {
 
    public static hasInitialised = false;
 
-   private static lastTime: number = 0;
+   public static lastTime = 0;
    /** Amount of time the game is through the current frame */
-   private static lag: number = 0;
+   private static lag = 0;
 
    public static cursorPosition: Point | null;
 
@@ -220,7 +220,7 @@ abstract class Game {
             createTextCanvasContext();
             
             createSolidTileShaders();
-            createLiquidTileShaders();
+            createWaterShaders();
             createEntityShaders();
             createWorldBorderShaders();
             createPlaceableItemProgram();
@@ -326,13 +326,13 @@ abstract class Game {
          renderChunkBorders();
       }
 
-      // renderParticles(ParticleRenderLayer.low);
+      renderParticles(ParticleRenderLayer.low);
 
       renderGameObjects(Object.values(this.board.droppedItems));
       renderGameObjects(Object.values(this.board.entities));
       renderGameObjects(Object.values(this.board.projectiles));
 
-      // renderParticles(ParticleRenderLayer.high);
+      renderParticles(ParticleRenderLayer.high);
 
       if (nerdVisionIsVisible()) {
          renderEntityHitboxes();

@@ -200,6 +200,15 @@ abstract class GameObject extends RenderObject {
          }
       }
 
+      if (typeof tile.flowDirection !== "undefined") {
+         const pushVector = new Vector(240 / SETTINGS.TPS, tile.flowDirection);
+         if (this.velocity === null) {
+            this.velocity = pushVector;
+         } else {
+            this.velocity.add(pushVector);
+         }
+      }
+
       // Apply velocity
       if (this.velocity !== null) {
          const velocity = this.velocity.copy();

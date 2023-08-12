@@ -8,6 +8,8 @@ export class Tile implements TileInfo {
    public biomeName: BiomeName;
    public isWall: boolean;
 
+   public flowDirection?: number;
+
    constructor(x: number, y: number, tileInfo: TileInfo) {
       this.x = x;
       this.y = y;
