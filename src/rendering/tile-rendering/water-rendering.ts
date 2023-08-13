@@ -338,8 +338,6 @@ void main() {
    vec4 foam = texture2D(u_foamTexture, foamCoord);
    foam.a *= steppingStoneColour.a;
 
-   foam.a *= 0.6;
-
    gl_FragColor = foam;
 }
 `;

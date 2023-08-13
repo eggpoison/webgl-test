@@ -4,7 +4,7 @@ interface Options {
     * If true, then all entity hitboxes will be shown
     * @default false
     */
-   showEntityHitboxes: boolean;
+   showHitboxes: boolean;
    /**
     * If true, then chunk borders will be displayed in a wireframe.
     * @default false
@@ -14,7 +14,7 @@ interface Options {
 
 const OPTIONS: Options = {
    nightVisionIsEnabled: false,
-   showEntityHitboxes: false,
+   showHitboxes: false,
    showChunkBorders: false
 };
 

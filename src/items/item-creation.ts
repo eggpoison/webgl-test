@@ -32,7 +32,8 @@ const ITEM_CLASS_RECORD: { [T in ItemType]: () => GenericItem<T> } = {
    barrel: () => PlaceableItem,
    frost_armour: () => ArmourItem,
    campfire: () => PlaceableItem,
-   furnace: () => PlaceableItem
+   furnace: () => PlaceableItem,
+   wooden_bow: () => Item
 };
 
 export function createItem(itemType: ItemType, count: number, id: number): Item {

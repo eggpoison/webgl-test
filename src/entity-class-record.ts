@@ -20,6 +20,7 @@ import TribeHut from "./entities/TribeHut";
 import Barrel from "./entities/Barrel";
 import Campfire from "./entities/Campfire";
 import Furnace from "./entities/Furnace";
+import Snowball from "./entities/Snowball";
 
 export type EntityClassType<T extends EntityType> = new (position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, ...clientParams: Parameters<EntityInfoClientArgs[T]>) => Entity;
 
@@ -42,7 +43,8 @@ const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
    tribe_hut: () => TribeHut,
    barrel: () => Barrel,
    campfire: () => Campfire,
-   furnace: () => Furnace
+   furnace: () => Furnace,
+   snowball: () => Snowball
 };
 
 export default ENTITY_CLASS_RECORD;

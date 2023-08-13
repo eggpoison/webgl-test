@@ -136,6 +136,11 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       textureSource: "furnace.png",
       name: "Furnace",
       description: ""
+   },
+   wooden_bow: {
+      textureSource: "wooden-bow.png",
+      name: "Wooden Bow",
+      description: ""
    }
 };
 

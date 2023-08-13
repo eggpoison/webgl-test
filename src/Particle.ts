@@ -1,4 +1,4 @@
-import { ParticleData, ParticleType, Point, Vector } from "webgl-test-shared";
+import { ParticleData, ParticleTint, ParticleType, Point, Vector } from "webgl-test-shared";
 
 export enum ParticleRenderLayer {
    low, // Below game objects
@@ -122,6 +122,10 @@ const PARTICLE_INFO: Record<ParticleType, ParticleInfo> = {
    [ParticleType.waterDroplet]: {
       size: [6, 6],
       renderLayer: ParticleRenderLayer.low
+   },
+   [ParticleType.snow]: {
+      size: [4, 4],
+      renderLayer: ParticleRenderLayer.low
    }
 };
 
@@ -143,6 +147,8 @@ class Particle {
    public opacity: number;
    public scale: number;
 
+   public tint: ParticleTint;
+
    public readonly width: number;
    public readonly height: number;
 
@@ -159,13 +165,10 @@ class Particle {
       this.rotation = data.rotation;
       this.opacity = data.opacity;
       this.scale = data.scale;
+      this.tint = data.tint;
 
       [this.width, this.height] = PARTICLE_INFO[data.type].size;
       this.renderLayer = PARTICLE_INFO[data.type].renderLayer;
-   }
-
-   public tick(): void {
-
    }
 
    public updateFromData(data: ParticleData): void {
@@ -175,6 +178,7 @@ class Particle {
       this.rotation = data.rotation;
       this.opacity = data.opacity;
       this.scale = data.scale;
+      this.tint = data.tint;
    }
 }
 

@@ -34,7 +34,8 @@ export const PARTICLE_TEXTURES: Record<ParticleType, string> = {
    [ParticleType.poisonDroplet]: "particles/poison-droplet.png",
    [ParticleType.slimePuddle]: "particles/slime-puddle.png",
    [ParticleType.waterSplash]: "particles/water-splash.png",
-   [ParticleType.waterDroplet]: "particles/water-droplet.png"
+   [ParticleType.waterDroplet]: "particles/water-droplet.png",
+   [ParticleType.snow]: "particles/snow.png",
 };
 
 const vertexShaderText = `
@@ -43,15 +44,18 @@ precision mediump float;
 attribute vec2 a_position;
 attribute vec2 a_texCoord;
 attribute float a_opacity;
+attribute vec3 a_tint;
 
 varying vec2 v_texCoord;
 varying float v_opacity;
+varying vec3 v_tint;
 
 void main() {
    gl_Position = vec4(a_position, 0.0, 1.0);
 
    v_texCoord = a_texCoord;
    v_opacity = a_opacity;
+   v_tint = a_tint;
 }
 `;
 
@@ -62,11 +66,30 @@ uniform sampler2D u_texture;
 
 varying vec2 v_texCoord;
 varying float v_opacity;
+varying vec3 v_tint;
 
 void main() {
    vec4 textureColour = texture2D(u_texture, v_texCoord);
+   
+   if (v_tint.r > 0.0) {
+      textureColour.r = mix(textureColour.r, 1.0, v_tint.r);
+   } else {
+      textureColour.r = mix(textureColour.r, 0.0, -v_tint.r);
+   }
+   if (v_tint.g > 0.0) {
+      textureColour.g = mix(textureColour.g, 1.0, v_tint.g);
+   } else {
+      textureColour.g = mix(textureColour.g, 0.0, -v_tint.g);
+   }
+   if (v_tint.b > 0.0) {
+      textureColour.b = mix(textureColour.b, 1.0, v_tint.b);
+   } else {
+      textureColour.b = mix(textureColour.b, 0.0, -v_tint.b);
+   }
 
-   gl_FragColor = vec4(textureColour.r, textureColour.g, textureColour.b, textureColour.a * v_opacity);
+   textureColour.a *= v_opacity;
+
+   gl_FragColor = textureColour;
 }
 `;
 
@@ -76,6 +99,7 @@ let textureUniformLocation: WebGLUniformLocation;
 let positionAttribLocation: number;
 let texCoordAttribLocation: number;
 let opacityAttribLocation: number;
+let tintAttribLocation: number;
 
 export function createParticleShaders(): void {
    program = createWebGLProgram(vertexShaderText, fragmentShaderText);
@@ -84,6 +108,7 @@ export function createParticleShaders(): void {
    positionAttribLocation = gl.getAttribLocation(program, "a_position");
    texCoordAttribLocation = gl.getAttribLocation(program, "a_texCoord");
    opacityAttribLocation = gl.getAttribLocation(program, "a_opacity");
+   tintAttribLocation = gl.getAttribLocation(program, "a_tint");
 }
 
 type CategorisedParticles = Record<string, Array<Particle>>;
@@ -173,14 +198,14 @@ export function renderParticles(renderLayer: ParticleRenderLayer): void {
          topRight = new Point(Camera.calculateXCanvasPosition(topRight.x), Camera.calculateYCanvasPosition(topRight.y));
          bottomLeft = new Point(Camera.calculateXCanvasPosition(bottomLeft.x), Camera.calculateYCanvasPosition(bottomLeft.y));
          bottomRight = new Point(Camera.calculateXCanvasPosition(bottomRight.x), Camera.calculateYCanvasPosition(bottomRight.y));
-
+         
          vertices.push(
-            bottomLeft.x, bottomLeft.y, 0, 0, particle.opacity,
-            bottomRight.x, bottomRight.y, 1, 0, particle.opacity,
-            topLeft.x, topLeft.y, 0, 1, particle.opacity,
-            topLeft.x, topLeft.y, 0, 1, particle.opacity,
-            bottomRight.x, bottomRight.y, 1, 0, particle.opacity,
-            topRight.x, topRight.y, 1, 1, particle.opacity
+            bottomLeft.x, bottomLeft.y, 0, 0, particle.opacity, ...particle.tint,
+            bottomRight.x, bottomRight.y, 1, 0, particle.opacity, ...particle.tint,
+            topLeft.x, topLeft.y, 0, 1, particle.opacity, ...particle.tint,
+            topLeft.x, topLeft.y, 0, 1, particle.opacity, ...particle.tint,
+            bottomRight.x, bottomRight.y, 1, 0, particle.opacity, ...particle.tint,
+            topRight.x, topRight.y, 1, 1, particle.opacity, ...particle.tint
          );
       }
       vertexArrays.push(vertices);
@@ -203,14 +228,16 @@ export function renderParticles(renderLayer: ParticleRenderLayer): void {
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
       gl.bufferData(gl.ARRAY_BUFFER, float32Vertices, gl.STATIC_DRAW);
 
-      gl.vertexAttribPointer(positionAttribLocation, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
-      gl.vertexAttribPointer(texCoordAttribLocation, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(opacityAttribLocation, 1, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(positionAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 0);
+      gl.vertexAttribPointer(texCoordAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(opacityAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(tintAttribLocation, 3, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
 
       // Enable the attributes
       gl.enableVertexAttribArray(positionAttribLocation);
       gl.enableVertexAttribArray(texCoordAttribLocation);
       gl.enableVertexAttribArray(opacityAttribLocation);
+      gl.enableVertexAttribArray(tintAttribLocation);
 
       gl.uniform1i(textureUniformLocation, 0);
 
@@ -219,7 +246,7 @@ export function renderParticles(renderLayer: ParticleRenderLayer): void {
       gl.bindTexture(gl.TEXTURE_2D, texture);
 
       // Draw the vertices
-      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 5);
+      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 8);
    }
 
    gl.disable(gl.BLEND);

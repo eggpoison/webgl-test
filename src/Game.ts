@@ -323,7 +323,7 @@ abstract class Game {
          renderTriangleDebugData(this.gameObjectDebugData);
       }
       renderWorldBorder();
-      if (nerdVisionIsVisible()) {
+      if (nerdVisionIsVisible() && OPTIONS.showChunkBorders) {
          renderChunkBorders();
       }
 
@@ -335,7 +335,7 @@ abstract class Game {
 
       renderParticles(ParticleRenderLayer.high);
 
-      if (nerdVisionIsVisible()) {
+      if (nerdVisionIsVisible() && OPTIONS.showHitboxes) {
          renderEntityHitboxes();
       }
       if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Game.board.gameObjects.hasOwnProperty(this.gameObjectDebugData.gameObjectID)) {
