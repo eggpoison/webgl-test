@@ -65,10 +65,10 @@ class Board {
 
          const size = RIVER_STEPPING_STONE_SIZES[steppingStone.size];
 
-         const minChunkX = Math.floor((steppingStone.position.x - size/2) / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE);
-         const maxChunkX = Math.floor((steppingStone.position.x + size/2) / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE);
-         const minChunkY = Math.floor((steppingStone.position.y - size/2) / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE);
-         const maxChunkY = Math.floor((steppingStone.position.y + size/2) / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE);
+         const minChunkX = Math.max(Math.min(Math.floor((steppingStone.position.x - size/2) / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+         const maxChunkX = Math.max(Math.min(Math.floor((steppingStone.position.x + size/2) / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+         const minChunkY = Math.max(Math.min(Math.floor((steppingStone.position.y - size/2) / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+         const maxChunkY = Math.max(Math.min(Math.floor((steppingStone.position.y + size/2) / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
          
          for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
             for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {

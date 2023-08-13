@@ -33,6 +33,7 @@ import { createWallBorderShaders, renderWallBorders } from "./rendering/wall-bor
 import { createParticleShaders, renderParticles } from "./rendering/particle-rendering";
 import { ParticleRenderLayer } from "./Particle";
 import Tribe from "./Tribe";
+import OPTIONS from "./options";
 
 const nightVertexShaderText = `
 precision mediump float;
@@ -81,8 +82,8 @@ let numRenders = 0;
 abstract class Game {
    private static readonly NIGHT_DARKNESS = 0.6;
 
-   public static _ticks: number;
-   public static _time: number;
+   private static _ticks: number;
+   private static _time: number;
 
    public static board: Board;
    
@@ -351,7 +352,9 @@ abstract class Game {
       this.cursorPosition = calculateCursorWorldPosition();
       renderCursorTooltip();
 
-      this.renderNight();
+      if (!OPTIONS.nightVisionIsEnabled) {
+         this.renderNight();
+      }
 
       updateInteractInventory();
    }

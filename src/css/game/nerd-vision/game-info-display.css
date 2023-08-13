@@ -1,22 +1,38 @@
 @import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;700;900&display=swap');
 
 #game-info-display {
+   background-color: rgba(0, 0, 0, 0.8);
    padding: 0.5rem;
+   border: 2px solid #666;
    position: absolute;
    top: 0;
-   right: 0;
-   bottom: 0;
    left: 0;
    z-index: 2;
-   pointer-events: none;
 }
 #game-info-display * {
    font-family: "Inconsolata";
    font-weight: 700;
    user-select: none;
-   pointer-events: none;
 }
 #game-info-display p {
-   color: #000;
+   color: #fff;
    margin: 0.5rem 0;
+}
+
+#game-info-display ul {
+   background-color: #000;
+   padding: 0.2rem;
+   margin: 0;
+   list-style-type: none;
+}
+
+#game-info-display input {
+   outline: none;
+}
+
+#game-info-display ul label.enabled {
+   color: #fff;
+}
+#game-info-display ul label {
+   color: #ccc;
 }

@@ -1,4 +1,5 @@
-type Options = {
+interface Options {
+   nightVisionIsEnabled: boolean;
    /**
     * If true, then all entity hitboxes will be shown
     * @default false
@@ -12,8 +13,9 @@ type Options = {
 }
 
 const OPTIONS: Options = {
+   nightVisionIsEnabled: false,
    showEntityHitboxes: false,
    showChunkBorders: false
-}
+};
 
 export default OPTIONS;
