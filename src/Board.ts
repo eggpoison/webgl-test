@@ -1,5 +1,5 @@
 import Entity from "./entities/Entity";
-import { SETTINGS, Point, Vector, ServerTileUpdateData, rotatePoint, WaterRockData, RiverSteppingStoneData } from "webgl-test-shared";
+import { SETTINGS, Point, Vector, ServerTileUpdateData, rotatePoint, WaterRockData, RiverSteppingStoneData, RiverSteppingStoneSize, RIVER_STEPPING_STONE_SIZES } from "webgl-test-shared";
 import Chunk from "./Chunk";
 import DroppedItem from "./items/DroppedItem";
 import { Tile } from "./Tile";
@@ -8,9 +8,15 @@ import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import Projectile from "./projectiles/Projectile";
 import Particle from "./Particle";
 
-export type EntityHitboxInfo = {
+export interface EntityHitboxInfo {
    readonly vertexPositions: readonly [Point, Point, Point, Point];
-   readonly sideAxes: ReadonlyArray<Vector>
+   readonly sideAxes: ReadonlyArray<Vector>;
+}
+
+export interface RiverSteppingStone {
+   readonly position: Point;
+   readonly rotation: number;
+   readonly size: RiverSteppingStoneSize;
 }
 
 class Board {
@@ -45,11 +51,27 @@ class Board {
       }
 
       // Add river stepping stones to chunks
-      for (const riverSteppingStone of riverSteppingStones) {
-         const chunkX = Math.floor(riverSteppingStone.position[0] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE);
-         const chunkY = Math.floor(riverSteppingStone.position[1] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE);
-         const chunk = this.chunks[chunkX][chunkY];
-         chunk.riverSteppingStones.push(riverSteppingStone);
+      for (const steppingStoneData of riverSteppingStones) {
+         // Create the client-side information for the stepping stone
+         const steppingStone: RiverSteppingStone = {
+            position: Point.unpackage(steppingStoneData.position),
+            rotation: steppingStoneData.rotation,
+            size: steppingStoneData.size
+         };
+
+         const size = RIVER_STEPPING_STONE_SIZES[steppingStone.size];
+
+         const minChunkX = Math.floor((steppingStone.position.x - size/2) / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE);
+         const maxChunkX = Math.floor((steppingStone.position.x + size/2) / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE);
+         const minChunkY = Math.floor((steppingStone.position.y - size/2) / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE);
+         const maxChunkY = Math.floor((steppingStone.position.y + size/2) / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE);
+         
+         for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+            for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
+               const chunk = this.getChunk(chunkX, chunkY);
+               chunk.riverSteppingStones.push(steppingStone);
+            }
+         }
       }
    }
 

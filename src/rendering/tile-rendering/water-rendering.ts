@@ -4,6 +4,7 @@ import Game from "../../Game";
 import { getTexture } from "../../textures";
 import Camera from "../../Camera";
 import { Tile } from "../../Tile";
+import { RiverSteppingStone } from "../../Board";
 
 const SHALLOW_WATER_COLOUR = [118/255, 185/255, 242/255] as const;
 const DEEP_WATER_COLOUR = [86/255, 141/255, 184/255] as const;
@@ -775,133 +776,135 @@ const calculateRockVertices = (): Record<string, ReadonlyArray<number>> => {
    return vertexRecord;
 }
 
-const calculateFoamVertices = (): Record<string, ReadonlyArray<number>> => {
-   const vertexRecord: Record<string, Array<number>> = {};
-
-   const visibleChunkBounds = Camera.getVisibleChunkBounds();
+const calculateVisibleSteppingStones = (): ReadonlySet<RiverSteppingStone> => {
+   const visibleSteppingStones = new Set<RiverSteppingStone>();
    
+   const visibleChunkBounds = Camera.getVisibleChunkBounds();
    for (let chunkX = visibleChunkBounds[0]; chunkX <= visibleChunkBounds[1]; chunkX++) {
       for (let chunkY = visibleChunkBounds[2]; chunkY <= visibleChunkBounds[3]; chunkY++) {
          const chunk = Game.board.getChunk(chunkX, chunkY);
          for (const riverSteppingStone of chunk.riverSteppingStones) {
-            const size = RIVER_STEPPING_STONE_SIZES[riverSteppingStone.size];
-            
-            let x1 = (riverSteppingStone.position[0] - size/2);
-            let x2 = (riverSteppingStone.position[0] + size/2);
-            let y1 = (riverSteppingStone.position[1] - size/2);
-            let y2 = (riverSteppingStone.position[1] + size/2);
-
-            const tileX = Math.floor(riverSteppingStone.position[0] / SETTINGS.TILE_SIZE);
-            const tileY = Math.floor(riverSteppingStone.position[1] / SETTINGS.TILE_SIZE);
-            const tile = Game.board.getTile(tileX, tileY);
-            
-            if (typeof tile.flowDirection === "undefined") {
-               continue;
-            }
-   
-            let topLeft = new Point(x1, y2);
-            let topRight = new Point(x2, y2);
-            let bottomRight = new Point(x2, y1);
-            let bottomLeft = new Point(x1, y1);
-
-            const pos = new Point(riverSteppingStone.position[0], riverSteppingStone.position[1]);
-
-            // Rotate the points to match the entity's rotation
-            topLeft = rotatePoint(topLeft, pos, riverSteppingStone.rotation);
-            topRight = rotatePoint(topRight, pos, riverSteppingStone.rotation);
-            bottomRight = rotatePoint(bottomRight, pos, riverSteppingStone.rotation);
-            bottomLeft = rotatePoint(bottomLeft, pos, riverSteppingStone.rotation);
-
-            const offset = new Vector(FOAM_OFFSET, tile.flowDirection).convertToPoint();
-            topLeft.x -= offset.x;
-            topRight.x -= offset.x;
-            bottomLeft.x -= offset.x;
-            bottomRight.x -= offset.x;
-            topLeft.y -= offset.y;
-            topRight.y -= offset.y;
-            bottomLeft.y -= offset.y;
-            bottomRight.y -= offset.y;
-
-            topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));
-            topRight = new Point(Camera.calculateXCanvasPosition(topRight.x), Camera.calculateYCanvasPosition(topRight.y));
-            bottomRight = new Point(Camera.calculateXCanvasPosition(bottomRight.x), Camera.calculateYCanvasPosition(bottomRight.y));
-            bottomLeft = new Point(Camera.calculateXCanvasPosition(bottomLeft.x), Camera.calculateYCanvasPosition(bottomLeft.y));
-
-            // Create the foam scrolling effect
-            const foamTextureOffsetMagnitude = (Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000 + tile.flowOffset);
-            const foamTextureOffset = new Vector(foamTextureOffsetMagnitude, -riverSteppingStone.rotation + tile.flowDirection).convertToPoint();
-            foamTextureOffset.x = foamTextureOffset.x % 1;
-            foamTextureOffset.y = foamTextureOffset.y % 1;
-            
-            const textureSource = RIVER_STEPPING_STONE_TEXTURES[riverSteppingStone.size];
-            if (!vertexRecord.hasOwnProperty(textureSource)) {
-               vertexRecord[textureSource] = [];
-            }
-
-            vertexRecord[textureSource].push(
-               bottomLeft.x, bottomLeft.y, 0, 0, foamTextureOffset.x, foamTextureOffset.y,
-               bottomRight.x, bottomRight.y, 1, 0, foamTextureOffset.x, foamTextureOffset.y,
-               topLeft.x, topLeft.y, 0, 1, foamTextureOffset.x, foamTextureOffset.y,
-               topLeft.x, topLeft.y, 0, 1, foamTextureOffset.x, foamTextureOffset.y,
-               bottomRight.x, bottomRight.y, 1, 0, foamTextureOffset.x, foamTextureOffset.y,
-               topRight.x, topRight.y, 1, 1, foamTextureOffset.x, foamTextureOffset.y
-            );
+            visibleSteppingStones.add(riverSteppingStone);
          }
       }
+   }
+
+   return visibleSteppingStones;
+}
+
+const calculateFoamVertices = (visibleSteppingStones: ReadonlySet<RiverSteppingStone>): Record<string, ReadonlyArray<number>> => {
+   const vertexRecord: Record<string, Array<number>> = {};
+
+   for (const steppingStone of visibleSteppingStones) {
+      const size = RIVER_STEPPING_STONE_SIZES[steppingStone.size];
+      
+      let x1 = (steppingStone.position.x - size/2);
+      let x2 = (steppingStone.position.x + size/2);
+      let y1 = (steppingStone.position.y - size/2);
+      let y2 = (steppingStone.position.y + size/2);
+
+      const tileX = Math.floor(steppingStone.position.x / SETTINGS.TILE_SIZE);
+      const tileY = Math.floor(steppingStone.position.y / SETTINGS.TILE_SIZE);
+      const tile = Game.board.getTile(tileX, tileY);
+      
+      if (typeof tile.flowDirection === "undefined") {
+         continue;
+      }
+
+      let topLeft = new Point(x1, y2);
+      let topRight = new Point(x2, y2);
+      let bottomRight = new Point(x2, y1);
+      let bottomLeft = new Point(x1, y1);
+
+      const pos = new Point(steppingStone.position.x, steppingStone.position.y);
+
+      // Rotate the points to match the entity's rotation
+      topLeft = rotatePoint(topLeft, pos, steppingStone.rotation);
+      topRight = rotatePoint(topRight, pos, steppingStone.rotation);
+      bottomRight = rotatePoint(bottomRight, pos, steppingStone.rotation);
+      bottomLeft = rotatePoint(bottomLeft, pos, steppingStone.rotation);
+
+      const offset = new Vector(FOAM_OFFSET, tile.flowDirection).convertToPoint();
+      topLeft.x -= offset.x;
+      topRight.x -= offset.x;
+      bottomLeft.x -= offset.x;
+      bottomRight.x -= offset.x;
+      topLeft.y -= offset.y;
+      topRight.y -= offset.y;
+      bottomLeft.y -= offset.y;
+      bottomRight.y -= offset.y;
+
+      topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));
+      topRight = new Point(Camera.calculateXCanvasPosition(topRight.x), Camera.calculateYCanvasPosition(topRight.y));
+      bottomRight = new Point(Camera.calculateXCanvasPosition(bottomRight.x), Camera.calculateYCanvasPosition(bottomRight.y));
+      bottomLeft = new Point(Camera.calculateXCanvasPosition(bottomLeft.x), Camera.calculateYCanvasPosition(bottomLeft.y));
+
+      // Create the foam scrolling effect
+      const foamTextureOffsetMagnitude = (Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000 + tile.flowOffset);
+      const foamTextureOffset = new Vector(foamTextureOffsetMagnitude, -steppingStone.rotation + tile.flowDirection).convertToPoint();
+      foamTextureOffset.x = foamTextureOffset.x % 1;
+      foamTextureOffset.y = foamTextureOffset.y % 1;
+      
+      const textureSource = RIVER_STEPPING_STONE_TEXTURES[steppingStone.size];
+      if (!vertexRecord.hasOwnProperty(textureSource)) {
+         vertexRecord[textureSource] = [];
+      }
+
+      vertexRecord[textureSource].push(
+         bottomLeft.x, bottomLeft.y, 0, 0, foamTextureOffset.x, foamTextureOffset.y,
+         bottomRight.x, bottomRight.y, 1, 0, foamTextureOffset.x, foamTextureOffset.y,
+         topLeft.x, topLeft.y, 0, 1, foamTextureOffset.x, foamTextureOffset.y,
+         topLeft.x, topLeft.y, 0, 1, foamTextureOffset.x, foamTextureOffset.y,
+         bottomRight.x, bottomRight.y, 1, 0, foamTextureOffset.x, foamTextureOffset.y,
+         topRight.x, topRight.y, 1, 1, foamTextureOffset.x, foamTextureOffset.y
+      );
    }
 
    return vertexRecord;
 }
 
-const calculateSteppingStoneVertices = (): Record<string, ReadonlyArray<number>> => {
+const calculateSteppingStoneVertices = (visibleSteppingStones: ReadonlySet<RiverSteppingStone>): Record<string, ReadonlyArray<number>> => {
    const vertexRecord: Record<string, Array<number>> = {};
 
-   const visibleChunkBounds = Camera.getVisibleChunkBounds();
-   
-   for (let chunkX = visibleChunkBounds[0]; chunkX <= visibleChunkBounds[1]; chunkX++) {
-      for (let chunkY = visibleChunkBounds[2]; chunkY <= visibleChunkBounds[3]; chunkY++) {
-         const chunk = Game.board.getChunk(chunkX, chunkY);
-         for (const riverSteppingStone of chunk.riverSteppingStones) {
-            const size = RIVER_STEPPING_STONE_SIZES[riverSteppingStone.size];
-            
-            let x1 = (riverSteppingStone.position[0] - size/2);
-            let x2 = (riverSteppingStone.position[0] + size/2);
-            let y1 = (riverSteppingStone.position[1] - size/2);
-            let y2 = (riverSteppingStone.position[1] + size/2);
-   
-            let topLeft = new Point(x1, y2);
-            let topRight = new Point(x2, y2);
-            let bottomRight = new Point(x2, y1);
-            let bottomLeft = new Point(x1, y1);
+   for (const steppingStone of visibleSteppingStones) {
+      const size = RIVER_STEPPING_STONE_SIZES[steppingStone.size];
+      
+      let x1 = (steppingStone.position.x - size/2);
+      let x2 = (steppingStone.position.x + size/2);
+      let y1 = (steppingStone.position.y - size/2);
+      let y2 = (steppingStone.position.y + size/2);
 
-            const pos = new Point(riverSteppingStone.position[0], riverSteppingStone.position[1]);
+      let topLeft = new Point(x1, y2);
+      let topRight = new Point(x2, y2);
+      let bottomRight = new Point(x2, y1);
+      let bottomLeft = new Point(x1, y1);
 
-            // Rotate the points to match the entity's rotation
-            topLeft = rotatePoint(topLeft, pos, riverSteppingStone.rotation);
-            topRight = rotatePoint(topRight, pos, riverSteppingStone.rotation);
-            bottomRight = rotatePoint(bottomRight, pos, riverSteppingStone.rotation);
-            bottomLeft = rotatePoint(bottomLeft, pos, riverSteppingStone.rotation);
+      const pos = new Point(steppingStone.position.x, steppingStone.position.y);
 
-            topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));
-            topRight = new Point(Camera.calculateXCanvasPosition(topRight.x), Camera.calculateYCanvasPosition(topRight.y));
-            bottomRight = new Point(Camera.calculateXCanvasPosition(bottomRight.x), Camera.calculateYCanvasPosition(bottomRight.y));
-            bottomLeft = new Point(Camera.calculateXCanvasPosition(bottomLeft.x), Camera.calculateYCanvasPosition(bottomLeft.y));
+      // Rotate the points to match the entity's rotation
+      topLeft = rotatePoint(topLeft, pos, steppingStone.rotation);
+      topRight = rotatePoint(topRight, pos, steppingStone.rotation);
+      bottomRight = rotatePoint(bottomRight, pos, steppingStone.rotation);
+      bottomLeft = rotatePoint(bottomLeft, pos, steppingStone.rotation);
 
-            const textureSource = RIVER_STEPPING_STONE_TEXTURES[riverSteppingStone.size];
-            if (!vertexRecord.hasOwnProperty(textureSource)) {
-               vertexRecord[textureSource] = [];
-            }
+      topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));
+      topRight = new Point(Camera.calculateXCanvasPosition(topRight.x), Camera.calculateYCanvasPosition(topRight.y));
+      bottomRight = new Point(Camera.calculateXCanvasPosition(bottomRight.x), Camera.calculateYCanvasPosition(bottomRight.y));
+      bottomLeft = new Point(Camera.calculateXCanvasPosition(bottomLeft.x), Camera.calculateYCanvasPosition(bottomLeft.y));
 
-            vertexRecord[textureSource].push(
-               bottomLeft.x, bottomLeft.y, 0, 0,
-               bottomRight.x, bottomRight.y, 1, 0,
-               topLeft.x, topLeft.y, 0, 1,
-               topLeft.x, topLeft.y, 0, 1,
-               bottomRight.x, bottomRight.y, 1, 0,
-               topRight.x, topRight.y, 1, 1
-            );
-         }
+      const textureSource = RIVER_STEPPING_STONE_TEXTURES[steppingStone.size];
+      if (!vertexRecord.hasOwnProperty(textureSource)) {
+         vertexRecord[textureSource] = [];
       }
+
+      vertexRecord[textureSource].push(
+         bottomLeft.x, bottomLeft.y, 0, 0,
+         bottomRight.x, bottomRight.y, 1, 0,
+         topLeft.x, topLeft.y, 0, 1,
+         topLeft.x, topLeft.y, 0, 1,
+         bottomRight.x, bottomRight.y, 1, 0,
+         topRight.x, topRight.y, 1, 1
+      );
    }
 
    return vertexRecord;
@@ -909,13 +912,14 @@ const calculateSteppingStoneVertices = (): Record<string, ReadonlyArray<number>>
 
 export function renderWater(): void {
    const visibleTiles = calculateVisibleWaterTiles();
+   const visibleSteppingStones = calculateVisibleSteppingStones();
 
    const baseVertices = calculateBaseVertices(visibleTiles);
    const rockVertexRecord = calculateRockVertices();
    const noiseVertices = calculateNoiseVertices(visibleTiles);
    const transitionVertexRecord = calculateTransitionVertices(visibleTiles);
-   const foamVertexRecord = calculateFoamVertices();
-   const steppingStoneVertices = calculateSteppingStoneVertices();
+   const foamVertexRecord = calculateFoamVertices(visibleSteppingStones);
+   const steppingStoneVertices = calculateSteppingStoneVertices(visibleSteppingStones);
    
    // 
    // Base program
