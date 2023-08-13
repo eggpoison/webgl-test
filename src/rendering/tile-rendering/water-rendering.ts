@@ -1,4 +1,4 @@
-import { SETTINGS, TileType, Vector } from "webgl-test-shared";
+import { Point, RIVER_STEPPING_STONE_SIZES, RiverSteppingStoneSize, SETTINGS, TileType, Vector, WaterRockSize, lerp, rotatePoint } from "webgl-test-shared";
 import { createWebGLProgram, gl } from "../../webgl";
 import Game from "../../Game";
 import { getTexture } from "../../textures";
@@ -7,6 +7,8 @@ import { Tile } from "../../Tile";
 
 const SHALLOW_WATER_COLOUR = [118/255, 185/255, 242/255] as const;
 const DEEP_WATER_COLOUR = [86/255, 141/255, 184/255] as const;
+
+const WATER_VISUAL_FLOW_SPEED = 0.3;
 
 const ADJACENT_TILE_OFFSETS = [
    [0, 0],
@@ -42,6 +44,22 @@ const TRANSITION_TEXTURES: Record<TileType, string | null> = {
    "snow": "tiles/gravel.png",
    "sand": "tiles/gravel.png"
 }
+
+const WATER_ROCK_SIZES: Record<WaterRockSize, number> = {
+   [WaterRockSize.small]: 24,
+   [WaterRockSize.large]: 32
+};
+
+const WATER_ROCK_TEXTURES: Record<WaterRockSize, string> = {
+   [WaterRockSize.small]: "tiles/water-rock-small.png",
+   [WaterRockSize.large]: "tiles/water-rock-large.png"
+};
+
+const RIVER_STEPPING_STONE_TEXTURES: Record<RiverSteppingStoneSize, string> = {
+   [RiverSteppingStoneSize.small]: "tiles/river-stepping-stone-small.png",
+   [RiverSteppingStoneSize.medium]: "tiles/river-stepping-stone-medium.png",
+   [RiverSteppingStoneSize.large]: "tiles/river-stepping-stone-large.png"
+};
 
 // Base shaders
 
@@ -106,13 +124,16 @@ precision mediump float;
 
 attribute vec2 a_position;
 attribute vec2 a_texCoord;
+attribute float a_opacity;
 
 varying vec2 v_texCoord;
+varying float v_opacity;
  
 void main() {
    gl_Position = vec4(a_position, 0.0, 1.0);
 
    v_texCoord = a_texCoord;
+   v_opacity = a_opacity;
 }
 `;
 
@@ -122,10 +143,11 @@ precision mediump float;
 uniform sampler2D u_texture;
  
 varying vec2 v_texCoord;
+varying float v_opacity;
  
 void main() {
    vec4 textureColour = texture2D(u_texture, v_texCoord);
-   textureColour.a *= 0.4;
+   textureColour.a *= v_opacity;
    gl_FragColor = textureColour;
 }
 `;
@@ -276,14 +298,41 @@ void main() {
    gl_FragColor = textureColour;
 }
 `;
-/*
 
-*/
+// Stepping stone shaders
+
+const steppingStoneVertexShaderText = `
+precision mediump float;
+
+attribute vec2 a_position;
+attribute vec2 a_texCoord;
+
+varying vec2 v_texCoord;
+ 
+void main() {
+   gl_Position = vec4(a_position, 0.0, 1.0);
+
+   v_texCoord = a_texCoord;
+}
+`;
+
+const steppingStoneFragmentShaderText = `
+precision mediump float;
+ 
+uniform sampler2D u_texture;
+ 
+varying vec2 v_texCoord;
+ 
+void main() {
+   gl_FragColor = texture2D(u_texture, v_texCoord);
+}
+`;
 
 let baseProgram: WebGLProgram;
 let rockProgram: WebGLProgram;
 let noiseProgram: WebGLProgram;
 let transitionProgram: WebGLProgram;
+let steppingStoneProgram: WebGLProgram;
 
 let baseTextureUniformLocation: WebGLUniformLocation;
 let shallowWaterColourUniformLocation: WebGLUniformLocation;
@@ -295,6 +344,8 @@ let noiseTextureUniformLocation: WebGLUniformLocation;
 
 let transitionTextureUniformLocation: WebGLUniformLocation;
 
+let steppingStoneTextureUniformLocation: WebGLUniformLocation;
+
 let baseProgramPositionAttribLocation: GLint;
 let baseProgramCoordAttribLocation: GLint;
 let baseProgramTopLeftLandDistanceAttribLocation: GLint;
@@ -304,6 +355,7 @@ let baseProgramBottomRightLandDistanceAttribLocation: GLint;
 
 let rockProgramPositionAttribLocation: GLint;
 let rockProgramCoordAttribLocation: GLint;
+let rockProgramOpacityAttribLocation: GLint;
 
 let noiseProgramPositionAttribLocation: GLint;
 let noiseProgramTexCoordAttribLocation: GLint;
@@ -319,6 +371,9 @@ let transitionProgramTopMarkerAttribLocation: GLint;
 let transitionProgramRightMarkerAttribLocation: GLint;
 let transitionProgramLeftMarkerAttribLocation: GLint;
 let transitionProgramBottomMarkerAttribLocation: GLint;
+
+let steppingStoneProgramPositionAttribLocation: GLint;
+let steppingStoneProgramTexCoordAttribLocation: GLint;
 
 export function createWaterShaders(): void {
    // 
@@ -348,6 +403,7 @@ export function createWaterShaders(): void {
 
    rockProgramPositionAttribLocation = gl.getAttribLocation(rockProgram, "a_position");
    rockProgramCoordAttribLocation = gl.getAttribLocation(rockProgram, "a_texCoord");
+   rockProgramOpacityAttribLocation = gl.getAttribLocation(rockProgram, "a_opacity");
    
    // 
    // Noise program
@@ -379,6 +435,17 @@ export function createWaterShaders(): void {
    transitionProgramRightMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_rightMarker");
    transitionProgramLeftMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_leftMarker");
    transitionProgramBottomMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_bottomMarker");
+   
+   // 
+   // Stepping stone program
+   // 
+
+   steppingStoneProgram = createWebGLProgram(steppingStoneVertexShaderText, steppingStoneFragmentShaderText);
+
+   steppingStoneTextureUniformLocation = gl.getUniformLocation(steppingStoneProgram, "u_texture")!;
+
+   steppingStoneProgramPositionAttribLocation = gl.getAttribLocation(steppingStoneProgram, "a_position");
+   steppingStoneProgramTexCoordAttribLocation = gl.getAttribLocation(steppingStoneProgram, "a_texCoord");
 }
 
 const calculateVisibleWaterTiles = (): ReadonlyArray<Tile> => {
@@ -486,18 +553,12 @@ const calculateNoiseVertices = (tiles: ReadonlyArray<Tile>): ReadonlyArray<numbe
       const epsilon = 0.01;
       const isDiagonal = Math.abs(tile.flowDirection!) > epsilon && Math.abs(tile.flowDirection! - Math.PI/2) > epsilon && Math.abs(tile.flowDirection! - Math.PI) > epsilon && Math.abs(tile.flowDirection! + Math.PI/2) > epsilon;
 
-      const speed = 0.3;
-      let offsetMagnitude: number;
-      if (isDiagonal) {
-         offsetMagnitude = (Game.lastTime * speed / 1000 / Math.SQRT2 + tile.flowOffset) % 1;
-      } else {
-         offsetMagnitude = (Game.lastTime * speed / 1000 + tile.flowOffset) % 1;
-      }
-      
       let offsetVector: Vector;
       if (isDiagonal) {
+         const offsetMagnitude = (Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000 / Math.SQRT2 + tile.flowOffset) % 1;
          offsetVector = new Vector(offsetMagnitude * Math.SQRT2, tile.flowDirection!);
       } else {
+         const offsetMagnitude = (Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000 + tile.flowOffset) % 1;
          offsetVector = new Vector(offsetMagnitude, tile.flowDirection!);
       }
       const offset = offsetVector.convertToPoint();
@@ -593,41 +654,124 @@ const calculateTransitionVertices = (visibleTiles: ReadonlyArray<Tile>): Record<
    return vertexRecord;
 }
 
-const calculateRockVertices = (): ReadonlyArray<number> => {
-   const vertices = new Array<number>();
+const calculateRockVertices = (): Record<string, ReadonlyArray<number>> => {
+   const vertexRecord: Record<string, Array<number>> = {};
+
+   const visibleChunkBounds = Camera.getVisibleChunkBounds();
    
-   for (const rockData of Game.board.waterRocks) {
-      console.log(rockData.position);
-      let x1 = (rockData.position[0] - 16);
-      let x2 = (rockData.position[0] + 16);
-      let y1 = (rockData.position[1] - 16);
-      let y2 = (rockData.position[1] + 16);
+   for (let chunkX = visibleChunkBounds[0]; chunkX <= visibleChunkBounds[1]; chunkX++) {
+      for (let chunkY = visibleChunkBounds[2]; chunkY <= visibleChunkBounds[3]; chunkY++) {
+         const chunk = Game.board.getChunk(chunkX, chunkY);
+         for (const waterRock of chunk.waterRocks) {
+            const size = WATER_ROCK_SIZES[waterRock.size];
+            
+            let x1 = (waterRock.position[0] - size/2);
+            let x2 = (waterRock.position[0] + size/2);
+            let y1 = (waterRock.position[1] - size/2);
+            let y2 = (waterRock.position[1] + size/2);
+   
+            let topLeft = new Point(x1, y2);
+            let topRight = new Point(x2, y2);
+            let bottomRight = new Point(x2, y1);
+            let bottomLeft = new Point(x1, y1);
 
-      x1 = Camera.calculateXCanvasPosition(x1);
-      x2 = Camera.calculateXCanvasPosition(x2);
-      y1 = Camera.calculateYCanvasPosition(y1);
-      y2 = Camera.calculateYCanvasPosition(y2);
+            const pos = new Point(waterRock.position[0], waterRock.position[1]);
 
-      vertices.push(
-         x1, y1, 0, 0,
-         x2, y1, 1, 0,
-         x1, y2, 0, 1,
-         x1, y2, 0, 1,
-         x2, y1, 1, 0,
-         x2, y2, 1, 1
-      );
+            // Rotate the points to match the entity's rotation
+            topLeft = rotatePoint(topLeft, pos, waterRock.rotation);
+            topRight = rotatePoint(topRight, pos, waterRock.rotation);
+            bottomRight = rotatePoint(bottomRight, pos, waterRock.rotation);
+            bottomLeft = rotatePoint(bottomLeft, pos, waterRock.rotation);
+
+            topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));
+            topRight = new Point(Camera.calculateXCanvasPosition(topRight.x), Camera.calculateYCanvasPosition(topRight.y));
+            bottomRight = new Point(Camera.calculateXCanvasPosition(bottomRight.x), Camera.calculateYCanvasPosition(bottomRight.y));
+            bottomLeft = new Point(Camera.calculateXCanvasPosition(bottomLeft.x), Camera.calculateYCanvasPosition(bottomLeft.y));
+
+            const opacity = lerp(0.15, 0.4, waterRock.opacity);
+
+            const textureSource = WATER_ROCK_TEXTURES[waterRock.size];
+            if (!vertexRecord.hasOwnProperty(textureSource)) {
+               vertexRecord[textureSource] = [];
+            }
+
+            vertexRecord[textureSource].push(
+               bottomLeft.x, bottomLeft.y, 0, 0, opacity,
+               bottomRight.x, bottomRight.y, 1, 0, opacity,
+               topLeft.x, topLeft.y, 0, 1, opacity,
+               topLeft.x, topLeft.y, 0, 1, opacity,
+               bottomRight.x, bottomRight.y, 1, 0, opacity,
+               topRight.x, topRight.y, 1, 1, opacity
+            );
+         }
+      }
    }
 
-   return vertices;
+   return vertexRecord;
+}
+
+const calculateSteppingStoneVertices = (): Record<string, ReadonlyArray<number>> => {
+   const vertexRecord: Record<string, Array<number>> = {};
+
+   const visibleChunkBounds = Camera.getVisibleChunkBounds();
+   
+   for (let chunkX = visibleChunkBounds[0]; chunkX <= visibleChunkBounds[1]; chunkX++) {
+      for (let chunkY = visibleChunkBounds[2]; chunkY <= visibleChunkBounds[3]; chunkY++) {
+         const chunk = Game.board.getChunk(chunkX, chunkY);
+         for (const riverSteppingStone of chunk.riverSteppingStones) {
+            const size = RIVER_STEPPING_STONE_SIZES[riverSteppingStone.size];
+            
+            let x1 = (riverSteppingStone.position[0] - size/2);
+            let x2 = (riverSteppingStone.position[0] + size/2);
+            let y1 = (riverSteppingStone.position[1] - size/2);
+            let y2 = (riverSteppingStone.position[1] + size/2);
+   
+            let topLeft = new Point(x1, y2);
+            let topRight = new Point(x2, y2);
+            let bottomRight = new Point(x2, y1);
+            let bottomLeft = new Point(x1, y1);
+
+            const pos = new Point(riverSteppingStone.position[0], riverSteppingStone.position[1]);
+
+            // Rotate the points to match the entity's rotation
+            topLeft = rotatePoint(topLeft, pos, riverSteppingStone.rotation);
+            topRight = rotatePoint(topRight, pos, riverSteppingStone.rotation);
+            bottomRight = rotatePoint(bottomRight, pos, riverSteppingStone.rotation);
+            bottomLeft = rotatePoint(bottomLeft, pos, riverSteppingStone.rotation);
+
+            topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));
+            topRight = new Point(Camera.calculateXCanvasPosition(topRight.x), Camera.calculateYCanvasPosition(topRight.y));
+            bottomRight = new Point(Camera.calculateXCanvasPosition(bottomRight.x), Camera.calculateYCanvasPosition(bottomRight.y));
+            bottomLeft = new Point(Camera.calculateXCanvasPosition(bottomLeft.x), Camera.calculateYCanvasPosition(bottomLeft.y));
+
+            const textureSource = RIVER_STEPPING_STONE_TEXTURES[riverSteppingStone.size];
+            if (!vertexRecord.hasOwnProperty(textureSource)) {
+               vertexRecord[textureSource] = [];
+            }
+
+            vertexRecord[textureSource].push(
+               bottomLeft.x, bottomLeft.y, 0, 0,
+               bottomRight.x, bottomRight.y, 1, 0,
+               topLeft.x, topLeft.y, 0, 1,
+               topLeft.x, topLeft.y, 0, 1,
+               bottomRight.x, bottomRight.y, 1, 0,
+               topRight.x, topRight.y, 1, 1
+            );
+         }
+      }
+   }
+
+   return vertexRecord;
 }
 
 export function renderLiquidTiles(): void {
    const visibleTiles = calculateVisibleWaterTiles();
 
    const baseVertices = calculateBaseVertices(visibleTiles);
-   const rockVertices = calculateRockVertices();
+   const rockVertexRecord = calculateRockVertices();
    const noiseVertices = calculateNoiseVertices(visibleTiles);
    const transitionVertexRecord = calculateTransitionVertices(visibleTiles);
+   const steppingStoneVertices = calculateSteppingStoneVertices();
    
    // 
    // Base program
@@ -677,27 +821,29 @@ export function renderLiquidTiles(): void {
    gl.enable(gl.BLEND);
    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
    
-   {
+   for (const [textureSource, vertices] of Object.entries(rockVertexRecord)) {
       // Create tile buffer
       const buffer = gl.createBuffer()!;
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(rockVertices), gl.STATIC_DRAW);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
    
-      gl.vertexAttribPointer(rockProgramPositionAttribLocation, 2, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0);
-      gl.vertexAttribPointer(rockProgramCoordAttribLocation, 2, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(rockProgramPositionAttribLocation, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
+      gl.vertexAttribPointer(rockProgramCoordAttribLocation, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(rockProgramOpacityAttribLocation, 1, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
       
       // Enable the attributes
       gl.enableVertexAttribArray(rockProgramPositionAttribLocation);
       gl.enableVertexAttribArray(rockProgramCoordAttribLocation);
+      gl.enableVertexAttribArray(rockProgramOpacityAttribLocation);
       
       gl.uniform1i(rockProgramTextureUniformLocation, 0);
 
-      const texture = getTexture("tiles/water-rock.png");
+      const texture = getTexture(textureSource);
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, texture);
       
       // Draw the tile
-      gl.drawArrays(gl.TRIANGLES, 0, rockVertices.length / 4);
+      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 5);
    }
    
    // 
@@ -768,7 +914,7 @@ export function renderLiquidTiles(): void {
       gl.enableVertexAttribArray(transitionProgramBottomMarkerAttribLocation);
       
       gl.uniform1i(transitionTextureUniformLocation, 0);
-               
+      
       // Set transition texture
       const transitionTexture = getTexture(textureSource);
       gl.activeTexture(gl.TEXTURE0);
@@ -776,6 +922,38 @@ export function renderLiquidTiles(): void {
    
       // Draw the tile
       gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 12);
+   }
+   
+   // 
+   // Stepping stone program
+   // 
+
+   gl.useProgram(steppingStoneProgram);
+
+   gl.enable(gl.BLEND);
+   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+   
+   for (const [textureSource, vertices] of Object.entries(steppingStoneVertices)) {
+      // Create tile buffer
+      const buffer = gl.createBuffer()!;
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+   
+      gl.vertexAttribPointer(steppingStoneProgramPositionAttribLocation, 2, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0);
+      gl.vertexAttribPointer(steppingStoneProgramTexCoordAttribLocation, 2, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+      
+      // Enable the attributes
+      gl.enableVertexAttribArray(steppingStoneProgramPositionAttribLocation);
+      gl.enableVertexAttribArray(steppingStoneProgramTexCoordAttribLocation);
+      
+      gl.uniform1i(steppingStoneTextureUniformLocation, 0);
+
+      const texture = getTexture(textureSource);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      
+      // Draw the tile
+      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 4);
    }
 
    gl.disable(gl.BLEND);

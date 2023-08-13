@@ -1,5 +1,5 @@
 import Entity from "./entities/Entity";
-import { SETTINGS, Point, Vector, ServerTileUpdateData, rotatePoint, WaterRockData } from "webgl-test-shared";
+import { SETTINGS, Point, Vector, ServerTileUpdateData, rotatePoint, WaterRockData, RiverSteppingStoneData } from "webgl-test-shared";
 import Chunk from "./Chunk";
 import DroppedItem from "./items/DroppedItem";
 import { Tile } from "./Tile";
@@ -17,8 +17,6 @@ class Board {
    private readonly tiles: Array<Array<Tile>>;
    private readonly chunks: Array<Array<Chunk>>;
 
-   public readonly waterRocks: ReadonlyArray<WaterRockData>;
-
    public gameObjects: Record<number, GameObject> = {};
    public entities: Record<number, Entity> = {};
    public droppedItems: Record<number, DroppedItem> = {};
@@ -26,9 +24,8 @@ class Board {
 
    public particles: Record<number, Particle> = {};
 
-   constructor(tiles: Array<Array<Tile>>, waterRocks: ReadonlyArray<WaterRockData>) {
+   constructor(tiles: Array<Array<Tile>>, waterRocks: ReadonlyArray<WaterRockData>, riverSteppingStones: ReadonlyArray<RiverSteppingStoneData>) {
       this.tiles = tiles;
-      this.waterRocks = waterRocks;
       
       // Create the chunk array
       this.chunks = new Array<Array<Chunk>>();
@@ -37,6 +34,22 @@ class Board {
          for (let y = 0; y < SETTINGS.BOARD_SIZE; y++) {
             this.chunks[x][y] = new Chunk(x, y);
          }
+      }
+
+      // Add water rocks to chunks
+      for (const waterRock of waterRocks) {
+         const chunkX = Math.floor(waterRock.position[0] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE);
+         const chunkY = Math.floor(waterRock.position[1] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE);
+         const chunk = this.chunks[chunkX][chunkY];
+         chunk.waterRocks.push(waterRock);
+      }
+
+      // Add river stepping stones to chunks
+      for (const riverSteppingStone of riverSteppingStones) {
+         const chunkX = Math.floor(riverSteppingStone.position[0] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE);
+         const chunkY = Math.floor(riverSteppingStone.position[1] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE);
+         const chunk = this.chunks[chunkX][chunkY];
+         chunk.riverSteppingStones.push(riverSteppingStone);
       }
    }
 

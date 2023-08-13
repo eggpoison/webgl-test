@@ -81,7 +81,7 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
                const initialGameDataPacket = initialGameDataPacketRef.current!;
 
                const tiles = Client.parseServerTileDataArray(initialGameDataPacket.tiles);
-               Game.board = new Board(tiles, initialGameDataPacket.waterRocks);
+               Game.board = new Board(tiles, initialGameDataPacket.waterRocks, initialGameDataPacket.riverSteppingStones);
 
                await Game.initialise();
 
