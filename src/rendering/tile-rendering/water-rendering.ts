@@ -10,6 +10,8 @@ const DEEP_WATER_COLOUR = [86/255, 141/255, 184/255] as const;
 
 const WATER_VISUAL_FLOW_SPEED = 0.3;
 
+const FOAM_OFFSET = 5;
+
 const ADJACENT_TILE_OFFSETS = [
    [0, 0],
    [-1, 0],
@@ -299,6 +301,48 @@ void main() {
 }
 `;
 
+// Foam shaders
+
+const foamVertexShaderText = `
+precision mediump float;
+
+attribute vec2 a_position;
+attribute vec2 a_texCoord;
+attribute vec2 a_textureOffset;
+
+varying vec2 v_texCoord;
+varying vec2 v_textureOffset;
+ 
+void main() {
+   gl_Position = vec4(a_position, 0.0, 1.0);
+
+   v_texCoord = a_texCoord;
+   v_textureOffset = a_textureOffset;
+}
+`;
+
+const foamFragmentShaderText = `
+precision mediump float;
+ 
+uniform sampler2D u_steppingStoneTexture;
+uniform sampler2D u_foamTexture;
+ 
+varying vec2 v_texCoord;
+varying vec2 v_textureOffset;
+ 
+void main() {
+   vec4 steppingStoneColour = texture2D(u_steppingStoneTexture, v_texCoord);
+   
+   vec2 foamCoord = fract(v_texCoord - v_textureOffset);
+   vec4 foam = texture2D(u_foamTexture, foamCoord);
+   foam.a *= steppingStoneColour.a;
+
+   foam.a *= 0.6;
+
+   gl_FragColor = foam;
+}
+`;
+
 // Stepping stone shaders
 
 const steppingStoneVertexShaderText = `
@@ -332,6 +376,7 @@ let baseProgram: WebGLProgram;
 let rockProgram: WebGLProgram;
 let noiseProgram: WebGLProgram;
 let transitionProgram: WebGLProgram;
+let foamProgram: WebGLProgram;
 let steppingStoneProgram: WebGLProgram;
 
 let baseTextureUniformLocation: WebGLUniformLocation;
@@ -343,6 +388,9 @@ let rockProgramTextureUniformLocation: WebGLUniformLocation;
 let noiseTextureUniformLocation: WebGLUniformLocation;
 
 let transitionTextureUniformLocation: WebGLUniformLocation;
+
+let foamProgramSteppingStoneTextureUniformLocation: WebGLUniformLocation;
+let foamProgramFoamTextureUniformLocation: WebGLUniformLocation;
 
 let steppingStoneTextureUniformLocation: WebGLUniformLocation;
 
@@ -371,6 +419,10 @@ let transitionProgramTopMarkerAttribLocation: GLint;
 let transitionProgramRightMarkerAttribLocation: GLint;
 let transitionProgramLeftMarkerAttribLocation: GLint;
 let transitionProgramBottomMarkerAttribLocation: GLint;
+
+let foamProgramPositionAttribLocation: GLint;
+let foamProgramTexCoordAttribLocation: GLint;
+let foamProgramTextureOffsetAttribLocation: GLint;
 
 let steppingStoneProgramPositionAttribLocation: GLint;
 let steppingStoneProgramTexCoordAttribLocation: GLint;
@@ -435,6 +487,19 @@ export function createWaterShaders(): void {
    transitionProgramRightMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_rightMarker");
    transitionProgramLeftMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_leftMarker");
    transitionProgramBottomMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_bottomMarker");
+   
+   // 
+   // Foam program
+   // 
+
+   foamProgram = createWebGLProgram(foamVertexShaderText, foamFragmentShaderText);
+
+   foamProgramSteppingStoneTextureUniformLocation = gl.getUniformLocation(foamProgram, "u_steppingStoneTexture")!;
+   foamProgramFoamTextureUniformLocation = gl.getUniformLocation(foamProgram, "u_foamTexture")!;
+   
+   foamProgramPositionAttribLocation = gl.getAttribLocation(foamProgram, "a_position");
+   foamProgramTexCoordAttribLocation = gl.getAttribLocation(foamProgram, "a_texCoord");
+   foamProgramTextureOffsetAttribLocation = gl.getAttribLocation(foamProgram, "a_textureOffset");
    
    // 
    // Stepping stone program
@@ -710,6 +775,84 @@ const calculateRockVertices = (): Record<string, ReadonlyArray<number>> => {
    return vertexRecord;
 }
 
+const calculateFoamVertices = (): Record<string, ReadonlyArray<number>> => {
+   const vertexRecord: Record<string, Array<number>> = {};
+
+   const visibleChunkBounds = Camera.getVisibleChunkBounds();
+   
+   for (let chunkX = visibleChunkBounds[0]; chunkX <= visibleChunkBounds[1]; chunkX++) {
+      for (let chunkY = visibleChunkBounds[2]; chunkY <= visibleChunkBounds[3]; chunkY++) {
+         const chunk = Game.board.getChunk(chunkX, chunkY);
+         for (const riverSteppingStone of chunk.riverSteppingStones) {
+            const size = RIVER_STEPPING_STONE_SIZES[riverSteppingStone.size];
+            
+            let x1 = (riverSteppingStone.position[0] - size/2);
+            let x2 = (riverSteppingStone.position[0] + size/2);
+            let y1 = (riverSteppingStone.position[1] - size/2);
+            let y2 = (riverSteppingStone.position[1] + size/2);
+
+            const tileX = Math.floor(riverSteppingStone.position[0] / SETTINGS.TILE_SIZE);
+            const tileY = Math.floor(riverSteppingStone.position[1] / SETTINGS.TILE_SIZE);
+            const tile = Game.board.getTile(tileX, tileY);
+            
+            if (typeof tile.flowDirection === "undefined") {
+               continue;
+            }
+   
+            let topLeft = new Point(x1, y2);
+            let topRight = new Point(x2, y2);
+            let bottomRight = new Point(x2, y1);
+            let bottomLeft = new Point(x1, y1);
+
+            const pos = new Point(riverSteppingStone.position[0], riverSteppingStone.position[1]);
+
+            // Rotate the points to match the entity's rotation
+            topLeft = rotatePoint(topLeft, pos, riverSteppingStone.rotation);
+            topRight = rotatePoint(topRight, pos, riverSteppingStone.rotation);
+            bottomRight = rotatePoint(bottomRight, pos, riverSteppingStone.rotation);
+            bottomLeft = rotatePoint(bottomLeft, pos, riverSteppingStone.rotation);
+
+            const offset = new Vector(FOAM_OFFSET, tile.flowDirection).convertToPoint();
+            topLeft.x -= offset.x;
+            topRight.x -= offset.x;
+            bottomLeft.x -= offset.x;
+            bottomRight.x -= offset.x;
+            topLeft.y -= offset.y;
+            topRight.y -= offset.y;
+            bottomLeft.y -= offset.y;
+            bottomRight.y -= offset.y;
+
+            topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));
+            topRight = new Point(Camera.calculateXCanvasPosition(topRight.x), Camera.calculateYCanvasPosition(topRight.y));
+            bottomRight = new Point(Camera.calculateXCanvasPosition(bottomRight.x), Camera.calculateYCanvasPosition(bottomRight.y));
+            bottomLeft = new Point(Camera.calculateXCanvasPosition(bottomLeft.x), Camera.calculateYCanvasPosition(bottomLeft.y));
+
+            // Create the foam scrolling effect
+            const foamTextureOffsetMagnitude = (Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000 + tile.flowOffset);
+            const foamTextureOffset = new Vector(foamTextureOffsetMagnitude, -riverSteppingStone.rotation + tile.flowDirection).convertToPoint();
+            foamTextureOffset.x = foamTextureOffset.x % 1;
+            foamTextureOffset.y = foamTextureOffset.y % 1;
+            
+            const textureSource = RIVER_STEPPING_STONE_TEXTURES[riverSteppingStone.size];
+            if (!vertexRecord.hasOwnProperty(textureSource)) {
+               vertexRecord[textureSource] = [];
+            }
+
+            vertexRecord[textureSource].push(
+               bottomLeft.x, bottomLeft.y, 0, 0, foamTextureOffset.x, foamTextureOffset.y,
+               bottomRight.x, bottomRight.y, 1, 0, foamTextureOffset.x, foamTextureOffset.y,
+               topLeft.x, topLeft.y, 0, 1, foamTextureOffset.x, foamTextureOffset.y,
+               topLeft.x, topLeft.y, 0, 1, foamTextureOffset.x, foamTextureOffset.y,
+               bottomRight.x, bottomRight.y, 1, 0, foamTextureOffset.x, foamTextureOffset.y,
+               topRight.x, topRight.y, 1, 1, foamTextureOffset.x, foamTextureOffset.y
+            );
+         }
+      }
+   }
+
+   return vertexRecord;
+}
+
 const calculateSteppingStoneVertices = (): Record<string, ReadonlyArray<number>> => {
    const vertexRecord: Record<string, Array<number>> = {};
 
@@ -764,13 +907,14 @@ const calculateSteppingStoneVertices = (): Record<string, ReadonlyArray<number>>
    return vertexRecord;
 }
 
-export function renderLiquidTiles(): void {
+export function renderWater(): void {
    const visibleTiles = calculateVisibleWaterTiles();
 
    const baseVertices = calculateBaseVertices(visibleTiles);
    const rockVertexRecord = calculateRockVertices();
    const noiseVertices = calculateNoiseVertices(visibleTiles);
    const transitionVertexRecord = calculateTransitionVertices(visibleTiles);
+   const foamVertexRecord = calculateFoamVertices();
    const steppingStoneVertices = calculateSteppingStoneVertices();
    
    // 
@@ -925,13 +1069,46 @@ export function renderLiquidTiles(): void {
    }
    
    // 
+   // Foam program
+   // 
+
+   gl.useProgram(foamProgram);
+   
+   for (const [textureSource, vertices] of Object.entries(foamVertexRecord)) {
+      // Create tile buffer
+      const buffer = gl.createBuffer()!;
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+   
+      gl.vertexAttribPointer(foamProgramPositionAttribLocation, 2, gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 0);
+      gl.vertexAttribPointer(foamProgramTexCoordAttribLocation, 2, gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(foamProgramTextureOffsetAttribLocation, 2, gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+      
+      // Enable the attributes
+      gl.enableVertexAttribArray(foamProgramPositionAttribLocation);
+      gl.enableVertexAttribArray(foamProgramTexCoordAttribLocation);
+      gl.enableVertexAttribArray(foamProgramTextureOffsetAttribLocation);
+      
+      gl.uniform1i(foamProgramSteppingStoneTextureUniformLocation, 0);
+      gl.uniform1i(foamProgramFoamTextureUniformLocation, 1);
+
+      const steppingStoneTexture = getTexture(textureSource);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, steppingStoneTexture);
+
+      const foamTexture = getTexture("tiles/water-foam.png");
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, foamTexture);
+      
+      // Draw the tile
+      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 4);
+   }
+   
+   // 
    // Stepping stone program
    // 
 
    gl.useProgram(steppingStoneProgram);
-
-   gl.enable(gl.BLEND);
-   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
    
    for (const [textureSource, vertices] of Object.entries(steppingStoneVertices)) {
       // Create tile buffer

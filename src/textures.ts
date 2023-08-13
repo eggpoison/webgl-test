@@ -100,7 +100,8 @@ const TEXTURE_SOURCES: Array<string> = [
    "tiles/water-rock-small.png",
    "tiles/river-stepping-stone-small.png",
    "tiles/river-stepping-stone-medium.png",
-   "tiles/river-stepping-stone-large.png"
+   "tiles/river-stepping-stone-large.png",
+   "tiles/water-foam.png",
 ];
 
 const textureSourceIsAlreadyIncluded = (src: string): boolean => {
