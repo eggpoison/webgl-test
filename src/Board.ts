@@ -30,7 +30,9 @@ class Board {
 
    public particles: Record<number, Particle> = {};
 
-   constructor(tiles: Array<Array<Tile>>, waterRocks: ReadonlyArray<WaterRockData>, riverSteppingStones: ReadonlyArray<RiverSteppingStoneData>) {
+   private readonly riverFlowDirections: Record<number, Record<number, number>>;
+
+   constructor(tiles: Array<Array<Tile>>, waterRocks: ReadonlyArray<WaterRockData>, riverSteppingStones: ReadonlyArray<RiverSteppingStoneData>, riverFlowDirections: Record<number, Record<number, number>>) {
       this.tiles = tiles;
       
       // Create the chunk array
@@ -41,6 +43,8 @@ class Board {
             this.chunks[x][y] = new Chunk(x, y);
          }
       }
+
+      this.riverFlowDirections = riverFlowDirections;
 
       // Add water rocks to chunks
       for (const waterRock of waterRocks) {
@@ -73,6 +77,14 @@ class Board {
             }
          }
       }
+   }
+
+   public getRiverFlowDirection(tileX: number, tileY: number): number {
+      if (!this.riverFlowDirections.hasOwnProperty(tileX) || !this.riverFlowDirections[tileX].hasOwnProperty(tileY)) {
+         throw new Error("Tried to get the river flow direction of a non-water tile.");
+      }
+      
+      return this.riverFlowDirections[tileX][tileY];
    }
 
    public getTile(tileX: number, tileY: number): Tile {

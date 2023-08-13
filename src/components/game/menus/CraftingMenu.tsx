@@ -7,6 +7,7 @@ import { windowHeight } from "../../../webgl";
 import ItemSlot from "../inventories/ItemSlot";
 import Game from "../../../Game";
 import { leftClickItemSlot } from "../../../inventory-manipulation";
+import Player from "../../../entities/Player";
 
 const CRAFTING_STATION_TEXTURE_SOURCE_RECORD: Record<CraftingStation, string> = {
    workbench: "workbench.png",
@@ -182,7 +183,7 @@ const CraftingMenu = () => {
    }
 
    const pickUpCraftingOutputItem = (e: MouseEvent): void => {
-      leftClickItemSlot(e, Game.definiteGameState.craftingOutputSlot!, 1);
+      leftClickItemSlot(e, Player.instance!.id, Game.definiteGameState.craftingOutputSlot!, 1);
    }
 
    // Find which of the available recipes can be crafted

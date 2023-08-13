@@ -107,11 +107,11 @@ const Hotbar = () => {
       if (typeof item !== "undefined") {
          const imageSrc = require("../../../images/items/" + CLIENT_ITEM_INFO_RECORD[item.type].textureSource);
          hotbarItemSlots.push(
-            <ItemSlot onClick={e => leftClickItemSlot(e, hotbarInventory, itemSlot)} onContextMenu={e => rightClickItemSlot(e, hotbarInventory, itemSlot)} isSelected={itemSlot === selectedItemSlot} picturedItemImageSrc={imageSrc} itemCount={item.count} key={itemSlot} />
+            <ItemSlot onClick={e => leftClickItemSlot(e, Player.instance!.id, hotbarInventory, itemSlot)} onContextMenu={e => rightClickItemSlot(e, Player.instance!.id, hotbarInventory, itemSlot)} isSelected={itemSlot === selectedItemSlot} picturedItemImageSrc={imageSrc} itemCount={item.count} key={itemSlot} />
          );
       } else {
          hotbarItemSlots.push(
-            <ItemSlot onClick={e => leftClickItemSlot(e, hotbarInventory, itemSlot)} onContextMenu={e => rightClickItemSlot(e, hotbarInventory, itemSlot)} isSelected={itemSlot === selectedItemSlot} key={itemSlot} />
+            <ItemSlot onClick={e => leftClickItemSlot(e, Player.instance!.id, hotbarInventory, itemSlot)} onContextMenu={e => rightClickItemSlot(e, Player.instance!.id, hotbarInventory, itemSlot)} isSelected={itemSlot === selectedItemSlot} key={itemSlot} />
          );
       }
    }
@@ -133,10 +133,10 @@ const Hotbar = () => {
          const armourItemInfo = CLIENT_ITEM_INFO_RECORD[armourInventory.itemSlots[1].type];
          
          const imageSrc = require("../../../images/items/" + armourItemInfo.textureSource);
-         armourItemSlotElement = <ItemSlot onClick={e => leftClickItemSlot(e, armourInventory, 1)} isSelected={false} picturedItemImageSrc={imageSrc} />
+         armourItemSlotElement = <ItemSlot onClick={e => leftClickItemSlot(e, Player.instance!.id, armourInventory, 1)} isSelected={false} picturedItemImageSrc={imageSrc} />
       } else {
          const imageSrc = require("../../../images/miscellaneous/armour-wireframe.png");
-         armourItemSlotElement = <ItemSlot onClick={e => leftClickItemSlot(e, armourInventory, 1)} isSelected={false} picturedItemImageSrc={imageSrc} />
+         armourItemSlotElement = <ItemSlot onClick={e => leftClickItemSlot(e, Player.instance!.id, armourInventory, 1)} isSelected={false} picturedItemImageSrc={imageSrc} />
       }
    } else {
       const imageSrc = require("../../../images/miscellaneous/armour-wireframe.png");

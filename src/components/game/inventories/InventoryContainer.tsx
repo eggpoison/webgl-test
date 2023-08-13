@@ -4,11 +4,12 @@ import { Inventory } from "../../../items/Item";
 import ItemSlot from "./ItemSlot";
 
 interface InventoryProps {
+   readonly entityID: number;
    readonly inventory: Inventory;
    readonly className?: string;
 }
 
-const InventoryContainer = ({ inventory, className }: InventoryProps) => {
+const InventoryContainer = ({ entityID, inventory, className }: InventoryProps) => {
    const itemSlots = new Array<JSX.Element>();
    
    for (let y = 0; y < inventory.height; y++) {
@@ -22,11 +23,11 @@ const InventoryContainer = ({ inventory, className }: InventoryProps) => {
             const itemImageSrc = require(`../../../images/items/${CLIENT_ITEM_INFO_RECORD[item.type].textureSource}`);
 
             rowItemSlots.push(
-               <ItemSlot key={x} onClick={e => leftClickItemSlot(e, inventory, itemSlot)} onContextMenu={e => rightClickItemSlot(e, inventory, itemSlot)} picturedItemImageSrc={itemImageSrc} itemCount={item.count} isSelected={false} />
+               <ItemSlot key={x} onClick={e => leftClickItemSlot(e, entityID, inventory, itemSlot)} onContextMenu={e => rightClickItemSlot(e, entityID, inventory, itemSlot)} picturedItemImageSrc={itemImageSrc} itemCount={item.count} isSelected={false} />
             );
          } else {
             rowItemSlots.push(
-               <ItemSlot key={x} onClick={e => leftClickItemSlot(e, inventory, itemSlot)} onContextMenu={e => rightClickItemSlot(e, inventory, itemSlot)} isSelected={false} />
+               <ItemSlot key={x} onClick={e => leftClickItemSlot(e, entityID, inventory, itemSlot)} onContextMenu={e => rightClickItemSlot(e, entityID, inventory, itemSlot)} isSelected={false} />
             );
          }
       }

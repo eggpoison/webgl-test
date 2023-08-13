@@ -3,6 +3,7 @@ import ItemSlot from "./ItemSlot";
 import CLIENT_ITEM_INFO_RECORD from "../../../client-item-info";
 import { leftClickItemSlot, rightClickItemSlot } from "../../../inventory-manipulation";
 import { Inventory } from "../../../items/Item";
+import Player from "../../../entities/Player";
 
 export let BackpackInventoryMenu_setIsVisible: (isVisible: boolean) => void = () => {};
 export let BackpackInventoryMenu_setBackpackInventory: (inventory: Inventory | null) => void = () => {};
@@ -13,13 +14,13 @@ const BackpackInventoryMenu = () => {
 
    const leftClickBackpackItemSlot = useCallback((e: MouseEvent, itemSlot: number): void => {
       if (backpackInventory !== null) {
-         leftClickItemSlot(e, backpackInventory, itemSlot);
+         leftClickItemSlot(e, Player.instance!.id, backpackInventory, itemSlot);
       }
    }, [backpackInventory]);
 
    const rightClickBackpackItemSlot = useCallback((e: MouseEvent, itemSlot: number): void => {
       if (backpackInventory !== null) {
-         rightClickItemSlot(e, backpackInventory, itemSlot);
+         rightClickItemSlot(e, Player.instance!.id, backpackInventory, itemSlot);
       }
    }, [backpackInventory]);
 

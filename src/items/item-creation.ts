@@ -3,7 +3,6 @@ import FoodItem from "./FoodItem";
 import Item, { Inventory, ItemSlots } from "./Item";
 import PlaceableItem from "./PlaceableItem";
 import ArmourItem from "./ArmourItem";
-import Entity from "../entities/Entity";
 
 type GenericItem<T extends ItemType> = new (itemType: T, count: number, id: number, itemInfo: ItemInfo<T>) => Item;
 
@@ -43,7 +42,7 @@ export function createItem(itemType: ItemType, count: number, id: number): Item 
    return new itemClass(itemType, count, id, itemInfoEntry);
 }
 
-export function createInventoryFromData(entity: Entity, inventoryData: InventoryData): Inventory {
+export function createInventoryFromData(inventoryData: InventoryData): Inventory {
    const itemSlots: ItemSlots = {};
    for (const [itemSlot, itemData] of Object.entries(inventoryData.itemSlots)) {
       const item = createItem(itemData.type, itemData.count, itemData.id);
@@ -54,7 +53,6 @@ export function createInventoryFromData(entity: Entity, inventoryData: Inventory
       itemSlots: itemSlots,
       width: inventoryData.width,
       height: inventoryData.height,
-      entityID: entity.id,
       inventoryName: inventoryData.inventoryName
    };
 

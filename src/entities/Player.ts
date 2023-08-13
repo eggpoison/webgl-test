@@ -161,7 +161,6 @@ class Player extends TribeMember {
          itemSlots: {},
          width: SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE,
          height: 1,
-         entityID: player.id,
          inventoryName: "hotbar"
       };
    }

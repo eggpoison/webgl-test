@@ -82,7 +82,6 @@ class Tribesman extends TribeMember {
          itemSlots: itemSlots,
          width: inventoryData.width,
          height: inventoryData.height,
-         entityID: this.id,
          inventoryName: "hotbar"
       };
 

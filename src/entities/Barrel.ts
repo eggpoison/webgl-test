@@ -42,7 +42,6 @@ class Barrel extends Entity {
          itemSlots: itemSlots,
          width: inventoryData.width,
          height: inventoryData.height,
-         entityID: this.id,
          inventoryName: "inventory"
       };
 

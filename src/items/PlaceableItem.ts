@@ -4,6 +4,7 @@ import { getTexture } from "../textures";
 import { createWebGLProgram, gl, halfWindowHeight, halfWindowWidth } from "../webgl";
 import Item from "./Item";
 import Game from "../Game";
+import Camera from "../Camera";
 
 type PlaceableEntityInfo = {
    readonly textureSource: string;
@@ -59,6 +60,7 @@ const PLACEABLE_ENTITY_INFO_RECORD: Partial<Record<ItemType, PlaceableEntityInfo
 const placeableEntityVertexShader = `
 precision mediump float;
 
+uniform float u_zoom;
 uniform float u_preTranslation;
 uniform vec2 u_playerRotation;
 uniform vec2 u_halfWindowSize;
@@ -74,6 +76,8 @@ void main() {
       vertWorldOffsetFromPlayer.x * u_playerRotation.y + vertWorldOffsetFromPlayer.y * u_playerRotation.x,
       vertWorldOffsetFromPlayer.y * u_playerRotation.y - vertWorldOffsetFromPlayer.x * u_playerRotation.x
    );
+
+   rotationOffset *= u_zoom;
 
    vec2 screenPos = rotationOffset + u_halfWindowSize;
    vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
@@ -106,6 +110,7 @@ let buffer: WebGLBuffer;
 /** The item type of the last placeable item to be rendered. */
 let previousRenderedPlaceableItemType: ItemType;
 
+let zoomUniformLocation: WebGLUniformLocation;
 let programPreTranslationUniformLocation: WebGLUniformLocation;
 let programPlayerRotationUniformLocation: WebGLUniformLocation;
 let programHalfWindowSizeUniformLocation: WebGLUniformLocation;
@@ -158,6 +163,7 @@ export function renderGhostPlaceableItem(): void {
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
    }
    
+   gl.uniform1f(zoomUniformLocation, Camera.zoom);
    gl.uniform1f(programPreTranslationUniformLocation, SETTINGS.ITEM_PLACE_DISTANCE);
    gl.uniform2f(programPlayerRotationUniformLocation, xRotation, yRotation);
    gl.uniform2f(programHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
@@ -183,10 +189,12 @@ export function renderGhostPlaceableItem(): void {
 export function createPlaceableItemProgram(): void {
    program = createWebGLProgram(placeableEntityVertexShader, placeableEntityFragmentShader, "a_vertWorldPosition");
    
+   zoomUniformLocation = gl.getUniformLocation(program, "u_zoom")!;
    programPreTranslationUniformLocation = gl.getUniformLocation(program, "u_preTranslation")!;
    programPlayerRotationUniformLocation = gl.getUniformLocation(program, "u_playerRotation")!;
    programHalfWindowSizeUniformLocation = gl.getUniformLocation(program, "u_halfWindowSize")!;
    programTextureUniformLocation = gl.getUniformLocation(program, "u_texture")!;
+
    programVertWorldPositionAttribLocation = gl.getAttribLocation(program, "a_vertWorldPosition");
    programTexCoordAttribLocation = gl.getAttribLocation(program, "a_texCoord");
 }

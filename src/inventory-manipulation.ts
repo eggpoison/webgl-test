@@ -9,7 +9,7 @@ const canInteractWithItemSlots = (): boolean => {
    return inventoryIsOpen() || interactInventoryIsOpen();
 }
 
-export function leftClickItemSlot(e: MouseEvent, inventory: Inventory, itemSlot: number): void {
+export function leftClickItemSlot(e: MouseEvent, entityID: number, inventory: Inventory, itemSlot: number): void {
    // Item slots can only be interacted with while the inventory is open
    if (!canInteractWithItemSlots()) return;
 
@@ -20,13 +20,13 @@ export function leftClickItemSlot(e: MouseEvent, inventory: Inventory, itemSlot:
 
       // Attempt to pick up the item if there isn't a held item
       if (!Game.definiteGameState.heldItemSlot!.itemSlots.hasOwnProperty(1)) {
-         Client.sendItemPickupPacket(inventory.entityID, inventory.inventoryName, itemSlot, clickedItem.count);
+         Client.sendItemPickupPacket(entityID, inventory.inventoryName, itemSlot, clickedItem.count);
    
          setHeldItemVisualPosition(e.clientX, e.clientY);
       } else {
          // If both the held item and the clicked item are of the same type, attempt to add the held item to the clicked item
          if (clickedItem.type === Game.definiteGameState.heldItemSlot!.itemSlots[1].type) {
-            Client.sendItemReleasePacket(inventory.entityID, inventory.inventoryName, itemSlot, Game.definiteGameState.heldItemSlot!.itemSlots[1].count);
+            Client.sendItemReleasePacket(entityID, inventory.inventoryName, itemSlot, Game.definiteGameState.heldItemSlot!.itemSlots[1].count);
          }
       }
    } else {
@@ -34,12 +34,12 @@ export function leftClickItemSlot(e: MouseEvent, inventory: Inventory, itemSlot:
 
       // Attempt to release the held item into the item slot if there is a held item
       if (Game.definiteGameState.heldItemSlot!.itemSlots.hasOwnProperty(1)) {
-         Client.sendItemReleasePacket(inventory.entityID, inventory.inventoryName, itemSlot, Game.definiteGameState.heldItemSlot!.itemSlots[1].count);
+         Client.sendItemReleasePacket(entityID, inventory.inventoryName, itemSlot, Game.definiteGameState.heldItemSlot!.itemSlots[1].count);
       }
    }
 }
 
-export function rightClickItemSlot(e: MouseEvent, inventory: Inventory, itemSlot: number): void {
+export function rightClickItemSlot(e: MouseEvent, entityID: number, inventory: Inventory, itemSlot: number): void {
    // Item slots can only be interacted with while the crafting menu is open
    if (!canInteractWithItemSlots()) return;
 
@@ -50,13 +50,13 @@ export function rightClickItemSlot(e: MouseEvent, inventory: Inventory, itemSlot
          const numItemsInSlot = clickedItem.count;
          const pickupCount = Math.ceil(numItemsInSlot / 2);
 
-         Client.sendItemPickupPacket(inventory.entityID, inventory.inventoryName, itemSlot, pickupCount);
+         Client.sendItemPickupPacket(entityID, inventory.inventoryName, itemSlot, pickupCount);
    
          setHeldItemVisualPosition(e.clientX, e.clientY);
       } else {
          // If both the held item and the clicked item are of the same type, attempt to drop 1 of the held item
          if (clickedItem.type === Game.definiteGameState.heldItemSlot.itemSlots[1].type) {
-            Client.sendItemReleasePacket(inventory.entityID, inventory.inventoryName, itemSlot, 1);
+            Client.sendItemReleasePacket(entityID, inventory.inventoryName, itemSlot, 1);
          }
       }
    } else {
@@ -64,7 +64,7 @@ export function rightClickItemSlot(e: MouseEvent, inventory: Inventory, itemSlot
       
       if (Game.definiteGameState.heldItemSlot !== null) {
          // Attempt to place one of the held item into the clicked item slot
-         Client.sendItemReleasePacket(inventory.entityID, inventory.inventoryName, itemSlot, 1);
+         Client.sendItemReleasePacket(entityID, inventory.inventoryName, itemSlot, 1);
       }
    }
 }

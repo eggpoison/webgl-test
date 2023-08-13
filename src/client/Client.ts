@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, TileInfo, HitboxType, InitialGameDataPacket, CraftingRecipe, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, HitboxData, HitboxInfo, ProjectileData, VisibleChunkBounds, ParticleData, TribeType, TribeData, InventoryData, WaterTileData } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, HitboxType, InitialGameDataPacket, CraftingRecipe, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, HitboxData, HitboxInfo, ProjectileData, VisibleChunkBounds, ParticleData, TribeType, TribeData, InventoryData } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -169,15 +169,7 @@ abstract class Client {
          tiles[y] = new Array<Tile>();
          for (let x = 0; x < SETTINGS.BOARD_DIMENSIONS; x++) {
             const serverTileData = serverTileDataArray[y][x];
-            const tileInfo: TileInfo = {
-               type: serverTileData.type,
-               biomeName: serverTileData.biomeName,
-               isWall: serverTileData.isWall
-            }
-            tiles[y][x] = new Tile(serverTileData.x, serverTileData.y, tileInfo);
-            if (serverTileData.hasOwnProperty("flowDirection")) {
-               tiles[y][x].flowDirection = (serverTileData as WaterTileData).flowDirection;
-            }
+            tiles[y][x] = new Tile(serverTileData.x, serverTileData.y, serverTileData.type, serverTileData.biomeName, serverTileData.isWall);
          }
       }
    
@@ -378,7 +370,6 @@ abstract class Client {
          itemSlots: itemSlots,
          width: inventoryData.width,
          height: inventoryData.height,
-         entityID: inventoryData.entityID,
          inventoryName: inventoryData.inventoryName
       };
       return inventory;

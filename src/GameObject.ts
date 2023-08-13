@@ -225,7 +225,8 @@ abstract class GameObject extends RenderObject {
 
       // If the game object is in a river, push them in the flow direction of the river
       if (this.isInRiver(tile)) {
-         const pushVector = new Vector(240 / SETTINGS.TPS, tile.flowDirection!);
+         const flowDirection = Game.board.getRiverFlowDirection(tile.x, tile.y);
+         const pushVector = new Vector(240 / SETTINGS.TPS, flowDirection);
          if (this.velocity === null) {
             this.velocity = pushVector;
          } else {

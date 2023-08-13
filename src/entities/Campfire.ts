@@ -26,17 +26,17 @@ class Campfire extends Entity {
          }, this)
       ]);
 
-      this.fuelInventory = createInventoryFromData(this, fuelInventory);
-      this.ingredientInventory = createInventoryFromData(this, ingredientInventory);
-      this.outputInventory = createInventoryFromData(this, outputInventory);
+      this.fuelInventory = createInventoryFromData(fuelInventory);
+      this.ingredientInventory = createInventoryFromData(ingredientInventory);
+      this.outputInventory = createInventoryFromData(outputInventory);
    }
 
    public updateFromData(entityData: EntityData<"campfire">): void {
       super.updateFromData(entityData);
 
-      this.fuelInventory = createInventoryFromData(this, entityData.clientArgs[0]);
-      this.ingredientInventory = createInventoryFromData(this, entityData.clientArgs[1]);
-      this.outputInventory = createInventoryFromData(this, entityData.clientArgs[2]);
+      this.fuelInventory = createInventoryFromData(entityData.clientArgs[0]);
+      this.ingredientInventory = createInventoryFromData(entityData.clientArgs[1]);
+      this.outputInventory = createInventoryFromData(entityData.clientArgs[2]);
    }
 }
 

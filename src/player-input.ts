@@ -6,8 +6,7 @@ import Client from "./client/Client";
 import Game from "./Game";
 import { Hotbar_setHotbarSelectedItemSlot } from "./components/game/inventories/Hotbar";
 import GameObject from "./GameObject";
-import { InteractInventoryInfo, InteractInventory_forceUpdate, InteractInventory_setElementClass, InteractInventory_setInventories } from "./components/game/inventories/InteractInventory";
-import { Inventory } from "./items/Item";
+import { InteractInventoryInfo, InteractInventory_forceUpdate, InteractInventory_setElementClass, InteractInventory_setEntityID, InteractInventory_setInventories } from "./components/game/inventories/InteractInventory";
 import Barrel from "./entities/Barrel";
 import { BackpackInventoryMenu_setIsVisible } from "./components/game/inventories/BackpackInventory";
 import Entity from "./entities/Entity";
@@ -354,6 +353,7 @@ export function updateInteractInventory(): void {
 
          const className = getInteractClassName(interactInventoryEntity);
          InteractInventory_setElementClass(className);
+         InteractInventory_setEntityID(interactInventoryEntity.id);
       } else {
          updateInteractInventoryIsOpen(false, null);
       }

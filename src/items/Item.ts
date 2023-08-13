@@ -10,7 +10,6 @@ export interface Inventory {
    itemSlots: ItemSlots;
    readonly width: number;
    readonly height: number;
-   readonly entityID: number;
    readonly inventoryName: string;
 }
 

@@ -8,15 +8,14 @@ export class Tile implements TileInfo {
    public biomeName: BiomeName;
    public isWall: boolean;
 
-   public flowDirection?: number;
    public flowOffset = Math.random();
 
-   constructor(x: number, y: number, tileInfo: TileInfo) {
+   constructor(x: number, y: number, tileType: TileType, biomeName: BiomeName, isWall: boolean) {
       this.x = x;
       this.y = y;
 
-      this.type = tileInfo.type;
-      this.biomeName = tileInfo.biomeName;
-      this.isWall = tileInfo.isWall;
+      this.type = tileType;
+      this.biomeName = biomeName;
+      this.isWall = isWall;
    }
 }

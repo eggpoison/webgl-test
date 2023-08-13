@@ -606,6 +606,8 @@ const calculateNoiseVertices = (tiles: ReadonlyArray<Tile>): ReadonlyArray<numbe
    const vertices = new Array<number>();
    
    for (const tile of tiles) {
+      const flowDirection = Game.board.getRiverFlowDirection(tile.x, tile.y);
+      
       let x1 = (tile.x - 0.5) * SETTINGS.TILE_SIZE;
       let x2 = (tile.x + 1.5) * SETTINGS.TILE_SIZE;
       let y1 = (tile.y - 0.5) * SETTINGS.TILE_SIZE;
@@ -617,15 +619,15 @@ const calculateNoiseVertices = (tiles: ReadonlyArray<Tile>): ReadonlyArray<numbe
       y2 = Camera.calculateYCanvasPosition(y2);
 
       const epsilon = 0.01;
-      const isDiagonal = Math.abs(tile.flowDirection!) > epsilon && Math.abs(tile.flowDirection! - Math.PI/2) > epsilon && Math.abs(tile.flowDirection! - Math.PI) > epsilon && Math.abs(tile.flowDirection! + Math.PI/2) > epsilon;
+      const isDiagonal = Math.abs(flowDirection!) > epsilon && Math.abs(flowDirection - Math.PI/2) > epsilon && Math.abs(flowDirection - Math.PI) > epsilon && Math.abs(flowDirection + Math.PI/2) > epsilon;
 
       let offsetVector: Vector;
       if (isDiagonal) {
          const offsetMagnitude = (Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000 / Math.SQRT2 + tile.flowOffset) % 1;
-         offsetVector = new Vector(offsetMagnitude * Math.SQRT2, tile.flowDirection!);
+         offsetVector = new Vector(offsetMagnitude * Math.SQRT2, flowDirection);
       } else {
          const offsetMagnitude = (Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000 + tile.flowOffset) % 1;
-         offsetVector = new Vector(offsetMagnitude, tile.flowDirection!);
+         offsetVector = new Vector(offsetMagnitude, flowDirection);
       }
       const offset = offsetVector.convertToPoint();
 
@@ -803,14 +805,6 @@ const calculateFoamVertices = (visibleSteppingStones: ReadonlySet<RiverSteppingS
       let y1 = (steppingStone.position.y - size/2);
       let y2 = (steppingStone.position.y + size/2);
 
-      const tileX = Math.floor(steppingStone.position.x / SETTINGS.TILE_SIZE);
-      const tileY = Math.floor(steppingStone.position.y / SETTINGS.TILE_SIZE);
-      const tile = Game.board.getTile(tileX, tileY);
-      
-      if (typeof tile.flowDirection === "undefined") {
-         continue;
-      }
-
       let topLeft = new Point(x1, y2);
       let topRight = new Point(x2, y2);
       let bottomRight = new Point(x2, y1);
@@ -824,7 +818,12 @@ const calculateFoamVertices = (visibleSteppingStones: ReadonlySet<RiverSteppingS
       bottomRight = rotatePoint(bottomRight, pos, steppingStone.rotation);
       bottomLeft = rotatePoint(bottomLeft, pos, steppingStone.rotation);
 
-      const offset = new Vector(FOAM_OFFSET, tile.flowDirection).convertToPoint();
+      const tileX = Math.floor(steppingStone.position.x / SETTINGS.TILE_SIZE);
+      const tileY = Math.floor(steppingStone.position.y / SETTINGS.TILE_SIZE);
+      const tile = Game.board.getTile(tileX, tileY);
+      const flowDirection = Game.board.getRiverFlowDirection(tileX, tileY);
+
+      const offset = new Vector(FOAM_OFFSET, flowDirection).convertToPoint();
       topLeft.x -= offset.x;
       topRight.x -= offset.x;
       bottomLeft.x -= offset.x;
@@ -841,7 +840,7 @@ const calculateFoamVertices = (visibleSteppingStones: ReadonlySet<RiverSteppingS
 
       // Create the foam scrolling effect
       const foamTextureOffsetMagnitude = (Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000 + tile.flowOffset);
-      const foamTextureOffset = new Vector(foamTextureOffsetMagnitude, -steppingStone.rotation + tile.flowDirection).convertToPoint();
+      const foamTextureOffset = new Vector(foamTextureOffsetMagnitude, -steppingStone.rotation + flowDirection).convertToPoint();
       foamTextureOffset.x = foamTextureOffset.x % 1;
       foamTextureOffset.y = foamTextureOffset.y % 1;
       
