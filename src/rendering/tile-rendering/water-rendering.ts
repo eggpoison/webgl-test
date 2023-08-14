@@ -1102,7 +1102,7 @@ export function renderWater(): void {
       gl.bindTexture(gl.TEXTURE_2D, foamTexture);
       
       // Draw the tile
-      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 4);
+      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 6);
    }
    
    // 
