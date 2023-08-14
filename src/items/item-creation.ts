@@ -3,6 +3,7 @@ import FoodItem from "./FoodItem";
 import Item, { Inventory, ItemSlots } from "./Item";
 import PlaceableItem from "./PlaceableItem";
 import ArmourItem from "./ArmourItem";
+import BowItem from "./BowItem";
 
 type GenericItem<T extends ItemType> = new (itemType: T, count: number, id: number, itemInfo: ItemInfo<T>) => Item;
 
@@ -33,7 +34,7 @@ const ITEM_CLASS_RECORD: { [T in ItemType]: () => GenericItem<T> } = {
    frost_armour: () => ArmourItem,
    campfire: () => PlaceableItem,
    furnace: () => PlaceableItem,
-   wooden_bow: () => Item
+   wooden_bow: () => BowItem
 };
 
 export function createItem(itemType: ItemType, count: number, id: number): Item {

@@ -126,6 +126,10 @@ const PARTICLE_INFO: Record<ParticleType, ParticleInfo> = {
    [ParticleType.snow]: {
       size: [4, 4],
       renderLayer: ParticleRenderLayer.low
+   },
+   [ParticleType.wind]: {
+      size: [4, 4],
+      renderLayer: ParticleRenderLayer.low
    }
 };
 

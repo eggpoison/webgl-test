@@ -22,8 +22,8 @@ import DefiniteGameState from "./game-state/definite-game-state";
 import LatencyGameState from "./game-state/latency-game-state";
 import { clearServerTicks, updateDebugScreenCurrentTime, updateDebugScreenFPS, updateDebugScreenTicks } from "./components/game/nerd-vision/GameInfoDisplay";
 import { createWorldBorderShaders, renderWorldBorder } from "./rendering/world-border-rendering";
-import { createRenderChunkBuffers, createSolidTileShaders, renderSolidTiles } from "./rendering/tile-rendering/solid-tile-rendering";
-import { createWaterShaders, renderWater } from "./rendering/tile-rendering/water-rendering";
+import { createSolidTileShaders, renderSolidTiles } from "./rendering/tile-rendering/solid-tile-rendering";
+import { createWaterShaders, renderWater } from "./rendering/tile-rendering/river-rendering";
 import { createChunkBorderShaders, renderChunkBorders } from "./rendering/chunk-border-rendering";
 import { nerdVisionIsVisible } from "./components/game/nerd-vision/NerdVision";
 import { setFrameProgress } from "./GameObject";
@@ -34,6 +34,7 @@ import { createParticleShaders, renderParticles } from "./rendering/particle-ren
 import { ParticleRenderLayer } from "./Particle";
 import Tribe from "./Tribe";
 import OPTIONS from "./options";
+import { createRenderChunks } from "./rendering/tile-rendering/render-chunks";
 
 const nightVertexShaderText = `
 precision mediump float;
@@ -232,7 +233,7 @@ abstract class Game {
             createParticleShaders();
             createWallBorderShaders();
             createAmbientOcclusionShaders();
-            createRenderChunkBuffers();
+            createRenderChunks();
 
             recalculateAmbientOcclusion();
             
@@ -243,7 +244,7 @@ abstract class Game {
             resolve();
          });
       } else {
-         createRenderChunkBuffers();
+         createRenderChunks();
          recalculateAmbientOcclusion();
       }
    }

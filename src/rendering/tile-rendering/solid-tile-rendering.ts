@@ -5,6 +5,7 @@ import { getTexture } from "../../textures";
 import { TILE_TYPE_RENDER_INFO_RECORD, SolidTileTypeRenderInfo } from "../../tile-type-render-info";
 import { gl, halfWindowWidth, halfWindowHeight, createWebGLProgram } from "../../webgl";
 import Game from "../../Game";
+import { RENDER_CHUNK_SIZE, RenderChunkSolidTileInfo, getRenderChunkSolidTileInfo } from "./render-chunks";
 
 const vertexShaderText = `
 precision mediump float;
@@ -49,24 +50,7 @@ let textureUniformLocation: WebGLUniformLocation;
 let tilePosAttribLocation: GLint;
 let texCoordAttribLocation: GLint;
 
-/** Width and height of a render chunk in tiles */
-export const RENDER_CHUNK_SIZE = 8;
-
-export const WORLD_RENDER_CHUNK_SIZE = SETTINGS.BOARD_DIMENSIONS / RENDER_CHUNK_SIZE;
-
-/**
- * Stores rendering information about one render chunk of the world.
- * A render chunk can contain multiple buffers depending on the number of different tile types in the chunk.
-*/
-interface RenderChunk {
-   buffers: Array<WebGLBuffer>;
-   vertexCounts: Array<number>;
-   indexedTextureSources: Array<string>;
-}
-
-let renderChunks = new Array<Array<RenderChunk>>();
-
-const generateRenderChunk = (renderChunkX: number, renderChunkY: number): RenderChunk => {
+export function calculateSolidTileRenderChunkData(renderChunkX: number, renderChunkY: number): RenderChunkSolidTileInfo {
    const tileMinX = renderChunkX * RENDER_CHUNK_SIZE;
    const tileMaxX = (renderChunkX + 1) * RENDER_CHUNK_SIZE - 1;
    const tileMinY = renderChunkY * RENDER_CHUNK_SIZE;
@@ -132,27 +116,6 @@ const generateRenderChunk = (renderChunkX: number, renderChunkY: number): Render
    };
 }
 
-export function createRenderChunkBuffers(): void {
-   renderChunks = new Array<Array<RenderChunk>>();
-   
-   for (let renderChunkX = 0; renderChunkX < WORLD_RENDER_CHUNK_SIZE; renderChunkX++) {
-      renderChunks.push(new Array<RenderChunk>());
-
-      for (let renderChunkY = 0; renderChunkY < WORLD_RENDER_CHUNK_SIZE; renderChunkY++) {
-         const renderChunk = generateRenderChunk(renderChunkX, renderChunkY);
-         renderChunks[renderChunkX].push(renderChunk);
-      }
-   }
-}
-
-export function updateRenderChunkFromTileBuffer(tileUpdate: ServerTileUpdateData): void {
-   const renderChunkX = Math.floor(tileUpdate.x / RENDER_CHUNK_SIZE);
-   const renderChunkY = Math.floor(tileUpdate.y / RENDER_CHUNK_SIZE);
-
-   const renderChunk = generateRenderChunk(renderChunkX, renderChunkY);
-   renderChunks[renderChunkX][renderChunkY] = renderChunk;
-}
-
 export function createSolidTileShaders(): void {
    program = createWebGLProgram(vertexShaderText, fragmentShaderText, "a_tilePos");
 
@@ -171,10 +134,10 @@ export function renderSolidTiles(): void {
 
    for (let renderChunkX = minRenderChunkX; renderChunkX <= maxRenderChunkX; renderChunkX++) {
       for (let renderChunkY = minRenderChunkY; renderChunkY <= maxRenderChunkY; renderChunkY++) {
-         const renderChunk = renderChunks[renderChunkX][renderChunkY];
+         const renderChunkInfo = getRenderChunkSolidTileInfo(renderChunkX, renderChunkY);
 
-         for (let idx = 0; idx < renderChunk.buffers.length; idx++) {
-            const buffer = renderChunk.buffers[idx];
+         for (let idx = 0; idx < renderChunkInfo.buffers.length; idx++) {
+            const buffer = renderChunkInfo.buffers[idx];
             gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
       
             gl.vertexAttribPointer(
@@ -205,12 +168,12 @@ export function renderSolidTiles(): void {
             gl.uniform1i(textureUniformLocation, 0);
             
             // Set all texture units
-            const texture = getTexture("tiles/" + renderChunk.indexedTextureSources[idx]);
+            const texture = getTexture("tiles/" + renderChunkInfo.indexedTextureSources[idx]);
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, texture);
       
             // Draw the tiles
-            gl.drawArrays(gl.TRIANGLES, 0, renderChunk.vertexCounts[idx] / 4);
+            gl.drawArrays(gl.TRIANGLES, 0, renderChunkInfo.vertexCounts[idx] / 4);
          }
       }
    }

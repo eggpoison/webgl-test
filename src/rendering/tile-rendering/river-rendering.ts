@@ -1,17 +1,21 @@
-import { Point, RIVER_STEPPING_STONE_SIZES, RiverSteppingStoneSize, SETTINGS, TileType, Vector, WaterRockSize, lerp, rotatePoint } from "webgl-test-shared";
-import { createWebGLProgram, gl } from "../../webgl";
+import { Point, RIVER_STEPPING_STONE_SIZES, RiverSteppingStoneSize, SETTINGS, Vector, WaterRockSize, lerp, rotatePoint } from "webgl-test-shared";
+import { createWebGLProgram, gl, halfWindowHeight, halfWindowWidth } from "../../webgl";
 import Game from "../../Game";
 import { getTexture } from "../../textures";
 import Camera from "../../Camera";
 import { Tile } from "../../Tile";
 import { RiverSteppingStone } from "../../Board";
+import { RENDER_CHUNK_SIZE, RenderChunkRiverInfo, getRenderChunkRiverInfo } from "./render-chunks";
 
 const SHALLOW_WATER_COLOUR = [118/255, 185/255, 242/255] as const;
 const DEEP_WATER_COLOUR = [86/255, 141/255, 184/255] as const;
 
 const WATER_VISUAL_FLOW_SPEED = 0.3;
 
-const FOAM_OFFSET = 5;
+/** How much the stepping stone foam should be offset from their stepping stones */
+const FOAM_OFFSET = 3;
+/** Extra size given to the foam under stepping stones */
+const FOAM_PADDING = 3.5;
 
 const ADJACENT_TILE_OFFSETS = [
    [0, 0],
@@ -30,23 +34,6 @@ const NEIGHBOURING_TILE_OFFSETS = [
    [0, 1],
    [1, -1]
 ];
-
-const TRANSITION_TEXTURES: Record<TileType, string | null> = {
-   "grass": "tiles/gravel.png",
-   "dirt": "tiles/gravel.png",
-   "rock": "tiles/gravel.png",
-   "darkRock": null,
-   "ice": "tiles/gravel.png",
-   "lava": "tiles/gravel.png",
-   "permafrost": "tiles/gravel.png",
-   "sludge": "tiles/gravel.png",
-   "sandstone": "tiles/gravel.png",
-   "slime": "tiles/gravel.png",
-   "magma": "tiles/gravel.png",
-   "water": null, // Transitions can't occur between two water tiles
-   "snow": "tiles/gravel.png",
-   "sand": "tiles/gravel.png"
-}
 
 const WATER_ROCK_SIZES: Record<WaterRockSize, number> = {
    [WaterRockSize.small]: 24,
@@ -125,6 +112,10 @@ void main() {
 const rockVertexShaderText = `
 precision mediump float;
 
+uniform vec2 u_playerPos;
+uniform vec2 u_halfWindowSize;
+uniform float u_zoom;
+
 attribute vec2 a_position;
 attribute vec2 a_texCoord;
 attribute float a_opacity;
@@ -133,7 +124,9 @@ varying vec2 v_texCoord;
 varying float v_opacity;
  
 void main() {
-   gl_Position = vec4(a_position, 0.0, 1.0);
+   vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
+   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+   gl_Position = vec4(clipSpacePos, 0.0, 1.0);
 
    v_texCoord = a_texCoord;
    v_opacity = a_opacity;
@@ -205,6 +198,10 @@ void main() {
 const transitionVertexShaderText = `
 precision mediump float;
 
+uniform vec2 u_playerPos;
+uniform vec2 u_halfWindowSize;
+uniform float u_zoom;
+
 attribute vec2 a_position;
 attribute vec2 a_texCoord;
 attribute float a_topLeftMarker;
@@ -227,7 +224,9 @@ varying float v_leftMarker;
 varying float v_bottomMarker;
  
 void main() {
-   gl_Position = vec4(a_position, 0.0, 1.0);
+   vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
+   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+   gl_Position = vec4(clipSpacePos, 0.0, 1.0);
 
    v_texCoord = a_texCoord;
    v_topLeftMarker = a_topLeftMarker;
@@ -338,6 +337,11 @@ void main() {
    vec4 foam = texture2D(u_foamTexture, foamCoord);
    foam.a *= steppingStoneColour.a;
 
+   float distFromCenter = distance(v_texCoord, vec2(0.5, 0.5));
+   float multiplier = 1.0 - distFromCenter * 2.0;
+   multiplier = pow(multiplier, 0.25);
+   foam.a *= multiplier;
+
    gl_FragColor = foam;
 }
 `;
@@ -382,10 +386,16 @@ let baseTextureUniformLocation: WebGLUniformLocation;
 let shallowWaterColourUniformLocation: WebGLUniformLocation;
 let deepWaterColourUniformLocation: WebGLUniformLocation;
 
+let rockProgramPlayerPosUniformLocation: WebGLUniformLocation;
+let rockProgramHalfWindowSizeUniformLocation: WebGLUniformLocation;
+let rockProgramZoomUniformLocation: WebGLUniformLocation;
 let rockProgramTextureUniformLocation: WebGLUniformLocation;
 
 let noiseTextureUniformLocation: WebGLUniformLocation;
 
+let transitionProgramPlayerPosUniformLocation: WebGLUniformLocation;
+let transitionProgramHalfWindowSizeUniformLocation: WebGLUniformLocation;
+let transitionProgramZoomUniformLocation: WebGLUniformLocation;
 let transitionTextureUniformLocation: WebGLUniformLocation;
 
 let foamProgramSteppingStoneTextureUniformLocation: WebGLUniformLocation;
@@ -450,6 +460,9 @@ export function createWaterShaders(): void {
 
    rockProgram = createWebGLProgram(rockVertexShaderText, rockFragmentShaderText);
 
+   rockProgramPlayerPosUniformLocation = gl.getUniformLocation(rockProgram, "u_playerPos")!;
+   rockProgramHalfWindowSizeUniformLocation = gl.getUniformLocation(rockProgram, "u_halfWindowSize")!;
+   rockProgramZoomUniformLocation = gl.getUniformLocation(rockProgram, "u_zoom")!;
    rockProgramTextureUniformLocation = gl.getUniformLocation(rockProgram, "u_texture")!;
 
    rockProgramPositionAttribLocation = gl.getAttribLocation(rockProgram, "a_position");
@@ -474,6 +487,9 @@ export function createWaterShaders(): void {
 
    transitionProgram = createWebGLProgram(transitionVertexShaderText, transitionFragmentShaderText);
 
+   transitionProgramPlayerPosUniformLocation = gl.getUniformLocation(transitionProgram, "u_playerPos")!;
+   transitionProgramHalfWindowSizeUniformLocation = gl.getUniformLocation(transitionProgram, "u_halfWindowSize")!;
+   transitionProgramZoomUniformLocation = gl.getUniformLocation(transitionProgram, "u_zoom")!;
    transitionTextureUniformLocation = gl.getUniformLocation(transitionProgram, "u_transitionTexture")!;
 
    transitionProgramPositionAttribLocation = gl.getAttribLocation(transitionProgram, "a_position");
@@ -510,6 +526,156 @@ export function createWaterShaders(): void {
 
    steppingStoneProgramPositionAttribLocation = gl.getAttribLocation(steppingStoneProgram, "a_position");
    steppingStoneProgramTexCoordAttribLocation = gl.getAttribLocation(steppingStoneProgram, "a_texCoord");
+}
+
+const calculateTransitionVertices = (renderChunkX: number, renderChunkY: number): Array<number> => {
+   const edgeTileIndexes = new Set<number>();
+
+   const tileMinX = renderChunkX * RENDER_CHUNK_SIZE;
+   const tileMaxX = (renderChunkX + 1) * RENDER_CHUNK_SIZE - 1;
+   const tileMinY = renderChunkY * RENDER_CHUNK_SIZE;
+   const tileMaxY = (renderChunkY + 1) * RENDER_CHUNK_SIZE - 1;
+   for (let tileX = tileMinX; tileX <= tileMaxX; tileX++) {
+      for (let tileY = tileMinY; tileY <= tileMaxY; tileY++) {
+         const tile = Game.board.getTile(tileX, tileY);
+
+         // Only add the neighbouring tiles if the tile is a water tile
+         if (tile.type === "water") {
+            for (const offset of NEIGHBOURING_TILE_OFFSETS) {
+               const tileX = tile.x + offset[0];
+               const tileY = tile.y + offset[1];
+               if (Game.board.tileIsInBoard(tileX, tileY)) {
+                  const tile = Game.board.getTile(tileX, tileY);
+                  if (tile.type !== "water") {
+                     const tileIndex = tileY * SETTINGS.BOARD_DIMENSIONS + tileX;
+                     edgeTileIndexes.add(tileIndex);
+                  }
+               }
+            }
+         }
+      }
+   }
+
+   const vertices = new Array<number>();
+   
+   for (const tileIndex of edgeTileIndexes) {
+      const tileX = tileIndex % SETTINGS.BOARD_DIMENSIONS;
+      const tileY = Math.floor(tileIndex / SETTINGS.BOARD_DIMENSIONS);
+
+      const tile = Game.board.getTile(tileX, tileY);
+
+      let x1 = tile.x * SETTINGS.TILE_SIZE;
+      let x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
+      let y1 = tile.y * SETTINGS.TILE_SIZE;
+      let y2 = (tile.y + 1) * SETTINGS.TILE_SIZE;
+
+      const bottomLeftWaterDistance = calculateDistanceToWater(tile.x, tile.y);
+      const bottomRightWaterDistance = calculateDistanceToWater(tile.x + 1, tile.y);
+      const topLeftWaterDistance = calculateDistanceToWater(tile.x, tile.y + 1);
+      const topRightWaterDistance = calculateDistanceToWater(tile.x + 1, tile.y + 1);
+
+      const topMarker = waterEdgeDist(tile.x, tile.y + 1);
+      const rightMarker = waterEdgeDist(tile.x - 1, tile.y);
+      const leftMarker = waterEdgeDist(tile.x + 1, tile.y);
+      const bottomMarker = waterEdgeDist(tile.x, tile.y - 1);
+      
+      vertices.push(
+         x1, y1, 0, 0, bottomLeftWaterDistance, bottomRightWaterDistance, topLeftWaterDistance, topRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
+         x2, y1, 1, 0, bottomLeftWaterDistance, bottomRightWaterDistance, topLeftWaterDistance, topRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
+         x1, y2, 0, 1, bottomLeftWaterDistance, bottomRightWaterDistance, topLeftWaterDistance, topRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
+         x1, y2, 0, 1, bottomLeftWaterDistance, bottomRightWaterDistance, topLeftWaterDistance, topRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
+         x2, y1, 1, 0, bottomLeftWaterDistance, bottomRightWaterDistance, topLeftWaterDistance, topRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
+         x2, y2, 1, 1, bottomLeftWaterDistance, bottomRightWaterDistance, topLeftWaterDistance, topRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker
+      );
+   }
+
+   return vertices;
+}
+
+const calculateRockVertices = (renderChunkX: number, renderChunkY: number): Array<Array<number>> => {
+   const vertexArrays = [ [], [] ] as Array<Array<number>>;
+
+   const minChunkX = Math.floor(renderChunkX * RENDER_CHUNK_SIZE / SETTINGS.CHUNK_SIZE);
+   const maxChunkX = Math.floor((renderChunkX + 1) * RENDER_CHUNK_SIZE / SETTINGS.CHUNK_SIZE) - 1;
+   const minChunkY = Math.floor(renderChunkY * RENDER_CHUNK_SIZE / SETTINGS.CHUNK_SIZE);
+   const maxChunkY = Math.floor((renderChunkY + 1) * RENDER_CHUNK_SIZE / SETTINGS.CHUNK_SIZE) - 1;
+   for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+      for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
+         const chunk = Game.board.getChunk(chunkX, chunkY);
+         for (const waterRock of chunk.waterRocks) {
+            const size = WATER_ROCK_SIZES[waterRock.size];
+            
+            let x1 = (waterRock.position[0] - size/2);
+            let x2 = (waterRock.position[0] + size/2);
+            let y1 = (waterRock.position[1] - size/2);
+            let y2 = (waterRock.position[1] + size/2);
+   
+            let topLeft = new Point(x1, y2);
+            let topRight = new Point(x2, y2);
+            let bottomRight = new Point(x2, y1);
+            let bottomLeft = new Point(x1, y1);
+
+            const pos = new Point(waterRock.position[0], waterRock.position[1]);
+
+            // Rotate the points to match the entity's rotation
+            topLeft = rotatePoint(topLeft, pos, waterRock.rotation);
+            topRight = rotatePoint(topRight, pos, waterRock.rotation);
+            bottomRight = rotatePoint(bottomRight, pos, waterRock.rotation);
+            bottomLeft = rotatePoint(bottomLeft, pos, waterRock.rotation);
+
+            // topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));
+            // topRight = new Point(Camera.calculateXCanvasPosition(topRight.x), Camera.calculateYCanvasPosition(topRight.y));
+            // bottomRight = new Point(Camera.calculateXCanvasPosition(bottomRight.x), Camera.calculateYCanvasPosition(bottomRight.y));
+            // bottomLeft = new Point(Camera.calculateXCanvasPosition(bottomLeft.x), Camera.calculateYCanvasPosition(bottomLeft.y));
+
+            const opacity = lerp(0.15, 0.4, waterRock.opacity);
+
+            // const textureSource = WATER_ROCK_TEXTURES[waterRock.size];
+            // if (!vertexRecord.hasOwnProperty(textureSource)) {
+            //    vertexRecord[textureSource] = [];
+            // }
+
+            vertexArrays[waterRock.size].push(
+               bottomLeft.x, bottomLeft.y, 0, 0, opacity,
+               bottomRight.x, bottomRight.y, 1, 0, opacity,
+               topLeft.x, topLeft.y, 0, 1, opacity,
+               topLeft.x, topLeft.y, 0, 1, opacity,
+               bottomRight.x, bottomRight.y, 1, 0, opacity,
+               topRight.x, topRight.y, 1, 1, opacity
+            );
+         }
+      }
+   }
+
+   return vertexArrays;
+}
+
+export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY: number): RenderChunkRiverInfo {
+   // Create transition buffer
+   const transitionVertices = calculateTransitionVertices(renderChunkX, renderChunkY);
+   const transitionBuffer = gl.createBuffer()!;
+   gl.bindBuffer(gl.ARRAY_BUFFER, transitionBuffer);
+   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(transitionVertices), gl.STATIC_DRAW);
+
+   const rockVertexArrays = calculateRockVertices(renderChunkX, renderChunkY);
+
+   const rockBuffers = new Array<WebGLBuffer>();
+   const rockVertexCounts = new Array<number>();
+   for (const vertices of rockVertexArrays) {
+      const buffer = gl.createBuffer()!;
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+
+      rockBuffers.push(buffer);
+      rockVertexCounts.push(vertices.length);
+   }
+
+   return {
+      transitionBuffer: transitionBuffer,
+      transitionVertexCount: transitionVertices.length,
+      rockBuffers: rockBuffers,
+      rockVertexCounts: rockVertexCounts
+   };
 }
 
 const calculateVisibleWaterTiles = (): ReadonlyArray<Tile> => {
@@ -654,128 +820,6 @@ const waterEdgeDist = (tileX: number, tileY: number): number => {
    return 1;
 }
 
-const calculateTransitionVertices = (visibleTiles: ReadonlyArray<Tile>): Record<string, ReadonlyArray<number>> => {
-   const edgeTileIndexes = new Set<number>();
-
-   for (const tile of visibleTiles) {
-      for (const offset of NEIGHBOURING_TILE_OFFSETS) {
-         const tileX = tile.x + offset[0];
-         const tileY = tile.y + offset[1];
-         if (Game.board.tileIsInBoard(tileX, tileY)) {
-            const tile = Game.board.getTile(tileX, tileY);
-            if (tile.type !== "water") {
-               const tileIndex = tileY * SETTINGS.BOARD_DIMENSIONS + tileX;
-               edgeTileIndexes.add(tileIndex);
-            }
-         }
-      }
-   }
-
-   const vertexRecord: Record<string, Array<number>> = {};
-   
-   for (const tileIndex of edgeTileIndexes) {
-      const tileX = tileIndex % SETTINGS.BOARD_DIMENSIONS;
-      const tileY = Math.floor(tileIndex / SETTINGS.BOARD_DIMENSIONS);
-
-      const tile = Game.board.getTile(tileX, tileY);
-
-      const transitionTextureSource = TRANSITION_TEXTURES[tile.type];
-      if (transitionTextureSource === null) {
-         continue;
-      }
-      if (!vertexRecord.hasOwnProperty(transitionTextureSource)) {
-         vertexRecord[transitionTextureSource] = [];
-      }
-
-      let x1 = tile.x * SETTINGS.TILE_SIZE;
-      let x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
-      let y1 = tile.y * SETTINGS.TILE_SIZE;
-      let y2 = (tile.y + 1) * SETTINGS.TILE_SIZE;
-
-      x1 = Camera.calculateXCanvasPosition(x1);
-      x2 = Camera.calculateXCanvasPosition(x2);
-      y1 = Camera.calculateYCanvasPosition(y1);
-      y2 = Camera.calculateYCanvasPosition(y2);
-
-      const bottomLeftWaterDistance = calculateDistanceToWater(tile.x, tile.y);
-      const bottomRightWaterDistance = calculateDistanceToWater(tile.x + 1, tile.y);
-      const topLeftWaterDistance = calculateDistanceToWater(tile.x, tile.y + 1);
-      const topRightWaterDistance = calculateDistanceToWater(tile.x + 1, tile.y + 1);
-
-      const topMarker = waterEdgeDist(tile.x, tile.y + 1);
-      const rightMarker = waterEdgeDist(tile.x - 1, tile.y);
-      const leftMarker = waterEdgeDist(tile.x + 1, tile.y);
-      const bottomMarker = waterEdgeDist(tile.x, tile.y - 1);
-      
-      vertexRecord[transitionTextureSource].push(
-         x1, y1, 0, 0, bottomLeftWaterDistance, bottomRightWaterDistance, topLeftWaterDistance, topRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
-         x2, y1, 1, 0, bottomLeftWaterDistance, bottomRightWaterDistance, topLeftWaterDistance, topRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
-         x1, y2, 0, 1, bottomLeftWaterDistance, bottomRightWaterDistance, topLeftWaterDistance, topRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
-         x1, y2, 0, 1, bottomLeftWaterDistance, bottomRightWaterDistance, topLeftWaterDistance, topRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
-         x2, y1, 1, 0, bottomLeftWaterDistance, bottomRightWaterDistance, topLeftWaterDistance, topRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
-         x2, y2, 1, 1, bottomLeftWaterDistance, bottomRightWaterDistance, topLeftWaterDistance, topRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker
-      );
-   }
-
-   return vertexRecord;
-}
-
-const calculateRockVertices = (): Record<string, ReadonlyArray<number>> => {
-   const vertexRecord: Record<string, Array<number>> = {};
-
-   const visibleChunkBounds = Camera.getVisibleChunkBounds();
-   
-   for (let chunkX = visibleChunkBounds[0]; chunkX <= visibleChunkBounds[1]; chunkX++) {
-      for (let chunkY = visibleChunkBounds[2]; chunkY <= visibleChunkBounds[3]; chunkY++) {
-         const chunk = Game.board.getChunk(chunkX, chunkY);
-         for (const waterRock of chunk.waterRocks) {
-            const size = WATER_ROCK_SIZES[waterRock.size];
-            
-            let x1 = (waterRock.position[0] - size/2);
-            let x2 = (waterRock.position[0] + size/2);
-            let y1 = (waterRock.position[1] - size/2);
-            let y2 = (waterRock.position[1] + size/2);
-   
-            let topLeft = new Point(x1, y2);
-            let topRight = new Point(x2, y2);
-            let bottomRight = new Point(x2, y1);
-            let bottomLeft = new Point(x1, y1);
-
-            const pos = new Point(waterRock.position[0], waterRock.position[1]);
-
-            // Rotate the points to match the entity's rotation
-            topLeft = rotatePoint(topLeft, pos, waterRock.rotation);
-            topRight = rotatePoint(topRight, pos, waterRock.rotation);
-            bottomRight = rotatePoint(bottomRight, pos, waterRock.rotation);
-            bottomLeft = rotatePoint(bottomLeft, pos, waterRock.rotation);
-
-            topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));
-            topRight = new Point(Camera.calculateXCanvasPosition(topRight.x), Camera.calculateYCanvasPosition(topRight.y));
-            bottomRight = new Point(Camera.calculateXCanvasPosition(bottomRight.x), Camera.calculateYCanvasPosition(bottomRight.y));
-            bottomLeft = new Point(Camera.calculateXCanvasPosition(bottomLeft.x), Camera.calculateYCanvasPosition(bottomLeft.y));
-
-            const opacity = lerp(0.15, 0.4, waterRock.opacity);
-
-            const textureSource = WATER_ROCK_TEXTURES[waterRock.size];
-            if (!vertexRecord.hasOwnProperty(textureSource)) {
-               vertexRecord[textureSource] = [];
-            }
-
-            vertexRecord[textureSource].push(
-               bottomLeft.x, bottomLeft.y, 0, 0, opacity,
-               bottomRight.x, bottomRight.y, 1, 0, opacity,
-               topLeft.x, topLeft.y, 0, 1, opacity,
-               topLeft.x, topLeft.y, 0, 1, opacity,
-               bottomRight.x, bottomRight.y, 1, 0, opacity,
-               topRight.x, topRight.y, 1, 1, opacity
-            );
-         }
-      }
-   }
-
-   return vertexRecord;
-}
-
 const calculateVisibleSteppingStones = (): ReadonlySet<RiverSteppingStone> => {
    const visibleSteppingStones = new Set<RiverSteppingStone>();
    
@@ -798,10 +842,10 @@ const calculateFoamVertices = (visibleSteppingStones: ReadonlySet<RiverSteppingS
    for (const steppingStone of visibleSteppingStones) {
       const size = RIVER_STEPPING_STONE_SIZES[steppingStone.size];
       
-      let x1 = (steppingStone.position.x - size/2);
-      let x2 = (steppingStone.position.x + size/2);
-      let y1 = (steppingStone.position.y - size/2);
-      let y2 = (steppingStone.position.y + size/2);
+      let x1 = (steppingStone.position.x - size/2 - FOAM_PADDING);
+      let x2 = (steppingStone.position.x + size/2 + FOAM_PADDING);
+      let y1 = (steppingStone.position.y - size/2 - FOAM_PADDING);
+      let y2 = (steppingStone.position.y + size/2 + FOAM_PADDING);
 
       let topLeft = new Point(x1, y2);
       let topRight = new Point(x2, y2);
@@ -907,14 +951,28 @@ const calculateSteppingStoneVertices = (visibleSteppingStones: ReadonlySet<River
    return vertexRecord;
 }
 
+const calculateVisibleRenderChunks = (): ReadonlyArray<RenderChunkRiverInfo> => {
+   const renderChunks = new Array<RenderChunkRiverInfo>();
+
+   const [minRenderChunkX, maxRenderChunkX, minRenderChunkY, maxRenderChunkY] = Camera.calculateVisibleRenderChunkBounds();
+
+   for (let renderChunkX = minRenderChunkX; renderChunkX <= maxRenderChunkX; renderChunkX++) {
+      for (let renderChunkY = minRenderChunkY; renderChunkY <= maxRenderChunkY; renderChunkY++) {
+         const renderChunkInfo = getRenderChunkRiverInfo(renderChunkX, renderChunkY);
+         renderChunks.push(renderChunkInfo);
+      }
+   }
+
+   return renderChunks;
+}
+
 export function renderWater(): void {
+   const visibleRenderChunks = calculateVisibleRenderChunks();
    const visibleTiles = calculateVisibleWaterTiles();
    const visibleSteppingStones = calculateVisibleSteppingStones();
 
    const baseVertices = calculateBaseVertices(visibleTiles);
-   const rockVertexRecord = calculateRockVertices();
    const noiseVertices = calculateNoiseVertices(visibleTiles);
-   const transitionVertexRecord = calculateTransitionVertices(visibleTiles);
    const foamVertexRecord = calculateFoamVertices(visibleSteppingStones);
    const steppingStoneVertices = calculateSteppingStoneVertices(visibleSteppingStones);
    
@@ -966,11 +1024,10 @@ export function renderWater(): void {
    gl.enable(gl.BLEND);
    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
    
-   for (const [textureSource, vertices] of Object.entries(rockVertexRecord)) {
-      // Create tile buffer
-      const buffer = gl.createBuffer()!;
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+   for (const renderChunkRiverInfo of visibleRenderChunks) {
+      for (let rockSize: WaterRockSize = 0; rockSize < 2; rockSize++) {
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, renderChunkRiverInfo.rockBuffers[rockSize]);
    
       gl.vertexAttribPointer(rockProgramPositionAttribLocation, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
       gl.vertexAttribPointer(rockProgramCoordAttribLocation, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
@@ -981,15 +1038,21 @@ export function renderWater(): void {
       gl.enableVertexAttribArray(rockProgramCoordAttribLocation);
       gl.enableVertexAttribArray(rockProgramOpacityAttribLocation);
       
+      gl.uniform2f(rockProgramPlayerPosUniformLocation, Camera.position.x, Camera.position.y);
+      gl.uniform2f(rockProgramHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
+      gl.uniform1f(rockProgramZoomUniformLocation, Camera.zoom);
       gl.uniform1i(rockProgramTextureUniformLocation, 0);
 
+      const textureSource = WATER_ROCK_TEXTURES[rockSize];
       const texture = getTexture(textureSource);
+      // const texture = getTexture(textureSource);
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, texture);
       
       // Draw the tile
-      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 5);
+      gl.drawArrays(gl.TRIANGLES, 0, renderChunkRiverInfo.rockVertexCounts[rockSize] / 5);
    }
+}
    
    // 
    // Noise program
@@ -1029,11 +1092,8 @@ export function renderWater(): void {
 
    gl.useProgram(transitionProgram);
 
-   for (const [textureSource, vertices] of Object.entries(transitionVertexRecord)) {
-      // Create tile buffer
-      const buffer = gl.createBuffer()!;
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+   for (const renderChunkRiverInfo of visibleRenderChunks) {
+      gl.bindBuffer(gl.ARRAY_BUFFER, renderChunkRiverInfo.transitionBuffer);
    
       gl.vertexAttribPointer(transitionProgramPositionAttribLocation, 2, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 0);
       gl.vertexAttribPointer(transitionProgramTexCoordAttribLocation, 2, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
@@ -1058,15 +1118,18 @@ export function renderWater(): void {
       gl.enableVertexAttribArray(transitionProgramLeftMarkerAttribLocation);
       gl.enableVertexAttribArray(transitionProgramBottomMarkerAttribLocation);
       
+      gl.uniform2f(transitionProgramPlayerPosUniformLocation, Camera.position.x, Camera.position.y);
+      gl.uniform2f(transitionProgramHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
+      gl.uniform1f(transitionProgramZoomUniformLocation, Camera.zoom);
       gl.uniform1i(transitionTextureUniformLocation, 0);
       
       // Set transition texture
-      const transitionTexture = getTexture(textureSource);
+      const transitionTexture = getTexture("tiles/gravel.png");
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, transitionTexture);
    
       // Draw the tile
-      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 12);
+      gl.drawArrays(gl.TRIANGLES, 0, renderChunkRiverInfo.transitionVertexCount / 12);
    }
    
    // 

@@ -102,6 +102,9 @@ const attack = (): void => {
    Client.sendAttackPacket(attackPacket);
 }
 
+export let rightMouseButtonIsPressed = false;
+export let leftMouseButtonIsPressed = false;
+
 const createItemUseListeners = (): void => {
    document.addEventListener("mousedown", e => {
       if (Player.instance === null || Game.definiteGameState.hotbar === null || Game.definiteGameState.playerIsDead()) return;
@@ -119,12 +122,16 @@ const createItemUseListeners = (): void => {
             selectedItem.resetAttackSwitchDelay();
          }
 
+         leftMouseButtonIsPressed = true;
+
          attack();
       } else if (e.button === 2) {
          // Right click
          if (typeof selectedItem !== "undefined" && typeof selectedItem.onRightMouseButtonDown !== "undefined") {
             selectedItem.onRightMouseButtonDown();
          }
+
+         rightMouseButtonIsPressed = true;
       }
    });
 
@@ -142,11 +149,15 @@ const createItemUseListeners = (): void => {
          return;
       }
 
-      if (e.button === 2) {
+      if (e.button === 0) {
+         leftMouseButtonIsPressed = false;
+      } else if (e.button === 2) {
          // Right mouse button up
          if (typeof selectedItem.onRightMouseButtonUp !== "undefined") {
             selectedItem.onRightMouseButtonUp();
          }
+
+         rightMouseButtonIsPressed = false;
       }
    });
 

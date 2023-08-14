@@ -36,6 +36,7 @@ export const PARTICLE_TEXTURES: Record<ParticleType, string> = {
    [ParticleType.waterSplash]: "particles/water-splash.png",
    [ParticleType.waterDroplet]: "particles/water-droplet.png",
    [ParticleType.snow]: "particles/snow.png",
+   [ParticleType.wind]: "particles/wind.png"
 };
 
 const vertexShaderText = `

@@ -20,13 +20,13 @@ import { setHeldItemVisual } from "../components/game/HeldItem";
 import { CraftingMenu_setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
 import { updateHealthBar } from "../components/game/HealthBar";
 import { registerServerTick } from "../components/game/nerd-vision/GameInfoDisplay";
-import { updateRenderChunkFromTileBuffer } from "../rendering/tile-rendering/solid-tile-rendering";
 import createProjectile from "../projectiles/projectile-creation";
 import Camera from "../Camera";
 import { isDev } from "../utils";
 import Particle from "../Particle";
 import { updateTileAmbientOcclusion } from "../rendering/ambient-occlusion-rendering";
 import Tribe from "../Tribe";
+import { updateRenderChunkFromTileUpdate } from "../rendering/tile-rendering/render-chunks";
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -458,7 +458,10 @@ abstract class Client {
 
       const hitboxes = this.createHitboxesFromData(projectileData.hitboxes);
 
-      createProjectile(position, hitboxes, projectileData.id, projectileData.type);
+      const projectile = createProjectile(position, hitboxes, projectileData.id, projectileData.type);
+      projectile.rotation = projectileData.rotation;
+      projectile.velocity = projectileData.velocity !== null ? Vector.unpackage(projectileData.velocity) : null;
+      projectile.acceleration = projectileData.acceleration !== null ? Vector.unpackage(projectileData.acceleration) : null
    }
    
    private static registerTileUpdates(tileUpdates: ReadonlyArray<ServerTileUpdateData>): void {
@@ -467,7 +470,7 @@ abstract class Client {
          tile.type = tileUpdate.type;
          tile.isWall = tileUpdate.isWall;
          
-         updateRenderChunkFromTileBuffer(tileUpdate);
+         updateRenderChunkFromTileUpdate(tileUpdate);
 
          // Update the ambient occlusion of nearby tiles
          const minTileX = Math.max(tile.x - 1, 0);

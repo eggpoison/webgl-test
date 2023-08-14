@@ -67,6 +67,7 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/yeti-paw.png",
    "entities/ice-spikes/ice-spikes.png",
    "projectiles/ice-shard.png",
+   "projectiles/wooden-arrow.png",
    "entities/snowball/snowball-large.png",
    "entities/snowball/snowball-small.png",
    "entities/slime/slime-small-body.png",

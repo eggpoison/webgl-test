@@ -4,8 +4,8 @@ import RenderPart from "../render-parts/RenderPart";
 import Projectile from "./Projectile";
 
 class WoodenArrowProjectile extends Projectile {
-   private static readonly HEIGHT = 20;
-   private static readonly WIDTH = 64;
+   private static readonly HEIGHT = 64;
+   private static readonly WIDTH = 20;
    
    constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number) {
       super(position, hitboxes, id);
