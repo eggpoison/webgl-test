@@ -23,8 +23,11 @@ export function calculateCursorWorldPosition(): Point | null {
    if (Game.getIsPaused()) return null;
    if (cursorX === null || cursorY === null) return null;
 
-   const worldX = cursorX - halfWindowWidth + Camera.position.x;
-   const worldY = -cursorY + halfWindowHeight + Camera.position.y;
+   // const worldX = Camera.calculateXScreenPos(cursorX);
+   // const worldY = Camera.calculateYScreenPos(cursorY);
+   
+   const worldX = (cursorX - halfWindowWidth) / Camera.zoom + Camera.position.x;
+   const worldY = (-cursorY + halfWindowHeight) / Camera.zoom + Camera.position.y;
 
    // If out of bounds return null;
    if (worldX < 0 || worldX >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE || worldY < 0 || worldY >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
@@ -45,10 +48,10 @@ export function handleMouseMovement(e: MouseEvent): void {
 export function getMouseTargetEntity(): Entity | null {
    if (Game.cursorPosition === null) return null;
    
-   const minChunkX = Math.max(Math.min(Math.floor((Game.cursorPosition.x - CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-   const maxChunkX = Math.max(Math.min(Math.floor((Game.cursorPosition.x + CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-   const minChunkY = Math.max(Math.min(Math.floor((Game.cursorPosition.y - CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-   const maxChunkY = Math.max(Math.min(Math.floor((Game.cursorPosition.y + CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+   const minChunkX = Math.max(Math.min(Math.floor((Game.cursorPosition.x - CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+   const maxChunkX = Math.max(Math.min(Math.floor((Game.cursorPosition.x + CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+   const minChunkY = Math.max(Math.min(Math.floor((Game.cursorPosition.y - CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+   const maxChunkY = Math.max(Math.min(Math.floor((Game.cursorPosition.y + CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
 
    let closestEntity: Entity | null = null;
    let minDistance = Number.MAX_SAFE_INTEGER;
@@ -71,8 +74,10 @@ export function getMouseTargetEntity(): Entity | null {
 }
 
 const calculateEntityScreenPosition = (entity: Entity): Point => {
-   const x = entity.renderPosition.x - Camera.position.x + halfWindowWidth;
-   const y = -entity.renderPosition.y + Camera.position.y + halfWindowHeight;
+   const x = Camera.calculateXScreenPos(entity.renderPosition.x);
+   const y = Camera.calculateYScreenPos(entity.renderPosition.y);
+   // const x = entity.renderPosition.x - Camera.position.x + halfWindowWidth;
+   // const y = -entity.renderPosition.y + Camera.position.y + halfWindowHeight;
 
    return new Point(x, y);
 }

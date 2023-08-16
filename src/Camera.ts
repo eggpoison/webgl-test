@@ -44,7 +44,7 @@ abstract class Camera {
    public static calculateXScreenPos(x: number): number {
       // Account for the player position
       const playerRelativePosition = x - this.position.x;
-
+      
       // Account for zoom
       return playerRelativePosition * this.zoom + halfWindowWidth;
    }
@@ -53,7 +53,7 @@ abstract class Camera {
    public static calculateYScreenPos(y: number): number {
       // Account for the player position
       const playerRelativePosition = y - this.position.y;
-
+      
       // Account for zoom
       return playerRelativePosition * this.zoom + halfWindowHeight;
    }

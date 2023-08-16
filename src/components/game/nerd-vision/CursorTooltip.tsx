@@ -15,7 +15,7 @@ const CursorTooltip = () => {
          setDebugData(debugData);
 
          if (cursorTooltipRef.current !== null && screenPosition !== null) {
-            cursorTooltipRef.current.style.top = screenPosition.y + "px";
+            cursorTooltipRef.current.style.bottom = screenPosition.y + "px";
             cursorTooltipRef.current.style.left = screenPosition.x + "px";
          }
       }

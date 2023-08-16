@@ -345,7 +345,7 @@ class Player extends TribeMember {
          let forceMultiplier = 1 / dist;
 
          // Push both entities away from each other
-         const force = SETTINGS.ENTITY_PUSH_FORCE / SETTINGS.TPS * forceMultiplier;
+         const force = SETTINGS.ENTITY_PUSH_FORCE / SETTINGS.TPS * forceMultiplier * gameObject.mass / Player.instance.mass;
          const angle = Player.instance.position.calculateAngleBetween(gameObject.position) + Math.PI;
 
          // No need to apply force to other object as they will do it themselves

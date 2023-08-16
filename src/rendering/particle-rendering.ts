@@ -195,18 +195,22 @@ export function renderParticles(renderLayer: ParticleRenderLayer): void {
          bottomRight = rotatePoint(bottomRight, renderPosition, particle.rotation);
 
          // Convert the corners to screen space
-         topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));
-         topRight = new Point(Camera.calculateXCanvasPosition(topRight.x), Camera.calculateYCanvasPosition(topRight.y));
-         bottomLeft = new Point(Camera.calculateXCanvasPosition(bottomLeft.x), Camera.calculateYCanvasPosition(bottomLeft.y));
-         bottomRight = new Point(Camera.calculateXCanvasPosition(bottomRight.x), Camera.calculateYCanvasPosition(bottomRight.y));
+         const topLeftX = Camera.calculateXCanvasPosition(topLeft.x);
+         const topLeftY = Camera.calculateYCanvasPosition(topLeft.y);
+         const topRightX = Camera.calculateXCanvasPosition(topRight.x);
+         const topRightY = Camera.calculateYCanvasPosition(topRight.y);
+         const bottomLeftX = Camera.calculateXCanvasPosition(bottomLeft.x);
+         const bottomLeftY = Camera.calculateYCanvasPosition(bottomLeft.y);
+         const bottomRightX = Camera.calculateXCanvasPosition(bottomRight.x);
+         const bottomRightY = Camera.calculateYCanvasPosition(bottomRight.y);
          
          vertices.push(
-            bottomLeft.x, bottomLeft.y, 0, 0, particle.opacity, ...particle.tint,
-            bottomRight.x, bottomRight.y, 1, 0, particle.opacity, ...particle.tint,
-            topLeft.x, topLeft.y, 0, 1, particle.opacity, ...particle.tint,
-            topLeft.x, topLeft.y, 0, 1, particle.opacity, ...particle.tint,
-            bottomRight.x, bottomRight.y, 1, 0, particle.opacity, ...particle.tint,
-            topRight.x, topRight.y, 1, 1, particle.opacity, ...particle.tint
+            bottomLeftX, bottomLeftY, 0, 0, particle.opacity, particle.tint[0], particle.tint[1], particle.tint[2],
+            bottomRightX, bottomRightY, 1, 0, particle.opacity, particle.tint[0], particle.tint[1], particle.tint[2],
+            topLeftX, topLeftY, 0, 1, particle.opacity, particle.tint[0], particle.tint[1], particle.tint[2],
+            topLeftX, topLeftY, 0, 1, particle.opacity, particle.tint[0], particle.tint[1], particle.tint[2],
+            bottomRightX, bottomRightY, 1, 0, particle.opacity, particle.tint[0], particle.tint[1], particle.tint[2],
+            topRightX, topRightY, 1, 1, particle.opacity, particle.tint[0], particle.tint[1], particle.tint[2]
          );
       }
       vertexArrays.push(vertices);

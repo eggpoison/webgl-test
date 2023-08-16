@@ -18,6 +18,8 @@ export interface RenderChunkRiverInfo {
    readonly transitionVertexCount: number;
    readonly rockBuffers: Array<WebGLBuffer>;
    readonly rockVertexCounts: Array<number>;
+   readonly baseBuffer: WebGLBuffer;
+   readonly baseVertexCount: number;
 }
 
 /** Stores rendering information about one render chunk of the world.*/

@@ -445,6 +445,7 @@ abstract class Client {
 
       const droppedItem = new DroppedItem(position, hitboxes, serverItemEntityData.id, velocity, serverItemEntityData.type);
       droppedItem.rotation = serverItemEntityData.rotation;
+      droppedItem.mass = serverItemEntityData.mass;
    }
 
    private static createProjectileFromServerData(projectileData: ProjectileData): void {
@@ -462,6 +463,7 @@ abstract class Client {
       projectile.rotation = projectileData.rotation;
       projectile.velocity = projectileData.velocity !== null ? Vector.unpackage(projectileData.velocity) : null;
       projectile.acceleration = projectileData.acceleration !== null ? Vector.unpackage(projectileData.acceleration) : null
+      projectile.mass = projectileData.mass;
    }
    
    private static registerTileUpdates(tileUpdates: ReadonlyArray<ServerTileUpdateData>): void {
@@ -516,6 +518,7 @@ abstract class Client {
       entity.velocity = entityData.velocity !== null ? Vector.unpackage(entityData.velocity) : null;
       entity.acceleration = entityData.acceleration !== null ? Vector.unpackage(entityData.acceleration) : null
       entity.rotation = entityData.rotation;
+      entity.mass = entityData.mass;
       entity.special = entityData.special;
    }
 

@@ -3,7 +3,7 @@
 #cursor-tooltip {
    position: absolute;
    z-index: 1;
-   transform: translate(-50%, -50%);
+   transform: translate(-50%, 50%);
    user-select: none;
    pointer-events: none;
 }

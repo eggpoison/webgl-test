@@ -90,7 +90,9 @@ abstract class GameObject extends RenderObject {
    public renderPosition!: Point;
 
    /** Angle the object is facing, taken counterclockwise from the positive x axis (radians) */
-   public rotation: number = 0;
+   public rotation = 0;
+
+   public mass = 1;
 
    /** Stores all render parts attached to the object, in ascending order of their z-indexes. */
    public readonly renderParts = new Array<RenderPart>();
@@ -316,9 +318,7 @@ abstract class GameObject extends RenderObject {
       this.acceleration = data.acceleration !== null ? Vector.unpackage(data.acceleration) : null;
       this.terminalVelocity = data.terminalVelocity;
       this.rotation = data.rotation;
-      if (this.position.x < 0 || this.position.x >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE || this.position.y < 0 || this.position.y >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
-         throw new Error("2");
-      }
+      this.mass = data.mass;
 
       this.updateChunks(new Set(data.chunkCoordinates.map(([x, y]) => Game.board.getChunk(x, y))));
    }

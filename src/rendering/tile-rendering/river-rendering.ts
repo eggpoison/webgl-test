@@ -56,6 +56,10 @@ const RIVER_STEPPING_STONE_TEXTURES: Record<RiverSteppingStoneSize, string> = {
 const baseVertexShaderText = `
 precision mediump float;
 
+uniform vec2 u_playerPos;
+uniform vec2 u_halfWindowSize;
+uniform float u_zoom;
+
 attribute vec2 a_position;
 attribute vec2 a_coord;
 attribute float a_topLeftLandDistance;
@@ -70,7 +74,9 @@ varying float v_bottomLeftLandDistance;
 varying float v_bottomRightLandDistance;
  
 void main() {
-   gl_Position = vec4(a_position, 0.0, 1.0);
+   vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
+   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+   gl_Position = vec4(clipSpacePos, 0.0, 1.0);
 
    v_coord = a_coord;
    v_topLeftLandDistance = a_topLeftLandDistance;
@@ -145,6 +151,58 @@ void main() {
    vec4 textureColour = texture2D(u_texture, v_texCoord);
    textureColour.a *= v_opacity;
    gl_FragColor = textureColour;
+}
+`;
+
+// Highlight shaders
+
+const highlightsVertexShaderText = `
+precision mediump float;
+
+attribute vec2 a_position;
+attribute vec2 a_texCoord;
+attribute float a_fadeProgress;
+
+varying vec2 v_texCoord;
+varying float v_fadeProgress;
+ 
+void main() {
+   gl_Position = vec4(a_position, 0.0, 1.0);
+
+   v_texCoord = a_texCoord;
+   v_fadeProgress = a_fadeProgress;
+}
+`;
+
+const highlightsFragmentShaderText = `
+precision mediump float;
+ 
+uniform sampler2D u_texture1;
+uniform sampler2D u_texture2;
+uniform sampler2D u_texture3;
+ 
+varying vec2 v_texCoord;
+varying float v_fadeProgress;
+ 
+void main() {
+   vec4 outputColour;
+   if (v_fadeProgress < 1.0) {
+      vec4 texture1Colour = texture2D(u_texture1, v_texCoord);
+      vec4 texture2Colour = texture2D(u_texture2, v_texCoord);
+      outputColour = mix(texture1Colour, texture2Colour, v_fadeProgress);
+   } else if (v_fadeProgress < 2.0) {
+      vec4 texture2Colour = texture2D(u_texture2, v_texCoord);
+      vec4 texture3Colour = texture2D(u_texture3, v_texCoord);
+      outputColour = mix(texture2Colour, texture3Colour, v_fadeProgress - 1.0);
+   } else {
+      vec4 texture3Colour = texture2D(u_texture3, v_texCoord);
+      vec4 texture1Colour = texture2D(u_texture1, v_texCoord);
+      outputColour = mix(texture3Colour, texture1Colour, v_fadeProgress - 2.0);
+   }
+
+   outputColour.a *= 0.4;
+
+   gl_FragColor = outputColour;
 }
 `;
 
@@ -377,11 +435,15 @@ void main() {
 
 let baseProgram: WebGLProgram;
 let rockProgram: WebGLProgram;
+let highlightsProgram: WebGLProgram;
 let noiseProgram: WebGLProgram;
 let transitionProgram: WebGLProgram;
 let foamProgram: WebGLProgram;
 let steppingStoneProgram: WebGLProgram;
 
+let baseProgramPlayerPosUniformLocation: WebGLUniformLocation;
+let baseProgramHalfWindowSizeUniformLocation: WebGLUniformLocation;
+let baseProgramZoomUniformLocation: WebGLUniformLocation;
 let baseTextureUniformLocation: WebGLUniformLocation;
 let shallowWaterColourUniformLocation: WebGLUniformLocation;
 let deepWaterColourUniformLocation: WebGLUniformLocation;
@@ -390,6 +452,10 @@ let rockProgramPlayerPosUniformLocation: WebGLUniformLocation;
 let rockProgramHalfWindowSizeUniformLocation: WebGLUniformLocation;
 let rockProgramZoomUniformLocation: WebGLUniformLocation;
 let rockProgramTextureUniformLocation: WebGLUniformLocation;
+
+let highlightsProgramTexture1UniformLocation: WebGLUniformLocation;
+let highlightsProgramTexture2UniformLocation: WebGLUniformLocation;
+let highlightsProgramTexture3UniformLocation: WebGLUniformLocation;
 
 let noiseTextureUniformLocation: WebGLUniformLocation;
 
@@ -413,6 +479,10 @@ let baseProgramBottomRightLandDistanceAttribLocation: GLint;
 let rockProgramPositionAttribLocation: GLint;
 let rockProgramCoordAttribLocation: GLint;
 let rockProgramOpacityAttribLocation: GLint;
+
+let highlightsProgramPositionAttribLocation: GLint;
+let highlightsProgramCoordAttribLocation: GLint;
+let highlightsProgramFadeProgressAttribLocation: GLint;
 
 let noiseProgramPositionAttribLocation: GLint;
 let noiseProgramTexCoordAttribLocation: GLint;
@@ -443,6 +513,9 @@ export function createWaterShaders(): void {
 
    baseProgram = createWebGLProgram(baseVertexShaderText, baseFragmentShaderText);
 
+   baseProgramPlayerPosUniformLocation = gl.getUniformLocation(baseProgram, "u_playerPos")!;
+   baseProgramHalfWindowSizeUniformLocation = gl.getUniformLocation(baseProgram, "u_halfWindowSize")!;
+   baseProgramZoomUniformLocation = gl.getUniformLocation(baseProgram, "u_zoom")!;
    baseTextureUniformLocation = gl.getUniformLocation(baseProgram, "u_baseTexture")!;
    shallowWaterColourUniformLocation = gl.getUniformLocation(baseProgram, "u_shallowWaterColour")!;
    deepWaterColourUniformLocation = gl.getUniformLocation(baseProgram, "u_deepWaterColour")!;
@@ -468,6 +541,20 @@ export function createWaterShaders(): void {
    rockProgramPositionAttribLocation = gl.getAttribLocation(rockProgram, "a_position");
    rockProgramCoordAttribLocation = gl.getAttribLocation(rockProgram, "a_texCoord");
    rockProgramOpacityAttribLocation = gl.getAttribLocation(rockProgram, "a_opacity");
+   
+   // 
+   // Highlights program
+   // 
+
+   highlightsProgram = createWebGLProgram(highlightsVertexShaderText, highlightsFragmentShaderText);
+
+   highlightsProgramTexture1UniformLocation = gl.getUniformLocation(highlightsProgram, "u_texture1")!;
+   highlightsProgramTexture2UniformLocation = gl.getUniformLocation(highlightsProgram, "u_texture2")!;
+   highlightsProgramTexture3UniformLocation = gl.getUniformLocation(highlightsProgram, "u_texture3")!;
+
+   highlightsProgramPositionAttribLocation = gl.getAttribLocation(highlightsProgram, "a_position");
+   highlightsProgramCoordAttribLocation = gl.getAttribLocation(highlightsProgram, "a_texCoord");
+   highlightsProgramFadeProgressAttribLocation = gl.getAttribLocation(highlightsProgram, "a_fadeProgress");
    
    // 
    // Noise program
@@ -623,17 +710,7 @@ const calculateRockVertices = (renderChunkX: number, renderChunkY: number): Arra
             bottomRight = rotatePoint(bottomRight, pos, waterRock.rotation);
             bottomLeft = rotatePoint(bottomLeft, pos, waterRock.rotation);
 
-            // topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));
-            // topRight = new Point(Camera.calculateXCanvasPosition(topRight.x), Camera.calculateYCanvasPosition(topRight.y));
-            // bottomRight = new Point(Camera.calculateXCanvasPosition(bottomRight.x), Camera.calculateYCanvasPosition(bottomRight.y));
-            // bottomLeft = new Point(Camera.calculateXCanvasPosition(bottomLeft.x), Camera.calculateYCanvasPosition(bottomLeft.y));
-
             const opacity = lerp(0.15, 0.4, waterRock.opacity);
-
-            // const textureSource = WATER_ROCK_TEXTURES[waterRock.size];
-            // if (!vertexRecord.hasOwnProperty(textureSource)) {
-            //    vertexRecord[textureSource] = [];
-            // }
 
             vertexArrays[waterRock.size].push(
                bottomLeft.x, bottomLeft.y, 0, 0, opacity,
@@ -648,6 +725,45 @@ const calculateRockVertices = (renderChunkX: number, renderChunkY: number): Arra
    }
 
    return vertexArrays;
+}
+
+const calculateBaseVertices = (renderChunkX: number, renderChunkY: number): ReadonlyArray<number> => {
+   const vertices = new Array<number>();
+   
+   const minTileX = renderChunkX * RENDER_CHUNK_SIZE;
+   const maxTileX = (renderChunkX + 1) * RENDER_CHUNK_SIZE - 1;
+   const minTileY = renderChunkY * RENDER_CHUNK_SIZE;
+   const maxTileY = (renderChunkY + 1) * RENDER_CHUNK_SIZE - 1;
+
+   for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
+      for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
+         const tile = Game.board.getTile(tileX, tileY);
+         if (tile.type !== "water") {
+            continue;
+         }
+
+         let x1 = tile.x * SETTINGS.TILE_SIZE;
+         let x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
+         let y1 = tile.y * SETTINGS.TILE_SIZE;
+         let y2 = (tile.y + 1) * SETTINGS.TILE_SIZE;
+   
+         const bottomLeftLandDistance = calculateDistanceToLand(tile.x, tile.y);
+         const bottomRightLandDistance = calculateDistanceToLand(tile.x + 1, tile.y);
+         const topLeftLandDistance = calculateDistanceToLand(tile.x, tile.y + 1);
+         const topRightLandDistance = calculateDistanceToLand(tile.x + 1, tile.y + 1);
+   
+         vertices.push(
+            x1, y1, 0, 0, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance,
+            x2, y1, 1, 0, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance,
+            x1, y2, 0, 1, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance,
+            x1, y2, 0, 1, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance,
+            x2, y1, 1, 0, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance,
+            x2, y2, 1, 1, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance
+         );
+      }
+   }
+
+   return vertices;
 }
 
 export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY: number): RenderChunkRiverInfo {
@@ -670,11 +786,18 @@ export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY
       rockVertexCounts.push(vertices.length);
    }
 
+   const baseVertices = calculateBaseVertices(renderChunkX, renderChunkY);
+   const baseBuffer = gl.createBuffer()!;
+   gl.bindBuffer(gl.ARRAY_BUFFER, baseBuffer);
+   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(baseVertices), gl.STATIC_DRAW);
+
    return {
       transitionBuffer: transitionBuffer,
       transitionVertexCount: transitionVertices.length,
       rockBuffers: rockBuffers,
-      rockVertexCounts: rockVertexCounts
+      rockVertexCounts: rockVertexCounts,
+      baseBuffer: baseBuffer,
+      baseVertexCount: baseVertices.length
    };
 }
 
@@ -734,38 +857,6 @@ const calculateDistanceToWater = (tileX: number, tileY: number): number => {
    return 1;
 }
 
-const calculateBaseVertices = (tiles: ReadonlyArray<Tile>): ReadonlyArray<number> => {
-   const vertices = new Array<number>();
-   
-   for (const tile of tiles) {
-      let x1 = tile.x * SETTINGS.TILE_SIZE;
-      let x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
-      let y1 = tile.y * SETTINGS.TILE_SIZE;
-      let y2 = (tile.y + 1) * SETTINGS.TILE_SIZE;
-
-      x1 = Camera.calculateXCanvasPosition(x1);
-      x2 = Camera.calculateXCanvasPosition(x2);
-      y1 = Camera.calculateYCanvasPosition(y1);
-      y2 = Camera.calculateYCanvasPosition(y2);
-
-      const bottomLeftLandDistance = calculateDistanceToLand(tile.x, tile.y);
-      const bottomRightLandDistance = calculateDistanceToLand(tile.x + 1, tile.y);
-      const topLeftLandDistance = calculateDistanceToLand(tile.x, tile.y + 1);
-      const topRightLandDistance = calculateDistanceToLand(tile.x + 1, tile.y + 1);
-
-      vertices.push(
-         x1, y1, 0, 0, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance,
-         x2, y1, 1, 0, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance,
-         x1, y2, 0, 1, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance,
-         x1, y2, 0, 1, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance,
-         x2, y1, 1, 0, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance,
-         x2, y2, 1, 1, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance
-      );
-   }
-
-   return vertices;
-}
-
 const calculateNoiseVertices = (tiles: ReadonlyArray<Tile>): ReadonlyArray<number> => {
    const vertices = new Array<number>();
    
@@ -785,12 +876,13 @@ const calculateNoiseVertices = (tiles: ReadonlyArray<Tile>): ReadonlyArray<numbe
       const epsilon = 0.01;
       const isDiagonal = Math.abs(flowDirection!) > epsilon && Math.abs(flowDirection - Math.PI/2) > epsilon && Math.abs(flowDirection - Math.PI) > epsilon && Math.abs(flowDirection + Math.PI/2) > epsilon;
 
+      const speedMultiplier = 1 + tile.flowOffset / 1.5;
       let offsetVector: Vector;
       if (isDiagonal) {
-         const offsetMagnitude = (Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000 / Math.SQRT2 + tile.flowOffset) % 1;
+         const offsetMagnitude = (Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000 / Math.SQRT2 * speedMultiplier + tile.flowOffset) % 1;
          offsetVector = new Vector(offsetMagnitude * Math.SQRT2, flowDirection);
       } else {
-         const offsetMagnitude = (Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000 + tile.flowOffset) % 1;
+         const offsetMagnitude = (Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000 * speedMultiplier + tile.flowOffset) % 1;
          offsetVector = new Vector(offsetMagnitude, flowDirection);
       }
       const offset = offsetVector.convertToPoint();
@@ -951,6 +1043,34 @@ const calculateSteppingStoneVertices = (visibleSteppingStones: ReadonlySet<River
    return vertexRecord;
 }
 
+const calculateHighlightsVertices = (tiles: ReadonlyArray<Tile>): ReadonlyArray<number> => {
+   const vertices = new Array<number>();
+   
+   for (const tile of tiles) {
+      let x1 = tile.x * SETTINGS.TILE_SIZE;
+      let x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
+      let y1 = tile.y * SETTINGS.TILE_SIZE;
+      let y2 = (tile.y + 1) * SETTINGS.TILE_SIZE;
+
+      x1 = Camera.calculateXCanvasPosition(x1);
+      x2 = Camera.calculateXCanvasPosition(x2);
+      y1 = Camera.calculateYCanvasPosition(y1);
+      y2 = Camera.calculateYCanvasPosition(y2);
+
+      const fadeProgress = (Game.lastTime / 3000 + tile.flowOffset) % 3;
+
+      vertices.push(
+         x1, y1, 0, 0, fadeProgress,
+         x2, y1, 1, 0, fadeProgress,
+         x1, y2, 0, 1, fadeProgress,
+         x1, y2, 0, 1, fadeProgress,
+         x2, y1, 1, 0, fadeProgress,
+         x2, y2, 1, 1, fadeProgress
+      );
+   }
+
+   return vertices;
+}
 const calculateVisibleRenderChunks = (): ReadonlyArray<RenderChunkRiverInfo> => {
    const renderChunks = new Array<RenderChunkRiverInfo>();
 
@@ -971,8 +1091,9 @@ export function renderWater(): void {
    const visibleTiles = calculateVisibleWaterTiles();
    const visibleSteppingStones = calculateVisibleSteppingStones();
 
-   const baseVertices = calculateBaseVertices(visibleTiles);
+   // const baseVertices = calculateBaseVertices(visibleTiles);
    const noiseVertices = calculateNoiseVertices(visibleTiles);
+   const highlightsVertices = calculateHighlightsVertices(visibleTiles);
    const foamVertexRecord = calculateFoamVertices(visibleSteppingStones);
    const steppingStoneVertices = calculateSteppingStoneVertices(visibleSteppingStones);
    
@@ -982,12 +1103,9 @@ export function renderWater(): void {
    
    gl.useProgram(baseProgram);
 
-   {
-      // Create tile buffer
-      const buffer = gl.createBuffer()!;
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(baseVertices), gl.STATIC_DRAW);
-   
+   for (const renderChunkInfo of visibleRenderChunks) {
+      gl.bindBuffer(gl.ARRAY_BUFFER, renderChunkInfo.baseBuffer);
+      
       gl.vertexAttribPointer(baseProgramPositionAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 0);
       gl.vertexAttribPointer(baseProgramCoordAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
       gl.vertexAttribPointer(baseProgramBottomLeftLandDistanceAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
@@ -1003,16 +1121,18 @@ export function renderWater(): void {
       gl.enableVertexAttribArray(baseProgramTopLeftLandDistanceAttribLocation);
       gl.enableVertexAttribArray(baseProgramTopRightLandDistanceAttribLocation);
       
+      gl.uniform2f(baseProgramPlayerPosUniformLocation, Camera.position.x, Camera.position.y);
+      gl.uniform2f(baseProgramHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
+      gl.uniform1f(baseProgramZoomUniformLocation, Camera.zoom);
       gl.uniform1i(baseTextureUniformLocation, 0);
-      gl.uniform3f(shallowWaterColourUniformLocation, ...SHALLOW_WATER_COLOUR);
-      gl.uniform3f(deepWaterColourUniformLocation, ...DEEP_WATER_COLOUR);
+      gl.uniform3f(shallowWaterColourUniformLocation, SHALLOW_WATER_COLOUR[0], SHALLOW_WATER_COLOUR[1], SHALLOW_WATER_COLOUR[2]);
+      gl.uniform3f(deepWaterColourUniformLocation, DEEP_WATER_COLOUR[0], DEEP_WATER_COLOUR[1], DEEP_WATER_COLOUR[2]);
 
       const texture = getTexture("tiles/water-base.png");
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, texture);
       
-      // Draw the tile
-      gl.drawArrays(gl.TRIANGLES, 0, baseVertices.length / 8);
+      gl.drawArrays(gl.TRIANGLES, 0, renderChunkInfo.baseVertexCount / 8);
    }
    
    // 
@@ -1026,33 +1146,71 @@ export function renderWater(): void {
    
    for (const renderChunkRiverInfo of visibleRenderChunks) {
       for (let rockSize: WaterRockSize = 0; rockSize < 2; rockSize++) {
+         gl.bindBuffer(gl.ARRAY_BUFFER, renderChunkRiverInfo.rockBuffers[rockSize]);
+      
+         gl.vertexAttribPointer(rockProgramPositionAttribLocation, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
+         gl.vertexAttribPointer(rockProgramCoordAttribLocation, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+         gl.vertexAttribPointer(rockProgramOpacityAttribLocation, 1, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+         
+         // Enable the attributes
+         gl.enableVertexAttribArray(rockProgramPositionAttribLocation);
+         gl.enableVertexAttribArray(rockProgramCoordAttribLocation);
+         gl.enableVertexAttribArray(rockProgramOpacityAttribLocation);
+         
+         gl.uniform2f(rockProgramPlayerPosUniformLocation, Camera.position.x, Camera.position.y);
+         gl.uniform2f(rockProgramHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
+         gl.uniform1f(rockProgramZoomUniformLocation, Camera.zoom);
+         gl.uniform1i(rockProgramTextureUniformLocation, 0);
 
-      gl.bindBuffer(gl.ARRAY_BUFFER, renderChunkRiverInfo.rockBuffers[rockSize]);
+         const textureSource = WATER_ROCK_TEXTURES[rockSize];
+         const texture = getTexture(textureSource);
+         gl.activeTexture(gl.TEXTURE0);
+         gl.bindTexture(gl.TEXTURE_2D, texture);
+         
+         // Draw the tile
+         gl.drawArrays(gl.TRIANGLES, 0, renderChunkRiverInfo.rockVertexCounts[rockSize] / 5);
+      }
+   }
+
+   // 
+   // Highlights program
+   // 
+
+   gl.useProgram(highlightsProgram);
    
-      gl.vertexAttribPointer(rockProgramPositionAttribLocation, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
-      gl.vertexAttribPointer(rockProgramCoordAttribLocation, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(rockProgramOpacityAttribLocation, 1, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+   {
+      const buffer = gl.createBuffer()!;
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(highlightsVertices), gl.STATIC_DRAW);
+   
+      gl.vertexAttribPointer(highlightsProgramPositionAttribLocation, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
+      gl.vertexAttribPointer(highlightsProgramCoordAttribLocation, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(highlightsProgramFadeProgressAttribLocation, 1, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
       
       // Enable the attributes
-      gl.enableVertexAttribArray(rockProgramPositionAttribLocation);
-      gl.enableVertexAttribArray(rockProgramCoordAttribLocation);
-      gl.enableVertexAttribArray(rockProgramOpacityAttribLocation);
+      gl.enableVertexAttribArray(highlightsProgramPositionAttribLocation);
+      gl.enableVertexAttribArray(highlightsProgramCoordAttribLocation);
+      gl.enableVertexAttribArray(highlightsProgramFadeProgressAttribLocation);
       
-      gl.uniform2f(rockProgramPlayerPosUniformLocation, Camera.position.x, Camera.position.y);
-      gl.uniform2f(rockProgramHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
-      gl.uniform1f(rockProgramZoomUniformLocation, Camera.zoom);
-      gl.uniform1i(rockProgramTextureUniformLocation, 0);
+      gl.uniform1i(highlightsProgramTexture1UniformLocation, 0);
+      gl.uniform1i(highlightsProgramTexture2UniformLocation, 1);
+      gl.uniform1i(highlightsProgramTexture3UniformLocation, 2);
 
-      const textureSource = WATER_ROCK_TEXTURES[rockSize];
-      const texture = getTexture(textureSource);
-      // const texture = getTexture(textureSource);
+      const texture1 = getTexture("tiles/river-bed-highlights-1.png");
       gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.bindTexture(gl.TEXTURE_2D, texture1);
+
+      const texture2 = getTexture("tiles/river-bed-highlights-2.png");
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, texture2);
+
+      const texture3 = getTexture("tiles/river-bed-highlights-3.png");
+      gl.activeTexture(gl.TEXTURE2);
+      gl.bindTexture(gl.TEXTURE_2D, texture3);
       
       // Draw the tile
-      gl.drawArrays(gl.TRIANGLES, 0, renderChunkRiverInfo.rockVertexCounts[rockSize] / 5);
+      gl.drawArrays(gl.TRIANGLES, 0, highlightsVertices.length / 5);
    }
-}
    
    // 
    // Noise program
