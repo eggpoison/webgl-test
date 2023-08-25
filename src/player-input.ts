@@ -38,7 +38,7 @@ const PLAYER_SLOW_TERMINAL_VELOCITY = 150;
 /** Acceleration of the player while slowed. */
 const PLAYER_SLOW_ACCELERATION = 600;
 
-const PLAYER_INTERACT_RANGE = 150;
+const PLAYER_INTERACT_RANGE = 125;
 
 /** Whether the inventory is open or not. */
 let _inventoryIsOpen = false;
@@ -260,7 +260,7 @@ const getInteractEntity = (): Entity | null => {
                if ((entity as Tombstone).deathInfo === null) {
                   continue;
                }
-               
+
                const distance = Player.instance.position.calculateDistanceBetween(entity.position);
                if (distance < minInteractionDistance) {
                   closestInteractableEntity = entity;
@@ -304,6 +304,8 @@ const setInteractInventory = (inventoryType: InteractInventoryType, entity: Enti
 
 export function hideInteractInventory(): void {
    _interactInventoryIsOpen = false;
+   interactInventoryEntity = null;
+
    InteractInventory_clearInventory();
 }
 
@@ -325,20 +327,17 @@ export function updateInteractInventory(): void {
          throw new Error("Interactable entity was null.");
       }
 
+      // If the interactable entity was removed, hide the interact inventory
+      if (!Game.board.gameObjects.hasOwnProperty(interactInventoryEntity.id)) {
+         hideInteractInventory();
+         return;
+      }
+
       const distanceToInteractEntity = Player.instance.position.calculateDistanceBetween(interactInventoryEntity.position);
       if (distanceToInteractEntity <= PLAYER_INTERACT_RANGE) {
-         // const interactInventoryType = getInteractInventoryType(interactInventoryEntity);
-         // setInteractInventory(interactInventoryType, interactInventoryEntity);
          InteractInventory_forceUpdate();
-         // const inventories = getInteractInventories(interactInventoryEntity);
-         // InteractInventory_setInventories(inventories);
-
-         // const className = getInteractClassName(interactInventoryEntity);
-         // InteractInventory_setElementClass(className);
-         // InteractInventory_setEntityID(interactInventoryEntity.id);
       } else {
          hideInteractInventory();
-         // updateInteractInventoryIsOpen(false, null);
       }
    }
 }
@@ -363,15 +362,12 @@ const createInventoryToggleListeners = (): void => {
       
       if (_interactInventoryIsOpen) {
          hideInteractInventory();
-         // updateInteractInventoryIsOpen(false, null);
       } else {
          const interactEntity = getInteractEntity();
          if (interactEntity !== null) {
             interactInventoryEntity = interactEntity;
             const interactInventoryType = getInteractInventoryType(interactInventoryEntity);
             setInteractInventory(interactInventoryType, interactInventoryEntity);
-            // const inventories = getInteractInventories(interactEntity);
-            // updateInteractInventoryIsOpen(true, inventories);
          }
       }
    });
