@@ -1,7 +1,8 @@
-import { EntityData, HitboxType, ItemType, Point, TribeType } from "webgl-test-shared";
+import { EntityData, ItemType, Point, TribeType } from "webgl-test-shared";
 import Entity from "./Entity";
-import Hitbox from "../hitboxes/Hitbox";
 import RenderPart from "../render-parts/RenderPart";
+import CircularHitbox from "../hitboxes/CircularHitbox";
+import RectangularHitbox from "../hitboxes/RectangularHitbox";
 
 abstract class TribeMember extends Entity {
    private readonly tribeType: TribeType;
@@ -12,7 +13,7 @@ abstract class TribeMember extends Entity {
 
    public armourType: ItemType | null;
    
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, tribeType: TribeType, armour: ItemType | null) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, tribeType: TribeType, armour: ItemType | null) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
       this.tribeID = tribeID;

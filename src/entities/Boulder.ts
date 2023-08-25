@@ -1,7 +1,8 @@
-import { EntityType, HitboxType, Point } from "webgl-test-shared";
-import Hitbox from "../hitboxes/Hitbox";
+import { EntityType, Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
+import CircularHitbox from "../hitboxes/CircularHitbox";
+import RectangularHitbox from "../hitboxes/RectangularHitbox";
 
 class Boulder extends Entity {
    private static readonly WIDTH = 80;
@@ -9,7 +10,7 @@ class Boulder extends Entity {
 
    public type: EntityType = "boulder";
 
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, boulderType: number) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, boulderType: number) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
       this.attachRenderParts([

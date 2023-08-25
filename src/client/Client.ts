@@ -1,11 +1,10 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, HitboxType, InitialGameDataPacket, CraftingRecipe, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, HitboxData, HitboxInfo, ProjectileData, VisibleChunkBounds, ParticleData, TribeType, TribeData, InventoryData } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, InitialGameDataPacket, CraftingRecipe, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, ProjectileData, VisibleChunkBounds, ParticleData, TribeType, TribeData, InventoryData, CircularHitboxData, RectangularHitboxData } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
 import Game from "../Game";
 import CircularHitbox from "../hitboxes/CircularHitbox";
-import Hitbox from "../hitboxes/Hitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import DroppedItem from "../items/DroppedItem";
 import { Tile } from "../Tile";
@@ -487,20 +486,16 @@ abstract class Client {
       }
    }
 
-   private static createHitboxesFromData(hitboxDataArray: ReadonlyArray<HitboxData<HitboxType>>): Set<Hitbox<HitboxType>> {
-      const hitboxes = new Set<Hitbox<HitboxType>>();
+   private static createHitboxesFromData(hitboxDataArray: ReadonlyArray<CircularHitboxData | RectangularHitboxData>): Set<CircularHitbox | RectangularHitbox> {
+      const hitboxes = new Set<CircularHitbox | RectangularHitbox>();
       for (const hitboxData of hitboxDataArray) {
-         const hitboxInfo = this.createHitboxInfo(hitboxData);
-         
-         switch (hitboxInfo.type) {
-            case "circular": {
-               hitboxes.add(new CircularHitbox(hitboxInfo));
-               break;
-            }
-            case "rectangular": {
-               hitboxes.add(new RectangularHitbox(hitboxInfo));
-               break;
-            }
+         const offset = typeof hitboxData.offset !== "undefined" ? Point.unpackage(hitboxData.offset) : undefined;
+         if (hitboxData.hasOwnProperty("radius")) {
+            // Circular
+            hitboxes.add(new CircularHitbox((hitboxData as CircularHitboxData).radius, offset));
+         } else {
+            // Rectangular
+            hitboxes.add(new RectangularHitbox((hitboxData as RectangularHitboxData).width, (hitboxData as RectangularHitboxData).height, offset));
          }
       }
       return hitboxes;
@@ -520,26 +515,6 @@ abstract class Client {
       entity.rotation = entityData.rotation;
       entity.mass = entityData.mass;
       entity.special = entityData.special;
-   }
-
-   private static createHitboxInfo(hitboxData: HitboxData<HitboxType>): HitboxInfo<HitboxType> {
-      switch (hitboxData.type) {
-         case "circular": {
-            return {
-               type: "circular",
-               radius: hitboxData.radius,
-               offset: typeof hitboxData.offset !== "undefined" ? Point.unpackage(hitboxData.offset) : undefined
-            };
-         }
-         case "rectangular": {
-            return {
-               type: "rectangular",
-               width: hitboxData.width,
-               height: hitboxData.height,
-               offset: typeof hitboxData.offset !== "undefined" ? Point.unpackage(hitboxData.offset) : undefined
-            };
-         }
-      }
    }
 
    private static registerGameDataSyncPacket(gameDataSyncPacket: GameDataSyncPacket): void {
@@ -570,7 +545,7 @@ abstract class Client {
       updateHealthBar(Player.MAX_HEALTH);
       
       const spawnPosition = Point.unpackage(respawnDataPacket.spawnPosition);
-      const player = new Player(spawnPosition, new Set(Player.HITBOXES), respawnDataPacket.playerID, null, null, TribeType.plainspeople, null, Game.definiteGameState.playerUsername);
+      const player = new Player(spawnPosition, new Set([Player.createNewPlayerHitbox()]), respawnDataPacket.playerID, null, null, TribeType.plainspeople, null, Game.definiteGameState.playerUsername);
       Player.setInstancePlayer(player);
 
       gameScreenSetIsDead(false);

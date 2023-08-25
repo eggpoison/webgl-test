@@ -1,24 +1,30 @@
-import { circleAndRectangleDoIntersect, computeSideAxis, HitboxType, HitboxVertexPositions, Point, rectanglePointsDoIntersect, RectangularHitboxInfo, rotatePoint, Vector } from "webgl-test-shared";
+import { circleAndRectangleDoIntersect, computeSideAxis, HitboxVertexPositions, Point, rectanglePointsDoIntersect, rotatePoint, Vector } from "webgl-test-shared";
 import Hitbox, { HitboxBounds } from "./Hitbox";
+import CircularHitbox from "./CircularHitbox";
 
-class RectangularHitbox extends Hitbox<"rectangular"> {
+class RectangularHitbox extends Hitbox {
+   public width: number;
+   public height: number;
+   
    /** Length of half of the diagonal of the rectangle */
    public readonly halfDiagonalLength: number;
 
    public vertexPositions!: HitboxVertexPositions;
    public sideAxes!: [axis1: Vector, axis2: Vector];
 
-   constructor(hitboxInfo: RectangularHitboxInfo) {
-      super(hitboxInfo);
+   constructor(width: number, height: number, offset?: Point) {
+      super(offset);
 
-      this.halfDiagonalLength = Math.sqrt(Math.pow(this.info.width / 2, 2) + Math.pow(this.info.height / 2, 2));
+      this.width = width;
+      this.height = height;
+      this.halfDiagonalLength = Math.sqrt(Math.pow(width / 2, 2) + Math.pow(height / 2, 2));
    }
 
    public computeVertexPositions(): void {
-      const x1 = this.gameObject.position.x - this.info.width / 2;
-      const x2 = this.gameObject.position.x + this.info.width / 2;
-      const y1 = this.gameObject.position.y - this.info.height / 2;
-      const y2 = this.gameObject.position.y + this.info.height / 2;
+      const x1 = this.gameObject.position.x - this.width / 2;
+      const x2 = this.gameObject.position.x + this.width / 2;
+      const y1 = this.gameObject.position.y - this.height / 2;
+      const y2 = this.gameObject.position.y + this.height / 2;
 
       let topLeft = new Point(x1, y2);
       let topRight = new Point(x2, y2);
@@ -31,11 +37,11 @@ class RectangularHitbox extends Hitbox<"rectangular"> {
       bottomLeft = rotatePoint(bottomLeft, this.gameObject.position, this.gameObject.rotation);
       bottomRight = rotatePoint(bottomRight, this.gameObject.position, this.gameObject.rotation);
 
-      if (typeof this.info.offset !== "undefined") {
-         topLeft.add(this.info.offset);
-         topRight.add(this.info.offset);
-         bottomLeft.add(this.info.offset);
-         bottomRight.add(this.info.offset);
+      if (typeof this.offset !== "undefined") {
+         topLeft.add(this.offset);
+         topRight.add(this.offset);
+         bottomLeft.add(this.offset);
+         bottomRight.add(this.offset);
       }
 
       this.vertexPositions = [topLeft, topRight, bottomLeft, bottomRight];
@@ -56,20 +62,20 @@ class RectangularHitbox extends Hitbox<"rectangular"> {
       return [minX, maxX, minY, maxY];
    }
 
-   public isColliding(otherHitbox: Hitbox<HitboxType>): boolean {
-      switch (otherHitbox.info.type) {
-         case "circular": {
-            return circleAndRectangleDoIntersect(otherHitbox.gameObject.position, otherHitbox.info.radius, this.gameObject.position, this.info.width, this.info.height, this.gameObject.rotation);
+   public isColliding(otherHitbox: CircularHitbox | RectangularHitbox): boolean {
+      if (otherHitbox.hasOwnProperty("radius")) {
+         // Circular
+         return circleAndRectangleDoIntersect(otherHitbox.gameObject.position, (otherHitbox as CircularHitbox).radius, this.gameObject.position, this.width, this.height, this.gameObject.rotation);
+      } else {
+         // Rectangular
+
+         // If the distance between the entities is greater than the sum of their half diagonals then they're not colliding
+         const distance = this.gameObject.position.calculateDistanceBetween(otherHitbox.gameObject.position);
+         if (distance > this.halfDiagonalLength + (otherHitbox as RectangularHitbox).halfDiagonalLength) {
+            return false;
          }
-         case "rectangular": {
-            // If the distance between the entities is greater than the sum of their half diagonals then they're not colliding
-            const distance = this.gameObject.position.calculateDistanceBetween(otherHitbox.gameObject.position);
-            if (distance > this.halfDiagonalLength + (otherHitbox as RectangularHitbox).halfDiagonalLength) {
-               return false;
-            }
-            
-            return rectanglePointsDoIntersect(this.vertexPositions, (otherHitbox as RectangularHitbox).vertexPositions, this.sideAxes, (otherHitbox as RectangularHitbox).sideAxes);
-         }
+         
+         return rectanglePointsDoIntersect(this.vertexPositions, (otherHitbox as RectangularHitbox).vertexPositions, this.sideAxes, (otherHitbox as RectangularHitbox).sideAxes);
       }
    }
 }

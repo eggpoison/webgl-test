@@ -1,7 +1,8 @@
-import { EntityData, EntityType, Point, HitboxType, ServerEntitySpecialData, StatusEffectType } from "webgl-test-shared";
+import { EntityData, EntityType, Point, ServerEntitySpecialData, StatusEffectType } from "webgl-test-shared";
 import Game from "../Game";
-import Hitbox from "../hitboxes/Hitbox";
 import GameObject from "../GameObject";
+import CircularHitbox from "../hitboxes/CircularHitbox";
+import RectangularHitbox from "../hitboxes/RectangularHitbox";
 
 abstract class Entity extends GameObject {
    public abstract readonly type: EntityType;
@@ -12,7 +13,7 @@ abstract class Entity extends GameObject {
 
    public statusEffects = new Array<StatusEffectType>();
 
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null) {
       super(position, hitboxes, id);
       
       this.secondsSinceLastHit = secondsSinceLastHit;

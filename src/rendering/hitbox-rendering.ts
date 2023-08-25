@@ -2,6 +2,8 @@ import { Point, rotatePoint } from "webgl-test-shared";
 import Camera from "../Camera";
 import { createWebGLProgram, gl } from "../webgl";
 import { calculateVisibleGameObjects } from "./game-object-rendering";
+import RectangularHitbox from "../hitboxes/RectangularHitbox";
+import CircularHitbox from "../hitboxes/CircularHitbox";
 
 const CIRCLE_VERTEX_COUNT = 20;
 
@@ -44,71 +46,69 @@ export function renderEntityHitboxes(): void {
    for (const gameObject of gameObjects) {
       for (const hitbox of gameObject.hitboxes) {
          const hitboxRenderPosition = hitbox.gameObject.renderPosition.copy();
-         if (typeof hitbox.info.offset !== "undefined") {
-            hitboxRenderPosition.add(hitbox.info.offset);
+         if (typeof hitbox.offset !== "undefined") {
+            hitboxRenderPosition.add(hitbox.offset);
          }
          
-         switch (hitbox.info.type) {
-            case "rectangular": {
-               const x1 = hitboxRenderPosition.x - hitbox.info.width / 2;
-               const x2 = hitboxRenderPosition.x + hitbox.info.width / 2;
-               const y1 = hitboxRenderPosition.y - hitbox.info.height / 2;
-               const y2 = hitboxRenderPosition.y + hitbox.info.height / 2;
-   
-               let topLeft = new Point(x1, y2);
-               let topRight = new Point(x2, y2);
-               let bottomRight = new Point(x2, y1);
-               let bottomLeft = new Point(x1, y1);
-   
-               // Rotate the points to match the entity's rotation
-               topLeft = rotatePoint(topLeft, hitboxRenderPosition, gameObject.rotation);
-               topRight = rotatePoint(topRight, hitboxRenderPosition, gameObject.rotation);
-               bottomRight = rotatePoint(bottomRight, hitboxRenderPosition, gameObject.rotation);
-               bottomLeft = rotatePoint(bottomLeft, hitboxRenderPosition, gameObject.rotation);
-   
-               topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));
-               topRight = new Point(Camera.calculateXCanvasPosition(topRight.x), Camera.calculateYCanvasPosition(topRight.y));
-               bottomRight = new Point(Camera.calculateXCanvasPosition(bottomRight.x), Camera.calculateYCanvasPosition(bottomRight.y));
-               bottomLeft = new Point(Camera.calculateXCanvasPosition(bottomLeft.x), Camera.calculateYCanvasPosition(bottomLeft.y));
-   
-               vertices.push(
-                  topLeft.x, topLeft.y,
-                  topRight.x, topRight.y,
-                  topRight.x, topRight.y,
-                  bottomRight.x, bottomRight.y,
-                  bottomRight.x, bottomRight.y,
-                  bottomLeft.x, bottomLeft.y,
-                  bottomLeft.x, bottomLeft.y,
-                  topLeft.x, topLeft.y
-               );
-               break;
-            }
-            case "circular": {
-               const step = 2 * Math.PI / CIRCLE_VERTEX_COUNT;
-   
-               let previousX: number;
-               let previousY: number;
+         if (hitbox.hasOwnProperty("width")) {
+            // Rectangular
             
-               // Add the outer vertices
-               for (let radians = 0, n = 0; n <= CIRCLE_VERTEX_COUNT; radians += step, n++) {
-                  if (n > 1) {
-                     vertices.push(previousX!, previousY!);
-                  }
-   
-                  // Trig shenanigans to get x and y coords
-                  const worldX = Math.cos(radians) * hitbox.info.radius + hitboxRenderPosition.x;
-                  const worldY = Math.sin(radians) * hitbox.info.radius + hitboxRenderPosition.y;
-                  
-                  const screenX = Camera.calculateXCanvasPosition(worldX);
-                  const screenY = Camera.calculateYCanvasPosition(worldY);
-                  
-                  vertices.push(screenX, screenY);
-   
-                  previousX = screenX;
-                  previousY = screenY;
+            const x1 = hitboxRenderPosition.x - (hitbox as RectangularHitbox).width / 2;
+            const x2 = hitboxRenderPosition.x + (hitbox as RectangularHitbox).width / 2;
+            const y1 = hitboxRenderPosition.y - (hitbox as RectangularHitbox).height / 2;
+            const y2 = hitboxRenderPosition.y + (hitbox as RectangularHitbox).height / 2;
+
+            let topLeft = new Point(x1, y2);
+            let topRight = new Point(x2, y2);
+            let bottomRight = new Point(x2, y1);
+            let bottomLeft = new Point(x1, y1);
+
+            // Rotate the points to match the entity's rotation
+            topLeft = rotatePoint(topLeft, hitboxRenderPosition, gameObject.rotation);
+            topRight = rotatePoint(topRight, hitboxRenderPosition, gameObject.rotation);
+            bottomRight = rotatePoint(bottomRight, hitboxRenderPosition, gameObject.rotation);
+            bottomLeft = rotatePoint(bottomLeft, hitboxRenderPosition, gameObject.rotation);
+
+            topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));
+            topRight = new Point(Camera.calculateXCanvasPosition(topRight.x), Camera.calculateYCanvasPosition(topRight.y));
+            bottomRight = new Point(Camera.calculateXCanvasPosition(bottomRight.x), Camera.calculateYCanvasPosition(bottomRight.y));
+            bottomLeft = new Point(Camera.calculateXCanvasPosition(bottomLeft.x), Camera.calculateYCanvasPosition(bottomLeft.y));
+
+            vertices.push(
+               topLeft.x, topLeft.y,
+               topRight.x, topRight.y,
+               topRight.x, topRight.y,
+               bottomRight.x, bottomRight.y,
+               bottomRight.x, bottomRight.y,
+               bottomLeft.x, bottomLeft.y,
+               bottomLeft.x, bottomLeft.y,
+               topLeft.x, topLeft.y
+            );
+         } else {
+            // Circular
+
+            const step = 2 * Math.PI / CIRCLE_VERTEX_COUNT;
+
+            let previousX: number;
+            let previousY: number;
+         
+            // Add the outer vertices
+            for (let radians = 0, n = 0; n <= CIRCLE_VERTEX_COUNT; radians += step, n++) {
+               if (n > 1) {
+                  vertices.push(previousX!, previousY!);
                }
-   
-               break;
+
+               // Trig shenanigans to get x and y coords
+               const worldX = Math.cos(radians) * (hitbox as CircularHitbox).radius + hitboxRenderPosition.x;
+               const worldY = Math.sin(radians) * (hitbox as CircularHitbox).radius + hitboxRenderPosition.y;
+               
+               const screenX = Camera.calculateXCanvasPosition(worldX);
+               const screenY = Camera.calculateYCanvasPosition(worldY);
+               
+               vertices.push(screenX, screenY);
+
+               previousX = screenX;
+               previousY = screenY;
             }
          }
       }

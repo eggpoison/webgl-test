@@ -314,46 +314,45 @@ varying float v_leftMarker;
 varying float v_bottomMarker;
 
 void main() {
-   float topLeftDist = 1.0 - (distance(vec2(0.0, 1.0), v_texCoord) * (1.0 - v_topLeftMarker));
-   float topRightDist = 1.0 - (distance(vec2(1.0, 1.0), v_texCoord) * (1.0 - v_topRightMarker));
-   float bottomLeftDist = 1.0 - (distance(vec2(0.0, 0.0), v_texCoord) * (1.0 - v_bottomLeftMarker));
-   float bottomRightDist = 1.0 - (distance(vec2(1.0, 0.0), v_texCoord) * (1.0 - v_bottomRightMarker));
-
    float dist = 0.0;
    if (v_topLeftMarker < 0.5) {
+      float topLeftDist = 1.0 - (distance(vec2(0.0, 1.0), v_texCoord) * (1.0 - v_topLeftMarker));
       dist = max(dist, topLeftDist - 0.5);
    }
    if (v_topRightMarker < 0.5) {
+      float topRightDist = 1.0 - (distance(vec2(1.0, 1.0), v_texCoord) * (1.0 - v_topRightMarker));
       dist = max(dist, topRightDist - 0.5);
    }
    if (v_bottomLeftMarker < 0.5) {
+      float bottomLeftDist = 1.0 - (distance(vec2(0.0, 0.0), v_texCoord) * (1.0 - v_bottomLeftMarker));
       dist = max(dist, bottomLeftDist - 0.5);
    }
    if (v_bottomRightMarker < 0.5) {
+      float bottomRightDist = 1.0 - (distance(vec2(1.0, 0.0), v_texCoord) * (1.0 - v_bottomRightMarker));
       dist = max(dist, bottomRightDist - 0.5);
    }
 
-   float topDist = v_texCoord.y * (1.0 - v_topMarker);
-   float rightDist = (1.0 - v_texCoord.x) * (1.0 - v_rightMarker);
-   float leftDist = v_texCoord.x * (1.0 - v_leftMarker);
-   float bottomDist = (1.0 - v_texCoord.y) * (1.0 - v_bottomMarker);
    if (v_topMarker < 0.5) {
+      float topDist = v_texCoord.y * (1.0 - v_topMarker);
       dist = max(dist, topDist - 0.5);
    }
    if (v_rightMarker < 0.5) {
+      float rightDist = (1.0 - v_texCoord.x) * (1.0 - v_rightMarker);
       dist = max(dist, rightDist - 0.5);
    }
    if (v_leftMarker < 0.5) {
+      float leftDist = v_texCoord.x * (1.0 - v_leftMarker);
       dist = max(dist, leftDist - 0.5);
    }
    if (v_bottomMarker < 0.5) {
+      float bottomDist = (1.0 - v_texCoord.y) * (1.0 - v_bottomMarker);
       dist = max(dist, bottomDist - 0.5);
    }
 
    dist = pow(dist, 0.3);
    
    vec4 textureColour = texture2D(u_transitionTexture, v_texCoord);
-   textureColour.a *= dist;
+   textureColour.a = dist;
    
    gl_FragColor = textureColour;
 }

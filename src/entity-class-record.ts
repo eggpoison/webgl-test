@@ -1,4 +1,4 @@
-import { EntityInfoClientArgs, EntityType, HitboxType, Point } from "webgl-test-shared";
+import { EntityInfoClientArgs, EntityType, Point } from "webgl-test-shared";
 import Boulder from "./entities/Boulder";
 import Cow from "./entities/Cow";
 import Entity from "./entities/Entity";
@@ -7,7 +7,6 @@ import Tombstone from "./entities/Tombstone";
 import Tree from "./entities/Tree";
 import Workbench from "./entities/Workbench";
 import Zombie from "./entities/Zombie";
-import Hitbox from "./hitboxes/Hitbox";
 import BerryBush from "./entities/BerryBush";
 import Cactus from "./entities/Cactus";
 import Yeti from "./entities/Yeti";
@@ -21,8 +20,10 @@ import Barrel from "./entities/Barrel";
 import Campfire from "./entities/Campfire";
 import Furnace from "./entities/Furnace";
 import Snowball from "./entities/Snowball";
+import CircularHitbox from "./hitboxes/CircularHitbox";
+import RectangularHitbox from "./hitboxes/RectangularHitbox";
 
-export type EntityClassType<T extends EntityType> = new (position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, ...clientParams: Parameters<EntityInfoClientArgs[T]>) => Entity;
+export type EntityClassType<T extends EntityType> = new (position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, ...clientParams: Parameters<EntityInfoClientArgs[T]>) => Entity;
 
 const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
    cow: () => Cow,

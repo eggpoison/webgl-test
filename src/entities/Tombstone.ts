@@ -1,24 +1,15 @@
-import { HitboxType, Point } from "webgl-test-shared";
-import Hitbox from "../hitboxes/Hitbox";
+import { DeathInfo, Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-
-const TOMBSTONE_DEATH_MESSAGES: ReadonlyArray<string> = [
-   "__NAME__ forgot their glasses when driving near a cliff.",
-   "__NAME__ tried to hug a yeti.",
-   "__NAME__'s brain exploded.",
-   "__NAME__ became too hydrated."
-];
-
-const NAMES: ReadonlyArray<string> = [
-   "James Wilson",
-   "Obama"
-];
+import CircularHitbox from "../hitboxes/CircularHitbox";
+import RectangularHitbox from "../hitboxes/RectangularHitbox";
 
 class Tombstone extends Entity {
    public readonly type = "tombstone";
    
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, tombstoneType: number) {
+   public readonly deathInfo: DeathInfo | null;
+   
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, tombstoneType: number, deathInfo: DeathInfo | null) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
       this.attachRenderParts([
@@ -29,6 +20,8 @@ class Tombstone extends Entity {
             zIndex: 0
          }, this)
       ]);
+
+      this.deathInfo = deathInfo;
    }
 }
 

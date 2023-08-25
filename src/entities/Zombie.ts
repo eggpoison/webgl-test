@@ -1,7 +1,8 @@
-import { HitboxType, Point } from "webgl-test-shared";
-import Hitbox from "../hitboxes/Hitbox";
+import { Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
+import CircularHitbox from "../hitboxes/CircularHitbox";
+import RectangularHitbox from "../hitboxes/RectangularHitbox";
 
 const ZOMBIE_TEXTURE_SOURCES: { [zombieType: number]: string } = {
    0: "zombie1.png",
@@ -13,7 +14,7 @@ const ZOMBIE_TEXTURE_SOURCES: { [zombieType: number]: string } = {
 class Zombie extends Entity {
    public readonly type = "zombie";
    
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, zombieType: number) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, zombieType: number) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
       this.attachRenderParts([

@@ -7,6 +7,7 @@ import GameObject from "./GameObject";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import Projectile from "./projectiles/Projectile";
 import Particle from "./Particle";
+import CircularHitbox from "./hitboxes/CircularHitbox";
 
 export interface EntityHitboxInfo {
    readonly vertexPositions: readonly [Point, Point, Point, Point];
@@ -104,7 +105,7 @@ class Board {
 
          // Calculate the entity's new info
          for (const hitbox of gameObject.hitboxes) {
-            if (hitbox.info.type === "rectangular") {
+            if (hitbox.hasOwnProperty("width")) {
                (hitbox as RectangularHitbox).computeVertexPositions();
                (hitbox as RectangularHitbox).computeSideAxes();
             }
@@ -147,20 +148,19 @@ class Board {
       let minDist = Number.MAX_SAFE_INTEGER;
       for (const hitbox of gameObject.hitboxes) {
          let distance: number;
-         switch (hitbox.info.type) {
-            case "circular": {
-               const dist = position.calculateDistanceBetween(gameObject.position);
-               distance = dist - hitbox.info.radius;
-               break;
-            }
-            case "rectangular": {
-               // Rotate the objects to axis-align the rectangle
-               const rotatedPositon = rotatePoint(position, gameObject.position, -gameObject.rotation);
+         if (hitbox.hasOwnProperty("radius")) {
+            // Circular
+            const dist = position.calculateDistanceBetween(gameObject.position);
+            distance = dist - (hitbox as CircularHitbox).radius;
+         } else {
+            // Rectangular
 
-               const distanceX = Math.max(Math.abs(rotatedPositon.x - gameObject.position.x) - hitbox.info.width / 2, 0);
-               const distanceY = Math.max(Math.abs(rotatedPositon.y - gameObject.position.y) - hitbox.info.height / 2, 0);
-               distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
-            }
+            // Rotate the objects to axis-align the rectangle
+            const rotatedPositon = rotatePoint(position, gameObject.position, -gameObject.rotation);
+
+            const distanceX = Math.max(Math.abs(rotatedPositon.x - gameObject.position.x) - (hitbox as RectangularHitbox).width / 2, 0);
+            const distanceY = Math.max(Math.abs(rotatedPositon.y - gameObject.position.y) - (hitbox as RectangularHitbox).height / 2, 0);
+            distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
          }
          if (distance < minDist) {
             minDist = distance;

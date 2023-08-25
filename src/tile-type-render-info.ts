@@ -59,6 +59,6 @@ export const TILE_TYPE_RENDER_INFO_RECORD: Record<TileType, TileTypeRenderInfo> 
       textureSource: "grass.png"
    },
    permafrost: {
-      textureSource: "permafrost-5.png"
+      textureSource: "permafrost.png"
    }
 };

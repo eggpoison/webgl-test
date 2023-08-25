@@ -1,10 +1,11 @@
-import { HitboxInfo, HitboxType, Point } from "webgl-test-shared";
+import { Point } from "webgl-test-shared";
 import GameObject from "../GameObject";
+import CircularHitbox from "./CircularHitbox";
+import RectangularHitbox from "./RectangularHitbox";
 
 export type HitboxBounds = [minX: number, maxX: number, minY: number, maxY: number];
 
-abstract class Hitbox<T extends HitboxType> {
-   public info: HitboxInfo<T>;
+abstract class Hitbox {
    public gameObject!: GameObject;
 
    /** The bounds of the hitbox since the last physics update */
@@ -12,8 +13,10 @@ abstract class Hitbox<T extends HitboxType> {
 
    public position!: Point;
 
-   constructor(hitboxInfo: HitboxInfo<T>) {
-      this.info = hitboxInfo;
+   public offset?: Point;
+
+   constructor(offset?: Point) {
+      this.offset = offset;
    }
 
    public setObject(gameObject: GameObject): void {
@@ -28,12 +31,12 @@ abstract class Hitbox<T extends HitboxType> {
 
    public updatePosition(): void {
       this.position = this.gameObject.position.copy();
-      if (typeof this.info.offset !== "undefined") {
-         this.position.add(this.info.offset);
+      if (typeof this.offset !== "undefined") {
+         this.position.add(this.offset);
       }
    }
 
-   public abstract isColliding(otherHitbox: Hitbox<HitboxType>): boolean;
+   public abstract isColliding(otherHitbox: CircularHitbox | RectangularHitbox): boolean;
 }
 
 export default Hitbox;

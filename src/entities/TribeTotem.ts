@@ -1,7 +1,8 @@
-import { Point, HitboxType, Vector, TribeTotemBanner, EntityData, TribeType } from "webgl-test-shared";
-import Hitbox from "../hitboxes/Hitbox";
+import { Point, Vector, TribeTotemBanner, EntityData, TribeType } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
+import CircularHitbox from "../hitboxes/CircularHitbox";
+import RectangularHitbox from "../hitboxes/RectangularHitbox";
 
 class TribeTotem extends Entity {
    private static readonly RADIUS = 60;
@@ -19,7 +20,7 @@ class TribeTotem extends Entity {
    private readonly banners: Record<number, TribeTotemBanner> = {};
    private readonly bannerRenderParts: Record<number, RenderPart> = {};
 
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, tribeID: number, tribeType: TribeType, banners: Array<TribeTotemBanner>) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, tribeID: number, tribeType: TribeType, banners: Array<TribeTotemBanner>) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
       this.attachRenderParts([

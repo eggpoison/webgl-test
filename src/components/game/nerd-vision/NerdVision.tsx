@@ -9,7 +9,7 @@ import TerminalButton, { setTerminalButtonOpened } from "./TerminalButton";
 export let showNerdVision: () => void;
 export let hideNerdVision: () => void;
 
-export let nerdVisionIsVisible: () => boolean;
+export let nerdVisionIsVisible: () => boolean = () => false;
 
 const NerdVision = () => {
    const [terminalStartingVisibility, setTerminalStartingVisibility] = useState(false);

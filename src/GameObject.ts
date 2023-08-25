@@ -1,10 +1,10 @@
-import { GameObjectData, HitboxType, Point, RIVER_STEPPING_STONE_SIZES, SETTINGS, TILE_TYPE_INFO_RECORD, Vector } from "webgl-test-shared";
+import { GameObjectData, Point, RIVER_STEPPING_STONE_SIZES, SETTINGS, TILE_TYPE_INFO_RECORD, Vector } from "webgl-test-shared";
 import RenderPart, { RenderObject } from "./render-parts/RenderPart";
-import Hitbox from "./hitboxes/Hitbox";
 import Chunk from "./Chunk";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import Game from "./Game";
 import { Tile } from "./Tile";
+import CircularHitbox from "./hitboxes/CircularHitbox";
 
 let frameProgress: number;
 export function setFrameProgress(newFrameProgress: number): void {
@@ -97,7 +97,7 @@ abstract class GameObject extends RenderObject {
    /** Stores all render parts attached to the object, in ascending order of their z-indexes. */
    public readonly renderParts = new Array<RenderPart>();
 
-   public readonly hitboxes!: ReadonlySet<Hitbox<HitboxType>>;
+   public readonly hitboxes!: ReadonlySet<CircularHitbox | RectangularHitbox>;
    public readonly hitboxHalfDiagonalLength?: number;
    
    /** Limit to how many units the object can move in a second */
@@ -105,7 +105,7 @@ abstract class GameObject extends RenderObject {
 
    public chunks!: Set<Chunk>;
 
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, a: boolean = false) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, a: boolean = false) {
       super();
       
       this.position = position;
@@ -119,7 +119,7 @@ abstract class GameObject extends RenderObject {
       // Calculate initial containing chunks
       for (const hitbox of this.hitboxes) {
          hitbox.setObject(this); 
-         if (hitbox.info.type === "rectangular") {
+         if (hitbox.hasOwnProperty("width")) {
             (hitbox as RectangularHitbox).computeVertexPositions();
          }
          hitbox.updateHitboxBounds();

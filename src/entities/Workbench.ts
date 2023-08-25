@@ -1,12 +1,13 @@
-import { HitboxType, Point } from "webgl-test-shared";
-import Hitbox from "../hitboxes/Hitbox";
+import { Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
+import CircularHitbox from "../hitboxes/CircularHitbox";
+import RectangularHitbox from "../hitboxes/RectangularHitbox";
 
 class Workbench extends Entity {
    public readonly type = "workbench";
    
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
       this.attachRenderParts([

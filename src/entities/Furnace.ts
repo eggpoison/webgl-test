@@ -1,9 +1,10 @@
-import { EntityData, EntityType, HitboxType, InventoryData, Point } from "webgl-test-shared";
-import Hitbox from "../hitboxes/Hitbox";
+import { EntityData, EntityType, InventoryData, Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { Inventory } from "../items/Item";
 import { createInventoryFromData } from "../items/item-creation";
+import CircularHitbox from "../hitboxes/CircularHitbox";
+import RectangularHitbox from "../hitboxes/RectangularHitbox";
 
 class Furnace extends Entity {
    private static readonly SIZE = 80;
@@ -14,7 +15,7 @@ class Furnace extends Entity {
    public ingredientInventory: Inventory;
    public outputInventory: Inventory;
 
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
       this.attachRenderParts([

@@ -1,9 +1,10 @@
-import { EntityData, HitboxType, InventoryData, ItemType, Point, TribeType, Vector } from "webgl-test-shared";
+import { EntityData, InventoryData, ItemType, Point, TribeType, Vector } from "webgl-test-shared";
 import TribeMember from "./TribeMember";
-import Hitbox from "../hitboxes/Hitbox";
 import RenderPart from "../render-parts/RenderPart";
 import { Inventory, ItemSlots } from "../items/Item";
 import { createItem } from "../items/item-creation";
+import CircularHitbox from "../hitboxes/CircularHitbox";
+import RectangularHitbox from "../hitboxes/RectangularHitbox";
 
 class Tribesman extends TribeMember {
    public readonly type = "tribesman";
@@ -17,7 +18,7 @@ class Tribesman extends TribeMember {
 
    public readonly inventory: Inventory;
 
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, inventoryData: InventoryData) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, inventoryData: InventoryData) {
       super(position, hitboxes, id, secondsSinceLastHit, tribeID, tribeType, armour);
 
       this.attachRenderParts([

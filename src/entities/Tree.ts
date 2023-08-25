@@ -1,7 +1,8 @@
-import { HitboxType, Point, TreeSize } from "webgl-test-shared";
-import Hitbox from "../hitboxes/Hitbox";
+import { Point, TreeSize } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
+import CircularHitbox from "../hitboxes/CircularHitbox";
+import RectangularHitbox from "../hitboxes/RectangularHitbox";
 
 const treeTextures: { [T in TreeSize]: string } = {
    [TreeSize.small]: "entities/tree/tree-small.png",
@@ -11,7 +12,7 @@ const treeTextures: { [T in TreeSize]: string } = {
 class Tree extends Entity {
    public readonly type = "tree";
    
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, treeSize: TreeSize) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, treeSize: TreeSize) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
       this.attachRenderParts([

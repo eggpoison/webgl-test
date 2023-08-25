@@ -1,7 +1,8 @@
-import { EntityData, EntityType, HitboxType, Point } from "webgl-test-shared";
+import { EntityData, EntityType, Point } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
-import Hitbox from "../hitboxes/Hitbox";
+import CircularHitbox from "../hitboxes/CircularHitbox";
+import RectangularHitbox from "../hitboxes/RectangularHitbox";
 
 class BerryBush extends Entity {
    private static readonly WIDTH = 80;
@@ -20,7 +21,7 @@ class BerryBush extends Entity {
 
    private readonly renderPart: RenderPart;
 
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, numBerries: number) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, numBerries: number) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
       this.renderPart = new RenderPart({

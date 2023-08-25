@@ -56,8 +56,8 @@ const GameScreen = () => {
 
       {/* Note: BackpackInventoryMenu must be exactly before CraftingMenu because of CSS hijinks */}
       <BackpackInventoryMenu />
-      <InteractInventory />
       <CraftingMenu />
+      <InteractInventory />
 
       <HeldItem />
 

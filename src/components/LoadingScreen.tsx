@@ -88,7 +88,7 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
                // Spawn the player
                Game.definiteGameState.playerUsername = username;
                const playerSpawnPosition = new Point(spawnPositionRef.current!.x, spawnPositionRef.current!.y);
-               const player = new Player(playerSpawnPosition, new Set(Player.HITBOXES), initialGameDataPacket.playerID, null, null, TribeType.plainspeople, null, username);
+               const player = new Player(playerSpawnPosition, new Set([Player.createNewPlayerHitbox()]), initialGameDataPacket.playerID, null, null, TribeType.plainspeople, null, username);
                Player.setInstancePlayer(player);
 
                Client.unloadGameDataPacket(initialGameDataPacket);

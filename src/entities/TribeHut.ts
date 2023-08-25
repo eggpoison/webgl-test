@@ -1,7 +1,8 @@
-import { Point, HitboxType } from "webgl-test-shared";
-import Hitbox from "../hitboxes/Hitbox";
+import { Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
+import CircularHitbox from "../hitboxes/CircularHitbox";
+import RectangularHitbox from "../hitboxes/RectangularHitbox";
 
 class TribeHut extends Entity {
    private static readonly SIZE = 88;
@@ -13,7 +14,7 @@ class TribeHut extends Entity {
 
    public tribeID: number | null;
 
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, tribeID: number | null) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, tribeID: number | null) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
       this.tribeID = tribeID;

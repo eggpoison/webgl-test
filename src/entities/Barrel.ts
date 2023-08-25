@@ -1,9 +1,10 @@
-import { EntityData, HitboxType, InventoryData, Point } from "webgl-test-shared";
-import Hitbox from "../hitboxes/Hitbox";
+import { EntityData, InventoryData, Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { Inventory, ItemSlots } from "../items/Item";
 import { createItem } from "../items/item-creation";
+import CircularHitbox from "../hitboxes/CircularHitbox";
+import RectangularHitbox from "../hitboxes/RectangularHitbox";
 
 class Barrel extends Entity {
    private static readonly RADIUS = 40;
@@ -14,7 +15,7 @@ class Barrel extends Entity {
 
    public tribeID: number | null;
 
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, inventoryData: InventoryData) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, inventoryData: InventoryData) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
       this.attachRenderParts([

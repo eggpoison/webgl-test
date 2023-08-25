@@ -1,7 +1,8 @@
-import { EntityType, Point, HitboxType, Vector, CactusFlowerSize, CactusBodyFlowerData, CactusLimbData } from "webgl-test-shared";
-import Hitbox from "../hitboxes/Hitbox";
+import { EntityType, Point, Vector, CactusFlowerSize, CactusBodyFlowerData, CactusLimbData } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
+import CircularHitbox from "../hitboxes/CircularHitbox";
+import RectangularHitbox from "../hitboxes/RectangularHitbox";
 
 class Cactus extends Entity {
    private static readonly SIZE = 80;
@@ -10,7 +11,7 @@ class Cactus extends Entity {
 
    public type: EntityType = "cactus";
 
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, flowers: ReadonlyArray<CactusBodyFlowerData>, limbs: ReadonlyArray<CactusLimbData>) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, flowers: ReadonlyArray<CactusBodyFlowerData>, limbs: ReadonlyArray<CactusLimbData>) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
       this.attachRenderPart(

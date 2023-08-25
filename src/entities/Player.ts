@@ -1,9 +1,8 @@
-import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitboxType, HitData, Point, SETTINGS, Vector, clampToBoardDimensions, TribeType, ItemType } from "webgl-test-shared";
+import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitData, Point, SETTINGS, Vector, clampToBoardDimensions, TribeType, ItemType } from "webgl-test-shared";
 import Camera from "../Camera";
 import { setCraftingMenuAvailableRecipes, setCraftingMenuAvailableCraftingStations } from "../components/game/menus/CraftingMenu";
 import Game from "../Game";
 import CircularHitbox from "../hitboxes/CircularHitbox";
-import Hitbox from "../hitboxes/Hitbox";
 import Item, { ItemSlot } from "../items/Item";
 import RenderPart from "../render-parts/RenderPart";
 import { halfWindowHeight, halfWindowWidth } from "../webgl";
@@ -125,14 +124,14 @@ class Player extends TribeMember {
    
    public readonly username: string;
 
-   public static readonly HITBOXES: ReadonlySet<Hitbox<HitboxType>> = new Set<Hitbox<HitboxType>>([
-      new CircularHitbox({
-         type: "circular",
-         radius: Player.RADIUS
-      })
-   ]);
+   // public static readonly HITBOXES: ReadonlySet<CircularHitbox | RectangularHitbox> = new Set<CircularHitbox | RectangularHitbox>([
+   //    new CircularHitbox({
+   //       type: "circular",
+   //       radius: Player.RADIUS
+   //    })
+   // ]);
 
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, username: string) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, username: string) {
       super(position, hitboxes, id, secondsSinceLastHit, tribeID, tribeType, armour);
 
       this.attachRenderParts([
@@ -386,33 +385,32 @@ class Player extends TribeMember {
 
       // Account for this object's hitboxes
       for (const hitbox of Player.instance!.hitboxes) {
-         switch (hitbox.info.type) {
-            case "circular": {
-               maxDist += hitbox.info.radius;
-               break;
-            }
-            case "rectangular": {
-               maxDist += (hitbox as RectangularHitbox).halfDiagonalLength;
-               break;
-            }
+         if (hitbox.hasOwnProperty("radius")) {
+            // Circular
+            maxDist += (hitbox as CircularHitbox).radius;
+         } else {
+            // Rectangular
+            maxDist += (hitbox as RectangularHitbox).halfDiagonalLength;
          }
       }
 
       // Account for the other object's hitboxes
       for (const hitbox of gameObject.hitboxes) {
-         switch (hitbox.info.type) {
-            case "circular": {
-               maxDist += hitbox.info.radius;
-               break;
-            }
-            case "rectangular": {
-               maxDist += (hitbox as RectangularHitbox).halfDiagonalLength;
-               break;
-            }
+         if (hitbox.hasOwnProperty("radius")) {
+            // Circular
+            maxDist += (hitbox as CircularHitbox).radius;
+         } else {
+            // Rectangular
+            maxDist += (hitbox as RectangularHitbox).halfDiagonalLength;
          }
       }
       
       return maxDist;
+   }
+
+   public static createNewPlayerHitbox(): CircularHitbox {
+      const hitbox = new CircularHitbox(Player.RADIUS);
+      return hitbox;
    }
 }
 

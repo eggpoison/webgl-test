@@ -1,7 +1,8 @@
-import { EntityType, Point, HitboxType, Vector, EntityData, lerp } from "webgl-test-shared";
-import Hitbox from "../hitboxes/Hitbox";
+import { EntityType, Point, Vector, EntityData, lerp } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
+import CircularHitbox from "../hitboxes/CircularHitbox";
+import RectangularHitbox from "../hitboxes/RectangularHitbox";
 
 class Yeti extends Entity {
    private static readonly SIZE = 128;
@@ -15,7 +16,7 @@ class Yeti extends Entity {
 
    private attackProgress = 1;
 
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, attackProgress: number) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, attackProgress: number) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
       this.attachRenderPart(
@@ -42,7 +43,9 @@ class Yeti extends Entity {
             textureSource: "entities/yeti-paw.png",
             zIndex: 0,
             offset: () => {
-               const angle = lerp(Yeti.PAW_END_ANGLE, Yeti.PAW_START_ANGLE, this.attackProgress) * (i === 0 ? 1 : -1);
+               let attackProgress = this.attackProgress;
+               attackProgress = Math.pow(attackProgress, 0.75);
+               const angle = lerp(Yeti.PAW_END_ANGLE, Yeti.PAW_START_ANGLE, attackProgress) * (i === 0 ? 1 : -1);
                const offset = new Vector(Yeti.SIZE/2, angle).convertToPoint();
                return offset;
             }

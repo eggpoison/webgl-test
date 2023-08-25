@@ -1,7 +1,8 @@
-import { EntityData, EntityType, HitboxType, Point, SlimeOrbData, SlimeSize, Vector, lerp } from "webgl-test-shared";
-import Hitbox from "../hitboxes/Hitbox";
+import { EntityData, EntityType, Point, SlimeOrbData, SlimeSize, Vector, lerp } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
+import CircularHitbox from "../hitboxes/CircularHitbox";
+import RectangularHitbox from "../hitboxes/RectangularHitbox";
 
 class Slime extends Entity {
    private static readonly SIZES: ReadonlyArray<number> = [
@@ -26,7 +27,7 @@ class Slime extends Entity {
    private numOrbs: number;
    private readonly orbRotations = new Array<number>();
 
-   constructor(position: Point, hitboxes: ReadonlySet<Hitbox<HitboxType>>, id: number, secondsSinceLastHit: number | null, size: SlimeSize, _eyeRotation: number, orbs: ReadonlyArray<SlimeOrbData>) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, size: SlimeSize, _eyeRotation: number, orbs: ReadonlyArray<SlimeOrbData>) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
       const spriteSize = Slime.SIZES[size];
