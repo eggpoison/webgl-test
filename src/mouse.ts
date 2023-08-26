@@ -86,7 +86,7 @@ export function renderCursorTooltip(): void {
    if (typeof Game.cursorPosition === "undefined") return;
 
    if (Game.cursorPosition === null) {
-      updateCursorTooltip(null, null, null);
+      updateCursorTooltip(null, null);
       if (isDev()) {
          updateDevEntityViewer(null);
       }
@@ -97,7 +97,7 @@ export function renderCursorTooltip(): void {
 
    // If there is no target, hide the tooltip
    if (targetEntity === null) {
-      updateCursorTooltip(null, null, null);
+      updateCursorTooltip(null, null);
       if (isDev()) {
          updateDevEntityViewer(null);
       }
@@ -110,5 +110,5 @@ export function renderCursorTooltip(): void {
    const screenPosition = calculateEntityScreenPosition(targetEntity);
 
    const debugData = Game.getGameObjectDebugData();
-   updateCursorTooltip(targetEntity, debugData, screenPosition);
+   updateCursorTooltip(debugData, screenPosition);
 }

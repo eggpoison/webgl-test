@@ -16,5 +16,5 @@ function createProjectile(position: Point, hitboxes: ReadonlySet<CircularHitbox 
    const projectileClass = PROJECTILE_CLASS_RECORD[projectileType]();
    return new projectileClass(position, hitboxes, id);
 }
-
+ 
 export default createProjectile;
