@@ -130,7 +130,7 @@ export function loadTextures(): Promise<void> {
 
       // Add item textures
       for (const clientItemInfo of Object.values(CLIENT_ITEM_INFO_RECORD)) {
-         TEXTURE_SOURCES.push(`items/${clientItemInfo.textureSource}`);
+         TEXTURE_SOURCES.push(clientItemInfo.textureSource);
       }
 
       for (const textureSource of TEXTURE_SOURCES) {

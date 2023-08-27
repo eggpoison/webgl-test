@@ -165,6 +165,11 @@ const categoriseGameObjectsByRenderPart = (visibleGameObjects: ReadonlyArray<Gam
    let totalRotation = 0;
 
    const addRenderPart = (renderPart: RenderPart): void => {
+      // Don't render inactive render parts
+      if (!renderPart.isActive) {
+         return;
+      }
+      
       // Calculate the render position for the object
       renderPart.updateRenderPosition();
 

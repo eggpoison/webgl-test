@@ -18,15 +18,15 @@ class Tribesman extends TribeMember {
 
    public readonly inventory: Inventory;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, inventoryData: InventoryData) {
-      super(position, hitboxes, id, secondsSinceLastHit, tribeID, tribeType, armour);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, activeItem: ItemType | null, swingProgress: number, inventoryData: InventoryData) {
+      super(position, hitboxes, id, secondsSinceLastHit, tribeID, tribeType, armour, activeItem, swingProgress);
 
       this.attachRenderParts([
          new RenderPart({
             width: Tribesman.RADIUS * 2,
             height: Tribesman.RADIUS * 2,
             textureSource: super.getTextureSource(tribeType),
-            zIndex: 0
+            zIndex: 1
          }, this)
       ]);
 
@@ -38,7 +38,7 @@ class Tribesman extends TribeMember {
                width: Tribesman.RADIUS * 2,
                height: Tribesman.RADIUS * 2,
                textureSource: `entities/human/goblin-warpaint-${warpaint}.png`,
-               zIndex: 1
+               zIndex: 2
             }, this)
          );
 
@@ -51,7 +51,7 @@ class Tribesman extends TribeMember {
                textureSource: "entities/human/goblin-ear.png",
                offset: () => leftEarOffset,
                getRotation: () => Math.PI/2 - Tribesman.GOBLIN_EAR_ANGLE,
-               zIndex: 1,
+               zIndex: 2,
                flipX: true
             }, this)
          );
@@ -64,7 +64,7 @@ class Tribesman extends TribeMember {
                textureSource: "entities/human/goblin-ear.png",
                offset: () => rightEarOffset,
                getRotation: () => -Math.PI/2 + Tribesman.GOBLIN_EAR_ANGLE,
-               zIndex: 1
+               zIndex: 2
             }, this)
          );
       }
@@ -93,7 +93,7 @@ class Tribesman extends TribeMember {
       super.updateFromData(entityData);
 
       // Update inventory from data
-      const inventoryData = entityData.clientArgs[3];
+      const inventoryData = entityData.clientArgs[5];
       const itemSlots: ItemSlots = {};
       for (const [itemSlot, itemData] of Object.entries(inventoryData.itemSlots)) {
          const item = createItem(itemData.type, itemData.count, itemData.id);

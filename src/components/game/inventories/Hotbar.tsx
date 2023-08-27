@@ -105,7 +105,7 @@ const Hotbar = () => {
       const item: Item | undefined = hotbarInventory.itemSlots[itemSlot];
       
       if (typeof item !== "undefined") {
-         const imageSrc = require("../../../images/items/" + CLIENT_ITEM_INFO_RECORD[item.type].textureSource);
+         const imageSrc = require("../../../images/" + CLIENT_ITEM_INFO_RECORD[item.type].textureSource);
          hotbarItemSlots.push(
             <ItemSlot onClick={e => leftClickItemSlot(e, Player.instance!.id, hotbarInventory, itemSlot)} onContextMenu={e => rightClickItemSlot(e, Player.instance!.id, hotbarInventory, itemSlot)} isSelected={itemSlot === selectedItemSlot} picturedItemImageSrc={imageSrc} itemCount={item.count} key={itemSlot} />
          );

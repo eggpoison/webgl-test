@@ -545,7 +545,7 @@ abstract class Client {
       updateHealthBar(Player.MAX_HEALTH);
       
       const spawnPosition = Point.unpackage(respawnDataPacket.spawnPosition);
-      const player = new Player(spawnPosition, new Set([Player.createNewPlayerHitbox()]), respawnDataPacket.playerID, null, null, TribeType.plainspeople, null, Game.definiteGameState.playerUsername);
+      const player = new Player(spawnPosition, new Set([Player.createNewPlayerHitbox()]), respawnDataPacket.playerID, null, null, TribeType.plainspeople, null, null, 0, Game.definiteGameState.playerUsername);
       Player.setInstancePlayer(player);
 
       gameScreenSetIsDead(false);
@@ -577,7 +577,8 @@ abstract class Client {
             acceleration: Player.instance.acceleration?.package() || null,
             terminalVelocity: Player.instance.terminalVelocity,
             rotation: Player.instance.rotation,
-            visibleChunkBounds: Camera.getVisibleChunkBounds()
+            visibleChunkBounds: Camera.getVisibleChunkBounds(),
+            selectedItemSlot: Game.latencyGameState.selectedHotbarItemSlot
          };
 
          this.socket.emit("player_data_packet", packet);

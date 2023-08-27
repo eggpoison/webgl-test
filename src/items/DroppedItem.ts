@@ -17,13 +17,11 @@ class DroppedItem extends GameObject implements BaseItemInfo {
 
       Game.board.droppedItems[this.id] = this;
 
-      const itemTextureSource = CLIENT_ITEM_INFO_RECORD[itemType].textureSource;
-
       this.attachRenderPart(
          new RenderPart({
             width: SETTINGS.ITEM_SIZE * 2,
             height: SETTINGS.ITEM_SIZE * 2,
-            textureSource: "items/" + itemTextureSource,
+            textureSource: CLIENT_ITEM_INFO_RECORD[itemType].textureSource,
             zIndex: 0
          }, this)
       );

@@ -472,4 +472,12 @@ export function updateActiveItem(): void {
          item.setIsActive(isActive);
       }
    }
+
+   if (Player.instance !== null) {
+      if (Game.definiteGameState.hotbar.itemSlots.hasOwnProperty(Game.latencyGameState.selectedHotbarItemSlot)) {
+         Player.instance.updateActiveItem(Game.definiteGameState.hotbar.itemSlots[Game.latencyGameState.selectedHotbarItemSlot].type);
+      } else {
+         Player.instance.updateActiveItem(null);
+      }
+   }
 }

@@ -124,22 +124,15 @@ class Player extends TribeMember {
    
    public readonly username: string;
 
-   // public static readonly HITBOXES: ReadonlySet<CircularHitbox | RectangularHitbox> = new Set<CircularHitbox | RectangularHitbox>([
-   //    new CircularHitbox({
-   //       type: "circular",
-   //       radius: Player.RADIUS
-   //    })
-   // ]);
-
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, username: string) {
-      super(position, hitboxes, id, secondsSinceLastHit, tribeID, tribeType, armour);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, activeItem: ItemType | null, swingProgress: number, username: string) {
+      super(position, hitboxes, id, secondsSinceLastHit, tribeID, tribeType, armour, activeItem, swingProgress);
 
       this.attachRenderParts([
          new RenderPart({
             width: 64,
             height: 64,
             textureSource: super.getTextureSource(tribeType),
-            zIndex: 0
+            zIndex: 1
          }, this)
       ]);
 

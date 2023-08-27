@@ -1,10 +1,13 @@
-import { EntityData, ItemType, Point, TribeType } from "webgl-test-shared";
+import { EntityData, ItemType, Point, TribeType, Vector } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
+import CLIENT_ITEM_INFO_RECORD from "../client-item-info";
 
 abstract class TribeMember extends Entity {
+   private static readonly ACTIVE_ITEM_RENDER_PART_SIZE = 28;
+   
    private readonly tribeType: TribeType;
 
    public tribeID: number | null;
@@ -12,8 +15,13 @@ abstract class TribeMember extends Entity {
    private armourRenderPart: RenderPart | null = null;
 
    public armourType: ItemType | null;
+
+   private activeItemRenderPart: RenderPart;
+
+   protected activeItem: ItemType | null;
+   private swingProgress: number;
    
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, tribeType: TribeType, armour: ItemType | null) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, activeItem: ItemType | null, swingProgress: number) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
       this.tribeID = tribeID;
@@ -21,6 +29,26 @@ abstract class TribeMember extends Entity {
 
       this.updateArmourRenderPart(armour);
       this.armourType = armour;
+      this.activeItem = activeItem;
+      this.swingProgress = swingProgress;
+      
+      this.activeItemRenderPart = new RenderPart({
+         textureSource: activeItem !== null ? CLIENT_ITEM_INFO_RECORD[activeItem].textureSource : "",
+         width: TribeMember.ACTIVE_ITEM_RENDER_PART_SIZE,
+         height: TribeMember.ACTIVE_ITEM_RENDER_PART_SIZE,
+         offset: () => {
+            return new Vector(36, Math.PI/4).convertToPoint();
+         },
+         getRotation: () => {
+            return Math.PI/4;
+         },
+         zIndex: 0
+      }, this);
+      this.attachRenderPart(this.activeItemRenderPart);
+      
+      if (activeItem === null) {
+         this.activeItemRenderPart.isActive = false;
+      }
    }
 
    protected overrideTileMoveSpeedMultiplier(): number | null {
@@ -81,13 +109,30 @@ abstract class TribeMember extends Entity {
       }
    }
 
+   private updateActiveItemRenderPart(activeItem: ItemType | null): void {
+      if (activeItem === null) {
+         this.activeItemRenderPart.isActive = false;
+      } else {
+         this.activeItemRenderPart.textureSource = CLIENT_ITEM_INFO_RECORD[activeItem].textureSource;
+         this.activeItemRenderPart.isActive = true;
+      }
+   }
+
    public updateFromData(entityData: EntityData<"player"> | EntityData<"tribesman">): void {
       super.updateFromData(entityData);
+
+      this.activeItem = entityData.clientArgs[3];
+      this.swingProgress = entityData.clientArgs[4];
+      this.updateActiveItemRenderPart(this.activeItem);
 
       this.tribeID = entityData.clientArgs[0];
       this.armourType = entityData.clientArgs[2];
 
       this.updateArmourRenderPart(entityData.clientArgs[2]);
+   }
+
+   public updateActiveItem(itemType: ItemType | null): void {
+      this.updateActiveItemRenderPart(itemType);
    }
 }
 

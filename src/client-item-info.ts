@@ -8,137 +8,137 @@ export type ClientItemInfo = {
 
 const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
    [ItemType.wood]: {
-      textureSource: "wood.png",
+      textureSource: "items/wood.png",
       name: "Wood",
       description: "A common material used in crafting many things."
    },
    [ItemType.wooden_sword]: {
-      textureSource: "wooden-sword.png",
+      textureSource: "items/wooden-sword.png",
       name: "Wooden Sword",
       description: "The splinters hurt you as much as the blade hurts the enemy."
    },
    [ItemType.wooden_axe]: {
-      textureSource: "wooden-axe.png",
+      textureSource: "items/wooden-axe.png",
       name: "Wooden Axe",
       description: ""
    },
    [ItemType.wooden_pickaxe]: {
-      textureSource: "wooden-pickaxe.png",
+      textureSource: "items/wooden-pickaxe.png",
       name: "Wooden Pickaxe",
       description: ""
    },
    [ItemType.berry]: {
-      textureSource: "berry.png",
+      textureSource: "items/berry.png",
       name: "Berry",
       description: "Provides little sustenance, but can be used in a pinch."
    },
    [ItemType.raw_beef]: {
-      textureSource: "raw-beef.png",
+      textureSource: "items/raw-beef.png",
       name: "Raw Beef",
       description: "The raw mutilated flesh of a deceased cow - would not recommend eating."
    },
    [ItemType.cooked_beef]: {
-      textureSource: "cooked-beef.png",
+      textureSource: "items/cooked-beef.png",
       name: "Cooked Beef",
       description: "A hearty meal. Could use some seasoning."
    },
    [ItemType.workbench]: {
-      textureSource: "workbench.png",
+      textureSource: "items/workbench.png",
       name: "Workbench",
       description: "The first crafting station available, able to craft many more complex recipes."
    },
    [ItemType.rock]: {
-      textureSource: "rock.png",
+      textureSource: "items/rock.png",
       name: "Rock",
       description: "This Grug rock. No hurt or face wrath of Grug."
    },
    [ItemType.stone_sword]: {
-      textureSource: "stone-sword.png",
+      textureSource: "items/stone-sword.png",
       name: "Stone Sword",
       description: ""
    },
    [ItemType.stone_axe]: {
-      textureSource: "stone-axe.png",
+      textureSource: "items/stone-axe.png",
       name: "Stone Axe",
       description: ""
    },
    [ItemType.stone_pickaxe]: {
-      textureSource: "stone-pickaxe.png",
+      textureSource: "items/stone-pickaxe.png",
       name: "Stone Pickaxe",
       description: ""
    },
    [ItemType.leather]: {
-      textureSource: "leather.png",
+      textureSource: "items/leather.png",
       name: "Leather",
       description: ""
    },
    [ItemType.leather_backpack]: {
-      textureSource: "leather-backpack.png",
+      textureSource: "items/leather-backpack.png",
       name: "Leather Backpack",
       description: "Allows you to hold more items."
    },
    [ItemType.cactus_spine]: {
-      textureSource: "cactus-spine.png",
+      textureSource: "items/cactus-spine.png",
       name: "Cactus Spine",
       description: "It's tough and spiky and gets everywhere."
    },
    [ItemType.yeti_hide]: {
-      textureSource: "yeti-hide.png",
+      textureSource: "items/yeti-hide.png",
       name: "Yeti Hide",
       description: "An extremely tough half-frost half-flesh hide."
    },
    [ItemType.frostcicle]: {
-      textureSource: "frostcicle.png",
+      textureSource: "items/frostcicle.png",
       name: "Frostcicle",
       description: "A perfectly preserved ice shard."
    },
    [ItemType.slimeball]: {
-      textureSource: "slimeball.png",
+      textureSource: "items/slimeball.png",
       name: "Slimeball",
       description: ""
    },
    [ItemType.eyeball]: {
-      textureSource: "eyeball.png",
+      textureSource: "items/eyeball.png",
       name: "Eyeball",
       description: ""
    },
    [ItemType.flesh_sword]: {
-      textureSource: "flesh-sword.png",
+      textureSource: "items/flesh-sword.png",
       name: "Flesh Sword",
       description: ""
    },
    [ItemType.tribe_totem]: {
-      textureSource: "tribe-totem.png",
+      textureSource: "items/tribe-totem.png",
       name: "Tribe Totem",
       description: ""
    },
    [ItemType.tribe_hut]: {
-      textureSource: "tribe-hut.png",
+      textureSource: "items/tribe-hut.png",
       name: "Tribe Hut",
       description: ""
    },
    [ItemType.barrel]: {
-      textureSource: "barrel.png",
+      textureSource: "items/barrel.png",
       name: "Barrel",
       description: ""
    },
    [ItemType.frost_armour]: {
-      textureSource: "frost-armour.png",
+      textureSource: "items/frost-armour.png",
       name: "Frost Armour",
       description: ""
    },
    [ItemType.campfire]: {
-      textureSource: "campfire.png",
+      textureSource: "items/campfire.png",
       name: "Campfire",
       description: ""
    },
    [ItemType.furnace]: {
-      textureSource: "furnace.png",
+      textureSource: "items/furnace.png",
       name: "Furnace",
       description: ""
    },
    [ItemType.wooden_bow]: {
-      textureSource: "wooden-bow.png",
+      textureSource: "items/wooden-bow.png",
       name: "Wooden Bow",
       description: ""
    }
