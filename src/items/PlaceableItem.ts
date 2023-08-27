@@ -15,12 +15,12 @@ type PlaceableEntityInfo = {
 }
 
 const PLACEABLE_ENTITY_INFO_RECORD: Partial<Record<ItemType, PlaceableEntityInfo>> = {
-   workbench: {
+   [ItemType.workbench]: {
       textureSource: "workbench/workbench.png",
       width: 80,
       height: 80
    },
-   tribe_totem: {
+   [ItemType.tribe_totem]: {
       textureSource: "tribe-totem/tribe-totem.png",
       width: 120,
       height: 120,
@@ -29,7 +29,7 @@ const PLACEABLE_ENTITY_INFO_RECORD: Partial<Record<ItemType, PlaceableEntityInfo
          return Game.tribe === null;
       }
    },
-   tribe_hut: {
+   [ItemType.tribe_hut]: {
       textureSource: "tribe-hut/tribe-hut.png",
       width: 88,
       height: 88,
@@ -40,17 +40,17 @@ const PLACEABLE_ENTITY_INFO_RECORD: Partial<Record<ItemType, PlaceableEntityInfo
          return Game.tribe.numHuts < Game.tribe.tribesmanCap;
       }
    },
-   barrel: {
+   [ItemType.barrel]: {
       textureSource: "barrel/barrel.png",
       width: 80,
       height: 80
    },
-   campfire: {
+   [ItemType.campfire]: {
       textureSource: "campfire/campfire.png",
       width: 104,
       height: 104
    },
-   furnace: {
+   [ItemType.furnace]: {
       textureSource: "furnace/furnace.png",
       width: 80,
       height: 80

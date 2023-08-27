@@ -25,7 +25,7 @@ abstract class TribeMember extends Entity {
 
    protected overrideTileMoveSpeedMultiplier(): number | null {
       // If snow armour is equipped, move at normal speed on snow tiles
-   if (this.armourType === "frost_armour") {
+   if (this.armourType === ItemType.frost_armour) {
          if (this.findCurrentTile().type === "snow") {
             return 1;
          }
@@ -52,7 +52,7 @@ abstract class TribeMember extends Entity {
 
    private getArmourTextureSource(armour: ItemType): string {
       switch (armour) {
-         case "frost_armour": {
+         case ItemType.frost_armour: {
             return "armour/frost-armour.png";
          }
          default: {

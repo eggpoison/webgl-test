@@ -22,7 +22,7 @@ export let Hotbar_updateArmourItemSlot: (inventory: Inventory) => void = () => {
 
 export let Hotbar_setHotbarSelectedItemSlot: (itemSlot: number) => void = () => {};
 
-const backpackItemTypes: ReadonlyArray<ItemType> = ["leather_backpack", "raw_beef"];
+const backpackItemTypes: ReadonlyArray<ItemType> = [ItemType.leather_backpack, ItemType.raw_beef];
 
 const Hotbar = () => {
    const [hotbarInventory, setHotbarInventory] = useState<Inventory | null>(null);
@@ -64,7 +64,7 @@ const Hotbar = () => {
 
             // Note: at this point in time, the server hasn't registered that the player has equipped the backpack into the backpack item slot and so we need to get the item from the held item
             const backpack = Game.definiteGameState.heldItemSlot.itemSlots[1];
-            if (backpack !== null && backpack.type !== "raw_beef") {
+            if (backpack !== null) {
                equipBackpack(Game.definiteGameState.heldItemSlot);
             }
          }

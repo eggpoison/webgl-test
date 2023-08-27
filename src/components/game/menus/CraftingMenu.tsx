@@ -115,7 +115,7 @@ interface IngredientsProps {
 const Ingredients = ({ recipe }: IngredientsProps) => {
    const ingredientElements = new Array<JSX.Element>();
    for (let i = 0; i < Object.keys(recipe.ingredients).length; i++) {
-      const [ingredientType, ingredientCount] = (Object.entries(recipe.ingredients) as ReadonlyArray<[ItemType, number]>)[i];
+      const [ingredientType, ingredientCount] = (Object.entries(recipe.ingredients) as unknown as ReadonlyArray<[ItemType, number]>)[i];
 
       ingredientElements[i] = <Ingredient ingredientType={ingredientType} amountRequiredForRecipe={ingredientCount} key={i} />
    }
