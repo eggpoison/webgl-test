@@ -25,6 +25,7 @@ export function generateFoodEatingParticleColours(): void {
       img.src = imageSource;
 
       img.addEventListener("load", () => {
+         temporaryCanvas.clearRect(0, 0, 16, 16);
          temporaryCanvas.drawImage(img, 0, 0, 16, 16);
 
          const imageData = temporaryCanvas.getImageData(0, 0, 16, 16);

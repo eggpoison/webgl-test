@@ -1,4 +1,5 @@
-import { ParticleData, ParticleTint, ParticleType, Point, Vector } from "webgl-test-shared";
+import { ItemType, ParticleData, ParticleTint, ParticleType, Point, Vector } from "webgl-test-shared";
+import { getRandomFoodEatingParticleColour } from "./food-eating-particles";
 
 export enum ParticleRenderLayer {
    low, // Below game objects
@@ -177,6 +178,17 @@ class Particle {
 
       [this.width, this.height] = PARTICLE_INFO[data.type].size;
       this.renderLayer = PARTICLE_INFO[data.type].renderLayer;
+
+      // TODO: Rework
+      if (data.foodItemType !== -1) {
+         console.log(data.foodItemType);
+         console.log(ItemType[data.foodItemType]);
+         const colour = getRandomFoodEatingParticleColour(data.foodItemType);
+         this.tint[0] = colour[0] / 255 - 1;
+         this.tint[1] = colour[1] / 255 - 1;
+         this.tint[2] = colour[2] / 255 - 1;
+         this.opacity *= colour[3] / 255;
+      }
    }
 
    public updateFromData(data: ParticleData): void {
@@ -186,7 +198,10 @@ class Particle {
       this.rotation = data.rotation;
       this.opacity = data.opacity;
       this.scale = data.scale;
-      this.tint = data.tint;
+      // TODO: Rework
+      if (data.foodItemType === -1) {
+         this.tint = data.tint;
+      }
    }
 }
 
