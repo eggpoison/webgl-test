@@ -8,6 +8,8 @@ import Game from "../Game";
 import { getFrameProgress } from "../GameObject";
 
 abstract class TribeMember extends Entity {
+   private static readonly FOOD_EAT_INTERVAL = 0.2;
+   
    private static readonly TOOL_ACTIVE_ITEM_SIZE = 48;
    private static readonly DEFAULT_ACTIVE_ITEM_SIZE = 32;
    
@@ -22,7 +24,7 @@ abstract class TribeMember extends Entity {
    private activeItemRenderPart: RenderPart;
 
    protected activeItem: ItemType | null;
-   public lastAttackTicks: number;
+   public lastActionTicks: number;
    
    constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, activeItem: ItemType | null, lastAttackTicks: number) {
       super(position, hitboxes, id, secondsSinceLastHit);
@@ -33,20 +35,17 @@ abstract class TribeMember extends Entity {
       this.updateArmourRenderPart(armour);
       this.armourType = armour;
       this.activeItem = activeItem;
-      this.lastAttackTicks = lastAttackTicks;
+      this.lastActionTicks = lastAttackTicks;
       
       this.activeItemRenderPart = new RenderPart({
          textureSource: activeItem !== null ? CLIENT_ITEM_INFO_RECORD[activeItem].textureSource : "",
          width: TribeMember.TOOL_ACTIVE_ITEM_SIZE,
          height: TribeMember.TOOL_ACTIVE_ITEM_SIZE,
          offset: () => {
-            const secondsSinceLastAttack = this.getSecondsSinceLastAttack();
+            const secondsSinceLastAction = this.getSecondsSinceLastAction();
             
             let direction = Math.PI / 4;
-            if (secondsSinceLastAttack < 0.5) {
-               direction -= lerp(Math.PI/2, 0, secondsSinceLastAttack * 2);
-            }
-
+   
             // TODO: This is kinda scuffed
             if (this.activeItem === null) {
                return new Point(0, 0);
@@ -54,20 +53,38 @@ abstract class TribeMember extends Entity {
 
             // TODO: As the offset function is called in the RenderPart constructor, this.activeItemRenderPart will initially
             // be undefined and so we have to check for this case
-            let size: number;
+            let itemSize: number;
             if (typeof this.activeItemRenderPart === "undefined") {
-               size = this.getActiveItemSize(this.activeItem);
+               itemSize = this.getActiveItemSize(this.activeItem);
             } else {
-               size = this.activeItemRenderPart.width;
+               itemSize = this.activeItemRenderPart.width;
             }
-            return new Vector(26 + size / 2, direction).convertToPoint();
+
+            if (Game.latencyGameState.playerIsEating) {
+               // Food eating animation
+               
+               const eatIntervalProgress = (secondsSinceLastAction % TribeMember.FOOD_EAT_INTERVAL) / TribeMember.FOOD_EAT_INTERVAL;
+               direction -= lerp(0, Math.PI/5, eatIntervalProgress);
+
+               const insetAmount = lerp(0, 10, eatIntervalProgress);
+   
+               return new Vector(26 + itemSize / 2 - insetAmount, direction).convertToPoint();
+            } else {
+               // Attack animation
+               
+               if (secondsSinceLastAction < 0.5) {
+                  direction -= lerp(Math.PI/2, 0, secondsSinceLastAction * 2);
+               }
+   
+               return new Vector(26 + itemSize / 2, direction).convertToPoint();
+            }
          },
          getRotation: () => {
-            const secondsSinceLastAttack = this.getSecondsSinceLastAttack();
+            const secondsSinceLastAction = this.getSecondsSinceLastAction();
             
             let direction = Math.PI / 4;
-            if (secondsSinceLastAttack < 0.5) {
-               direction -= lerp(Math.PI/2, 0, secondsSinceLastAttack * 2);
+            if (secondsSinceLastAction < 0.5) {
+               direction -= lerp(Math.PI/2, 0, secondsSinceLastAction * 2);
             }
             return -Math.PI/4 + direction;
          },
@@ -80,14 +97,14 @@ abstract class TribeMember extends Entity {
       }
    }
 
-   private getSecondsSinceLastAttack(): number {
-      const ticksSinceLastAttack = Game.ticks - this.lastAttackTicks;
-      let secondsSinceLastAttack = ticksSinceLastAttack / SETTINGS.TPS;
+   private getSecondsSinceLastAction(): number {
+      const ticksSinceLastAction = Game.ticks - this.lastActionTicks;
+      let secondsSinceLastAction = ticksSinceLastAction / SETTINGS.TPS;
 
       // Account for frame progress
-      secondsSinceLastAttack += getFrameProgress() / SETTINGS.TPS;
+      secondsSinceLastAction += getFrameProgress() / SETTINGS.TPS;
 
-      return secondsSinceLastAttack;
+      return secondsSinceLastAction;
    }
 
    protected overrideTileMoveSpeedMultiplier(): number | null {
@@ -173,7 +190,7 @@ abstract class TribeMember extends Entity {
       super.updateFromData(entityData);
 
       this.activeItem = entityData.clientArgs[3];
-      this.lastAttackTicks = entityData.clientArgs[4];
+      this.lastActionTicks = entityData.clientArgs[4];
       this.updateActiveItemRenderPart(this.activeItem);
 
       this.tribeID = entityData.clientArgs[0];

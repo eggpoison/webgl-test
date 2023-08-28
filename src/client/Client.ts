@@ -578,7 +578,8 @@ abstract class Client {
             terminalVelocity: Player.instance.terminalVelocity,
             rotation: Player.instance.rotation,
             visibleChunkBounds: Camera.getVisibleChunkBounds(),
-            selectedItemSlot: Game.latencyGameState.selectedHotbarItemSlot
+            selectedItemSlot: Game.latencyGameState.selectedHotbarItemSlot,
+            isEating: Game.latencyGameState.playerIsEating
          };
 
          this.socket.emit("player_data_packet", packet);

@@ -100,7 +100,7 @@ const attack = (): void => {
    };
    Client.sendAttackPacket(attackPacket);
 
-   Player.instance.lastAttackTicks = Game.ticks;
+   Player.instance.lastActionTicks = Game.ticks;
 }
 
 export let rightMouseButtonIsPressed = false;

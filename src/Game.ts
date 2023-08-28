@@ -35,6 +35,7 @@ import { ParticleRenderLayer } from "./Particle";
 import Tribe from "./Tribe";
 import OPTIONS from "./options";
 import { createRenderChunks } from "./rendering/tile-rendering/render-chunks";
+import { generateFoodEatingParticleColours } from "./food-eating-particles";
 
 const nightVertexShaderText = `
 precision mediump float;
@@ -236,6 +237,8 @@ abstract class Game {
             createRenderChunks();
 
             recalculateAmbientOcclusion();
+
+            generateFoodEatingParticleColours();
             
             await loadTextures();
    
