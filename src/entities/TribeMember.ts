@@ -1,12 +1,14 @@
-import { EntityData, ItemType, Point, TribeType, Vector } from "webgl-test-shared";
+import { EntityData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, ItemType, Point, SETTINGS, TribeType, Vector, lerp } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import CLIENT_ITEM_INFO_RECORD from "../client-item-info";
+import Game from "../Game";
 
 abstract class TribeMember extends Entity {
-   private static readonly ACTIVE_ITEM_RENDER_PART_SIZE = 28;
+   private static readonly TOOL_ACTIVE_ITEM_SIZE = 48;
+   private static readonly DEFAULT_ACTIVE_ITEM_SIZE = 32;
    
    private readonly tribeType: TribeType;
 
@@ -19,9 +21,9 @@ abstract class TribeMember extends Entity {
    private activeItemRenderPart: RenderPart;
 
    protected activeItem: ItemType | null;
-   private swingProgress: number;
+   public lastAttackTicks: number;
    
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, activeItem: ItemType | null, swingProgress: number) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, activeItem: ItemType | null, lastAttackTicks: number) {
       super(position, hitboxes, id, secondsSinceLastHit);
 
       this.tribeID = tribeID;
@@ -30,17 +32,45 @@ abstract class TribeMember extends Entity {
       this.updateArmourRenderPart(armour);
       this.armourType = armour;
       this.activeItem = activeItem;
-      this.swingProgress = swingProgress;
+      this.lastAttackTicks = lastAttackTicks;
       
       this.activeItemRenderPart = new RenderPart({
          textureSource: activeItem !== null ? CLIENT_ITEM_INFO_RECORD[activeItem].textureSource : "",
-         width: TribeMember.ACTIVE_ITEM_RENDER_PART_SIZE,
-         height: TribeMember.ACTIVE_ITEM_RENDER_PART_SIZE,
+         width: TribeMember.TOOL_ACTIVE_ITEM_SIZE,
+         height: TribeMember.TOOL_ACTIVE_ITEM_SIZE,
          offset: () => {
-            return new Vector(36, Math.PI/4).convertToPoint();
+            const ticksSinceLastAttack = Game.ticks - this.lastAttackTicks;
+            const secondsSinceLastAttack = ticksSinceLastAttack / SETTINGS.TPS;
+            
+            let direction = Math.PI / 4;
+            if (secondsSinceLastAttack < 0.5) {
+               direction -= lerp(Math.PI/2, 0, secondsSinceLastAttack * 2);
+            }
+
+            // TODO: This is kinda scuffed
+            if (this.activeItem === null) {
+               return new Point(0, 0);
+            }
+
+            // TODO: As the offset function is called in the RenderPart constructor, this.activeItemRenderPart will initially
+            // be undefined and so we have to check for this case
+            let size: number;
+            if (typeof this.activeItemRenderPart === "undefined") {
+               size = this.getActiveItemSize(this.activeItem);
+            } else {
+               size = this.activeItemRenderPart.width;
+            }
+            return new Vector(20 + size / 2, direction).convertToPoint();
          },
          getRotation: () => {
-            return Math.PI/4;
+            const ticksSinceLastAttack = Game.ticks - this.lastAttackTicks;
+            const secondsSinceLastAttack = ticksSinceLastAttack / SETTINGS.TPS;
+            
+            let direction = Math.PI / 4;
+            if (secondsSinceLastAttack < 0.5) {
+               direction -= lerp(Math.PI/2, 0, secondsSinceLastAttack * 2);
+            }
+            return -Math.PI/4 + direction;
          },
          zIndex: 0
       }, this);
@@ -53,7 +83,7 @@ abstract class TribeMember extends Entity {
 
    protected overrideTileMoveSpeedMultiplier(): number | null {
       // If snow armour is equipped, move at normal speed on snow tiles
-   if (this.armourType === ItemType.frost_armour) {
+      if (this.armourType === ItemType.frost_armour) {
          if (this.findCurrentTile().type === "snow") {
             return 1;
          }
@@ -109,20 +139,32 @@ abstract class TribeMember extends Entity {
       }
    }
 
-   private updateActiveItemRenderPart(activeItem: ItemType | null): void {
-      if (activeItem === null) {
+   private updateActiveItemRenderPart(activeItemType: ItemType | null): void {
+      if (activeItemType === null) {
          this.activeItemRenderPart.isActive = false;
       } else {
-         this.activeItemRenderPart.textureSource = CLIENT_ITEM_INFO_RECORD[activeItem].textureSource;
+         this.activeItemRenderPart.textureSource = CLIENT_ITEM_INFO_RECORD[activeItemType].textureSource;
          this.activeItemRenderPart.isActive = true;
+
+         const renderPartSize = this.getActiveItemSize(activeItemType);
+         this.activeItemRenderPart.width = renderPartSize;
+         this.activeItemRenderPart.height = renderPartSize;
       }
+   }
+
+   private getActiveItemSize(activeItemType: ItemType) {
+      const itemTypeInfo = ITEM_TYPE_RECORD[activeItemType];
+      if (itemTypeInfo === "axe" || itemTypeInfo === "sword" || itemTypeInfo === "bow" || itemTypeInfo === "pickaxe") {
+         return TribeMember.TOOL_ACTIVE_ITEM_SIZE;
+      }
+      return TribeMember.DEFAULT_ACTIVE_ITEM_SIZE;
    }
 
    public updateFromData(entityData: EntityData<"player"> | EntityData<"tribesman">): void {
       super.updateFromData(entityData);
 
       this.activeItem = entityData.clientArgs[3];
-      this.swingProgress = entityData.clientArgs[4];
+      this.lastAttackTicks = entityData.clientArgs[4];
       this.updateActiveItemRenderPart(this.activeItem);
 
       this.tribeID = entityData.clientArgs[0];
@@ -131,8 +173,9 @@ abstract class TribeMember extends Entity {
       this.updateArmourRenderPart(entityData.clientArgs[2]);
    }
 
-   public updateActiveItem(itemType: ItemType | null): void {
-      this.updateActiveItemRenderPart(itemType);
+   public updateActiveItem(activeItemType: ItemType | null): void {
+      this.updateActiveItemRenderPart(activeItemType);
+      this.activeItem = activeItemType;
    }
 }
 

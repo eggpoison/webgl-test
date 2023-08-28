@@ -22,17 +22,11 @@ export enum InteractInventoryType {
 
 export let InteractInventory_setInventory: (inventoryType: InteractInventoryType, entity: Entity) => void;
 export let InteractInventory_clearInventory: () => void;
-// export let InteractInventory_setEntityID: (entityID: number) => void;
-// export let InteractInventory_setInventories: (inventories: Array<InteractInventoryInfo> | null) => void;
 export let InteractInventory_forceUpdate: () => void;
-// export let InteractInventory_setElementClass: (className: string | undefined) => void;
 
 export let interactInventoryIsOpen: () => boolean;
 
 const InteractInventory = (): null | JSX.Element => {
-   // const [entityID, setEntityID] = useState<number>(-1);
-   // const [inventories, setInventories] = useState<Array<InteractInventoryInfo> | null>(null);
-   // const [elementClass, setElementClass] = useState<string | undefined>();
    const [inventoryType, setInventoryType] = useState<InteractInventoryType | null>(null);
    const [entity, setEntity] = useState<Entity | null>(null);
    const [_, forceUpdate] = useReducer(x => x + 1, 0);
@@ -46,17 +40,6 @@ const InteractInventory = (): null | JSX.Element => {
       InteractInventory_clearInventory = (): void => {
          setInventoryType(null);
       }
-      // InteractInventory_setEntityID = (entityID: number): void => {
-      //    setEntityID(entityID);
-      // }
-
-      // InteractInventory_setInventories = (inventories: Array<InteractInventoryInfo> | null) => {
-      //    setInventories(inventories);
-      // }
-
-      // InteractInventory_setElementClass = (className: string | undefined): void => {
-      //    setElementClass(className);
-      // }
    }, []);
    
    useEffect(() => {
@@ -94,11 +77,6 @@ const InteractInventory = (): null | JSX.Element => {
          return null;
       }
    }
-   // return <div id="interact-inventory" className={typeof elementClass !== "undefined" ? `inventory ${elementClass}` : "inventory"}>
-   //    {inventories.map((inventoryInfo, i) => {
-   //       return <InventoryContainer entityID={entityID} className={inventoryInfo.className} inventory={inventoryInfo.inventory} key={i} />
-   //    })}
-   // </div>;
 }
 
 export default InteractInventory;

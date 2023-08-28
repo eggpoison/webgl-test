@@ -53,8 +53,8 @@ export class RenderObject {
 
 class RenderPart extends RenderObject implements RenderPartInfo {
    public readonly offset?: () => Point;
-   public readonly width: number;
-   public readonly height: number;
+   public width: number;
+   public height: number;
    public textureSource: string;
    public readonly zIndex: number;
    public readonly inheritParentRotation: boolean;

@@ -22,9 +22,6 @@ export function getCursorY(): number | null {
 export function calculateCursorWorldPosition(): Point | null {
    if (Game.getIsPaused()) return null;
    if (cursorX === null || cursorY === null) return null;
-
-   // const worldX = Camera.calculateXScreenPos(cursorX);
-   // const worldY = Camera.calculateYScreenPos(cursorY);
    
    const worldX = (cursorX - halfWindowWidth) / Camera.zoom + Camera.position.x;
    const worldY = (-cursorY + halfWindowHeight) / Camera.zoom + Camera.position.y;

@@ -82,20 +82,6 @@ class Item {
       Client.sendItemUsePacket();
    }
 
-   // private select(): void {
-   //    this._isActive = true;
-   //    if (typeof this.onSelect !== "undefined") {
-   //       this.onSelect();
-   //    }
-   // }
-
-   // private deselect(): void {
-   //    this._isActive = false;
-   //    if (typeof this.onDeselect !== "undefined") {
-   //       this.onDeselect();
-   //    }
-   // }
-
    protected onSelect?(): void;
 
    protected onDeselect?(): void;

@@ -98,6 +98,8 @@ const attack = (): void => {
       targetEntities: attackTargets.map(entity => entity.id)
    };
    Client.sendAttackPacket(attackPacket);
+
+   Player.instance.lastAttackTicks = Game.ticks;
 }
 
 export let rightMouseButtonIsPressed = false;
@@ -309,16 +311,6 @@ export function hideInteractInventory(): void {
    InteractInventory_clearInventory();
 }
 
-// export function updateInteractInventoryIsOpen(isOpen: boolean, inventoryType: InteractInventoryType | null): void {
-//    _interactInventoryIsOpen = isOpen;
-
-//    if (inventoryType !== null) {
-//       InteractInventory_setInventories(inventories);
-//    }
-   
-//    InteractInventory_setInventory()
-// }
-
 export function updateInteractInventory(): void {
    if (Player.instance === null) return;
    
@@ -346,7 +338,6 @@ export function updateInteractInventory(): void {
 const createInventoryToggleListeners = (): void => {
    addKeyListener("e", () => {
       if (_interactInventoryIsOpen) {
-         // updateInteractInventoryIsOpen(false, null);
          hideInteractInventory();
          return;
       }

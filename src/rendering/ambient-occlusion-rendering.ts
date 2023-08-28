@@ -12,12 +12,6 @@ Key:
 0 = ground
 */
 
-// interface AmbientOcclusionType {
-//    /** The combination of tile types required for this type of ambient occlusion to be rendered */
-//    readonly requiredCombination: string;
-//    readonly textureSource: string;
-// }
-
 const ATLAS: Record<string, string> = {
    // * 1 *
    // 1 0 1

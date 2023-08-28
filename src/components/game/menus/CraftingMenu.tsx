@@ -34,14 +34,14 @@ const RecipeViewer = ({ recipe, hoverPosition, craftingMenuHeight }: RecipeViewe
    
    return <div className="recipe-viewer" ref={recipeViewerRef}>
       <div className="header">
-         <img className="recipe-product-icon" src={require("../../../images/items/" + CLIENT_ITEM_INFO_RECORD[recipe.product].textureSource)} alt="" />
+         <img className="recipe-product-icon" src={require("../../../images/" + CLIENT_ITEM_INFO_RECORD[recipe.product].textureSource)} alt="" />
          <div className="recipe-product-name">{CLIENT_ITEM_INFO_RECORD[recipe.product].name}</div>
       </div>
 
       <ul className="ingredients">
          {(Object.entries(recipe.ingredients) as unknown as ReadonlyArray<[ItemType, number]>).map(([ingredientType, ingredientCount]: [ItemType, number], i: number) => {
             return <li className="ingredient" key={i}>
-               <img className="ingredient-icon" src={require("../../../images/items/" + CLIENT_ITEM_INFO_RECORD[ingredientType].textureSource)} alt="" />
+               <img className="ingredient-icon" src={require("../../../images/" + CLIENT_ITEM_INFO_RECORD[ingredientType].textureSource)} alt="" />
                <span className="ingredient-count">x{ingredientCount}</span>
             </li>;
          })}
@@ -78,7 +78,7 @@ interface IngredientProps {
 const Ingredient = ({ ingredientType, amountRequiredForRecipe }: IngredientProps) => {
    const [tooltipIsShown, setTooltipIsShown] = useState(false);
    
-   const itemIconSource = require("../../../images/items/" + CLIENT_ITEM_INFO_RECORD[ingredientType].textureSource);
+   const itemIconSource = require("../../../images/" + CLIENT_ITEM_INFO_RECORD[ingredientType].textureSource);
 
    // Find whether the player has enough available ingredients to craft the recipe
    const numIngredientsAvailableToPlayer = getNumItemsOfType(ingredientType);
@@ -261,7 +261,7 @@ const CraftingMenu = () => {
             const recipe = availableRecipes[itemSlotIndex];
             const isCraftable = craftableRecipes.current.includes(recipe);
             
-            const imageSrc = require("../../../images/items/" + CLIENT_ITEM_INFO_RECORD[recipe.product].textureSource);
+            const imageSrc = require("../../../images/" + CLIENT_ITEM_INFO_RECORD[recipe.product].textureSource);
             itemSlots.push(
                <ItemSlot onMouseOver={(e) => hoverRecipe(recipe, e)} onMouseOut={() => unhoverRecipe()} onMouseMove={e => mouseMove(e)} className={isCraftable ? "craftable" : undefined} isSelected={recipe === selectedRecipe} onClick={() => selectRecipe(recipe)} picturedItemImageSrc={imageSrc} itemCount={recipe.yield !== 1 ? recipe.yield : undefined} key={j} />
             );
@@ -283,7 +283,7 @@ const CraftingMenu = () => {
    return <div id="crafting-menu" className="inventory" ref={onCraftingMenuRefChange}>
       <div className="available-crafting-stations">
          {Array.from(availableCraftingStations).map((craftingStationType: CraftingStation, i: number) => {
-            return <img className="crafting-station-image" src={require("../../../images/items/" + CRAFTING_STATION_TEXTURE_SOURCE_RECORD[craftingStationType])} key={i} alt="" />
+            return <img className="crafting-station-image" src={require("../../../images/" + CRAFTING_STATION_TEXTURE_SOURCE_RECORD[craftingStationType])} key={i} alt="" />
          })}
       </div>
       
@@ -295,7 +295,7 @@ const CraftingMenu = () => {
          {selectedRecipe !== null ? <>
             <div className="header">
                <div className="recipe-product-name">{CLIENT_ITEM_INFO_RECORD[selectedRecipe.product].name}</div>
-               <img src={require("../../../images/items/" + CLIENT_ITEM_INFO_RECORD[selectedRecipe.product].textureSource)} className="recipe-product-icon" alt="" />
+               <img src={require("../../../images/" + CLIENT_ITEM_INFO_RECORD[selectedRecipe.product].textureSource)} className="recipe-product-icon" alt="" />
             </div>
 
             <div className="content">
@@ -309,7 +309,7 @@ const CraftingMenu = () => {
             <div className="bottom">
                <button onClick={() => craftRecipe()} className={`craft-button${craftableRecipes.current.includes(selectedRecipe) ? " craftable" : ""}`}>CRAFT</button>
                {craftingOutputItem !== null ? (
-                  <ItemSlot onMouseDown={e => pickUpCraftingOutputItem(e)} picturedItemImageSrc={require("../../../images/items/" + CLIENT_ITEM_INFO_RECORD[craftingOutputItem.type].textureSource)} itemCount={craftingOutputItem.count} className="crafting-output" isSelected={false} />
+                  <ItemSlot onMouseDown={e => pickUpCraftingOutputItem(e)} picturedItemImageSrc={require("../../../images/" + CLIENT_ITEM_INFO_RECORD[craftingOutputItem.type].textureSource)} itemCount={craftingOutputItem.count} className="crafting-output" isSelected={false} />
                ) : (
                   <ItemSlot className="crafting-output" isSelected={false} />
                )}

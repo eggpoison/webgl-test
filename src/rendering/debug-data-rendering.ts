@@ -88,19 +88,6 @@ const addLineVertices = (vertices: Array<number>, debugData: GameObjectDebugData
       vertices.push(
          ...generateLine(gameObject.renderPosition, targetPosition, line.thickness, line.colour[0], line.colour[1], line.colour[2])
       );
-      // const startX = Camera.calculateXCanvasPosition(gameObject.renderPosition.x);
-      // const startY = Camera.calculateYCanvasPosition(gameObject.renderPosition.y);
-
-      // const endX = Camera.calculateXCanvasPosition(line.targetPosition[0]);
-      // const endY = Camera.calculateYCanvasPosition(line.targetPosition[1]);
-      // vertices.push(
-      //    startX, startY, line.colour[0], line.colour[1], line.colour[2],
-      //    endX, startY, line.colour[0], line.colour[1], line.colour[2],
-      //    startX, endY, line.colour[0], line.colour[1], line.colour[2],
-      //    startX, endY, line.colour[0], line.colour[1], line.colour[2],
-      //    endX, startY, line.colour[0], line.colour[1], line.colour[2],
-      //    endX, endY, line.colour[0], line.colour[1], line.colour[2]
-      // );
    }
 }
 

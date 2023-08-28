@@ -56,7 +56,7 @@ const HeldItem = () => {
    const heldItemDisplayCount = heldItem.count > 1 ? heldItem.count : "";
    
    return <div id="held-item" ref={onRefChange}>
-      <img className="held-item-icon" src={require("../../images/items/" + CLIENT_ITEM_INFO_RECORD[heldItem.type].textureSource)} alt="" />
+      <img className="held-item-icon" src={require("../../images/" + CLIENT_ITEM_INFO_RECORD[heldItem.type].textureSource)} alt="" />
       <div className="held-item-count">{heldItemDisplayCount}</div>
    </div>;
 }
