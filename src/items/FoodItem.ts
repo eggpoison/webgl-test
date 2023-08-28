@@ -21,6 +21,8 @@ class FoodItem extends Item implements FoodItemInfo {
    }
    
    public tick(): void {
+      super.tick();
+      
       if (this.isActive() && Game.latencyGameState.playerIsEating) {
          if (this.canEat()) {
             this.eatTimer -= 1 / SETTINGS.TPS;

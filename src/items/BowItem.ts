@@ -16,6 +16,8 @@ class BowItem extends Item {
    }
    
    public tick(): void {
+      super.tick();
+      
       if (rightMouseButtonIsPressed && this.isActive()) {
          this.fire();
       }

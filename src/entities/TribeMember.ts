@@ -1,10 +1,11 @@
-import { EntityData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, ItemType, Point, SETTINGS, TribeType, Vector, lerp } from "webgl-test-shared";
+import { EntityData, ITEM_TYPE_RECORD, ItemType, Point, SETTINGS, TribeType, Vector, lerp } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import CLIENT_ITEM_INFO_RECORD from "../client-item-info";
 import Game from "../Game";
+import { getFrameProgress } from "../GameObject";
 
 abstract class TribeMember extends Entity {
    private static readonly TOOL_ACTIVE_ITEM_SIZE = 48;
@@ -39,8 +40,7 @@ abstract class TribeMember extends Entity {
          width: TribeMember.TOOL_ACTIVE_ITEM_SIZE,
          height: TribeMember.TOOL_ACTIVE_ITEM_SIZE,
          offset: () => {
-            const ticksSinceLastAttack = Game.ticks - this.lastAttackTicks;
-            const secondsSinceLastAttack = ticksSinceLastAttack / SETTINGS.TPS;
+            const secondsSinceLastAttack = this.getSecondsSinceLastAttack();
             
             let direction = Math.PI / 4;
             if (secondsSinceLastAttack < 0.5) {
@@ -60,11 +60,10 @@ abstract class TribeMember extends Entity {
             } else {
                size = this.activeItemRenderPart.width;
             }
-            return new Vector(20 + size / 2, direction).convertToPoint();
+            return new Vector(26 + size / 2, direction).convertToPoint();
          },
          getRotation: () => {
-            const ticksSinceLastAttack = Game.ticks - this.lastAttackTicks;
-            const secondsSinceLastAttack = ticksSinceLastAttack / SETTINGS.TPS;
+            const secondsSinceLastAttack = this.getSecondsSinceLastAttack();
             
             let direction = Math.PI / 4;
             if (secondsSinceLastAttack < 0.5) {
@@ -79,6 +78,16 @@ abstract class TribeMember extends Entity {
       if (activeItem === null) {
          this.activeItemRenderPart.isActive = false;
       }
+   }
+
+   private getSecondsSinceLastAttack(): number {
+      const ticksSinceLastAttack = Game.ticks - this.lastAttackTicks;
+      let secondsSinceLastAttack = ticksSinceLastAttack / SETTINGS.TPS;
+
+      // Account for frame progress
+      secondsSinceLastAttack += getFrameProgress() / SETTINGS.TPS;
+
+      return secondsSinceLastAttack;
    }
 
    protected overrideTileMoveSpeedMultiplier(): number | null {

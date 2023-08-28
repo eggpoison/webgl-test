@@ -11,6 +11,7 @@ import { BackpackInventoryMenu_setIsVisible } from "./components/game/inventorie
 import Entity from "./entities/Entity";
 import Tribesman from "./entities/Tribesman";
 import Tombstone from "./entities/Tombstone";
+import Item from "./items/Item";
 
 let lightspeedIsActive = false;
 
@@ -118,13 +119,21 @@ const createItemUseListeners = (): void => {
 
       if (e.button === 0) {
          // Left click
-         if (typeof selectedItem !== "undefined") {
-            selectedItem.resetAttackSwitchDelay();
-         }
-
+         
          leftMouseButtonIsPressed = true;
 
-         attack();
+         if (Game.definiteGameState.hotbar.itemSlots.hasOwnProperty(Game.latencyGameState.selectedHotbarItemSlot)) {
+            // Attack with item
+            if (selectedItem.canAttack()) {
+               attack();
+               selectedItem.resetAttackCooldownTimer();
+            }
+         } else {
+            // Attack without item
+            if (Item.canAttack()) {
+               attack();
+            }
+         }
       } else if (e.button === 2) {
          // Right click
          if (typeof selectedItem !== "undefined" && typeof selectedItem.onRightMouseButtonDown !== "undefined") {
@@ -186,6 +195,8 @@ const selectItemSlot = (itemSlot: number): void => {
    }
 
    Game.latencyGameState.selectedHotbarItemSlot = itemSlot;
+
+   Item.resetGlobalAttackSwitchDelay();
    
    Hotbar_setHotbarSelectedItemSlot(itemSlot);
    updateActiveItem();
