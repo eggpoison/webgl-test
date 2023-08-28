@@ -18,8 +18,8 @@ class Tribesman extends TribeMember {
 
    public readonly inventory: Inventory;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, activeItem: ItemType | null, swingProgress: number, inventoryData: InventoryData) {
-      super(position, hitboxes, id, secondsSinceLastHit, tribeID, tribeType, armour, activeItem, swingProgress);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, activeItem: ItemType | null, lastAttackTicks: number, lastEatTicks: number, inventoryData: InventoryData) {
+      super(position, hitboxes, id, secondsSinceLastHit, tribeID, tribeType, armour, activeItem, lastAttackTicks, lastEatTicks);
 
       this.attachRenderParts([
          new RenderPart({
@@ -93,7 +93,7 @@ class Tribesman extends TribeMember {
       super.updateFromData(entityData);
 
       // Update inventory from data
-      const inventoryData = entityData.clientArgs[5];
+      const inventoryData = entityData.clientArgs[6];
       const itemSlots: ItemSlots = {};
       for (const [itemSlot, itemData] of Object.entries(inventoryData.itemSlots)) {
          const item = createItem(itemData.type, itemData.count, itemData.id);

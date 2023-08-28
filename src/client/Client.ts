@@ -176,7 +176,7 @@ abstract class Client {
    }
 
    public static unloadGameDataPacket(gameDataPacket: GameDataPacket): void {
-      Game.ticks = gameDataPacket.serverTicks;
+      Game.pendingTicks = gameDataPacket.serverTicks;
       Game.time = gameDataPacket.serverTime;
 
       if (isDev()) {
@@ -545,7 +545,7 @@ abstract class Client {
       updateHealthBar(Player.MAX_HEALTH);
       
       const spawnPosition = Point.unpackage(respawnDataPacket.spawnPosition);
-      const player = new Player(spawnPosition, new Set([Player.createNewPlayerHitbox()]), respawnDataPacket.playerID, null, null, TribeType.plainspeople, null, null, 0, Game.definiteGameState.playerUsername);
+      const player = new Player(spawnPosition, new Set([Player.createNewPlayerHitbox()]), respawnDataPacket.playerID, null, null, TribeType.plainspeople, null, null, -99999, -99999, Game.definiteGameState.playerUsername);
       Player.setInstancePlayer(player);
 
       gameScreenSetIsDead(false);

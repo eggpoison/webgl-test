@@ -124,8 +124,8 @@ class Player extends TribeMember {
    
    public readonly username: string;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, activeItem: ItemType | null, swingProgress: number, username: string) {
-      super(position, hitboxes, id, secondsSinceLastHit, tribeID, tribeType, armour, activeItem, swingProgress);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, activeItem: ItemType | null, lastAttackTicks: number, lastEatTicks: number, username: string) {
+      super(position, hitboxes, id, secondsSinceLastHit, tribeID, tribeType, armour, activeItem, lastAttackTicks, lastEatTicks);
 
       this.attachRenderParts([
          new RenderPart({

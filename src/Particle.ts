@@ -181,8 +181,6 @@ class Particle {
 
       // TODO: Rework
       if (data.foodItemType !== -1) {
-         console.log(data.foodItemType);
-         console.log(ItemType[data.foodItemType]);
          const colour = getRandomFoodEatingParticleColour(data.foodItemType);
          this.tint[0] = colour[0] / 255 - 1;
          this.tint[1] = colour[1] / 255 - 1;
@@ -190,7 +188,6 @@ class Particle {
          this.opacity *= colour[3] / 255;
       }
    }
-
    public updateFromData(data: ParticleData): void {
       this.position = Point.unpackage(data.position);
       this.velocity = data.velocity !== null ? Vector.unpackage(data.velocity) : null;

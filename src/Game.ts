@@ -84,6 +84,9 @@ let numRenders = 0;
 abstract class Game {
    private static readonly NIGHT_DARKNESS = 0.6;
 
+   // TODO: Is the a good way of handling this?
+   public static pendingTicks = 0;
+
    private static _ticks: number;
    private static _time: number;
 
@@ -371,6 +374,7 @@ abstract class Game {
          // Update
          this.lag += deltaTime;
          while (this.lag >= 1000 / SETTINGS.TPS) {
+            this.ticks = this.pendingTicks;
             this.update();
             Client.sendPlayerDataPacket();
             this.lag -= 1000 / SETTINGS.TPS;

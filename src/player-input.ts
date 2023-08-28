@@ -35,9 +35,9 @@ const PLAYER_ACCELERATION = 700;
 const PLAYER_LIGHTSPEED_ACCELERATION = 15000;
 
 /** Terminal velocity of the player while slowed. */
-const PLAYER_SLOW_TERMINAL_VELOCITY = 150;
+const PLAYER_SLOW_TERMINAL_VELOCITY = 100;
 /** Acceleration of the player while slowed. */
-const PLAYER_SLOW_ACCELERATION = 600;
+const PLAYER_SLOW_ACCELERATION = 400;
 
 const PLAYER_INTERACT_RANGE = 125;
 
@@ -100,7 +100,7 @@ const attack = (): void => {
    };
    Client.sendAttackPacket(attackPacket);
 
-   Player.instance.lastActionTicks = Game.ticks;
+   Player.instance.lastAttackTicks = Game.ticks;
 }
 
 export let rightMouseButtonIsPressed = false;

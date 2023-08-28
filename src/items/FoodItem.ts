@@ -30,10 +30,6 @@ class FoodItem extends Item implements FoodItemInfo {
             if (this.eatTimer <= 0) {
                this.eatTimer = this.eatTime;
                this.sendUsePacket();
-
-               if (Player.instance !== null) {
-                  Player.instance.lastActionTicks = Game.ticks;
-               }
    
                // If all the food has been eaten, stop the player from eating
                if (this.count === 1) {
@@ -59,6 +55,10 @@ class FoodItem extends Item implements FoodItemInfo {
          this.eatTimer = this.eatTime;
          
          Game.latencyGameState.playerIsEating = true;
+
+         if (Player.instance !== null) {
+            Player.instance.lastEatTicks = Game.ticks;
+         }
       }
    }
 
