@@ -5,7 +5,7 @@ import Camera from "./Camera";
 export const CIRCLE_VERTEX_COUNT = 50;
 
 let canvas: HTMLCanvasElement;
-export let gl: WebGLRenderingContext;
+export let gl: WebGL2RenderingContext;
 
 export let windowWidth = window.innerWidth;
 export let windowHeight = window.innerHeight;

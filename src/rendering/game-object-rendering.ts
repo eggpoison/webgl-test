@@ -118,7 +118,9 @@ export function calculateVisibleGameObjects(): Array<GameObject> {
    return visibleGameObjects;
 }
 
-const calculateVertexPositionX = (vertexPositionX: number, vertexPositionY: number, renderPartPosition: Point, totalRotation: number): number => {
+// TODO: These functions should be renamed and probably (?) put into the Camera class
+
+export function calculateVertexPositionX(vertexPositionX: number, vertexPositionY: number, renderPartPosition: Point, totalRotation: number): number {
    // Rotate the x position around the render part position
    const rotatedX = Math.cos(totalRotation) * (vertexPositionX - renderPartPosition.x) + Math.sin(totalRotation) * (vertexPositionY - renderPartPosition.y) + renderPartPosition.x
    
@@ -126,7 +128,7 @@ const calculateVertexPositionX = (vertexPositionX: number, vertexPositionY: numb
    return Camera.calculateXCanvasPosition(rotatedX);
 }
 
-const calculateVertexPositionY = (vertexPositionX: number, vertexPositionY: number, renderPartPosition: Point, totalRotation: number): number => {
+export function calculateVertexPositionY (vertexPositionX: number, vertexPositionY: number, renderPartPosition: Point, totalRotation: number): number {
    // Rotate the y position around the render part position
    const rotatedY = -Math.sin(totalRotation) * (vertexPositionX - renderPartPosition.x) + Math.cos(totalRotation) * (vertexPositionY - renderPartPosition.y) + renderPartPosition.y
 
@@ -304,7 +306,6 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
       const tileBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, tileBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-      
 
       gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 9 * Float32Array.BYTES_PER_ELEMENT, 0);
       gl.vertexAttribPointer(imageRenderingProgramTexCoordAttribLocation, 2, gl.FLOAT, false, 9 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
@@ -314,7 +315,6 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
 
       gl.uniform1iv(imageRenderingProgramTexturesUniformLocation, usedTextureSources.map((_, idx) => idx));
       
-      // Enable the attributes
       gl.enableVertexAttribArray(0);
       gl.enableVertexAttribArray(imageRenderingProgramTexCoordAttribLocation);
       gl.enableVertexAttribArray(imageRenderingProgramTintAttribLocation);

@@ -14,12 +14,12 @@ export interface RenderChunkSolidTileInfo {
 }
 
 export interface RenderChunkRiverInfo {
-   readonly transitionBuffer: WebGLBuffer;
-   readonly transitionVertexCount: number;
-   readonly rockBuffers: Array<WebGLBuffer>;
-   readonly rockVertexCounts: Array<number>;
    readonly baseBuffer: WebGLBuffer;
    readonly baseVertexCount: number;
+   readonly transitionBuffer: WebGLBuffer;
+   readonly transitionVertexCount: number;
+   readonly rockBuffers: ReadonlyArray<WebGLBuffer>;
+   readonly rockVertexCounts: ReadonlyArray<number>;
    readonly highlightsBuffer: WebGLBuffer;
    readonly highlightsVertexCount: number;
 }

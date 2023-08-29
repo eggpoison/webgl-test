@@ -15,10 +15,8 @@ export function getFrameProgress(): number {
    return frameProgress;
 }
 
-const calculateGameObjectRenderPosition = (gameObject: GameObject, a: boolean = false): Point => {
+const calculateGameObjectRenderPosition = (gameObject: GameObject): Point => {
    let renderPosition = gameObject.position.copy();
-
-   if(a)console.log("starting position:",renderPosition.x);
    
    // Account for frame progress
    if (gameObject.velocity !== null) {
@@ -54,18 +52,13 @@ const calculateGameObjectRenderPosition = (gameObject: GameObject, a: boolean = 
          }
       }
 
-      if(a)console.log("frame velocity x:"+frameVelocity.convertToPoint().x);
-
       // Apply the frame velocity to the object's position
       if (frameVelocity !== null) {
          frameVelocity.magnitude *= frameProgress / SETTINGS.TPS;
-         if(a)console.log("add frame velocity x magnitude:"+frameVelocity.convertToPoint().x);
 
          const offset = frameVelocity.convertToPoint();
          renderPosition.add(offset);
       }
-
-      if(a)console.log("after:"+renderPosition.x);
    }
 
    // Clamp the render position
@@ -110,7 +103,7 @@ abstract class GameObject extends RenderObject {
    /** Limit to how many units the object can move in a second */
    public terminalVelocity: number = 0;
 
-   public chunks!: Set<Chunk>;
+   public chunks = new Set<Chunk>();
 
    constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, a: boolean = false) {
       super();
@@ -131,7 +124,7 @@ abstract class GameObject extends RenderObject {
          }
          hitbox.updateHitboxBounds();
       }
-      this.chunks = this.calculateContainingChunks();
+      this.recalculateContainingChunks();
       
       // Add game object to chunks
       for (const chunk of this.chunks) {
@@ -172,6 +165,8 @@ abstract class GameObject extends RenderObject {
       if (tile.type === "water" && !this.isInRiver(tile)) {
          tileMoveSpeedMultiplier = 1;
       }
+
+      // TODO: This is scuffed
       if (typeof this.overrideTileMoveSpeedMultiplier !== "undefined") {
          const speed = this.overrideTileMoveSpeedMultiplier();
          if (speed !== null) {
@@ -192,20 +187,26 @@ abstract class GameObject extends RenderObject {
          tileFrictionReduceAmount = 0;
       }
       
-      // Accelerate
       if (this.acceleration !== null) {
+         // Accelerate
+
          const acceleration = this.acceleration.copy();
          acceleration.magnitude *= tileTypeInfo.friction * tileMoveSpeedMultiplier / SETTINGS.TPS;
+
+         // let accelerationMagnitude = this.acceleration.magnitude;
+         // accelerationMagnitude *= tileTypeInfo.friction * tileMoveSpeedMultiplier / SETTINGS.TPS;
 
          // Make acceleration slow as the game object reaches its terminal velocity
          if (this.velocity !== null) {
             const progressToTerminalVelocity = this.velocity.magnitude / terminalVelocity;
             if (progressToTerminalVelocity < 1) {
                acceleration.magnitude *= 1 - Math.pow(progressToTerminalVelocity * 1.1, 2);
+               // accelerationMagnitude *= 1 - Math.pow(progressToTerminalVelocity * 1.1, 2);
             }
          }
 
          acceleration.magnitude += tileFrictionReduceAmount;
+         // accelerationMagnitude += tileFrictionReduceAmount;
 
          const magnitudeBeforeAdd = this.velocity?.magnitude || 0;
 
@@ -224,8 +225,8 @@ abstract class GameObject extends RenderObject {
                this.velocity.magnitude = magnitudeBeforeAdd;
             }
          }
-      // Friction
       } else if (this.velocity !== null) {
+         // If the game object isn't accelerating, apply friction
          this.velocity.magnitude -= 3 * SETTINGS.FRICTION_CONSTANT / SETTINGS.TPS * tileTypeInfo.friction;
          if (this.velocity.magnitude <= 0) {
             this.velocity = null;
@@ -276,8 +277,10 @@ abstract class GameObject extends RenderObject {
       return Game.board.getChunk(x, y);
    }
 
-   public calculateContainingChunks(): Set<Chunk> {
-      const chunks = new Set<Chunk>();
+   /** Recalculates which chunks the game object is contained in */
+   public recalculateContainingChunks(): void {
+      this.chunks.clear();
+      
       for (const hitbox of this.hitboxes) {
          const minChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[0] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
          const maxChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[1] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
@@ -287,45 +290,19 @@ abstract class GameObject extends RenderObject {
          for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
             for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
                const chunk = Game.board.getChunk(chunkX, chunkY);
-               if (!chunks.has(chunk)) {
-                  chunks.add(chunk);
+               if (!this.chunks.has(chunk)) {
+                  this.chunks.add(chunk);
                }
             }
          }
       }
-
-      return chunks;
    }
 
-   public updateChunks(newChunks: ReadonlySet<Chunk>): void {
-      // Find all chunks which aren't present in the new chunks and remove them
-      for (const chunk of this.chunks) {
-         if (!newChunks.has(chunk)) {
-            chunk.removeGameObject(this);
-            this.chunks.delete(chunk);
-         }
-      }
-
-      // Add all new chunks
-      for (const chunk of newChunks) {
-         if (!this.chunks.has(chunk)) {
-            chunk.addGameObject(this);
-            this.chunks.add(chunk);
-         }
-      }
-   }
-
-   public updateRenderPosition(a: boolean = false): void {
-      this.renderPosition = calculateGameObjectRenderPosition(this, a);
+   public updateRenderPosition(): void {
+      this.renderPosition = calculateGameObjectRenderPosition(this);
    }
 
    public updateFromData(data: GameObjectData): void {
-      // if (this.renderParts[0].textureSource === "projectiles/wooden-arrow.png") {
-      //    console.log("-=--==-=-==--=-=--==-=-=--=-=-==-=-=--==-");
-      //    console.log("update x position from data: " + data.position[0]);
-      //    // console.trace();
-      //    console.log("-=--==-=-==--=-=--==-=-=--=-=-==-=-=--==-");
-      // }
       this.position = Point.unpackage(data.position);
       this.velocity = data.velocity !== null ? Vector.unpackage(data.velocity) : null;
       this.acceleration = data.acceleration !== null ? Vector.unpackage(data.acceleration) : null;
@@ -333,7 +310,9 @@ abstract class GameObject extends RenderObject {
       this.rotation = data.rotation;
       this.mass = data.mass;
 
-      this.updateChunks(new Set(data.chunkCoordinates.map(([x, y]) => Game.board.getChunk(x, y))));
+      // Update the chunks to match the server data
+      this.chunks.clear();
+      this.chunks = new Set(data.chunkCoordinates.map(([x, y]) => Game.board.getChunk(x, y)));
    }
 
    public remove?(): void;

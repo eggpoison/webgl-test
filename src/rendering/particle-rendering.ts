@@ -5,6 +5,7 @@ import Camera from "../Camera";
 import Particle, { ParticleRenderLayer } from "../Particle";
 import { getTexture } from "../textures";
 import { getFrameProgress } from "../GameObject";
+import { calculateVertexPositionX, calculateVertexPositionY } from "./game-object-rendering";
 
 export const PARTICLE_TEXTURES: Record<ParticleType, string> = {
    [ParticleType.bloodPoolSmall]: "particles/blood-pool-small.png",
@@ -43,7 +44,7 @@ export const PARTICLE_TEXTURES: Record<ParticleType, string> = {
 const vertexShaderText = `#version 300 es
 precision mediump float;
 
-in vec2 a_position;
+layout(location = 0) in vec2 a_position;
 in vec2 a_texCoord;
 in float a_opacity;
 in vec3 a_tint;
@@ -100,15 +101,16 @@ void main() {
 let program: WebGLProgram;
 
 let textureUniformLocation: WebGLUniformLocation;
+
 let texCoordAttribLocation: number;
 let opacityAttribLocation: number;
 let tintAttribLocation: number;
 
 export function createParticleShaders(): void {
    program = createWebGLProgram(vertexShaderText, fragmentShaderText);
-
+   
    textureUniformLocation = gl.getUniformLocation(program, "u_texture")!;
-
+   
    gl.bindAttribLocation(program, 0, "a_position");
    texCoordAttribLocation = gl.getAttribLocation(program, "a_texCoord");
    opacityAttribLocation = gl.getAttribLocation(program, "a_opacity");
@@ -117,14 +119,13 @@ export function createParticleShaders(): void {
 
 type CategorisedParticles = Record<string, Array<Particle>>;
 
-const particleIsVisible = (particle: Particle): boolean => {
+const particleIsVisible = (particle: Particle, particleRenderPosition: Point): boolean => {
    const halfMaxDiagonalLength = Math.sqrt(Math.pow(particle.width, 2) + Math.pow(particle.height, 2)) / 2;
 
-   const pos = calculateParticleRenderPosition(particle);
-   if (pos.x + halfMaxDiagonalLength < Camera.visiblePositionBounds[0]
-      || pos.x - halfMaxDiagonalLength > Camera.visiblePositionBounds[1]
-      || pos.y + halfMaxDiagonalLength < Camera.visiblePositionBounds[2]
-      || pos.y - halfMaxDiagonalLength > Camera.visiblePositionBounds[3]) {
+   if (particleRenderPosition.x + halfMaxDiagonalLength < Camera.visiblePositionBounds[0]
+      || particleRenderPosition.x - halfMaxDiagonalLength > Camera.visiblePositionBounds[1]
+      || particleRenderPosition.y + halfMaxDiagonalLength < Camera.visiblePositionBounds[2]
+      || particleRenderPosition.y - halfMaxDiagonalLength > Camera.visiblePositionBounds[3]) {
       return false;
    }
    return true;
@@ -134,7 +135,7 @@ const categoriseParticles = (renderLayer: ParticleRenderLayer): CategorisedParti
    const categorisedParticles: CategorisedParticles = {};
 
    for (const particle of Object.values(Game.board.particles)) {
-      if (particle.renderLayer !== renderLayer || !particleIsVisible(particle)) continue;
+      if (particle.renderLayer !== renderLayer) continue;
 
       const textureSource = PARTICLE_TEXTURES[particle.type];
       
@@ -196,38 +197,54 @@ export function renderParticles(renderLayer: ParticleRenderLayer): void {
       for (const particle of particles) {
          const renderPosition = calculateParticleRenderPosition(particle);
 
-         const width = particle.width * particle.scale;
-         const height = particle.height * particle.scale;
+         if (particleIsVisible(particle, renderPosition)) {
+            const width = particle.width * particle.scale;
+            const height = particle.height * particle.scale;
+   
+            // let topLeft = new Point(renderPosition.x - width/2, renderPosition.y + height/2);
+            // let topRight = new Point(renderPosition.x + width/2, renderPosition.y + height/2);
+            // let bottomLeft = new Point(renderPosition.x - width/2, renderPosition.y - height/2);
+            // let bottomRight = new Point(renderPosition.x + width/2, renderPosition.y - height/2);
+            
+            // // Rotate the corners into position
+            // topLeft = rotatePoint(topLeft, renderPosition, particle.rotation);
+            // topRight = rotatePoint(topRight, renderPosition, particle.rotation);
+            // bottomLeft = rotatePoint(bottomLeft, renderPosition, particle.rotation);
+            // bottomRight = rotatePoint(bottomRight, renderPosition, particle.rotation);
+   
+            // // Convert the corners to screen space
+            // const topLeftX = Camera.calculateXCanvasPosition(topLeft.x);
+            // const topLeftY = Camera.calculateYCanvasPosition(topLeft.y);
+            // const topRightX = Camera.calculateXCanvasPosition(topRight.x);
+            // const topRightY = Camera.calculateYCanvasPosition(topRight.y);
+            // const bottomLeftX = Camera.calculateXCanvasPosition(bottomLeft.x);
+            // const bottomLeftY = Camera.calculateYCanvasPosition(bottomLeft.y);
+            // const bottomRightX = Camera.calculateXCanvasPosition(bottomRight.x);
+            // const bottomRightY = Camera.calculateYCanvasPosition(bottomRight.y);
 
-         let topLeft = new Point(renderPosition.x - width/2, renderPosition.y + height/2);
-         let topRight = new Point(renderPosition.x + width/2, renderPosition.y + height/2);
-         let bottomLeft = new Point(renderPosition.x - width/2, renderPosition.y - height/2);
-         let bottomRight = new Point(renderPosition.x + width/2, renderPosition.y - height/2);
-         
-         // Rotate the corners into position
-         topLeft = rotatePoint(topLeft, renderPosition, particle.rotation);
-         topRight = rotatePoint(topRight, renderPosition, particle.rotation);
-         bottomLeft = rotatePoint(bottomLeft, renderPosition, particle.rotation);
-         bottomRight = rotatePoint(bottomRight, renderPosition, particle.rotation);
+            const x1 = renderPosition.x - width / 2;
+            const x2 = renderPosition.x + width / 2;
+            const y1 = renderPosition.y - height / 2;
+            const y2 = renderPosition.y + height / 2;
 
-         // Convert the corners to screen space
-         const topLeftX = Camera.calculateXCanvasPosition(topLeft.x);
-         const topLeftY = Camera.calculateYCanvasPosition(topLeft.y);
-         const topRightX = Camera.calculateXCanvasPosition(topRight.x);
-         const topRightY = Camera.calculateYCanvasPosition(topRight.y);
-         const bottomLeftX = Camera.calculateXCanvasPosition(bottomLeft.x);
-         const bottomLeftY = Camera.calculateYCanvasPosition(bottomLeft.y);
-         const bottomRightX = Camera.calculateXCanvasPosition(bottomRight.x);
-         const bottomRightY = Camera.calculateYCanvasPosition(bottomRight.y);
-         
-         vertices.push(
-            bottomLeftX, bottomLeftY, 0, 0, particle.opacity, particle.tint[0], particle.tint[1], particle.tint[2],
-            bottomRightX, bottomRightY, 1, 0, particle.opacity, particle.tint[0], particle.tint[1], particle.tint[2],
-            topLeftX, topLeftY, 0, 1, particle.opacity, particle.tint[0], particle.tint[1], particle.tint[2],
-            topLeftX, topLeftY, 0, 1, particle.opacity, particle.tint[0], particle.tint[1], particle.tint[2],
-            bottomRightX, bottomRightY, 1, 0, particle.opacity, particle.tint[0], particle.tint[1], particle.tint[2],
-            topRightX, topRightY, 1, 1, particle.opacity, particle.tint[0], particle.tint[1], particle.tint[2]
-         );
+            const topLeftX = calculateVertexPositionX(x1, y2, renderPosition, particle.rotation);
+            const topLeftY = calculateVertexPositionY(x1, y2, renderPosition, particle.rotation);
+            const topRightX = calculateVertexPositionX(x2, y2, renderPosition, particle.rotation);
+            const topRightY = calculateVertexPositionY(x2, y2, renderPosition, particle.rotation);
+            const bottomLeftX = calculateVertexPositionX(x1, y1, renderPosition, particle.rotation);
+            const bottomLeftY = calculateVertexPositionY(x1, y1, renderPosition, particle.rotation);
+            const bottomRightX = calculateVertexPositionX(x2, y1, renderPosition, particle.rotation);
+            const bottomRightY = calculateVertexPositionY(x2, y1, renderPosition, particle.rotation);
+            
+            vertices.push(
+               bottomLeftX, bottomLeftY, 0, 0, particle.opacity, particle.tint[0], particle.tint[1], particle.tint[2],
+               bottomRightX, bottomRightY, 1, 0, particle.opacity, particle.tint[0], particle.tint[1], particle.tint[2],
+               topLeftX, topLeftY, 0, 1, particle.opacity, particle.tint[0], particle.tint[1], particle.tint[2],
+               topLeftX, topLeftY, 0, 1, particle.opacity, particle.tint[0], particle.tint[1], particle.tint[2],
+               bottomRightX, bottomRightY, 1, 0, particle.opacity, particle.tint[0], particle.tint[1], particle.tint[2],
+               topRightX, topRightY, 1, 1, particle.opacity, particle.tint[0], particle.tint[1], particle.tint[2]
+            );
+         }
       }
       vertexArrays.push(vertices);
    }

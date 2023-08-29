@@ -8,6 +8,7 @@ import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import Projectile from "./projectiles/Projectile";
 import Particle from "./Particle";
 import CircularHitbox from "./hitboxes/CircularHitbox";
+import Player from "./entities/Player";
 
 export interface EntityHitboxInfo {
    readonly vertexPositions: readonly [Point, Point, Point, Point];
@@ -99,8 +100,12 @@ class Board {
    }
 
    public updateGameObjects(): void {
+      if (Player.instance !== null) {
+         Player.instance.applyPhysics();
+      }
+
       for (const gameObject of Object.values(this.gameObjects)) {
-         gameObject.applyPhysics();
+         // gameObject.applyPhysics();
          if (typeof gameObject.tick !== "undefined") gameObject.tick();
 
          // Calculate the entity's new info
@@ -113,9 +118,7 @@ class Board {
             hitbox.updatePosition();
          }
 
-         // Update the entities' containing chunks
-         const newChunks = gameObject.calculateContainingChunks();
-         gameObject.updateChunks(newChunks);
+         gameObject.recalculateContainingChunks();
       }
    }
 
