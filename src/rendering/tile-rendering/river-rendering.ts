@@ -154,50 +154,60 @@ void main() {
 }
 `;
 
-// Highlight shaders
+// Highlights shaders
 
 const highlightsVertexShaderText = `
 precision mediump float;
 
+uniform vec2 u_playerPos;
+uniform vec2 u_halfWindowSize;
+uniform float u_zoom;
+
 attribute vec2 a_position;
 attribute vec2 a_texCoord;
-attribute float a_fadeProgress;
+attribute float a_fadeOffset;
 
 varying vec2 v_texCoord;
-varying float v_fadeProgress;
+varying float v_fadeOffset;
  
 void main() {
-   gl_Position = vec4(a_position, 0.0, 1.0);
+   vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
+   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+   gl_Position = vec4(clipSpacePos, 0.0, 1.0);
 
    v_texCoord = a_texCoord;
-   v_fadeProgress = a_fadeProgress;
+   v_fadeOffset = a_fadeOffset;
 }
 `;
 
 const highlightsFragmentShaderText = `
 precision mediump float;
  
+uniform float u_fadeProgress;
 uniform sampler2D u_texture1;
 uniform sampler2D u_texture2;
 uniform sampler2D u_texture3;
- 
+
 varying vec2 v_texCoord;
-varying float v_fadeProgress;
+varying float v_fadeOffset;
  
 void main() {
+   float fadeProgress = u_fadeProgress + v_fadeOffset;
+   fadeProgress = mod(fadeProgress, 3.0);
+   
    vec4 outputColour;
-   if (v_fadeProgress < 1.0) {
+   if (fadeProgress < 1.0) {
       vec4 texture1Colour = texture2D(u_texture1, v_texCoord);
       vec4 texture2Colour = texture2D(u_texture2, v_texCoord);
-      outputColour = mix(texture1Colour, texture2Colour, v_fadeProgress);
-   } else if (v_fadeProgress < 2.0) {
+      outputColour = mix(texture1Colour, texture2Colour, fadeProgress);
+   } else if (fadeProgress < 2.0) {
       vec4 texture2Colour = texture2D(u_texture2, v_texCoord);
       vec4 texture3Colour = texture2D(u_texture3, v_texCoord);
-      outputColour = mix(texture2Colour, texture3Colour, v_fadeProgress - 1.0);
+      outputColour = mix(texture2Colour, texture3Colour, fadeProgress - 1.0);
    } else {
       vec4 texture3Colour = texture2D(u_texture3, v_texCoord);
       vec4 texture1Colour = texture2D(u_texture1, v_texCoord);
-      outputColour = mix(texture3Colour, texture1Colour, v_fadeProgress - 2.0);
+      outputColour = mix(texture3Colour, texture1Colour, fadeProgress - 2.0);
    }
 
    outputColour.a *= 0.4;
@@ -452,6 +462,10 @@ let rockProgramHalfWindowSizeUniformLocation: WebGLUniformLocation;
 let rockProgramZoomUniformLocation: WebGLUniformLocation;
 let rockProgramTextureUniformLocation: WebGLUniformLocation;
 
+let highlightsProgramPlayerPosUniformLocation: WebGLUniformLocation;
+let highlightsProgramHalfWindowSizeUniformLocation: WebGLUniformLocation;
+let highlightsProgramZoomUniformLocation: WebGLUniformLocation;
+let highlightsProgramFadeProgressUniformLocation: WebGLUniformLocation;
 let highlightsProgramTexture1UniformLocation: WebGLUniformLocation;
 let highlightsProgramTexture2UniformLocation: WebGLUniformLocation;
 let highlightsProgramTexture3UniformLocation: WebGLUniformLocation;
@@ -481,7 +495,7 @@ let rockProgramOpacityAttribLocation: GLint;
 
 let highlightsProgramPositionAttribLocation: GLint;
 let highlightsProgramCoordAttribLocation: GLint;
-let highlightsProgramFadeProgressAttribLocation: GLint;
+let highlightsProgramFadeOffsetAttribLocation: GLint;
 
 let noiseProgramPositionAttribLocation: GLint;
 let noiseProgramTexCoordAttribLocation: GLint;
@@ -547,13 +561,17 @@ export function createWaterShaders(): void {
 
    highlightsProgram = createWebGLProgram(highlightsVertexShaderText, highlightsFragmentShaderText);
 
+   highlightsProgramPlayerPosUniformLocation = gl.getUniformLocation(highlightsProgram, "u_playerPos")!;
+   highlightsProgramHalfWindowSizeUniformLocation = gl.getUniformLocation(highlightsProgram, "u_halfWindowSize")!;
+   highlightsProgramZoomUniformLocation = gl.getUniformLocation(highlightsProgram, "u_zoom")!;
+   highlightsProgramFadeProgressUniformLocation = gl.getUniformLocation(highlightsProgram, "u_fadeProgress")!;
    highlightsProgramTexture1UniformLocation = gl.getUniformLocation(highlightsProgram, "u_texture1")!;
    highlightsProgramTexture2UniformLocation = gl.getUniformLocation(highlightsProgram, "u_texture2")!;
    highlightsProgramTexture3UniformLocation = gl.getUniformLocation(highlightsProgram, "u_texture3")!;
 
    highlightsProgramPositionAttribLocation = gl.getAttribLocation(highlightsProgram, "a_position");
    highlightsProgramCoordAttribLocation = gl.getAttribLocation(highlightsProgram, "a_texCoord");
-   highlightsProgramFadeProgressAttribLocation = gl.getAttribLocation(highlightsProgram, "a_fadeProgress");
+   highlightsProgramFadeOffsetAttribLocation = gl.getAttribLocation(highlightsProgram, "a_fadeOffset");
    
    // 
    // Noise program
@@ -790,13 +808,20 @@ export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY
    gl.bindBuffer(gl.ARRAY_BUFFER, baseBuffer);
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(baseVertices), gl.STATIC_DRAW);
 
+   const highlightsVertices = calculateHighlightsVertices(renderChunkX, renderChunkY);
+   const highlightsBuffer = gl.createBuffer()!;
+   gl.bindBuffer(gl.ARRAY_BUFFER, highlightsBuffer);
+   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(highlightsVertices), gl.STATIC_DRAW);
+
    return {
       transitionBuffer: transitionBuffer,
       transitionVertexCount: transitionVertices.length,
       rockBuffers: rockBuffers,
       rockVertexCounts: rockVertexCounts,
       baseBuffer: baseBuffer,
-      baseVertexCount: baseVertices.length
+      baseVertexCount: baseVertices.length,
+      highlightsBuffer: highlightsBuffer,
+      highlightsVertexCount: highlightsVertices.length
    };
 }
 
@@ -1042,34 +1067,42 @@ const calculateSteppingStoneVertices = (visibleSteppingStones: ReadonlySet<River
    return vertexRecord;
 }
 
-const calculateHighlightsVertices = (tiles: ReadonlyArray<Tile>): ReadonlyArray<number> => {
+const calculateHighlightsVertices = (renderChunkX: number, renderChunkY: number): ReadonlyArray<number> => {
    const vertices = new Array<number>();
    
-   for (const tile of tiles) {
-      let x1 = tile.x * SETTINGS.TILE_SIZE;
-      let x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
-      let y1 = tile.y * SETTINGS.TILE_SIZE;
-      let y2 = (tile.y + 1) * SETTINGS.TILE_SIZE;
+   const minTileX = renderChunkX * RENDER_CHUNK_SIZE;
+   const maxTileX = (renderChunkX + 1) * RENDER_CHUNK_SIZE - 1;
+   const minTileY = renderChunkY * RENDER_CHUNK_SIZE;
+   const maxTileY = (renderChunkY + 1) * RENDER_CHUNK_SIZE - 1;
 
-      x1 = Camera.calculateXCanvasPosition(x1);
-      x2 = Camera.calculateXCanvasPosition(x2);
-      y1 = Camera.calculateYCanvasPosition(y1);
-      y2 = Camera.calculateYCanvasPosition(y2);
+   for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
+      for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
+         const tile = Game.board.getTile(tileX, tileY);
+         if (tile.type !== "water") {
+            continue;
+         }
 
-      const fadeProgress = (Game.lastTime / 3000 + tile.flowOffset) % 3;
+         const x1 = tile.x * SETTINGS.TILE_SIZE;
+         const x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
+         const y1 = tile.y * SETTINGS.TILE_SIZE;
+         const y2 = (tile.y + 1) * SETTINGS.TILE_SIZE;
 
-      vertices.push(
-         x1, y1, 0, 0, fadeProgress,
-         x2, y1, 1, 0, fadeProgress,
-         x1, y2, 0, 1, fadeProgress,
-         x1, y2, 0, 1, fadeProgress,
-         x2, y1, 1, 0, fadeProgress,
-         x2, y2, 1, 1, fadeProgress
-      );
+         const fadeOffset = Math.random() * 3;
+   
+         vertices.push(
+            x1, y1, 0, 0, fadeOffset,
+            x2, y1, 1, 0, fadeOffset,
+            x1, y2, 0, 1, fadeOffset,
+            x1, y2, 0, 1, fadeOffset,
+            x2, y1, 1, 0, fadeOffset,
+            x2, y2, 1, 1, fadeOffset
+         );
+      }
    }
 
    return vertices;
 }
+
 const calculateVisibleRenderChunks = (): ReadonlyArray<RenderChunkRiverInfo> => {
    const renderChunks = new Array<RenderChunkRiverInfo>();
 
@@ -1090,9 +1123,7 @@ export function renderWater(): void {
    const visibleTiles = calculateVisibleWaterTiles();
    const visibleSteppingStones = calculateVisibleSteppingStones();
 
-   // const baseVertices = calculateBaseVertices(visibleTiles);
    const noiseVertices = calculateNoiseVertices(visibleTiles);
-   const highlightsVertices = calculateHighlightsVertices(visibleTiles);
    const foamVertexRecord = calculateFoamVertices(visibleSteppingStones);
    const steppingStoneVertices = calculateSteppingStoneVertices(visibleSteppingStones);
    
@@ -1177,20 +1208,24 @@ export function renderWater(): void {
 
    gl.useProgram(highlightsProgram);
    
-   {
-      const buffer = gl.createBuffer()!;
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(highlightsVertices), gl.STATIC_DRAW);
-   
+   for (const renderChunkRiverInfo of visibleRenderChunks) {
+      gl.bindBuffer(gl.ARRAY_BUFFER, renderChunkRiverInfo.highlightsBuffer);
+
       gl.vertexAttribPointer(highlightsProgramPositionAttribLocation, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
       gl.vertexAttribPointer(highlightsProgramCoordAttribLocation, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(highlightsProgramFadeProgressAttribLocation, 1, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(highlightsProgramFadeOffsetAttribLocation, 1, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
       
       // Enable the attributes
       gl.enableVertexAttribArray(highlightsProgramPositionAttribLocation);
       gl.enableVertexAttribArray(highlightsProgramCoordAttribLocation);
-      gl.enableVertexAttribArray(highlightsProgramFadeProgressAttribLocation);
+      gl.enableVertexAttribArray(highlightsProgramFadeOffsetAttribLocation);
       
+      const fadeProgress = (Game.lastTime / 3000) % 3;
+
+      gl.uniform2f(highlightsProgramPlayerPosUniformLocation, Camera.position.x, Camera.position.y);
+      gl.uniform2f(highlightsProgramHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
+      gl.uniform1f(highlightsProgramZoomUniformLocation, Camera.zoom);
+      gl.uniform1f(highlightsProgramFadeProgressUniformLocation, fadeProgress);
       gl.uniform1i(highlightsProgramTexture1UniformLocation, 0);
       gl.uniform1i(highlightsProgramTexture2UniformLocation, 1);
       gl.uniform1i(highlightsProgramTexture3UniformLocation, 2);
@@ -1208,7 +1243,7 @@ export function renderWater(): void {
       gl.bindTexture(gl.TEXTURE_2D, texture3);
       
       // Draw the tile
-      gl.drawArrays(gl.TRIANGLES, 0, highlightsVertices.length / 5);
+      gl.drawArrays(gl.TRIANGLES, 0, renderChunkRiverInfo.highlightsVertexCount / 5);
    }
    
    // 
