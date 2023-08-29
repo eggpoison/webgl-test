@@ -1,4 +1,4 @@
-import { Point, lerp, rotatePoint } from "webgl-test-shared";
+import { Point, lerp } from "webgl-test-shared";
 import Camera from "../Camera";
 import Entity from "../entities/Entity";
 import Game from "../Game";
@@ -117,30 +117,27 @@ export function calculateVisibleGameObjects(): Array<GameObject> {
    return visibleGameObjects;
 }
 
-const calculateRenderPartVertexPositions = (renderPart: RenderPart, totalRotation: number): [tl: Point, tr: Point, bl: Point, br: Point] => {
-   let topLeft = new Point(renderPart.renderPosition.x - renderPart.width / 2, renderPart.renderPosition.y + renderPart.height / 2);
-   let topRight = new Point(renderPart.renderPosition.x + renderPart.width / 2, renderPart.renderPosition.y + renderPart.height / 2);
-   let bottomLeft = new Point(renderPart.renderPosition.x - renderPart.width / 2, renderPart.renderPosition.y - renderPart.height / 2);
-   let bottomRight = new Point(renderPart.renderPosition.x + renderPart.width / 2, renderPart.renderPosition.y - renderPart.height / 2);
+const calculateVertexPositionX = (vertexPositionX: number, vertexPositionY: number, renderPartPosition: Point, totalRotation: number): number => {
+   // Rotate the x position around the render part position
+   const rotatedX = Math.cos(totalRotation) * (vertexPositionX - renderPartPosition.x) + Math.sin(totalRotation) * (vertexPositionY - renderPartPosition.y) + renderPartPosition.x
    
-   // Rotate the corners into position
-   topLeft = rotatePoint(topLeft, renderPart.renderPosition, totalRotation);
-   topRight = rotatePoint(topRight, renderPart.renderPosition, totalRotation);
-   bottomLeft = rotatePoint(bottomLeft, renderPart.renderPosition, totalRotation);
-   bottomRight = rotatePoint(bottomRight, renderPart.renderPosition, totalRotation);
+   // Convert to canvas position
+   return Camera.calculateXCanvasPosition(rotatedX);
+}
 
-   // Convert the corners to screen space
-   topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));
-   topRight = new Point(Camera.calculateXCanvasPosition(topRight.x), Camera.calculateYCanvasPosition(topRight.y));
-   bottomLeft = new Point(Camera.calculateXCanvasPosition(bottomLeft.x), Camera.calculateYCanvasPosition(bottomLeft.y));
-   bottomRight = new Point(Camera.calculateXCanvasPosition(bottomRight.x), Camera.calculateYCanvasPosition(bottomRight.y));
+const calculateVertexPositionY = (vertexPositionX: number, vertexPositionY: number, renderPartPosition: Point, totalRotation: number): number => {
+   // Rotate the y position around the render part position
+   const rotatedY = -Math.sin(totalRotation) * (vertexPositionX - renderPartPosition.x) + Math.cos(totalRotation) * (vertexPositionY - renderPartPosition.y) + renderPartPosition.y
 
-   return [topLeft, topRight, bottomLeft, bottomRight];
+   // Convert to canvas position
+   return Camera.calculateYCanvasPosition(rotatedY);
 }
 
 interface RenderInfo {
    readonly renderPart: RenderPart;
    readonly totalRotation: number;
+   /** The root render object associated with the render part */
+   readonly baseRenderObject: RenderObject;
 }
 
 interface CategorisedRenderParts {
@@ -164,7 +161,7 @@ const categoriseGameObjectsByRenderPart = (visibleGameObjects: ReadonlyArray<Gam
 
    let totalRotation = 0;
 
-   const addRenderPart = (renderPart: RenderPart): void => {
+   const addRenderPart = (baseRenderObject: RenderObject, renderPart: RenderPart): void => {
       // Don't render inactive render parts
       if (!renderPart.isActive) {
          return;
@@ -187,12 +184,13 @@ const categoriseGameObjectsByRenderPart = (visibleGameObjects: ReadonlyArray<Gam
       const renderPartRotation = renderPart.inheritParentRotation ? totalRotation : renderPart.rotation;
       texturedRenderParts[renderPart.textureSource].push({
          renderPart: renderPart,
-         totalRotation: renderPartRotation
+         totalRotation: renderPartRotation,
+         baseRenderObject: baseRenderObject
       });
       
       // Add any child render parts
       for (const childRenderPart of renderPart.renderParts) {
-         addRenderPart(childRenderPart);
+         addRenderPart(baseRenderObject, childRenderPart);
       }
 
       totalRotation -= renderPart.rotation;
@@ -204,7 +202,7 @@ const categoriseGameObjectsByRenderPart = (visibleGameObjects: ReadonlyArray<Gam
       totalRotation = gameObject.rotation;
       
       for (const renderPart of gameObject.renderParts) {
-         addRenderPart(renderPart);
+         addRenderPart(gameObject, renderPart);
       }
    }
 
@@ -242,22 +240,14 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
             let greenTint = 0;
             let blueTint = 0;
 
-            // TODO: Remove this hacky bullshit
-            let entity: Entity | undefined;
-            let nextOneUp: RenderObject = renderInfo.renderPart;
-            while (nextOneUp instanceof RenderPart) {
-               nextOneUp = nextOneUp.parentRenderObject;
-            }
-            if (nextOneUp instanceof Entity) {
-               entity = nextOneUp;
-            }
-            if (typeof entity !== "undefined") {
-               if (entity.statusEffects.includes("freezing")) {
+            // TODO: This shouldn't be here, and shouldn't be hardcoded
+            if (renderInfo.baseRenderObject instanceof Entity) {
+               if (renderInfo.baseRenderObject.statusEffects.includes("freezing")) {
                   blueTint += 0.5;
                   redTint -= 0.15;
                }
 
-               const redness = calculateEntityRedness(entity);
+               const redness = calculateEntityRedness(renderInfo.baseRenderObject);
                redTint = lerp(redTint, 1, redness);
                greenTint = lerp(greenTint, -1, redness);
                blueTint = lerp(blueTint, -1, redness);
@@ -266,15 +256,27 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
             const u0 = renderInfo.renderPart.flipX ? 1 : 0;
             const u1 = 1 - u0;
 
-            // Calculate the corner positions of the render part
-            const [tl, tr, bl, br] = calculateRenderPartVertexPositions(renderInfo.renderPart, renderInfo.totalRotation);
+            const x1 = renderInfo.renderPart.renderPosition.x - renderInfo.renderPart.width / 2;
+            const x2 = renderInfo.renderPart.renderPosition.x + renderInfo.renderPart.width / 2;
+            const y1 = renderInfo.renderPart.renderPosition.y - renderInfo.renderPart.height / 2;
+            const y2 = renderInfo.renderPart.renderPosition.y + renderInfo.renderPart.height / 2;
+
+            const topLeftX = calculateVertexPositionX(x1, y2, renderInfo.renderPart.renderPosition, renderInfo.totalRotation);
+            const topLeftY = calculateVertexPositionY(x1, y2, renderInfo.renderPart.renderPosition, renderInfo.totalRotation);
+            const topRightX = calculateVertexPositionX(x2, y2, renderInfo.renderPart.renderPosition, renderInfo.totalRotation);
+            const topRightY = calculateVertexPositionY(x2, y2, renderInfo.renderPart.renderPosition, renderInfo.totalRotation);
+            const bottomLeftX = calculateVertexPositionX(x1, y1, renderInfo.renderPart.renderPosition, renderInfo.totalRotation);
+            const bottomLeftY = calculateVertexPositionY(x1, y1, renderInfo.renderPart.renderPosition, renderInfo.totalRotation);
+            const bottomRightX = calculateVertexPositionX(x2, y1, renderInfo.renderPart.renderPosition, renderInfo.totalRotation);
+            const bottomRightY = calculateVertexPositionY(x2, y1, renderInfo.renderPart.renderPosition, renderInfo.totalRotation);
+
             vertices.push(
-               bl.x, bl.y, u0, 0, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
-               br.x, br.y, u1, 0, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
-               tl.x, tl.y, u0, 1, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
-               tl.x, tl.y, u0, 1, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
-               br.x, br.y, u1, 0, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
-               tr.x, tr.y, u1, 1, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity
+               bottomLeftX, bottomLeftY, u0, 0, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
+               bottomRightX, bottomRightY, u1, 0, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
+               topLeftX, topLeftY, u0, 1, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
+               topLeftX, topLeftY, u0, 1, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
+               bottomRightX, bottomRightY, u1, 0, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
+               topRightX, topRightY, u1, 1, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity
             );
          }
          

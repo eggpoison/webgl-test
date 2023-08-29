@@ -15,8 +15,10 @@ export function getFrameProgress(): number {
    return frameProgress;
 }
 
-const calculateGameObjectRenderPosition = (gameObject: GameObject): Point => {
+const calculateGameObjectRenderPosition = (gameObject: GameObject, a: boolean = false): Point => {
    let renderPosition = gameObject.position.copy();
+
+   if(a)console.log("starting position:",renderPosition.x);
    
    // Account for frame progress
    if (gameObject.velocity !== null) {
@@ -52,13 +54,18 @@ const calculateGameObjectRenderPosition = (gameObject: GameObject): Point => {
          }
       }
 
+      if(a)console.log("frame velocity x:"+frameVelocity.convertToPoint().x);
+
       // Apply the frame velocity to the object's position
       if (frameVelocity !== null) {
          frameVelocity.magnitude *= frameProgress / SETTINGS.TPS;
+         if(a)console.log("add frame velocity x magnitude:"+frameVelocity.convertToPoint().x);
 
          const offset = frameVelocity.convertToPoint();
          renderPosition.add(offset);
       }
+
+      if(a)console.log("after:"+renderPosition.x);
    }
 
    // Clamp the render position
@@ -308,11 +315,17 @@ abstract class GameObject extends RenderObject {
       }
    }
 
-   public updateRenderPosition(): void {
-      this.renderPosition = calculateGameObjectRenderPosition(this);
+   public updateRenderPosition(a: boolean = false): void {
+      this.renderPosition = calculateGameObjectRenderPosition(this, a);
    }
 
    public updateFromData(data: GameObjectData): void {
+      // if (this.renderParts[0].textureSource === "projectiles/wooden-arrow.png") {
+      //    console.log("-=--==-=-==--=-=--==-=-=--=-=-==-=-=--==-");
+      //    console.log("update x position from data: " + data.position[0]);
+      //    // console.trace();
+      //    console.log("-=--==-=-==--=-=--==-=-=--=-=-==-=-=--==-");
+      // }
       this.position = Point.unpackage(data.position);
       this.velocity = data.velocity !== null ? Vector.unpackage(data.velocity) : null;
       this.acceleration = data.acceleration !== null ? Vector.unpackage(data.acceleration) : null;

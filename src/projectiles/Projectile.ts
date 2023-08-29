@@ -5,6 +5,8 @@ import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 
 class Projectile extends GameObject {
+   public lastX = 0;
+   
    constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number) {
       super(position, hitboxes, id);
 

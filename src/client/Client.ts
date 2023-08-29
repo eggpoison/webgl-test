@@ -75,12 +75,17 @@ abstract class Client {
 
                registerServerTick();
    
-               try {
-                  this.unloadGameDataPacket(gameDataPacket);
-               } catch (error: unknown) {
-                  console.warn(error);
-                  throw new Error("Error when trying to unload game data packet!");
-               }
+               // if (Game.pendingPackets !== null) {
+               //    console.warn("overriding existing packet");
+               // }
+               // Game.pendingPackets = gameDataPacket;
+               Game.pendingPackets.push(gameDataPacket);
+               // try {
+               //    this.unloadGameDataPacket(gameDataPacket);
+               // } catch (error: unknown) {
+               //    console.warn(error);
+               //    throw new Error("Error when trying to unload game data packet!");
+               // }
             });
    
             // When the connection to the server fails
@@ -176,7 +181,7 @@ abstract class Client {
    }
 
    public static unloadGameDataPacket(gameDataPacket: GameDataPacket): void {
-      Game.pendingTicks = gameDataPacket.serverTicks;
+      // Game.pendingTicks = gameDataPacket.serverTicks;
       Game.time = gameDataPacket.serverTime;
 
       if (isDev()) {

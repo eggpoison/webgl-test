@@ -4,7 +4,7 @@ import { isDev } from "./utils";
 import { renderPlayerNames, createTextCanvasContext } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/game/ChatBox";
-import { GameObjectDebugData, lerp, Point, SETTINGS } from "webgl-test-shared";
+import { GameDataPacket, GameObjectDebugData, lerp, Point, SETTINGS } from "webgl-test-shared";
 import { createEntityShaders, renderGameObjects } from "./rendering/game-object-rendering";
 import Client from "./client/Client";
 import { calculateCursorWorldPosition, getCursorX, getCursorY, getMouseTargetEntity, handleMouseMovement, renderCursorTooltip } from "./mouse";
@@ -85,7 +85,8 @@ abstract class Game {
    private static readonly NIGHT_DARKNESS = 0.6;
 
    // TODO: Is the a good way of handling this?
-   public static pendingTicks = 0;
+   // public static pendingTicks = 0;
+   public static pendingPackets = new Array<GameDataPacket>();
 
    private static _ticks: number;
    private static _time: number;
@@ -256,6 +257,7 @@ abstract class Game {
    }
 
    private static update(): void {
+      console.log("tick");
       updateSpamFilter();
 
       updatePlayerMovement();
@@ -374,7 +376,19 @@ abstract class Game {
          // Update
          this.lag += deltaTime;
          while (this.lag >= 1000 / SETTINGS.TPS) {
-            this.ticks = this.pendingTicks;
+            // this.ticks = this.pendingTicks;
+            if (this.pendingPackets.length > 0) {
+               Client.unloadGameDataPacket(this.pendingPackets[0]);
+               this.pendingPackets.splice(0, 1);
+            } else {
+               console.warn("no packets");
+            }
+            // if (this.pendingPackets !== null) {
+            //    Client.unloadGameDataPacket(this.pendingPackets);
+            //    this.pendingPackets = null;
+            // } else {
+            //    console.warn("No packet");
+            // }
             this.update();
             Client.sendPlayerDataPacket();
             this.lag -= 1000 / SETTINGS.TPS;
