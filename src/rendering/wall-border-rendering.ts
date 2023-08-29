@@ -26,12 +26,10 @@ void main() {
 
 let program: WebGLProgram;
 
-let positionAttribLocation: GLint;
-
 export function createWallBorderShaders(): void {
    program = createWebGLProgram(vertexShaderText, fragmentShaderText);
 
-   positionAttribLocation = gl.getAttribLocation(program, "a_position");
+   gl.bindAttribLocation(program, 0, "a_position");
 }
 
 const getVisibleTiles = (): ReadonlyArray<Tile> => {
@@ -152,10 +150,10 @@ export function renderWallBorders(): void {
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
-   gl.vertexAttribPointer(positionAttribLocation, 2, gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
+   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
 
    // Enable the attributes
-   gl.enableVertexAttribArray(positionAttribLocation);
+   gl.enableVertexAttribArray(0);
 
    // Draw the vertices
    gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 2);

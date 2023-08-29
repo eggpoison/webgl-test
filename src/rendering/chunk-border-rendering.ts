@@ -24,6 +24,8 @@ let program: WebGLProgram;
 
 export function createChunkBorderShaders(): void {
    program = createWebGLProgram(vertexShaderText, fragmentShaderText);
+
+   gl.bindAttribLocation(program, 0, "vertPosition");
 }
 
 export function renderChunkBorders(): void {
@@ -61,10 +63,9 @@ export function renderChunkBorders(): void {
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
-   const positionAttribLocation = gl.getAttribLocation(program, "vertPosition");
-   gl.vertexAttribPointer(positionAttribLocation, 2, gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
+   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
 
-   gl.enableVertexAttribArray(positionAttribLocation);
+   gl.enableVertexAttribArray(0);
 
    gl.drawArrays(gl.LINES, 0, vertices.length / 2);
 }

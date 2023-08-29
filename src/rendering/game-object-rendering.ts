@@ -90,7 +90,7 @@ void main() {
 let imageRenderingProgram: WebGLProgram;
 
 let imageRenderingProgramTexturesUniformLocation: WebGLUniformLocation;
-let imageRenderingProgramPosAttribLocation: GLint;
+
 let imageRenderingProgramTintAttribLocation: GLint;
 let imageRenderingProgramTexCoordAttribLocation: GLint;
 let imageRenderingProgramTextureIdxAttribLocation: GLint;
@@ -100,7 +100,8 @@ export function createEntityShaders(): void {
    imageRenderingProgram = createWebGLProgram(vertexShaderText, entityRenderingFragmentShaderText);
 
    imageRenderingProgramTexturesUniformLocation = gl.getUniformLocation(imageRenderingProgram, "u_textures")!;
-   imageRenderingProgramPosAttribLocation = gl.getAttribLocation(imageRenderingProgram, "a_position");
+
+   gl.bindAttribLocation(imageRenderingProgram, 0, "a_position");
    imageRenderingProgramTintAttribLocation = gl.getAttribLocation(imageRenderingProgram, "a_tint");
    imageRenderingProgramTexCoordAttribLocation = gl.getAttribLocation(imageRenderingProgram, "a_texCoord");
    imageRenderingProgramTextureIdxAttribLocation = gl.getAttribLocation(imageRenderingProgram, "a_textureIdx");
@@ -305,7 +306,7 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
       
 
-      gl.vertexAttribPointer(imageRenderingProgramPosAttribLocation, 2, gl.FLOAT, false, 9 * Float32Array.BYTES_PER_ELEMENT, 0);
+      gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 9 * Float32Array.BYTES_PER_ELEMENT, 0);
       gl.vertexAttribPointer(imageRenderingProgramTexCoordAttribLocation, 2, gl.FLOAT, false, 9 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
       gl.vertexAttribPointer(imageRenderingProgramTintAttribLocation, 3, gl.FLOAT, false, 9 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
       gl.vertexAttribPointer(imageRenderingProgramTextureIdxAttribLocation, 1, gl.FLOAT, false, 9 * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
@@ -314,7 +315,7 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
       gl.uniform1iv(imageRenderingProgramTexturesUniformLocation, usedTextureSources.map((_, idx) => idx));
       
       // Enable the attributes
-      gl.enableVertexAttribArray(imageRenderingProgramPosAttribLocation);
+      gl.enableVertexAttribArray(0);
       gl.enableVertexAttribArray(imageRenderingProgramTexCoordAttribLocation);
       gl.enableVertexAttribArray(imageRenderingProgramTintAttribLocation);
       gl.enableVertexAttribArray(imageRenderingProgramTextureIdxAttribLocation);

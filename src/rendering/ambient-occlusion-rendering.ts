@@ -99,14 +99,14 @@ let program: WebGLProgram;
 
 let textureUniformLocation: WebGLUniformLocation;
 
-let positionAttribLocation: GLint;
 let texCoordAttribLocation: GLint;
 
 export function createAmbientOcclusionShaders(): void {
    program = createWebGLProgram(vertexShaderText, fragmentShaderText);
 
    textureUniformLocation = gl.getUniformLocation(program, "u_textures")!;
-   positionAttribLocation = gl.getAttribLocation(program, "a_position");
+
+   gl.bindAttribLocation(program, 0, "a_position");
    texCoordAttribLocation = gl.getAttribLocation(program, "a_texCoord");
 }
 
@@ -403,11 +403,11 @@ const render = (ambientOcclusionInfo: AmbientOcclusionInfo): void => {
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
-      gl.vertexAttribPointer(positionAttribLocation, 2, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0);
+      gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0);
       gl.vertexAttribPointer(texCoordAttribLocation, 2, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
 
       // Enable the attributes
-      gl.enableVertexAttribArray(positionAttribLocation);
+      gl.enableVertexAttribArray(0);
       gl.enableVertexAttribArray(texCoordAttribLocation);
 
       gl.uniform1i(textureUniformLocation, 0);

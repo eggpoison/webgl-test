@@ -47,7 +47,6 @@ let halfWindowSizeUniformLocation: WebGLUniformLocation;
 let zoomUniformLocation: WebGLUniformLocation;
 let textureUniformLocation: WebGLUniformLocation;
 
-let tilePosAttribLocation: GLint;
 let texCoordAttribLocation: GLint;
 
 export function calculateSolidTileRenderChunkData(renderChunkX: number, renderChunkY: number): RenderChunkSolidTileInfo {
@@ -123,7 +122,8 @@ export function createSolidTileShaders(): void {
    halfWindowSizeUniformLocation = gl.getUniformLocation(program, "u_halfWindowSize")!;
    zoomUniformLocation = gl.getUniformLocation(program, "u_zoom")!;
    textureUniformLocation = gl.getUniformLocation(program, "u_texture")!;
-   tilePosAttribLocation = gl.getAttribLocation(program, "a_tilePos");
+
+   gl.bindAttribLocation(program, 0, "a_tilePos");
    texCoordAttribLocation = gl.getAttribLocation(program, "a_texCoord");
 }
 
@@ -141,7 +141,7 @@ export function renderSolidTiles(): void {
             gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
       
             gl.vertexAttribPointer(
-               tilePosAttribLocation, // Attribute location
+               0, // Attribute location
                2, // Number of elements per attribute
                gl.FLOAT, // Type of elements
                false,
@@ -162,7 +162,7 @@ export function renderSolidTiles(): void {
             gl.uniform1f(zoomUniformLocation, Camera.zoom);
          
             // Enable the attributes
-            gl.enableVertexAttribArray(tilePosAttribLocation);
+            gl.enableVertexAttribArray(0);
             gl.enableVertexAttribArray(texCoordAttribLocation);
       
             gl.uniform1i(textureUniformLocation, 0);

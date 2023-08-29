@@ -84,8 +84,6 @@ let numRenders = 0;
 abstract class Game {
    private static readonly NIGHT_DARKNESS = 0.6;
 
-   // TODO: Is the a good way of handling this?
-   // public static pendingTicks = 0;
    public static pendingPackets = new Array<GameDataPacket>();
 
    private static _ticks: number;
@@ -257,7 +255,6 @@ abstract class Game {
    }
 
    private static update(): void {
-      console.log("tick");
       updateSpamFilter();
 
       updatePlayerMovement();
@@ -320,6 +317,7 @@ abstract class Game {
          Player.instance.updateRenderPosition();
          Camera.setCameraPosition(Player.instance.renderPosition);
          Camera.updateVisibleChunkBounds();
+         Camera.updateVisiblePositionBounds();
       }
 
       renderPlayerNames();
@@ -376,19 +374,12 @@ abstract class Game {
          // Update
          this.lag += deltaTime;
          while (this.lag >= 1000 / SETTINGS.TPS) {
-            // this.ticks = this.pendingTicks;
             if (this.pendingPackets.length > 0) {
                Client.unloadGameDataPacket(this.pendingPackets[0]);
                this.pendingPackets.splice(0, 1);
             } else {
-               console.warn("no packets");
+               console.log("no packets");
             }
-            // if (this.pendingPackets !== null) {
-            //    Client.unloadGameDataPacket(this.pendingPackets);
-            //    this.pendingPackets = null;
-            // } else {
-            //    console.warn("No packet");
-            // }
             this.update();
             Client.sendPlayerDataPacket();
             this.lag -= 1000 / SETTINGS.TPS;

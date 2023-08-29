@@ -21,12 +21,10 @@ void main() {
 
 let program: WebGLProgram;
 
-let vertPositionAttribLocation: GLint;
-
 export function createWorldBorderShaders(): void {
    program = createWebGLProgram(vertexShaderText, fragmentShaderText);
 
-   vertPositionAttribLocation = gl.getAttribLocation(program, "a_vertPosition");
+   gl.bindAttribLocation(program, 0, "a_vertPosition");
 }
 
 export function renderWorldBorder(): void {
@@ -106,9 +104,8 @@ export function renderWorldBorder(): void {
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
    
-      const positionAttribLocation = vertPositionAttribLocation;
       gl.vertexAttribPointer(
-         positionAttribLocation,
+         0,
          2,
          gl.FLOAT,
          false,
@@ -117,7 +114,7 @@ export function renderWorldBorder(): void {
       );
    
       // Enable the attributes
-      gl.enableVertexAttribArray(positionAttribLocation);
+      gl.enableVertexAttribArray(0);
    
       gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 2);
    }

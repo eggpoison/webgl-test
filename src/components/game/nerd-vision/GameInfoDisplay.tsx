@@ -87,7 +87,7 @@ const GameInfoDisplay = () => {
       <p>FPS: {_fps}</p>
       <p>TPS: {tps}</p>
 
-      <ul>
+      <ul className="options">
          <li>
             <label className={nightVisionIsEnabled ? "enabled" : undefined}>
                <input checked={nightVisionIsEnabled} type="checkbox" onChange={toggleNightvision} />
@@ -104,6 +104,36 @@ const GameInfoDisplay = () => {
             <label className={showChunkBorders ? "enabled" : undefined}>
                <input checked={showChunkBorders} type="checkbox" onChange={toggleSetShowChunkBorders} />
                Chunk borders
+            </label>
+         </li>
+      </ul>
+
+      <ul>
+         <li>
+            <label>
+               {Object.keys(Game.board.gameObjects).length} Game Objects
+            </label>
+         </li>
+         <ul>
+            <li>
+               <label>
+                  {Object.keys(Game.board.entities).length} Entities
+               </label>
+            </li>
+            <li>
+               <label>
+                  {Object.keys(Game.board.projectiles).length} Projectiles
+               </label>
+            </li>
+            <li>
+               <label>
+                  {Object.keys(Game.board.droppedItems).length} Dropped Items
+               </label>
+            </li>
+         </ul>
+         <li>
+            <label>
+               {Object.keys(Game.board.particles).length} Particles
             </label>
          </li>
       </ul>

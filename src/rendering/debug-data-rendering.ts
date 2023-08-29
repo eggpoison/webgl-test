@@ -52,12 +52,10 @@ void main() {
 }
 `;
 
-let lineProgramPositionAttribLocation: GLint;
 let lineProgramColourAttribLocation: GLint;
 
 let lineProgram: WebGLProgram;
 
-let triangleProgramPositionAttribLocation: GLint;
 let triangleProgramColourAttribLocation: GLint;
 
 let triangleProgram: WebGLProgram;
@@ -65,12 +63,12 @@ let triangleProgram: WebGLProgram;
 export function createDebugDataShaders(): void {
    lineProgram = createWebGLProgram(lineVertexShaderText, lineFragmentShaderText);
 
-   lineProgramPositionAttribLocation = gl.getAttribLocation(lineProgram, "a_position");
+   gl.bindAttribLocation(lineProgram, 0, "a_position");
    lineProgramColourAttribLocation = gl.getAttribLocation(lineProgram, "a_colour");
 
    triangleProgram = createWebGLProgram(triangleVertexShaderText, triangleFragmentShaderText);
 
-   triangleProgramPositionAttribLocation = gl.getAttribLocation(triangleProgram, "a_position");
+   gl.bindAttribLocation(triangleProgram, 0, "a_position");
    triangleProgramColourAttribLocation = gl.getAttribLocation(triangleProgram, "a_colour");
 }
 
@@ -105,10 +103,10 @@ export function renderLineDebugData(debugData: GameObjectDebugData): void {
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
-   gl.vertexAttribPointer(lineProgramPositionAttribLocation, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
+   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
    gl.vertexAttribPointer(lineProgramColourAttribLocation, 3, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
 
-   gl.enableVertexAttribArray(lineProgramPositionAttribLocation);
+   gl.enableVertexAttribArray(0);
    gl.enableVertexAttribArray(lineProgramColourAttribLocation);
 
    gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 5);
@@ -149,10 +147,10 @@ export function renderTriangleDebugData(debugData: GameObjectDebugData): void {
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
-   gl.vertexAttribPointer(triangleProgramPositionAttribLocation, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
+   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
    gl.vertexAttribPointer(triangleProgramColourAttribLocation, 3, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
 
-   gl.enableVertexAttribArray(triangleProgramPositionAttribLocation);
+   gl.enableVertexAttribArray(0);
    gl.enableVertexAttribArray(triangleProgramColourAttribLocation);
 
    gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 5);

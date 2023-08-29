@@ -24,14 +24,12 @@ void main() {
 }
 `;
 
-let positionAttribLocation: GLint;
-
 let program: WebGLProgram;
 
 export function createHitboxShaders(): void {
    program = createWebGLProgram(vertexShaderText, fragmentShaderText);
 
-   positionAttribLocation = gl.getAttribLocation(program, "a_position");
+   gl.bindAttribLocation(program, 0, "a_position");
 }
 
 /** Renders all hitboxes of a specified set of entities */
@@ -118,9 +116,9 @@ export function renderEntityHitboxes(): void {
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
-   gl.vertexAttribPointer(positionAttribLocation, 2, gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
+   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
 
-   gl.enableVertexAttribArray(positionAttribLocation);
+   gl.enableVertexAttribArray(0);
 
    gl.drawArrays(gl.LINES, 0, vertices.length / 2);
 }

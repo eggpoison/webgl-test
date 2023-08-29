@@ -20,7 +20,13 @@
 }
 
 #game-info-display ul {
+   color: #fff;
    background-color: #000;
+   margin-left: 0rem;
+   padding-left: 1rem;
+}
+
+#game-info-display ul.options {
    padding: 0.2rem;
    margin: 0;
    list-style-type: none;

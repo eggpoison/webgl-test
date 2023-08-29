@@ -2,6 +2,8 @@ import { Point, SETTINGS, VisibleChunkBounds } from "webgl-test-shared";
 import { halfWindowHeight, halfWindowWidth, windowHeight, windowWidth } from "./webgl";
 import { RENDER_CHUNK_SIZE, WORLD_RENDER_CHUNK_SIZE } from "./rendering/tile-rendering/render-chunks";
 
+export type VisiblePositionBounds = [minX: number, maxX: number, minY: number, maxY: number];
+
 abstract class Camera {
    /** Larger = zoomed in, smaller = zoomed out */
    public static readonly zoom: number = 1.4;
@@ -10,15 +12,26 @@ abstract class Camera {
 
    private static visibleChunkBounds: VisibleChunkBounds = [-1, -1, -1, -1];
 
+   public static visiblePositionBounds: VisiblePositionBounds = [-1, -1, -1, -1];
+
    public static updateVisibleChunkBounds(): void {
       const unitsInChunk = SETTINGS.TILE_SIZE * SETTINGS.CHUNK_SIZE;
 
-      const minX = Math.max(Math.floor((this.position.x - windowWidth / 2) / unitsInChunk), 0);
-      const maxX = Math.min(Math.floor((this.position.x + windowWidth / 2) / unitsInChunk), SETTINGS.BOARD_SIZE - 1);
-      const minY = Math.max(Math.floor((this.position.y - windowHeight / 2) / unitsInChunk), 0);
-      const maxY = Math.min(Math.floor((this.position.y + windowHeight / 2) / unitsInChunk), SETTINGS.BOARD_SIZE - 1);
+      // minX
+      this.visibleChunkBounds[0] = Math.max(Math.floor((this.position.x - halfWindowWidth) / unitsInChunk), 0);
+      // maxX
+      this.visibleChunkBounds[1] = Math.min(Math.floor((this.position.x + halfWindowWidth) / unitsInChunk), SETTINGS.BOARD_SIZE - 1);
+      // minY
+      this.visibleChunkBounds[2] = Math.max(Math.floor((this.position.y - halfWindowHeight) / unitsInChunk), 0);
+      // maxY
+      this.visibleChunkBounds[3] = Math.min(Math.floor((this.position.y + halfWindowHeight) / unitsInChunk), SETTINGS.BOARD_SIZE - 1);
+   }
 
-      this.visibleChunkBounds = [minX, maxX, minY, maxY];
+   public static updateVisiblePositionBounds(): void {
+      this.visiblePositionBounds[0] = this.position.x - halfWindowWidth;
+      this.visiblePositionBounds[1] = this.position.x + halfWindowWidth;
+      this.visiblePositionBounds[2] = this.position.y - halfWindowHeight;
+      this.visiblePositionBounds[3] = this.position.y + halfWindowHeight;
    }
 
    public static getVisibleChunkBounds(): VisibleChunkBounds {

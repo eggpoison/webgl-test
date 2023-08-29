@@ -98,7 +98,6 @@ void main() {
 let program: WebGLProgram;
 
 let textureUniformLocation: WebGLUniformLocation;
-let positionAttribLocation: number;
 let texCoordAttribLocation: number;
 let opacityAttribLocation: number;
 let tintAttribLocation: number;
@@ -107,7 +106,8 @@ export function createParticleShaders(): void {
    program = createWebGLProgram(vertexShaderText, fragmentShaderText);
 
    textureUniformLocation = gl.getUniformLocation(program, "u_texture")!;
-   positionAttribLocation = gl.getAttribLocation(program, "a_position");
+
+   gl.bindAttribLocation(program, 0, "a_position");
    texCoordAttribLocation = gl.getAttribLocation(program, "a_texCoord");
    opacityAttribLocation = gl.getAttribLocation(program, "a_opacity");
    tintAttribLocation = gl.getAttribLocation(program, "a_tint");
@@ -115,11 +115,24 @@ export function createParticleShaders(): void {
 
 type CategorisedParticles = Record<string, Array<Particle>>;
 
+const particleIsVisible = (particle: Particle): boolean => {
+   const halfMaxDiagonalLength = Math.sqrt(Math.pow(particle.width, 2) + Math.pow(particle.height, 2)) / 2;
+
+   const pos = calculateParticleRenderPosition(particle);
+   if (pos.x + halfMaxDiagonalLength < Camera.visiblePositionBounds[0]
+      || pos.x - halfMaxDiagonalLength > Camera.visiblePositionBounds[1]
+      || pos.y + halfMaxDiagonalLength < Camera.visiblePositionBounds[2]
+      || pos.y - halfMaxDiagonalLength > Camera.visiblePositionBounds[3]) {
+      return false;
+   }
+   return true;
+}
+
 const categoriseParticles = (renderLayer: ParticleRenderLayer): CategorisedParticles => {
    const categorisedParticles: CategorisedParticles = {};
 
    for (const particle of Object.values(Game.board.particles)) {
-      if (particle.renderLayer !== renderLayer) continue;
+      if (particle.renderLayer !== renderLayer || !particleIsVisible(particle)) continue;
 
       const textureSource = PARTICLE_TEXTURES[particle.type];
       
@@ -169,7 +182,7 @@ const calculateParticleRenderPosition = (particle: Particle): Point => {
 
 export function renderParticles(renderLayer: ParticleRenderLayer): void {
    const categorisedParticles = categoriseParticles(renderLayer);
-   
+
    // Create vertices
 
    const textureSources = new Array<string>();
@@ -234,13 +247,13 @@ export function renderParticles(renderLayer: ParticleRenderLayer): void {
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
       gl.bufferData(gl.ARRAY_BUFFER, float32Vertices, gl.STATIC_DRAW);
 
-      gl.vertexAttribPointer(positionAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 0);
+      gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 0);
       gl.vertexAttribPointer(texCoordAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
       gl.vertexAttribPointer(opacityAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
       gl.vertexAttribPointer(tintAttribLocation, 3, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
 
       // Enable the attributes
-      gl.enableVertexAttribArray(positionAttribLocation);
+      gl.enableVertexAttribArray(0);
       gl.enableVertexAttribArray(texCoordAttribLocation);
       gl.enableVertexAttribArray(opacityAttribLocation);
       gl.enableVertexAttribArray(tintAttribLocation);
