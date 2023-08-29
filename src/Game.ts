@@ -323,7 +323,7 @@ abstract class Game {
       renderPlayerNames();
 
       renderSolidTiles();
-      // renderRivers();
+      renderRivers();
       // renderAmbientOcclusion();
       // renderWallBorders();
       if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Game.board.gameObjects.hasOwnProperty(this.gameObjectDebugData.gameObjectID)) {

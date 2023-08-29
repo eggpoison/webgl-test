@@ -1,9 +1,8 @@
-import { Point, RIVER_STEPPING_STONE_SIZES, RiverSteppingStoneSize, SETTINGS, Vector, WaterRockSize, lerp, rotatePoint } from "webgl-test-shared";
+import { Point, RIVER_STEPPING_STONE_SIZES, RiverSteppingStoneSize, SETTINGS, Vector, WaterRockSize, lerp, randFloat, rotatePoint } from "webgl-test-shared";
 import { createWebGLProgram, gl, halfWindowHeight, halfWindowWidth } from "../../webgl";
 import Game from "../../Game";
 import { getTexture } from "../../textures";
 import Camera from "../../Camera";
-import { Tile } from "../../Tile";
 import { RiverSteppingStone } from "../../Board";
 import { RENDER_CHUNK_SIZE, RenderChunkRiverInfo, getRenderChunkRiverInfo } from "./render-chunks";
 
@@ -223,18 +222,30 @@ void main() {
 const noiseVertexShaderText = `#version 300 es
 precision mediump float;
 
+uniform vec2 u_playerPos;
+uniform vec2 u_halfWindowSize;
+uniform float u_zoom;
+
 in vec2 a_position;
 in vec2 a_texCoord;
-in vec2 a_noiseOffset;
+in vec2 a_flowDirection;
+in float a_animationOffset;
+in float a_animationSpeed;
 
 out vec2 v_texCoord;
-out vec2 v_noiseOffset;
- 
+out vec2 v_flowDirection;
+out float v_animationOffset;
+out float v_animationSpeed;
+
 void main() {
-   gl_Position = vec4(a_position, 0.0, 1.0);
+   vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
+   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+   gl_Position = vec4(clipSpacePos, 0.0, 1.0);
 
    v_texCoord = a_texCoord;
-   v_noiseOffset = a_noiseOffset;
+   v_flowDirection = a_flowDirection;
+   v_animationOffset = a_animationOffset;
+   v_animationSpeed = a_animationSpeed;
 }
 `;
 
@@ -242,15 +253,19 @@ const noiseFragmentShaderText = `#version 300 es
 precision mediump float;
  
 uniform sampler2D u_noiseTexture;
+uniform float u_animationOffset;
  
 in vec2 v_texCoord;
-in vec2 v_noiseOffset;
+in vec2 v_flowDirection;
+in float v_animationOffset;
+in float v_animationSpeed;
 
 out vec4 outputColour;
  
 void main() {
-   vec2 noiseCoord = fract(v_texCoord - v_noiseOffset);
-   outputColour = texture(u_noiseTexture, noiseCoord);
+   float animationOffset = fract(u_animationOffset * v_animationSpeed + v_animationOffset);
+   vec2 offsetCoord = v_flowDirection * animationOffset;
+   outputColour = texture(u_noiseTexture, v_texCoord - offsetCoord);
 
    outputColour.r += 0.5;
    outputColour.g += 0.5;
@@ -474,7 +489,11 @@ let highlightsProgramTexture1UniformLocation: WebGLUniformLocation;
 let highlightsProgramTexture2UniformLocation: WebGLUniformLocation;
 let highlightsProgramTexture3UniformLocation: WebGLUniformLocation;
 
+let noiseProgramPlayerPosUniformLocation: WebGLUniformLocation;
+let noiseProgramHalfWindowSizeUniformLocation: WebGLUniformLocation;
+let noiseProgramZoomUniformLocation: WebGLUniformLocation;
 let noiseTextureUniformLocation: WebGLUniformLocation;
+let noiseAnimationOffsetUniformLocation: WebGLUniformLocation;
 
 let transitionProgramPlayerPosUniformLocation: WebGLUniformLocation;
 let transitionProgramHalfWindowSizeUniformLocation: WebGLUniformLocation;
@@ -499,7 +518,9 @@ let highlightsProgramCoordAttribLocation: GLint;
 let highlightsProgramFadeOffsetAttribLocation: GLint;
 
 let noiseProgramTexCoordAttribLocation: GLint;
-let noiseOffsetAttribLocation: GLint;
+let noiseFlowDirectionAttribLocation: GLint;
+let noiseAnimationOffsetAttribLocation: GLint;
+let noiseAnimationSpeedAttribLocation: GLint;
 
 let transitionProgramTexCoordAttribLocation: GLint;
 let transitionProgramTopLeftMarkerAttribLocation: GLint;
@@ -576,11 +597,17 @@ export function createWaterShaders(): void {
 
    noiseProgram = createWebGLProgram(noiseVertexShaderText, noiseFragmentShaderText);
 
+   noiseProgramPlayerPosUniformLocation = gl.getUniformLocation(noiseProgram, "u_playerPos")!;
+   noiseProgramHalfWindowSizeUniformLocation = gl.getUniformLocation(noiseProgram, "u_halfWindowSize")!;
+   noiseProgramZoomUniformLocation = gl.getUniformLocation(noiseProgram, "u_zoom")!;
    noiseTextureUniformLocation = gl.getUniformLocation(noiseProgram, "u_noiseTexture")!;
+   noiseAnimationOffsetUniformLocation = gl.getUniformLocation(noiseProgram, "u_animationOffset")!;
 
    gl.bindAttribLocation(noiseProgram, 0, "a_position");
    noiseProgramTexCoordAttribLocation = gl.getAttribLocation(noiseProgram, "a_texCoord");
-   noiseOffsetAttribLocation = gl.getAttribLocation(noiseProgram, "a_noiseOffset");
+   noiseFlowDirectionAttribLocation = gl.getAttribLocation(noiseProgram, "a_flowDirection");
+   noiseAnimationOffsetAttribLocation = gl.getAttribLocation(noiseProgram, "a_animationOffset");
+   noiseAnimationSpeedAttribLocation = gl.getAttribLocation(noiseProgram, "a_animationSpeed");
 
    // 
    // Transition program
@@ -810,6 +837,11 @@ export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY
    gl.bindBuffer(gl.ARRAY_BUFFER, highlightsBuffer);
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(highlightsVertices), gl.STATIC_DRAW);
 
+   const noiseVertices = calculateNoiseVertices(renderChunkX, renderChunkY);
+   const noiseBuffer = gl.createBuffer()!;
+   gl.bindBuffer(gl.ARRAY_BUFFER, noiseBuffer);
+   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(noiseVertices), gl.STATIC_DRAW);
+
    return {
       transitionBuffer: transitionBuffer,
       transitionVertexCount: transitionVertices.length,
@@ -818,28 +850,10 @@ export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY
       baseBuffer: baseBuffer,
       baseVertexCount: baseVertices.length,
       highlightsBuffer: highlightsBuffer,
-      highlightsVertexCount: highlightsVertices.length
+      highlightsVertexCount: highlightsVertices.length,
+      noiseBuffer: noiseBuffer,
+      noiseVertexCount: noiseVertices.length
    };
-}
-
-const calculateVisibleWaterTiles = (): ReadonlyArray<Tile> => {
-   const visibleChunkBounds = Camera.getVisibleChunkBounds();
-
-   const minTileX = visibleChunkBounds[0] * SETTINGS.CHUNK_SIZE;
-   const maxTileX = (visibleChunkBounds[1] + 1) * SETTINGS.CHUNK_SIZE - 1;
-   const minTileY = visibleChunkBounds[2] * SETTINGS.CHUNK_SIZE;
-   const maxTileY = (visibleChunkBounds[3] + 1) * SETTINGS.CHUNK_SIZE - 1;
-
-   const tiles = new Array<Tile>();
-   for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
-      for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
-         const tile = Game.board.getTile(tileX, tileY);
-         if (tile.type === "water") {
-            tiles.push(tile);
-         }         
-      }
-   }
-   return tiles;
 }
 
 const calculateDistanceToLand = (tileX: number, tileY: number): number => {
@@ -878,46 +892,61 @@ const calculateDistanceToWater = (tileX: number, tileY: number): number => {
    return 1;
 }
 
-const calculateNoiseVertices = (tiles: ReadonlyArray<Tile>): ReadonlyArray<number> => {
+const calculateNoiseVertices = (renderChunkX: number, renderChunkY: number): ReadonlyArray<number> => {
    const vertices = new Array<number>();
    
-   for (const tile of tiles) {
-      const flowDirection = Game.board.getRiverFlowDirection(tile.x, tile.y);
-      
-      let x1 = (tile.x - 0.5) * SETTINGS.TILE_SIZE;
-      let x2 = (tile.x + 1.5) * SETTINGS.TILE_SIZE;
-      let y1 = (tile.y - 0.5) * SETTINGS.TILE_SIZE;
-      let y2 = (tile.y + 1.5) * SETTINGS.TILE_SIZE;
+   const minTileX = renderChunkX * RENDER_CHUNK_SIZE;
+   const maxTileX = (renderChunkX + 1) * RENDER_CHUNK_SIZE - 1;
+   const minTileY = renderChunkY * RENDER_CHUNK_SIZE;
+   const maxTileY = (renderChunkY + 1) * RENDER_CHUNK_SIZE - 1;
 
-      x1 = Camera.calculateXCanvasPosition(x1);
-      x2 = Camera.calculateXCanvasPosition(x2);
-      y1 = Camera.calculateYCanvasPosition(y1);
-      y2 = Camera.calculateYCanvasPosition(y2);
+   for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
+      for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
+         const tile = Game.board.getTile(tileX, tileY);
+         if (tile.type !== "water") {
+            continue;
+         }
+         const flowDirection = Game.board.getRiverFlowDirection(tileX, tileY);
+         
+         const x1 = (tileX - 0.5) * SETTINGS.TILE_SIZE;
+         const x2 = (tileX + 1.5) * SETTINGS.TILE_SIZE;
+         const y1 = (tileY - 0.5) * SETTINGS.TILE_SIZE;
+         const y2 = (tileY + 1.5) * SETTINGS.TILE_SIZE;
 
-      const epsilon = 0.01;
-      const isDiagonal = Math.abs(flowDirection!) > epsilon && Math.abs(flowDirection - Math.PI/2) > epsilon && Math.abs(flowDirection - Math.PI) > epsilon && Math.abs(flowDirection + Math.PI/2) > epsilon;
+         const epsilon = 0.01;
+         const isDiagonal = Math.abs(flowDirection!) > epsilon && Math.abs(flowDirection - Math.PI/2) > epsilon && Math.abs(flowDirection - Math.PI) > epsilon && Math.abs(flowDirection + Math.PI/2) > epsilon;
 
-      const speedMultiplier = 1 + tile.flowOffset / 1.5;
-      let offsetX: number;
-      let offsetY: number;
-      if (isDiagonal) {
-         const offsetMagnitude = (Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000 / Math.SQRT2 * speedMultiplier + tile.flowOffset) % 1;
-         offsetX = offsetMagnitude * Math.SQRT2 * Math.cos(flowDirection);
-         offsetY = offsetMagnitude * Math.SQRT2 * Math.sin(flowDirection);
-      } else {
-         const offsetMagnitude = (Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000 * speedMultiplier + tile.flowOffset) % 1;
-         offsetX = offsetMagnitude * Math.cos(flowDirection);
-         offsetY = offsetMagnitude * Math.sin(flowDirection);
+         // const speedMultiplier = 1 + tile.flowOffset / 1.5;
+         // let offsetX: number;
+         // let offsetY: number;
+         // if (isDiagonal) {
+         //    const offsetMagnitude = (Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000 / Math.SQRT2 * speedMultiplier + tile.flowOffset) % 1;
+         //    offsetX = offsetMagnitude * Math.SQRT2 * Math.cos(flowDirection);
+         //    offsetY = offsetMagnitude * Math.SQRT2 * Math.sin(flowDirection);
+         // } else {
+         //    const offsetMagnitude = (Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000 * speedMultiplier + tile.flowOffset) % 1;
+         //    offsetX = offsetMagnitude * Math.cos(flowDirection);
+         //    offsetY = offsetMagnitude * Math.sin(flowDirection);
+         // }
+
+         const flowAnimationOffset = Math.random();
+         const animationSpeed = randFloat(1, 1.67);
+
+         // flow animation offset
+         // flow direction
+
+         const flowDirectionX = Math.sin(flowDirection);
+         const flowDirectionY = Math.cos(flowDirection);
+
+         vertices.push(
+            x1, y1, 0, 0, flowDirectionX, flowDirectionY, flowAnimationOffset, animationSpeed,
+            x2, y1, 1, 0, flowDirectionX, flowDirectionY, flowAnimationOffset, animationSpeed,
+            x1, y2, 0, 1, flowDirectionX, flowDirectionY, flowAnimationOffset, animationSpeed,
+            x1, y2, 0, 1, flowDirectionX, flowDirectionY, flowAnimationOffset, animationSpeed,
+            x2, y1, 1, 0, flowDirectionX, flowDirectionY, flowAnimationOffset, animationSpeed,
+            x2, y2, 1, 1, flowDirectionX, flowDirectionY, flowAnimationOffset, animationSpeed
+         );
       }
-
-      vertices.push(
-         x1, y1, 0, 0, offsetX, offsetY,
-         x2, y1, 1, 0, offsetX, offsetY,
-         x1, y2, 0, 1, offsetX, offsetY,
-         x1, y2, 0, 1, offsetX, offsetY,
-         x2, y1, 1, 0, offsetX, offsetY,
-         x2, y2, 1, 1, offsetX, offsetY
-      );
    }
 
    return vertices;
@@ -1119,10 +1148,8 @@ const calculateVisibleRenderChunks = (): ReadonlyArray<RenderChunkRiverInfo> => 
 
 export function renderRivers(): void {
    const visibleRenderChunks = calculateVisibleRenderChunks();
-   const visibleTiles = calculateVisibleWaterTiles();
    const visibleSteppingStones = calculateVisibleSteppingStones();
 
-   const noiseVertices = calculateNoiseVertices(visibleTiles);
    const foamVertexRecord = calculateFoamVertices(visibleSteppingStones);
    const steppingStoneVertices = calculateSteppingStoneVertices(visibleSteppingStones);
    
@@ -1251,22 +1278,29 @@ export function renderRivers(): void {
    
    gl.useProgram(noiseProgram);
 
-   {
-      // Create tile buffer
-      const buffer = gl.createBuffer()!;
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(noiseVertices), gl.STATIC_DRAW);
+   for (const renderChunkInfo of visibleRenderChunks) {
+      gl.bindBuffer(gl.ARRAY_BUFFER, renderChunkInfo.noiseBuffer);
    
-      gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 0);
-      gl.vertexAttribPointer(noiseProgramTexCoordAttribLocation, 2, gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(noiseOffsetAttribLocation, 2, gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 0);
+      gl.vertexAttribPointer(noiseProgramTexCoordAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(noiseFlowDirectionAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(noiseAnimationOffsetAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(noiseAnimationSpeedAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
    
       // Enable the attributes
       gl.enableVertexAttribArray(0);
       gl.enableVertexAttribArray(noiseProgramTexCoordAttribLocation);
-      gl.enableVertexAttribArray(noiseOffsetAttribLocation);
+      gl.enableVertexAttribArray(noiseFlowDirectionAttribLocation);
+      gl.enableVertexAttribArray(noiseAnimationOffsetAttribLocation);
+      gl.enableVertexAttribArray(noiseAnimationSpeedAttribLocation);
       
+      const animationOffset = (Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000) % 1;
+      
+      gl.uniform2f(noiseProgramPlayerPosUniformLocation, Camera.position.x, Camera.position.y);
+      gl.uniform2f(noiseProgramHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
+      gl.uniform1f(noiseProgramZoomUniformLocation, Camera.zoom);
       gl.uniform1i(noiseTextureUniformLocation, 0);
+      gl.uniform1f(noiseAnimationOffsetUniformLocation, animationOffset);
                
       // Set noise texture
       const noiseTexture = getTexture("tiles/water-noise.png");
@@ -1274,7 +1308,7 @@ export function renderRivers(): void {
       gl.bindTexture(gl.TEXTURE_2D, noiseTexture);
    
       // Draw the tile
-      gl.drawArrays(gl.TRIANGLES, 0, noiseVertices.length / 6);
+      gl.drawArrays(gl.TRIANGLES, 0, renderChunkInfo.noiseVertexCount / 8);
    }
 
    // 

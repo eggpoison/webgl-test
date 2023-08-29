@@ -22,6 +22,8 @@ export interface RenderChunkRiverInfo {
    readonly rockVertexCounts: ReadonlyArray<number>;
    readonly highlightsBuffer: WebGLBuffer;
    readonly highlightsVertexCount: number;
+   readonly noiseBuffer: WebGLBuffer;
+   readonly noiseVertexCount: number;
 }
 
 /** Stores rendering information about one render chunk of the world.*/
