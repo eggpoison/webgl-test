@@ -200,27 +200,6 @@ export function renderParticles(renderLayer: ParticleRenderLayer): void {
          if (particleIsVisible(particle, renderPosition)) {
             const width = particle.width * particle.scale;
             const height = particle.height * particle.scale;
-   
-            // let topLeft = new Point(renderPosition.x - width/2, renderPosition.y + height/2);
-            // let topRight = new Point(renderPosition.x + width/2, renderPosition.y + height/2);
-            // let bottomLeft = new Point(renderPosition.x - width/2, renderPosition.y - height/2);
-            // let bottomRight = new Point(renderPosition.x + width/2, renderPosition.y - height/2);
-            
-            // // Rotate the corners into position
-            // topLeft = rotatePoint(topLeft, renderPosition, particle.rotation);
-            // topRight = rotatePoint(topRight, renderPosition, particle.rotation);
-            // bottomLeft = rotatePoint(bottomLeft, renderPosition, particle.rotation);
-            // bottomRight = rotatePoint(bottomRight, renderPosition, particle.rotation);
-   
-            // // Convert the corners to screen space
-            // const topLeftX = Camera.calculateXCanvasPosition(topLeft.x);
-            // const topLeftY = Camera.calculateYCanvasPosition(topLeft.y);
-            // const topRightX = Camera.calculateXCanvasPosition(topRight.x);
-            // const topRightY = Camera.calculateYCanvasPosition(topRight.y);
-            // const bottomLeftX = Camera.calculateXCanvasPosition(bottomLeft.x);
-            // const bottomLeftY = Camera.calculateYCanvasPosition(bottomLeft.y);
-            // const bottomRightX = Camera.calculateXCanvasPosition(bottomRight.x);
-            // const bottomRightY = Camera.calculateYCanvasPosition(bottomRight.y);
 
             const x1 = renderPosition.x - width / 2;
             const x2 = renderPosition.x + width / 2;

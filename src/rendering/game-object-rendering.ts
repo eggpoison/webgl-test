@@ -143,10 +143,12 @@ interface RenderInfo {
    readonly baseRenderObject: RenderObject;
 }
 
+interface TexturedRenderParts {
+   [textureSource: string]: Array<RenderInfo>;
+}
+
 interface CategorisedRenderParts {
-   [zIndex: number]: {
-      [textureSource: string]: Array<RenderInfo>;
-   }
+   [zIndex: number]: TexturedRenderParts;
 }
 
 export function renderGameObjects(gameObjects: ReadonlyArray<GameObject>): void {
@@ -225,14 +227,14 @@ const calculateEntityRedness = (entity: Entity): number => {
 
 const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
    // Find which z-index layers are being rendered, in ascending order.
-   const zIndexes = Object.keys(renderParts).map(zIndex => Number(zIndex)).sort((a, b) => a - b);
+   // const zIndexes = Object.keys(renderParts).map(zIndex => Number(zIndex)).sort((a, b) => a - b);
 
    // Calculate vertices
    let numTextureUnitsUsed = 0;
    const vertexArrays = new Array<Array<number>>();
    const textureSources = new Array<string>();
-   for (const zIndex of zIndexes) {
-      for (const [textureSource, texturedRenderParts] of Object.entries(renderParts[zIndex])) {
+   for (const zIndexRenderPartInfo of Object.values(renderParts) as ReadonlyArray<TexturedRenderParts>) {
+      for (const [textureSource, texturedRenderParts] of Object.entries(zIndexRenderPartInfo)) {
          const vertices = new Array<number>();
          const textureIdx = numTextureUnitsUsed % MAX_ACTIVE_TEXTURE_UNITS;
          for (const renderInfo of texturedRenderParts) {

@@ -94,9 +94,6 @@ class RenderPart extends RenderObject implements RenderPartInfo {
    /** Updates the render part's position based on its parent's position and rotation */
    public updateRenderPosition(): void {
       this.renderPosition = this.parentRenderObject.renderPosition.copy();
-      // if (this.textureSource === "projectiles/wooden-arrow.png") {
-      //    console.log("parent position:",this.renderPosition.x,this.renderPosition.y);
-      // }
 
       if (typeof this.offset !== "undefined") {
          // Offset the parent object's render position
@@ -105,9 +102,6 @@ class RenderPart extends RenderObject implements RenderPartInfo {
 
          this.renderPosition.add(offset.convertToPoint());
       }
-      // if (this.textureSource === "projectiles/wooden-arrow.png") {
-      //    console.log("after:",this.renderPosition.x,this.renderPosition.y);
-      // }
 
       if (typeof this.getRotation !== "undefined") {
          this.rotation = this.getRotation();

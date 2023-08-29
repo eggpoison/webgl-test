@@ -75,17 +75,7 @@ abstract class Client {
 
                registerServerTick();
    
-               // if (Game.pendingPackets !== null) {
-               //    console.warn("overriding existing packet");
-               // }
-               // Game.pendingPackets = gameDataPacket;
                Game.pendingPackets.push(gameDataPacket);
-               // try {
-               //    this.unloadGameDataPacket(gameDataPacket);
-               // } catch (error: unknown) {
-               //    console.warn(error);
-               //    throw new Error("Error when trying to unload game data packet!");
-               // }
             });
    
             // When the connection to the server fails

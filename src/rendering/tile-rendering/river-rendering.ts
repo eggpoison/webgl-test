@@ -898,21 +898,17 @@ const calculateNoiseVertices = (tiles: ReadonlyArray<Tile>): ReadonlyArray<numbe
       const isDiagonal = Math.abs(flowDirection!) > epsilon && Math.abs(flowDirection - Math.PI/2) > epsilon && Math.abs(flowDirection - Math.PI) > epsilon && Math.abs(flowDirection + Math.PI/2) > epsilon;
 
       const speedMultiplier = 1 + tile.flowOffset / 1.5;
-      // let offsetVector: Vector;
       let offsetX: number;
       let offsetY: number;
       if (isDiagonal) {
          const offsetMagnitude = (Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000 / Math.SQRT2 * speedMultiplier + tile.flowOffset) % 1;
-         // offsetVector = new Vector(offsetMagnitude * Math.SQRT2, flowDirection);
          offsetX = offsetMagnitude * Math.SQRT2 * Math.cos(flowDirection);
          offsetY = offsetMagnitude * Math.SQRT2 * Math.sin(flowDirection);
       } else {
          const offsetMagnitude = (Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000 * speedMultiplier + tile.flowOffset) % 1;
-         // offsetVector = new Vector(offsetMagnitude, flowDirection);
          offsetX = offsetMagnitude * Math.cos(flowDirection);
          offsetY = offsetMagnitude * Math.sin(flowDirection);
       }
-      // const offset = offsetVector.convertToPoint();
 
       vertices.push(
          x1, y1, 0, 0, offsetX, offsetY,
@@ -1121,7 +1117,7 @@ const calculateVisibleRenderChunks = (): ReadonlyArray<RenderChunkRiverInfo> => 
    return renderChunks;
 }
 
-export function renderWater(): void {
+export function renderRivers(): void {
    const visibleRenderChunks = calculateVisibleRenderChunks();
    const visibleTiles = calculateVisibleWaterTiles();
    const visibleSteppingStones = calculateVisibleSteppingStones();

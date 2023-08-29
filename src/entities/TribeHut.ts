@@ -36,7 +36,6 @@ class TribeHut extends Entity {
             height: TribeHut.DOOR_HEIGHT,
             textureSource: "entities/tribe-hut/tribe-hut-door.png",
             zIndex: 1,
-            // getRotation: () => -Math.PI / 2,
             offset: () => doorOffset
          }, this)
       );

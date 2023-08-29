@@ -73,9 +73,6 @@ export function getMouseTargetEntity(): Entity | null {
 const calculateEntityScreenPosition = (entity: Entity): Point => {
    const x = Camera.calculateXScreenPos(entity.renderPosition.x);
    const y = Camera.calculateYScreenPos(entity.renderPosition.y);
-   // const x = entity.renderPosition.x - Camera.position.x + halfWindowWidth;
-   // const y = -entity.renderPosition.y + Camera.position.y + halfWindowHeight;
-
    return new Point(x, y);
 }
 
