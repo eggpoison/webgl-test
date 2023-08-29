@@ -53,25 +53,25 @@ const RIVER_STEPPING_STONE_TEXTURES: Record<RiverSteppingStoneSize, string> = {
 
 // Base shaders
 
-const baseVertexShaderText = `
+const baseVertexShaderText = `#version 300 es
 precision mediump float;
 
 uniform vec2 u_playerPos;
 uniform vec2 u_halfWindowSize;
 uniform float u_zoom;
 
-attribute vec2 a_position;
-attribute vec2 a_coord;
-attribute float a_topLeftLandDistance;
-attribute float a_topRightLandDistance;
-attribute float a_bottomLeftLandDistance;
-attribute float a_bottomRightLandDistance;
+in vec2 a_position;
+in vec2 a_coord;
+in float a_topLeftLandDistance;
+in float a_topRightLandDistance;
+in float a_bottomLeftLandDistance;
+in float a_bottomRightLandDistance;
 
-varying vec2 v_coord;
-varying float v_topLeftLandDistance;
-varying float v_topRightLandDistance;
-varying float v_bottomLeftLandDistance;
-varying float v_bottomRightLandDistance;
+out vec2 v_coord;
+out float v_topLeftLandDistance;
+out float v_topRightLandDistance;
+out float v_bottomLeftLandDistance;
+out float v_bottomRightLandDistance;
  
 void main() {
    vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
@@ -86,18 +86,20 @@ void main() {
 }
 `;
 
-const baseFragmentShaderText = `
+const baseFragmentShaderText = `#version 300 es
 precision mediump float;
 
 uniform sampler2D u_baseTexture;
 uniform vec3 u_shallowWaterColour;
 uniform vec3 u_deepWaterColour;
  
-varying vec2 v_coord;
-varying float v_topLeftLandDistance;
-varying float v_topRightLandDistance;
-varying float v_bottomLeftLandDistance;
-varying float v_bottomRightLandDistance;
+in vec2 v_coord;
+in float v_topLeftLandDistance;
+in float v_topRightLandDistance;
+in float v_bottomLeftLandDistance;
+in float v_bottomRightLandDistance;
+
+out vec4 outputColour;
 
 void main() {
    float a = mix(v_bottomLeftLandDistance, v_bottomRightLandDistance, v_coord.x);
@@ -107,27 +109,27 @@ void main() {
    vec3 colour = mix(u_shallowWaterColour, u_deepWaterColour, dist);
    vec4 colourWithAlpha = vec4(colour, 1.0);
 
-   vec4 textureColour = texture2D(u_baseTexture, v_coord);
+   vec4 textureColour = texture(u_baseTexture, v_coord);
 
-   gl_FragColor = colourWithAlpha * textureColour;
+   outputColour = colourWithAlpha * textureColour;
 }
 `;
 
 // Rock shaders
 
-const rockVertexShaderText = `
+const rockVertexShaderText = `#version 300 es
 precision mediump float;
 
 uniform vec2 u_playerPos;
 uniform vec2 u_halfWindowSize;
 uniform float u_zoom;
 
-attribute vec2 a_position;
-attribute vec2 a_texCoord;
-attribute float a_opacity;
+in vec2 a_position;
+in vec2 a_texCoord;
+in float a_opacity;
 
-varying vec2 v_texCoord;
-varying float v_opacity;
+out vec2 v_texCoord;
+out float v_opacity;
  
 void main() {
    vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
@@ -139,36 +141,37 @@ void main() {
 }
 `;
 
-const rockFragmentShaderText = `
+const rockFragmentShaderText = `#version 300 es
 precision mediump float;
  
 uniform sampler2D u_texture;
  
-varying vec2 v_texCoord;
-varying float v_opacity;
+in vec2 v_texCoord;
+in float v_opacity;
+
+out vec4 outputColour;
  
 void main() {
-   vec4 textureColour = texture2D(u_texture, v_texCoord);
-   textureColour.a *= v_opacity;
-   gl_FragColor = textureColour;
+   outputColour = texture(u_texture, v_texCoord);
+   outputColour.a *= v_opacity;
 }
 `;
 
 // Highlights shaders
 
-const highlightsVertexShaderText = `
+const highlightsVertexShaderText = `#version 300 es
 precision mediump float;
 
 uniform vec2 u_playerPos;
 uniform vec2 u_halfWindowSize;
 uniform float u_zoom;
 
-attribute vec2 a_position;
-attribute vec2 a_texCoord;
-attribute float a_fadeOffset;
+in vec2 a_position;
+in vec2 a_texCoord;
+in float a_fadeOffset;
 
-varying vec2 v_texCoord;
-varying float v_fadeOffset;
+out vec2 v_texCoord;
+out float v_fadeOffset;
  
 void main() {
    vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
@@ -180,7 +183,7 @@ void main() {
 }
 `;
 
-const highlightsFragmentShaderText = `
+const highlightsFragmentShaderText = `#version 300 es
 precision mediump float;
  
 uniform float u_fadeProgress;
@@ -188,45 +191,44 @@ uniform sampler2D u_texture1;
 uniform sampler2D u_texture2;
 uniform sampler2D u_texture3;
 
-varying vec2 v_texCoord;
-varying float v_fadeOffset;
+in vec2 v_texCoord;
+in float v_fadeOffset;
+
+out vec4 outputColour;
  
 void main() {
    float fadeProgress = u_fadeProgress + v_fadeOffset;
    fadeProgress = mod(fadeProgress, 3.0);
    
-   vec4 outputColour;
    if (fadeProgress < 1.0) {
-      vec4 texture1Colour = texture2D(u_texture1, v_texCoord);
-      vec4 texture2Colour = texture2D(u_texture2, v_texCoord);
+      vec4 texture1Colour = texture(u_texture1, v_texCoord);
+      vec4 texture2Colour = texture(u_texture2, v_texCoord);
       outputColour = mix(texture1Colour, texture2Colour, fadeProgress);
    } else if (fadeProgress < 2.0) {
-      vec4 texture2Colour = texture2D(u_texture2, v_texCoord);
-      vec4 texture3Colour = texture2D(u_texture3, v_texCoord);
+      vec4 texture2Colour = texture(u_texture2, v_texCoord);
+      vec4 texture3Colour = texture(u_texture3, v_texCoord);
       outputColour = mix(texture2Colour, texture3Colour, fadeProgress - 1.0);
    } else {
-      vec4 texture3Colour = texture2D(u_texture3, v_texCoord);
-      vec4 texture1Colour = texture2D(u_texture1, v_texCoord);
+      vec4 texture3Colour = texture(u_texture3, v_texCoord);
+      vec4 texture1Colour = texture(u_texture1, v_texCoord);
       outputColour = mix(texture3Colour, texture1Colour, fadeProgress - 2.0);
    }
 
    outputColour.a *= 0.4;
-
-   gl_FragColor = outputColour;
 }
 `;
 
 // Noise shaders
 
-const noiseVertexShaderText = `
+const noiseVertexShaderText = `#version 300 es
 precision mediump float;
 
-attribute vec2 a_position;
-attribute vec2 a_texCoord;
-attribute vec2 a_noiseOffset;
+in vec2 a_position;
+in vec2 a_texCoord;
+in vec2 a_noiseOffset;
 
-varying vec2 v_texCoord;
-varying vec2 v_noiseOffset;
+out vec2 v_texCoord;
+out vec2 v_noiseOffset;
  
 void main() {
    gl_Position = vec4(a_position, 0.0, 1.0);
@@ -236,60 +238,60 @@ void main() {
 }
 `;
 
-const noiseFragmentShaderText = `
+const noiseFragmentShaderText = `#version 300 es
 precision mediump float;
  
 uniform sampler2D u_noiseTexture;
  
-varying vec2 v_texCoord;
-varying vec2 v_noiseOffset;
+in vec2 v_texCoord;
+in vec2 v_noiseOffset;
+
+out vec4 outputColour;
  
 void main() {
    vec2 noiseCoord = fract(v_texCoord - v_noiseOffset);
-   vec4 noiseColour = texture2D(u_noiseTexture, noiseCoord);
+   outputColour = texture(u_noiseTexture, noiseCoord);
 
-   noiseColour.r += 0.5;
-   noiseColour.g += 0.5;
-   noiseColour.b += 0.5;
+   outputColour.r += 0.5;
+   outputColour.g += 0.5;
+   outputColour.b += 0.5;
 
    float distanceFromCenter = max(abs(v_texCoord.x - 0.5), abs(v_texCoord.y - 0.5));
    if (distanceFromCenter >= 0.166) {
-      noiseColour.a *= mix(1.0, 0.0, (distanceFromCenter - 0.166) * 3.0);
+      outputColour.a *= mix(1.0, 0.0, (distanceFromCenter - 0.166) * 3.0);
    }
-
-   gl_FragColor = noiseColour;
 }
 `;
 
 // Transition shaders
 
-const transitionVertexShaderText = `
+const transitionVertexShaderText = `#version 300 es
 precision mediump float;
 
 uniform vec2 u_playerPos;
 uniform vec2 u_halfWindowSize;
 uniform float u_zoom;
 
-attribute vec2 a_position;
-attribute vec2 a_texCoord;
-attribute float a_topLeftMarker;
-attribute float a_topRightMarker;
-attribute float a_bottomLeftMarker;
-attribute float a_bottomRightMarker;
-attribute float a_topMarker;
-attribute float a_rightMarker;
-attribute float a_leftMarker;
-attribute float a_bottomMarker;
+in vec2 a_position;
+in vec2 a_texCoord;
+in float a_topLeftMarker;
+in float a_topRightMarker;
+in float a_bottomLeftMarker;
+in float a_bottomRightMarker;
+in float a_topMarker;
+in float a_rightMarker;
+in float a_leftMarker;
+in float a_bottomMarker;
 
-varying vec2 v_texCoord;
-varying float v_topLeftMarker;
-varying float v_topRightMarker;
-varying float v_bottomLeftMarker;
-varying float v_bottomRightMarker;
-varying float v_topMarker;
-varying float v_rightMarker;
-varying float v_leftMarker;
-varying float v_bottomMarker;
+out vec2 v_texCoord;
+out float v_topLeftMarker;
+out float v_topRightMarker;
+out float v_bottomLeftMarker;
+out float v_bottomRightMarker;
+out float v_topMarker;
+out float v_rightMarker;
+out float v_leftMarker;
+out float v_bottomMarker;
  
 void main() {
    vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
@@ -308,20 +310,22 @@ void main() {
 }
 `;
 
-const transitionFragmentShaderText = `
+const transitionFragmentShaderText = `#version 300 es
 precision mediump float;
 
 uniform sampler2D u_transitionTexture;
  
-varying vec2 v_texCoord;
-varying float v_topLeftMarker;
-varying float v_topRightMarker;
-varying float v_bottomLeftMarker;
-varying float v_bottomRightMarker;
-varying float v_topMarker;
-varying float v_rightMarker;
-varying float v_leftMarker;
-varying float v_bottomMarker;
+in vec2 v_texCoord;
+in float v_topLeftMarker;
+in float v_topRightMarker;
+in float v_bottomLeftMarker;
+in float v_bottomRightMarker;
+in float v_topMarker;
+in float v_rightMarker;
+in float v_leftMarker;
+in float v_bottomMarker;
+
+out vec4 outputColour;
 
 void main() {
    float dist = 0.0;
@@ -361,24 +365,22 @@ void main() {
 
    dist = pow(dist, 0.3);
    
-   vec4 textureColour = texture2D(u_transitionTexture, v_texCoord);
-   textureColour.a = dist;
-   
-   gl_FragColor = textureColour;
+   outputColour = texture(u_transitionTexture, v_texCoord);
+   outputColour.a = dist;
 }
 `;
 
 // Foam shaders
 
-const foamVertexShaderText = `
+const foamVertexShaderText = `#version 300 es
 precision mediump float;
 
-attribute vec2 a_position;
-attribute vec2 a_texCoord;
-attribute vec2 a_textureOffset;
+in vec2 a_position;
+in vec2 a_texCoord;
+in vec2 a_textureOffset;
 
-varying vec2 v_texCoord;
-varying vec2 v_textureOffset;
+out vec2 v_texCoord;
+out vec2 v_textureOffset;
  
 void main() {
    gl_Position = vec4(a_position, 0.0, 1.0);
@@ -388,40 +390,40 @@ void main() {
 }
 `;
 
-const foamFragmentShaderText = `
+const foamFragmentShaderText = `#version 300 es
 precision mediump float;
  
 uniform sampler2D u_steppingStoneTexture;
 uniform sampler2D u_foamTexture;
  
-varying vec2 v_texCoord;
-varying vec2 v_textureOffset;
+in vec2 v_texCoord;
+in vec2 v_textureOffset;
+
+out vec4 outputColour;
  
 void main() {
-   vec4 steppingStoneColour = texture2D(u_steppingStoneTexture, v_texCoord);
+   vec4 steppingStoneColour = texture(u_steppingStoneTexture, v_texCoord);
    
    vec2 foamCoord = fract(v_texCoord - v_textureOffset);
-   vec4 foam = texture2D(u_foamTexture, foamCoord);
-   foam.a *= steppingStoneColour.a;
+   outputColour = texture(u_foamTexture, foamCoord);
+   outputColour.a *= steppingStoneColour.a;
 
    float distFromCenter = distance(v_texCoord, vec2(0.5, 0.5));
    float multiplier = 1.0 - distFromCenter * 2.0;
    multiplier = pow(multiplier, 0.25);
-   foam.a *= multiplier;
-
-   gl_FragColor = foam;
+   outputColour.a *= multiplier;
 }
 `;
 
 // Stepping stone shaders
 
-const steppingStoneVertexShaderText = `
+const steppingStoneVertexShaderText = `#version 300 es
 precision mediump float;
 
-attribute vec2 a_position;
-attribute vec2 a_texCoord;
+in vec2 a_position;
+in vec2 a_texCoord;
 
-varying vec2 v_texCoord;
+out vec2 v_texCoord;
  
 void main() {
    gl_Position = vec4(a_position, 0.0, 1.0);
@@ -430,15 +432,17 @@ void main() {
 }
 `;
 
-const steppingStoneFragmentShaderText = `
+const steppingStoneFragmentShaderText = `#version 300 es
 precision mediump float;
  
 uniform sampler2D u_texture;
  
-varying vec2 v_texCoord;
+in vec2 v_texCoord;
+
+out vec4 outputColour;
  
 void main() {
-   gl_FragColor = texture2D(u_texture, v_texCoord);
+   outputColour = texture(u_texture, v_texCoord);
 }
 `;
 

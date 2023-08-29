@@ -39,7 +39,7 @@ window.addEventListener("resize", resizeCanvas);
 
 export function createWebGLContext(): void {
    canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
-   const glAttempt = canvas.getContext("webgl", { alpha: false });
+   const glAttempt = canvas.getContext("webgl2", { alpha: false });
 
    if (glAttempt === null) {
       alert("Your browser does not support WebGL.");

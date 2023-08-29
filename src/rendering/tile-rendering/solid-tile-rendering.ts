@@ -7,17 +7,17 @@ import { gl, halfWindowWidth, halfWindowHeight, createWebGLProgram } from "../..
 import Game from "../../Game";
 import { RENDER_CHUNK_SIZE, RenderChunkSolidTileInfo, getRenderChunkSolidTileInfo } from "./render-chunks";
 
-const vertexShaderText = `
+const vertexShaderText = `#version 300 es
 precision mediump float;
 
 uniform vec2 u_playerPos;
 uniform vec2 u_halfWindowSize;
 uniform float u_zoom;
 
-attribute vec2 a_tilePos;
-attribute vec2 a_texCoord;
+in vec2 a_tilePos;
+in vec2 a_texCoord;
 
-varying vec2 v_texCoord;
+out vec2 v_texCoord;
 
 void main() {
    vec2 screenPos = (a_tilePos - u_playerPos) * u_zoom + u_halfWindowSize;
@@ -28,15 +28,17 @@ void main() {
 }
 `;
 
-const fragmentShaderText = `
+const fragmentShaderText = `#version 300 es
 precision mediump float;
 
 uniform sampler2D u_texture;
 
-varying vec2 v_texCoord;
+in vec2 v_texCoord;
+
+out vec4 outputColour;
  
 void main() {
-   gl_FragColor = texture2D(u_texture, v_texCoord);
+   outputColour = texture(u_texture, v_texCoord);
 }
 `;
 

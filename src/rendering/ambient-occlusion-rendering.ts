@@ -67,13 +67,13 @@ const ATLAS: Record<string, string> = {
    "*1*000101": "1edge2corner.png",
 };
 
-const vertexShaderText = `
+const vertexShaderText = `#version 300 es
 precision mediump float;
 
-attribute vec2 a_position;
-attribute vec2 a_texCoord;
+in vec2 a_position;
+in vec2 a_texCoord;
 
-varying vec2 v_texCoord;
+out vec2 v_texCoord;
 
 void main() {
    gl_Position = vec4(a_position, 0.0, 1.0);
@@ -82,16 +82,18 @@ void main() {
 }
 `;
 
-const fragmentShaderText = `
+const fragmentShaderText = `#version 300 es
 precision mediump float;
 
 uniform sampler2D u_texture;
 
-varying vec2 v_texCoord;
+in vec2 v_texCoord;
+
+out vec4 outputColour;
  
 void main() {
-   vec4 col = texture2D(u_texture, v_texCoord);
-   gl_FragColor = vec4(col.r, col.g, col.b, col.a * 0.3);
+   vec4 col = texture(u_texture, v_texCoord);
+   outputColour = vec4(col.r, col.g, col.b, col.a * 0.3);
 }
 `;
 

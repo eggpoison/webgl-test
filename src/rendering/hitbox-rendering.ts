@@ -7,20 +7,22 @@ import CircularHitbox from "../hitboxes/CircularHitbox";
 
 const CIRCLE_VERTEX_COUNT = 20;
 
-const vertexShaderText = `
+const vertexShaderText = `#version 300 es
 precision mediump float;
 
-attribute vec2 a_position;
+in vec2 a_position;
 
 void main() {
    gl_Position = vec4(a_position, 0.0, 1.0);   
 }
 `;
-const fragmentShaderText = `
+const fragmentShaderText = `#version 300 es
 precision mediump float;
 
+out vec4 outputColour;
+
 void main() {
-   gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);   
+   outputColour = vec4(1.0, 0.0, 0.0, 1.0);   
 }
 `;
 

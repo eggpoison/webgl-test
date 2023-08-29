@@ -4,13 +4,13 @@ import { createWebGLProgram, generateLine, generateThickCircleWireframeVertices,
 import GameObject from "../GameObject";
 import Game from "../Game";
 
-const lineVertexShaderText = `
+const lineVertexShaderText = `#version 300 es
 precision mediump float;
 
-attribute vec2 a_position;
-attribute vec3 a_colour;
+in vec2 a_position;
+in vec3 a_colour;
 
-varying vec3 v_colour;
+out vec3 v_colour;
 
 void main() {
    v_colour = a_colour;
@@ -18,13 +18,15 @@ void main() {
    gl_Position = vec4(a_position, 0.0, 1.0);   
 }
 `;
-const lineFragmentShaderText = `
+const lineFragmentShaderText = `#version 300 es
 precision mediump float;
 
-varying vec3 v_colour;
+in vec3 v_colour;
+
+out vec4 outputColour;
 
 void main() {
-   gl_FragColor = vec4(v_colour, 1.0);   
+   outputColour = vec4(v_colour, 1.0);   
 }
 `;
 

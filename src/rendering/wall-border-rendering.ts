@@ -6,21 +6,23 @@ import { createWebGLProgram, gl } from "../webgl";
 
 const BORDER_THICKNESS = 5;
 
-const vertexShaderText = `
+const vertexShaderText = `#version 300 es
 precision mediump float;
 
-attribute vec2 a_position;
+in vec2 a_position;
 
 void main() {
    gl_Position = vec4(a_position, 0.0, 1.0);
 }
 `;
 
-const fragmentShaderText = `
+const fragmentShaderText = `#version 300 es
 precision mediump float;
 
+out vec4 outputColour;
+
 void main() {
-   gl_FragColor = vec4(0.15, 0.15, 0.15, 1.0);
+   outputColour = vec4(0.15, 0.15, 0.15, 1.0);
 }
 `;
 

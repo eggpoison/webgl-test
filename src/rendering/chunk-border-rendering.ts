@@ -2,21 +2,23 @@ import { SETTINGS } from "webgl-test-shared";
 import Camera from "../Camera";
 import { createWebGLProgram, gl } from "../webgl";
 
-
 const chunkBorderColour = "1.0, 0.0, 0.0";
-const vertexShaderText = `
+
+const vertexShaderText = `#version 300 es
 precision lowp float;
 
-attribute vec2 vertPosition;
+in vec2 vertPosition;
 
 void main() {
    gl_Position = vec4(vertPosition, 0.0, 1.0);
 }`;
-const fragmentShaderText = `
+const fragmentShaderText = `#version 300 es
 precision mediump float;
 
+out vec4 outputColour;
+
 void main() {
-   gl_FragColor = vec4(${chunkBorderColour}, 1.0);
+   outputColour = vec4(${chunkBorderColour}, 1.0);
 }
 `;
 

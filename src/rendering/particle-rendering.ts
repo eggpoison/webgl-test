@@ -40,17 +40,17 @@ export const PARTICLE_TEXTURES: Record<ParticleType, string> = {
    [ParticleType.white1x1]: "particles/white1x1.png"
 };
 
-const vertexShaderText = `
+const vertexShaderText = `#version 300 es
 precision mediump float;
 
-attribute vec2 a_position;
-attribute vec2 a_texCoord;
-attribute float a_opacity;
-attribute vec3 a_tint;
+in vec2 a_position;
+in vec2 a_texCoord;
+in float a_opacity;
+in vec3 a_tint;
 
-varying vec2 v_texCoord;
-varying float v_opacity;
-varying vec3 v_tint;
+out vec2 v_texCoord;
+out float v_opacity;
+out vec3 v_tint;
 
 void main() {
    gl_Position = vec4(a_position, 0.0, 1.0);
@@ -61,17 +61,19 @@ void main() {
 }
 `;
 
-const fragmentShaderText = `
+const fragmentShaderText = `#version 300 es
 precision mediump float;
 
 uniform sampler2D u_texture;
 
-varying vec2 v_texCoord;
-varying float v_opacity;
-varying vec3 v_tint;
+in vec2 v_texCoord;
+in float v_opacity;
+in vec3 v_tint;
+
+out vec4 outputColour;
 
 void main() {
-   vec4 textureColour = texture2D(u_texture, v_texCoord);
+   vec4 textureColour = texture(u_texture, v_texCoord);
    
    if (v_tint.r > 0.0) {
       textureColour.r = mix(textureColour.r, 1.0, v_tint.r);
@@ -91,7 +93,7 @@ void main() {
 
    textureColour.a *= v_opacity;
 
-   gl_FragColor = textureColour;
+   outputColour = textureColour;
 }
 `;
 
