@@ -27,6 +27,7 @@ const NIGHT_DARKNESS = 0.6;
 
 let program: WebGLProgram;
 let buffer: WebGLBuffer;
+let vao: WebGLVertexArrayObject;
 
 let darkenFactorUniformLocation: WebGLUniformLocation;
 
@@ -34,6 +35,9 @@ export function createNightShaders(): void {
    program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText, "a_vertPosition");
 
    darkenFactorUniformLocation = gl.getUniformLocation(program, "u_darkenFactor")!;
+
+   vao = gl.createVertexArray()!;
+   gl.bindVertexArray(vao);
 
    const vertices = [
       -1, -1,
@@ -47,6 +51,12 @@ export function createNightShaders(): void {
    buffer = gl.createBuffer()!;
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+
+   const l = gl.getAttribLocation(program, "a_position");
+   gl.vertexAttribPointer(l, 2, gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
+   gl.enableVertexAttribArray(l);
+
+   gl.bindVertexArray(null);
 }
 
 export function renderNight(): void {
@@ -67,14 +77,13 @@ export function renderNight(): void {
    gl.enable(gl.BLEND);
    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-
-   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
-   gl.enableVertexAttribArray(0);
+   gl.bindVertexArray(vao);
 
    gl.uniform1f(darkenFactorUniformLocation, darkenFactor);
 
    gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+   gl.bindVertexArray(null);
 
    gl.disable(gl.BLEND);
    gl.blendFunc(gl.ONE, gl.ZERO);
