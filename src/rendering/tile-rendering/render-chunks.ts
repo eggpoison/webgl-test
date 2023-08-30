@@ -14,16 +14,16 @@ export interface RenderChunkSolidTileInfo {
 }
 
 export interface RenderChunkRiverInfo {
-   readonly baseBuffer: WebGLBuffer;
+   readonly baseVAO: WebGLVertexArrayObject;
    readonly baseVertexCount: number;
-   readonly transitionBuffer: WebGLBuffer;
-   readonly transitionVertexCount: number;
-   readonly rockBuffers: ReadonlyArray<WebGLBuffer>;
+   readonly rockVAOs: ReadonlyArray<WebGLVertexArrayObject>;
    readonly rockVertexCounts: ReadonlyArray<number>;
-   readonly highlightsBuffer: WebGLBuffer;
+   readonly highlightsVAO: WebGLVertexArrayObject;
    readonly highlightsVertexCount: number;
-   readonly noiseBuffer: WebGLBuffer;
+   readonly noiseVAO: WebGLVertexArrayObject;
    readonly noiseVertexCount: number;
+   readonly transitionVAO: WebGLVertexArrayObject;
+   readonly transitionVertexCount: number;
 }
 
 /** Stores rendering information about one render chunk of the world.*/

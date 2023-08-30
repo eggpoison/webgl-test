@@ -505,33 +505,6 @@ let foamProgramFoamTextureUniformLocation: WebGLUniformLocation;
 
 let steppingStoneTextureUniformLocation: WebGLUniformLocation;
 
-let baseProgramCoordAttribLocation: GLint;
-let baseProgramTopLeftLandDistanceAttribLocation: GLint;
-let baseProgramTopRightLandDistanceAttribLocation: GLint;
-let baseProgramBottomLeftLandDistanceAttribLocation: GLint;
-let baseProgramBottomRightLandDistanceAttribLocation: GLint;
-
-let rockProgramCoordAttribLocation: GLint;
-let rockProgramOpacityAttribLocation: GLint;
-
-let highlightsProgramCoordAttribLocation: GLint;
-let highlightsProgramFadeOffsetAttribLocation: GLint;
-
-let noiseProgramTexCoordAttribLocation: GLint;
-let noiseFlowDirectionAttribLocation: GLint;
-let noiseAnimationOffsetAttribLocation: GLint;
-let noiseAnimationSpeedAttribLocation: GLint;
-
-let transitionProgramTexCoordAttribLocation: GLint;
-let transitionProgramTopLeftMarkerAttribLocation: GLint;
-let transitionProgramTopRightMarkerAttribLocation: GLint;
-let transitionProgramBottomLeftMarkerAttribLocation: GLint;
-let transitionProgramBottomRightMarkerAttribLocation: GLint;
-let transitionProgramTopMarkerAttribLocation: GLint;
-let transitionProgramRightMarkerAttribLocation: GLint;
-let transitionProgramLeftMarkerAttribLocation: GLint;
-let transitionProgramBottomMarkerAttribLocation: GLint;
-
 let foamProgramTexCoordAttribLocation: GLint;
 let foamProgramTextureOffsetAttribLocation: GLint;
 
@@ -551,13 +524,6 @@ export function createWaterShaders(): void {
    shallowWaterColourUniformLocation = gl.getUniformLocation(baseProgram, "u_shallowWaterColour")!;
    deepWaterColourUniformLocation = gl.getUniformLocation(baseProgram, "u_deepWaterColour")!;
 
-   gl.bindAttribLocation(baseProgram, 0, "a_position");
-   baseProgramCoordAttribLocation = gl.getAttribLocation(baseProgram, "a_coord");
-   baseProgramTopLeftLandDistanceAttribLocation = gl.getAttribLocation(baseProgram, "a_topLeftLandDistance");
-   baseProgramTopRightLandDistanceAttribLocation = gl.getAttribLocation(baseProgram, "a_topRightLandDistance");
-   baseProgramBottomLeftLandDistanceAttribLocation = gl.getAttribLocation(baseProgram, "a_bottomLeftLandDistance");
-   baseProgramBottomRightLandDistanceAttribLocation = gl.getAttribLocation(baseProgram, "a_bottomRightLandDistance");
-   
    // 
    // Rock program
    // 
@@ -568,10 +534,6 @@ export function createWaterShaders(): void {
    rockProgramHalfWindowSizeUniformLocation = gl.getUniformLocation(rockProgram, "u_halfWindowSize")!;
    rockProgramZoomUniformLocation = gl.getUniformLocation(rockProgram, "u_zoom")!;
    rockProgramTextureUniformLocation = gl.getUniformLocation(rockProgram, "u_texture")!;
-
-   gl.bindAttribLocation(rockProgram, 0, "a_position");
-   rockProgramCoordAttribLocation = gl.getAttribLocation(rockProgram, "a_texCoord");
-   rockProgramOpacityAttribLocation = gl.getAttribLocation(rockProgram, "a_opacity");
    
    // 
    // Highlights program
@@ -586,10 +548,6 @@ export function createWaterShaders(): void {
    highlightsProgramTexture1UniformLocation = gl.getUniformLocation(highlightsProgram, "u_texture1")!;
    highlightsProgramTexture2UniformLocation = gl.getUniformLocation(highlightsProgram, "u_texture2")!;
    highlightsProgramTexture3UniformLocation = gl.getUniformLocation(highlightsProgram, "u_texture3")!;
-
-   gl.bindAttribLocation(highlightsProgram, 0, "a_position");
-   highlightsProgramCoordAttribLocation = gl.getAttribLocation(highlightsProgram, "a_texCoord");
-   highlightsProgramFadeOffsetAttribLocation = gl.getAttribLocation(highlightsProgram, "a_fadeOffset");
    
    // 
    // Noise program
@@ -603,12 +561,6 @@ export function createWaterShaders(): void {
    noiseTextureUniformLocation = gl.getUniformLocation(noiseProgram, "u_noiseTexture")!;
    noiseAnimationOffsetUniformLocation = gl.getUniformLocation(noiseProgram, "u_animationOffset")!;
 
-   gl.bindAttribLocation(noiseProgram, 0, "a_position");
-   noiseProgramTexCoordAttribLocation = gl.getAttribLocation(noiseProgram, "a_texCoord");
-   noiseFlowDirectionAttribLocation = gl.getAttribLocation(noiseProgram, "a_flowDirection");
-   noiseAnimationOffsetAttribLocation = gl.getAttribLocation(noiseProgram, "a_animationOffset");
-   noiseAnimationSpeedAttribLocation = gl.getAttribLocation(noiseProgram, "a_animationSpeed");
-
    // 
    // Transition program
    // 
@@ -619,17 +571,6 @@ export function createWaterShaders(): void {
    transitionProgramHalfWindowSizeUniformLocation = gl.getUniformLocation(transitionProgram, "u_halfWindowSize")!;
    transitionProgramZoomUniformLocation = gl.getUniformLocation(transitionProgram, "u_zoom")!;
    transitionTextureUniformLocation = gl.getUniformLocation(transitionProgram, "u_transitionTexture")!;
-
-   gl.bindAttribLocation(transitionProgram, 0, "a_position");
-   transitionProgramTexCoordAttribLocation = gl.getAttribLocation(transitionProgram, "a_texCoord");
-   transitionProgramTopLeftMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_topLeftMarker");
-   transitionProgramTopRightMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_topRightMarker");
-   transitionProgramBottomLeftMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_bottomLeftMarker");
-   transitionProgramBottomRightMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_bottomRightMarker");
-   transitionProgramTopMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_topMarker");
-   transitionProgramRightMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_rightMarker");
-   transitionProgramLeftMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_leftMarker");
-   transitionProgramBottomMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_bottomMarker");
    
    // 
    // Foam program
@@ -807,9 +748,162 @@ const calculateBaseVertices = (renderChunkX: number, renderChunkY: number): Read
    return vertices;
 }
 
+const createBaseVAO = (buffer: WebGLBuffer): WebGLVertexArrayObject => {
+   const vao = gl.createVertexArray()!;
+   gl.bindVertexArray(vao);
+
+   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+
+   const baseProgramCoordAttribLocation = gl.getAttribLocation(baseProgram, "a_coord");
+   const baseProgramTopLeftLandDistanceAttribLocation = gl.getAttribLocation(baseProgram, "a_topLeftLandDistance");
+   const baseProgramTopRightLandDistanceAttribLocation = gl.getAttribLocation(baseProgram, "a_topRightLandDistance");
+   const baseProgramBottomLeftLandDistanceAttribLocation = gl.getAttribLocation(baseProgram, "a_bottomLeftLandDistance");
+   const baseProgramBottomRightLandDistanceAttribLocation = gl.getAttribLocation(baseProgram, "a_bottomRightLandDistance");
+      
+   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 0);
+   gl.vertexAttribPointer(baseProgramCoordAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(baseProgramBottomLeftLandDistanceAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(baseProgramBottomRightLandDistanceAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(baseProgramTopLeftLandDistanceAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(baseProgramTopRightLandDistanceAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
+   
+   // Enable the attributes
+   gl.enableVertexAttribArray(0);
+   gl.enableVertexAttribArray(baseProgramCoordAttribLocation);
+   gl.enableVertexAttribArray(baseProgramBottomLeftLandDistanceAttribLocation);
+   gl.enableVertexAttribArray(baseProgramBottomRightLandDistanceAttribLocation);
+   gl.enableVertexAttribArray(baseProgramTopLeftLandDistanceAttribLocation);
+   gl.enableVertexAttribArray(baseProgramTopRightLandDistanceAttribLocation);
+
+   gl.bindVertexArray(null);
+
+   return vao;
+}
+
+const createRockVAO = (buffer: WebGLBuffer): WebGLVertexArrayObject => {
+   const vao = gl.createVertexArray()!;
+   gl.bindVertexArray(vao);
+
+   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+
+   const rockProgramCoordAttribLocation = gl.getAttribLocation(rockProgram, "a_texCoord");
+   const rockProgramOpacityAttribLocation = gl.getAttribLocation(rockProgram, "a_opacity");
+      
+   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
+   gl.vertexAttribPointer(rockProgramCoordAttribLocation, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(rockProgramOpacityAttribLocation, 1, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+   
+   gl.enableVertexAttribArray(0);
+   gl.enableVertexAttribArray(rockProgramCoordAttribLocation);
+   gl.enableVertexAttribArray(rockProgramOpacityAttribLocation);
+
+   gl.bindVertexArray(null);
+
+   return vao;
+}
+
+const createHighlightsVAO = (buffer: WebGLBuffer): WebGLVertexArrayObject => {
+   const vao = gl.createVertexArray()!;
+   gl.bindVertexArray(vao);
+
+   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+
+   const highlightsProgramCoordAttribLocation = gl.getAttribLocation(highlightsProgram, "a_texCoord");
+   const highlightsProgramFadeOffsetAttribLocation = gl.getAttribLocation(highlightsProgram, "a_fadeOffset");
+
+   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
+   gl.vertexAttribPointer(highlightsProgramCoordAttribLocation, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(highlightsProgramFadeOffsetAttribLocation, 1, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+   
+   gl.enableVertexAttribArray(0);
+   gl.enableVertexAttribArray(highlightsProgramCoordAttribLocation);
+   gl.enableVertexAttribArray(highlightsProgramFadeOffsetAttribLocation);
+
+   gl.bindVertexArray(null);
+
+   return vao;
+}
+
+const createNoiseVAO = (buffer: WebGLBuffer): WebGLVertexArrayObject => {
+   const vao = gl.createVertexArray()!;
+   gl.bindVertexArray(vao);
+
+   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+
+   const noiseProgramTexCoordAttribLocation = gl.getAttribLocation(noiseProgram, "a_texCoord");
+   const noiseFlowDirectionAttribLocation = gl.getAttribLocation(noiseProgram, "a_flowDirection");
+   const noiseAnimationOffsetAttribLocation = gl.getAttribLocation(noiseProgram, "a_animationOffset");
+   const noiseAnimationSpeedAttribLocation = gl.getAttribLocation(noiseProgram, "a_animationSpeed");
+   
+   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 0);
+   gl.vertexAttribPointer(noiseProgramTexCoordAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(noiseFlowDirectionAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(noiseAnimationOffsetAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(noiseAnimationSpeedAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
+
+   // Enable the attributes
+   gl.enableVertexAttribArray(0);
+   gl.enableVertexAttribArray(noiseProgramTexCoordAttribLocation);
+   gl.enableVertexAttribArray(noiseFlowDirectionAttribLocation);
+   gl.enableVertexAttribArray(noiseAnimationOffsetAttribLocation);
+   gl.enableVertexAttribArray(noiseAnimationSpeedAttribLocation);
+
+   gl.bindVertexArray(null);
+
+   return vao;
+}
+
+const createTransitionVAO = (buffer: WebGLBuffer): WebGLVertexArrayObject => {
+   const vao = gl.createVertexArray()!;
+   gl.bindVertexArray(vao);
+
+   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+
+   const transitionProgramTexCoordAttribLocation = gl.getAttribLocation(transitionProgram, "a_texCoord");
+   const transitionProgramTopLeftMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_topLeftMarker");
+   const transitionProgramTopRightMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_topRightMarker");
+   const transitionProgramBottomLeftMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_bottomLeftMarker");
+   const transitionProgramBottomRightMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_bottomRightMarker");
+   const transitionProgramTopMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_topMarker");
+   const transitionProgramRightMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_rightMarker");
+   const transitionProgramLeftMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_leftMarker");
+   const transitionProgramBottomMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_bottomMarker");
+   
+   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 0);
+   gl.vertexAttribPointer(transitionProgramTexCoordAttribLocation, 2, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(transitionProgramBottomLeftMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(transitionProgramBottomRightMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(transitionProgramTopLeftMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(transitionProgramTopRightMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(transitionProgramTopMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 8 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(transitionProgramRightMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 9 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(transitionProgramLeftMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 10 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(transitionProgramBottomMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 11 * Float32Array.BYTES_PER_ELEMENT);
+
+   gl.enableVertexAttribArray(0);
+   gl.enableVertexAttribArray(transitionProgramTexCoordAttribLocation);
+   gl.enableVertexAttribArray(transitionProgramBottomLeftMarkerAttribLocation);
+   gl.enableVertexAttribArray(transitionProgramBottomRightMarkerAttribLocation);
+   gl.enableVertexAttribArray(transitionProgramTopLeftMarkerAttribLocation);
+   gl.enableVertexAttribArray(transitionProgramTopRightMarkerAttribLocation);
+   gl.enableVertexAttribArray(transitionProgramTopMarkerAttribLocation);
+   gl.enableVertexAttribArray(transitionProgramRightMarkerAttribLocation);
+   gl.enableVertexAttribArray(transitionProgramLeftMarkerAttribLocation);
+   gl.enableVertexAttribArray(transitionProgramBottomMarkerAttribLocation);
+
+   gl.bindVertexArray(null);
+
+   return vao;
+}
+
 export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY: number): RenderChunkRiverInfo {
    // TODO: Calculate visible water tiles and pass them into all these functions
-   
+
+   const baseVertices = calculateBaseVertices(renderChunkX, renderChunkY);
+   const baseBuffer = gl.createBuffer()!;
+   gl.bindBuffer(gl.ARRAY_BUFFER, baseBuffer);
+   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(baseVertices), gl.STATIC_DRAW);
+
    // Create transition buffer
    const transitionVertices = calculateTransitionVertices(renderChunkX, renderChunkY);
    const transitionBuffer = gl.createBuffer()!;
@@ -829,11 +923,6 @@ export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY
       rockVertexCounts.push(vertices.length);
    }
 
-   const baseVertices = calculateBaseVertices(renderChunkX, renderChunkY);
-   const baseBuffer = gl.createBuffer()!;
-   gl.bindBuffer(gl.ARRAY_BUFFER, baseBuffer);
-   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(baseVertices), gl.STATIC_DRAW);
-
    const highlightsVertices = calculateHighlightsVertices(renderChunkX, renderChunkY);
    const highlightsBuffer = gl.createBuffer()!;
    gl.bindBuffer(gl.ARRAY_BUFFER, highlightsBuffer);
@@ -845,15 +934,15 @@ export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(noiseVertices), gl.STATIC_DRAW);
 
    return {
-      transitionBuffer: transitionBuffer,
-      transitionVertexCount: transitionVertices.length,
-      rockBuffers: rockBuffers,
-      rockVertexCounts: rockVertexCounts,
-      baseBuffer: baseBuffer,
+      baseVAO: createBaseVAO(baseBuffer),
       baseVertexCount: baseVertices.length,
-      highlightsBuffer: highlightsBuffer,
+      rockVAOs: rockBuffers.map(buffer => createRockVAO(buffer)),
+      rockVertexCounts: rockVertexCounts,
+      highlightsVAO: createHighlightsVAO(highlightsBuffer),
       highlightsVertexCount: highlightsVertices.length,
-      noiseBuffer: noiseBuffer,
+      transitionVAO: createTransitionVAO(transitionBuffer),
+      transitionVertexCount: transitionVertices.length,
+      noiseVAO: createNoiseVAO(noiseBuffer),
       noiseVertexCount: noiseVertices.length
    };
 }
@@ -1142,23 +1231,13 @@ export function renderRivers(): void {
    
    gl.useProgram(baseProgram);
 
+   // Bind water base texture
+   const baseTexture = getTexture("tiles/water-base.png");
+   gl.activeTexture(gl.TEXTURE0);
+   gl.bindTexture(gl.TEXTURE_2D, baseTexture);
+
    for (const renderChunkInfo of visibleRenderChunks) {
-      gl.bindBuffer(gl.ARRAY_BUFFER, renderChunkInfo.baseBuffer);
-      
-      gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 0);
-      gl.vertexAttribPointer(baseProgramCoordAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(baseProgramBottomLeftLandDistanceAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(baseProgramBottomRightLandDistanceAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(baseProgramTopLeftLandDistanceAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(baseProgramTopRightLandDistanceAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
-      
-      // Enable the attributes
-      gl.enableVertexAttribArray(0);
-      gl.enableVertexAttribArray(baseProgramCoordAttribLocation);
-      gl.enableVertexAttribArray(baseProgramBottomLeftLandDistanceAttribLocation);
-      gl.enableVertexAttribArray(baseProgramBottomRightLandDistanceAttribLocation);
-      gl.enableVertexAttribArray(baseProgramTopLeftLandDistanceAttribLocation);
-      gl.enableVertexAttribArray(baseProgramTopRightLandDistanceAttribLocation);
+      gl.bindVertexArray(renderChunkInfo.baseVAO);
       
       gl.uniform2f(baseProgramPlayerPosUniformLocation, Camera.position.x, Camera.position.y);
       gl.uniform2f(baseProgramHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
@@ -1166,10 +1245,6 @@ export function renderRivers(): void {
       gl.uniform1i(baseTextureUniformLocation, 0);
       gl.uniform3f(shallowWaterColourUniformLocation, SHALLOW_WATER_COLOUR[0], SHALLOW_WATER_COLOUR[1], SHALLOW_WATER_COLOUR[2]);
       gl.uniform3f(deepWaterColourUniformLocation, DEEP_WATER_COLOUR[0], DEEP_WATER_COLOUR[1], DEEP_WATER_COLOUR[2]);
-
-      const texture = getTexture("tiles/water-base.png");
-      gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, texture);
       
       gl.drawArrays(gl.TRIANGLES, 0, renderChunkInfo.baseVertexCount / 8);
    }
@@ -1182,31 +1257,24 @@ export function renderRivers(): void {
 
    gl.enable(gl.BLEND);
    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+   // Bind water rock textures
+   for (let rockSize: WaterRockSize = 0; rockSize < 2; rockSize++) {
+      const textureSource = WATER_ROCK_TEXTURES[rockSize];
+      const texture = getTexture(textureSource);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+   }
    
    for (const renderChunkRiverInfo of visibleRenderChunks) {
       for (let rockSize: WaterRockSize = 0; rockSize < 2; rockSize++) {
-         gl.bindBuffer(gl.ARRAY_BUFFER, renderChunkRiverInfo.rockBuffers[rockSize]);
-      
-         gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
-         gl.vertexAttribPointer(rockProgramCoordAttribLocation, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-         gl.vertexAttribPointer(rockProgramOpacityAttribLocation, 1, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
-         
-         // Enable the attributes
-         gl.enableVertexAttribArray(0);
-         gl.enableVertexAttribArray(rockProgramCoordAttribLocation);
-         gl.enableVertexAttribArray(rockProgramOpacityAttribLocation);
+         gl.bindVertexArray(renderChunkRiverInfo.rockVAOs[rockSize]);
          
          gl.uniform2f(rockProgramPlayerPosUniformLocation, Camera.position.x, Camera.position.y);
          gl.uniform2f(rockProgramHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
          gl.uniform1f(rockProgramZoomUniformLocation, Camera.zoom);
          gl.uniform1i(rockProgramTextureUniformLocation, 0);
-
-         const textureSource = WATER_ROCK_TEXTURES[rockSize];
-         const texture = getTexture(textureSource);
-         gl.activeTexture(gl.TEXTURE0);
-         gl.bindTexture(gl.TEXTURE_2D, texture);
          
-         // Draw the tile
          gl.drawArrays(gl.TRIANGLES, 0, renderChunkRiverInfo.rockVertexCounts[rockSize] / 5);
       }
    }
@@ -1216,40 +1284,31 @@ export function renderRivers(): void {
    // 
 
    gl.useProgram(highlightsProgram);
+      
+   const highlightsFadeProgress = (Game.lastTime / 3000) % 3;
+
+   const texture1 = getTexture("tiles/river-bed-highlights-1.png");
+   gl.activeTexture(gl.TEXTURE0);
+   gl.bindTexture(gl.TEXTURE_2D, texture1);
+
+   const texture2 = getTexture("tiles/river-bed-highlights-2.png");
+   gl.activeTexture(gl.TEXTURE1);
+   gl.bindTexture(gl.TEXTURE_2D, texture2);
+
+   const texture3 = getTexture("tiles/river-bed-highlights-3.png");
+   gl.activeTexture(gl.TEXTURE2);
+   gl.bindTexture(gl.TEXTURE_2D, texture3);
    
    for (const renderChunkRiverInfo of visibleRenderChunks) {
-      gl.bindBuffer(gl.ARRAY_BUFFER, renderChunkRiverInfo.highlightsBuffer);
-
-      gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
-      gl.vertexAttribPointer(highlightsProgramCoordAttribLocation, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(highlightsProgramFadeOffsetAttribLocation, 1, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
-      
-      // Enable the attributes
-      gl.enableVertexAttribArray(0);
-      gl.enableVertexAttribArray(highlightsProgramCoordAttribLocation);
-      gl.enableVertexAttribArray(highlightsProgramFadeOffsetAttribLocation);
-      
-      const fadeProgress = (Game.lastTime / 3000) % 3;
+      gl.bindVertexArray(renderChunkRiverInfo.highlightsVAO);
 
       gl.uniform2f(highlightsProgramPlayerPosUniformLocation, Camera.position.x, Camera.position.y);
       gl.uniform2f(highlightsProgramHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
       gl.uniform1f(highlightsProgramZoomUniformLocation, Camera.zoom);
-      gl.uniform1f(highlightsProgramFadeProgressUniformLocation, fadeProgress);
+      gl.uniform1f(highlightsProgramFadeProgressUniformLocation, highlightsFadeProgress);
       gl.uniform1i(highlightsProgramTexture1UniformLocation, 0);
       gl.uniform1i(highlightsProgramTexture2UniformLocation, 1);
       gl.uniform1i(highlightsProgramTexture3UniformLocation, 2);
-
-      const texture1 = getTexture("tiles/river-bed-highlights-1.png");
-      gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, texture1);
-
-      const texture2 = getTexture("tiles/river-bed-highlights-2.png");
-      gl.activeTexture(gl.TEXTURE1);
-      gl.bindTexture(gl.TEXTURE_2D, texture2);
-
-      const texture3 = getTexture("tiles/river-bed-highlights-3.png");
-      gl.activeTexture(gl.TEXTURE2);
-      gl.bindTexture(gl.TEXTURE_2D, texture3);
       
       // Draw the tile
       gl.drawArrays(gl.TRIANGLES, 0, renderChunkRiverInfo.highlightsVertexCount / 5);
@@ -1262,33 +1321,19 @@ export function renderRivers(): void {
    gl.useProgram(noiseProgram);
       
    const noiseAnimationOffset = Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000;
+               
+   const noiseTexture = getTexture("tiles/water-noise.png");
+   gl.activeTexture(gl.TEXTURE0);
+   gl.bindTexture(gl.TEXTURE_2D, noiseTexture);
 
    for (const renderChunkInfo of visibleRenderChunks) {
-      gl.bindBuffer(gl.ARRAY_BUFFER, renderChunkInfo.noiseBuffer);
-   
-      gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 0);
-      gl.vertexAttribPointer(noiseProgramTexCoordAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(noiseFlowDirectionAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(noiseAnimationOffsetAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(noiseAnimationSpeedAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
-   
-      // Enable the attributes
-      gl.enableVertexAttribArray(0);
-      gl.enableVertexAttribArray(noiseProgramTexCoordAttribLocation);
-      gl.enableVertexAttribArray(noiseFlowDirectionAttribLocation);
-      gl.enableVertexAttribArray(noiseAnimationOffsetAttribLocation);
-      gl.enableVertexAttribArray(noiseAnimationSpeedAttribLocation);
+      gl.bindVertexArray(renderChunkInfo.noiseVAO);
       
       gl.uniform2f(noiseProgramPlayerPosUniformLocation, Camera.position.x, Camera.position.y);
       gl.uniform2f(noiseProgramHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
       gl.uniform1f(noiseProgramZoomUniformLocation, Camera.zoom);
       gl.uniform1i(noiseTextureUniformLocation, 0);
       gl.uniform1f(noiseAnimationOffsetUniformLocation, noiseAnimationOffset);
-               
-      // Set noise texture
-      const noiseTexture = getTexture("tiles/water-noise.png");
-      gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, noiseTexture);
    
       // Draw the tile
       gl.drawArrays(gl.TRIANGLES, 0, renderChunkInfo.noiseVertexCount / 8);
@@ -1299,52 +1344,36 @@ export function renderRivers(): void {
    // 
 
    gl.useProgram(transitionProgram);
+      
+   // Bind transition texture
+   const transitionTexture = getTexture("tiles/gravel.png");
+   gl.activeTexture(gl.TEXTURE0);
+   gl.bindTexture(gl.TEXTURE_2D, transitionTexture);
 
    for (const renderChunkRiverInfo of visibleRenderChunks) {
-      gl.bindBuffer(gl.ARRAY_BUFFER, renderChunkRiverInfo.transitionBuffer);
-   
-      gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 0);
-      gl.vertexAttribPointer(transitionProgramTexCoordAttribLocation, 2, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(transitionProgramBottomLeftMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(transitionProgramBottomRightMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(transitionProgramTopLeftMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(transitionProgramTopRightMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(transitionProgramTopMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 8 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(transitionProgramRightMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 9 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(transitionProgramLeftMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 10 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(transitionProgramBottomMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 11 * Float32Array.BYTES_PER_ELEMENT);
-   
-      // Enable the attributes
-      gl.enableVertexAttribArray(0);
-      gl.enableVertexAttribArray(noiseProgramTexCoordAttribLocation);
-      gl.enableVertexAttribArray(transitionProgramBottomLeftMarkerAttribLocation);
-      gl.enableVertexAttribArray(transitionProgramBottomRightMarkerAttribLocation);
-      gl.enableVertexAttribArray(transitionProgramTopLeftMarkerAttribLocation);
-      gl.enableVertexAttribArray(transitionProgramTopRightMarkerAttribLocation);
-      gl.enableVertexAttribArray(transitionProgramTopMarkerAttribLocation);
-      gl.enableVertexAttribArray(transitionProgramRightMarkerAttribLocation);
-      gl.enableVertexAttribArray(transitionProgramLeftMarkerAttribLocation);
-      gl.enableVertexAttribArray(transitionProgramBottomMarkerAttribLocation);
+      gl.bindVertexArray(renderChunkRiverInfo.transitionVAO);
       
       gl.uniform2f(transitionProgramPlayerPosUniformLocation, Camera.position.x, Camera.position.y);
       gl.uniform2f(transitionProgramHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
       gl.uniform1f(transitionProgramZoomUniformLocation, Camera.zoom);
       gl.uniform1i(transitionTextureUniformLocation, 0);
-      
-      // Set transition texture
-      const transitionTexture = getTexture("tiles/gravel.png");
-      gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, transitionTexture);
    
       // Draw the tile
       gl.drawArrays(gl.TRIANGLES, 0, renderChunkRiverInfo.transitionVertexCount / 12);
    }
+
+   gl.bindVertexArray(null);
    
    // 
    // Foam program
    // 
 
    gl.useProgram(foamProgram);
+
+   // Bind foam texture
+   const foamTexture = getTexture("tiles/water-foam.png");
+   gl.activeTexture(gl.TEXTURE1);
+   gl.bindTexture(gl.TEXTURE_2D, foamTexture);
    
    for (const [textureSource, vertices] of Object.entries(foamVertexRecord)) {
       // Create tile buffer
@@ -1367,10 +1396,6 @@ export function renderRivers(): void {
       const steppingStoneTexture = getTexture(textureSource);
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, steppingStoneTexture);
-
-      const foamTexture = getTexture("tiles/water-foam.png");
-      gl.activeTexture(gl.TEXTURE1);
-      gl.bindTexture(gl.TEXTURE_2D, foamTexture);
       
       // Draw the tile
       gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 6);

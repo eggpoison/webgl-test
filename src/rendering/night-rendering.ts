@@ -26,7 +26,6 @@ void main() {
 const NIGHT_DARKNESS = 0.6;
 
 let program: WebGLProgram;
-let buffer: WebGLBuffer;
 let vao: WebGLVertexArrayObject;
 
 let darkenFactorUniformLocation: WebGLUniformLocation;
@@ -48,13 +47,12 @@ export function createNightShaders(): void {
       1, 1
    ];
    
-   buffer = gl.createBuffer()!;
+   const buffer = gl.createBuffer()!;
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
-   const l = gl.getAttribLocation(program, "a_position");
-   gl.vertexAttribPointer(l, 2, gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
-   gl.enableVertexAttribArray(l);
+   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
+   gl.enableVertexAttribArray(0);
 
    gl.bindVertexArray(null);
 }
