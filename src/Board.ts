@@ -102,6 +102,7 @@ class Board {
    public updateGameObjects(): void {
       if (Player.instance !== null) {
          Player.instance.applyPhysics();
+         Player.instance.updateHitboxes();
          Player.instance.recalculateContainingChunks();
       }
 
@@ -110,14 +111,14 @@ class Board {
          if (typeof gameObject.tick !== "undefined") gameObject.tick();
 
          // Calculate the entity's new info
-         for (const hitbox of gameObject.hitboxes) {
-            if (hitbox.hasOwnProperty("width")) {
-               (hitbox as RectangularHitbox).computeVertexPositions();
-               (hitbox as RectangularHitbox).computeSideAxes();
-            }
-            hitbox.updateHitboxBounds();
-            hitbox.updatePosition();
-         }
+         // for (const hitbox of gameObject.hitboxes) {
+         //    if (hitbox.hasOwnProperty("width")) {
+         //       (hitbox as RectangularHitbox).computeVertexPositions();
+         //       (hitbox as RectangularHitbox).computeSideAxes();
+         //    }
+         //    hitbox.updateHitboxBounds();
+         //    hitbox.updatePosition();
+         // }
 
          // gameObject.recalculateContainingChunks();
       }

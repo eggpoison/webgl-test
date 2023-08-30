@@ -446,7 +446,6 @@ abstract class Client {
       const projectile = createProjectile(position, hitboxes, projectileData.id, projectileData.type);
       projectile.rotation = projectileData.rotation;
       projectile.velocity = projectileData.velocity !== null ? Vector.unpackage(projectileData.velocity) : null;
-      projectile.acceleration = projectileData.acceleration !== null ? Vector.unpackage(projectileData.acceleration) : null;
       projectile.mass = projectileData.mass;
    }
    
@@ -496,7 +495,6 @@ abstract class Client {
       const entity = new entityConstructor(position, hitboxes, entityData.id, entityData.secondsSinceLastHit, ...entityData.clientArgs);
       
       entity.velocity = entityData.velocity !== null ? Vector.unpackage(entityData.velocity) : null;
-      entity.acceleration = entityData.acceleration !== null ? Vector.unpackage(entityData.acceleration) : null
       entity.rotation = entityData.rotation;
       entity.mass = entityData.mass;
       entity.special = entityData.special;

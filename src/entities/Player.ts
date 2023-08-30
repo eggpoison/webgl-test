@@ -352,20 +352,13 @@ class Player extends TribeMember {
    }
 
    private static getCollidingGameObjects(): ReadonlyArray<GameObject> {
-      if (Player.instance === null) throw new Error();
-      
       const collidingGameObjects = new Array<GameObject>();
-      // console.log("check collisions");
-      let i = 0;
 
-      for (const chunk of Player.instance.chunks) {
-         // if (++i === 1) {
-         //    console.log(chunk.x, chunk.y);  
-         // }
+      for (const chunk of Player.instance!.chunks) {
          gameObjectLoop: for (const gameObject of chunk.getGameObjects()) {
             if (gameObject === Player.instance) continue;
 
-            for (const hitbox of Player.instance.hitboxes) {
+            for (const hitbox of Player.instance!.hitboxes) {
                for (const otherHitbox of gameObject.hitboxes) {
                   if (hitbox.isColliding(otherHitbox)) {
                      collidingGameObjects.push(gameObject);

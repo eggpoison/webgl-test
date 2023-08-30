@@ -10,7 +10,7 @@ class DroppedItem extends GameObject implements BaseItemInfo {
    public readonly type: ItemType;
 
    constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, velocity: Vector | null, itemType: ItemType) {
-      super(position, hitboxes, id, true);
+      super(position, hitboxes, id);
       
       this.velocity = velocity;
       this.type = itemType;

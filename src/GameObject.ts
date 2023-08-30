@@ -20,37 +20,10 @@ const calculateGameObjectRenderPosition = (gameObject: GameObject): Point => {
    
    // Account for frame progress
    if (gameObject.velocity !== null) {
-      const tile = gameObject.findCurrentTile();
-      const tileTypeInfo = TILE_TYPE_INFO_RECORD[tile.type];
-
-      const tileMoveSpeedMultiplier = tileTypeInfo.moveSpeedMultiplier || 1;
-
-      const terminalVelocity = gameObject.terminalVelocity * tileMoveSpeedMultiplier;
-
       // 
       // Calculate the change in position that has occurred since the start of the frame
       // 
       let frameVelocity: Vector | null = gameObject.velocity.copy();
-      
-      // Accelerate
-      if (gameObject.acceleration !== null) {
-         const acceleration = gameObject.acceleration.copy();
-         acceleration.magnitude *= tileTypeInfo.friction * tileMoveSpeedMultiplier / SETTINGS.TPS;
-
-         const magnitudeBeforeAdd = gameObject.velocity?.magnitude || 0;
-
-         // Add acceleration to velocity
-         if (frameVelocity !== null) {
-            frameVelocity.add(acceleration);
-         } else {
-            frameVelocity = acceleration;
-         }
-
-         // Don't accelerate past terminal velocity
-         if (frameVelocity.magnitude > terminalVelocity && gameObject.velocity.magnitude > magnitudeBeforeAdd) {
-            frameVelocity.magnitude = terminalVelocity;
-         }
-      }
 
       // Apply the frame velocity to the object's position
       if (frameVelocity !== null) {
@@ -105,7 +78,7 @@ abstract class GameObject extends RenderObject {
 
    public chunks = new Set<Chunk>();
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, a: boolean = false) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number) {
       super();
       
       this.position = position;
@@ -116,14 +89,17 @@ abstract class GameObject extends RenderObject {
       // Create hitbox using hitbox info
       this.hitboxes = hitboxes;
       
-      // Calculate initial containing chunks
       for (const hitbox of this.hitboxes) {
          hitbox.setObject(this); 
          if (hitbox.hasOwnProperty("width")) {
             (hitbox as RectangularHitbox).computeVertexPositions();
+            (hitbox as RectangularHitbox).computeSideAxes();
          }
          hitbox.updateHitboxBounds();
+         hitbox.updatePosition();
       }
+
+      // Calculate initial containing chunks
       this.recalculateContainingChunks();
       
       // Add game object to chunks
@@ -274,8 +250,9 @@ abstract class GameObject extends RenderObject {
 
    /** Recalculates which chunks the game object is contained in */
    public recalculateContainingChunks(): void {
-      this.chunks.clear();
+      const containingChunks = new Set<Chunk>();
       
+      // Find containing chunks
       for (const hitbox of this.hitboxes) {
          const minChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[0] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
          const maxChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[1] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
@@ -285,10 +262,26 @@ abstract class GameObject extends RenderObject {
          for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
             for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
                const chunk = Game.board.getChunk(chunkX, chunkY);
-               if (!this.chunks.has(chunk)) {
-                  this.chunks.add(chunk);
+               if (!containingChunks.has(chunk)) {
+                  containingChunks.add(chunk);
                }
             }
+         }
+      }
+
+      // Find all chunks which aren't present in the new chunks and remove them
+      for (const chunk of this.chunks) {
+         if (!containingChunks.has(chunk)) {
+            chunk.removeGameObject(this as unknown as GameObject);
+            this.chunks.delete(chunk);
+         }
+      }
+
+      // Add all new chunks
+      for (const chunk of containingChunks) {
+         if (!this.chunks.has(chunk)) {
+            chunk.addGameObject(this as unknown as GameObject);
+            this.chunks.add(chunk);
          }
       }
    }
@@ -297,13 +290,24 @@ abstract class GameObject extends RenderObject {
       this.renderPosition = calculateGameObjectRenderPosition(this);
    }
 
+   public updateHitboxes(): void {
+      for (const hitbox of this.hitboxes) {
+         if (hitbox.hasOwnProperty("width")) {
+            (hitbox as RectangularHitbox).computeVertexPositions();
+            (hitbox as RectangularHitbox).computeSideAxes();
+         }
+         hitbox.updateHitboxBounds();
+         hitbox.updatePosition();
+      }
+   }
+
    public updateFromData(data: GameObjectData): void {
       this.position = Point.unpackage(data.position);
       this.velocity = data.velocity !== null ? Vector.unpackage(data.velocity) : null;
-      this.acceleration = data.acceleration !== null ? Vector.unpackage(data.acceleration) : null;
-      this.terminalVelocity = data.terminalVelocity;
       this.rotation = data.rotation;
       this.mass = data.mass;
+
+      this.updateHitboxes();
 
       // Recalculate the game object's containing chunks to account for the new position
       this.recalculateContainingChunks();
