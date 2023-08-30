@@ -65,11 +65,11 @@ let triangleProgramColourAttribLocation: GLint;
 let triangleProgram: WebGLProgram;
 
 export function createDebugDataShaders(): void {
-   lineProgram = createWebGLProgram(lineVertexShaderText, lineFragmentShaderText);
+   lineProgram = createWebGLProgram(gl, lineVertexShaderText, lineFragmentShaderText);
 
    lineProgramColourAttribLocation = gl.getAttribLocation(lineProgram, "a_colour");
 
-   triangleProgram = createWebGLProgram(triangleVertexShaderText, triangleFragmentShaderText);
+   triangleProgram = createWebGLProgram(gl, triangleVertexShaderText, triangleFragmentShaderText);
 
    triangleProgramColourAttribLocation = gl.getAttribLocation(triangleProgram, "a_colour");
 }

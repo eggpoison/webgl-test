@@ -1,4 +1,4 @@
-import { ItemType, ParticleData, ParticleTint, ParticleType, Point, Vector } from "webgl-test-shared";
+import { ParticleData, ParticleTint, ParticleType, Point, Vector } from "webgl-test-shared";
 import { getRandomFoodEatingParticleColour } from "./food-eating-particles";
 
 export enum ParticleRenderLayer {

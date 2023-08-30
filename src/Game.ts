@@ -8,7 +8,7 @@ import { GameDataPacket, GameObjectDebugData, lerp, Point, SETTINGS } from "webg
 import { createEntityShaders, renderGameObjects } from "./rendering/game-object-rendering";
 import Client from "./client/Client";
 import { calculateCursorWorldPosition, getCursorX, getCursorY, getMouseTargetEntity, handleMouseMovement, renderCursorTooltip } from "./mouse";
-import { updateDevEntityViewer } from "./components/game/nerd-vision/EntityViewer";
+import { updateDevEntityViewer } from "./components/game/dev/EntityViewer";
 import { createShaderStrings, createWebGLContext, createWebGLProgram, gl, resizeCanvas } from "./webgl";
 import { loadTextures } from "./textures";
 import { hidePauseScreen, showPauseScreen, toggleSettingsMenu } from "./components/game/GameScreen";
@@ -20,12 +20,12 @@ import { createHitboxShaders, renderEntityHitboxes } from "./rendering/hitbox-re
 import { updateInteractInventory, updatePlayerMovement } from "./player-input";
 import DefiniteGameState from "./game-state/definite-game-state";
 import LatencyGameState from "./game-state/latency-game-state";
-import { clearServerTicks, registerFrame, updateDebugScreenCurrentTime, updateDebugScreenFPS, updateDebugScreenRenderTime, updateDebugScreenTicks, updateFrameCounter } from "./components/game/nerd-vision/GameInfoDisplay";
+import { clearServerTicks, updateDebugScreenCurrentTime, updateDebugScreenFPS, updateDebugScreenRenderTime } from "./components/game/dev/GameInfoDisplay";
 import { createWorldBorderShaders, renderWorldBorder } from "./rendering/world-border-rendering";
 import { createSolidTileShaders, renderSolidTiles } from "./rendering/tile-rendering/solid-tile-rendering";
 import { createWaterShaders, renderRivers } from "./rendering/tile-rendering/river-rendering";
 import { createChunkBorderShaders, renderChunkBorders } from "./rendering/chunk-border-rendering";
-import { nerdVisionIsVisible } from "./components/game/nerd-vision/NerdVision";
+import { nerdVisionIsVisible } from "./components/game/dev/NerdVision";
 import { setFrameProgress } from "./GameObject";
 import { createDebugDataShaders, renderLineDebugData, renderTriangleDebugData } from "./rendering/debug-data-rendering";
 import { createAmbientOcclusionShaders, recalculateAmbientOcclusion, renderAmbientOcclusion } from "./rendering/ambient-occlusion-rendering";
@@ -36,6 +36,7 @@ import Tribe from "./Tribe";
 import OPTIONS from "./options";
 import { createRenderChunks } from "./rendering/tile-rendering/render-chunks";
 import { generateFoodEatingParticleColours } from "./food-eating-particles";
+import { registerFrame, updateFrameGraph } from "./components/game/dev/FrameGraph";
 
 const nightVertexShaderText = `
 precision mediump float;
@@ -79,7 +80,6 @@ const createEventListeners = (): void => {
 }
 
 let lastRenderTime = Math.floor(new Date().getTime() / 1000);
-let numRenders = 0;
 
 abstract class Game {
    private static readonly NIGHT_DARKNESS = 0.6;
@@ -140,7 +140,7 @@ abstract class Game {
 
    /** Starts the game */
    public static start(): void {
-      this.nightProgram = createWebGLProgram(nightVertexShaderText, nightFragmentShaderText, "a_vertPosition");
+      this.nightProgram = createWebGLProgram(gl, nightVertexShaderText, nightFragmentShaderText, "a_vertPosition");
       this.nightProgramVertPosAttribLocation = gl.getAttribLocation(this.nightProgram, "a_vertPosition");
       this.nightProgramDarkenFactorUniformLocation = gl.getUniformLocation(this.nightProgram, "u_darkenFactor")!;
       this.createNightBuffer();
@@ -289,10 +289,8 @@ abstract class Game {
       }
       
       const currentRenderTime = Math.floor(new Date().getTime() / 1000);
-      numRenders++;
       if (currentRenderTime !== lastRenderTime) {
          clearServerTicks();
-         numRenders = 0;
       }
       lastRenderTime = currentRenderTime;
 
@@ -326,9 +324,9 @@ abstract class Game {
 
       renderParticles(ParticleRenderLayer.low);
 
-      // renderGameObjects(Object.values(this.board.droppedItems));
+      renderGameObjects(Object.values(this.board.droppedItems));
       renderGameObjects(Object.values(this.board.entities));
-      // renderGameObjects(Object.values(this.board.projectiles));
+      renderGameObjects(Object.values(this.board.projectiles));
 
       renderParticles(ParticleRenderLayer.high);
 
@@ -355,7 +353,6 @@ abstract class Game {
 
       updateInteractInventory();
 
-      registerFrame();
       updateDebugScreenFPS();
    }
 
@@ -364,7 +361,7 @@ abstract class Game {
          const deltaTime = currentTime - this.lastTime;
          this.lastTime = currentTime;
       
-         updateFrameCounter(deltaTime / 1000);
+         // updateFrameCounter(deltaTime / 1000);
 
          // Update
          this.lag += deltaTime;
@@ -388,6 +385,8 @@ abstract class Game {
          const renderEndTime = performance.now();
 
          const renderTime = renderEndTime - renderStartTime;
+         registerFrame(renderStartTime, renderEndTime);
+         updateFrameGraph();
          updateDebugScreenRenderTime(renderTime);
       }
 

@@ -1,11 +1,11 @@
 import { Point, SETTINGS } from "webgl-test-shared";
 import { halfWindowHeight, halfWindowWidth } from "./webgl";
 import CLIENT_SETTINGS from "./client-settings";
-import { updateCursorTooltip } from "./components/game/nerd-vision/CursorTooltip";
+import { updateCursorTooltip } from "./components/game/dev/CursorTooltip";
 import Entity from "./entities/Entity";
 import Game from "./Game";
 import Camera from "./Camera";
-import { updateDevEntityViewer } from "./components/game/nerd-vision/EntityViewer";
+import { updateDevEntityViewer } from "./components/game/dev/EntityViewer";
 import { isDev } from "./utils";
 
 let cursorX: number | null = null;
@@ -81,7 +81,7 @@ export function renderCursorTooltip(): void {
    if (typeof Game.cursorPosition === "undefined") return;
 
    if (Game.cursorPosition === null) {
-      updateCursorTooltip(null, null, null);
+      updateCursorTooltip(null, null);
       if (isDev()) {
          updateDevEntityViewer(null);
       }
@@ -92,7 +92,7 @@ export function renderCursorTooltip(): void {
 
    // If there is no target, hide the tooltip
    if (targetEntity === null) {
-      updateCursorTooltip(null, null, null);
+      updateCursorTooltip(null, null);
       if (isDev()) {
          updateDevEntityViewer(null);
       }
@@ -105,5 +105,5 @@ export function renderCursorTooltip(): void {
    const screenPosition = calculateEntityScreenPosition(targetEntity);
 
    const debugData = Game.getGameObjectDebugData();
-   updateCursorTooltip(targetEntity, debugData, screenPosition);
+   updateCursorTooltip(debugData, screenPosition);
 }

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { addKeyListener } from "../../../keyboard-input";
 import GameInfoDisplay from "./GameInfoDisplay";
 import TerminalButton, { setTerminalButtonOpened } from "./TerminalButton";
+import FrameGraph from "./FrameGraph";
 
 export let showNerdVision: () => void;
 export let hideNerdVision: () => void;
@@ -64,6 +65,7 @@ const NerdVision = () => {
       <TerminalButton startingIsOpened={terminalStartingVisibility} />
       <Terminal startingIsVisible={terminalStartingVisibility}/>
       <CursorTooltip />
+      <FrameGraph />
    </div>;
 }
 

@@ -29,7 +29,7 @@ void main() {
 let program: WebGLProgram;
 
 export function createWallBorderShaders(): void {
-   program = createWebGLProgram(vertexShaderText, fragmentShaderText);
+   program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
 
    gl.bindAttribLocation(program, 0, "a_position");
 }

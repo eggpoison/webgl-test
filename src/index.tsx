@@ -27,6 +27,7 @@ import "./css/game/nerd-vision/cursor-tooltip.css";
 import "./css/game/nerd-vision/terminal-button.css";
 import "./css/game/nerd-vision/terminal.css";
 import "./css/game/nerd-vision/entity-viewer.css";
+import "./css/game/nerd-vision/frame-graph.css";
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement

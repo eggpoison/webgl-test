@@ -10,7 +10,6 @@ import DroppedItem from "../items/DroppedItem";
 import { Tile } from "../Tile";
 import { createItem } from "../items/item-creation";
 import { gameScreenSetIsDead } from "../components/game/GameScreen";
-import Chunk from "../Chunk";
 import Item, { Inventory, ItemSlots } from "../items/Item";
 import { updateActiveItem, updateInventoryIsOpen } from "../player-input";
 import { Hotbar_updateArmourItemSlot, Hotbar_updateBackpackItemSlot, Hotbar_updateHotbarInventory } from "../components/game/inventories/Hotbar";
@@ -18,7 +17,7 @@ import { BackpackInventoryMenu_setBackpackInventory } from "../components/game/i
 import { setHeldItemVisual } from "../components/game/HeldItem";
 import { CraftingMenu_setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
 import { updateHealthBar } from "../components/game/HealthBar";
-import { registerServerTick, updateDebugScreenTicks } from "../components/game/nerd-vision/GameInfoDisplay";
+import { registerServerTick, updateDebugScreenTicks } from "../components/game/dev/GameInfoDisplay";
 import createProjectile from "../projectiles/projectile-creation";
 import Camera from "../Camera";
 import { isDev } from "../utils";
@@ -473,7 +472,7 @@ abstract class Client {
    private static createHitboxesFromData(hitboxDataArray: ReadonlyArray<CircularHitboxData | RectangularHitboxData>): Set<CircularHitbox | RectangularHitbox> {
       const hitboxes = new Set<CircularHitbox | RectangularHitbox>();
       for (const hitboxData of hitboxDataArray) {
-         const offset = typeof hitboxData.offset !== "undefined" ? Point.unpackage(hitboxData.offset) : undefined;
+         const offset = (typeof hitboxData.offsetX !== "undefined" || typeof hitboxData.offsetY !== "undefined") ? new Point(hitboxData.offsetX || 0, hitboxData.offsetY || 0) : undefined;
          if (hitboxData.hasOwnProperty("radius")) {
             // Circular
             hitboxes.add(new CircularHitbox((hitboxData as CircularHitboxData).radius, offset));

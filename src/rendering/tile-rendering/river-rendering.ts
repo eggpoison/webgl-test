@@ -263,9 +263,9 @@ in float v_animationSpeed;
 out vec4 outputColour;
  
 void main() {
-   float animationOffset = fract(u_animationOffset * v_animationSpeed + v_animationOffset);
+   float animationOffset = u_animationOffset * v_animationSpeed + v_animationOffset;
    vec2 offsetCoord = v_flowDirection * animationOffset;
-   outputColour = texture(u_noiseTexture, v_texCoord - offsetCoord);
+   outputColour = texture(u_noiseTexture, fract(v_texCoord - offsetCoord));
 
    outputColour.r += 0.5;
    outputColour.g += 0.5;
@@ -542,7 +542,7 @@ export function createWaterShaders(): void {
    // Base program
    // 
 
-   baseProgram = createWebGLProgram(baseVertexShaderText, baseFragmentShaderText);
+   baseProgram = createWebGLProgram(gl, baseVertexShaderText, baseFragmentShaderText);
 
    baseProgramPlayerPosUniformLocation = gl.getUniformLocation(baseProgram, "u_playerPos")!;
    baseProgramHalfWindowSizeUniformLocation = gl.getUniformLocation(baseProgram, "u_halfWindowSize")!;
@@ -562,7 +562,7 @@ export function createWaterShaders(): void {
    // Rock program
    // 
 
-   rockProgram = createWebGLProgram(rockVertexShaderText, rockFragmentShaderText);
+   rockProgram = createWebGLProgram(gl, rockVertexShaderText, rockFragmentShaderText);
 
    rockProgramPlayerPosUniformLocation = gl.getUniformLocation(rockProgram, "u_playerPos")!;
    rockProgramHalfWindowSizeUniformLocation = gl.getUniformLocation(rockProgram, "u_halfWindowSize")!;
@@ -577,7 +577,7 @@ export function createWaterShaders(): void {
    // Highlights program
    // 
 
-   highlightsProgram = createWebGLProgram(highlightsVertexShaderText, highlightsFragmentShaderText);
+   highlightsProgram = createWebGLProgram(gl, highlightsVertexShaderText, highlightsFragmentShaderText);
 
    highlightsProgramPlayerPosUniformLocation = gl.getUniformLocation(highlightsProgram, "u_playerPos")!;
    highlightsProgramHalfWindowSizeUniformLocation = gl.getUniformLocation(highlightsProgram, "u_halfWindowSize")!;
@@ -595,7 +595,7 @@ export function createWaterShaders(): void {
    // Noise program
    // 
 
-   noiseProgram = createWebGLProgram(noiseVertexShaderText, noiseFragmentShaderText);
+   noiseProgram = createWebGLProgram(gl, noiseVertexShaderText, noiseFragmentShaderText);
 
    noiseProgramPlayerPosUniformLocation = gl.getUniformLocation(noiseProgram, "u_playerPos")!;
    noiseProgramHalfWindowSizeUniformLocation = gl.getUniformLocation(noiseProgram, "u_halfWindowSize")!;
@@ -613,7 +613,7 @@ export function createWaterShaders(): void {
    // Transition program
    // 
 
-   transitionProgram = createWebGLProgram(transitionVertexShaderText, transitionFragmentShaderText);
+   transitionProgram = createWebGLProgram(gl, transitionVertexShaderText, transitionFragmentShaderText);
 
    transitionProgramPlayerPosUniformLocation = gl.getUniformLocation(transitionProgram, "u_playerPos")!;
    transitionProgramHalfWindowSizeUniformLocation = gl.getUniformLocation(transitionProgram, "u_halfWindowSize")!;
@@ -635,7 +635,7 @@ export function createWaterShaders(): void {
    // Foam program
    // 
 
-   foamProgram = createWebGLProgram(foamVertexShaderText, foamFragmentShaderText);
+   foamProgram = createWebGLProgram(gl, foamVertexShaderText, foamFragmentShaderText);
 
    foamProgramSteppingStoneTextureUniformLocation = gl.getUniformLocation(foamProgram, "u_steppingStoneTexture")!;
    foamProgramFoamTextureUniformLocation = gl.getUniformLocation(foamProgram, "u_foamTexture")!;
@@ -648,7 +648,7 @@ export function createWaterShaders(): void {
    // Stepping stone program
    // 
 
-   steppingStoneProgram = createWebGLProgram(steppingStoneVertexShaderText, steppingStoneFragmentShaderText);
+   steppingStoneProgram = createWebGLProgram(gl, steppingStoneVertexShaderText, steppingStoneFragmentShaderText);
 
    steppingStoneTextureUniformLocation = gl.getUniformLocation(steppingStoneProgram, "u_texture")!;
 
@@ -808,6 +808,8 @@ const calculateBaseVertices = (renderChunkX: number, renderChunkY: number): Read
 }
 
 export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY: number): RenderChunkRiverInfo {
+   // TODO: Calculate visible water tiles and pass them into all these functions
+   
    // Create transition buffer
    const transitionVertices = calculateTransitionVertices(renderChunkX, renderChunkY);
    const transitionBuffer = gl.createBuffer()!;
@@ -913,38 +915,19 @@ const calculateNoiseVertices = (renderChunkX: number, renderChunkY: number): Rea
          const y1 = (tileY - 0.5) * SETTINGS.TILE_SIZE;
          const y2 = (tileY + 1.5) * SETTINGS.TILE_SIZE;
 
-         const epsilon = 0.01;
-         const isDiagonal = Math.abs(flowDirection!) > epsilon && Math.abs(flowDirection - Math.PI/2) > epsilon && Math.abs(flowDirection - Math.PI) > epsilon && Math.abs(flowDirection + Math.PI/2) > epsilon;
-
-         // const speedMultiplier = 1 + tile.flowOffset / 1.5;
-         // let offsetX: number;
-         // let offsetY: number;
-         // if (isDiagonal) {
-         //    const offsetMagnitude = (Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000 / Math.SQRT2 * speedMultiplier + tile.flowOffset) % 1;
-         //    offsetX = offsetMagnitude * Math.SQRT2 * Math.cos(flowDirection);
-         //    offsetY = offsetMagnitude * Math.SQRT2 * Math.sin(flowDirection);
-         // } else {
-         //    const offsetMagnitude = (Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000 * speedMultiplier + tile.flowOffset) % 1;
-         //    offsetX = offsetMagnitude * Math.cos(flowDirection);
-         //    offsetY = offsetMagnitude * Math.sin(flowDirection);
-         // }
-
-         const flowAnimationOffset = Math.random();
+         const animationOffset = Math.random();
          const animationSpeed = randFloat(1, 1.67);
-
-         // flow animation offset
-         // flow direction
-
+         
          const flowDirectionX = Math.sin(flowDirection);
          const flowDirectionY = Math.cos(flowDirection);
 
          vertices.push(
-            x1, y1, 0, 0, flowDirectionX, flowDirectionY, flowAnimationOffset, animationSpeed,
-            x2, y1, 1, 0, flowDirectionX, flowDirectionY, flowAnimationOffset, animationSpeed,
-            x1, y2, 0, 1, flowDirectionX, flowDirectionY, flowAnimationOffset, animationSpeed,
-            x1, y2, 0, 1, flowDirectionX, flowDirectionY, flowAnimationOffset, animationSpeed,
-            x2, y1, 1, 0, flowDirectionX, flowDirectionY, flowAnimationOffset, animationSpeed,
-            x2, y2, 1, 1, flowDirectionX, flowDirectionY, flowAnimationOffset, animationSpeed
+            x1, y1, 0, 0, flowDirectionX, flowDirectionY, animationOffset, animationSpeed,
+            x2, y1, 1, 0, flowDirectionX, flowDirectionY, animationOffset, animationSpeed,
+            x1, y2, 0, 1, flowDirectionX, flowDirectionY, animationOffset, animationSpeed,
+            x1, y2, 0, 1, flowDirectionX, flowDirectionY, animationOffset, animationSpeed,
+            x2, y1, 1, 0, flowDirectionX, flowDirectionY, animationOffset, animationSpeed,
+            x2, y2, 1, 1, flowDirectionX, flowDirectionY, animationOffset, animationSpeed
          );
       }
    }
@@ -1277,6 +1260,8 @@ export function renderRivers(): void {
    // 
    
    gl.useProgram(noiseProgram);
+      
+   const noiseAnimationOffset = Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000;
 
    for (const renderChunkInfo of visibleRenderChunks) {
       gl.bindBuffer(gl.ARRAY_BUFFER, renderChunkInfo.noiseBuffer);
@@ -1284,7 +1269,7 @@ export function renderRivers(): void {
       gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 0);
       gl.vertexAttribPointer(noiseProgramTexCoordAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
       gl.vertexAttribPointer(noiseFlowDirectionAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(noiseAnimationOffsetAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(noiseAnimationOffsetAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
       gl.vertexAttribPointer(noiseAnimationSpeedAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
    
       // Enable the attributes
@@ -1294,13 +1279,11 @@ export function renderRivers(): void {
       gl.enableVertexAttribArray(noiseAnimationOffsetAttribLocation);
       gl.enableVertexAttribArray(noiseAnimationSpeedAttribLocation);
       
-      const animationOffset = (Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000) % 1;
-      
       gl.uniform2f(noiseProgramPlayerPosUniformLocation, Camera.position.x, Camera.position.y);
       gl.uniform2f(noiseProgramHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
       gl.uniform1f(noiseProgramZoomUniformLocation, Camera.zoom);
       gl.uniform1i(noiseTextureUniformLocation, 0);
-      gl.uniform1f(noiseAnimationOffsetUniformLocation, animationOffset);
+      gl.uniform1f(noiseAnimationOffsetUniformLocation, noiseAnimationOffset);
                
       // Set noise texture
       const noiseTexture = getTexture("tiles/water-noise.png");

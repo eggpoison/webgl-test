@@ -69,46 +69,46 @@ export function createShaderStrings(): void {
    }
 }
 
-export function createWebGLProgram(vertexShaderText: string, fragmentShaderText: string, attrib0Name?: string): WebGLProgram {
+export function createWebGLProgram(glRenderingContext: WebGL2RenderingContext, vertexShaderText: string, fragmentShaderText: string, attrib0Name?: string): WebGLProgram {
    // Create shaders
-   const vertexShader = gl.createShader(gl.VERTEX_SHADER)!;
-   const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER)!;
+   const vertexShader = glRenderingContext.createShader(glRenderingContext.VERTEX_SHADER)!;
+   const fragmentShader = glRenderingContext.createShader(glRenderingContext.FRAGMENT_SHADER)!;
 
-   gl.shaderSource(vertexShader, vertexShaderText);
-   gl.shaderSource(fragmentShader, fragmentShaderText);
+   glRenderingContext.shaderSource(vertexShader, vertexShaderText);
+   glRenderingContext.shaderSource(fragmentShader, fragmentShaderText);
 
-   gl.compileShader(vertexShader);
-   if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
-      throw new Error("ERROR compiling vertex shader! " + gl.getShaderInfoLog(vertexShader));
+   glRenderingContext.compileShader(vertexShader);
+   if (!glRenderingContext.getShaderParameter(vertexShader, glRenderingContext.COMPILE_STATUS)) {
+      throw new Error("ERROR compiling vertex shader! " + glRenderingContext.getShaderInfoLog(vertexShader));
    }
 
-   gl.compileShader(fragmentShader);
-   if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
-      throw new Error("ERROR compiling fragment shader! " + gl.getShaderInfoLog(fragmentShader));
+   glRenderingContext.compileShader(fragmentShader);
+   if (!glRenderingContext.getShaderParameter(fragmentShader, glRenderingContext.COMPILE_STATUS)) {
+      throw new Error("ERROR compiling fragment shader! " + glRenderingContext.getShaderInfoLog(fragmentShader));
    }
 
    // 
    // Create the program and attach shaders to the program
    // 
 
-   const program = gl.createProgram()!;
+   const program = glRenderingContext.createProgram()!;
 
-   gl.attachShader(program, vertexShader);
-   gl.attachShader(program, fragmentShader);
+   glRenderingContext.attachShader(program, vertexShader);
+   glRenderingContext.attachShader(program, fragmentShader);
 
    if (typeof attrib0Name !== "undefined") {
-      gl.bindAttribLocation(program, 0, attrib0Name);
+      glRenderingContext.bindAttribLocation(program, 0, attrib0Name);
    }
 
-   gl.linkProgram(program);
-   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      throw new Error("ERROR linking program! " + gl.getProgramInfoLog(program));
+   glRenderingContext.linkProgram(program);
+   if (!glRenderingContext.getProgramParameter(program, glRenderingContext.LINK_STATUS)) {
+      throw new Error("ERROR linking program! " + glRenderingContext.getProgramInfoLog(program));
    }
 
    if (isDev()) {
-      gl.validateProgram(program);
-      if (!gl.getProgramParameter(program, gl.VALIDATE_STATUS)) {
-         throw new Error("ERROR validating program! " + gl.getProgramInfoLog(program));
+      glRenderingContext.validateProgram(program);
+      if (!glRenderingContext.getProgramParameter(program, glRenderingContext.VALIDATE_STATUS)) {
+         throw new Error("ERROR validating program! " + glRenderingContext.getProgramInfoLog(program));
       }
    }
 

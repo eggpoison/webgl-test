@@ -34,7 +34,7 @@ let zoomUniformLocation: WebGLUniformLocation;
 let program: WebGLProgram;
 
 export function createWorldBorderShaders(): void {
-   program = createWebGLProgram(vertexShaderText, fragmentShaderText);
+   program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
 
    playerPosUniformLocation = gl.getUniformLocation(program, "u_playerPos")!;
    halfWindowSizeUniformLocation = gl.getUniformLocation(program, "u_halfWindowSize")!;

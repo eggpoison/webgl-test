@@ -5,7 +5,6 @@ import Player from "./entities/Player";
 import Client from "./client/Client";
 import Game from "./Game";
 import { Hotbar_setHotbarSelectedItemSlot } from "./components/game/inventories/Hotbar";
-import GameObject from "./GameObject";
 import { InteractInventoryType, InteractInventory_clearInventory, InteractInventory_forceUpdate, InteractInventory_setInventory } from "./components/game/inventories/InteractInventory";
 import { BackpackInventoryMenu_setIsVisible } from "./components/game/inventories/BackpackInventory";
 import Entity from "./entities/Entity";

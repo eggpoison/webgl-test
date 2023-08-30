@@ -1,29 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { SETTINGS, roundNum } from "webgl-test-shared";
+import { roundNum } from "webgl-test-shared";
 import Game from "../../../Game";
 import OPTIONS from "../../../options";
-
-let _fps: number = -1;
-
-const fpsTimers = new Array<number>();
 
 let serverTicks = 0;
 
 let tps = -1;
-
-/** Registers that a frame has occured for use in showing the fps counter */
-export function registerFrame(): void {
-   fpsTimers.push(1);
-}
-
-export function updateFrameCounter(deltaTime: number): void {
-   for (let i = fpsTimers.length - 1; i >= 0; i--) {
-      fpsTimers[i] -= deltaTime;
-      if (fpsTimers[i] <= 0) {
-         fpsTimers.splice(i, 1);
-      }
-   }
-}
 
 export let updateDebugScreenCurrentTime: (time: number) => void = () => {};
 export let updateDebugScreenTicks: (time: number) => void = () => {};
@@ -60,7 +42,7 @@ const formatTime = (time: number): string => {
 const GameInfoDisplay = () => {
    const [currentTime, setCurrentTime] = useState(0);
    const [ticks, setTicks] = useState(Game.ticks);
-   const [fps, setFPS] = useState(0);
+   // const [fps, setFPS] = useState(0);
    const [renderTime, setRenderTime] = useState(0);
 
    const [nightVisionIsEnabled, setNightvisionIsEnabled] = useState(OPTIONS.nightVisionIsEnabled);
@@ -78,9 +60,9 @@ const GameInfoDisplay = () => {
       updateDebugScreenTicks = (ticks: number): void => {
          setTicks(ticks);
       }
-      updateDebugScreenFPS = (): void => {
-         setFPS(fpsTimers.length);
-      }
+      // updateDebugScreenFPS = (): void => {
+      //    setFPS(fpsTimers.length);
+      // }
       updateDebugScreenRenderTime = (renderTime: number): void => {
          setRenderTime(renderTime);
       }
@@ -104,8 +86,8 @@ const GameInfoDisplay = () => {
    return <div id="game-info-display">
       <p>Time: {formatTime(roundNum(currentTime, 2))}</p>
       <p>Ticks: {roundNum(ticks, 2)}</p>
-      <p>FPS: {fps}</p>
-      <p>Render time ms: {renderTime.toFixed(2)}</p>
+      {/* <p>FPS: {fps}</p>
+      <p>Render time ms: {renderTime.toFixed(2)}</p> */}
       <p>TPS: {tps}</p>
 
       <ul className="options">

@@ -187,7 +187,7 @@ export function renderGhostPlaceableItem(): void {
 }
 
 export function createPlaceableItemProgram(): void {
-   program = createWebGLProgram(placeableEntityVertexShader, placeableEntityFragmentShader, "a_vertWorldPosition");
+   program = createWebGLProgram(gl, placeableEntityVertexShader, placeableEntityFragmentShader, "a_vertWorldPosition");
    
    zoomUniformLocation = gl.getUniformLocation(program, "u_zoom")!;
    programPreTranslationUniformLocation = gl.getUniformLocation(program, "u_preTranslation")!;

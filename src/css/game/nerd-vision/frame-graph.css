@@ -1,0 +1,11 @@
+#frame-graph {
+   position: absolute;
+   left: 0;
+   bottom: 0;
+   z-index: 2;
+}
+
+#frame-graph canvas {
+   /* background-color: red; */
+   background-color: rgba(0, 0, 0, 0.3);
+}

@@ -1,4 +1,4 @@
-import { SETTINGS, ServerTileUpdateData, TILE_TYPE_INFO_RECORD } from "webgl-test-shared";
+import { SETTINGS, TILE_TYPE_INFO_RECORD } from "webgl-test-shared";
 import Camera from "../../Camera";
 import { Tile } from "../../Tile";
 import { getTexture } from "../../textures";
@@ -141,7 +141,7 @@ export function calculateSolidTileRenderChunkData(renderChunkX: number, renderCh
 }
 
 export function createSolidTileShaders(): void {
-   program = createWebGLProgram(vertexShaderText, fragmentShaderText, "a_tilePos");
+   program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText, "a_tilePos");
 
    playerPosUniformLocation = gl.getUniformLocation(program, "u_playerPos")!;
    halfWindowSizeUniformLocation = gl.getUniformLocation(program, "u_halfWindowSize")!;

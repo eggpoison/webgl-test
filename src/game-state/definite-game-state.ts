@@ -1,6 +1,6 @@
 import Game from "../Game";
 import { updateHealthBar } from "../components/game/HealthBar";
-import { hideNerdVision } from "../components/game/nerd-vision/NerdVision";
+import { hideNerdVision } from "../components/game/dev/NerdVision";
 import Player from "../entities/Player";
 import GameState from "./game-state";
 

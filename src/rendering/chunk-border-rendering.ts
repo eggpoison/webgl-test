@@ -25,7 +25,7 @@ void main() {
 let program: WebGLProgram;
 
 export function createChunkBorderShaders(): void {
-   program = createWebGLProgram(vertexShaderText, fragmentShaderText);
+   program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
 
    gl.bindAttribLocation(program, 0, "vertPosition");
 }

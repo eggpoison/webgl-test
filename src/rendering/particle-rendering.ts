@@ -107,7 +107,7 @@ let opacityAttribLocation: number;
 let tintAttribLocation: number;
 
 export function createParticleShaders(): void {
-   program = createWebGLProgram(vertexShaderText, fragmentShaderText);
+   program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
    
    textureUniformLocation = gl.getUniformLocation(program, "u_texture")!;
    
@@ -122,6 +122,7 @@ type CategorisedParticles = Record<string, Array<Particle>>;
 const particleIsVisible = (particle: Particle): boolean => {
    const halfMaxDiagonalLength = Math.sqrt(Math.pow(particle.width, 2) + Math.pow(particle.height, 2)) / 2;
 
+   // TODO: The particle render position shouldn't be unnecessarily calculated here, as the positions would be calculated twice if the particle was rendered
    const particleRenderPosition = calculateParticleRenderPosition(particle);
    if (particleRenderPosition.x + halfMaxDiagonalLength < Camera.visiblePositionBounds[0]
       || particleRenderPosition.x - halfMaxDiagonalLength > Camera.visiblePositionBounds[1]
@@ -190,7 +191,6 @@ export function renderParticles(renderLayer: ParticleRenderLayer): void {
    // Create vertices
 
    const textureSources = new Array<string>();
-   const vertexArrays = new Array<Array<number>>();
    const vertexDatas = new Array<Float32Array>();
    const vertexCounts = new Array<number>();
    for (const [textureSource, particles] of Object.entries(categorisedParticles)) {
@@ -201,7 +201,6 @@ export function renderParticles(renderLayer: ParticleRenderLayer): void {
       textureSources.push(textureSource);
       vertexCounts.push(particles.length * 6 * 8);
 
-      const vertices = new Array<number>();
       const vertexData = new Float32Array(particles.length * 6 * 8);
       for (let i = 0; i < particles.length; i++) {
          const particle = particles[i];
@@ -280,7 +279,6 @@ export function renderParticles(renderLayer: ParticleRenderLayer): void {
          vertexData[i * 6 * 8 + 46] = particle.tint[1];
          vertexData[i * 6 * 8 + 47] = particle.tint[2];
       }
-      vertexArrays.push(vertices);
       vertexDatas.push(vertexData);
    }
 

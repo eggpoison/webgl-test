@@ -35,7 +35,7 @@ void main() {
 }
 `;
 
-let entityRenderingFragmentShaderText: string;
+let fragmentShaderText: string;
 createShaderString(`
 precision highp float;
 
@@ -81,7 +81,7 @@ void main() {
    gl_FragColor = fragColour;
 }
 `, (shaderString: string) => {
-   entityRenderingFragmentShaderText = shaderString
+   fragmentShaderText = shaderString
 });
 
 let imageRenderingProgram: WebGLProgram;
@@ -94,7 +94,7 @@ let imageRenderingProgramTextureIdxAttribLocation: GLint;
 let imageRenderingProgramOpacityAttribLocation: GLint;
 
 export function createEntityShaders(): void {
-   imageRenderingProgram = createWebGLProgram(vertexShaderText, entityRenderingFragmentShaderText);
+   imageRenderingProgram = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
 
    imageRenderingProgramTexturesUniformLocation = gl.getUniformLocation(imageRenderingProgram, "u_textures")!;
 

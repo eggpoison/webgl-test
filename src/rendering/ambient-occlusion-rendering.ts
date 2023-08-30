@@ -104,7 +104,7 @@ let textureUniformLocation: WebGLUniformLocation;
 let texCoordAttribLocation: GLint;
 
 export function createAmbientOcclusionShaders(): void {
-   program = createWebGLProgram(vertexShaderText, fragmentShaderText);
+   program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
 
    textureUniformLocation = gl.getUniformLocation(program, "u_textures")!;
 
