@@ -4,17 +4,16 @@ import { isDev } from "./utils";
 import { renderPlayerNames, createTextCanvasContext } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/game/ChatBox";
-import { GameDataPacket, GameObjectDebugData, lerp, Point, SETTINGS } from "webgl-test-shared";
+import { GameDataPacket, GameObjectDebugData, Point, SETTINGS } from "webgl-test-shared";
 import { createEntityShaders, renderGameObjects } from "./rendering/game-object-rendering";
 import Client from "./client/Client";
 import { calculateCursorWorldPosition, getCursorX, getCursorY, getMouseTargetEntity, handleMouseMovement, renderCursorTooltip } from "./mouse";
 import { updateDevEntityViewer } from "./components/game/dev/EntityViewer";
-import { createShaderStrings, createWebGLContext, createWebGLProgram, gl, resizeCanvas } from "./webgl";
+import { createShaderStrings, createWebGLContext, gl, resizeCanvas } from "./webgl";
 import { loadTextures } from "./textures";
 import { hidePauseScreen, showPauseScreen, toggleSettingsMenu } from "./components/game/GameScreen";
 import { getGameState } from "./components/App";
 import Item from "./items/Item";
-import { createPlaceableItemProgram, renderGhostPlaceableItem } from "./items/PlaceableItem";
 import { clearPressedKeys } from "./keyboard-input";
 import { createHitboxShaders, renderEntityHitboxes } from "./rendering/hitbox-rendering";
 import { updateInteractInventory, updatePlayerMovement } from "./player-input";
@@ -37,25 +36,8 @@ import OPTIONS from "./options";
 import { createRenderChunks } from "./rendering/tile-rendering/render-chunks";
 import { generateFoodEatingParticleColours } from "./food-eating-particles";
 import { registerFrame, updateFrameGraph } from "./components/game/dev/FrameGraph";
-
-const nightVertexShaderText = `
-precision mediump float;
-
-attribute vec2 a_vertPosition;
- 
-void main() {
-   gl_Position = vec4(a_vertPosition, 0.0, 1.0);
-}
-`;
-const nightFragmentShaderText = `
-precision mediump float;
-
-uniform float u_darkenFactor;
- 
-void main() {
-   gl_FragColor = vec4(0.0, 0.0, 0.0, u_darkenFactor);
-}
-`;
+import { createNightShaders, renderNight } from "./rendering/night-rendering";
+import { createPlaceableItemProgram, renderGhostPlaceableItem } from "./rendering/placeable-item-rendering";
 
 let listenersHaveBeenCreated = false;
 
@@ -82,8 +64,6 @@ const createEventListeners = (): void => {
 let lastRenderTime = Math.floor(new Date().getTime() / 1000);
 
 abstract class Game {
-   private static readonly NIGHT_DARKNESS = 0.6;
-
    public static pendingPackets = new Array<GameDataPacket>();
 
    public static ticks: number;
@@ -104,11 +84,6 @@ abstract class Game {
    private static lag = 0;
 
    public static cursorPosition: Point | null;
-
-   private static nightProgram: WebGLProgram;
-   private static nightBuffer: WebGLBuffer;
-   private static nightProgramVertPosAttribLocation: GLint;
-   private static nightProgramDarkenFactorUniformLocation: WebGLUniformLocation;
 
    public static definiteGameState = new DefiniteGameState();
    public static latencyGameState = new LatencyGameState();
@@ -140,11 +115,6 @@ abstract class Game {
 
    /** Starts the game */
    public static start(): void {
-      this.nightProgram = createWebGLProgram(gl, nightVertexShaderText, nightFragmentShaderText, "a_vertPosition");
-      this.nightProgramVertPosAttribLocation = gl.getAttribLocation(this.nightProgram, "a_vertPosition");
-      this.nightProgramDarkenFactorUniformLocation = gl.getUniformLocation(this.nightProgram, "u_darkenFactor")!;
-      this.createNightBuffer();
-
       createEventListeners();
       resizeCanvas();
 
@@ -163,21 +133,6 @@ abstract class Game {
 
    public static stop(): void {
       this.isRunning = false;
-   }
-
-   private static createNightBuffer(): void {
-      const vertices = [
-         -1, -1,
-         1, 1,
-         -1, 1,
-         -1, -1,
-         1, -1,
-         1, 1
-      ];
-      
-      this.nightBuffer = gl.createBuffer()!;
-      gl.bindBuffer(gl.ARRAY_BUFFER, this.nightBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
    }
 
    public static pause(): void {
@@ -223,6 +178,7 @@ abstract class Game {
             createChunkBorderShaders();
             createHitboxShaders();
             createDebugDataShaders();
+            createNightShaders();
 
             createParticleShaders();
             createWallBorderShaders();
@@ -348,7 +304,7 @@ abstract class Game {
       renderCursorTooltip();
 
       if (!OPTIONS.nightVisionIsEnabled) {
-         this.renderNight();
+         renderNight();
       }
 
       updateInteractInventory();
@@ -393,37 +349,6 @@ abstract class Game {
       if (this.isRunning) {
          requestAnimationFrame(time => this.main(time));
       }
-   }
-
-   private static renderNight(): void {
-      // Don't render nighttime if it is day
-      if (this.time >= 6 && this.time < 18) return;
-
-      let darkenFactor: number;
-      if (this.time >= 18 && this.time < 20) {
-         darkenFactor = lerp(0, this.NIGHT_DARKNESS, (this.time - 18) / 2);
-      } else if (this.time >= 4 && this.time < 6) {
-         darkenFactor = lerp(0, this.NIGHT_DARKNESS, (6 - this.time) / 2);
-      } else {
-         darkenFactor = this.NIGHT_DARKNESS;
-      }
-
-      gl.useProgram(this.nightProgram);
-
-      gl.enable(gl.BLEND);
-      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-
-      gl.bindBuffer(gl.ARRAY_BUFFER, this.nightBuffer);
-
-      gl.vertexAttribPointer(this.nightProgramVertPosAttribLocation, 2, gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
-      gl.enableVertexAttribArray(this.nightProgramVertPosAttribLocation);
-
-      gl.uniform1f(this.nightProgramDarkenFactorUniformLocation, darkenFactor);
-
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-      gl.disable(gl.BLEND);
-      gl.blendFunc(gl.ONE, gl.ZERO);
    }
 }
 
