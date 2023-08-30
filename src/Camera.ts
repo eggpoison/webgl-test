@@ -10,7 +10,7 @@ abstract class Camera {
 
    public static position: Point;
 
-   private static visibleChunkBounds: VisibleChunkBounds = [-1, -1, -1, -1];
+   public static visibleChunkBounds: VisibleChunkBounds = [-1, -1, -1, -1];
 
    public static visiblePositionBounds: VisiblePositionBounds = [-1, -1, -1, -1];
 

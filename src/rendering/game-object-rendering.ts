@@ -83,9 +83,6 @@ void main() {
 `, (shaderString: string) => {
    entityRenderingFragmentShaderText = shaderString
 });
-/*
-
-*/
 
 let imageRenderingProgram: WebGLProgram;
 
@@ -226,20 +223,40 @@ const calculateEntityRedness = (entity: Entity): number => {
 }
 
 const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
-   // Find which z-index layers are being rendered, in ascending order.
-   // const zIndexes = Object.keys(renderParts).map(zIndex => Number(zIndex)).sort((a, b) => a - b);
-
-   // Calculate vertices
+   // Calculate how many render parts will be in each draw call
    let numTextureUnitsUsed = 0;
-   const vertexArrays = new Array<Array<number>>();
+   let partCounter = 0;
+   const numPartsPerDrawCall = new Array<number>();
+   for (const zIndexRenderInfo of Object.values(renderParts) as ReadonlyArray<TexturedRenderParts>) {
+      for (const texturedRenderParts of Object.values(zIndexRenderInfo)) {
+         partCounter += texturedRenderParts.length;
+         if (numTextureUnitsUsed % MAX_ACTIVE_TEXTURE_UNITS === MAX_ACTIVE_TEXTURE_UNITS - 1) {
+            numPartsPerDrawCall.push(partCounter);
+            partCounter = 0;
+         }
+         numTextureUnitsUsed++;
+      }
+   }
+   if (partCounter > 0) {
+      numPartsPerDrawCall.push(partCounter);
+   }
+   
+   // Calculate vertices
+   numTextureUnitsUsed = 0;
+   let particleIdx = 0;
+   const vertexDatas = new Array<Float32Array>();
    const textureSources = new Array<string>();
    for (const zIndexRenderPartInfo of Object.values(renderParts) as ReadonlyArray<TexturedRenderParts>) {
       for (const [textureSource, texturedRenderParts] of Object.entries(zIndexRenderPartInfo)) {
-         const vertices = new Array<number>();
+         if (numTextureUnitsUsed % MAX_ACTIVE_TEXTURE_UNITS === 0) {
+            const idx = Math.floor(numTextureUnitsUsed / MAX_ACTIVE_TEXTURE_UNITS);
+            const numPartsInDrawCall = numPartsPerDrawCall[idx];
+            vertexDatas.push(new Float32Array(numPartsInDrawCall * 6 * 9));
+            particleIdx = 0;
+         }
+         
          const textureIdx = numTextureUnitsUsed % MAX_ACTIVE_TEXTURE_UNITS;
          for (const renderInfo of texturedRenderParts) {
-            // Add texture source
-            
             // Calculate vertices for all render parts in the record
             let redTint = 0;
             let greenTint = 0;
@@ -275,17 +292,72 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
             const bottomRightX = calculateVertexPositionX(x2, y1, renderInfo.renderPart.renderPosition, renderInfo.totalRotation);
             const bottomRightY = calculateVertexPositionY(x2, y1, renderInfo.renderPart.renderPosition, renderInfo.totalRotation);
 
-            vertices.push(
-               bottomLeftX, bottomLeftY, u0, 0, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
-               bottomRightX, bottomRightY, u1, 0, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
-               topLeftX, topLeftY, u0, 1, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
-               topLeftX, topLeftY, u0, 1, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
-               bottomRightX, bottomRightY, u1, 0, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity,
-               topRightX, topRightY, u1, 1, redTint, greenTint, blueTint, textureIdx, renderInfo.renderPart.opacity
-            );
+            const data = vertexDatas[vertexDatas.length - 1];
+
+            // TODO: Find better way to do this
+            data[particleIdx * 6 * 9] = bottomLeftX;
+            data[particleIdx * 6 * 9 + 1] = bottomLeftY;
+            data[particleIdx * 6 * 9 + 2] = u0;
+            data[particleIdx * 6 * 9 + 3] = 0;
+            data[particleIdx * 6 * 9 + 4] = redTint;
+            data[particleIdx * 6 * 9 + 5] = greenTint;
+            data[particleIdx * 6 * 9 + 6] = blueTint;
+            data[particleIdx * 6 * 9 + 7] = textureIdx;
+            data[particleIdx * 6 * 9 + 8] = renderInfo.renderPart.opacity;
+
+            data[particleIdx * 6 * 9 + 9] = bottomRightX;
+            data[particleIdx * 6 * 9 + 10] = bottomRightY;
+            data[particleIdx * 6 * 9 + 11] = u1;
+            data[particleIdx * 6 * 9 + 12] = 0;
+            data[particleIdx * 6 * 9 + 13] = redTint;
+            data[particleIdx * 6 * 9 + 14] = greenTint;
+            data[particleIdx * 6 * 9 + 15] = blueTint;
+            data[particleIdx * 6 * 9 + 16] = textureIdx;
+            data[particleIdx * 6 * 9 + 17] = renderInfo.renderPart.opacity;
+
+            data[particleIdx * 6 * 9 + 18] = topLeftX;
+            data[particleIdx * 6 * 9 + 19] = topLeftY;
+            data[particleIdx * 6 * 9 + 20] = u0;
+            data[particleIdx * 6 * 9 + 21] = 1;
+            data[particleIdx * 6 * 9 + 22] = redTint;
+            data[particleIdx * 6 * 9 + 23] = greenTint;
+            data[particleIdx * 6 * 9 + 24] = blueTint;
+            data[particleIdx * 6 * 9 + 25] = textureIdx;
+            data[particleIdx * 6 * 9 + 26] = renderInfo.renderPart.opacity;
+
+            data[particleIdx * 6 * 9 + 27] = topLeftX;
+            data[particleIdx * 6 * 9 + 28] = topLeftY;
+            data[particleIdx * 6 * 9 + 29] = u0;
+            data[particleIdx * 6 * 9 + 30] = 1;
+            data[particleIdx * 6 * 9 + 31] = redTint;
+            data[particleIdx * 6 * 9 + 32] = greenTint;
+            data[particleIdx * 6 * 9 + 33] = blueTint;
+            data[particleIdx * 6 * 9 + 34] = textureIdx;
+            data[particleIdx * 6 * 9 + 35] = renderInfo.renderPart.opacity;
+
+            data[particleIdx * 6 * 9 + 36] = bottomRightX;
+            data[particleIdx * 6 * 9 + 37] = bottomRightY;
+            data[particleIdx * 6 * 9 + 38] = u1;
+            data[particleIdx * 6 * 9 + 39] = 0;
+            data[particleIdx * 6 * 9 + 40] = redTint;
+            data[particleIdx * 6 * 9 + 41] = greenTint;
+            data[particleIdx * 6 * 9 + 42] = blueTint;
+            data[particleIdx * 6 * 9 + 43] = textureIdx;
+            data[particleIdx * 6 * 9 + 44] = renderInfo.renderPart.opacity;
+
+            data[particleIdx * 6 * 9 + 45] = topRightX;
+            data[particleIdx * 6 * 9 + 46] = topRightY;
+            data[particleIdx * 6 * 9 + 47] = u1;
+            data[particleIdx * 6 * 9 + 48] = 1;
+            data[particleIdx * 6 * 9 + 49] = redTint;
+            data[particleIdx * 6 * 9 + 50] = greenTint;
+            data[particleIdx * 6 * 9 + 51] = blueTint;
+            data[particleIdx * 6 * 9 + 52] = textureIdx;
+            data[particleIdx * 6 * 9 + 53] = renderInfo.renderPart.opacity;
+
+            particleIdx++;
          }
          
-         vertexArrays.push(vertices);
          textureSources.push(textureSource);
          numTextureUnitsUsed++;
       }
@@ -296,18 +368,18 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
    gl.enable(gl.BLEND);
    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-   for (let currentDrawCall = 0; currentDrawCall < Math.ceil(numTextureUnitsUsed / MAX_ACTIVE_TEXTURE_UNITS); currentDrawCall++) {
-      let vertices = new Array<number>();
+   for (let currentDrawCall = 0; currentDrawCall < vertexDatas.length; currentDrawCall++) {
+      const vertexData = vertexDatas[currentDrawCall];
+      const vertexCount = numPartsPerDrawCall[currentDrawCall] * 6;
+
       const usedTextureSources = new Array<string>();
       for (let idx = currentDrawCall * MAX_ACTIVE_TEXTURE_UNITS; idx <= Math.min((currentDrawCall + 1) * MAX_ACTIVE_TEXTURE_UNITS - 1, numTextureUnitsUsed - 1); idx++) {
-         vertices = vertices.concat(vertexArrays[idx]);
          usedTextureSources.push(textureSources[idx]);
       }
       
-      // Create tile buffer
-      const tileBuffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, tileBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+      const buffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
 
       gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 9 * Float32Array.BYTES_PER_ELEMENT, 0);
       gl.vertexAttribPointer(imageRenderingProgramTexCoordAttribLocation, 2, gl.FLOAT, false, 9 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
@@ -332,7 +404,7 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
       }
 
       // Draw the vertices
-      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 9);
+      gl.drawArrays(gl.TRIANGLES, 0, vertexCount);
    }
 
    gl.disable(gl.BLEND);

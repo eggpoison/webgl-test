@@ -1,4 +1,4 @@
-import { ParticleType, Point, SETTINGS, Vector, rotatePoint } from "webgl-test-shared";
+import { ParticleType, Point, SETTINGS, Vector } from "webgl-test-shared";
 import Game from "../Game";
 import { createWebGLProgram, gl } from "../webgl";
 import Camera from "../Camera";
@@ -119,9 +119,10 @@ export function createParticleShaders(): void {
 
 type CategorisedParticles = Record<string, Array<Particle>>;
 
-const particleIsVisible = (particle: Particle, particleRenderPosition: Point): boolean => {
+const particleIsVisible = (particle: Particle): boolean => {
    const halfMaxDiagonalLength = Math.sqrt(Math.pow(particle.width, 2) + Math.pow(particle.height, 2)) / 2;
 
+   const particleRenderPosition = calculateParticleRenderPosition(particle);
    if (particleRenderPosition.x + halfMaxDiagonalLength < Camera.visiblePositionBounds[0]
       || particleRenderPosition.x - halfMaxDiagonalLength > Camera.visiblePositionBounds[1]
       || particleRenderPosition.y + halfMaxDiagonalLength < Camera.visiblePositionBounds[2]
@@ -135,7 +136,7 @@ const categoriseParticles = (renderLayer: ParticleRenderLayer): CategorisedParti
    const categorisedParticles: CategorisedParticles = {};
 
    for (const particle of Object.values(Game.board.particles)) {
-      if (particle.renderLayer !== renderLayer) continue;
+      if (particle.renderLayer !== renderLayer || !particleIsVisible(particle)) continue;
 
       const textureSource = PARTICLE_TEXTURES[particle.type];
       
@@ -190,42 +191,97 @@ export function renderParticles(renderLayer: ParticleRenderLayer): void {
 
    const textureSources = new Array<string>();
    const vertexArrays = new Array<Array<number>>();
+   const vertexDatas = new Array<Float32Array>();
+   const vertexCounts = new Array<number>();
    for (const [textureSource, particles] of Object.entries(categorisedParticles)) {
+      if (particles.length === 0) {
+         continue;
+      }
+      
       textureSources.push(textureSource);
+      vertexCounts.push(particles.length * 6 * 8);
 
       const vertices = new Array<number>();
-      for (const particle of particles) {
+      const vertexData = new Float32Array(particles.length * 6 * 8);
+      for (let i = 0; i < particles.length; i++) {
+         const particle = particles[i];
+         
          const renderPosition = calculateParticleRenderPosition(particle);
 
-         if (particleIsVisible(particle, renderPosition)) {
-            const width = particle.width * particle.scale;
-            const height = particle.height * particle.scale;
+         const width = particle.width * particle.scale;
+         const height = particle.height * particle.scale;
 
-            const x1 = renderPosition.x - width / 2;
-            const x2 = renderPosition.x + width / 2;
-            const y1 = renderPosition.y - height / 2;
-            const y2 = renderPosition.y + height / 2;
+         const x1 = renderPosition.x - width / 2;
+         const x2 = renderPosition.x + width / 2;
+         const y1 = renderPosition.y - height / 2;
+         const y2 = renderPosition.y + height / 2;
 
-            const topLeftX = calculateVertexPositionX(x1, y2, renderPosition, particle.rotation);
-            const topLeftY = calculateVertexPositionY(x1, y2, renderPosition, particle.rotation);
-            const topRightX = calculateVertexPositionX(x2, y2, renderPosition, particle.rotation);
-            const topRightY = calculateVertexPositionY(x2, y2, renderPosition, particle.rotation);
-            const bottomLeftX = calculateVertexPositionX(x1, y1, renderPosition, particle.rotation);
-            const bottomLeftY = calculateVertexPositionY(x1, y1, renderPosition, particle.rotation);
-            const bottomRightX = calculateVertexPositionX(x2, y1, renderPosition, particle.rotation);
-            const bottomRightY = calculateVertexPositionY(x2, y1, renderPosition, particle.rotation);
-            
-            vertices.push(
-               bottomLeftX, bottomLeftY, 0, 0, particle.opacity, particle.tint[0], particle.tint[1], particle.tint[2],
-               bottomRightX, bottomRightY, 1, 0, particle.opacity, particle.tint[0], particle.tint[1], particle.tint[2],
-               topLeftX, topLeftY, 0, 1, particle.opacity, particle.tint[0], particle.tint[1], particle.tint[2],
-               topLeftX, topLeftY, 0, 1, particle.opacity, particle.tint[0], particle.tint[1], particle.tint[2],
-               bottomRightX, bottomRightY, 1, 0, particle.opacity, particle.tint[0], particle.tint[1], particle.tint[2],
-               topRightX, topRightY, 1, 1, particle.opacity, particle.tint[0], particle.tint[1], particle.tint[2]
-            );
-         }
+         const topLeftX = calculateVertexPositionX(x1, y2, renderPosition, particle.rotation);
+         const topLeftY = calculateVertexPositionY(x1, y2, renderPosition, particle.rotation);
+         const topRightX = calculateVertexPositionX(x2, y2, renderPosition, particle.rotation);
+         const topRightY = calculateVertexPositionY(x2, y2, renderPosition, particle.rotation);
+         const bottomLeftX = calculateVertexPositionX(x1, y1, renderPosition, particle.rotation);
+         const bottomLeftY = calculateVertexPositionY(x1, y1, renderPosition, particle.rotation);
+         const bottomRightX = calculateVertexPositionX(x2, y1, renderPosition, particle.rotation);
+         const bottomRightY = calculateVertexPositionY(x2, y1, renderPosition, particle.rotation);
+         
+         // TODO: Surely there is a less awful way of doing this?
+         vertexData[i * 6 * 8] = bottomLeftX;
+         vertexData[i * 6 * 8 + 1] = bottomLeftY;
+         vertexData[i * 6 * 8 + 2] = 0;
+         vertexData[i * 6 * 8 + 3] = 0;
+         vertexData[i * 6 * 8 + 4] = particle.opacity;
+         vertexData[i * 6 * 8 + 5] = particle.tint[0];
+         vertexData[i * 6 * 8 + 6] = particle.tint[1];
+         vertexData[i * 6 * 8 + 7] = particle.tint[2];
+
+         vertexData[i * 6 * 8 + 8] = bottomRightX;
+         vertexData[i * 6 * 8 + 9] = bottomRightY;
+         vertexData[i * 6 * 8 + 10] = 1;
+         vertexData[i * 6 * 8 + 11] = 0;
+         vertexData[i * 6 * 8 + 12] = particle.opacity;
+         vertexData[i * 6 * 8 + 13] = particle.tint[0];
+         vertexData[i * 6 * 8 + 14] = particle.tint[1];
+         vertexData[i * 6 * 8 + 15] = particle.tint[2];
+
+         vertexData[i * 6 * 8 + 16] = topLeftX;
+         vertexData[i * 6 * 8 + 17] = topLeftY;
+         vertexData[i * 6 * 8 + 18] = 0;
+         vertexData[i * 6 * 8 + 19] = 1;
+         vertexData[i * 6 * 8 + 20] = particle.opacity;
+         vertexData[i * 6 * 8 + 21] = particle.tint[0];
+         vertexData[i * 6 * 8 + 22] = particle.tint[1];
+         vertexData[i * 6 * 8 + 23] = particle.tint[2];
+
+         vertexData[i * 6 * 8 + 24] = topLeftX;
+         vertexData[i * 6 * 8 + 25] = topLeftY;
+         vertexData[i * 6 * 8 + 26] = 0;
+         vertexData[i * 6 * 8 + 27] = 1;
+         vertexData[i * 6 * 8 + 28] = particle.opacity;
+         vertexData[i * 6 * 8 + 29] = particle.tint[0];
+         vertexData[i * 6 * 8 + 30] = particle.tint[1];
+         vertexData[i * 6 * 8 + 31] = particle.tint[2];
+
+         vertexData[i * 6 * 8 + 32] = bottomRightX;
+         vertexData[i * 6 * 8 + 33] = bottomRightY;
+         vertexData[i * 6 * 8 + 34] = 1;
+         vertexData[i * 6 * 8 + 35] = 0;
+         vertexData[i * 6 * 8 + 36] = particle.opacity;
+         vertexData[i * 6 * 8 + 37] = particle.tint[0];
+         vertexData[i * 6 * 8 + 38] = particle.tint[1];
+         vertexData[i * 6 * 8 + 39] = particle.tint[2];
+
+         vertexData[i * 6 * 8 + 40] = topRightX;
+         vertexData[i * 6 * 8 + 41] = topRightY;
+         vertexData[i * 6 * 8 + 42] = 1;
+         vertexData[i * 6 * 8 + 43] = 1;
+         vertexData[i * 6 * 8 + 44] = particle.opacity;
+         vertexData[i * 6 * 8 + 45] = particle.tint[0];
+         vertexData[i * 6 * 8 + 46] = particle.tint[1];
+         vertexData[i * 6 * 8 + 47] = particle.tint[2];
       }
       vertexArrays.push(vertices);
+      vertexDatas.push(vertexData);
    }
 
    gl.useProgram(program);
@@ -235,15 +291,13 @@ export function renderParticles(renderLayer: ParticleRenderLayer): void {
 
    for (let i = 0; i < textureSources.length; i++) {
       const textureSource = textureSources[i];
-      const vertices = vertexArrays[i];
-      if (vertices.length === 0) continue;
+      const vertexData = vertexDatas[i];
+      const vertexCount = vertexCounts[i];
 
-      const float32Vertices = new Float32Array(vertices);
-      
       // Create buffer
       const buffer = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, float32Vertices, gl.STATIC_DRAW);
+      gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
 
       gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 0);
       gl.vertexAttribPointer(texCoordAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
@@ -263,7 +317,7 @@ export function renderParticles(renderLayer: ParticleRenderLayer): void {
       gl.bindTexture(gl.TEXTURE_2D, texture);
 
       // Draw the vertices
-      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 8);
+      gl.drawArrays(gl.TRIANGLES, 0, vertexCount / 8);
    }
 
    gl.disable(gl.BLEND);

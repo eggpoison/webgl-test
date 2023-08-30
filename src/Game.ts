@@ -336,9 +336,9 @@ abstract class Game {
 
       renderParticles(ParticleRenderLayer.low);
 
-      renderGameObjects(Object.values(this.board.droppedItems));
+      // renderGameObjects(Object.values(this.board.droppedItems));
       renderGameObjects(Object.values(this.board.entities));
-      renderGameObjects(Object.values(this.board.projectiles));
+      // renderGameObjects(Object.values(this.board.projectiles));
 
       renderParticles(ParticleRenderLayer.high);
 
