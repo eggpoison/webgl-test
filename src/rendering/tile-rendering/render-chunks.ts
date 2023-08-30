@@ -8,9 +8,9 @@ export const RENDER_CHUNK_SIZE = 8;
 export const WORLD_RENDER_CHUNK_SIZE = SETTINGS.BOARD_DIMENSIONS / RENDER_CHUNK_SIZE;
 
 export interface RenderChunkSolidTileInfo {
-   readonly buffers: Array<WebGLBuffer>;
-   readonly vertexCounts: Array<number>;
-   readonly indexedTextureSources: Array<string>;
+   readonly buffers: ReadonlyArray<WebGLBuffer>;
+   readonly vertexCounts: ReadonlyArray<number>;
+   readonly indexedTextureSources: ReadonlyArray<string>;
 }
 
 export interface RenderChunkRiverInfo {

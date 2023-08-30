@@ -117,7 +117,6 @@ abstract class TribeMember extends Entity {
                
                const direction = lerp(0, -Math.PI/5, eatIntervalProgress);
                return direction;
-
             } else {
                // Attack animation
 

@@ -57,6 +57,7 @@ export function getMouseTargetEntity(): Entity | null {
          const chunk = Game.board.getChunk(chunkX, chunkY);
          for (const gameObject of chunk.getGameObjects()) {
             if (gameObject instanceof Entity) {
+               // console.log(gameObject.type);
                const distance = Game.cursorPosition.calculateDistanceBetween(gameObject.renderPosition);
                if (distance <= CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE && distance < minDistance) {
                   closestEntity = gameObject;

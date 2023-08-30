@@ -102,6 +102,7 @@ class Board {
    public updateGameObjects(): void {
       if (Player.instance !== null) {
          Player.instance.applyPhysics();
+         Player.instance.recalculateContainingChunks();
       }
 
       for (const gameObject of Object.values(this.gameObjects)) {
@@ -118,7 +119,7 @@ class Board {
             hitbox.updatePosition();
          }
 
-         gameObject.recalculateContainingChunks();
+         // gameObject.recalculateContainingChunks();
       }
    }
 

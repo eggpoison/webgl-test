@@ -18,7 +18,7 @@ import { BackpackInventoryMenu_setBackpackInventory } from "../components/game/i
 import { setHeldItemVisual } from "../components/game/HeldItem";
 import { CraftingMenu_setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
 import { updateHealthBar } from "../components/game/HealthBar";
-import { registerServerTick } from "../components/game/nerd-vision/GameInfoDisplay";
+import { registerServerTick, updateDebugScreenTicks } from "../components/game/nerd-vision/GameInfoDisplay";
 import createProjectile from "../projectiles/projectile-creation";
 import Camera from "../Camera";
 import { isDev } from "../utils";
@@ -171,8 +171,10 @@ abstract class Client {
    }
 
    public static unloadGameDataPacket(gameDataPacket: GameDataPacket): void {
-      // Game.pendingTicks = gameDataPacket.serverTicks;
+      Game.ticks = gameDataPacket.serverTicks;
+      updateDebugScreenTicks(gameDataPacket.serverTicks);
       Game.time = gameDataPacket.serverTime;
+
 
       if (isDev()) {
          Game.setGameObjectDebugData(gameDataPacket.gameObjectDebugData);
@@ -429,12 +431,6 @@ abstract class Client {
       const position = Point.unpackage(serverItemEntityData.position); 
       const velocity = serverItemEntityData.velocity !== null ? Vector.unpackage(serverItemEntityData.velocity) : null;
 
-      const containingChunks = new Set<Chunk>();
-      for (const [chunkX, chunkY] of serverItemEntityData.chunkCoordinates) {
-         const chunk = Game.board.getChunk(chunkX, chunkY);
-         containingChunks.add(chunk);
-      }
-
       const hitboxes = this.createHitboxesFromData(serverItemEntityData.hitboxes);
 
       const droppedItem = new DroppedItem(position, hitboxes, serverItemEntityData.id, velocity, serverItemEntityData.type);
@@ -445,18 +441,12 @@ abstract class Client {
    private static createProjectileFromServerData(projectileData: ProjectileData): void {
       const position = Point.unpackage(projectileData.position); 
 
-      const containingChunks = new Set<Chunk>();
-      for (const [chunkX, chunkY] of projectileData.chunkCoordinates) {
-         const chunk = Game.board.getChunk(chunkX, chunkY);
-         containingChunks.add(chunk);
-      }
-
       const hitboxes = this.createHitboxesFromData(projectileData.hitboxes);
 
       const projectile = createProjectile(position, hitboxes, projectileData.id, projectileData.type);
       projectile.rotation = projectileData.rotation;
       projectile.velocity = projectileData.velocity !== null ? Vector.unpackage(projectileData.velocity) : null;
-      projectile.acceleration = projectileData.acceleration !== null ? Vector.unpackage(projectileData.acceleration) : null
+      projectile.acceleration = projectileData.acceleration !== null ? Vector.unpackage(projectileData.acceleration) : null;
       projectile.mass = projectileData.mass;
    }
    

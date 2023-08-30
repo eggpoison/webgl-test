@@ -80,31 +80,54 @@ export function calculateSolidTileRenderChunkData(renderChunkX: number, renderCh
 
    let idx = 0;
    for (const [textureSource, tiles] of Object.entries(tilesCategorised)) {
-      const vertices = new Array<number>();
+      const vertexData = new Float32Array(tiles.length * 24);
 
-      for (const tile of tiles) {
+      for (let i = 0; i < tiles.length; i++) {
+         const tile = tiles[i];
+
          const x1 = tile.x * SETTINGS.TILE_SIZE;
          const x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
          const y1 = tile.y * SETTINGS.TILE_SIZE;
          const y2 = (tile.y + 1) * SETTINGS.TILE_SIZE;
 
-         vertices.push(
-            x1, y1, 0, 0,
-            x2, y1, 1, 0,
-            x1, y2, 0, 1,
-            x1, y2, 0, 1,
-            x2, y1, 1, 0,
-            x2, y2, 1, 1
-         );
+         vertexData[i * 24] = x1;
+         vertexData[i * 24 + 1] = y1;
+         vertexData[i * 24 + 2] = 0;
+         vertexData[i * 24 + 3] = 0;
+
+         vertexData[i * 24 + 4] = x2;
+         vertexData[i * 24 + 5] = y1;
+         vertexData[i * 24 + 6] = 1;
+         vertexData[i * 24 + 7] = 0;
+
+         vertexData[i * 24 + 8] = x1;
+         vertexData[i * 24 + 9] = y2;
+         vertexData[i * 24 + 10] = 0;
+         vertexData[i * 24 + 11] = 1;
+
+         vertexData[i * 24 + 12] = x1;
+         vertexData[i * 24 + 13] = y2;
+         vertexData[i * 24 + 14] = 0;
+         vertexData[i * 24 + 15] = 1;
+
+         vertexData[i * 24 + 16] = x2;
+         vertexData[i * 24 + 17] = y1;
+         vertexData[i * 24 + 18] = 1;
+         vertexData[i * 24 + 19] = 0;
+
+         vertexData[i * 24 + 20] = x2;
+         vertexData[i * 24 + 21] = y2;
+         vertexData[i * 24 + 22] = 1;
+         vertexData[i * 24 + 23] = 1;
       }
 
       // Create tile buffer
       const buffer = gl.createBuffer()!;
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+      gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
 
       buffers[idx] = buffer;
-      vertexCounts[idx] = vertices.length;
+      vertexCounts[idx] = tiles.length * 24;
       indexedTextureSources[idx] = textureSource;
 
       idx++;

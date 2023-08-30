@@ -177,6 +177,7 @@ class Player extends TribeMember {
    }
 
    public static resolveCollisions(): void {
+      // console.log(Player.instance?.position);
       // this.resolveWallTileCollisions();
       this.resolveWallCollisions();
       this.resolveGameObjectCollisions();
@@ -354,8 +355,13 @@ class Player extends TribeMember {
       if (Player.instance === null) throw new Error();
       
       const collidingGameObjects = new Array<GameObject>();
+      // console.log("check collisions");
+      let i = 0;
 
       for (const chunk of Player.instance.chunks) {
+         // if (++i === 1) {
+         //    console.log(chunk.x, chunk.y);  
+         // }
          gameObjectLoop: for (const gameObject of chunk.getGameObjects()) {
             if (gameObject === Player.instance) continue;
 

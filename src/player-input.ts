@@ -19,11 +19,6 @@ export function setLightspeedIsActive(isActive: boolean): void {
    lightspeedIsActive = isActive;
 }
 
-/** How far away from the entity the attack is done */
-const PLAYER_ATTACK_OFFSET = 80;
-/** Max distance from the attack position that the attack will be registered from */
-const PLAYER_ATTACK_TEST_RADIUS = 48;
-
 /** Terminal velocity of the player while moving without any modifiers. */
 const PLAYER_TERMINAL_VELOCITY = 300;
 
@@ -47,56 +42,12 @@ let _inventoryIsOpen = false;
 let _interactInventoryIsOpen = false;
 let interactInventoryEntity: Entity | null = null;
 
-/** Calculates which entities would be the target of a player attack in the current game state. */
-export function calculatePlayerAttackTargets(): ReadonlyArray<GameObject> {
-   if (Player.instance === null) return [];
-   
-   const offset = new Vector(PLAYER_ATTACK_OFFSET, Player.instance.rotation);
-   const attackPosition = Player.instance.position.copy();
-   attackPosition.add(offset.convertToPoint());
-
-   const minChunkX = Math.max(Math.min(Math.floor((attackPosition.x - PLAYER_ATTACK_TEST_RADIUS) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-   const maxChunkX = Math.max(Math.min(Math.floor((attackPosition.x + PLAYER_ATTACK_TEST_RADIUS) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-   const minChunkY = Math.max(Math.min(Math.floor((attackPosition.y - PLAYER_ATTACK_TEST_RADIUS) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-   const maxChunkY = Math.max(Math.min(Math.floor((attackPosition.y + PLAYER_ATTACK_TEST_RADIUS) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-
-   // Find all attacked entities
-   const attackedGameObjects = new Array<GameObject>();
-   for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
-      for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
-         const chunk = Game.board.getChunk(chunkX, chunkY);
-
-         for (const gameObject of chunk.getGameObjects()) {
-            // Skip entities that are already in the array
-            if (attackedGameObjects.includes(gameObject)) continue;
-
-            const dist = Game.board.calculateDistanceBetweenPointAndGameObject(attackPosition, gameObject);
-            if (dist <= PLAYER_ATTACK_TEST_RADIUS) attackedGameObjects.push(gameObject);
-         }
-      }
-   }
-   
-   // Don't attack yourself
-   while (true) {
-      const idx = attackedGameObjects.indexOf(Player.instance);
-      if (idx !== -1) {
-         attackedGameObjects.splice(idx, 1);
-      } else {
-         break;
-      }
-   }
-
-   return attackedGameObjects;
-}
-
 const attack = (): void => {
    if (Player.instance === null) return;
       
-   const attackTargets = calculatePlayerAttackTargets();
    const attackPacket: AttackPacket = {
       itemSlot: Game.latencyGameState.selectedHotbarItemSlot,
-      attackDirection: Player.instance.rotation,
-      targetEntities: attackTargets.map(entity => entity.id)
+      attackDirection: Player.instance.rotation
    };
    Client.sendAttackPacket(attackPacket);
 

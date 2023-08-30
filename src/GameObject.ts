@@ -305,9 +305,8 @@ abstract class GameObject extends RenderObject {
       this.rotation = data.rotation;
       this.mass = data.mass;
 
-      // Update the chunks to match the server data
-      this.chunks.clear();
-      this.chunks = new Set(data.chunkCoordinates.map(([x, y]) => Game.board.getChunk(x, y)));
+      // Recalculate the game object's containing chunks to account for the new position
+      this.recalculateContainingChunks();
    }
 
    public remove?(): void;

@@ -20,7 +20,7 @@ export interface RenderPartInfo {
 /** A thing which is able to hold render parts */
 export class RenderObject {
    public renderPosition!: Point;
-   public rotation: number = 0;
+   public rotation = 0;
    public readonly renderParts = new Array<RenderPart>();
 
    public attachRenderParts(renderParts: ReadonlyArray<RenderPart>): void {
@@ -79,7 +79,6 @@ class RenderPart extends RenderObject implements RenderPartInfo {
       this.height = renderPartInfo.height;
       this.textureSource = renderPartInfo.textureSource;
       this.zIndex = renderPartInfo.zIndex;
-      if (typeof renderPartInfo.getRotation !== "undefined") this.rotation = renderPartInfo.getRotation();
       this.inheritParentRotation = typeof renderPartInfo.inheritParentRotation !== "undefined" ? renderPartInfo.inheritParentRotation : true;
       this.getRotation = renderPartInfo.getRotation;
       this.opacity = renderPartInfo.opacity || 1;
@@ -88,7 +87,8 @@ class RenderPart extends RenderObject implements RenderPartInfo {
       this.parentRenderObject = parentRenderObject;
 
       // As soon as the render part is created, calculate an initial position for it.
-      this.updateRenderPosition();
+      // this.recalculateRotation();
+      // this.updateRenderPosition();
    }
 
    /** Updates the render part's position based on its parent's position and rotation */
@@ -103,8 +103,16 @@ class RenderPart extends RenderObject implements RenderPartInfo {
          this.renderPosition.add(offset.convertToPoint());
       }
 
+      this.recalculateRotation();
+   }
+
+   private recalculateRotation(): void {
       if (typeof this.getRotation !== "undefined") {
          this.rotation = this.getRotation();
+         if (isNaN(this.rotation)) {
+            console.warn(this);
+            throw new Error("Render part's rotation was NaN.");
+         }
       }
    }
 }

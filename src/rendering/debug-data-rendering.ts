@@ -7,7 +7,7 @@ import Game from "../Game";
 const lineVertexShaderText = `#version 300 es
 precision mediump float;
 
-in vec2 a_position;
+layout(location = 0) in vec2 a_position;
 in vec3 a_colour;
 
 out vec3 v_colour;
@@ -30,13 +30,13 @@ void main() {
 }
 `;
 
-const triangleVertexShaderText = `
+const triangleVertexShaderText = `#version 300 es
 precision mediump float;
 
-attribute vec2 a_position;
-attribute vec3 a_colour;
+layout(location = 0) in vec2 a_position;
+in vec3 a_colour;
 
-varying vec3 v_colour;
+out vec3 v_colour;
 
 void main() {
    v_colour = a_colour;
@@ -44,13 +44,15 @@ void main() {
    gl_Position = vec4(a_position, 0.0, 1.0);   
 }
 `;
-const triangleFragmentShaderText = `
+const triangleFragmentShaderText = `#version 300 es
 precision mediump float;
 
-varying vec3 v_colour;
+in vec3 v_colour;
+
+out vec4 outputColour;
 
 void main() {
-   gl_FragColor = vec4(v_colour, 0.6);
+   outputColour = vec4(v_colour, 0.6);
 }
 `;
 
@@ -65,12 +67,10 @@ let triangleProgram: WebGLProgram;
 export function createDebugDataShaders(): void {
    lineProgram = createWebGLProgram(lineVertexShaderText, lineFragmentShaderText);
 
-   gl.bindAttribLocation(lineProgram, 0, "a_position");
    lineProgramColourAttribLocation = gl.getAttribLocation(lineProgram, "a_colour");
 
    triangleProgram = createWebGLProgram(triangleVertexShaderText, triangleFragmentShaderText);
 
-   gl.bindAttribLocation(triangleProgram, 0, "a_position");
    triangleProgramColourAttribLocation = gl.getAttribLocation(triangleProgram, "a_colour");
 }
 

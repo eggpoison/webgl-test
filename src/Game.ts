@@ -20,7 +20,7 @@ import { createHitboxShaders, renderEntityHitboxes } from "./rendering/hitbox-re
 import { updateInteractInventory, updatePlayerMovement } from "./player-input";
 import DefiniteGameState from "./game-state/definite-game-state";
 import LatencyGameState from "./game-state/latency-game-state";
-import { clearServerTicks, updateDebugScreenCurrentTime, updateDebugScreenFPS, updateDebugScreenTicks } from "./components/game/nerd-vision/GameInfoDisplay";
+import { clearServerTicks, registerFrame, updateDebugScreenCurrentTime, updateDebugScreenFPS, updateDebugScreenRenderTime, updateDebugScreenTicks, updateFrameCounter } from "./components/game/nerd-vision/GameInfoDisplay";
 import { createWorldBorderShaders, renderWorldBorder } from "./rendering/world-border-rendering";
 import { createSolidTileShaders, renderSolidTiles } from "./rendering/tile-rendering/solid-tile-rendering";
 import { createWaterShaders, renderRivers } from "./rendering/tile-rendering/river-rendering";
@@ -86,7 +86,7 @@ abstract class Game {
 
    public static pendingPackets = new Array<GameDataPacket>();
 
-   private static _ticks: number;
+   public static ticks: number;
    private static _time: number;
 
    public static board: Board;
@@ -116,15 +116,6 @@ abstract class Game {
    private static gameObjectDebugData: GameObjectDebugData | null = null;
 
    public static tribe: Tribe | null = null;
-
-   public static get ticks(): number {
-      return this._ticks;
-   }
-
-   public static set ticks(ticks: number) {
-      this._ticks = ticks;
-      updateDebugScreenTicks(ticks);
-   }
 
    public static get time(): number {
       return this._time;
@@ -300,7 +291,6 @@ abstract class Game {
       const currentRenderTime = Math.floor(new Date().getTime() / 1000);
       numRenders++;
       if (currentRenderTime !== lastRenderTime) {
-         updateDebugScreenFPS(numRenders);
          clearServerTicks();
          numRenders = 0;
       }
@@ -364,12 +354,17 @@ abstract class Game {
       }
 
       updateInteractInventory();
+
+      registerFrame();
+      updateDebugScreenFPS();
    }
 
    public static main(currentTime: number): void {
       if (this.isSynced) {
          const deltaTime = currentTime - this.lastTime;
          this.lastTime = currentTime;
+      
+         updateFrameCounter(deltaTime / 1000);
 
          // Update
          this.lag += deltaTime;
@@ -385,8 +380,15 @@ abstract class Game {
             this.lag -= 1000 / SETTINGS.TPS;
          }
 
+         const renderStartTime = performance.now();
+
          const frameProgress = this.lag / 1000 * SETTINGS.TPS;
          this.render(frameProgress);
+
+         const renderEndTime = performance.now();
+
+         const renderTime = renderEndTime - renderStartTime;
+         updateDebugScreenRenderTime(renderTime);
       }
 
       if (this.isRunning) {

@@ -243,7 +243,7 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
    
    // Calculate vertices
    numTextureUnitsUsed = 0;
-   let particleIdx = 0;
+   let partIndex = 0;
    const vertexDatas = new Array<Float32Array>();
    const textureSources = new Array<string>();
    for (const zIndexRenderPartInfo of Object.values(renderParts) as ReadonlyArray<TexturedRenderParts>) {
@@ -252,12 +252,11 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
             const idx = Math.floor(numTextureUnitsUsed / MAX_ACTIVE_TEXTURE_UNITS);
             const numPartsInDrawCall = numPartsPerDrawCall[idx];
             vertexDatas.push(new Float32Array(numPartsInDrawCall * 6 * 9));
-            particleIdx = 0;
+            partIndex = 0;
          }
          
          const textureIdx = numTextureUnitsUsed % MAX_ACTIVE_TEXTURE_UNITS;
          for (const renderInfo of texturedRenderParts) {
-            // Calculate vertices for all render parts in the record
             let redTint = 0;
             let greenTint = 0;
             let blueTint = 0;
@@ -295,67 +294,67 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
             const data = vertexDatas[vertexDatas.length - 1];
 
             // TODO: Find better way to do this
-            data[particleIdx * 6 * 9] = bottomLeftX;
-            data[particleIdx * 6 * 9 + 1] = bottomLeftY;
-            data[particleIdx * 6 * 9 + 2] = u0;
-            data[particleIdx * 6 * 9 + 3] = 0;
-            data[particleIdx * 6 * 9 + 4] = redTint;
-            data[particleIdx * 6 * 9 + 5] = greenTint;
-            data[particleIdx * 6 * 9 + 6] = blueTint;
-            data[particleIdx * 6 * 9 + 7] = textureIdx;
-            data[particleIdx * 6 * 9 + 8] = renderInfo.renderPart.opacity;
+            data[partIndex * 6 * 9] = bottomLeftX;
+            data[partIndex * 6 * 9 + 1] = bottomLeftY;
+            data[partIndex * 6 * 9 + 2] = u0;
+            data[partIndex * 6 * 9 + 3] = 0;
+            data[partIndex * 6 * 9 + 4] = redTint;
+            data[partIndex * 6 * 9 + 5] = greenTint;
+            data[partIndex * 6 * 9 + 6] = blueTint;
+            data[partIndex * 6 * 9 + 7] = textureIdx;
+            data[partIndex * 6 * 9 + 8] = renderInfo.renderPart.opacity;
 
-            data[particleIdx * 6 * 9 + 9] = bottomRightX;
-            data[particleIdx * 6 * 9 + 10] = bottomRightY;
-            data[particleIdx * 6 * 9 + 11] = u1;
-            data[particleIdx * 6 * 9 + 12] = 0;
-            data[particleIdx * 6 * 9 + 13] = redTint;
-            data[particleIdx * 6 * 9 + 14] = greenTint;
-            data[particleIdx * 6 * 9 + 15] = blueTint;
-            data[particleIdx * 6 * 9 + 16] = textureIdx;
-            data[particleIdx * 6 * 9 + 17] = renderInfo.renderPart.opacity;
+            data[partIndex * 6 * 9 + 9] = bottomRightX;
+            data[partIndex * 6 * 9 + 10] = bottomRightY;
+            data[partIndex * 6 * 9 + 11] = u1;
+            data[partIndex * 6 * 9 + 12] = 0;
+            data[partIndex * 6 * 9 + 13] = redTint;
+            data[partIndex * 6 * 9 + 14] = greenTint;
+            data[partIndex * 6 * 9 + 15] = blueTint;
+            data[partIndex * 6 * 9 + 16] = textureIdx;
+            data[partIndex * 6 * 9 + 17] = renderInfo.renderPart.opacity;
 
-            data[particleIdx * 6 * 9 + 18] = topLeftX;
-            data[particleIdx * 6 * 9 + 19] = topLeftY;
-            data[particleIdx * 6 * 9 + 20] = u0;
-            data[particleIdx * 6 * 9 + 21] = 1;
-            data[particleIdx * 6 * 9 + 22] = redTint;
-            data[particleIdx * 6 * 9 + 23] = greenTint;
-            data[particleIdx * 6 * 9 + 24] = blueTint;
-            data[particleIdx * 6 * 9 + 25] = textureIdx;
-            data[particleIdx * 6 * 9 + 26] = renderInfo.renderPart.opacity;
+            data[partIndex * 6 * 9 + 18] = topLeftX;
+            data[partIndex * 6 * 9 + 19] = topLeftY;
+            data[partIndex * 6 * 9 + 20] = u0;
+            data[partIndex * 6 * 9 + 21] = 1;
+            data[partIndex * 6 * 9 + 22] = redTint;
+            data[partIndex * 6 * 9 + 23] = greenTint;
+            data[partIndex * 6 * 9 + 24] = blueTint;
+            data[partIndex * 6 * 9 + 25] = textureIdx;
+            data[partIndex * 6 * 9 + 26] = renderInfo.renderPart.opacity;
 
-            data[particleIdx * 6 * 9 + 27] = topLeftX;
-            data[particleIdx * 6 * 9 + 28] = topLeftY;
-            data[particleIdx * 6 * 9 + 29] = u0;
-            data[particleIdx * 6 * 9 + 30] = 1;
-            data[particleIdx * 6 * 9 + 31] = redTint;
-            data[particleIdx * 6 * 9 + 32] = greenTint;
-            data[particleIdx * 6 * 9 + 33] = blueTint;
-            data[particleIdx * 6 * 9 + 34] = textureIdx;
-            data[particleIdx * 6 * 9 + 35] = renderInfo.renderPart.opacity;
+            data[partIndex * 6 * 9 + 27] = topLeftX;
+            data[partIndex * 6 * 9 + 28] = topLeftY;
+            data[partIndex * 6 * 9 + 29] = u0;
+            data[partIndex * 6 * 9 + 30] = 1;
+            data[partIndex * 6 * 9 + 31] = redTint;
+            data[partIndex * 6 * 9 + 32] = greenTint;
+            data[partIndex * 6 * 9 + 33] = blueTint;
+            data[partIndex * 6 * 9 + 34] = textureIdx;
+            data[partIndex * 6 * 9 + 35] = renderInfo.renderPart.opacity;
 
-            data[particleIdx * 6 * 9 + 36] = bottomRightX;
-            data[particleIdx * 6 * 9 + 37] = bottomRightY;
-            data[particleIdx * 6 * 9 + 38] = u1;
-            data[particleIdx * 6 * 9 + 39] = 0;
-            data[particleIdx * 6 * 9 + 40] = redTint;
-            data[particleIdx * 6 * 9 + 41] = greenTint;
-            data[particleIdx * 6 * 9 + 42] = blueTint;
-            data[particleIdx * 6 * 9 + 43] = textureIdx;
-            data[particleIdx * 6 * 9 + 44] = renderInfo.renderPart.opacity;
+            data[partIndex * 6 * 9 + 36] = bottomRightX;
+            data[partIndex * 6 * 9 + 37] = bottomRightY;
+            data[partIndex * 6 * 9 + 38] = u1;
+            data[partIndex * 6 * 9 + 39] = 0;
+            data[partIndex * 6 * 9 + 40] = redTint;
+            data[partIndex * 6 * 9 + 41] = greenTint;
+            data[partIndex * 6 * 9 + 42] = blueTint;
+            data[partIndex * 6 * 9 + 43] = textureIdx;
+            data[partIndex * 6 * 9 + 44] = renderInfo.renderPart.opacity;
 
-            data[particleIdx * 6 * 9 + 45] = topRightX;
-            data[particleIdx * 6 * 9 + 46] = topRightY;
-            data[particleIdx * 6 * 9 + 47] = u1;
-            data[particleIdx * 6 * 9 + 48] = 1;
-            data[particleIdx * 6 * 9 + 49] = redTint;
-            data[particleIdx * 6 * 9 + 50] = greenTint;
-            data[particleIdx * 6 * 9 + 51] = blueTint;
-            data[particleIdx * 6 * 9 + 52] = textureIdx;
-            data[particleIdx * 6 * 9 + 53] = renderInfo.renderPart.opacity;
+            data[partIndex * 6 * 9 + 45] = topRightX;
+            data[partIndex * 6 * 9 + 46] = topRightY;
+            data[partIndex * 6 * 9 + 47] = u1;
+            data[partIndex * 6 * 9 + 48] = 1;
+            data[partIndex * 6 * 9 + 49] = redTint;
+            data[partIndex * 6 * 9 + 50] = greenTint;
+            data[partIndex * 6 * 9 + 51] = blueTint;
+            data[partIndex * 6 * 9 + 52] = textureIdx;
+            data[partIndex * 6 * 9 + 53] = renderInfo.renderPart.opacity;
 
-            particleIdx++;
+            partIndex++;
          }
          
          textureSources.push(textureSource);
@@ -373,7 +372,7 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
       const vertexCount = numPartsPerDrawCall[currentDrawCall] * 6;
 
       const usedTextureSources = new Array<string>();
-      for (let idx = currentDrawCall * MAX_ACTIVE_TEXTURE_UNITS; idx <= Math.min((currentDrawCall + 1) * MAX_ACTIVE_TEXTURE_UNITS - 1, numTextureUnitsUsed - 1); idx++) {
+      for (let idx = currentDrawCall * MAX_ACTIVE_TEXTURE_UNITS; idx <= Math.min((currentDrawCall + 1) * MAX_ACTIVE_TEXTURE_UNITS - 1, textureSources.length - 1); idx++) {
          usedTextureSources.push(textureSources[idx]);
       }
       
