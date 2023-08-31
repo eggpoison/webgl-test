@@ -8,7 +8,8 @@ export const RENDER_CHUNK_SIZE = 8;
 export const WORLD_RENDER_CHUNK_SIZE = SETTINGS.BOARD_DIMENSIONS / RENDER_CHUNK_SIZE;
 
 export interface RenderChunkSolidTileInfo {
-   readonly buffers: ReadonlyArray<WebGLBuffer>;
+   // readonly buffers: ReadonlyArray<WebGLBuffer>;
+   readonly vaos: ReadonlyArray<WebGLVertexArrayObject>;
    readonly vertexCounts: ReadonlyArray<number>;
    readonly indexedTextureSources: ReadonlyArray<string>;
 }
@@ -24,6 +25,10 @@ export interface RenderChunkRiverInfo {
    readonly noiseVertexCount: number;
    readonly transitionVAO: WebGLVertexArrayObject;
    readonly transitionVertexCount: number;
+   readonly foamVAOs: ReadonlyArray<WebGLVertexArrayObject>;
+   readonly foamVertexCounts: ReadonlyArray<number>;
+   readonly steppingStoneVAO: WebGLVertexArrayObject;
+   readonly steppingStoneVertexCount: number;
 }
 
 /** Stores rendering information about one render chunk of the world.*/

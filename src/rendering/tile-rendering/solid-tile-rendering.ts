@@ -14,7 +14,7 @@ uniform vec2 u_playerPos;
 uniform vec2 u_halfWindowSize;
 uniform float u_zoom;
 
-in vec2 a_tilePos;
+layout(location = 0) in vec2 a_tilePos;
 in vec2 a_texCoord;
 
 out vec2 v_texCoord;
@@ -74,9 +74,9 @@ export function calculateSolidTileRenderChunkData(renderChunkX: number, renderCh
       }
    }
 
-   let buffers = new Array<WebGLBuffer>();
-   let vertexCounts = new Array<number>();
-   let indexedTextureSources = new Array<string>();
+   const vaos = new Array<WebGLVertexArrayObject>();
+   const vertexCounts = new Array<number>();
+   const indexedTextureSources = new Array<string>();
 
    let idx = 0;
    for (const [textureSource, tiles] of Object.entries(tilesCategorised)) {
@@ -121,12 +121,22 @@ export function calculateSolidTileRenderChunkData(renderChunkX: number, renderCh
          vertexData[i * 24 + 23] = 1;
       }
 
-      // Create tile buffer
+      const vao = gl.createVertexArray()!;
+      gl.bindVertexArray(vao);
+
       const buffer = gl.createBuffer()!;
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
       gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
+      
+      gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0);
+      gl.vertexAttribPointer(texCoordAttribLocation, 2, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   
+      gl.enableVertexAttribArray(0);
+      gl.enableVertexAttribArray(texCoordAttribLocation);
 
-      buffers[idx] = buffer;
+      gl.bindVertexArray(null);
+
+      vaos[idx] = vao;
       vertexCounts[idx] = tiles.length * 24;
       indexedTextureSources[idx] = textureSource;
 
@@ -134,7 +144,7 @@ export function calculateSolidTileRenderChunkData(renderChunkX: number, renderCh
    }
 
    return {
-      buffers: buffers,
+      vaos: vaos,
       vertexCounts: vertexCounts,
       indexedTextureSources: indexedTextureSources
    };
@@ -161,35 +171,13 @@ export function renderSolidTiles(): void {
       for (let renderChunkY = minRenderChunkY; renderChunkY <= maxRenderChunkY; renderChunkY++) {
          const renderChunkInfo = getRenderChunkSolidTileInfo(renderChunkX, renderChunkY);
 
-         for (let idx = 0; idx < renderChunkInfo.buffers.length; idx++) {
-            const buffer = renderChunkInfo.buffers[idx];
-            gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      
-            gl.vertexAttribPointer(
-               0, // Attribute location
-               2, // Number of elements per attribute
-               gl.FLOAT, // Type of elements
-               false,
-               4 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
-               0 // Offset from the beginning of a single vertex to this attribute
-            );
-            gl.vertexAttribPointer(
-               texCoordAttribLocation, // Attribute location
-               2, // Number of elements per attribute
-               gl.FLOAT, // Type of elements
-               false,
-               4 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
-               2 * Float32Array.BYTES_PER_ELEMENT // Offset from the beginning of a single vertex to this attribute
-            );
-      
+         for (let idx = 0; idx < renderChunkInfo.vaos.length; idx++) {
+            const vao = renderChunkInfo.vaos[idx];
+            gl.bindVertexArray(vao);
+            
             gl.uniform2f(playerPosUniformLocation, Camera.position.x, Camera.position.y);
             gl.uniform2f(halfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
             gl.uniform1f(zoomUniformLocation, Camera.zoom);
-         
-            // Enable the attributes
-            gl.enableVertexAttribArray(0);
-            gl.enableVertexAttribArray(texCoordAttribLocation);
-      
             gl.uniform1i(textureUniformLocation, 0);
             
             // Set all texture units
@@ -202,4 +190,6 @@ export function renderSolidTiles(): void {
          }
       }
    }
+
+   gl.bindVertexArray(null);
 }

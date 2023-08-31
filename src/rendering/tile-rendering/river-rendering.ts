@@ -307,7 +307,7 @@ out float v_topMarker;
 out float v_rightMarker;
 out float v_leftMarker;
 out float v_bottomMarker;
- 
+
 void main() {
    vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
    vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
@@ -390,37 +390,49 @@ void main() {
 const foamVertexShaderText = `#version 300 es
 precision mediump float;
 
-in vec2 a_position;
+uniform vec2 u_playerPos;
+uniform vec2 u_halfWindowSize;
+uniform float u_zoom;
+
+layout(location = 0) in vec2 a_position;
 in vec2 a_texCoord;
-in vec2 a_textureOffset;
+in vec2 a_flowDirection;
+in float a_textureOffset;
 
 out vec2 v_texCoord;
-out vec2 v_textureOffset;
+out vec2 v_flowDirection;
+out float v_textureOffset;
  
 void main() {
-   gl_Position = vec4(a_position, 0.0, 1.0);
+   vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
+   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+   gl_Position = vec4(clipSpacePos, 0.0, 1.0);
 
    v_texCoord = a_texCoord;
    v_textureOffset = a_textureOffset;
+   v_flowDirection = a_flowDirection;
 }
 `;
 
 const foamFragmentShaderText = `#version 300 es
 precision mediump float;
  
-uniform sampler2D u_steppingStoneTexture;
 uniform sampler2D u_foamTexture;
+uniform sampler2D u_steppingStoneTexture;
+uniform float u_textureOffset;
  
 in vec2 v_texCoord;
-in vec2 v_textureOffset;
+in vec2 v_flowDirection;
+in float v_textureOffset;
 
 out vec4 outputColour;
  
 void main() {
    vec4 steppingStoneColour = texture(u_steppingStoneTexture, v_texCoord);
    
-   vec2 foamCoord = fract(v_texCoord - v_textureOffset);
-   outputColour = texture(u_foamTexture, foamCoord);
+   float offsetAmount = u_textureOffset + v_textureOffset;
+   vec2 offset = v_flowDirection * offsetAmount;
+   outputColour = texture(u_foamTexture, fract(v_texCoord - offset));
    outputColour.a *= steppingStoneColour.a;
 
    float distFromCenter = distance(v_texCoord, vec2(0.5, 0.5));
@@ -435,29 +447,47 @@ void main() {
 const steppingStoneVertexShaderText = `#version 300 es
 precision mediump float;
 
-in vec2 a_position;
+uniform vec2 u_playerPos;
+uniform vec2 u_halfWindowSize;
+uniform float u_zoom;
+
+layout(location = 0) in vec2 a_position;
 in vec2 a_texCoord;
+in float a_textureIdx;
 
 out vec2 v_texCoord;
+out float v_textureIdx;
  
 void main() {
-   gl_Position = vec4(a_position, 0.0, 1.0);
+   vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
+   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+   gl_Position = vec4(clipSpacePos, 0.0, 1.0);
 
    v_texCoord = a_texCoord;
+   v_textureIdx = a_textureIdx;
 }
 `;
 
 const steppingStoneFragmentShaderText = `#version 300 es
 precision mediump float;
  
-uniform sampler2D u_texture;
+uniform sampler2D u_texture0;
+uniform sampler2D u_texture1;
+uniform sampler2D u_texture2;
  
 in vec2 v_texCoord;
+in float v_textureIdx;
 
 out vec4 outputColour;
  
 void main() {
-   outputColour = texture(u_texture, v_texCoord);
+   if (v_textureIdx < 0.5) {
+      outputColour = texture(u_texture0, v_texCoord);
+   } else if (v_textureIdx < 1.5) {
+      outputColour = texture(u_texture1, v_texCoord);
+   } else {
+      outputColour = texture(u_texture2, v_texCoord);
+   }
 }
 `;
 
@@ -500,15 +530,19 @@ let transitionProgramHalfWindowSizeUniformLocation: WebGLUniformLocation;
 let transitionProgramZoomUniformLocation: WebGLUniformLocation;
 let transitionTextureUniformLocation: WebGLUniformLocation;
 
-let foamProgramSteppingStoneTextureUniformLocation: WebGLUniformLocation;
+let foamProgramPlayerPosUniformLocation: WebGLUniformLocation;
+let foamProgramHalfWindowSizeUniformLocation: WebGLUniformLocation;
+let foamProgramZoomUniformLocation: WebGLUniformLocation;
 let foamProgramFoamTextureUniformLocation: WebGLUniformLocation;
+let foamProgramSteppingStoneTextureUniformLocation: WebGLUniformLocation;
+let foamProgramTextureOffsetUniformLocation: WebGLUniformLocation;
 
-let steppingStoneTextureUniformLocation: WebGLUniformLocation;
-
-let foamProgramTexCoordAttribLocation: GLint;
-let foamProgramTextureOffsetAttribLocation: GLint;
-
-let steppingStoneProgramTexCoordAttribLocation: GLint;
+let steppingStoneProgramPlayerPosUniformLocation: WebGLUniformLocation;
+let steppingStoneProgramHalfWindowSizeUniformLocation: WebGLUniformLocation;
+let steppingStoneProgramZoomUniformLocation: WebGLUniformLocation;
+let steppingStoneTexture1UniformLocation: WebGLUniformLocation;
+let steppingStoneTexture2UniformLocation: WebGLUniformLocation;
+let steppingStoneTexture3UniformLocation: WebGLUniformLocation;
 
 export function createWaterShaders(): void {
    // 
@@ -578,12 +612,12 @@ export function createWaterShaders(): void {
 
    foamProgram = createWebGLProgram(gl, foamVertexShaderText, foamFragmentShaderText);
 
+   foamProgramPlayerPosUniformLocation = gl.getUniformLocation(foamProgram, "u_playerPos")!;
+   foamProgramHalfWindowSizeUniformLocation = gl.getUniformLocation(foamProgram, "u_halfWindowSize")!;
+   foamProgramZoomUniformLocation = gl.getUniformLocation(foamProgram, "u_zoom")!;
    foamProgramSteppingStoneTextureUniformLocation = gl.getUniformLocation(foamProgram, "u_steppingStoneTexture")!;
    foamProgramFoamTextureUniformLocation = gl.getUniformLocation(foamProgram, "u_foamTexture")!;
-   
-   gl.bindAttribLocation(foamProgram, 0, "a_position");
-   foamProgramTexCoordAttribLocation = gl.getAttribLocation(foamProgram, "a_texCoord");
-   foamProgramTextureOffsetAttribLocation = gl.getAttribLocation(foamProgram, "a_textureOffset");
+   foamProgramTextureOffsetUniformLocation = gl.getUniformLocation(foamProgram, "u_textureOffset")!;
    
    // 
    // Stepping stone program
@@ -591,10 +625,12 @@ export function createWaterShaders(): void {
 
    steppingStoneProgram = createWebGLProgram(gl, steppingStoneVertexShaderText, steppingStoneFragmentShaderText);
 
-   steppingStoneTextureUniformLocation = gl.getUniformLocation(steppingStoneProgram, "u_texture")!;
-
-   gl.bindAttribLocation(steppingStoneProgram, 0, "a_position");
-   steppingStoneProgramTexCoordAttribLocation = gl.getAttribLocation(steppingStoneProgram, "a_texCoord");
+   steppingStoneProgramPlayerPosUniformLocation = gl.getUniformLocation(steppingStoneProgram, "u_playerPos")!;
+   steppingStoneProgramHalfWindowSizeUniformLocation = gl.getUniformLocation(steppingStoneProgram, "u_halfWindowSize")!;
+   steppingStoneProgramZoomUniformLocation = gl.getUniformLocation(steppingStoneProgram, "u_zoom")!;
+   steppingStoneTexture1UniformLocation = gl.getUniformLocation(steppingStoneProgram, "u_texture1")!;
+   steppingStoneTexture2UniformLocation = gl.getUniformLocation(steppingStoneProgram, "u_texture2")!;
+   steppingStoneTexture3UniformLocation = gl.getUniformLocation(steppingStoneProgram, "u_texture3")!;
 }
 
 const calculateTransitionVertices = (renderChunkX: number, renderChunkY: number): Array<number> => {
@@ -748,6 +784,67 @@ const calculateBaseVertices = (renderChunkX: number, renderChunkY: number): Read
    return vertices;
 }
 
+const calculateFoamVertices = (steppingStones: ReadonlySet<RiverSteppingStone>, size: RiverSteppingStoneSize): Array<number> => {
+   const vertices = new Array<number>();
+
+   for (const steppingStone of steppingStones) {
+      if (steppingStone.size !== size) {
+         continue;
+      }
+      
+      const renderSize = RIVER_STEPPING_STONE_SIZES[steppingStone.size];
+      
+      let x1 = (steppingStone.position.x - renderSize/2 - FOAM_PADDING);
+      let x2 = (steppingStone.position.x + renderSize/2 + FOAM_PADDING);
+      let y1 = (steppingStone.position.y - renderSize/2 - FOAM_PADDING);
+      let y2 = (steppingStone.position.y + renderSize/2 + FOAM_PADDING);
+
+      let topLeft = new Point(x1, y2);
+      let topRight = new Point(x2, y2);
+      let bottomRight = new Point(x2, y1);
+      let bottomLeft = new Point(x1, y1);
+
+      const pos = new Point(steppingStone.position.x, steppingStone.position.y);
+
+      // Rotate the points to match the entity's rotation
+      topLeft = rotatePoint(topLeft, pos, steppingStone.rotation);
+      topRight = rotatePoint(topRight, pos, steppingStone.rotation);
+      bottomRight = rotatePoint(bottomRight, pos, steppingStone.rotation);
+      bottomLeft = rotatePoint(bottomLeft, pos, steppingStone.rotation);
+
+      const tileX = Math.floor(steppingStone.position.x / SETTINGS.TILE_SIZE);
+      const tileY = Math.floor(steppingStone.position.y / SETTINGS.TILE_SIZE);
+      const flowDirection = Game.board.getRiverFlowDirection(tileX, tileY);
+
+      const offset = new Vector(FOAM_OFFSET, flowDirection).convertToPoint();
+      topLeft.x -= offset.x;
+      topRight.x -= offset.x;
+      bottomLeft.x -= offset.x;
+      bottomRight.x -= offset.x;
+      topLeft.y -= offset.y;
+      topRight.y -= offset.y;
+      bottomLeft.y -= offset.y;
+      bottomRight.y -= offset.y;
+
+      const flowDirectionX = Math.sin(flowDirection - steppingStone.rotation);
+      const flowDirectionY = Math.cos(flowDirection - steppingStone.rotation);
+
+      const textureOffset = Math.random();
+
+      vertices.push(
+         bottomLeft.x, bottomLeft.y, 0, 0, flowDirectionX, flowDirectionY, textureOffset,
+         bottomRight.x, bottomRight.y, 1, 0, flowDirectionX, flowDirectionY, textureOffset,
+         topLeft.x, topLeft.y, 0, 1, flowDirectionX, flowDirectionY, textureOffset,
+         topLeft.x, topLeft.y, 0, 1, flowDirectionX, flowDirectionY, textureOffset,
+         bottomRight.x, bottomRight.y, 1, 0, flowDirectionX, flowDirectionY, textureOffset,
+         topRight.x, topRight.y, 1, 1, flowDirectionX, flowDirectionY, textureOffset
+      );
+   }
+
+   // return vertexRecord;
+   return vertices;
+}
+
 const createBaseVAO = (buffer: WebGLBuffer): WebGLVertexArrayObject => {
    const vao = gl.createVertexArray()!;
    gl.bindVertexArray(vao);
@@ -896,6 +993,55 @@ const createTransitionVAO = (buffer: WebGLBuffer): WebGLVertexArrayObject => {
    return vao;
 }
 
+const createFoamVAO = (buffer: WebGLBuffer): WebGLVertexArrayObject => {
+   const vao = gl.createVertexArray()!;
+   gl.bindVertexArray(vao);
+
+   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+   
+   const foamProgramTexCoordAttribLocation = gl.getAttribLocation(foamProgram, "a_texCoord");
+   const foamProgramFlowDirectionAttribLocation = gl.getAttribLocation(foamProgram, "a_flowDirection");
+   const foamProgramTextureOffsetAttribLocation = gl.getAttribLocation(foamProgram, "a_textureOffset");
+   
+   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 0);
+   gl.vertexAttribPointer(foamProgramTexCoordAttribLocation, 2, gl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(foamProgramFlowDirectionAttribLocation, 2, gl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(foamProgramTextureOffsetAttribLocation, 1, gl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
+   
+   // Enable the attributes
+   gl.enableVertexAttribArray(0);
+   gl.enableVertexAttribArray(foamProgramTexCoordAttribLocation);
+   gl.enableVertexAttribArray(foamProgramFlowDirectionAttribLocation);
+   gl.enableVertexAttribArray(foamProgramTextureOffsetAttribLocation);
+
+   gl.bindVertexArray(null);
+
+   return vao;
+}
+
+const createSteppingStoneVAO = (buffer: WebGLBuffer): WebGLVertexArrayObject => {
+   const vao = gl.createVertexArray()!;
+   gl.bindVertexArray(vao);
+
+   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+
+   const texCoordAttribLocation = gl.getAttribLocation(steppingStoneProgram, "a_texCoord");
+   const textureIdxAttribLocation = gl.getAttribLocation(steppingStoneProgram, "a_textureIdx");
+   
+   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
+   gl.vertexAttribPointer(texCoordAttribLocation, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(textureIdxAttribLocation, 1, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+   
+   // Enable the attributes
+   gl.enableVertexAttribArray(0);
+   gl.enableVertexAttribArray(texCoordAttribLocation);
+   gl.enableVertexAttribArray(textureIdxAttribLocation);
+
+   gl.bindVertexArray(null);
+
+   return vao;
+}
+
 export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY: number): RenderChunkRiverInfo {
    // TODO: Calculate visible water tiles and pass them into all these functions
 
@@ -903,12 +1049,6 @@ export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY
    const baseBuffer = gl.createBuffer()!;
    gl.bindBuffer(gl.ARRAY_BUFFER, baseBuffer);
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(baseVertices), gl.STATIC_DRAW);
-
-   // Create transition buffer
-   const transitionVertices = calculateTransitionVertices(renderChunkX, renderChunkY);
-   const transitionBuffer = gl.createBuffer()!;
-   gl.bindBuffer(gl.ARRAY_BUFFER, transitionBuffer);
-   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(transitionVertices), gl.STATIC_DRAW);
 
    const rockVertexArrays = calculateRockVertices(renderChunkX, renderChunkY);
 
@@ -933,6 +1073,30 @@ export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY
    gl.bindBuffer(gl.ARRAY_BUFFER, noiseBuffer);
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(noiseVertices), gl.STATIC_DRAW);
 
+   const transitionVertices = calculateTransitionVertices(renderChunkX, renderChunkY);
+   const transitionBuffer = gl.createBuffer()!;
+   gl.bindBuffer(gl.ARRAY_BUFFER, transitionBuffer);
+   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(transitionVertices), gl.STATIC_DRAW);
+
+   const steppingStones = calculateRenderChunkSteppingStones(renderChunkX, renderChunkY);
+
+   const foamVertexArrays = new Array<Array<number>>();
+   const foamBuffers = new Array<WebGLBuffer>();
+   for (let size: RiverSteppingStoneSize = 0; size < 3; size++) {
+      const vertices = calculateFoamVertices(steppingStones, size);
+      const buffer = gl.createBuffer()!;
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+
+      foamVertexArrays.push(vertices);
+      foamBuffers.push(buffer);
+   }
+
+   const steppingStoneVertices = calculateSteppingStoneVertices(steppingStones);
+   const steppingStoneBuffer = gl.createBuffer()!;
+   gl.bindBuffer(gl.ARRAY_BUFFER, steppingStoneBuffer);
+   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(steppingStoneVertices), gl.STATIC_DRAW);
+
    return {
       baseVAO: createBaseVAO(baseBuffer),
       baseVertexCount: baseVertices.length,
@@ -943,7 +1107,11 @@ export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY
       transitionVAO: createTransitionVAO(transitionBuffer),
       transitionVertexCount: transitionVertices.length,
       noiseVAO: createNoiseVAO(noiseBuffer),
-      noiseVertexCount: noiseVertices.length
+      noiseVertexCount: noiseVertices.length,
+      foamVAOs: foamBuffers.map(buffer => createFoamVAO(buffer)),
+      foamVertexCounts: foamVertexArrays.map(vertices => vertices.length),
+      steppingStoneVAO: createSteppingStoneVAO(steppingStoneBuffer),
+      steppingStoneVertexCount: steppingStoneVertices.length
    };
 }
 
@@ -1036,92 +1204,23 @@ const waterEdgeDist = (tileX: number, tileY: number): number => {
    return 1;
 }
 
-const calculateVisibleSteppingStones = (): ReadonlySet<RiverSteppingStone> => {
-   const visibleSteppingStones = new Set<RiverSteppingStone>();
-   
-   const visibleChunkBounds = Camera.getVisibleChunkBounds();
-   for (let chunkX = visibleChunkBounds[0]; chunkX <= visibleChunkBounds[1]; chunkX++) {
-      for (let chunkY = visibleChunkBounds[2]; chunkY <= visibleChunkBounds[3]; chunkY++) {
+const calculateRenderChunkSteppingStones = (renderChunkX: number, renderChunkY: number): ReadonlySet<RiverSteppingStone> => {
+   const steppingStones = new Set<RiverSteppingStone>();
+
+   for (let chunkX = renderChunkX * 2; chunkX <= renderChunkX * 2 + 1; chunkX++) {
+      for (let chunkY = renderChunkY * 2; chunkY <= renderChunkY * 2 + 1; chunkY++) {
          const chunk = Game.board.getChunk(chunkX, chunkY);
          for (const riverSteppingStone of chunk.riverSteppingStones) {
-            visibleSteppingStones.add(riverSteppingStone);
+            steppingStones.add(riverSteppingStone);
          }
       }
    }
-
-   return visibleSteppingStones;
+   
+   return steppingStones;
 }
 
-const calculateFoamVertices = (visibleSteppingStones: ReadonlySet<RiverSteppingStone>): Record<string, ReadonlyArray<number>> => {
-   const vertexRecord: Record<string, Array<number>> = {};
-
-   for (const steppingStone of visibleSteppingStones) {
-      const size = RIVER_STEPPING_STONE_SIZES[steppingStone.size];
-      
-      let x1 = (steppingStone.position.x - size/2 - FOAM_PADDING);
-      let x2 = (steppingStone.position.x + size/2 + FOAM_PADDING);
-      let y1 = (steppingStone.position.y - size/2 - FOAM_PADDING);
-      let y2 = (steppingStone.position.y + size/2 + FOAM_PADDING);
-
-      let topLeft = new Point(x1, y2);
-      let topRight = new Point(x2, y2);
-      let bottomRight = new Point(x2, y1);
-      let bottomLeft = new Point(x1, y1);
-
-      const pos = new Point(steppingStone.position.x, steppingStone.position.y);
-
-      // Rotate the points to match the entity's rotation
-      topLeft = rotatePoint(topLeft, pos, steppingStone.rotation);
-      topRight = rotatePoint(topRight, pos, steppingStone.rotation);
-      bottomRight = rotatePoint(bottomRight, pos, steppingStone.rotation);
-      bottomLeft = rotatePoint(bottomLeft, pos, steppingStone.rotation);
-
-      const tileX = Math.floor(steppingStone.position.x / SETTINGS.TILE_SIZE);
-      const tileY = Math.floor(steppingStone.position.y / SETTINGS.TILE_SIZE);
-      const tile = Game.board.getTile(tileX, tileY);
-      const flowDirection = Game.board.getRiverFlowDirection(tileX, tileY);
-
-      const offset = new Vector(FOAM_OFFSET, flowDirection).convertToPoint();
-      topLeft.x -= offset.x;
-      topRight.x -= offset.x;
-      bottomLeft.x -= offset.x;
-      bottomRight.x -= offset.x;
-      topLeft.y -= offset.y;
-      topRight.y -= offset.y;
-      bottomLeft.y -= offset.y;
-      bottomRight.y -= offset.y;
-
-      topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));
-      topRight = new Point(Camera.calculateXCanvasPosition(topRight.x), Camera.calculateYCanvasPosition(topRight.y));
-      bottomRight = new Point(Camera.calculateXCanvasPosition(bottomRight.x), Camera.calculateYCanvasPosition(bottomRight.y));
-      bottomLeft = new Point(Camera.calculateXCanvasPosition(bottomLeft.x), Camera.calculateYCanvasPosition(bottomLeft.y));
-
-      // Create the foam scrolling effect
-      const foamTextureOffsetMagnitude = (Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000 + tile.flowOffset);
-      const foamTextureOffset = new Vector(foamTextureOffsetMagnitude, -steppingStone.rotation + flowDirection).convertToPoint();
-      foamTextureOffset.x = foamTextureOffset.x % 1;
-      foamTextureOffset.y = foamTextureOffset.y % 1;
-      
-      const textureSource = RIVER_STEPPING_STONE_TEXTURES[steppingStone.size];
-      if (!vertexRecord.hasOwnProperty(textureSource)) {
-         vertexRecord[textureSource] = [];
-      }
-
-      vertexRecord[textureSource].push(
-         bottomLeft.x, bottomLeft.y, 0, 0, foamTextureOffset.x, foamTextureOffset.y,
-         bottomRight.x, bottomRight.y, 1, 0, foamTextureOffset.x, foamTextureOffset.y,
-         topLeft.x, topLeft.y, 0, 1, foamTextureOffset.x, foamTextureOffset.y,
-         topLeft.x, topLeft.y, 0, 1, foamTextureOffset.x, foamTextureOffset.y,
-         bottomRight.x, bottomRight.y, 1, 0, foamTextureOffset.x, foamTextureOffset.y,
-         topRight.x, topRight.y, 1, 1, foamTextureOffset.x, foamTextureOffset.y
-      );
-   }
-
-   return vertexRecord;
-}
-
-const calculateSteppingStoneVertices = (visibleSteppingStones: ReadonlySet<RiverSteppingStone>): Record<string, ReadonlyArray<number>> => {
-   const vertexRecord: Record<string, Array<number>> = {};
+const calculateSteppingStoneVertices = (visibleSteppingStones: ReadonlySet<RiverSteppingStone>): ReadonlyArray<number> => {
+   const vertices = new Array<number>();
 
    for (const steppingStone of visibleSteppingStones) {
       const size = RIVER_STEPPING_STONE_SIZES[steppingStone.size];
@@ -1144,27 +1243,19 @@ const calculateSteppingStoneVertices = (visibleSteppingStones: ReadonlySet<River
       bottomRight = rotatePoint(bottomRight, pos, steppingStone.rotation);
       bottomLeft = rotatePoint(bottomLeft, pos, steppingStone.rotation);
 
-      topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));
-      topRight = new Point(Camera.calculateXCanvasPosition(topRight.x), Camera.calculateYCanvasPosition(topRight.y));
-      bottomRight = new Point(Camera.calculateXCanvasPosition(bottomRight.x), Camera.calculateYCanvasPosition(bottomRight.y));
-      bottomLeft = new Point(Camera.calculateXCanvasPosition(bottomLeft.x), Camera.calculateYCanvasPosition(bottomLeft.y));
+      const textureIdx: number = steppingStone.size;
 
-      const textureSource = RIVER_STEPPING_STONE_TEXTURES[steppingStone.size];
-      if (!vertexRecord.hasOwnProperty(textureSource)) {
-         vertexRecord[textureSource] = [];
-      }
-
-      vertexRecord[textureSource].push(
-         bottomLeft.x, bottomLeft.y, 0, 0,
-         bottomRight.x, bottomRight.y, 1, 0,
-         topLeft.x, topLeft.y, 0, 1,
-         topLeft.x, topLeft.y, 0, 1,
-         bottomRight.x, bottomRight.y, 1, 0,
-         topRight.x, topRight.y, 1, 1
+      vertices.push(
+         bottomLeft.x, bottomLeft.y, 0, 0, textureIdx,
+         bottomRight.x, bottomRight.y, 1, 0, textureIdx,
+         topLeft.x, topLeft.y, 0, 1, textureIdx,
+         topLeft.x, topLeft.y, 0, 1, textureIdx,
+         bottomRight.x, bottomRight.y, 1, 0, textureIdx,
+         topRight.x, topRight.y, 1, 1, textureIdx
       );
    }
 
-   return vertexRecord;
+   return vertices;
 }
 
 const calculateHighlightsVertices = (renderChunkX: number, renderChunkY: number): ReadonlyArray<number> => {
@@ -1220,11 +1311,7 @@ const calculateVisibleRenderChunks = (): ReadonlyArray<RenderChunkRiverInfo> => 
 
 export function renderRivers(): void {
    const visibleRenderChunks = calculateVisibleRenderChunks();
-   const visibleSteppingStones = calculateVisibleSteppingStones();
 
-   const foamVertexRecord = calculateFoamVertices(visibleSteppingStones);
-   const steppingStoneVertices = calculateSteppingStoneVertices(visibleSteppingStones);
-   
    // 
    // Base program
    // 
@@ -1310,7 +1397,6 @@ export function renderRivers(): void {
       gl.uniform1i(highlightsProgramTexture2UniformLocation, 1);
       gl.uniform1i(highlightsProgramTexture3UniformLocation, 2);
       
-      // Draw the tile
       gl.drawArrays(gl.TRIANGLES, 0, renderChunkRiverInfo.highlightsVertexCount / 5);
    }
    
@@ -1335,7 +1421,6 @@ export function renderRivers(): void {
       gl.uniform1i(noiseTextureUniformLocation, 0);
       gl.uniform1f(noiseAnimationOffsetUniformLocation, noiseAnimationOffset);
    
-      // Draw the tile
       gl.drawArrays(gl.TRIANGLES, 0, renderChunkInfo.noiseVertexCount / 8);
    }
 
@@ -1358,11 +1443,8 @@ export function renderRivers(): void {
       gl.uniform1f(transitionProgramZoomUniformLocation, Camera.zoom);
       gl.uniform1i(transitionTextureUniformLocation, 0);
    
-      // Draw the tile
       gl.drawArrays(gl.TRIANGLES, 0, renderChunkRiverInfo.transitionVertexCount / 12);
    }
-
-   gl.bindVertexArray(null);
    
    // 
    // Foam program
@@ -1372,33 +1454,36 @@ export function renderRivers(): void {
 
    // Bind foam texture
    const foamTexture = getTexture("tiles/water-foam.png");
-   gl.activeTexture(gl.TEXTURE1);
+   gl.activeTexture(gl.TEXTURE0);
    gl.bindTexture(gl.TEXTURE_2D, foamTexture);
-   
-   for (const [textureSource, vertices] of Object.entries(foamVertexRecord)) {
-      // Create tile buffer
-      const buffer = gl.createBuffer()!;
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-   
-      gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 0);
-      gl.vertexAttribPointer(foamProgramTexCoordAttribLocation, 2, gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(foamProgramTextureOffsetAttribLocation, 2, gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
-      
-      // Enable the attributes
-      gl.enableVertexAttribArray(0);
-      gl.enableVertexAttribArray(foamProgramTexCoordAttribLocation);
-      gl.enableVertexAttribArray(foamProgramTextureOffsetAttribLocation);
-      
-      gl.uniform1i(foamProgramSteppingStoneTextureUniformLocation, 0);
-      gl.uniform1i(foamProgramFoamTextureUniformLocation, 1);
 
+   // Bind stepping stone textures
+   for (let size: RiverSteppingStoneSize = 0; size < 3; size++) {
+      const textureSource = RIVER_STEPPING_STONE_TEXTURES[size];
       const steppingStoneTexture = getTexture(textureSource);
-      gl.activeTexture(gl.TEXTURE0);
+      gl.activeTexture(gl.TEXTURE1 + size);
       gl.bindTexture(gl.TEXTURE_2D, steppingStoneTexture);
-      
-      // Draw the tile
-      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 6);
+   }
+   
+
+   const foamTextureOffset = Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000;
+   
+   for (const renderChunkRiverInfo of visibleRenderChunks) {
+      for (let size: RiverSteppingStoneSize = 0; size < 3; size++) {
+         const vao = renderChunkRiverInfo.foamVAOs[size];
+         gl.bindVertexArray(vao);
+         
+         gl.uniform2f(foamProgramPlayerPosUniformLocation, Camera.position.x, Camera.position.y);
+         gl.uniform2f(foamProgramHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
+         gl.uniform1f(foamProgramZoomUniformLocation, Camera.zoom);
+         gl.uniform1i(foamProgramFoamTextureUniformLocation, 0);
+         gl.uniform1i(foamProgramSteppingStoneTextureUniformLocation, 1 + size);
+         gl.uniform1f(foamProgramTextureOffsetUniformLocation, foamTextureOffset);
+         
+         const vertexCount = renderChunkRiverInfo.foamVertexCounts[size];
+         gl.drawArrays(gl.TRIANGLES, 0, vertexCount / 7);
+            
+      }
    }
    
    // 
@@ -1406,29 +1491,33 @@ export function renderRivers(): void {
    // 
 
    gl.useProgram(steppingStoneProgram);
-   
-   for (const [textureSource, vertices] of Object.entries(steppingStoneVertices)) {
-      // Create tile buffer
-      const buffer = gl.createBuffer()!;
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-   
-      gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0);
-      gl.vertexAttribPointer(steppingStoneProgramTexCoordAttribLocation, 2, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-      
-      // Enable the attributes
-      gl.enableVertexAttribArray(0);
-      gl.enableVertexAttribArray(steppingStoneProgramTexCoordAttribLocation);
-      
-      gl.uniform1i(steppingStoneTextureUniformLocation, 0);
 
-      const texture = getTexture(textureSource);
-      gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, texture);
+   const steppingStoneTexture1 = getTexture(RIVER_STEPPING_STONE_TEXTURES[RiverSteppingStoneSize.small]);
+   gl.activeTexture(gl.TEXTURE0);
+   gl.bindTexture(gl.TEXTURE_2D, steppingStoneTexture1);
+
+   const steppingStoneTexture2 = getTexture(RIVER_STEPPING_STONE_TEXTURES[RiverSteppingStoneSize.medium]);
+   gl.activeTexture(gl.TEXTURE1);
+   gl.bindTexture(gl.TEXTURE_2D, steppingStoneTexture2);
+
+   const steppingStoneTexture3 = getTexture(RIVER_STEPPING_STONE_TEXTURES[RiverSteppingStoneSize.large]);
+   gl.activeTexture(gl.TEXTURE2);
+   gl.bindTexture(gl.TEXTURE_2D, steppingStoneTexture3);
+   
+   for (const renderChunkRiverInfo of visibleRenderChunks) {
+      gl.bindVertexArray(renderChunkRiverInfo.steppingStoneVAO);
       
-      // Draw the tile
-      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 4);
+      gl.uniform2f(steppingStoneProgramPlayerPosUniformLocation, Camera.position.x, Camera.position.y);
+      gl.uniform2f(steppingStoneProgramHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
+      gl.uniform1f(steppingStoneProgramZoomUniformLocation, Camera.zoom);
+      gl.uniform1i(steppingStoneTexture1UniformLocation, 0);
+      gl.uniform1i(steppingStoneTexture2UniformLocation, 1);
+      gl.uniform1i(steppingStoneTexture3UniformLocation, 2);
+      
+      gl.drawArrays(gl.TRIANGLES, 0, renderChunkRiverInfo.steppingStoneVertexCount / 5);
    }
+
+   gl.bindVertexArray(null);
 
    gl.disable(gl.BLEND);
    gl.blendFunc(gl.ONE, gl.ZERO);
