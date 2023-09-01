@@ -21,7 +21,7 @@ class Tree extends Entity {
             height: 80 + treeSize * 20,
             textureSource: treeTextures[treeSize],
             zIndex: 0
-         }, this)
+         })
       ]);
    }
 }

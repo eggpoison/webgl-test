@@ -27,7 +27,7 @@ class Cow extends Entity {
             textureSource: `entities/cow/cow-body-${cowNum}.png`,
             offset: () => new Point(0, -(Cow.HEAD_SIZE - Cow.HEAD_OVERLAP) / 2),
             zIndex: 0
-         }, this),
+         }),
          // Head
          new RenderPart({
             width: Cow.HEAD_IMAGE_WIDTH,
@@ -35,7 +35,7 @@ class Cow extends Entity {
             textureSource: `entities/cow/cow-head-${cowNum}.png`,
             offset: () => new Point(0, (Cow.BODY_HEIGHT - Cow.HEAD_OVERLAP) / 2),
             zIndex: 1
-         }, this)
+         })
       ]);
    }
 }

@@ -16,7 +16,7 @@ class Workbench extends Entity {
             height: 80,
             textureSource: "entities/workbench/workbench.png",
             zIndex: 0
-         }, this)
+         })
       ]);
    }
 }

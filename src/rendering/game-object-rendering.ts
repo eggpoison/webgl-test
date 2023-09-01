@@ -4,7 +4,7 @@ import Entity from "../entities/Entity";
 import Game from "../Game";
 import RenderPart, { RenderObject } from "../render-parts/RenderPart";
 import { getTexture } from "../textures";
-import { createShaderString, createWebGLProgram, gl, MAX_ACTIVE_TEXTURE_UNITS } from "../webgl";
+import { createShaderString, createWebGLProgram, gl, halfWindowHeight, halfWindowWidth, MAX_ACTIVE_TEXTURE_UNITS } from "../webgl";
 import GameObject from "../GameObject";
 
 /*
@@ -13,6 +13,10 @@ import GameObject from "../GameObject";
 
 const vertexShaderText = `
 precision highp float;
+
+uniform vec2 u_playerPos;
+uniform vec2 u_halfWindowSize;
+uniform float u_zoom;
 
 attribute vec2 a_position;
 attribute vec2 a_texCoord;
@@ -26,7 +30,9 @@ varying float v_textureIdx;
 varying float v_opacity;
  
 void main() {
-   gl_Position = vec4(a_position, 0.0, 1.0);
+   vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
+   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+   gl_Position = vec4(clipSpacePos, 0.0, 1.0);
 
    v_texCoord = a_texCoord;
    v_textureIdx = a_textureIdx;
@@ -84,25 +90,31 @@ void main() {
    fragmentShaderText = shaderString
 });
 
-let imageRenderingProgram: WebGLProgram;
+let program: WebGLProgram;
 
+let playerPositionUniformLocation: WebGLUniformLocation;
+let halfWindowSizeUniformLocation: WebGLUniformLocation;
+let zoomUniformLocation: WebGLUniformLocation;
 let imageRenderingProgramTexturesUniformLocation: WebGLUniformLocation;
 
-let imageRenderingProgramTintAttribLocation: GLint;
-let imageRenderingProgramTexCoordAttribLocation: GLint;
-let imageRenderingProgramTextureIdxAttribLocation: GLint;
-let imageRenderingProgramOpacityAttribLocation: GLint;
+let tintAttribLocation: GLint;
+let texCoordAttribLocation: GLint;
+let textureIdxAttribLocation: GLint;
+let opacityAttribLocation: GLint;
 
 export function createEntityShaders(): void {
-   imageRenderingProgram = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
+   program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
 
-   imageRenderingProgramTexturesUniformLocation = gl.getUniformLocation(imageRenderingProgram, "u_textures")!;
+   playerPositionUniformLocation = gl.getUniformLocation(program, "u_playerPos")!;
+   halfWindowSizeUniformLocation = gl.getUniformLocation(program, "u_halfWindowSize")!;
+   zoomUniformLocation = gl.getUniformLocation(program, "u_zoom")!;
+   imageRenderingProgramTexturesUniformLocation = gl.getUniformLocation(program, "u_textures")!;
 
-   gl.bindAttribLocation(imageRenderingProgram, 0, "a_position");
-   imageRenderingProgramTintAttribLocation = gl.getAttribLocation(imageRenderingProgram, "a_tint");
-   imageRenderingProgramTexCoordAttribLocation = gl.getAttribLocation(imageRenderingProgram, "a_texCoord");
-   imageRenderingProgramTextureIdxAttribLocation = gl.getAttribLocation(imageRenderingProgram, "a_textureIdx");
-   imageRenderingProgramOpacityAttribLocation = gl.getAttribLocation(imageRenderingProgram, "a_opacity");
+   gl.bindAttribLocation(program, 0, "a_position");
+   tintAttribLocation = gl.getAttribLocation(program, "a_tint");
+   texCoordAttribLocation = gl.getAttribLocation(program, "a_texCoord");
+   textureIdxAttribLocation = gl.getAttribLocation(program, "a_textureIdx");
+   opacityAttribLocation = gl.getAttribLocation(program, "a_opacity");
 }
 
 export function calculateVisibleGameObjects(): Array<GameObject> {
@@ -119,18 +131,18 @@ export function calculateVisibleGameObjects(): Array<GameObject> {
 
 export function calculateVertexPositionX(vertexPositionX: number, vertexPositionY: number, renderPartPosition: Point, totalRotation: number): number {
    // Rotate the x position around the render part position
-   const rotatedX = Math.cos(totalRotation) * (vertexPositionX - renderPartPosition.x) + Math.sin(totalRotation) * (vertexPositionY - renderPartPosition.y) + renderPartPosition.x
+   return Math.cos(totalRotation) * (vertexPositionX - renderPartPosition.x) + Math.sin(totalRotation) * (vertexPositionY - renderPartPosition.y) + renderPartPosition.x
    
    // Convert to canvas position
-   return Camera.calculateXCanvasPosition(rotatedX);
+   // return Camera.calculateXCanvasPosition(rotatedX);
 }
 
 export function calculateVertexPositionY (vertexPositionX: number, vertexPositionY: number, renderPartPosition: Point, totalRotation: number): number {
    // Rotate the y position around the render part position
-   const rotatedY = -Math.sin(totalRotation) * (vertexPositionX - renderPartPosition.x) + Math.cos(totalRotation) * (vertexPositionY - renderPartPosition.y) + renderPartPosition.y
+   return -Math.sin(totalRotation) * (vertexPositionX - renderPartPosition.x) + Math.cos(totalRotation) * (vertexPositionY - renderPartPosition.y) + renderPartPosition.y
 
    // Convert to canvas position
-   return Camera.calculateYCanvasPosition(rotatedY);
+   // return Camera.calculateYCanvasPosition(rotatedY);
 }
 
 interface RenderInfo {
@@ -163,14 +175,14 @@ const categoriseGameObjectsByRenderPart = (visibleGameObjects: ReadonlyArray<Gam
 
    let totalRotation = 0;
 
-   const addRenderPart = (baseRenderObject: RenderObject, renderPart: RenderPart): void => {
+   const addRenderPart = (baseRenderObject: RenderObject, renderPart: RenderPart, parentRenderObject: RenderObject): void => {
       // Don't render inactive render parts
       if (!renderPart.isActive) {
          return;
       }
       
       // Calculate the render position for the object
-      renderPart.updateRenderPosition();
+      renderPart.updateRenderPosition(parentRenderObject);
 
       if (!categorisedRenderParts.hasOwnProperty(renderPart.zIndex)) {
          categorisedRenderParts[renderPart.zIndex] = {};
@@ -192,7 +204,7 @@ const categoriseGameObjectsByRenderPart = (visibleGameObjects: ReadonlyArray<Gam
       
       // Add any child render parts
       for (const childRenderPart of renderPart.renderParts) {
-         addRenderPart(baseRenderObject, childRenderPart);
+         addRenderPart(baseRenderObject, childRenderPart, renderPart);
       }
 
       totalRotation -= renderPart.rotation;
@@ -204,7 +216,7 @@ const categoriseGameObjectsByRenderPart = (visibleGameObjects: ReadonlyArray<Gam
       totalRotation = gameObject.rotation;
       
       for (const renderPart of gameObject.renderParts) {
-         addRenderPart(gameObject, renderPart);
+         addRenderPart(gameObject, renderPart, gameObject);
       }
    }
 
@@ -362,7 +374,7 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
       }
    }
 
-   gl.useProgram(imageRenderingProgram);
+   gl.useProgram(program);
 
    gl.enable(gl.BLEND);
    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -381,18 +393,21 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
       gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
 
       gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 9 * Float32Array.BYTES_PER_ELEMENT, 0);
-      gl.vertexAttribPointer(imageRenderingProgramTexCoordAttribLocation, 2, gl.FLOAT, false, 9 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(imageRenderingProgramTintAttribLocation, 3, gl.FLOAT, false, 9 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(imageRenderingProgramTextureIdxAttribLocation, 1, gl.FLOAT, false, 9 * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(imageRenderingProgramOpacityAttribLocation, 1, gl.FLOAT, false, 9 * Float32Array.BYTES_PER_ELEMENT, 8 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(texCoordAttribLocation, 2, gl.FLOAT, false, 9 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(tintAttribLocation, 3, gl.FLOAT, false, 9 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(textureIdxAttribLocation, 1, gl.FLOAT, false, 9 * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(opacityAttribLocation, 1, gl.FLOAT, false, 9 * Float32Array.BYTES_PER_ELEMENT, 8 * Float32Array.BYTES_PER_ELEMENT);
 
+      gl.uniform2f(playerPositionUniformLocation, Camera.position.x, Camera.position.y);
+      gl.uniform2f(halfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
+      gl.uniform1f(zoomUniformLocation, Camera.zoom);
       gl.uniform1iv(imageRenderingProgramTexturesUniformLocation, usedTextureSources.map((_, idx) => idx));
       
       gl.enableVertexAttribArray(0);
-      gl.enableVertexAttribArray(imageRenderingProgramTexCoordAttribLocation);
-      gl.enableVertexAttribArray(imageRenderingProgramTintAttribLocation);
-      gl.enableVertexAttribArray(imageRenderingProgramTextureIdxAttribLocation);
-      gl.enableVertexAttribArray(imageRenderingProgramOpacityAttribLocation);
+      gl.enableVertexAttribArray(texCoordAttribLocation);
+      gl.enableVertexAttribArray(tintAttribLocation);
+      gl.enableVertexAttribArray(textureIdxAttribLocation);
+      gl.enableVertexAttribArray(opacityAttribLocation);
       
       // Set all texture units
       for (let i = 0; i < usedTextureSources.length; i++) {

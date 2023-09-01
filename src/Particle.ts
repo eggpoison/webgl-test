@@ -11,7 +11,7 @@ interface ParticleInfo {
    readonly renderLayer: ParticleRenderLayer;
 }
 
-const PARTICLE_INFO: Record<ParticleType, ParticleInfo> = {
+export const PARTICLE_INFO: Record<ParticleType, ParticleInfo> = {
    [ParticleType.bloodPoolSmall]: {
       size: [20, 20],
       renderLayer: ParticleRenderLayer.low
@@ -161,8 +161,6 @@ class Particle {
    public readonly width: number;
    public readonly height: number;
 
-   public readonly renderLayer: ParticleRenderLayer;
-
    constructor(data: ParticleData) {
       this.id = getAvailableID();
 
@@ -177,7 +175,6 @@ class Particle {
       this.tint = data.tint;
 
       [this.width, this.height] = PARTICLE_INFO[data.type].size;
-      this.renderLayer = PARTICLE_INFO[data.type].renderLayer;
 
       // TODO: Rework
       if (data.foodItemType !== -1) {

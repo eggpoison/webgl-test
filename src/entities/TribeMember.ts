@@ -137,7 +137,7 @@ abstract class TribeMember extends Entity {
             }
          },
          zIndex: 0
-      }, this);
+      });
       this.attachRenderPart(this.activeItemRenderPart);
       
       if (activeItem === null) {
@@ -217,7 +217,7 @@ abstract class TribeMember extends Entity {
                width: 72,
                height: 72,
                zIndex: 2
-            }, this);
+            });
             
             this.attachRenderPart(this.armourRenderPart);
          } else {

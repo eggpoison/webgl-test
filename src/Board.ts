@@ -25,12 +25,13 @@ class Board {
    private readonly tiles: Array<Array<Tile>>;
    private readonly chunks: Array<Array<Chunk>>;
 
-   public gameObjects: Record<number, GameObject> = {};
-   public entities: Record<number, Entity> = {};
-   public droppedItems: Record<number, DroppedItem> = {};
-   public projectiles: Record<number, Projectile> = {};
+   public readonly gameObjects: Record<number, GameObject> = {};
+   public readonly entities: Record<number, Entity> = {};
+   public readonly droppedItems: Record<number, DroppedItem> = {};
+   public readonly projectiles: Record<number, Projectile> = {};
 
-   public particles: Record<number, Particle> = {};
+   public readonly lowParticles: Record<number, Particle> = {};
+   public readonly highParticles: Record<number, Particle> = {};
 
    private readonly riverFlowDirections: Record<number, Record<number, number>>;
 

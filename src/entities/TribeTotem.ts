@@ -29,7 +29,7 @@ class TribeTotem extends Entity {
             height: TribeTotem.RADIUS * 2,
             textureSource: `entities/tribe-totem/tribe-totem.png`,
             zIndex: 1
-         }, this)
+         })
       ]);
 
       this.tribeID = tribeID;
@@ -65,7 +65,7 @@ class TribeTotem extends Entity {
          offset: () => new Vector(TribeTotem.BANNER_LAYER_DISTANCES[banner.layer], banner.direction).convertToPoint(),
          getRotation: () => banner.direction,
          zIndex: 2
-      }, this);
+      });
       
       this.attachRenderPart(renderPart);
       this.bannerRenderParts[banner.hutNum] = renderPart;

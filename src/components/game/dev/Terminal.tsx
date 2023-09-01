@@ -283,7 +283,7 @@ const Terminal = ({ startingIsVisible }: TerminalParams) => {
          <span>&gt;</span>
 
          <div className="line-input-wrapper">
-            <input ref={lineInputRef} type="text" className="line-input" value={lineInputValue} onChange={e => enterLineCharacter(e)} onKeyDown={e => enterKey(e.nativeEvent)} />
+            <input ref={lineInputRef} name="line-input" type="text" className="line-input" value={lineInputValue} onChange={e => enterLineCharacter(e)} onKeyDown={e => enterKey(e.nativeEvent)} />
             <div className="dummy-line-input"></div>
          </div>
 

@@ -64,8 +64,6 @@ const createEventListeners = (): void => {
 let lastRenderTime = Math.floor(new Date().getTime() / 1000);
 
 abstract class Game {
-   public static pendingPackets = new Array<GameDataPacket>();
-
    public static ticks: number;
    private static _time: number;
 
@@ -278,13 +276,13 @@ abstract class Game {
          renderChunkBorders();
       }
 
-      renderParticles(ParticleRenderLayer.low);
+      renderParticles(Object.values(this.board.lowParticles));
 
       renderGameObjects(Object.values(this.board.droppedItems));
       renderGameObjects(Object.values(this.board.entities));
       renderGameObjects(Object.values(this.board.projectiles));
 
-      renderParticles(ParticleRenderLayer.high);
+      renderParticles(Object.values(this.board.highParticles));
 
       if (nerdVisionIsVisible() && OPTIONS.showHitboxes) {
          renderEntityHitboxes();
@@ -312,6 +310,17 @@ abstract class Game {
       updateDebugScreenFPS();
    }
 
+   public static b(): void {
+      this.update();
+      Client.sendPlayerDataPacket();
+      while (this.lag >= 1000 / SETTINGS.TPS) {
+         this.lag -= 1000 / SETTINGS.TPS;
+      }
+      // this.lag = 0;
+      const frameProgress = this.lag / 1000 * SETTINGS.TPS;
+      console.log("update " + frameProgress);
+   }
+
    public static main(currentTime: number): void {
       if (this.isSynced) {
          const deltaTime = currentTime - this.lastTime;
@@ -319,24 +328,13 @@ abstract class Game {
       
          // updateFrameCounter(deltaTime / 1000);
 
-         // Update
          this.lag += deltaTime;
-         while (this.lag >= 1000 / SETTINGS.TPS) {
-            if (this.pendingPackets.length > 0) {
-               Client.unloadGameDataPacket(this.pendingPackets[0]);
-               this.pendingPackets.splice(0, 1);
-            } else {
-               console.log("no packets");
-            }
-            this.update();
-            Client.sendPlayerDataPacket();
-            this.lag -= 1000 / SETTINGS.TPS;
-         }
 
          const renderStartTime = performance.now();
 
          const frameProgress = this.lag / 1000 * SETTINGS.TPS;
          this.render(frameProgress);
+         console.log("render. frame progress: " + frameProgress);
 
          const renderEndTime = performance.now();
 

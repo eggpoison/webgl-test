@@ -25,7 +25,7 @@ class Yeti extends Entity {
             height: Yeti.SIZE,
             textureSource: "entities/yeti.png",
             zIndex: 1
-         }, this)
+         })
       );
 
       for (let i = 0; i < 2; i++) {
@@ -49,7 +49,7 @@ class Yeti extends Entity {
                const offset = new Vector(Yeti.SIZE/2, angle).convertToPoint();
                return offset;
             }
-         }, this)
+         })
       );
    }
 

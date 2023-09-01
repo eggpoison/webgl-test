@@ -41,7 +41,7 @@ class Slime extends Entity {
             height: spriteSize,
             textureSource: `entities/slime/slime-${sizeString}-body.png`,
             zIndex: 2
-         }, this),
+         }),
          // Eye
          new RenderPart({
             width: spriteSize,
@@ -50,14 +50,14 @@ class Slime extends Entity {
             zIndex: 3,
             inheritParentRotation: false,
             getRotation: () => this.eyeRotation
-         }, this),
+         }),
          // Shading
          new RenderPart({
             width: spriteSize,
             height: spriteSize,
             textureSource: `entities/slime/slime-${sizeString}-shading.png`,
             zIndex: 0
-         }, this)
+         })
       ]);
 
       this.size = size;
@@ -87,7 +87,7 @@ class Slime extends Entity {
          zIndex: 1,
          offset: () => new Vector(offsetMagnitude, this.orbRotations[i]).convertToPoint(),
          getRotation: () => orbData.rotation
-      }, this);
+      });
       
       this.attachRenderPart(renderPart);
    }

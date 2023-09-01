@@ -24,7 +24,7 @@ class Furnace extends Entity {
             height: Furnace.SIZE,
             textureSource: "entities/furnace/furnace.png",
             zIndex: 0
-         }, this)
+         })
       ]);
 
       this.fuelInventory = createInventoryFromData(fuelInventory);

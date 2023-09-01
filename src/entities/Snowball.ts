@@ -29,7 +29,7 @@ class Snowball extends Entity {
             height: textureSize,
             textureSource: getTextureSource(size),
             zIndex: 0
-         }, this)
+         })
       ]);
    }
 }

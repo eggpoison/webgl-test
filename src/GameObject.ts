@@ -15,40 +15,6 @@ export function getFrameProgress(): number {
    return frameProgress;
 }
 
-const calculateGameObjectRenderPosition = (gameObject: GameObject): Point => {
-   let renderPosition = gameObject.position.copy();
-   
-   // Account for frame progress
-   if (gameObject.velocity !== null) {
-      // 
-      // Calculate the change in position that has occurred since the start of the frame
-      // 
-      let frameVelocity: Vector | null = gameObject.velocity.copy();
-
-      // Apply the frame velocity to the object's position
-      if (frameVelocity !== null) {
-         frameVelocity.magnitude *= frameProgress / SETTINGS.TPS;
-
-         const offset = frameVelocity.convertToPoint();
-         renderPosition.add(offset);
-      }
-   }
-
-   // Clamp the render position
-   if (renderPosition.x < 0) {
-      renderPosition.x = 0;
-   } else if (renderPosition.x >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
-      renderPosition.x = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE - 1;
-   }
-   if (renderPosition.y < 0) {
-      renderPosition.y = 0;
-   } else if (renderPosition.y >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
-      renderPosition.y = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE - 1;
-   }
-
-   return renderPosition;
-}
-
 abstract class GameObject extends RenderObject {
    public readonly id: number;
 
@@ -58,9 +24,6 @@ abstract class GameObject extends RenderObject {
    public velocity: Vector | null = null;
    /** Acceleration of the object */
    public acceleration: Vector | null = null;
-
-   /** Estimated position of the object during the current frame */
-   public renderPosition!: Point;
 
    /** Angle the object is facing, taken counterclockwise from the positive x axis (radians) */
    public rotation = 0;
@@ -82,7 +45,8 @@ abstract class GameObject extends RenderObject {
       super();
       
       this.position = position;
-      this.renderPosition = position;
+      this.renderPosition.x = position.x;
+      this.renderPosition.y = position.y;
 
       this.id = id;
 
@@ -262,9 +226,7 @@ abstract class GameObject extends RenderObject {
          for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
             for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
                const chunk = Game.board.getChunk(chunkX, chunkY);
-               if (!containingChunks.has(chunk)) {
-                  containingChunks.add(chunk);
-               }
+               containingChunks.add(chunk);
             }
          }
       }
@@ -287,7 +249,37 @@ abstract class GameObject extends RenderObject {
    }
 
    public updateRenderPosition(): void {
-      this.renderPosition = calculateGameObjectRenderPosition(this);
+      // Start the render position at the known position
+      this.renderPosition.x = this.position.x;
+      this.renderPosition.y = this.position.y;
+      
+      // Account for frame progress
+      if (this.velocity !== null) {
+         // 
+         // Calculate the change in position that has occurred since the start of the frame
+         // 
+         let frameVelocity: Vector | null = this.velocity.copy();
+   
+         // Apply the frame velocity to the object's position
+         if (frameVelocity !== null) {
+            frameVelocity.magnitude *= frameProgress / SETTINGS.TPS;
+   
+            const offset = frameVelocity.convertToPoint();
+            this.renderPosition.add(offset);
+         }
+      }
+   
+      // Clamp the render position
+      if (this.renderPosition.x < 0) {
+         this.renderPosition.x = 0;
+      } else if (this.renderPosition.x >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
+         this.renderPosition.x = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE - 1;
+      }
+      if (this.renderPosition.y < 0) {
+         this.renderPosition.y = 0;
+      } else if (this.renderPosition.y >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
+         this.renderPosition.y = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE - 1;
+      }
    }
 
    public updateHitboxes(): void {

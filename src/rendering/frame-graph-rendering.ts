@@ -65,12 +65,13 @@ export function setupFrameGraph(): void {
 }
 
 export function renderFrameGraph(frames: ReadonlyArray<FrameInfo>): void {
-   // Calculate vertices
-   const vertices = new Array<number>();
-
+   const vertexData = new Float32Array(frames.length * 6 * 5);
+   
    const currentTimeSeconds = performance.now() / 1000;
    
-   for (const frame of frames) {
+   // Calculate vertices
+   for (let i = 0; i < frames.length; i++) {
+      const frame = frames[i];
       const secondsSinceFrameStartTime = currentTimeSeconds - frame.startTime / 1000;
       const secondsSinceFrameEndTime = currentTimeSeconds - frame.endTime / 1000;
 
@@ -86,21 +87,48 @@ export function renderFrameGraph(frames: ReadonlyArray<FrameInfo>): void {
       const g = 0;
       const b = 0;
 
-      vertices.push(
-         x1, y1, r, g, b,
-         x2, y1, r, g, b,
-         x1, y2, r, g, b,
-         x1, y2, r, g, b,
-         x2, y1, r, g, b,
-         x2, y2, r, g, b
-      );
+      vertexData[i * 6 * 5] = x1;
+      vertexData[i * 6 * 5 + 1] = y1;
+      vertexData[i * 6 * 5 + 2] = r;
+      vertexData[i * 6 * 5 + 3] = g;
+      vertexData[i * 6 * 5 + 4] = b;
+
+      vertexData[i * 6 * 5 + 5] = x2;
+      vertexData[i * 6 * 5 + 6] = y1;
+      vertexData[i * 6 * 5 + 7] = r;
+      vertexData[i * 6 * 5 + 8] = g;
+      vertexData[i * 6 * 5 + 9] = b;
+
+      vertexData[i * 6 * 5 + 10] = x1;
+      vertexData[i * 6 * 5 + 11] = y2;
+      vertexData[i * 6 * 5 + 12] = r;
+      vertexData[i * 6 * 5 + 13] = g;
+      vertexData[i * 6 * 5 + 14] = b;
+
+      vertexData[i * 6 * 5 + 15] = x1;
+      vertexData[i * 6 * 5 + 16] = y2;
+      vertexData[i * 6 * 5 + 17] = r;
+      vertexData[i * 6 * 5 + 18] = g;
+      vertexData[i * 6 * 5 + 19] = b;
+
+      vertexData[i * 6 * 5 + 20] = x2;
+      vertexData[i * 6 * 5 + 21] = y1;
+      vertexData[i * 6 * 5 + 22] = r;
+      vertexData[i * 6 * 5 + 23] = g;
+      vertexData[i * 6 * 5 + 24] = b;
+
+      vertexData[i * 6 * 5 + 25] = x2;
+      vertexData[i * 6 * 5 + 26] = y2;
+      vertexData[i * 6 * 5 + 27] = r;
+      vertexData[i * 6 * 5 + 28] = g;
+      vertexData[i * 6 * 5 + 29] = b;
    }
    
    gl.useProgram(program);
 
    const buffer = gl.createBuffer()!;
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+   gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
 
    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
    gl.vertexAttribPointer(colourAttribLocation, 3, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
@@ -108,5 +136,5 @@ export function renderFrameGraph(frames: ReadonlyArray<FrameInfo>): void {
    gl.enableVertexAttribArray(0);
    gl.enableVertexAttribArray(colourAttribLocation);
 
-   gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 5);
+   gl.drawArrays(gl.TRIANGLES, 0, frames.length * 6);
 }

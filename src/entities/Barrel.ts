@@ -24,7 +24,7 @@ class Barrel extends Entity {
             height: Barrel.RADIUS * 2,
             textureSource: "entities/barrel/barrel.png",
             zIndex: 0
-         }, this)
+         })
       ]);
 
       this.inventory = this.createInventoryFromData(inventoryData);

@@ -5,6 +5,7 @@ import { getTexture } from "../../textures";
 import Camera from "../../Camera";
 import { RiverSteppingStone } from "../../Board";
 import { RENDER_CHUNK_SIZE, RenderChunkRiverInfo, getRenderChunkRiverInfo } from "./render-chunks";
+import { Tile } from "../../Tile";
 
 const SHALLOW_WATER_COLOUR = [118/255, 185/255, 242/255] as const;
 const DEEP_WATER_COLOUR = [86/255, 141/255, 184/255] as const;
@@ -633,29 +634,18 @@ export function createWaterShaders(): void {
    steppingStoneTexture3UniformLocation = gl.getUniformLocation(steppingStoneProgram, "u_texture3")!;
 }
 
-const calculateTransitionVertices = (renderChunkX: number, renderChunkY: number): Array<number> => {
+const calculateTransitionVertices = (waterTiles: ReadonlyArray<Tile>): Array<number> => {
    const edgeTileIndexes = new Set<number>();
 
-   const tileMinX = renderChunkX * RENDER_CHUNK_SIZE;
-   const tileMaxX = (renderChunkX + 1) * RENDER_CHUNK_SIZE - 1;
-   const tileMinY = renderChunkY * RENDER_CHUNK_SIZE;
-   const tileMaxY = (renderChunkY + 1) * RENDER_CHUNK_SIZE - 1;
-   for (let tileX = tileMinX; tileX <= tileMaxX; tileX++) {
-      for (let tileY = tileMinY; tileY <= tileMaxY; tileY++) {
-         const tile = Game.board.getTile(tileX, tileY);
-
-         // Only add the neighbouring tiles if the tile is a water tile
-         if (tile.type === "water") {
-            for (const offset of NEIGHBOURING_TILE_OFFSETS) {
-               const tileX = tile.x + offset[0];
-               const tileY = tile.y + offset[1];
-               if (Game.board.tileIsInBoard(tileX, tileY)) {
-                  const tile = Game.board.getTile(tileX, tileY);
-                  if (tile.type !== "water") {
-                     const tileIndex = tileY * SETTINGS.BOARD_DIMENSIONS + tileX;
-                     edgeTileIndexes.add(tileIndex);
-                  }
-               }
+   for (const tile of waterTiles) {
+      for (const offset of NEIGHBOURING_TILE_OFFSETS) {
+         const tileX = tile.x + offset[0];
+         const tileY = tile.y + offset[1];
+         if (Game.board.tileIsInBoard(tileX, tileY)) {
+            const tile = Game.board.getTile(tileX, tileY);
+            if (tile.type !== "water") {
+               const tileIndex = tileY * SETTINGS.BOARD_DIMENSIONS + tileX;
+               edgeTileIndexes.add(tileIndex);
             }
          }
       }
@@ -745,40 +735,28 @@ const calculateRockVertices = (renderChunkX: number, renderChunkY: number): Arra
    return vertexArrays;
 }
 
-const calculateBaseVertices = (renderChunkX: number, renderChunkY: number): ReadonlyArray<number> => {
+const calculateBaseVertices = (waterTiles: ReadonlyArray<Tile>): ReadonlyArray<number> => {
    const vertices = new Array<number>();
-   
-   const minTileX = renderChunkX * RENDER_CHUNK_SIZE;
-   const maxTileX = (renderChunkX + 1) * RENDER_CHUNK_SIZE - 1;
-   const minTileY = renderChunkY * RENDER_CHUNK_SIZE;
-   const maxTileY = (renderChunkY + 1) * RENDER_CHUNK_SIZE - 1;
 
-   for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
-      for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
-         const tile = Game.board.getTile(tileX, tileY);
-         if (tile.type !== "water") {
-            continue;
-         }
+   for (const tile of waterTiles) {
+      let x1 = tile.x * SETTINGS.TILE_SIZE;
+      let x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
+      let y1 = tile.y * SETTINGS.TILE_SIZE;
+      let y2 = (tile.y + 1) * SETTINGS.TILE_SIZE;
 
-         let x1 = tile.x * SETTINGS.TILE_SIZE;
-         let x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
-         let y1 = tile.y * SETTINGS.TILE_SIZE;
-         let y2 = (tile.y + 1) * SETTINGS.TILE_SIZE;
-   
-         const bottomLeftLandDistance = calculateDistanceToLand(tile.x, tile.y);
-         const bottomRightLandDistance = calculateDistanceToLand(tile.x + 1, tile.y);
-         const topLeftLandDistance = calculateDistanceToLand(tile.x, tile.y + 1);
-         const topRightLandDistance = calculateDistanceToLand(tile.x + 1, tile.y + 1);
-   
-         vertices.push(
-            x1, y1, 0, 0, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance,
-            x2, y1, 1, 0, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance,
-            x1, y2, 0, 1, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance,
-            x1, y2, 0, 1, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance,
-            x2, y1, 1, 0, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance,
-            x2, y2, 1, 1, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance
-         );
-      }
+      const bottomLeftLandDistance = calculateDistanceToLand(tile.x, tile.y);
+      const bottomRightLandDistance = calculateDistanceToLand(tile.x + 1, tile.y);
+      const topLeftLandDistance = calculateDistanceToLand(tile.x, tile.y + 1);
+      const topRightLandDistance = calculateDistanceToLand(tile.x + 1, tile.y + 1);
+
+      vertices.push(
+         x1, y1, 0, 0, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance,
+         x2, y1, 1, 0, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance,
+         x1, y2, 0, 1, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance,
+         x1, y2, 0, 1, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance,
+         x2, y1, 1, 0, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance,
+         x2, y2, 1, 1, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance
+      );
    }
 
    return vertices;
@@ -1042,10 +1020,34 @@ const createSteppingStoneVAO = (buffer: WebGLBuffer): WebGLVertexArrayObject => 
    return vao;
 }
 
-export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY: number): RenderChunkRiverInfo {
-   // TODO: Calculate visible water tiles and pass them into all these functions
+const getWaterChunkWaterTiles = (renderChunkX: number, renderChunkY: number): Array<Tile> => {
+   const minTileX = renderChunkX * RENDER_CHUNK_SIZE;
+   const maxTileX = (renderChunkX + 1) * RENDER_CHUNK_SIZE - 1;
+   const minTileY = renderChunkY * RENDER_CHUNK_SIZE;
+   const maxTileY = (renderChunkY + 1) * RENDER_CHUNK_SIZE - 1;
 
-   const baseVertices = calculateBaseVertices(renderChunkX, renderChunkY);
+   const tiles = new Array<Tile>();
+   for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
+      for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
+         const tile = Game.board.getTile(tileX, tileY);
+         if (tile.type === "water") {
+            tiles.push(tile);
+         }
+      }
+   }
+
+   return tiles;
+}
+
+export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY: number): RenderChunkRiverInfo | null {
+   const waterTiles = getWaterChunkWaterTiles(renderChunkX, renderChunkY);
+
+   // If there are no water tiles don't calculate any data
+   if (waterTiles.length === 0) {
+      return null;
+   }
+   
+   const baseVertices = calculateBaseVertices(waterTiles);
    const baseBuffer = gl.createBuffer()!;
    gl.bindBuffer(gl.ARRAY_BUFFER, baseBuffer);
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(baseVertices), gl.STATIC_DRAW);
@@ -1063,17 +1065,17 @@ export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY
       rockVertexCounts.push(vertices.length);
    }
 
-   const highlightsVertices = calculateHighlightsVertices(renderChunkX, renderChunkY);
+   const highlightsVertices = calculateHighlightsVertices(waterTiles);
    const highlightsBuffer = gl.createBuffer()!;
    gl.bindBuffer(gl.ARRAY_BUFFER, highlightsBuffer);
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(highlightsVertices), gl.STATIC_DRAW);
 
-   const noiseVertices = calculateNoiseVertices(renderChunkX, renderChunkY);
+   const noiseVertices = calculateNoiseVertices(waterTiles);
    const noiseBuffer = gl.createBuffer()!;
    gl.bindBuffer(gl.ARRAY_BUFFER, noiseBuffer);
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(noiseVertices), gl.STATIC_DRAW);
 
-   const transitionVertices = calculateTransitionVertices(renderChunkX, renderChunkY);
+   const transitionVertices = calculateTransitionVertices(waterTiles);
    const transitionBuffer = gl.createBuffer()!;
    gl.bindBuffer(gl.ARRAY_BUFFER, transitionBuffer);
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(transitionVertices), gl.STATIC_DRAW);
@@ -1151,42 +1153,31 @@ const calculateDistanceToWater = (tileX: number, tileY: number): number => {
    return 1;
 }
 
-const calculateNoiseVertices = (renderChunkX: number, renderChunkY: number): ReadonlyArray<number> => {
+const calculateNoiseVertices = (waterTiles: ReadonlyArray<Tile>): ReadonlyArray<number> => {
    const vertices = new Array<number>();
    
-   const minTileX = renderChunkX * RENDER_CHUNK_SIZE;
-   const maxTileX = (renderChunkX + 1) * RENDER_CHUNK_SIZE - 1;
-   const minTileY = renderChunkY * RENDER_CHUNK_SIZE;
-   const maxTileY = (renderChunkY + 1) * RENDER_CHUNK_SIZE - 1;
+   for (const tile of waterTiles) {
+      const flowDirection = Game.board.getRiverFlowDirection(tile.x, tile.y);
+      
+      const x1 = (tile.x - 0.5) * SETTINGS.TILE_SIZE;
+      const x2 = (tile.x + 1.5) * SETTINGS.TILE_SIZE;
+      const y1 = (tile.y - 0.5) * SETTINGS.TILE_SIZE;
+      const y2 = (tile.y + 1.5) * SETTINGS.TILE_SIZE;
 
-   for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
-      for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
-         const tile = Game.board.getTile(tileX, tileY);
-         if (tile.type !== "water") {
-            continue;
-         }
-         const flowDirection = Game.board.getRiverFlowDirection(tileX, tileY);
-         
-         const x1 = (tileX - 0.5) * SETTINGS.TILE_SIZE;
-         const x2 = (tileX + 1.5) * SETTINGS.TILE_SIZE;
-         const y1 = (tileY - 0.5) * SETTINGS.TILE_SIZE;
-         const y2 = (tileY + 1.5) * SETTINGS.TILE_SIZE;
+      const animationOffset = Math.random();
+      const animationSpeed = randFloat(1, 1.67);
+      
+      const flowDirectionX = Math.sin(flowDirection);
+      const flowDirectionY = Math.cos(flowDirection);
 
-         const animationOffset = Math.random();
-         const animationSpeed = randFloat(1, 1.67);
-         
-         const flowDirectionX = Math.sin(flowDirection);
-         const flowDirectionY = Math.cos(flowDirection);
-
-         vertices.push(
-            x1, y1, 0, 0, flowDirectionX, flowDirectionY, animationOffset, animationSpeed,
-            x2, y1, 1, 0, flowDirectionX, flowDirectionY, animationOffset, animationSpeed,
-            x1, y2, 0, 1, flowDirectionX, flowDirectionY, animationOffset, animationSpeed,
-            x1, y2, 0, 1, flowDirectionX, flowDirectionY, animationOffset, animationSpeed,
-            x2, y1, 1, 0, flowDirectionX, flowDirectionY, animationOffset, animationSpeed,
-            x2, y2, 1, 1, flowDirectionX, flowDirectionY, animationOffset, animationSpeed
-         );
-      }
+      vertices.push(
+         x1, y1, 0, 0, flowDirectionX, flowDirectionY, animationOffset, animationSpeed,
+         x2, y1, 1, 0, flowDirectionX, flowDirectionY, animationOffset, animationSpeed,
+         x1, y2, 0, 1, flowDirectionX, flowDirectionY, animationOffset, animationSpeed,
+         x1, y2, 0, 1, flowDirectionX, flowDirectionY, animationOffset, animationSpeed,
+         x2, y1, 1, 0, flowDirectionX, flowDirectionY, animationOffset, animationSpeed,
+         x2, y2, 1, 1, flowDirectionX, flowDirectionY, animationOffset, animationSpeed
+      );
    }
 
    return vertices;
@@ -1258,37 +1249,25 @@ const calculateSteppingStoneVertices = (visibleSteppingStones: ReadonlySet<River
    return vertices;
 }
 
-const calculateHighlightsVertices = (renderChunkX: number, renderChunkY: number): ReadonlyArray<number> => {
+const calculateHighlightsVertices = (waterTiles: ReadonlyArray<Tile>): ReadonlyArray<number> => {
    const vertices = new Array<number>();
    
-   const minTileX = renderChunkX * RENDER_CHUNK_SIZE;
-   const maxTileX = (renderChunkX + 1) * RENDER_CHUNK_SIZE - 1;
-   const minTileY = renderChunkY * RENDER_CHUNK_SIZE;
-   const maxTileY = (renderChunkY + 1) * RENDER_CHUNK_SIZE - 1;
+   for (const tile of waterTiles) {
+      const x1 = tile.x * SETTINGS.TILE_SIZE;
+      const x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
+      const y1 = tile.y * SETTINGS.TILE_SIZE;
+      const y2 = (tile.y + 1) * SETTINGS.TILE_SIZE;
 
-   for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
-      for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
-         const tile = Game.board.getTile(tileX, tileY);
-         if (tile.type !== "water") {
-            continue;
-         }
+      const fadeOffset = Math.random() * 3;
 
-         const x1 = tile.x * SETTINGS.TILE_SIZE;
-         const x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
-         const y1 = tile.y * SETTINGS.TILE_SIZE;
-         const y2 = (tile.y + 1) * SETTINGS.TILE_SIZE;
-
-         const fadeOffset = Math.random() * 3;
-   
-         vertices.push(
-            x1, y1, 0, 0, fadeOffset,
-            x2, y1, 1, 0, fadeOffset,
-            x1, y2, 0, 1, fadeOffset,
-            x1, y2, 0, 1, fadeOffset,
-            x2, y1, 1, 0, fadeOffset,
-            x2, y2, 1, 1, fadeOffset
-         );
-      }
+      vertices.push(
+         x1, y1, 0, 0, fadeOffset,
+         x2, y1, 1, 0, fadeOffset,
+         x1, y2, 0, 1, fadeOffset,
+         x1, y2, 0, 1, fadeOffset,
+         x2, y1, 1, 0, fadeOffset,
+         x2, y2, 1, 1, fadeOffset
+      );
    }
 
    return vertices;
@@ -1302,7 +1281,9 @@ const calculateVisibleRenderChunks = (): ReadonlyArray<RenderChunkRiverInfo> => 
    for (let renderChunkX = minRenderChunkX; renderChunkX <= maxRenderChunkX; renderChunkX++) {
       for (let renderChunkY = minRenderChunkY; renderChunkY <= maxRenderChunkY; renderChunkY++) {
          const renderChunkInfo = getRenderChunkRiverInfo(renderChunkX, renderChunkY);
-         renderChunks.push(renderChunkInfo);
+         if (renderChunkInfo !== null) {
+            renderChunks.push(renderChunkInfo);
+         }
       }
    }
 

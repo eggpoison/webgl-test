@@ -16,7 +16,7 @@ class IceShardsProjectile extends Projectile {
             height: IceShardsProjectile.SIZE,
             textureSource: "projectiles/ice-shard.png",
             zIndex: 0
-         }, this)
+         })
       );
    }
 }

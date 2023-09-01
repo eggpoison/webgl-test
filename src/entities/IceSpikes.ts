@@ -19,7 +19,7 @@ class IceSpikes extends Entity {
             height: IceSpikes.HEIGHT,
             textureSource: `entities/ice-spikes/ice-spikes.png`,
             zIndex: 0
-         }, this)
+         })
       ]);
    }
 }

@@ -24,7 +24,7 @@ class Campfire extends Entity {
             height: Campfire.SIZE,
             textureSource: "entities/campfire/campfire.png",
             zIndex: 0
-         }, this)
+         })
       ]);
 
       this.fuelInventory = createInventoryFromData(fuelInventory);

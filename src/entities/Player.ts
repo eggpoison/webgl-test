@@ -133,7 +133,7 @@ class Player extends TribeMember {
             height: 64,
             textureSource: super.getTextureSource(tribeType),
             zIndex: 1
-         }, this)
+         })
       ]);
 
       this.username = username;

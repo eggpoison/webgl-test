@@ -1,4 +1,4 @@
-import { circleAndRectangleDoIntersect, computeSideAxis, HitboxVertexPositions, Point, rectanglePointsDoIntersect, rotatePoint, Vector } from "webgl-test-shared";
+import { circleAndRectangleDoIntersect, computeSideAxis, HitboxVertexPositions, Point, rectanglePointsDoIntersect, rotateXAroundPoint, rotateYAroundPoint, Vector } from "webgl-test-shared";
 import Hitbox, { HitboxBounds } from "./Hitbox";
 import CircularHitbox from "./CircularHitbox";
 
@@ -9,7 +9,13 @@ class RectangularHitbox extends Hitbox {
    /** Length of half of the diagonal of the rectangle */
    public readonly halfDiagonalLength: number;
 
-   public vertexPositions!: HitboxVertexPositions;
+   public vertexPositions: HitboxVertexPositions = [
+      new Point(-1, -1),
+      new Point(-1, -1),
+      new Point(-1, -1),
+      new Point(-1, -1)
+   ];
+
    public sideAxes!: [axis1: Vector, axis2: Vector];
 
    constructor(width: number, height: number, offset?: Point) {
@@ -26,25 +32,25 @@ class RectangularHitbox extends Hitbox {
       const y1 = this.gameObject.position.y - this.height / 2;
       const y2 = this.gameObject.position.y + this.height / 2;
 
-      let topLeft = new Point(x1, y2);
-      let topRight = new Point(x2, y2);
-      let bottomLeft = new Point(x1, y1);
-      let bottomRight = new Point(x2, y1);
-
-      // Rotate the points to match the entity's rotation
-      topLeft = rotatePoint(topLeft, this.gameObject.position, this.gameObject.rotation);
-      topRight = rotatePoint(topRight, this.gameObject.position, this.gameObject.rotation);
-      bottomLeft = rotatePoint(bottomLeft, this.gameObject.position, this.gameObject.rotation);
-      bottomRight = rotatePoint(bottomRight, this.gameObject.position, this.gameObject.rotation);
+      // Top left
+      this.vertexPositions[0].x = rotateXAroundPoint(x1, y2, this.gameObject.position.x, this.gameObject.position.y, this.gameObject.rotation);
+      this.vertexPositions[0].y = rotateYAroundPoint(x1, y2, this.gameObject.position.x, this.gameObject.position.y, this.gameObject.rotation);
+      // Top right
+      this.vertexPositions[1].x = rotateXAroundPoint(x2, y2, this.gameObject.position.x, this.gameObject.position.y, this.gameObject.rotation);
+      this.vertexPositions[1].y = rotateYAroundPoint(x2, y2, this.gameObject.position.x, this.gameObject.position.y, this.gameObject.rotation);
+      // Bottom left
+      this.vertexPositions[2].x = rotateXAroundPoint(x1, y1, this.gameObject.position.x, this.gameObject.position.y, this.gameObject.rotation);
+      this.vertexPositions[2].y = rotateYAroundPoint(x1, y1, this.gameObject.position.x, this.gameObject.position.y, this.gameObject.rotation);
+      // Bottom right
+      this.vertexPositions[3].x = rotateXAroundPoint(x2, y1, this.gameObject.position.x, this.gameObject.position.y, this.gameObject.rotation);
+      this.vertexPositions[3].y = rotateYAroundPoint(x2, y1, this.gameObject.position.x, this.gameObject.position.y, this.gameObject.rotation);
 
       if (typeof this.offset !== "undefined") {
-         topLeft.add(this.offset);
-         topRight.add(this.offset);
-         bottomLeft.add(this.offset);
-         bottomRight.add(this.offset);
+         this.vertexPositions[0].add(this.offset);
+         this.vertexPositions[1].add(this.offset);
+         this.vertexPositions[2].add(this.offset);
+         this.vertexPositions[3].add(this.offset);
       }
-
-      this.vertexPositions = [topLeft, topRight, bottomLeft, bottomRight];
    }
 
    public computeSideAxes(): void {

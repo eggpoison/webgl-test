@@ -23,7 +23,7 @@ class Zombie extends Entity {
             height: 64,
             textureSource: "entities/zombie/" + ZOMBIE_TEXTURE_SOURCES[zombieType],
             zIndex: 0
-         }, this)
+         })
       ]);
    }
 }

@@ -48,8 +48,8 @@ const MainMenu = ({ existingUsername, passUsername }: MainMenuProps) => {
 
    return <div id="main-menu">
       {username === null ? <>
-         <div id="name-input">
-            <input ref={nameInputBoxRef} onKeyDown={e => pressEnter(e.nativeEvent)} type="text" placeholder="Enter name here" autoFocus />
+         <div id="name-input-container">
+            <input ref={nameInputBoxRef} name="name-input" onKeyDown={e => pressEnter(e.nativeEvent)} type="text" placeholder="Enter name here" autoFocus />
             <button onClick={enterName}>Play</button>
          </div>
       </> : <>

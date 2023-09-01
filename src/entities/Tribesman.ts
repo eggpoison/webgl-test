@@ -27,7 +27,7 @@ class Tribesman extends TribeMember {
             height: Tribesman.RADIUS * 2,
             textureSource: super.getTextureSource(tribeType),
             zIndex: 1
-         }, this)
+         })
       ]);
 
       if (tribeType === TribeType.goblins) {
@@ -39,7 +39,7 @@ class Tribesman extends TribeMember {
                height: Tribesman.RADIUS * 2,
                textureSource: `entities/human/goblin-warpaint-${warpaint}.png`,
                zIndex: 2
-            }, this)
+            })
          );
 
          // Left ear
@@ -53,7 +53,7 @@ class Tribesman extends TribeMember {
                getRotation: () => Math.PI/2 - Tribesman.GOBLIN_EAR_ANGLE,
                zIndex: 2,
                flipX: true
-            }, this)
+            })
          );
          // Right ear
          const rightEarOffset = new Vector(Tribesman.RADIUS + Tribesman.GOBLIN_EAR_OFFSET, Tribesman.GOBLIN_EAR_ANGLE).convertToPoint();
@@ -65,7 +65,7 @@ class Tribesman extends TribeMember {
                offset: () => rightEarOffset,
                getRotation: () => -Math.PI/2 + Tribesman.GOBLIN_EAR_ANGLE,
                zIndex: 2
-            }, this)
+            })
          );
       }
 

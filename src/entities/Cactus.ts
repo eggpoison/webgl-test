@@ -20,7 +20,7 @@ class Cactus extends Entity {
             height: Cactus.SIZE,
             textureSource: "entities/cactus/cactus.png",
             zIndex: 2
-         }, this)
+         })
       );
 
       // Attach flower render parts
@@ -29,9 +29,9 @@ class Cactus extends Entity {
          
          // Calculate position offset
          const offsetDirection = column * Math.PI / 4;
-         const offsetVector = new Vector(height, offsetDirection).convertToPoint();
+         const offsetVector = Point.fromVectorForm(height, offsetDirection);
 
-         let flowerSize = (type === 4 || size === CactusFlowerSize.large) ? 20 : 16;
+         const flowerSize = (type === 4 || size === CactusFlowerSize.large) ? 20 : 16;
 
          this.attachRenderPart(
             new RenderPart({
@@ -41,7 +41,7 @@ class Cactus extends Entity {
                zIndex: 3,
                offset: () => offsetVector,
                getRotation: () => rotation
-            }, this)
+            })
          );
       }
 
@@ -60,7 +60,7 @@ class Cactus extends Entity {
                zIndex: 0,
                offset: () => offset,
                getRotation: () => limbRotation
-            }, this)
+            })
          );
          
          if (typeof flower !== "undefined") {
@@ -77,7 +77,7 @@ class Cactus extends Entity {
                   zIndex: 1,
                   offset: () => flowerOffset,
                   getRotation: () => rotation
-               }, this)
+               })
             );
          }
       }

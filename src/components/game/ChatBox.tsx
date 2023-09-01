@@ -156,7 +156,7 @@ const ChatBox = () => {
             })}
          </div>
 
-         <input ref={inputBoxRef} type="text" onFocus={() => setIsFocused(true)} onBlur={() => setIsFocused(false)} onKeyDown={e => keyPress(e.nativeEvent as KeyboardEvent)} className={`message-preview${isFocused ? " active" : ""}`} />
+         <input ref={inputBoxRef} name="chat-box-input" type="text" onFocus={() => setIsFocused(true)} onBlur={() => setIsFocused(false)} onKeyDown={e => keyPress(e.nativeEvent as KeyboardEvent)} className={`message-preview${isFocused ? " active" : ""}`} />
       </div>
    );
 }

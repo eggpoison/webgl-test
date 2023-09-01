@@ -29,7 +29,7 @@ class BerryBush extends Entity {
          height: BerryBush.HEIGHT,
          textureSource: this.getTextureSourceFromNumBerries(numBerries),
          zIndex: 0
-      }, this);
+      });
       this.attachRenderParts([this.renderPart]);
    }
 

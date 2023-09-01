@@ -17,7 +17,7 @@ class WoodenArrowProjectile extends Projectile {
             height: WoodenArrowProjectile.HEIGHT,
             textureSource: "projectiles/wooden-arrow.png",
             zIndex: 0
-         }, this)
+         })
       );
    }
 }

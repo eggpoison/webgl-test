@@ -18,7 +18,7 @@ class Tombstone extends Entity {
             height: 96,
             textureSource: `entities/tombstone/tombstone${tombstoneType + 1}.png`,
             zIndex: 0
-         }, this)
+         })
       ]);
 
       this.deathInfo = deathInfo;

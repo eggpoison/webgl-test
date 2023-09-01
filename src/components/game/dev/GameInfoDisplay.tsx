@@ -93,52 +93,32 @@ const GameInfoDisplay = () => {
       <ul className="options">
          <li>
             <label className={nightVisionIsEnabled ? "enabled" : undefined}>
-               <input checked={nightVisionIsEnabled} type="checkbox" onChange={toggleNightvision} />
+               <input checked={nightVisionIsEnabled} name="nightvision-checkbox" type="checkbox" onChange={toggleNightvision} />
                Nightvision
             </label>
          </li>
          <li>
             <label className={showHitboxes ? "enabled" : undefined}>
-               <input checked={showHitboxes} type="checkbox" onChange={toggleShowHitboxes} />
+               <input checked={showHitboxes} name="hitboxes-checkbox" type="checkbox" onChange={toggleShowHitboxes} />
                Hitboxes
             </label>
          </li>
          <li>
             <label className={showChunkBorders ? "enabled" : undefined}>
-               <input checked={showChunkBorders} type="checkbox" onChange={toggleSetShowChunkBorders} />
+               <input checked={showChunkBorders} name="chunk-borders-checkbox" type="checkbox" onChange={toggleSetShowChunkBorders} />
                Chunk borders
             </label>
          </li>
       </ul>
 
       <ul>
-         <li>
-            <label>
-               {Object.keys(Game.board.gameObjects).length} Game Objects
-            </label>
-         </li>
+         <li>{Object.keys(Game.board.gameObjects).length} Game Objects</li>
          <ul>
-            <li>
-               <label>
-                  {Object.keys(Game.board.entities).length} Entities
-               </label>
-            </li>
-            <li>
-               <label>
-                  {Object.keys(Game.board.projectiles).length} Projectiles
-               </label>
-            </li>
-            <li>
-               <label>
-                  {Object.keys(Game.board.droppedItems).length} Dropped Items
-               </label>
-            </li>
+            <li>{Object.keys(Game.board.entities).length} Entities</li>
+            <li>{Object.keys(Game.board.projectiles).length} Projectiles</li>
+            <li>{Object.keys(Game.board.droppedItems).length} Dropped Items</li>
          </ul>
-         <li>
-            <label>
-               {Object.keys(Game.board.particles).length} Particles
-            </label>
-         </li>
+         <li>{Object.keys(Game.board.lowParticles).length + Object.keys(Game.board.highParticles).length} Particles</li>
       </ul>
    </div>;
 }

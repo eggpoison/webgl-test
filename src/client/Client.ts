@@ -21,7 +21,7 @@ import { registerServerTick, updateDebugScreenTicks } from "../components/game/d
 import createProjectile from "../projectiles/projectile-creation";
 import Camera from "../Camera";
 import { isDev } from "../utils";
-import Particle from "../Particle";
+import Particle, { PARTICLE_INFO, ParticleRenderLayer } from "../Particle";
 import { updateTileAmbientOcclusion } from "../rendering/ambient-occlusion-rendering";
 import Tribe from "../Tribe";
 import { updateRenderChunkFromTileUpdate } from "../rendering/tile-rendering/render-chunks";
@@ -70,11 +70,12 @@ abstract class Client {
          if (!socketAlreadyExists) {
             this.socket.on("game_data_packet", gameDataPacket => {
                // Only unload game packets when the game is running
-               if (Game.getIsPaused() || !Game.isRunning || !Game.isSynced) return;
+               if (Game.getIsPaused() || !Game.isRunning || !Game.isSynced || document.visibilityState === "hidden") return;
 
                registerServerTick();
-   
-               Game.pendingPackets.push(gameDataPacket);
+
+               this.unloadGameDataPacket(gameDataPacket);
+               Game.b();
             });
    
             // When the connection to the server fails
@@ -231,7 +232,13 @@ abstract class Client {
    }
 
    private static updateParticles(particles: ReadonlyArray<ParticleData>): void {
-      const knownIDs = new Set(Object.keys(Game.board.particles).map(idString => Number(idString)));
+      const knownIDs = new Set<number>();
+      for (const id of Object.keys(Game.board.lowParticles)) {
+         knownIDs.add(Number(id));
+      }
+      for (const id of Object.keys(Game.board.highParticles)) {
+         knownIDs.add(Number(id));
+      }
       
       // Remove the player from the list of known entities so the player isn't removed
       if (Player.instance !== null) {
@@ -240,11 +247,18 @@ abstract class Client {
 
       // Update the game entities
       for (const particleData of particles) {// If it already exists, update it
-         if (Game.board.particles.hasOwnProperty(particleData.id)) {
-            Game.board.particles[particleData.id].updateFromData(particleData);
+         if (Game.board.lowParticles.hasOwnProperty(particleData.id)) {
+            Game.board.lowParticles[particleData.id].updateFromData(particleData);
+         } else if (Game.board.highParticles.hasOwnProperty(particleData.id)) {
+            Game.board.highParticles[particleData.id].updateFromData(particleData);
          } else {
             const particle = new Particle(particleData);
-            Game.board.particles[particleData.id] = particle;
+            const renderLayer = PARTICLE_INFO[particle.type].renderLayer;
+            if (renderLayer === ParticleRenderLayer.low) {
+               Game.board.lowParticles[particleData.id] = particle
+            } else {
+               Game.board.highParticles[particleData.id] = particle;
+            }
          }
 
          knownIDs.delete(particleData.id);
@@ -252,7 +266,8 @@ abstract class Client {
 
       // All known entity ids which haven't been removed are ones which are dead
       for (const id of knownIDs) {
-         delete Game.board.particles[id];
+         delete Game.board.lowParticles[id];
+         delete Game.board.highParticles[id];
       }
    }
 

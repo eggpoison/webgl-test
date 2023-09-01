@@ -34,7 +34,7 @@ export interface RenderChunkRiverInfo {
 /** Stores rendering information about one render chunk of the world.*/
 export interface RenderChunk {
    solidTileInfo: RenderChunkSolidTileInfo;
-   riverInfo: RenderChunkRiverInfo;
+   riverInfo: RenderChunkRiverInfo | null;
 }
 
 let renderChunks: Array<Array<RenderChunk>>;
@@ -69,6 +69,6 @@ export function getRenderChunkSolidTileInfo(renderChunkX: number, renderChunkY: 
    return renderChunks[renderChunkX][renderChunkY].solidTileInfo;
 }
 
-export function getRenderChunkRiverInfo(renderChunkX: number, renderChunkY: number): RenderChunkRiverInfo {
+export function getRenderChunkRiverInfo(renderChunkX: number, renderChunkY: number): RenderChunkRiverInfo | null {
    return renderChunks[renderChunkX][renderChunkY].riverInfo;
 }

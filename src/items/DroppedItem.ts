@@ -23,7 +23,7 @@ class DroppedItem extends GameObject implements BaseItemInfo {
             height: SETTINGS.ITEM_SIZE * 2,
             textureSource: CLIENT_ITEM_INFO_RECORD[itemType].textureSource,
             zIndex: 0
-         }, this)
+         })
       );
    }
 

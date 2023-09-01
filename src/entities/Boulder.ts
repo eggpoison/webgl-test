@@ -19,7 +19,7 @@ class Boulder extends Entity {
             height: Boulder.HEIGHT,
             textureSource: `entities/boulder/boulder${boulderType + 1}.png`,
             zIndex: 0
-         }, this)
+         })
       ]);
    }
 }

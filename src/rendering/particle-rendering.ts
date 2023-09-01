@@ -1,8 +1,7 @@
 import { ParticleType, Point, SETTINGS, Vector } from "webgl-test-shared";
-import Game from "../Game";
-import { createWebGLProgram, gl } from "../webgl";
+import { createWebGLProgram, gl, halfWindowHeight, halfWindowWidth } from "../webgl";
 import Camera from "../Camera";
-import Particle, { ParticleRenderLayer } from "../Particle";
+import Particle, { PARTICLE_INFO } from "../Particle";
 import { getTexture } from "../textures";
 import { getFrameProgress } from "../GameObject";
 import { calculateVertexPositionX, calculateVertexPositionY } from "./game-object-rendering";
@@ -44,6 +43,10 @@ export const PARTICLE_TEXTURES: Record<ParticleType, string> = {
 const vertexShaderText = `#version 300 es
 precision mediump float;
 
+uniform vec2 u_playerPos;
+uniform vec2 u_halfWindowSize;
+uniform float u_zoom;
+
 layout(location = 0) in vec2 a_position;
 in vec2 a_texCoord;
 in float a_opacity;
@@ -54,7 +57,9 @@ out float v_opacity;
 out vec3 v_tint;
 
 void main() {
-   gl_Position = vec4(a_position, 0.0, 1.0);
+   vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
+   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+   gl_Position = vec4(clipSpacePos, 0.0, 1.0);
 
    v_texCoord = a_texCoord;
    v_opacity = a_opacity;
@@ -100,6 +105,9 @@ void main() {
 
 let program: WebGLProgram;
 
+let playerPositionUniformLocation: WebGLUniformLocation;
+let halfWindowSizeUniformLocation: WebGLUniformLocation;
+let zoomUniformLocation: WebGLUniformLocation;
 let textureUniformLocation: WebGLUniformLocation;
 
 let texCoordAttribLocation: number;
@@ -109,45 +117,33 @@ let tintAttribLocation: number;
 export function createParticleShaders(): void {
    program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
    
+   playerPositionUniformLocation = gl.getUniformLocation(program, "u_playerPos")!;
+   halfWindowSizeUniformLocation = gl.getUniformLocation(program, "u_halfWindowSize")!;
+   zoomUniformLocation = gl.getUniformLocation(program, "u_zoom")!;
    textureUniformLocation = gl.getUniformLocation(program, "u_texture")!;
    
-   gl.bindAttribLocation(program, 0, "a_position");
    texCoordAttribLocation = gl.getAttribLocation(program, "a_texCoord");
    opacityAttribLocation = gl.getAttribLocation(program, "a_opacity");
    tintAttribLocation = gl.getAttribLocation(program, "a_tint");
 }
 
-type CategorisedParticles = Record<string, Array<Particle>>;
+type GroupedParticles = Array<Array<Particle>>;
 
-const particleIsVisible = (particle: Particle): boolean => {
-   const halfMaxDiagonalLength = Math.sqrt(Math.pow(particle.width, 2) + Math.pow(particle.height, 2)) / 2;
+const numParticleTypes = Object.keys(PARTICLE_INFO).length;
 
-   // TODO: The particle render position shouldn't be unnecessarily calculated here, as the positions would be calculated twice if the particle was rendered
-   const particleRenderPosition = calculateParticleRenderPosition(particle);
-   if (particleRenderPosition.x + halfMaxDiagonalLength < Camera.visiblePositionBounds[0]
-      || particleRenderPosition.x - halfMaxDiagonalLength > Camera.visiblePositionBounds[1]
-      || particleRenderPosition.y + halfMaxDiagonalLength < Camera.visiblePositionBounds[2]
-      || particleRenderPosition.y - halfMaxDiagonalLength > Camera.visiblePositionBounds[3]) {
-      return false;
-   }
-   return true;
-}
+const groupParticles = (particles: ReadonlyArray<Particle>): GroupedParticles => {
+   const groupedParticles: GroupedParticles = [];
 
-const categoriseParticles = (renderLayer: ParticleRenderLayer): CategorisedParticles => {
-   const categorisedParticles: CategorisedParticles = {};
-
-   for (const particle of Object.values(Game.board.particles)) {
-      if (particle.renderLayer !== renderLayer || !particleIsVisible(particle)) continue;
-
-      const textureSource = PARTICLE_TEXTURES[particle.type];
-      
-      if (!categorisedParticles.hasOwnProperty(textureSource)) {
-         categorisedParticles[textureSource] = [];
-      }
-      categorisedParticles[textureSource].push(particle);
+   // Fill array initially with all particle types as empty
+   for (let i = 0; i < numParticleTypes; i++) {
+      groupedParticles.push([]);
    }
 
-   return categorisedParticles;
+   for (const particle of particles) {
+      groupedParticles[particle.type].push(particle);
+   }
+
+   return groupedParticles;
 }
 
 const calculateParticleRenderPosition = (particle: Particle): Point => {
@@ -185,31 +181,31 @@ const calculateParticleRenderPosition = (particle: Particle): Point => {
    return renderPosition;
 }
 
-export function renderParticles(renderLayer: ParticleRenderLayer): void {
-   const categorisedParticles = categoriseParticles(renderLayer);
+export function renderParticles(particlesToRender: ReadonlyArray<Particle>): void {
+   const groupedParticles = groupParticles(particlesToRender);
 
    // Create vertices
-
    const textureSources = new Array<string>();
    const vertexDatas = new Array<Float32Array>();
    const vertexCounts = new Array<number>();
-   for (const [textureSource, particles] of Object.entries(categorisedParticles)) {
+   for (let particleType: ParticleType = 0; particleType < numParticleTypes; particleType++) {
+      const particles = groupedParticles[particleType];
       if (particles.length === 0) {
          continue;
       }
       
-      textureSources.push(textureSource);
+      textureSources.push(PARTICLE_TEXTURES[particleType]);
       vertexCounts.push(particles.length * 6 * 8);
 
       const vertexData = new Float32Array(particles.length * 6 * 8);
       for (let i = 0; i < particles.length; i++) {
          const particle = particles[i];
          
-         const renderPosition = calculateParticleRenderPosition(particle);
-
          const width = particle.width * particle.scale;
          const height = particle.height * particle.scale;
 
+         const renderPosition = calculateParticleRenderPosition(particle);
+         
          const x1 = renderPosition.x - width / 2;
          const x2 = renderPosition.x + width / 2;
          const y1 = renderPosition.y - height / 2;
@@ -308,6 +304,9 @@ export function renderParticles(renderLayer: ParticleRenderLayer): void {
       gl.enableVertexAttribArray(opacityAttribLocation);
       gl.enableVertexAttribArray(tintAttribLocation);
 
+      gl.uniform2f(playerPositionUniformLocation, Camera.position.x, Camera.position.y);
+      gl.uniform2f(halfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
+      gl.uniform1f(zoomUniformLocation, Camera.zoom);
       gl.uniform1i(textureUniformLocation, 0);
 
       const texture = getTexture(textureSource);
