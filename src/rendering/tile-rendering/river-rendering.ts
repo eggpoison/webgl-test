@@ -419,7 +419,6 @@ const foamFragmentShaderText = `#version 300 es
 precision mediump float;
  
 uniform sampler2D u_foamTexture;
-uniform sampler2D u_steppingStoneTexture;
 uniform float u_textureOffset;
  
 in vec2 v_texCoord;
@@ -429,16 +428,13 @@ in float v_textureOffset;
 out vec4 outputColour;
  
 void main() {
-   vec4 steppingStoneColour = texture(u_steppingStoneTexture, v_texCoord);
-   
    float offsetAmount = u_textureOffset + v_textureOffset;
    vec2 offset = v_flowDirection * offsetAmount;
    outputColour = texture(u_foamTexture, fract(v_texCoord - offset));
-   outputColour.a *= steppingStoneColour.a;
 
    float distFromCenter = distance(v_texCoord, vec2(0.5, 0.5));
    float multiplier = 1.0 - distFromCenter * 2.0;
-   multiplier = pow(multiplier, 0.25);
+   multiplier = pow(multiplier, 0.35);
    outputColour.a *= multiplier;
 }
 `;
@@ -472,9 +468,9 @@ void main() {
 const steppingStoneFragmentShaderText = `#version 300 es
 precision mediump float;
  
-uniform sampler2D u_texture0;
 uniform sampler2D u_texture1;
 uniform sampler2D u_texture2;
+uniform sampler2D u_texture3;
  
 in vec2 v_texCoord;
 in float v_textureIdx;
@@ -483,11 +479,11 @@ out vec4 outputColour;
  
 void main() {
    if (v_textureIdx < 0.5) {
-      outputColour = texture(u_texture0, v_texCoord);
-   } else if (v_textureIdx < 1.5) {
       outputColour = texture(u_texture1, v_texCoord);
-   } else {
+   } else if (v_textureIdx < 1.5) {
       outputColour = texture(u_texture2, v_texCoord);
+   } else {
+      outputColour = texture(u_texture3, v_texCoord);
    }
 }
 `;
@@ -535,7 +531,6 @@ let foamProgramPlayerPosUniformLocation: WebGLUniformLocation;
 let foamProgramHalfWindowSizeUniformLocation: WebGLUniformLocation;
 let foamProgramZoomUniformLocation: WebGLUniformLocation;
 let foamProgramFoamTextureUniformLocation: WebGLUniformLocation;
-let foamProgramSteppingStoneTextureUniformLocation: WebGLUniformLocation;
 let foamProgramTextureOffsetUniformLocation: WebGLUniformLocation;
 
 let steppingStoneProgramPlayerPosUniformLocation: WebGLUniformLocation;
@@ -616,7 +611,6 @@ export function createWaterShaders(): void {
    foamProgramPlayerPosUniformLocation = gl.getUniformLocation(foamProgram, "u_playerPos")!;
    foamProgramHalfWindowSizeUniformLocation = gl.getUniformLocation(foamProgram, "u_halfWindowSize")!;
    foamProgramZoomUniformLocation = gl.getUniformLocation(foamProgram, "u_zoom")!;
-   foamProgramSteppingStoneTextureUniformLocation = gl.getUniformLocation(foamProgram, "u_steppingStoneTexture")!;
    foamProgramFoamTextureUniformLocation = gl.getUniformLocation(foamProgram, "u_foamTexture")!;
    foamProgramTextureOffsetUniformLocation = gl.getUniformLocation(foamProgram, "u_textureOffset")!;
    
@@ -762,14 +756,10 @@ const calculateBaseVertices = (waterTiles: ReadonlyArray<Tile>): ReadonlyArray<n
    return vertices;
 }
 
-const calculateFoamVertices = (steppingStones: ReadonlySet<RiverSteppingStone>, size: RiverSteppingStoneSize): Array<number> => {
+const calculateFoamVertices = (steppingStones: ReadonlySet<RiverSteppingStone>): Array<number> => {
    const vertices = new Array<number>();
 
    for (const steppingStone of steppingStones) {
-      if (steppingStone.size !== size) {
-         continue;
-      }
-      
       const renderSize = RIVER_STEPPING_STONE_SIZES[steppingStone.size];
       
       let x1 = (steppingStone.position.x - renderSize/2 - FOAM_PADDING);
@@ -1082,17 +1072,10 @@ export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY
 
    const steppingStones = calculateRenderChunkSteppingStones(renderChunkX, renderChunkY);
 
-   const foamVertexArrays = new Array<Array<number>>();
-   const foamBuffers = new Array<WebGLBuffer>();
-   for (let size: RiverSteppingStoneSize = 0; size < 3; size++) {
-      const vertices = calculateFoamVertices(steppingStones, size);
-      const buffer = gl.createBuffer()!;
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-
-      foamVertexArrays.push(vertices);
-      foamBuffers.push(buffer);
-   }
+   const foamVertices = calculateFoamVertices(steppingStones);
+   const foamBuffer = gl.createBuffer()!;
+   gl.bindBuffer(gl.ARRAY_BUFFER, foamBuffer);
+   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(foamVertices), gl.STATIC_DRAW);
 
    const steppingStoneVertices = calculateSteppingStoneVertices(steppingStones);
    const steppingStoneBuffer = gl.createBuffer()!;
@@ -1110,8 +1093,8 @@ export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY
       transitionVertexCount: transitionVertices.length,
       noiseVAO: createNoiseVAO(noiseBuffer),
       noiseVertexCount: noiseVertices.length,
-      foamVAOs: foamBuffers.map(buffer => createFoamVAO(buffer)),
-      foamVertexCounts: foamVertexArrays.map(vertices => vertices.length),
+      foamVAO: createFoamVAO(foamBuffer),
+      foamVertexCount: foamVertices.length,
       steppingStoneVAO: createSteppingStoneVAO(steppingStoneBuffer),
       steppingStoneVertexCount: steppingStoneVertices.length
    };
@@ -1235,6 +1218,7 @@ const calculateSteppingStoneVertices = (visibleSteppingStones: ReadonlySet<River
       bottomLeft = rotatePoint(bottomLeft, pos, steppingStone.rotation);
 
       const textureIdx: number = steppingStone.size;
+      console.log(steppingStone.size, RIVER_STEPPING_STONE_TEXTURES[steppingStone.size]);
 
       vertices.push(
          bottomLeft.x, bottomLeft.y, 0, 0, textureIdx,
@@ -1450,21 +1434,16 @@ export function renderRivers(): void {
    const foamTextureOffset = Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000;
    
    for (const renderChunkRiverInfo of visibleRenderChunks) {
-      for (let size: RiverSteppingStoneSize = 0; size < 3; size++) {
-         const vao = renderChunkRiverInfo.foamVAOs[size];
-         gl.bindVertexArray(vao);
-         
-         gl.uniform2f(foamProgramPlayerPosUniformLocation, Camera.position.x, Camera.position.y);
-         gl.uniform2f(foamProgramHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
-         gl.uniform1f(foamProgramZoomUniformLocation, Camera.zoom);
-         gl.uniform1i(foamProgramFoamTextureUniformLocation, 0);
-         gl.uniform1i(foamProgramSteppingStoneTextureUniformLocation, 1 + size);
-         gl.uniform1f(foamProgramTextureOffsetUniformLocation, foamTextureOffset);
-         
-         const vertexCount = renderChunkRiverInfo.foamVertexCounts[size];
-         gl.drawArrays(gl.TRIANGLES, 0, vertexCount / 7);
-            
-      }
+      const vao = renderChunkRiverInfo.foamVAO;
+      gl.bindVertexArray(vao);
+      
+      gl.uniform2f(foamProgramPlayerPosUniformLocation, Camera.position.x, Camera.position.y);
+      gl.uniform2f(foamProgramHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
+      gl.uniform1f(foamProgramZoomUniformLocation, Camera.zoom);
+      gl.uniform1i(foamProgramFoamTextureUniformLocation, 0);
+      gl.uniform1f(foamProgramTextureOffsetUniformLocation, foamTextureOffset);
+      
+      gl.drawArrays(gl.TRIANGLES, 0, renderChunkRiverInfo.foamVertexCount / 7);
    }
    
    // 

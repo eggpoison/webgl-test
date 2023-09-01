@@ -74,8 +74,9 @@ abstract class Client {
 
                registerServerTick();
 
-               this.unloadGameDataPacket(gameDataPacket);
-               Game.b();
+               Game.queuedPackets.push(gameDataPacket);
+               // this.unloadGameDataPacket(gameDataPacket);
+               // Game.b(gameDataPacket);
             });
    
             // When the connection to the server fails

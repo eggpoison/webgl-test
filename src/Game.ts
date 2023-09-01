@@ -64,6 +64,8 @@ const createEventListeners = (): void => {
 let lastRenderTime = Math.floor(new Date().getTime() / 1000);
 
 abstract class Game {
+   public static queuedPackets = new Array<GameDataPacket>();
+   
    public static ticks: number;
    private static _time: number;
 
@@ -210,12 +212,16 @@ abstract class Game {
 
       Item.decrementGlobalItemSwitchDelay();
 
-      this.board.updateGameObjects();
+      if (isDev()) updateDevEntityViewer();
+   }
+
+   private static updatePlayer(): void {
       if (Player.instance !== null) {
+         Player.instance.applyPhysics();
+         Player.instance.updateHitboxes();
+         Player.instance.recalculateContainingChunks();
          Player.resolveCollisions();
       }
-
-      if (isDev()) updateDevEntityViewer();
    }
 
    private static tickPlayerItems(): void {
@@ -310,16 +316,19 @@ abstract class Game {
       updateDebugScreenFPS();
    }
 
-   public static b(): void {
-      this.update();
-      Client.sendPlayerDataPacket();
-      while (this.lag >= 1000 / SETTINGS.TPS) {
-         this.lag -= 1000 / SETTINGS.TPS;
-      }
-      // this.lag = 0;
-      const frameProgress = this.lag / 1000 * SETTINGS.TPS;
-      console.log("update " + frameProgress);
-   }
+   // private static bb: GameDataPacket | null = null;
+
+   // public static b(gameDataPacket: GameDataPacket): void {
+   //    this.bb = gameDataPacket;
+   //    // this.update();
+   //    // Client.sendPlayerDataPacket();
+   //    // while (this.lag >= 1000 / SETTINGS.TPS) {
+   //    //    this.lag -= 1000 / SETTINGS.TPS;
+   //    // }
+   //    // // this.lag = 0;
+   //    // const frameProgress = this.lag / 1000 * SETTINGS.TPS;
+   //    // console.log("update " + frameProgress);
+   // }
 
    public static main(currentTime: number): void {
       if (this.isSynced) {
@@ -329,12 +338,27 @@ abstract class Game {
          // updateFrameCounter(deltaTime / 1000);
 
          this.lag += deltaTime;
+         while (this.lag >= 1000 / SETTINGS.TPS) {
+            if (this.queuedPackets.length > 0) {
+               // If there are multiple packets in the queue, register the first one first.
+               Client.unloadGameDataPacket(this.queuedPackets[0]);
+               this.queuedPackets.splice(0, 1);
+               this.update();
+               this.updatePlayer();
+            } else {
+               console.log("No packets!");
+               this.update();
+               this.board.updateGameObjects();
+            }
+            Client.sendPlayerDataPacket();
+            this.lag -= 1000 / SETTINGS.TPS;
+         }
 
          const renderStartTime = performance.now();
 
          const frameProgress = this.lag / 1000 * SETTINGS.TPS;
          this.render(frameProgress);
-         console.log("render. frame progress: " + frameProgress);
+         // console.log("render. frame progress: " + frameProgress);
 
          const renderEndTime = performance.now();
 

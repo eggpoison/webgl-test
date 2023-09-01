@@ -25,8 +25,8 @@ export interface RenderChunkRiverInfo {
    readonly noiseVertexCount: number;
    readonly transitionVAO: WebGLVertexArrayObject;
    readonly transitionVertexCount: number;
-   readonly foamVAOs: ReadonlyArray<WebGLVertexArrayObject>;
-   readonly foamVertexCounts: ReadonlyArray<number>;
+   readonly foamVAO: WebGLVertexArrayObject;
+   readonly foamVertexCount: number;
    readonly steppingStoneVAO: WebGLVertexArrayObject;
    readonly steppingStoneVertexCount: number;
 }
