@@ -21,7 +21,7 @@ import { registerServerTick, updateDebugScreenTicks } from "../components/game/d
 import createProjectile from "../projectiles/projectile-creation";
 import Camera from "../Camera";
 import { isDev } from "../utils";
-import Particle, { PARTICLE_INFO, ParticleRenderLayer } from "../Particle";
+import Particle from "../Particle";
 import { updateTileAmbientOcclusion } from "../rendering/ambient-occlusion-rendering";
 import Tribe from "../Tribe";
 import { updateRenderChunkFromTileUpdate } from "../rendering/tile-rendering/render-chunks";
@@ -75,8 +75,6 @@ abstract class Client {
                registerServerTick();
 
                Game.queuedPackets.push(gameDataPacket);
-               // this.unloadGameDataPacket(gameDataPacket);
-               // Game.b(gameDataPacket);
             });
    
             // When the connection to the server fails
@@ -233,43 +231,46 @@ abstract class Client {
    }
 
    private static updateParticles(particles: ReadonlyArray<ParticleData>): void {
-      const knownIDs = new Set<number>();
-      for (const id of Object.keys(Game.board.lowParticles)) {
-         knownIDs.add(Number(id));
-      }
-      for (const id of Object.keys(Game.board.highParticles)) {
-         knownIDs.add(Number(id));
-      }
-      
-      // Remove the player from the list of known entities so the player isn't removed
-      if (Player.instance !== null) {
-         knownIDs.delete(Player.instance.id);
-      }
+      const sentParticleIDs = new Set(particles.map(particle => particle.id));
 
-      // Update the game entities
-      for (const particleData of particles) {// If it already exists, update it
-         if (Game.board.lowParticles.hasOwnProperty(particleData.id)) {
-            Game.board.lowParticles[particleData.id].updateFromData(particleData);
-         } else if (Game.board.highParticles.hasOwnProperty(particleData.id)) {
-            Game.board.highParticles[particleData.id].updateFromData(particleData);
-         } else {
-            const particle = new Particle(particleData);
-            const renderLayer = PARTICLE_INFO[particle.type].renderLayer;
-            if (renderLayer === ParticleRenderLayer.low) {
-               Game.board.lowParticles[particleData.id] = particle
-            } else {
-               Game.board.highParticles[particleData.id] = particle;
-            }
+      // Destroy all server particles which aren't being sent anymore
+      for (const particleID of Game.board.serverParticleIDs) {
+         if (!sentParticleIDs.has(particleID)) {
+            delete Game.board.lowParticlesMonocolour[particleID];
+            delete Game.board.lowParticlesTextured[particleID];
+            delete Game.board.highParticlesMonocolour[particleID];
+            delete Game.board.highParticlesTextured[particleID];
          }
-
-         knownIDs.delete(particleData.id);
       }
 
-      // All known entity ids which haven't been removed are ones which are dead
-      for (const id of knownIDs) {
-         delete Game.board.lowParticles[id];
-         delete Game.board.highParticles[id];
+      for (const particleData of particles) {
+         if (Game.board.lowParticlesMonocolour.hasOwnProperty(particleData.id)) {
+            Game.board.lowParticlesMonocolour[particleData.id].updateFromData(particleData);
+            Game.board.serverParticleIDs.add(particleData.id);
+         } else if (Game.board.lowParticlesTextured.hasOwnProperty(particleData.id)) {
+            Game.board.lowParticlesTextured[particleData.id].updateFromData(particleData);
+            Game.board.serverParticleIDs.add(particleData.id);
+         } else if (Game.board.highParticlesMonocolour.hasOwnProperty(particleData.id)) {
+            Game.board.highParticlesMonocolour[particleData.id].updateFromData(particleData);
+            Game.board.serverParticleIDs.add(particleData.id);
+         } else if (Game.board.highParticlesTextured.hasOwnProperty(particleData.id)) {
+            Game.board.highParticlesTextured[particleData.id].updateFromData(particleData);
+            Game.board.serverParticleIDs.add(particleData.id);
+         } else {
+            this.createParticleFromData(particleData);
+            Game.board.serverParticleIDs.delete(particleData.id);
+         }
       }
+   }
+
+   private static createParticleFromData(data: ParticleData): void {
+      const position = Point.unpackage(data.position);
+      const velocity = data.velocity !== null ? Vector.unpackage(data.velocity) : null;
+      const acceleration = data.acceleration !== null ? Vector.unpackage(data.acceleration) : null;
+
+      const particle = new Particle(data.id, data.type, position, velocity, acceleration, data.lifetime);
+      particle.age = data.age;
+      particle.rotation = data.rotation;
    }
 
    /**

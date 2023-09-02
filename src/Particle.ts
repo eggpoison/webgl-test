@@ -1,142 +1,224 @@
-import { ParticleData, ParticleTint, ParticleType, Point, Vector } from "webgl-test-shared";
-import { getRandomFoodEatingParticleColour } from "./food-eating-particles";
+import { ParticleData, ParticleTint, ParticleType, Point, SETTINGS, Vector } from "webgl-test-shared";
+import Game from "./Game";
 
 export enum ParticleRenderLayer {
    low, // Below game objects
    high // Above game objects
 }
 
-interface ParticleInfo {
-   readonly size: [width: number, height: number];
-   readonly renderLayer: ParticleRenderLayer;
+export enum ParticleRenderType {
+   monocolour = 0, // Particle with one colour
+   textured = 1    // Particle with texture
 }
 
-export const PARTICLE_INFO: Record<ParticleType, ParticleInfo> = {
+interface ParticleInfo {
+   readonly width: number;
+   readonly height: number;
+   readonly renderLayer: ParticleRenderLayer;
+   readonly renderType: ParticleRenderType;
+}
+
+// Particles can be server and client
+// Server particles 
+
+export const PARTICLE_INFO = {
+   // Server
    [ParticleType.bloodPoolSmall]: {
-      size: [20, 20],
-      renderLayer: ParticleRenderLayer.low
+      width: 20,
+      height: 20,
+      renderLayer: ParticleRenderLayer.low,
+      renderType: ParticleRenderType.textured
    },
+   // Server
    [ParticleType.bloodPoolMedium]: {
-      size: [28, 28],
-      renderLayer: ParticleRenderLayer.low
+      width: 28,
+      height: 28,
+      renderLayer: ParticleRenderLayer.low,
+      renderType: ParticleRenderType.textured
    },
+   // Server
    [ParticleType.bloodPoolLarge]: {
-      size: [40, 40],
-      renderLayer: ParticleRenderLayer.low
+      width: 40,
+      height: 40,
+      renderLayer: ParticleRenderLayer.low,
+      renderType: ParticleRenderType.textured
    },
+   // Client
    [ParticleType.blood]: {
-      size: [4, 4],
-      renderLayer: ParticleRenderLayer.high
+      width: 4,
+      height: 4,
+      renderLayer: ParticleRenderLayer.high,
+      renderType: ParticleRenderType.monocolour
    },
+   // Client
    [ParticleType.bloodLarge]: {
-      size: [8, 8],
-      renderLayer: ParticleRenderLayer.high
+      width: 8,
+      height: 8,
+      renderLayer: ParticleRenderLayer.high,
+      renderType: ParticleRenderType.monocolour
    },
+   // Client
    [ParticleType.cactusSpine]: {
-      size: [4, 16],
-      renderLayer: ParticleRenderLayer.high
+      width: 4,
+      height: 16,
+      renderLayer: ParticleRenderLayer.high,
+      renderType: ParticleRenderType.textured
    },
+   // Client
    [ParticleType.dirt]: {
-      size: [8, 8],
-      renderLayer: ParticleRenderLayer.low
+      width: 8,
+      height: 8,
+      renderLayer: ParticleRenderLayer.low,
+      renderType: ParticleRenderType.textured
    },
+   // Server
    [ParticleType.leaf]: {
-      size: [28, 20],
-      renderLayer: ParticleRenderLayer.low
+      width: 28,
+      height: 20,
+      renderLayer: ParticleRenderLayer.low,
+      renderType: ParticleRenderType.textured
    },
+   // Client
    [ParticleType.rock]: {
-      size: [12, 12],
-      renderLayer: ParticleRenderLayer.low
+      width: 12,
+      height: 12,
+      renderLayer: ParticleRenderLayer.low,
+      renderType: ParticleRenderType.textured
    },
+   // Client
    [ParticleType.rockLarge]: {
-      size: [16, 16],
-      renderLayer: ParticleRenderLayer.low
+      width: 16,
+      height: 16,
+      renderLayer: ParticleRenderLayer.low,
+      renderType: ParticleRenderType.textured
    },
+   // Server
    [ParticleType.cactusFlower1]: {
-      size: [16, 16],
-      renderLayer: ParticleRenderLayer.low
+      width: 16,
+      height: 16,
+      renderLayer: ParticleRenderLayer.low,
+      renderType: ParticleRenderType.textured
    },
+   // Server
    [ParticleType.cactusFlower1_2]: {
-      size: [20, 20],
-      renderLayer: ParticleRenderLayer.low
+      width: 20,
+      height: 20,
+      renderLayer: ParticleRenderLayer.low,
+      renderType: ParticleRenderType.textured
    },
+   // Server
    [ParticleType.cactusFlower2]: {
-      size: [16, 16],
-      renderLayer: ParticleRenderLayer.low
+      width: 16,
+      height: 16,
+      renderLayer: ParticleRenderLayer.low,
+      renderType: ParticleRenderType.textured
    },
+   // Server
    [ParticleType.cactusFlower2_2]: {
-      size: [20, 20],
-      renderLayer: ParticleRenderLayer.low
+      width: 20,
+      height: 20,
+      renderLayer: ParticleRenderLayer.low,
+      renderType: ParticleRenderType.textured
    },
+   // Server
    [ParticleType.cactusFlower3]: {
-      size: [16, 16],
-      renderLayer: ParticleRenderLayer.low
+      width: 16,
+      height: 16,
+      renderLayer: ParticleRenderLayer.low,
+      renderType: ParticleRenderType.textured
    },
+   // Server
    [ParticleType.cactusFlower3_2]: {
-      size: [20, 20],
-      renderLayer: ParticleRenderLayer.low
+      width: 20,
+      height: 20,
+      renderLayer: ParticleRenderLayer.low,
+      renderType: ParticleRenderType.textured
    },
+   // Server
    [ParticleType.cactusFlower4]: {
-      size: [16, 16],
-      renderLayer: ParticleRenderLayer.low
+      width: 16,
+      height: 16,
+      renderLayer: ParticleRenderLayer.low,
+      renderType: ParticleRenderType.textured
    },
+   // Server
    [ParticleType.cactusFlower4_2]: {
-      size: [20, 20],
-      renderLayer: ParticleRenderLayer.low
+      width: 20,
+      height: 20,
+      renderLayer: ParticleRenderLayer.low,
+      renderType: ParticleRenderType.textured
    },
+   // Server
    [ParticleType.cactusFlower5]: {
-      size: [20, 20],
-      renderLayer: ParticleRenderLayer.low
+      width: 20,
+      height: 20,
+      renderLayer: ParticleRenderLayer.low,
+      renderType: ParticleRenderType.textured
    },
+   // Server
    [ParticleType.smokeBlack]: {
-      size: [32, 32],
-      renderLayer: ParticleRenderLayer.high
+      width: 32,
+      height: 32,
+      renderLayer: ParticleRenderLayer.high,
+      renderType: ParticleRenderType.textured
    },
-   [ParticleType.smokeWhite]: {
-      size: [32, 32],
-      renderLayer: ParticleRenderLayer.high
-   },
+   // (DONE) Client
    [ParticleType.emberRed]: {
-      size: [4, 4],
-      renderLayer: ParticleRenderLayer.high
+      width: 4,
+      height: 4,
+      renderLayer: ParticleRenderLayer.high,
+      renderType: ParticleRenderType.monocolour
    },
+   // (DONE) Client
    [ParticleType.emberOrange]: {
-      size: [4, 4],
-      renderLayer: ParticleRenderLayer.high
+      width: 4,
+      height: 4,
+      renderLayer: ParticleRenderLayer.high,
+      renderType: ParticleRenderType.monocolour
    },
+   // Server
    [ParticleType.footprint]: {
-      size: [16, 16],
-      renderLayer: ParticleRenderLayer.low
+      width: 16,
+      height: 16,
+      renderLayer: ParticleRenderLayer.low,
+      renderType: ParticleRenderType.textured
    },
+   // (DONE) Client
    [ParticleType.poisonDroplet]: {
-      size: [12, 12],
-      renderLayer: ParticleRenderLayer.low
+      width: 12,
+      height: 12,
+      renderLayer: ParticleRenderLayer.low,
+      renderType: ParticleRenderType.textured
    },
+   // Client
    [ParticleType.slimePuddle]: {
-      size: [28, 28],
-      renderLayer: ParticleRenderLayer.low
+      width: 28,
+      height: 28,
+      renderLayer: ParticleRenderLayer.low,
+      renderType: ParticleRenderType.textured
    },
+   // Client ?????
    [ParticleType.waterSplash]: {
-      size: [32, 32],
-      renderLayer: ParticleRenderLayer.low
+      width: 32,
+      height: 32,
+      renderLayer: ParticleRenderLayer.low,
+      renderType: ParticleRenderType.textured
    },
+   // (DONE) Client
    [ParticleType.waterDroplet]: {
-      size: [6, 6],
-      renderLayer: ParticleRenderLayer.low
+      width: 6,
+      height: 6,
+      renderLayer: ParticleRenderLayer.low,
+      renderType: ParticleRenderType.monocolour
    },
+   // Client
    [ParticleType.snow]: {
-      size: [4, 4],
-      renderLayer: ParticleRenderLayer.low
-   },
-   [ParticleType.wind]: {
-      size: [4, 4],
-      renderLayer: ParticleRenderLayer.low
-   },
-   [ParticleType.white1x1]: {
-      size: [4, 4],
-      renderLayer: ParticleRenderLayer.low
+      width: 4,
+      height: 4,
+      renderLayer: ParticleRenderLayer.low,
+      renderType: ParticleRenderType.monocolour
    }
-};
+} satisfies Record<ParticleType, ParticleInfo>;
 
 let idCounter = 0;
 
@@ -152,39 +234,126 @@ class Particle {
    public position: Point;
    public velocity: Vector | null;
    public acceleration: Vector | null;
-   public rotation: number;
-   public opacity: number;
-   public scale: number;
+   public rotation: number = 0;
+   public opacity: number = 1;
+   public scale: number = 1;
 
-   public tint: ParticleTint;
+   public drag: number = 0;
+   public angularVelocity: number = 0;
+   public angularAcceleration: number = 0;
+   public angularDrag: number = 0;
 
-   public readonly width: number;
-   public readonly height: number;
+   public age = 0;
+   public readonly lifetime: number;
 
-   constructor(data: ParticleData) {
-      this.id = getAvailableID();
+   /**
+    * In a monocolour particle, each element indicates the corresponding RGB value from 0->1.
+    * In a textured particle, each element indicates the modifier for the texture's colour from -1->1, where 0 doesn't affect the colour
+    */
+   public tint: ParticleTint = [0, 0, 0];
+   
+   constructor(id: number | null, type: ParticleType, position: Point, initialVelocity: Vector | null, initialAcceleration: Vector | null, lifetime: number) {
+      // TODO: This is bad. Ideally shouldn't have to define ID in constructor, but that may not be possible
+      if (id === null) {
+         this.id = getAvailableID();
+      } else {
+         this.id = id;
+      }
 
-      this.type = data.type;
-      
-      this.position = Point.unpackage(data.position);
-      this.velocity = data.velocity !== null ? Vector.unpackage(data.velocity) : null;
-      this.acceleration = data.acceleration !== null ? Vector.unpackage(data.acceleration) : null;
-      this.rotation = data.rotation;
-      this.opacity = data.opacity;
-      this.scale = data.scale;
-      this.tint = data.tint;
+      this.type = type;
+      this.position = position;
+      this.velocity = initialVelocity;
+      this.acceleration = initialAcceleration;
+      this.lifetime = lifetime;
 
-      [this.width, this.height] = PARTICLE_INFO[data.type].size;
+      // Add itself to the board
+      const renderLayer = PARTICLE_INFO[type].renderLayer;
+      const renderType = PARTICLE_INFO[type].renderType;
+      if (renderLayer === ParticleRenderLayer.low) {
+         if (renderType === ParticleRenderType.monocolour) {
+            Game.board.lowParticlesMonocolour[this.id] = this;
+         } else {
+            Game.board.lowParticlesTextured[this.id] = this;
+         }
+      } else {
+         if (renderType === ParticleRenderType.monocolour) {
+            Game.board.highParticlesMonocolour[this.id] = this;
+         } else {
+            Game.board.highParticlesTextured[this.id] = this;
+         }
+      }
+      // this.rotation = data.rotation;
+      // this.opacity = data.opacity;
+      // this.scale = data.scale;
+      // this.tint = data.tint;
 
       // TODO: Rework
-      if (data.foodItemType !== -1) {
-         const colour = getRandomFoodEatingParticleColour(data.foodItemType);
-         this.tint[0] = colour[0] / 255 - 1;
-         this.tint[1] = colour[1] / 255 - 1;
-         this.tint[2] = colour[2] / 255 - 1;
-         this.opacity *= colour[3] / 255;
+      // if (data.foodItemType !== -1) {
+      //    const colour = getRandomFoodEatingParticleColour(data.foodItemType);
+      //    this.tint[0] = colour[0] / 255 - 1;
+      //    this.tint[1] = colour[1] / 255 - 1;
+      //    this.tint[2] = colour[2] / 255 - 1;
+      //    this.opacity *= colour[3] / 255;
+      // }
+   }
+   
+   public tick(): void {
+      this.applyPhysics();
+
+      this.rotation += this.angularVelocity / SETTINGS.TPS;
+
+      // Angular acceleration
+      this.angularVelocity += this.angularAcceleration / SETTINGS.TPS;
+      
+      // Angular drag
+      // Move the angular velocity to zero
+      if (this.angularVelocity !== 0) {
+         const signBefore = Math.sign(this.angularVelocity);
+         this.angularVelocity -= this.angularDrag * signBefore / SETTINGS.TPS;
+         if (Math.sign(this.angularVelocity) !== signBefore) {
+            this.angularVelocity = 0;
+         }
       }
    }
+
+   public updateOpacity(): void {
+      if (typeof this.getOpacity !== "undefined") {
+         this.opacity = this.getOpacity(this.age);
+      }
+   }
+
+   private applyPhysics(): void {
+      // Accelerate
+      if (this.acceleration !== null) {
+         const acceleration = this.acceleration.copy();
+         acceleration.magnitude *= 1 / SETTINGS.TPS;
+
+         // Add acceleration to velocity
+         if (this.velocity !== null) {
+            this.velocity.add(acceleration);
+         } else {
+            this.velocity = acceleration;
+         }
+      }
+
+      // Drag
+      if (this.velocity !== null) {
+         this.velocity.magnitude -= this.drag / SETTINGS.TPS;
+         if (this.velocity.magnitude < 0) {
+            this.velocity = null;
+         }
+      }
+      
+      // Apply velocity
+      if (this.velocity !== null) {
+         const velocity = this.velocity.copy();
+         velocity.magnitude /= SETTINGS.TPS;
+         this.position.add(velocity.convertToPoint());
+      }
+   }
+
+   public getOpacity?(age: number): number;
+   
    public updateFromData(data: ParticleData): void {
       this.position = Point.unpackage(data.position);
       this.velocity = data.velocity !== null ? Vector.unpackage(data.velocity) : null;
@@ -192,10 +361,7 @@ class Particle {
       this.rotation = data.rotation;
       this.opacity = data.opacity;
       this.scale = data.scale;
-      // TODO: Rework
-      if (data.foodItemType === -1) {
-         this.tint = data.tint;
-      }
+      this.age = data.age;
    }
 }
 

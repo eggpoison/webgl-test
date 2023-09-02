@@ -1218,7 +1218,6 @@ const calculateSteppingStoneVertices = (visibleSteppingStones: ReadonlySet<River
       bottomLeft = rotatePoint(bottomLeft, pos, steppingStone.rotation);
 
       const textureIdx: number = steppingStone.size;
-      console.log(steppingStone.size, RIVER_STEPPING_STONE_TEXTURES[steppingStone.size]);
 
       vertices.push(
          bottomLeft.x, bottomLeft.y, 0, 0, textureIdx,

@@ -8,7 +8,6 @@ import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import Projectile from "./projectiles/Projectile";
 import Particle from "./Particle";
 import CircularHitbox from "./hitboxes/CircularHitbox";
-import Player from "./entities/Player";
 
 export interface EntityHitboxInfo {
    readonly vertexPositions: readonly [Point, Point, Point, Point];
@@ -30,8 +29,13 @@ class Board {
    public readonly droppedItems: Record<number, DroppedItem> = {};
    public readonly projectiles: Record<number, Projectile> = {};
 
-   public readonly lowParticles: Record<number, Particle> = {};
-   public readonly highParticles: Record<number, Particle> = {};
+   // TODO: This is too messy
+   public readonly lowParticlesMonocolour: Record<number, Particle> = {};
+   public readonly lowParticlesTextured: Record<number, Particle> = {};
+   public readonly highParticlesMonocolour: Record<number, Particle> = {};
+   public readonly highParticlesTextured: Record<number, Particle> = {};
+   /** Stores the IDs of all particles sent by the server */
+   public readonly serverParticleIDs = new Set<number>();
 
    private readonly riverFlowDirections: Record<number, Record<number, number>>;
 
@@ -100,13 +104,75 @@ class Board {
       return this.chunks[x][y];
    }
 
-   public updateGameObjects(): void {
-      // if (Player.instance !== null) {
-      //    Player.instance.applyPhysics();
-      //    Player.instance.updateHitboxes();
-      //    Player.instance.recalculateContainingChunks();
-      // }
+   public updateParticles(): void {
+      {
+         const removedParticles = new Array<Particle>();
+         for (const particle of Object.values(this.lowParticlesMonocolour)) {
+            particle.tick();
+            
+            particle.age += 1 / SETTINGS.TPS;
+            if (particle.age >= particle.lifetime) {
+               removedParticles.push(particle);
+            }
+         }
+         for (const removedParticle of removedParticles) {
+            delete this.lowParticlesMonocolour[removedParticle.id];
+         }
+      }
+      {
+         const removedParticles = new Array<Particle>();
+         for (const particle of Object.values(this.lowParticlesTextured)) {
+            particle.tick();
+            
+            particle.age += 1 / SETTINGS.TPS;
+            if (particle.age >= particle.lifetime) {
+               removedParticles.push(particle);
+            }
+         }
+         for (const removedParticle of removedParticles) {
+            delete this.lowParticlesTextured[removedParticle.id];
+         }
+      }
+      {
+         const removedParticles = new Array<Particle>();
+         for (const particle of Object.values(this.highParticlesMonocolour)) {
+            particle.tick();
+            
+            particle.age += 1 / SETTINGS.TPS;
+            if (particle.age >= particle.lifetime) {
+               removedParticles.push(particle);
+            }
+         }
+         for (const removedParticle of removedParticles) {
+            delete this.highParticlesMonocolour[removedParticle.id];
+         }
+      }
+      {
+         const removedParticles = new Array<Particle>();
+         for (const particle of Object.values(this.highParticlesTextured)) {
+            particle.tick();
+            
+            particle.age += 1 / SETTINGS.TPS;
+            if (particle.age >= particle.lifetime) {
+               removedParticles.push(particle);
+            }
+         }
+         for (const removedParticle of removedParticles) {
+            delete this.highParticlesTextured[removedParticle.id];
+         }
+      }
+   }
 
+   /** Ticks all game objects without updating them */
+   public tickGameObjects(): void {
+      for (const gameObject of Object.values(this.gameObjects)) {
+         if (typeof gameObject.tick !== "undefined") {
+            gameObject.tick();
+         }
+      }
+   }
+
+   public updateGameObjects(): void {
       for (const gameObject of Object.values(this.gameObjects)) {
          gameObject.applyPhysics();
          if (typeof gameObject.tick !== "undefined") gameObject.tick();

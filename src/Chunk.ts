@@ -20,7 +20,7 @@ class Chunk {
 
    public addGameObject(gameObject: GameObject): void {
       this.gameObjects.push(gameObject);
-
+      
       if (gameObject instanceof Entity) {
          this.entities.push(gameObject);
       }

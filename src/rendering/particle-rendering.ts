@@ -1,17 +1,17 @@
-import { ParticleType, Point, SETTINGS, Vector } from "webgl-test-shared";
+import { ParticleType, Point, SETTINGS, Vector, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import { createWebGLProgram, gl, halfWindowHeight, halfWindowWidth } from "../webgl";
 import Camera from "../Camera";
-import Particle, { PARTICLE_INFO } from "../Particle";
+import Particle, { PARTICLE_INFO, ParticleRenderType } from "../Particle";
 import { getTexture } from "../textures";
 import { getFrameProgress } from "../GameObject";
-import { calculateVertexPositionX, calculateVertexPositionY } from "./game-object-rendering";
 
-export const PARTICLE_TEXTURES: Record<ParticleType, string> = {
+type FilterTexturedTypes<T extends ParticleType> = (typeof PARTICLE_INFO)[T]["renderType"] extends ParticleRenderType.textured ? T : never;
+type FilterMonocolourTypes<T extends ParticleType> = (typeof PARTICLE_INFO)[T]["renderType"] extends ParticleRenderType.monocolour ? T : never;
+
+export const PARTICLE_TEXTURES: { [T in ParticleType as Exclude<T, FilterMonocolourTypes<T>>]: string } = {
    [ParticleType.bloodPoolSmall]: "particles/blood-pool-small.png",
    [ParticleType.bloodPoolMedium]: "particles/blood-pool-medium.png",
    [ParticleType.bloodPoolLarge]: "particles/blood-pool-large.png",
-   [ParticleType.blood]: "particles/blood.png",
-   [ParticleType.bloodLarge]: "particles/blood-large.png",
    [ParticleType.cactusSpine]: "particles/cactus-spine.png",
    [ParticleType.dirt]: "particles/dirt.png",
    [ParticleType.leaf]: "particles/leaf.png",
@@ -27,20 +27,24 @@ export const PARTICLE_TEXTURES: Record<ParticleType, string> = {
    [ParticleType.cactusFlower4_2]: "entities/cactus/cactus-flower-large-4.png",
    [ParticleType.cactusFlower5]: "entities/cactus/cactus-flower-5.png",
    [ParticleType.smokeBlack]: "particles/smoke-black.png",
-   [ParticleType.smokeWhite]: "particles/smoke-white.png",
-   [ParticleType.emberRed]: "particles/ember-red.png",
-   [ParticleType.emberOrange]: "particles/ember-orange.png",
    [ParticleType.footprint]: "particles/footprint.png",
    [ParticleType.poisonDroplet]: "particles/poison-droplet.png",
    [ParticleType.slimePuddle]: "particles/slime-puddle.png",
-   [ParticleType.waterSplash]: "particles/water-splash.png",
-   [ParticleType.waterDroplet]: "particles/water-droplet.png",
-   [ParticleType.snow]: "particles/snow.png",
-   [ParticleType.wind]: "particles/wind.png",
-   [ParticleType.white1x1]: "particles/white1x1.png"
+   [ParticleType.waterSplash]: "particles/water-splash.png"
 };
 
-const vertexShaderText = `#version 300 es
+export type ParticleColour = [r: number, g: number, b: number];
+
+export const PARTICLE_COLOURS: { [T in ParticleType as Exclude<T, FilterTexturedTypes<T>>]: ParticleColour } = {
+   [ParticleType.blood]: [212/255, 0, 0],
+   [ParticleType.bloodLarge]: [186/255, 0, 0],
+   [ParticleType.emberRed]: [255/255, 102/255, 0],
+   [ParticleType.emberOrange]: [255/255, 184/255, 61/255],
+   [ParticleType.waterDroplet]: [8/255, 197/255, 255/255],
+   [ParticleType.snow]: [199/255, 209/255, 209/255]
+};
+
+const texturedVertexShaderText = `#version 300 es
 precision mediump float;
 
 uniform vec2 u_playerPos;
@@ -67,7 +71,7 @@ void main() {
 }
 `;
 
-const fragmentShaderText = `#version 300 es
+const texturedFragmentShaderText = `#version 300 es
 precision mediump float;
 
 uniform sampler2D u_texture;
@@ -115,7 +119,7 @@ let opacityAttribLocation: number;
 let tintAttribLocation: number;
 
 export function createParticleShaders(): void {
-   program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
+   program = createWebGLProgram(gl, texturedVertexShaderText, texturedFragmentShaderText);
    
    playerPositionUniformLocation = gl.getUniformLocation(program, "u_playerPos")!;
    halfWindowSizeUniformLocation = gl.getUniformLocation(program, "u_halfWindowSize")!;
@@ -181,7 +185,7 @@ const calculateParticleRenderPosition = (particle: Particle): Point => {
    return renderPosition;
 }
 
-export function renderParticles(particlesToRender: ReadonlyArray<Particle>): void {
+export function renderTexturedParticles(particlesToRender: ReadonlyArray<Particle>): void {
    const groupedParticles = groupParticles(particlesToRender);
 
    // Create vertices
@@ -194,31 +198,34 @@ export function renderParticles(particlesToRender: ReadonlyArray<Particle>): voi
          continue;
       }
       
-      textureSources.push(PARTICLE_TEXTURES[particleType]);
+      textureSources.push(PARTICLE_TEXTURES[particleType as keyof typeof PARTICLE_TEXTURES]);
       vertexCounts.push(particles.length * 6 * 8);
 
       const vertexData = new Float32Array(particles.length * 6 * 8);
       for (let i = 0; i < particles.length; i++) {
          const particle = particles[i];
          
-         const width = particle.width * particle.scale;
-         const height = particle.height * particle.scale;
+         const particleInfo = PARTICLE_INFO[particle.type];
+         const width = particleInfo.width * particle.scale;
+         const height = particleInfo.height * particle.scale;
 
          const renderPosition = calculateParticleRenderPosition(particle);
-         
+
          const x1 = renderPosition.x - width / 2;
          const x2 = renderPosition.x + width / 2;
          const y1 = renderPosition.y - height / 2;
          const y2 = renderPosition.y + height / 2;
 
-         const topLeftX = calculateVertexPositionX(x1, y2, renderPosition, particle.rotation);
-         const topLeftY = calculateVertexPositionY(x1, y2, renderPosition, particle.rotation);
-         const topRightX = calculateVertexPositionX(x2, y2, renderPosition, particle.rotation);
-         const topRightY = calculateVertexPositionY(x2, y2, renderPosition, particle.rotation);
-         const bottomLeftX = calculateVertexPositionX(x1, y1, renderPosition, particle.rotation);
-         const bottomLeftY = calculateVertexPositionY(x1, y1, renderPosition, particle.rotation);
-         const bottomRightX = calculateVertexPositionX(x2, y1, renderPosition, particle.rotation);
-         const bottomRightY = calculateVertexPositionY(x2, y1, renderPosition, particle.rotation);
+         const topLeftX = rotateXAroundPoint(x1, y2, renderPosition.x, renderPosition.y, particle.rotation);
+         const topLeftY = rotateYAroundPoint(x1, y2, renderPosition.x, renderPosition.y, particle.rotation);
+         const topRightX = rotateXAroundPoint(x2, y2, renderPosition.x, renderPosition.y, particle.rotation);
+         const topRightY = rotateYAroundPoint(x2, y2, renderPosition.x, renderPosition.y, particle.rotation);
+         const bottomLeftX = rotateXAroundPoint(x1, y1, renderPosition.x, renderPosition.y, particle.rotation);
+         const bottomLeftY = rotateYAroundPoint(x1, y1, renderPosition.x, renderPosition.y, particle.rotation);
+         const bottomRightX = rotateXAroundPoint(x2, y1, renderPosition.x, renderPosition.y, particle.rotation);
+         const bottomRightY = rotateYAroundPoint(x2, y1, renderPosition.x, renderPosition.y, particle.rotation);
+
+         particle.updateOpacity();
          
          // TODO: Surely there is a less awful way of doing this?
          vertexData[i * 6 * 8] = bottomLeftX;

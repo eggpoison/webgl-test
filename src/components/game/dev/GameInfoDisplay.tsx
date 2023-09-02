@@ -118,7 +118,7 @@ const GameInfoDisplay = () => {
             <li>{Object.keys(Game.board.projectiles).length} Projectiles</li>
             <li>{Object.keys(Game.board.droppedItems).length} Dropped Items</li>
          </ul>
-         <li>{Object.keys(Game.board.lowParticles).length + Object.keys(Game.board.highParticles).length} Particles</li>
+         <li>{Object.keys(Game.board.lowParticlesMonocolour).length + Object.keys(Game.board.lowParticlesTextured).length + Object.keys(Game.board.highParticlesMonocolour).length + Object.keys(Game.board.highParticlesTextured).length} Particles</li>
       </ul>
    </div>;
 }

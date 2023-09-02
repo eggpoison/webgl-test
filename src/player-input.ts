@@ -357,7 +357,7 @@ const getPlayerMoveSpeedMultiplier = (): number => {
    let moveSpeedMultiplier = 1;
 
    for (const statusEffect of Player.instance!.statusEffects) {
-      moveSpeedMultiplier *= STATUS_EFFECT_MODIFIERS[statusEffect].moveSpeedMultiplier;
+      moveSpeedMultiplier *= STATUS_EFFECT_MODIFIERS[statusEffect.type].moveSpeedMultiplier;
    }
 
    return moveSpeedMultiplier;

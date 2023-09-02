@@ -29,8 +29,7 @@ import { setFrameProgress } from "./GameObject";
 import { createDebugDataShaders, renderLineDebugData, renderTriangleDebugData } from "./rendering/debug-data-rendering";
 import { createAmbientOcclusionShaders, recalculateAmbientOcclusion, renderAmbientOcclusion } from "./rendering/ambient-occlusion-rendering";
 import { createWallBorderShaders, renderWallBorders } from "./rendering/wall-border-rendering";
-import { createParticleShaders, renderParticles } from "./rendering/particle-rendering";
-import { ParticleRenderLayer } from "./Particle";
+import { createParticleShaders, renderTexturedParticles } from "./rendering/particle-rendering";
 import Tribe from "./Tribe";
 import OPTIONS from "./options";
 import { createRenderChunks } from "./rendering/tile-rendering/render-chunks";
@@ -99,6 +98,14 @@ abstract class Game {
    public static set time(time: number) {
       this._time = time;
       updateDebugScreenCurrentTime(time);
+   }
+
+   public static tickIntervalHasPassed(intervalSeconds: number): boolean {
+      const ticksPerInterval = intervalSeconds * SETTINGS.TPS;
+      
+      const previousCheck = (this.ticks - 1) / ticksPerInterval;
+      const check = this.ticks / ticksPerInterval;
+      return Math.floor(previousCheck) !== Math.floor(check);
    }
 
    public static setGameObjectDebugData(gameObjectDebugData: GameObjectDebugData | undefined): void {
@@ -282,13 +289,13 @@ abstract class Game {
          renderChunkBorders();
       }
 
-      renderParticles(Object.values(this.board.lowParticles));
+      renderTexturedParticles(Object.values(this.board.lowParticlesTextured));
 
       renderGameObjects(Object.values(this.board.droppedItems));
       renderGameObjects(Object.values(this.board.entities));
       renderGameObjects(Object.values(this.board.projectiles));
 
-      renderParticles(Object.values(this.board.highParticles));
+      renderTexturedParticles(Object.values(this.board.highParticlesTextured));
 
       if (nerdVisionIsVisible() && OPTIONS.showHitboxes) {
          renderEntityHitboxes();
@@ -316,20 +323,6 @@ abstract class Game {
       updateDebugScreenFPS();
    }
 
-   // private static bb: GameDataPacket | null = null;
-
-   // public static b(gameDataPacket: GameDataPacket): void {
-   //    this.bb = gameDataPacket;
-   //    // this.update();
-   //    // Client.sendPlayerDataPacket();
-   //    // while (this.lag >= 1000 / SETTINGS.TPS) {
-   //    //    this.lag -= 1000 / SETTINGS.TPS;
-   //    // }
-   //    // // this.lag = 0;
-   //    // const frameProgress = this.lag / 1000 * SETTINGS.TPS;
-   //    // console.log("update " + frameProgress);
-   // }
-
    public static main(currentTime: number): void {
       if (this.isSynced) {
          const deltaTime = currentTime - this.lastTime;
@@ -340,15 +333,22 @@ abstract class Game {
          this.lag += deltaTime;
          while (this.lag >= 1000 / SETTINGS.TPS) {
             if (this.queuedPackets.length > 0) {
+               // Done before so that server data can override particles
+               this.board.updateParticles();
+               
                // If there are multiple packets in the queue, register the first one first.
                Client.unloadGameDataPacket(this.queuedPackets[0]);
                this.queuedPackets.splice(0, 1);
+
+               this.board.tickGameObjects();
                this.update();
                this.updatePlayer();
             } else {
                console.log("No packets!");
-               this.update();
+               
+               this.board.updateParticles();
                this.board.updateGameObjects();
+               this.update();
             }
             Client.sendPlayerDataPacket();
             this.lag -= 1000 / SETTINGS.TPS;

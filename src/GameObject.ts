@@ -1,10 +1,11 @@
-import { GameObjectData, Point, RIVER_STEPPING_STONE_SIZES, SETTINGS, TILE_TYPE_INFO_RECORD, Vector } from "webgl-test-shared";
+import { GameObjectData, ParticleType, Point, RIVER_STEPPING_STONE_SIZES, SETTINGS, TILE_TYPE_INFO_RECORD, Vector, lerp, randFloat, randSign } from "webgl-test-shared";
 import RenderPart, { RenderObject } from "./render-parts/RenderPart";
 import Chunk from "./Chunk";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import Game from "./Game";
 import { Tile } from "./Tile";
 import CircularHitbox from "./hitboxes/CircularHitbox";
+import Particle from "./Particle";
 
 let frameProgress: number;
 export function setFrameProgress(newFrameProgress: number): void {
@@ -66,16 +67,30 @@ abstract class GameObject extends RenderObject {
       // Calculate initial containing chunks
       this.recalculateContainingChunks();
       
-      // Add game object to chunks
-      for (const chunk of this.chunks) {
-         chunk.addGameObject(this);
-      }
       Game.board.gameObjects[this.id] = this;
    }
 
    protected overrideTileMoveSpeedMultiplier?(): number | null;
 
-   public tick?(): void;
+   public tick(): void {
+      if (this.isInRiver(this.findCurrentTile()) && Game.tickIntervalHasPassed(0.05)) {
+         const lifetime = 1;
+            
+         const particle = new Particle(
+            null,
+            ParticleType.waterDroplet,
+            this.position.copy(),
+            new Vector(randFloat(40, 60), 2 * Math.PI * Math.random()),
+            null,
+            lifetime
+         );
+         particle.rotation = 2 * Math.PI * Math.random();
+         particle.angularVelocity = randFloat(2, 3) * randSign();
+         particle.getOpacity = (age: number): number => {
+            return lerp(0.75, 0, age / lifetime);
+         };
+      }
+   };
 
    private isInRiver(tile: Tile): boolean {
       if (tile.type !== "water") {

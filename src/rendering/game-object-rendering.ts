@@ -1,4 +1,4 @@
-import { Point, lerp } from "webgl-test-shared";
+import { Point, lerp, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import Camera from "../Camera";
 import Entity from "../entities/Entity";
 import Game from "../Game";
@@ -125,24 +125,6 @@ export function calculateVisibleGameObjects(): Array<GameObject> {
    }
 
    return visibleGameObjects;
-}
-
-// TODO: These functions should be renamed and probably (?) put into the Camera class
-
-export function calculateVertexPositionX(vertexPositionX: number, vertexPositionY: number, renderPartPosition: Point, totalRotation: number): number {
-   // Rotate the x position around the render part position
-   return Math.cos(totalRotation) * (vertexPositionX - renderPartPosition.x) + Math.sin(totalRotation) * (vertexPositionY - renderPartPosition.y) + renderPartPosition.x
-   
-   // Convert to canvas position
-   // return Camera.calculateXCanvasPosition(rotatedX);
-}
-
-export function calculateVertexPositionY (vertexPositionX: number, vertexPositionY: number, renderPartPosition: Point, totalRotation: number): number {
-   // Rotate the y position around the render part position
-   return -Math.sin(totalRotation) * (vertexPositionX - renderPartPosition.x) + Math.cos(totalRotation) * (vertexPositionY - renderPartPosition.y) + renderPartPosition.y
-
-   // Convert to canvas position
-   // return Camera.calculateYCanvasPosition(rotatedY);
 }
 
 interface RenderInfo {
@@ -275,7 +257,7 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
 
             // TODO: This shouldn't be here, and shouldn't be hardcoded
             if (renderInfo.baseRenderObject instanceof Entity) {
-               if (renderInfo.baseRenderObject.statusEffects.includes("freezing")) {
+               if (renderInfo.baseRenderObject.hasStatusEffect("freezing")) {
                   blueTint += 0.5;
                   redTint -= 0.15;
                }
@@ -294,14 +276,14 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
             const y1 = renderInfo.renderPart.renderPosition.y - renderInfo.renderPart.height / 2;
             const y2 = renderInfo.renderPart.renderPosition.y + renderInfo.renderPart.height / 2;
 
-            const topLeftX = calculateVertexPositionX(x1, y2, renderInfo.renderPart.renderPosition, renderInfo.totalRotation);
-            const topLeftY = calculateVertexPositionY(x1, y2, renderInfo.renderPart.renderPosition, renderInfo.totalRotation);
-            const topRightX = calculateVertexPositionX(x2, y2, renderInfo.renderPart.renderPosition, renderInfo.totalRotation);
-            const topRightY = calculateVertexPositionY(x2, y2, renderInfo.renderPart.renderPosition, renderInfo.totalRotation);
-            const bottomLeftX = calculateVertexPositionX(x1, y1, renderInfo.renderPart.renderPosition, renderInfo.totalRotation);
-            const bottomLeftY = calculateVertexPositionY(x1, y1, renderInfo.renderPart.renderPosition, renderInfo.totalRotation);
-            const bottomRightX = calculateVertexPositionX(x2, y1, renderInfo.renderPart.renderPosition, renderInfo.totalRotation);
-            const bottomRightY = calculateVertexPositionY(x2, y1, renderInfo.renderPart.renderPosition, renderInfo.totalRotation);
+            const topLeftX = rotateXAroundPoint(x1, y2, renderInfo.renderPart.renderPosition.x, renderInfo.renderPart.renderPosition.y, renderInfo.totalRotation);
+            const topLeftY = rotateYAroundPoint(x1, y2, renderInfo.renderPart.renderPosition.x, renderInfo.renderPart.renderPosition.y, renderInfo.totalRotation);
+            const topRightX = rotateXAroundPoint(x2, y2, renderInfo.renderPart.renderPosition.x, renderInfo.renderPart.renderPosition.y, renderInfo.totalRotation);
+            const topRightY = rotateYAroundPoint(x2, y2, renderInfo.renderPart.renderPosition.x, renderInfo.renderPart.renderPosition.y, renderInfo.totalRotation);
+            const bottomLeftX = rotateXAroundPoint(x1, y1, renderInfo.renderPart.renderPosition.x, renderInfo.renderPart.renderPosition.y, renderInfo.totalRotation);
+            const bottomLeftY = rotateYAroundPoint(x1, y1, renderInfo.renderPart.renderPosition.x, renderInfo.renderPart.renderPosition.y, renderInfo.totalRotation);
+            const bottomRightX = rotateXAroundPoint(x2, y1, renderInfo.renderPart.renderPosition.x, renderInfo.renderPart.renderPosition.y, renderInfo.totalRotation);
+            const bottomRightY = rotateYAroundPoint(x2, y1, renderInfo.renderPart.renderPosition.x, renderInfo.renderPart.renderPosition.y, renderInfo.totalRotation);
 
             const data = vertexDatas[vertexDatas.length - 1];
 
