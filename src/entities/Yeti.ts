@@ -21,12 +21,13 @@ class Yeti extends Entity {
       super(position, hitboxes, id);
 
       this.attachRenderPart(
-         new RenderPart({
-            width: Yeti.SIZE,
-            height: Yeti.SIZE,
-            textureSource: "entities/yeti.png",
-            zIndex: 1
-         })
+         new RenderPart(
+            Yeti.SIZE,
+            Yeti.SIZE,
+            "entities/yeti.png",
+            1,
+            0
+         )
       );
 
       for (let i = 0; i < 2; i++) {
@@ -37,21 +38,21 @@ class Yeti extends Entity {
    }
    
    private createPaw(i: number): void {
-      this.attachRenderPart(
-         new RenderPart({
-            width: Yeti.PAW_SIZE,
-            height: Yeti.PAW_SIZE,
-            textureSource: "entities/yeti-paw.png",
-            zIndex: 0,
-            offset: () => {
-               let attackProgress = this.attackProgress;
-               attackProgress = Math.pow(attackProgress, 0.75);
-               const angle = lerp(Yeti.PAW_END_ANGLE, Yeti.PAW_START_ANGLE, attackProgress) * (i === 0 ? 1 : -1);
-               const offset = new Vector(Yeti.SIZE/2, angle).convertToPoint();
-               return offset;
-            }
-         })
+      const paw = new RenderPart(
+         Yeti.PAW_SIZE,
+         Yeti.PAW_SIZE,
+         "entities/yeti-paw.png",
+         0,
+         0
       );
+      paw.offset = () => {
+         let attackProgress = this.attackProgress;
+         attackProgress = Math.pow(attackProgress, 0.75);
+         const angle = lerp(Yeti.PAW_END_ANGLE, Yeti.PAW_START_ANGLE, attackProgress) * (i === 0 ? 1 : -1);
+         const offset = new Vector(Yeti.SIZE/2, angle).convertToPoint();
+         return offset;
+      }
+      this.attachRenderPart(paw);
    }
 
    public updateFromData(entityData: EntityData<"yeti">): void {

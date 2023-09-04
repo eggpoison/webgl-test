@@ -11,12 +11,13 @@ class IceShardsProjectile extends Projectile {
       super(position, hitboxes, id);
 
       this.attachRenderPart(
-         new RenderPart({
-            width: IceShardsProjectile.SIZE,
-            height: IceShardsProjectile.SIZE,
-            textureSource: "projectiles/ice-shard.png",
-            zIndex: 0
-         })
+         new RenderPart(
+            IceShardsProjectile.SIZE,
+            IceShardsProjectile.SIZE,
+            "projectiles/ice-shard.png",
+            0,
+            0
+         )
       );
    }
 }

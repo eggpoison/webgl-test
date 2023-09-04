@@ -1,5 +1,5 @@
 import { SETTINGS, ServerTileUpdateData } from "webgl-test-shared";
-import { calculateSolidTileRenderChunkData } from "./solid-tile-rendering";
+import { createSolidTileRenderChunkData, recalculateSolidTileRenderChunkData } from "./solid-tile-rendering";
 import { calculateRiverRenderChunkData } from "./river-rendering";
 
 /** Width and height of a render chunk in tiles */
@@ -8,10 +8,9 @@ export const RENDER_CHUNK_SIZE = 8;
 export const WORLD_RENDER_CHUNK_SIZE = SETTINGS.BOARD_DIMENSIONS / RENDER_CHUNK_SIZE;
 
 export interface RenderChunkSolidTileInfo {
-   // readonly buffers: ReadonlyArray<WebGLBuffer>;
-   readonly vaos: ReadonlyArray<WebGLVertexArrayObject>;
-   readonly vertexCounts: ReadonlyArray<number>;
-   readonly indexedTextureSources: ReadonlyArray<string>;
+   vaos: Array<WebGLVertexArrayObject>;
+   vertexCounts: Array<number>;
+   indexedTextureSources: Array<string>;
 }
 
 export interface RenderChunkRiverInfo {
@@ -46,7 +45,7 @@ export function createRenderChunks(): void {
       renderChunks.push(new Array<RenderChunk>());
 
       for (let renderChunkY = 0; renderChunkY < WORLD_RENDER_CHUNK_SIZE; renderChunkY++) {
-         const solidTileInfo = calculateSolidTileRenderChunkData(renderChunkX, renderChunkY);
+         const solidTileInfo = createSolidTileRenderChunkData(renderChunkX, renderChunkY);
          const riverInfo = calculateRiverRenderChunkData(renderChunkX, renderChunkY);
 
          renderChunks[renderChunkX].push({
@@ -61,8 +60,7 @@ export function updateRenderChunkFromTileUpdate(tileUpdate: ServerTileUpdateData
    const renderChunkX = Math.floor(tileUpdate.x / RENDER_CHUNK_SIZE);
    const renderChunkY = Math.floor(tileUpdate.y / RENDER_CHUNK_SIZE);
 
-   const solidTileInfo = calculateSolidTileRenderChunkData(renderChunkX, renderChunkY);
-   renderChunks[renderChunkX][renderChunkY].solidTileInfo = solidTileInfo;
+   recalculateSolidTileRenderChunkData(renderChunkX, renderChunkY, renderChunks[renderChunkX][renderChunkY].solidTileInfo);
 }
 
 export function getRenderChunkSolidTileInfo(renderChunkX: number, renderChunkY: number): RenderChunkSolidTileInfo {

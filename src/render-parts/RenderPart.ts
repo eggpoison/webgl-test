@@ -1,21 +1,21 @@
 import { Point, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 
-export interface RenderPartInfo {
-   /** The render part's offset from its parent */
-   readonly offset?: Point | (() => Point);
-   /** Width of the render part */
-   readonly width: number;
-   /** Height of the render part */
-   readonly height: number;
-   readonly textureSource: string;
-   /** Render priority of the render part in relation to its entity's other render parts. */
-   readonly zIndex: number;
-   /** Rotation of the render part in radians */
-   readonly getRotation?: () => number;
-   readonly inheritParentRotation?: boolean;
-   readonly opacity?: number;
-   readonly flipX?: boolean;
-}
+// export interface RenderPartInfo {
+//    /** The render part's offset from its parent */
+//    readonly offset?: Point | (() => Point);
+//    /** Width of the render part */
+//    readonly width: number;
+//    /** Height of the render part */
+//    readonly height: number;
+//    readonly textureSource: string;
+//    /** Render priority of the render part in relation to its entity's other render parts. */
+//    readonly zIndex: number;
+//    /** Rotation of the render part in radians */
+//    readonly getRotation?: () => number;
+//    readonly inheritParentRotation?: boolean;
+//    readonly opacity?: number;
+//    readonly flipX?: boolean;
+// }
 
 /** A thing which is able to hold render parts */
 export class RenderObject {
@@ -25,12 +25,6 @@ export class RenderObject {
    public rotation = 0;
    
    public readonly renderParts = new Array<RenderPart>();
-
-   public attachRenderParts(renderParts: ReadonlyArray<RenderPart>): void {
-      for (const renderPart of renderParts) {
-         this.attachRenderPart(renderPart);
-      }
-   }
 
    public attachRenderPart(renderPart: RenderPart): void {
       // Find an index for the render part
@@ -54,36 +48,35 @@ export class RenderObject {
    }
 }
 
-class RenderPart extends RenderObject implements RenderPartInfo {
-   public readonly offset?: Point | (() => Point);
+class RenderPart extends RenderObject {
+   public offset?: Point | (() => Point);
    public width: number;
    public height: number;
    public textureSource: string;
    public readonly zIndex: number;
-   public readonly inheritParentRotation: boolean;
-   public readonly getRotation?: () => number;
-   public readonly opacity: number;
-   public readonly flipX: boolean;
+   public rotation = 0;
+   public opacity = 1;
 
+   public getRotation?: () => number;
+
+   /** Whether or not the render part will inherit its parents' rotation */
+   public inheritParentRotation = true;
    /** Whether the render part is being rendered or not */
    public isActive = true;
+   public flipX = false;
    
-   constructor(renderPartInfo: RenderPartInfo) {
+   constructor(width: number, height: number, textureSource: string, zIndex: number, rotation: number) {
       super();
       
-      if (typeof renderPartInfo.textureSource === "undefined") {
+      if (typeof textureSource === "undefined") {
          throw new Error("Tried to create a render part with an undefined texture source.");
       }
 
-      this.offset = renderPartInfo.offset;
-      this.width = renderPartInfo.width;
-      this.height = renderPartInfo.height;
-      this.textureSource = renderPartInfo.textureSource;
-      this.zIndex = renderPartInfo.zIndex;
-      this.inheritParentRotation = typeof renderPartInfo.inheritParentRotation !== "undefined" ? renderPartInfo.inheritParentRotation : true;
-      this.getRotation = renderPartInfo.getRotation;
-      this.opacity = renderPartInfo.opacity || 1;
-      this.flipX = renderPartInfo.flipX || false; // Don't flip X by default
+      this.width = width;
+      this.height = height;
+      this.textureSource = textureSource;
+      this.zIndex = zIndex;
+      this.rotation = rotation;
    }
 
    /** Updates the render part's position based on its parent's position and rotation */

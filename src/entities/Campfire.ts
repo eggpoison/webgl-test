@@ -18,14 +18,15 @@ class Campfire extends Entity {
    constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData) {
       super(position, hitboxes, id);
 
-      this.attachRenderParts([
-         new RenderPart({
-            width: Campfire.SIZE,
-            height: Campfire.SIZE,
-            textureSource: "entities/campfire/campfire.png",
-            zIndex: 0
-         })
-      ]);
+      this.attachRenderPart(
+         new RenderPart(
+            Campfire.SIZE,
+            Campfire.SIZE,
+            "entities/campfire/campfire.png",
+            0,
+            0
+         )
+      );
 
       this.fuelInventory = createInventoryFromData(fuelInventory);
       this.ingredientInventory = createInventoryFromData(ingredientInventory);

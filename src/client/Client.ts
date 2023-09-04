@@ -17,7 +17,7 @@ import { BackpackInventoryMenu_setBackpackInventory } from "../components/game/i
 import { setHeldItemVisual } from "../components/game/HeldItem";
 import { CraftingMenu_setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
 import { updateHealthBar } from "../components/game/HealthBar";
-import { registerServerTick, updateDebugScreenTicks } from "../components/game/dev/GameInfoDisplay";
+import { registerServerTick, updateDebugScreenCurrentTime, updateDebugScreenTicks } from "../components/game/dev/GameInfoDisplay";
 import createProjectile from "../projectiles/projectile-creation";
 import Camera from "../Camera";
 import { isDev } from "../utils";
@@ -218,6 +218,7 @@ abstract class Client {
       Board.ticks = gameDataPacket.serverTicks;
       updateDebugScreenTicks(gameDataPacket.serverTicks);
       Board.time = gameDataPacket.serverTime;
+      updateDebugScreenCurrentTime(gameDataPacket.serverTime);
 
 
       if (isDev()) {

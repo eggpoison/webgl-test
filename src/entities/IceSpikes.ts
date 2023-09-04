@@ -13,14 +13,15 @@ class IceSpikes extends Entity {
    constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number) {
       super(position, hitboxes, id);
 
-      this.attachRenderParts([
-         new RenderPart({
-            width: IceSpikes.WIDTH,
-            height: IceSpikes.HEIGHT,
-            textureSource: `entities/ice-spikes/ice-spikes.png`,
-            zIndex: 0
-         })
-      ]);
+      this.attachRenderPart(
+         new RenderPart(
+            IceSpikes.WIDTH,
+            IceSpikes.HEIGHT,
+             `entities/ice-spikes/ice-spikes.png`,
+             0,
+             0
+         )
+      );
    }
 }
 

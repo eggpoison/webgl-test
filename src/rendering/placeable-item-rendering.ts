@@ -74,7 +74,7 @@ export function renderGhostPlaceableItem(): void {
    // Don't render if there is no player
    if (Player.instance === null) return;
 
-   const { textureSource, width, height} = PLACEABLE_ENTITY_INFO_RECORD[playerSelectedItem.type]!;
+   const placeableEntityInfo = PLACEABLE_ENTITY_INFO_RECORD[playerSelectedItem.type]!;
 
    gl.useProgram(program);
 
@@ -88,10 +88,10 @@ export function renderGhostPlaceableItem(): void {
    // If a new type of placeable entity is being drawn, create a new buffer for it
    if (playerSelectedItem.type !== previousRenderedPlaceableItemType) {
       // Calculate vertex world positions
-      const x1 = -width / 2;
-      const x2 = width / 2;
-      const y1 = -height / 2;
-      const y2 = height / 2;
+      const x1 = -placeableEntityInfo.width / 2;
+      const x2 = placeableEntityInfo.width / 2;
+      const y1 = -placeableEntityInfo.height / 2;
+      const y2 = placeableEntityInfo.height / 2;
 
       const vertices: Array<number> = [
          x1, y1, 0, 0,
@@ -124,7 +124,7 @@ export function renderGhostPlaceableItem(): void {
    gl.enableVertexAttribArray(programVertWorldPositionAttribLocation);
    gl.enableVertexAttribArray(programTexCoordAttribLocation);
 
-   const texture = getTexture("entities/" + textureSource);
+   const texture = getTexture("entities/" + placeableEntityInfo.textureSource);
    gl.activeTexture(gl.TEXTURE0);
    gl.bindTexture(gl.TEXTURE_2D, texture);
 

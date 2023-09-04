@@ -20,27 +20,26 @@ class TribeHut extends Entity {
       this.tribeID = tribeID;
       
       // Hut
-      const hutRenderPart = new RenderPart({
-         width: TribeHut.SIZE,
-         height: TribeHut.SIZE,
-         textureSource: "entities/tribe-hut/tribe-hut.png",
-         zIndex: 2
-      });
-
-      const doorOffset = new Point(-TribeHut.SIZE/4, TribeHut.SIZE/2 + TribeHut.DOOR_HEIGHT/2);
+      const hutRenderPart = new RenderPart(
+         TribeHut.SIZE,
+         TribeHut.SIZE,
+         "entities/tribe-hut/tribe-hut.png",
+         2,
+         0
+      );
+      this.attachRenderPart(hutRenderPart);
 
       // Door
-      hutRenderPart.attachRenderPart(
-         new RenderPart({
-            width: TribeHut.DOOR_WIDTH,
-            height: TribeHut.DOOR_HEIGHT,
-            textureSource: "entities/tribe-hut/tribe-hut-door.png",
-            zIndex: 1,
-            offset: () => doorOffset
-         })
+      const doorRenderPart = new RenderPart(
+         TribeHut.DOOR_WIDTH,
+         TribeHut.DOOR_HEIGHT,
+         "entities/tribe-hut/tribe-hut-door.png",
+         1,
+         0
       );
+      doorRenderPart.offset = new Point(-TribeHut.SIZE/4, TribeHut.SIZE/2 + TribeHut.DOOR_HEIGHT/2);
+      hutRenderPart.attachRenderPart(doorRenderPart);
 
-      this.attachRenderPart(hutRenderPart);
    }
 }
 

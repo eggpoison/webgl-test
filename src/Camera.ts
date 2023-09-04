@@ -12,6 +12,8 @@ abstract class Camera {
 
    public static visibleChunkBounds: VisibleChunkBounds = [-1, -1, -1, -1];
 
+   public static visibleRenderChunkBounds: VisibleChunkBounds = [-1, -1, -1, -1];
+
    public static visiblePositionBounds: VisiblePositionBounds = [-1, -1, -1, -1];
 
    public static updateVisibleChunkBounds(): void {
@@ -38,15 +40,13 @@ abstract class Camera {
       return this.visibleChunkBounds;
    }
 
-   public static calculateVisibleRenderChunkBounds(): VisibleChunkBounds {
+   public static updateVisibleRenderChunkBounds(): void {
       const unitsInChunk = SETTINGS.TILE_SIZE * RENDER_CHUNK_SIZE;
 
-      const minX = Math.max(Math.floor((this.position.x - windowWidth / 2) / unitsInChunk), 0);
-      const maxX = Math.min(Math.floor((this.position.x + windowWidth / 2) / unitsInChunk), WORLD_RENDER_CHUNK_SIZE - 1);
-      const minY = Math.max(Math.floor((this.position.y - windowHeight / 2) / unitsInChunk), 0);
-      const maxY = Math.min(Math.floor((this.position.y + windowHeight / 2) / unitsInChunk), WORLD_RENDER_CHUNK_SIZE - 1);
-
-      return [minX, maxX, minY, maxY];
+      this.visibleRenderChunkBounds[0] = Math.max(Math.floor((this.position.x - windowWidth / 2) / unitsInChunk), 0);
+      this.visibleRenderChunkBounds[1] = Math.min(Math.floor((this.position.x + windowWidth / 2) / unitsInChunk), WORLD_RENDER_CHUNK_SIZE - 1);
+      this.visibleRenderChunkBounds[2] = Math.max(Math.floor((this.position.y - windowHeight / 2) / unitsInChunk), 0);
+      this.visibleRenderChunkBounds[3] = Math.min(Math.floor((this.position.y + windowHeight / 2) / unitsInChunk), WORLD_RENDER_CHUNK_SIZE - 1);
    }
 
    public static setCameraPosition(position: Point): void {

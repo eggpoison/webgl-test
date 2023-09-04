@@ -12,12 +12,13 @@ class WoodenArrowProjectile extends Projectile {
       super(position, hitboxes, id);
 
       this.attachRenderPart(
-         new RenderPart({
-            width: WoodenArrowProjectile.WIDTH,
-            height: WoodenArrowProjectile.HEIGHT,
-            textureSource: "projectiles/wooden-arrow.png",
-            zIndex: 0
-         })
+         new RenderPart(
+            WoodenArrowProjectile.WIDTH,
+            WoodenArrowProjectile.HEIGHT,
+            "projectiles/wooden-arrow.png",
+            0,
+            0
+         )
       );
    }
 }

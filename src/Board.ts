@@ -10,7 +10,6 @@ import Particle, { ParticleRenderLayer } from "./particles/Particle";
 import CircularHitbox from "./hitboxes/CircularHitbox";
 import MonocolourParticle from "./particles/MonocolourParticle";
 import TexturedParticle from "./particles/TexturedParticle";
-import { updateDebugScreenCurrentTime } from "./components/game/dev/GameInfoDisplay";
 
 export interface EntityHitboxInfo {
    readonly vertexPositions: readonly [Point, Point, Point, Point];
@@ -25,7 +24,7 @@ export interface RiverSteppingStone {
 
 abstract class Board {
    public static ticks: number;
-   private static _time: number;
+   public static time: number;
 
    private static tiles: Array<Array<Tile>>;
    private static chunks: Array<Array<Chunk>>;
@@ -44,16 +43,6 @@ abstract class Board {
    public static readonly serverParticleIDs = new Set<number>();
 
    private static riverFlowDirections: Record<number, Record<number, number>>;
-
-   // TODO: Remove these getters and setters
-   public static get time(): number {
-      return this._time;
-   }
-
-   public static set time(time: number) {
-      this._time = time;
-      updateDebugScreenCurrentTime(time);
-   }
 
    public static initialise(tiles: Array<Array<Tile>>, waterRocks: ReadonlyArray<WaterRockData>, riverSteppingStones: ReadonlyArray<RiverSteppingStoneData>, riverFlowDirections: Record<number, Record<number, number>>): void {
       this.tiles = tiles;

@@ -52,7 +52,7 @@ export function addChatMessage(senderName: string, message: string): void {
 }
 
 export let focusChatbox: () => void = () => {};
-export let chatboxIsFocused: () => boolean = () => false;
+export let chatboxIsFocused = false;
 
 const ChatBox = () => {
    const chatboxRef = useRef<HTMLDivElement | null>(null);
@@ -128,7 +128,7 @@ const ChatBox = () => {
    }
 
    useEffect(() => {
-      chatboxIsFocused = () => isFocused;
+      chatboxIsFocused = isFocused;
 
       if (!isFocused) {
          inputBoxRef.current!.value = "";

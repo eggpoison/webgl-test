@@ -262,46 +262,50 @@ export function renderMonocolourParticles(particles: ReadonlyArray<MonocolourPar
       const bottomRightX = rotateXAroundPoint(x2, y1, renderPosition.x, renderPosition.y, particle.rotation);
       const bottomRightY = rotateYAroundPoint(x2, y1, renderPosition.x, renderPosition.y, particle.rotation);
 
-      particle.updateOpacity();
+      // Update opacity
+      let opacity = particle.opacity;
+      if (typeof particle.getOpacity !== "undefined") {
+         opacity = particle.getOpacity(particle.age);
+      }
 
       vertexData[i * 6 * 6] = bottomLeftX;
       vertexData[i * 6 * 6 + 1] = bottomLeftY;
-      vertexData[i * 6 * 6 + 2] = particle.opacity;
+      vertexData[i * 6 * 6 + 2] = opacity;
       vertexData[i * 6 * 6 + 3] = particle.colour[0];
       vertexData[i * 6 * 6 + 4] = particle.colour[1];
       vertexData[i * 6 * 6 + 5] = particle.colour[2];
 
       vertexData[i * 6 * 6 + 6] = bottomRightX;
       vertexData[i * 6 * 6 + 7] = bottomRightY;
-      vertexData[i * 6 * 6 + 8] = particle.opacity;
+      vertexData[i * 6 * 6 + 8] = opacity;
       vertexData[i * 6 * 6 + 9] = particle.colour[0];
       vertexData[i * 6 * 6 + 10] = particle.colour[1];
       vertexData[i * 6 * 6 + 11] = particle.colour[2];
 
       vertexData[i * 6 * 6 + 12] = topLeftX;
       vertexData[i * 6 * 6 + 13] = topLeftY;
-      vertexData[i * 6 * 6 + 14] = particle.opacity;
+      vertexData[i * 6 * 6 + 14] = opacity;
       vertexData[i * 6 * 6 + 15] = particle.colour[0];
       vertexData[i * 6 * 6 + 16] = particle.colour[1];
       vertexData[i * 6 * 6 + 17] = particle.colour[2];
 
       vertexData[i * 6 * 6 + 18] = topLeftX;
       vertexData[i * 6 * 6 + 19] = topLeftY;
-      vertexData[i * 6 * 6 + 20] = particle.opacity;
+      vertexData[i * 6 * 6 + 20] = opacity;
       vertexData[i * 6 * 6 + 21] = particle.colour[0];
       vertexData[i * 6 * 6 + 22] = particle.colour[1];
       vertexData[i * 6 * 6 + 23] = particle.colour[2];
 
       vertexData[i * 6 * 6 + 24] = bottomRightX;
       vertexData[i * 6 * 6 + 25] = bottomRightY;
-      vertexData[i * 6 * 6 + 26] = particle.opacity;
+      vertexData[i * 6 * 6 + 26] = opacity;
       vertexData[i * 6 * 6 + 27] = particle.colour[0];
       vertexData[i * 6 * 6 + 28] = particle.colour[1];
       vertexData[i * 6 * 6 + 29] = particle.colour[2];
 
       vertexData[i * 6 * 6 + 30] = topRightX;
       vertexData[i * 6 * 6 + 31] = topRightY;
-      vertexData[i * 6 * 6 + 32] = particle.opacity;
+      vertexData[i * 6 * 6 + 32] = opacity;
       vertexData[i * 6 * 6 + 33] = particle.colour[0];
       vertexData[i * 6 * 6 + 34] = particle.colour[1];
       vertexData[i * 6 * 6 + 35] = particle.colour[2];
@@ -377,14 +381,18 @@ export function renderTexturedParticles(particles: ReadonlyArray<TexturedParticl
          const bottomRightX = rotateXAroundPoint(x2, y1, renderPosition.x, renderPosition.y, particle.rotation);
          const bottomRightY = rotateYAroundPoint(x2, y1, renderPosition.x, renderPosition.y, particle.rotation);
 
-         particle.updateOpacity();
+         // Update opacity
+         let opacity = particle.opacity;
+         if (typeof particle.getOpacity !== "undefined") {
+            opacity = particle.getOpacity(particle.age);
+         }
          
          // TODO: Surely there is a less awful way of doing this?
          vertexData[i * 6 * 8] = bottomLeftX;
          vertexData[i * 6 * 8 + 1] = bottomLeftY;
          vertexData[i * 6 * 8 + 2] = 0;
          vertexData[i * 6 * 8 + 3] = 0;
-         vertexData[i * 6 * 8 + 4] = particle.opacity;
+         vertexData[i * 6 * 8 + 4] = opacity;
          vertexData[i * 6 * 8 + 5] = particle.tint[0];
          vertexData[i * 6 * 8 + 6] = particle.tint[1];
          vertexData[i * 6 * 8 + 7] = particle.tint[2];
@@ -393,7 +401,7 @@ export function renderTexturedParticles(particles: ReadonlyArray<TexturedParticl
          vertexData[i * 6 * 8 + 9] = bottomRightY;
          vertexData[i * 6 * 8 + 10] = 1;
          vertexData[i * 6 * 8 + 11] = 0;
-         vertexData[i * 6 * 8 + 12] = particle.opacity;
+         vertexData[i * 6 * 8 + 12] = opacity;
          vertexData[i * 6 * 8 + 13] = particle.tint[0];
          vertexData[i * 6 * 8 + 14] = particle.tint[1];
          vertexData[i * 6 * 8 + 15] = particle.tint[2];
@@ -402,7 +410,7 @@ export function renderTexturedParticles(particles: ReadonlyArray<TexturedParticl
          vertexData[i * 6 * 8 + 17] = topLeftY;
          vertexData[i * 6 * 8 + 18] = 0;
          vertexData[i * 6 * 8 + 19] = 1;
-         vertexData[i * 6 * 8 + 20] = particle.opacity;
+         vertexData[i * 6 * 8 + 20] = opacity;
          vertexData[i * 6 * 8 + 21] = particle.tint[0];
          vertexData[i * 6 * 8 + 22] = particle.tint[1];
          vertexData[i * 6 * 8 + 23] = particle.tint[2];
@@ -411,7 +419,7 @@ export function renderTexturedParticles(particles: ReadonlyArray<TexturedParticl
          vertexData[i * 6 * 8 + 25] = topLeftY;
          vertexData[i * 6 * 8 + 26] = 0;
          vertexData[i * 6 * 8 + 27] = 1;
-         vertexData[i * 6 * 8 + 28] = particle.opacity;
+         vertexData[i * 6 * 8 + 28] = opacity;
          vertexData[i * 6 * 8 + 29] = particle.tint[0];
          vertexData[i * 6 * 8 + 30] = particle.tint[1];
          vertexData[i * 6 * 8 + 31] = particle.tint[2];
@@ -420,7 +428,7 @@ export function renderTexturedParticles(particles: ReadonlyArray<TexturedParticl
          vertexData[i * 6 * 8 + 33] = bottomRightY;
          vertexData[i * 6 * 8 + 34] = 1;
          vertexData[i * 6 * 8 + 35] = 0;
-         vertexData[i * 6 * 8 + 36] = particle.opacity;
+         vertexData[i * 6 * 8 + 36] = opacity;
          vertexData[i * 6 * 8 + 37] = particle.tint[0];
          vertexData[i * 6 * 8 + 38] = particle.tint[1];
          vertexData[i * 6 * 8 + 39] = particle.tint[2];
@@ -429,7 +437,7 @@ export function renderTexturedParticles(particles: ReadonlyArray<TexturedParticl
          vertexData[i * 6 * 8 + 41] = topRightY;
          vertexData[i * 6 * 8 + 42] = 1;
          vertexData[i * 6 * 8 + 43] = 1;
-         vertexData[i * 6 * 8 + 44] = particle.opacity;
+         vertexData[i * 6 * 8 + 44] = opacity;
          vertexData[i * 6 * 8 + 45] = particle.tint[0];
          vertexData[i * 6 * 8 + 46] = particle.tint[1];
          vertexData[i * 6 * 8 + 47] = particle.tint[2];

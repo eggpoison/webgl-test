@@ -281,12 +281,6 @@ abstract class Particle {
       }
    }
 
-   public updateOpacity(): void {
-      if (typeof this.getOpacity !== "undefined") {
-         this.opacity = this.getOpacity(this.age);
-      }
-   }
-
    private applyPhysics(): void {
       // Accelerate
       if (this.acceleration !== null) {

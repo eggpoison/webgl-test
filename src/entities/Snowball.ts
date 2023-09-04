@@ -23,14 +23,15 @@ class Snowball extends Entity {
 
       const textureSize = SNOWBALL_SIZES[size];
 
-      this.attachRenderParts([
-         new RenderPart({
-            width: textureSize,
-            height: textureSize,
-            textureSource: getTextureSource(size),
-            zIndex: 0
-         })
-      ]);
+      this.attachRenderPart(
+         new RenderPart(
+            textureSize,
+            textureSize,
+            getTextureSource(size),
+            0,
+            0
+         )
+      );
    }
 }
 

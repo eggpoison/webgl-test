@@ -6,11 +6,11 @@ import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { createBloodParticle } from "../generic-particles";
 
 const ZOMBIE_TEXTURE_SOURCES: { [zombieType: number]: string } = {
-   0: "zombie1.png",
-   1: "zombie2.png",
-   2: "zombie3.png",
-   3: "zombie-golden.png"
-}
+   0: "entities/zombie/zombie1.png",
+   1: "entities/zombie/zombie2.png",
+   2: "entities/zombie/zombie3.png",
+   3: "entities/zombie/zombie-golden.png"
+};
 
 class Zombie extends Entity {
    public readonly type = "zombie";
@@ -20,14 +20,15 @@ class Zombie extends Entity {
    constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, zombieType: number) {
       super(position, hitboxes, id);
 
-      this.attachRenderParts([
-         new RenderPart({
-            width: Zombie.RADIUS * 2,
-            height: Zombie.RADIUS * 2,
-            textureSource: "entities/zombie/" + ZOMBIE_TEXTURE_SOURCES[zombieType],
-            zIndex: 0
-         })
-      ]);
+      this.attachRenderPart(
+         new RenderPart(
+            Zombie.RADIUS * 2,
+            Zombie.RADIUS * 2,
+            ZOMBIE_TEXTURE_SOURCES[zombieType],
+            0,
+            0
+         )
+      );
    }
 
    protected onHit(hitData: HitData): void {

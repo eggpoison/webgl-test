@@ -12,14 +12,15 @@ class Tombstone extends Entity {
    constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, tombstoneType: number, deathInfo: DeathInfo | null) {
       super(position, hitboxes, id);
 
-      this.attachRenderParts([
-         new RenderPart({
-            width: 64,
-            height: 96,
-            textureSource: `entities/tombstone/tombstone${tombstoneType + 1}.png`,
-            zIndex: 0
-         })
-      ]);
+      this.attachRenderPart(
+         new RenderPart(
+            64,
+            96,
+            `entities/tombstone/tombstone${tombstoneType + 1}.png`,
+            0,
+            0
+         )
+      );
 
       this.deathInfo = deathInfo;
    }

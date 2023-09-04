@@ -27,14 +27,15 @@ class Tree extends Entity {
       this.treeSize = treeSize;
       
       const size = this.getRadius() * 2;
-      this.attachRenderParts([
-         new RenderPart({
-            width: size,
-            height: size,
-            textureSource: treeTextures[treeSize],
-            zIndex: 0
-         })
-      ]);
+      this.attachRenderPart(
+         new RenderPart(
+            size,
+            size,
+            treeTextures[treeSize],
+            0,
+            0
+         )
+      );
    }
 
    private getRadius(): number {
@@ -45,10 +46,11 @@ class Tree extends Entity {
       // Create leaf particles
       {
          const spawnPosition = this.position.copy();
-         const offset = new Vector(this.getRadius(), 2 * Math.PI * Math.random()).convertToPoint();
+         const moveDirection = 2 * Math.PI * Math.random();
+         const offset = new Vector(this.getRadius(), moveDirection).convertToPoint();
          spawnPosition.add(offset);
 
-         createLeafParticle(spawnPosition, Math.random() < 0.5 ? LeafParticleSize.large : LeafParticleSize.small);
+         createLeafParticle(spawnPosition, moveDirection + randFloat(-1, 1), Math.random() < 0.5 ? LeafParticleSize.large : LeafParticleSize.small);
       }
       
       // Create leaf specks
@@ -86,7 +88,6 @@ class Tree extends Entity {
    }
 
    public onDie(): void {
-
       let numLeaves: number;
       if (this.treeSize === TreeSize.small) {
          numLeaves = randInt(2, 3);
@@ -98,7 +99,7 @@ class Tree extends Entity {
          const offset = new Vector(this.getRadius() * Math.random(), 2 * Math.PI * Math.random()).convertToPoint();
          spawnPosition.add(offset);
 
-         createLeafParticle(spawnPosition, Math.random() < 0.5 ? LeafParticleSize.large : LeafParticleSize.small);
+         createLeafParticle(spawnPosition, Math.random(), Math.random() < 0.5 ? LeafParticleSize.large : LeafParticleSize.small);
       }
    }
 }

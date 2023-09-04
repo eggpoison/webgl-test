@@ -9,9 +9,9 @@ const BLOOD_COLOUR_LOW: Readonly<ParticleColour> = [150, 0, 0];
 const BLOOD_COLOUR_HIGH: Readonly<ParticleColour> = [212, 0, 0];
 
 export function createBloodParticle(hurtEntityPosition: Point, directionFromAttacker: number, offset: number): void {
-   const spawnPosition = hurtEntityPosition.copy();
-   const offsetVector = new Vector(offset, directionFromAttacker + Math.PI + 0.2 * Math.PI * (Math.random() - 0.5)).convertToPoint();
-   spawnPosition.add(offsetVector);
+   const spawnPosition = Point.fromVectorForm(offset, directionFromAttacker + Math.PI + 0.2 * Math.PI * (Math.random() - 0.5));
+   spawnPosition.x += hurtEntityPosition.x;
+   spawnPosition.y += hurtEntityPosition.y;
 
    const lifetime = randFloat(0.3, 0.4);
    
@@ -43,7 +43,7 @@ export enum LeafParticleSize {
    large
 }
 
-export function createLeafParticle(spawnPosition: Point, size: LeafParticleSize): void {
+export function createLeafParticle(spawnPosition: Point, moveDirection: number, size: LeafParticleSize): void {
    const lifetime = randFloat(2, 2.5);
 
    let width: number;
@@ -64,7 +64,7 @@ export function createLeafParticle(spawnPosition: Point, size: LeafParticleSize)
       width,
       height,
       spawnPosition,
-      new Vector(randFloat(30, 50), 2 * Math.PI * Math.random()),
+      new Vector(randFloat(30, 50), moveDirection),
       null,
       lifetime,
       textureSource

@@ -23,7 +23,7 @@ let selectedCommandIndex = 0;
 /**
  * Checks whether the player is using the terminal or not.
  */
-export let playerIsUsingTerminal: () => boolean = () => false;
+export let playerIsUsingTerminal = false;
 
 const getCommandErrorMessage = (command: string): string => {
    const commandComponents = parseCommand(command);
@@ -234,15 +234,13 @@ const Terminal = ({ startingIsVisible }: TerminalParams) => {
    };
 
    useEffect(() => {
-      playerIsUsingTerminal = (): boolean => {
-         return isInFocus;
-      }
+      playerIsUsingTerminal = isInFocus;
    }, [isInFocus]);
 
    // When the terminal is closed, set isInFocus to false
    useEffect(() => {
       return () => {
-         playerIsUsingTerminal = () => false;
+         playerIsUsingTerminal = false;
       }
    }, []);
 

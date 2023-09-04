@@ -18,14 +18,15 @@ class Furnace extends Entity {
    constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData) {
       super(position, hitboxes, id);
 
-      this.attachRenderParts([
-         new RenderPart({
-            width: Furnace.SIZE,
-            height: Furnace.SIZE,
-            textureSource: "entities/furnace/furnace.png",
-            zIndex: 0
-         })
-      ]);
+      this.attachRenderPart(
+         new RenderPart(
+            Furnace.SIZE,
+            Furnace.SIZE,
+            "entities/furnace/furnace.png",
+            0,
+            0
+         )
+      );
 
       this.fuelInventory = createInventoryFromData(fuelInventory);
       this.ingredientInventory = createInventoryFromData(ingredientInventory);

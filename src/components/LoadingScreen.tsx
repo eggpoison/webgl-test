@@ -62,6 +62,7 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
          case "sending_player_data": {
             Camera.setCameraPosition(spawnPositionRef.current!);
             Camera.updateVisibleChunkBounds();
+            Camera.updateVisibleRenderChunkBounds();
             Camera.updateVisiblePositionBounds();
             Client.sendInitialPlayerData(username, Camera.getVisibleChunkBounds());
 

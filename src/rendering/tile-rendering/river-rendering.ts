@@ -1258,10 +1258,8 @@ const calculateHighlightsVertices = (waterTiles: ReadonlyArray<Tile>): ReadonlyA
 const calculateVisibleRenderChunks = (): ReadonlyArray<RenderChunkRiverInfo> => {
    const renderChunks = new Array<RenderChunkRiverInfo>();
 
-   const [minRenderChunkX, maxRenderChunkX, minRenderChunkY, maxRenderChunkY] = Camera.calculateVisibleRenderChunkBounds();
-
-   for (let renderChunkX = minRenderChunkX; renderChunkX <= maxRenderChunkX; renderChunkX++) {
-      for (let renderChunkY = minRenderChunkY; renderChunkY <= maxRenderChunkY; renderChunkY++) {
+   for (let renderChunkX = Camera.visibleRenderChunkBounds[0]; renderChunkX <= Camera.visibleRenderChunkBounds[1]; renderChunkX++) {
+      for (let renderChunkY = Camera.visibleRenderChunkBounds[2]; renderChunkY <= Camera.visibleRenderChunkBounds[3]; renderChunkY++) {
          const renderChunkInfo = getRenderChunkRiverInfo(renderChunkX, renderChunkY);
          if (renderChunkInfo !== null) {
             renderChunks.push(renderChunkInfo);

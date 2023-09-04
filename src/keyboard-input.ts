@@ -58,7 +58,7 @@ const getKey = (e: KeyboardEvent): string => {
 }
 
 const onKeyDown = (e: KeyboardEvent): void => {
-   if (chatboxIsFocused() || playerIsUsingTerminal()) {
+   if (chatboxIsFocused || playerIsUsingTerminal) {
       return;
    }
 

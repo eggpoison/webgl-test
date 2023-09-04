@@ -18,70 +18,67 @@ class Cactus extends Entity {
       super(position, hitboxes, id);
 
       this.attachRenderPart(
-         new RenderPart({
-            width: Cactus.RADIUS * 2,
-            height: Cactus.RADIUS * 2,
-            textureSource: "entities/cactus/cactus.png",
-            zIndex: 2
-         })
+         new RenderPart(
+            Cactus.RADIUS * 2,
+            Cactus.RADIUS * 2,
+            "entities/cactus/cactus.png",
+            2,
+            0
+         )
       );
 
       // Attach flower render parts
       for (let i = 0; i < flowers.length; i++) {
-         const { type, size, column, height, rotation } = flowers[i];
+         const flowerInfo = flowers[i];
          
          // Calculate position offset
-         const offsetDirection = column * Math.PI / 4;
-         const offsetVector = Point.fromVectorForm(height, offsetDirection);
+         const offsetDirection = flowerInfo.column * Math.PI / 4;
+         const offsetVector = Point.fromVectorForm(flowerInfo.height, offsetDirection);
 
-         const flowerSize = (type === 4 || size === CactusFlowerSize.large) ? 20 : 16;
+         const flowerSize = (flowerInfo.type === 4 || flowerInfo.size === CactusFlowerSize.large) ? 20 : 16;
 
-         this.attachRenderPart(
-            new RenderPart({
-               width: flowerSize,
-               height: flowerSize,
-               textureSource: this.getFlowerTextureSource(type, size),
-               zIndex: 3,
-               offset: () => offsetVector,
-               getRotation: () => rotation
-            })
+         const renderPart = new RenderPart(
+            flowerSize,
+            flowerSize,
+            this.getFlowerTextureSource(flowerInfo.type, flowerInfo.size),
+            3,
+            flowerInfo.rotation
          );
+         renderPart.offset = offsetVector;
+         this.attachRenderPart(renderPart);
       }
 
       // Limbs
       for (let i = 0; i < limbs.length; i++) {
-         const { direction, flower } = limbs[i];
+         const limbInfo = limbs[i];
 
-         const offset = new Vector(Cactus.RADIUS, direction).convertToPoint();
+         const offset = new Vector(Cactus.RADIUS, limbInfo.direction).convertToPoint();
 
-         const limbRotation = 2 * Math.PI * Math.random();
-         this.attachRenderPart(
-            new RenderPart({
-               width: Cactus.LIMB_SIZE,
-               height: Cactus.LIMB_SIZE,
-               textureSource: "entities/cactus/cactus-limb.png",
-               zIndex: 0,
-               offset: () => offset,
-               getRotation: () => limbRotation
-            })
-         );
+         const renderPart = new RenderPart(
+            Cactus.LIMB_SIZE,
+            Cactus.LIMB_SIZE,
+            "entities/cactus/cactus-limb.png",
+            0,
+            2 * Math.PI * Math.random()
+         )
+         renderPart.offset = offset;
+         this.attachRenderPart(renderPart);
          
-         if (typeof flower !== "undefined") {
-            const { type, height, direction, rotation } = flower;
+         if (typeof limbInfo.flower !== "undefined") {
+            const flowerInfo = limbInfo.flower;
 
-            const flowerOffset = new Vector(height, direction).convertToPoint();
+            const flowerOffset = new Vector(flowerInfo.height, flowerInfo.direction).convertToPoint();
             flowerOffset.add(offset);
 
-            this.attachRenderPart(
-               new RenderPart({
-                  width: 16,
-                  height: 16,
-                  textureSource: this.getFlowerTextureSource(type, CactusFlowerSize.small),
-                  zIndex: 1,
-                  offset: () => flowerOffset,
-                  getRotation: () => rotation
-               })
-            );
+            const flowerRenderPart = new RenderPart(
+               16,
+               16,
+               this.getFlowerTextureSource(flowerInfo.type, CactusFlowerSize.small),
+               1,
+               flowerInfo.rotation
+            )
+            flowerRenderPart.offset = flowerOffset;
+            this.attachRenderPart(flowerRenderPart);
          }
       }
    }

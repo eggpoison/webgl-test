@@ -1,4 +1,4 @@
-import { EntityData, InventoryData, ItemType, Point, TribeType, Vector } from "webgl-test-shared";
+import { EntityData, InventoryData, ItemType, Point, TribeType } from "webgl-test-shared";
 import TribeMember from "./TribeMember";
 import RenderPart from "../render-parts/RenderPart";
 import { Inventory, ItemSlots } from "../items/Item";
@@ -21,52 +21,50 @@ class Tribesman extends TribeMember {
    constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, activeItem: ItemType | null, foodEatingType: ItemType | -1, lastAttackTicks: number, lastEatTicks: number, inventoryData: InventoryData) {
       super(position, hitboxes, id, tribeID, tribeType, armour, activeItem, foodEatingType, lastAttackTicks, lastEatTicks);
 
-      this.attachRenderParts([
-         new RenderPart({
-            width: Tribesman.RADIUS * 2,
-            height: Tribesman.RADIUS * 2,
-            textureSource: super.getTextureSource(tribeType),
-            zIndex: 1
-         })
-      ]);
+      this.attachRenderPart(
+         new RenderPart(
+            Tribesman.RADIUS * 2,
+            Tribesman.RADIUS * 2,
+            super.getTextureSource(tribeType),
+            1,
+            0
+         )
+      );
 
       if (tribeType === TribeType.goblins) {
          // Goblin warpaint
          const warpaint = id % 3 + 1;
          this.attachRenderPart(
-            new RenderPart({
-               width: Tribesman.RADIUS * 2,
-               height: Tribesman.RADIUS * 2,
-               textureSource: `entities/human/goblin-warpaint-${warpaint}.png`,
-               zIndex: 2
-            })
+            new RenderPart(
+               Tribesman.RADIUS * 2,
+               Tribesman.RADIUS * 2,
+               `entities/human/goblin-warpaint-${warpaint}.png`,
+               2,
+               0
+            )
          );
 
          // Left ear
-         const leftEarOffset = new Vector(Tribesman.RADIUS + Tribesman.GOBLIN_EAR_OFFSET, -Tribesman.GOBLIN_EAR_ANGLE).convertToPoint();
-         this.attachRenderPart(
-            new RenderPart({
-               width: Tribesman.GOBLIN_EAR_WIDTH,
-               height: Tribesman.GOBLIN_EAR_HEIGHT,
-               textureSource: "entities/human/goblin-ear.png",
-               offset: () => leftEarOffset,
-               getRotation: () => Math.PI/2 - Tribesman.GOBLIN_EAR_ANGLE,
-               zIndex: 2,
-               flipX: true
-            })
+         const leftEarRenderPart = new RenderPart(
+            Tribesman.GOBLIN_EAR_WIDTH,
+            Tribesman.GOBLIN_EAR_HEIGHT,
+            "entities/human/goblin-ear.png",
+            2,
+            Math.PI/2 - Tribesman.GOBLIN_EAR_ANGLE,
          );
+         leftEarRenderPart.offset = Point.fromVectorForm(Tribesman.RADIUS + Tribesman.GOBLIN_EAR_OFFSET, -Tribesman.GOBLIN_EAR_ANGLE);
+         leftEarRenderPart.flipX = true;
+
          // Right ear
-         const rightEarOffset = new Vector(Tribesman.RADIUS + Tribesman.GOBLIN_EAR_OFFSET, Tribesman.GOBLIN_EAR_ANGLE).convertToPoint();
-         this.attachRenderPart(
-            new RenderPart({
-               width: Tribesman.GOBLIN_EAR_WIDTH,
-               height: Tribesman.GOBLIN_EAR_HEIGHT,
-               textureSource: "entities/human/goblin-ear.png",
-               offset: () => rightEarOffset,
-               getRotation: () => -Math.PI/2 + Tribesman.GOBLIN_EAR_ANGLE,
-               zIndex: 2
-            })
+         const rightEarRenderPart = new RenderPart(
+            Tribesman.GOBLIN_EAR_WIDTH,
+            Tribesman.GOBLIN_EAR_HEIGHT,
+            "entities/human/goblin-ear.png",
+            2,
+            -Math.PI/2 + Tribesman.GOBLIN_EAR_ANGLE,
          );
+         rightEarRenderPart.offset = Point.fromVectorForm(Tribesman.RADIUS + Tribesman.GOBLIN_EAR_OFFSET, Tribesman.GOBLIN_EAR_ANGLE);
+         this.attachRenderPart(rightEarRenderPart);
       }
 
       this.inventory = this.createInventoryFromData(inventoryData);

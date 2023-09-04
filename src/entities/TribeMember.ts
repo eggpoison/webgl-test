@@ -73,95 +73,96 @@ abstract class TribeMember extends Entity {
       this.lastEatTicks = lastEatTicks;
       this.foodEatingType = foodEatingType;
       
-      this.activeItemRenderPart = new RenderPart({
-         textureSource: activeItem !== null ? CLIENT_ITEM_INFO_RECORD[activeItem].textureSource : "",
-         width: TribeMember.TOOL_ACTIVE_ITEM_SIZE,
-         height: TribeMember.TOOL_ACTIVE_ITEM_SIZE,
-         offset: () => {
-            // TODO: This is kinda scuffed
-            if (this.activeItem === null) {
-               return new Point(0, 0);
+      this.activeItemRenderPart = new RenderPart(
+         TribeMember.TOOL_ACTIVE_ITEM_SIZE,
+         TribeMember.TOOL_ACTIVE_ITEM_SIZE,
+         activeItem !== null ? CLIENT_ITEM_INFO_RECORD[activeItem].textureSource : "",
+         0,
+         0
+      );
+      this.activeItemRenderPart.offset = () => {
+         // TODO: This is kinda scuffed
+         if (this.activeItem === null) {
+            return new Point(0, 0);
+         }
+
+         let direction = Math.PI / 4;
+
+         // TODO: As the offset function is called in the RenderPart constructor, this.activeItemRenderPart will initially
+         // be undefined and so we have to check for this case
+         let itemSize: number;
+         if (typeof this.activeItemRenderPart === "undefined") {
+            itemSize = this.getActiveItemSize(this.activeItem);
+         } else {
+            itemSize = this.activeItemRenderPart.width;
+         }
+
+         if (latencyGameState.playerIsEating) {
+            // Food eating animation
+            
+            const secondsSinceLastEat = this.getSecondsSinceLastAction(this.lastEatTicks);
+
+            let eatIntervalProgress = (secondsSinceLastEat % TribeMember.FOOD_EAT_INTERVAL) / TribeMember.FOOD_EAT_INTERVAL * 2;
+            if (eatIntervalProgress > 1) {
+               eatIntervalProgress = 2 - eatIntervalProgress;
             }
+            
+            direction -= lerp(0, Math.PI/5, eatIntervalProgress);
 
-            let direction = Math.PI / 4;
+            const insetAmount = lerp(0, 17, eatIntervalProgress);
 
-            // TODO: As the offset function is called in the RenderPart constructor, this.activeItemRenderPart will initially
-            // be undefined and so we have to check for this case
-            let itemSize: number;
-            if (typeof this.activeItemRenderPart === "undefined") {
-               itemSize = this.getActiveItemSize(this.activeItem);
+            return new Vector(26 + itemSize / 2 - insetAmount, direction).convertToPoint();
+         } else {
+            // Attack animation
+            
+            const secondsSinceLastAttack = this.getSecondsSinceLastAction(this.lastAttackTicks);
+            const attackProgress = this.getAttackProgress(secondsSinceLastAttack);
+
+            let direction: number;
+            if (attackProgress < TribeMember.ATTACK_LUNGE_TIME) {
+               // Lunge part of the animation
+               direction = lerp(TribeMember.ITEM_RESTING_DIRECTION, TribeMember.ITEM_RESTING_DIRECTION - TribeMember.ITEM_SWING_RANGE, attackProgress / TribeMember.ATTACK_LUNGE_TIME);
             } else {
-               itemSize = this.activeItemRenderPart.width;
+               // Return part of the animation
+               const returnProgress = (attackProgress - TribeMember.ATTACK_LUNGE_TIME) / (1 - TribeMember.ATTACK_LUNGE_TIME);
+               direction = lerp(TribeMember.ITEM_RESTING_DIRECTION - TribeMember.ITEM_SWING_RANGE, TribeMember.ITEM_RESTING_DIRECTION, returnProgress);
             }
 
-            if (latencyGameState.playerIsEating) {
-               // Food eating animation
-               
-               const secondsSinceLastEat = this.getSecondsSinceLastAction(this.lastEatTicks);
+            return new Vector(26 + itemSize / 2, direction).convertToPoint();
+         }
+      };
+      this.activeItemRenderPart.getRotation = () => {
+         if (latencyGameState.playerIsEating) {
+            // Eating animation
 
-               let eatIntervalProgress = (secondsSinceLastEat % TribeMember.FOOD_EAT_INTERVAL) / TribeMember.FOOD_EAT_INTERVAL * 2;
-               if (eatIntervalProgress > 1) {
-                  eatIntervalProgress = 2 - eatIntervalProgress;
-               }
-               
-               direction -= lerp(0, Math.PI/5, eatIntervalProgress);
+            const secondsSinceLastEat = this.getSecondsSinceLastAction(this.lastEatTicks);
+            
+            let eatIntervalProgress = (secondsSinceLastEat % TribeMember.FOOD_EAT_INTERVAL) / TribeMember.FOOD_EAT_INTERVAL * 2;
+            if (eatIntervalProgress > 1) {
+               eatIntervalProgress = 2 - eatIntervalProgress;
+            }
+            
+            const direction = lerp(0, -Math.PI/5, eatIntervalProgress);
+            return direction;
+         } else {
+            // Attack animation
 
-               const insetAmount = lerp(0, 17, eatIntervalProgress);
-   
-               return new Vector(26 + itemSize / 2 - insetAmount, direction).convertToPoint();
+            const secondsSinceLastAttack = this.getSecondsSinceLastAction(this.lastAttackTicks);
+            const attackProgress = this.getAttackProgress(secondsSinceLastAttack);
+
+            let direction: number;
+            if (attackProgress < TribeMember.ATTACK_LUNGE_TIME) {
+               // Lunge part of the animation
+               direction = lerp(TribeMember.ITEM_RESTING_ROTATION, TribeMember.ITEM_END_ROTATION, attackProgress / TribeMember.ATTACK_LUNGE_TIME);
             } else {
-               // Attack animation
-               
-               const secondsSinceLastAttack = this.getSecondsSinceLastAction(this.lastAttackTicks);
-               const attackProgress = this.getAttackProgress(secondsSinceLastAttack);
-
-               let direction: number;
-               if (attackProgress < TribeMember.ATTACK_LUNGE_TIME) {
-                  // Lunge part of the animation
-                  direction = lerp(TribeMember.ITEM_RESTING_DIRECTION, TribeMember.ITEM_RESTING_DIRECTION - TribeMember.ITEM_SWING_RANGE, attackProgress / TribeMember.ATTACK_LUNGE_TIME);
-               } else {
-                  // Return part of the animation
-                  const returnProgress = (attackProgress - TribeMember.ATTACK_LUNGE_TIME) / (1 - TribeMember.ATTACK_LUNGE_TIME);
-                  direction = lerp(TribeMember.ITEM_RESTING_DIRECTION - TribeMember.ITEM_SWING_RANGE, TribeMember.ITEM_RESTING_DIRECTION, returnProgress);
-               }
-
-               return new Vector(26 + itemSize / 2, direction).convertToPoint();
+               // Return part of the animation
+               const returnProgress = (attackProgress - TribeMember.ATTACK_LUNGE_TIME) / (1 - TribeMember.ATTACK_LUNGE_TIME);
+               direction = lerp(TribeMember.ITEM_END_ROTATION, TribeMember.ITEM_RESTING_ROTATION, returnProgress);
             }
-         },
-         getRotation: () => {
-            if (latencyGameState.playerIsEating) {
-               // Eating animation
 
-               const secondsSinceLastEat = this.getSecondsSinceLastAction(this.lastEatTicks);
-               
-               let eatIntervalProgress = (secondsSinceLastEat % TribeMember.FOOD_EAT_INTERVAL) / TribeMember.FOOD_EAT_INTERVAL * 2;
-               if (eatIntervalProgress > 1) {
-                  eatIntervalProgress = 2 - eatIntervalProgress;
-               }
-               
-               const direction = lerp(0, -Math.PI/5, eatIntervalProgress);
-               return direction;
-            } else {
-               // Attack animation
-
-               const secondsSinceLastAttack = this.getSecondsSinceLastAction(this.lastAttackTicks);
-               const attackProgress = this.getAttackProgress(secondsSinceLastAttack);
-
-               let direction: number;
-               if (attackProgress < TribeMember.ATTACK_LUNGE_TIME) {
-                  // Lunge part of the animation
-                  direction = lerp(TribeMember.ITEM_RESTING_ROTATION, TribeMember.ITEM_END_ROTATION, attackProgress / TribeMember.ATTACK_LUNGE_TIME);
-               } else {
-                  // Return part of the animation
-                  const returnProgress = (attackProgress - TribeMember.ATTACK_LUNGE_TIME) / (1 - TribeMember.ATTACK_LUNGE_TIME);
-                  direction = lerp(TribeMember.ITEM_END_ROTATION, TribeMember.ITEM_RESTING_ROTATION, returnProgress);
-               }
-
-               return direction;
-            }
-         },
-         zIndex: 0
-      });
+            return direction;
+         }
+      };
       this.attachRenderPart(this.activeItemRenderPart);
       
       if (activeItem === null) {
@@ -282,12 +283,13 @@ abstract class TribeMember extends Entity {
    public updateArmourRenderPart(armour: ItemType | null): void {
       if (armour !== null) {
          if (this.armourRenderPart === null) {
-            this.armourRenderPart = new RenderPart({
-               textureSource: this.getArmourTextureSource(armour),
-               width: 72,
-               height: 72,
-               zIndex: 2
-            });
+            this.armourRenderPart = new RenderPart(
+               72,
+               72,
+               this.getArmourTextureSource(armour),
+               2,
+               0
+            );
             
             this.attachRenderPart(this.armourRenderPart);
          } else {

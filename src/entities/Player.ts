@@ -1,4 +1,4 @@
-import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitData, Point, SETTINGS, Vector, clampToBoardDimensions, TribeType, ItemType, EntityData } from "webgl-test-shared";
+import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitData, Point, SETTINGS, Vector, clampToBoardDimensions, TribeType, ItemType } from "webgl-test-shared";
 import Camera from "../Camera";
 import { setCraftingMenuAvailableRecipes, setCraftingMenuAvailableCraftingStations } from "../components/game/menus/CraftingMenu";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -119,14 +119,15 @@ class Player extends TribeMember {
    constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, activeItem: ItemType | null, foodEatingType: ItemType | -1, lastAttackTicks: number, lastEatTicks: number, username: string) {
       super(position, hitboxes, id, tribeID, tribeType, armour, activeItem, foodEatingType, lastAttackTicks, lastEatTicks);
 
-      this.attachRenderParts([
-         new RenderPart({
-            width: 64,
-            height: 64,
-            textureSource: super.getTextureSource(tribeType),
-            zIndex: 1
-         })
-      ]);
+      this.attachRenderPart(
+         new RenderPart(
+            64,
+            64,
+            super.getTextureSource(tribeType),
+            1,
+            0
+         )
+      );
 
       this.username = username;
    }

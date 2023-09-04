@@ -34,31 +34,39 @@ class Slime extends Entity {
 
       const sizeString = Slime.SIZE_STRINGS[size];
 
-      this.attachRenderParts([
-         // Body
-         new RenderPart({
-            width: spriteSize,
-            height: spriteSize,
-            textureSource: `entities/slime/slime-${sizeString}-body.png`,
-            zIndex: 2
-         }),
-         // Eye
-         new RenderPart({
-            width: spriteSize,
-            height: spriteSize,
-            textureSource: `entities/slime/slime-${sizeString}-eye.png`,
-            zIndex: 3,
-            inheritParentRotation: false,
-            getRotation: () => this.eyeRotation
-         }),
-         // Shading
-         new RenderPart({
-            width: spriteSize,
-            height: spriteSize,
-            textureSource: `entities/slime/slime-${sizeString}-shading.png`,
-            zIndex: 0
-         })
-      ]);
+      // Body
+      this.attachRenderPart(
+         new RenderPart(
+            spriteSize,
+            spriteSize,
+            `entities/slime/slime-${sizeString}-body.png`,
+            2,
+            0
+         )
+      );
+
+      // Eye
+      const eyeRenderPart = 
+      new RenderPart(
+         spriteSize,
+         spriteSize,
+         `entities/slime/slime-${sizeString}-eye.png`,
+         3,
+         this.eyeRotation
+      );
+      eyeRenderPart.inheritParentRotation = false;
+      this.attachRenderPart(eyeRenderPart);
+
+      // Shading
+      this.attachRenderPart(
+         new RenderPart(
+            spriteSize,
+            spriteSize,
+            `entities/slime/slime-${sizeString}-shading.png`,
+            0,
+            0
+         )
+      );
 
       this.size = size;
 
@@ -80,15 +88,14 @@ class Slime extends Entity {
 
       this.orbRotations.push(orbData.rotation);
 
-      const renderPart = new RenderPart({
-         width: orbSize,
-         height: orbSize,
-         textureSource: `entities/slime/slime-orb-${sizeString}.png`,
-         zIndex: 1,
-         offset: () => new Vector(offsetMagnitude, this.orbRotations[i]).convertToPoint(),
-         getRotation: () => orbData.rotation
-      });
-      
+      const renderPart = new RenderPart(
+         orbSize,
+         orbSize,
+         `entities/slime/slime-orb-${sizeString}.png`,
+         1,
+         orbData.rotation
+      );
+      renderPart.offset = new Vector(offsetMagnitude, this.orbRotations[i]).convertToPoint();
       this.attachRenderPart(renderPart);
    }
 

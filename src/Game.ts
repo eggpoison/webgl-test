@@ -295,6 +295,7 @@ abstract class Game {
          Player.instance.updateRenderPosition();
          Camera.setCameraPosition(Player.instance.renderPosition);
          Camera.updateVisibleChunkBounds();
+         Camera.updateVisibleRenderChunkBounds();
          Camera.updateVisiblePositionBounds();
       }
 

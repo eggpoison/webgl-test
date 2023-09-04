@@ -1,11 +1,9 @@
-import { EntityData, EntityType, Point, Vector } from "webgl-test-shared";
+import { EntityData, EntityType, Point, Vector, randFloat } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import TexturedParticle from "../particles/TexturedParticle";
-import { ParticleRenderLayer } from "../particles/Particle";
-import Board from "../Board";
+import { LeafParticleSize, createLeafParticle } from "../generic-particles";
 
 class BerryBush extends Entity {
    private static readonly RADIUS = 40;
@@ -26,45 +24,40 @@ class BerryBush extends Entity {
    constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, numBerries: number) {
       super(position, hitboxes, id);
 
-      this.renderPart = new RenderPart({
-         width: BerryBush.RADIUS * 2,
-         height: BerryBush.RADIUS * 2,
-         textureSource: this.getTextureSourceFromNumBerries(numBerries),
-         zIndex: 0
-      });
-      this.attachRenderParts([this.renderPart]);
+      this.renderPart = new RenderPart(
+         BerryBush.RADIUS * 2,
+         BerryBush.RADIUS * 2,
+         BerryBush.TEXTURE_SOURCES[numBerries],
+         0,
+         0
+      );
+      this.attachRenderPart(this.renderPart);
    }
 
    public updateFromData(entityData: EntityData<"berry_bush">): void {
       super.updateFromData(entityData);
 
       const numBerries = entityData.clientArgs[0];
-      this.renderPart.textureSource = this.getTextureSourceFromNumBerries(numBerries);
-   }
-
-   private getTextureSourceFromNumBerries(numBerries: number): string {
-      return BerryBush.TEXTURE_SOURCES[numBerries];
+      this.renderPart.textureSource = BerryBush.TEXTURE_SOURCES[numBerries];
    }
 
    protected onHit(): void {
       const spawnPosition = this.position.copy();
-
-      const offset = new Vector(BerryBush.RADIUS, 2 * Math.PI * Math.random()).convertToPoint();
+      const moveDirection = 2 * Math.PI * Math.random();
+      const offset = new Vector(BerryBush.RADIUS, moveDirection).convertToPoint();
       spawnPosition.add(offset);
-      
-      const lifetime = 2;
-      
-      const particle = new TexturedParticle(
-         null,
-         5 * 4,
-         3 * 4,
-         spawnPosition,
-         null,
-         null,
-         lifetime,
-         "particles/leaf-small.png"
-      );
-      Board.addTexturedParticle(particle, ParticleRenderLayer.low);
+
+      createLeafParticle(spawnPosition, moveDirection + randFloat(-1, 1), LeafParticleSize.small);
+   }
+
+   public onDie(): void {
+      for (let i = 0; i < 6; i++) {
+         const spawnPosition = this.position.copy();
+         const offset = new Vector(BerryBush.RADIUS * Math.random(), Math.random()).convertToPoint();
+         spawnPosition.add(offset);
+
+         createLeafParticle(spawnPosition, Math.random(), LeafParticleSize.small);
+      }
    }
 }
 
