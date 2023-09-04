@@ -2,7 +2,7 @@ import { GameObjectDebugData, Point, SETTINGS } from "webgl-test-shared";
 import Camera from "../Camera";
 import { createWebGLProgram, generateLine, generateThickCircleWireframeVertices, gl } from "../webgl";
 import GameObject from "../GameObject";
-import Game from "../Game";
+import Board from "../Board";
 
 const lineVertexShaderText = `#version 300 es
 precision mediump float;
@@ -95,7 +95,7 @@ const addLineVertices = (vertices: Array<number>, debugData: GameObjectDebugData
 export function renderLineDebugData(debugData: GameObjectDebugData): void {
    gl.useProgram(lineProgram);
 
-   const gameObject = Game.board.gameObjects[debugData.gameObjectID];
+   const gameObject = Board.gameObjects[debugData.gameObjectID];
 
    const vertices = new Array<number>();
    addCircleVertices(vertices, debugData, gameObject);
@@ -134,7 +134,7 @@ const addTileHighlightVertices = (vertices: Array<number>, debugData: GameObject
 }
 
 export function renderTriangleDebugData(debugData: GameObjectDebugData): void {
-   const gameObject = Game.board.gameObjects[debugData.gameObjectID];
+   const gameObject = Board.gameObjects[debugData.gameObjectID];
 
    const vertices = new Array<number>();
    

@@ -1,12 +1,14 @@
-import { EntityData, EntityType, Point } from "webgl-test-shared";
+import { EntityData, EntityType, Point, Vector } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
+import TexturedParticle from "../particles/TexturedParticle";
+import { ParticleRenderLayer } from "../particles/Particle";
+import Board from "../Board";
 
 class BerryBush extends Entity {
-   private static readonly WIDTH = 80;
-   private static readonly HEIGHT = 80;
+   private static readonly RADIUS = 40;
 
    public readonly type: EntityType = "berry_bush";
 
@@ -21,12 +23,12 @@ class BerryBush extends Entity {
 
    private readonly renderPart: RenderPart;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, numBerries: number) {
-      super(position, hitboxes, id, secondsSinceLastHit);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, numBerries: number) {
+      super(position, hitboxes, id);
 
       this.renderPart = new RenderPart({
-         width: BerryBush.WIDTH,
-         height: BerryBush.HEIGHT,
+         width: BerryBush.RADIUS * 2,
+         height: BerryBush.RADIUS * 2,
          textureSource: this.getTextureSourceFromNumBerries(numBerries),
          zIndex: 0
       });
@@ -42,6 +44,27 @@ class BerryBush extends Entity {
 
    private getTextureSourceFromNumBerries(numBerries: number): string {
       return BerryBush.TEXTURE_SOURCES[numBerries];
+   }
+
+   protected onHit(): void {
+      const spawnPosition = this.position.copy();
+
+      const offset = new Vector(BerryBush.RADIUS, 2 * Math.PI * Math.random()).convertToPoint();
+      spawnPosition.add(offset);
+      
+      const lifetime = 2;
+      
+      const particle = new TexturedParticle(
+         null,
+         5 * 4,
+         3 * 4,
+         spawnPosition,
+         null,
+         null,
+         lifetime,
+         "particles/leaf-small.png"
+      );
+      Board.addTexturedParticle(particle, ParticleRenderLayer.low);
    }
 }
 

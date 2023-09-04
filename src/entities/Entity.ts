@@ -1,30 +1,28 @@
-import { EntityData, EntityType, ParticleType, Point, ServerEntitySpecialData, StatusEffectData, StatusEffectType, Vector, lerp, randFloat } from "webgl-test-shared";
-import Game from "../Game";
+import { EntityData, EntityType, HitData, ParticleColour, SETTINGS, StatusEffectData, StatusEffectType, Vector, lerp, randFloat, randItem } from "webgl-test-shared";
 import GameObject from "../GameObject";
-import CircularHitbox from "../hitboxes/CircularHitbox";
-import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import Particle from "../Particle";
+import TexturedParticle from "../particles/TexturedParticle";
+import MonocolourParticle from "../particles/MonocolourParticle";
+import { ParticleRenderLayer } from "../particles/Particle";
+import Board from "../Board";
 
 abstract class Entity extends GameObject {
+   private static readonly BURNING_PARTICLE_COLOURS: ReadonlyArray<ParticleColour> = [
+      [255/255, 102/255, 0],
+      [255/255, 184/255, 61/255]
+   ];
+   
    public abstract readonly type: EntityType;
 
-   public secondsSinceLastHit: number | null;
+   public secondsSinceLastHit = 99999;
 
-   public special?: ServerEntitySpecialData;
+   public mobAIType?: string;
 
    public statusEffects = new Array<StatusEffectData>();
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null) {
-      super(position, hitboxes, id);
-      
-      this.secondsSinceLastHit = secondsSinceLastHit;
-
-      // Add entity to the ID record
-      Game.board.entities[this.id] = this;
-   }
-
    public tick(): void {
       super.tick();
+
+      this.secondsSinceLastHit += 1 / SETTINGS.TPS;
 
       const poisonStatusEffect = this.getStatusEffect("poisoned");
       if (poisonStatusEffect !== null) {
@@ -35,22 +33,25 @@ abstract class Entity extends GameObject {
 
             const lifetime = 2;
             
-            const particle = new Particle(
+            const particle = new TexturedParticle(
                null,
-               ParticleType.poisonDroplet,
+               12,
+               12,
                spawnPosition,
                null,
                null,
-               lifetime
+               lifetime,
+               "particles/poison-droplet.png"
             );
             particle.rotation = 2 * Math.PI * Math.random();
             particle.getOpacity = (age: number) => {
                return lerp(0.75, 0, age / lifetime);
             }
+            Board.addTexturedParticle(particle, ParticleRenderLayer.low);
          }
       }
 
-      const fireStatusEffect = this.getStatusEffect("fire");
+      const fireStatusEffect = this.getStatusEffect("burning");
       if (fireStatusEffect !== null) {
          // Embers
          if (fireStatusEffect.ticksElapsed % 3 === 0) {
@@ -64,13 +65,15 @@ abstract class Entity extends GameObject {
             const velocityOffset = new Vector(30, Math.PI);
             velocity.add(velocityOffset);
             
-            const particle = new Particle(
+            const particle = new MonocolourParticle(
                null,
-               Math.random() < 0.5 ? ParticleType.emberRed : ParticleType.emberOrange,
+               4,
+               4,
                spawnPosition,
                velocity,
                new Vector(randFloat(0, 80), 2 * Math.PI * Math.random()),
-               lifetime
+               lifetime,
+               randItem(Entity.BURNING_PARTICLE_COLOURS)
             );
             particle.drag = 60;
             particle.rotation = 2 * Math.PI * Math.random();
@@ -78,6 +81,7 @@ abstract class Entity extends GameObject {
                const opacity = 1 - age / lifetime;
                return Math.pow(opacity, 0.3);
             }
+            Board.addMonocolourParticle(particle, ParticleRenderLayer.high);
          }
       }
    }
@@ -100,17 +104,24 @@ abstract class Entity extends GameObject {
       return null;
    }
 
-   public remove(): void {
-      delete Game.board.entities[this.id];
-   }
-
    public updateFromData(entityData: EntityData<EntityType>): void {
       super.updateFromData(entityData);
 
-      this.secondsSinceLastHit = entityData.secondsSinceLastHit;
       this.statusEffects = entityData.statusEffects;
-      this.special = entityData.special;
+      this.mobAIType = entityData.mobAIType;
    }
+
+   protected onHit?(hitData: HitData): void;
+
+   public registerHit(hitData: HitData): void {
+      if (typeof this.onHit !== "undefined") {
+         this.onHit(hitData);
+      }
+
+      this.secondsSinceLastHit = 0;
+   }
+
+   public onDie?(): void;
 }
 
 export default Entity;

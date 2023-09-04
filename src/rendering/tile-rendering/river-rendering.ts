@@ -1,9 +1,8 @@
 import { Point, RIVER_STEPPING_STONE_SIZES, RiverSteppingStoneSize, SETTINGS, Vector, WaterRockSize, lerp, randFloat, rotatePoint } from "webgl-test-shared";
 import { createWebGLProgram, gl, halfWindowHeight, halfWindowWidth } from "../../webgl";
-import Game from "../../Game";
 import { getTexture } from "../../textures";
 import Camera from "../../Camera";
-import { RiverSteppingStone } from "../../Board";
+import Board, { RiverSteppingStone } from "../../Board";
 import { RENDER_CHUNK_SIZE, RenderChunkRiverInfo, getRenderChunkRiverInfo } from "./render-chunks";
 import { Tile } from "../../Tile";
 
@@ -635,8 +634,8 @@ const calculateTransitionVertices = (waterTiles: ReadonlyArray<Tile>): Array<num
       for (const offset of NEIGHBOURING_TILE_OFFSETS) {
          const tileX = tile.x + offset[0];
          const tileY = tile.y + offset[1];
-         if (Game.board.tileIsInBoard(tileX, tileY)) {
-            const tile = Game.board.getTile(tileX, tileY);
+         if (Board.tileIsInBoard(tileX, tileY)) {
+            const tile = Board.getTile(tileX, tileY);
             if (tile.type !== "water") {
                const tileIndex = tileY * SETTINGS.BOARD_DIMENSIONS + tileX;
                edgeTileIndexes.add(tileIndex);
@@ -651,7 +650,7 @@ const calculateTransitionVertices = (waterTiles: ReadonlyArray<Tile>): Array<num
       const tileX = tileIndex % SETTINGS.BOARD_DIMENSIONS;
       const tileY = Math.floor(tileIndex / SETTINGS.BOARD_DIMENSIONS);
 
-      const tile = Game.board.getTile(tileX, tileY);
+      const tile = Board.getTile(tileX, tileY);
 
       let x1 = tile.x * SETTINGS.TILE_SIZE;
       let x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
@@ -690,7 +689,7 @@ const calculateRockVertices = (renderChunkX: number, renderChunkY: number): Arra
    const maxChunkY = Math.floor((renderChunkY + 1) * RENDER_CHUNK_SIZE / SETTINGS.CHUNK_SIZE) - 1;
    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
-         const chunk = Game.board.getChunk(chunkX, chunkY);
+         const chunk = Board.getChunk(chunkX, chunkY);
          for (const waterRock of chunk.waterRocks) {
             const size = WATER_ROCK_SIZES[waterRock.size];
             
@@ -782,7 +781,7 @@ const calculateFoamVertices = (steppingStones: ReadonlySet<RiverSteppingStone>):
 
       const tileX = Math.floor(steppingStone.position.x / SETTINGS.TILE_SIZE);
       const tileY = Math.floor(steppingStone.position.y / SETTINGS.TILE_SIZE);
-      const flowDirection = Game.board.getRiverFlowDirection(tileX, tileY);
+      const flowDirection = Board.getRiverFlowDirection(tileX, tileY);
 
       const offset = new Vector(FOAM_OFFSET, flowDirection).convertToPoint();
       topLeft.x -= offset.x;
@@ -1019,7 +1018,7 @@ const getWaterChunkWaterTiles = (renderChunkX: number, renderChunkY: number): Ar
    const tiles = new Array<Tile>();
    for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
       for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
-         const tile = Game.board.getTile(tileX, tileY);
+         const tile = Board.getTile(tileX, tileY);
          if (tile.type === "water") {
             tiles.push(tile);
          }
@@ -1105,11 +1104,11 @@ const calculateDistanceToLand = (tileX: number, tileY: number): number => {
    for (const offset of ADJACENT_TILE_OFFSETS) {
       const x = tileX + offset[0];
       const y = tileY + offset[1];
-      if (!Game.board.tileIsInBoard(x, y)) {
+      if (!Board.tileIsInBoard(x, y)) {
          continue;
       }
 
-      const tile = Game.board.getTile(x, y);
+      const tile = Board.getTile(x, y);
       if (tile.type !== "water") {
          return 0;
       }
@@ -1123,11 +1122,11 @@ const calculateDistanceToWater = (tileX: number, tileY: number): number => {
    for (const offset of ADJACENT_TILE_OFFSETS) {
       const x = tileX + offset[0];
       const y = tileY + offset[1];
-      if (!Game.board.tileIsInBoard(x, y)) {
+      if (!Board.tileIsInBoard(x, y)) {
          continue;
       }
 
-      const tile = Game.board.getTile(x, y);
+      const tile = Board.getTile(x, y);
       if (tile.type === "water") {
          return 0;
       }
@@ -1140,7 +1139,7 @@ const calculateNoiseVertices = (waterTiles: ReadonlyArray<Tile>): ReadonlyArray<
    const vertices = new Array<number>();
    
    for (const tile of waterTiles) {
-      const flowDirection = Game.board.getRiverFlowDirection(tile.x, tile.y);
+      const flowDirection = Board.getRiverFlowDirection(tile.x, tile.y);
       
       const x1 = (tile.x - 0.5) * SETTINGS.TILE_SIZE;
       const x2 = (tile.x + 1.5) * SETTINGS.TILE_SIZE;
@@ -1167,11 +1166,11 @@ const calculateNoiseVertices = (waterTiles: ReadonlyArray<Tile>): ReadonlyArray<
 }
 
 const waterEdgeDist = (tileX: number, tileY: number): number => {
-   if (!Game.board.tileIsInBoard(tileX, tileY)) {
+   if (!Board.tileIsInBoard(tileX, tileY)) {
       return 1;
    }
 
-   const tile = Game.board.getTile(tileX, tileY);
+   const tile = Board.getTile(tileX, tileY);
    if (tile.type === "water") {
       return 0;
    }
@@ -1183,7 +1182,7 @@ const calculateRenderChunkSteppingStones = (renderChunkX: number, renderChunkY: 
 
    for (let chunkX = renderChunkX * 2; chunkX <= renderChunkX * 2 + 1; chunkX++) {
       for (let chunkY = renderChunkY * 2; chunkY <= renderChunkY * 2 + 1; chunkY++) {
-         const chunk = Game.board.getChunk(chunkX, chunkY);
+         const chunk = Board.getChunk(chunkX, chunkY);
          for (const riverSteppingStone of chunk.riverSteppingStones) {
             steppingStones.add(riverSteppingStone);
          }
@@ -1274,6 +1273,7 @@ const calculateVisibleRenderChunks = (): ReadonlyArray<RenderChunkRiverInfo> => 
 }
 
 export function renderRivers(): void {
+   const time = performance.now();
    const visibleRenderChunks = calculateVisibleRenderChunks();
 
    // 
@@ -1336,7 +1336,7 @@ export function renderRivers(): void {
 
    gl.useProgram(highlightsProgram);
       
-   const highlightsFadeProgress = (Game.lastTime / 3000) % 3;
+   const highlightsFadeProgress = (time / 3000) % 3;
 
    const texture1 = getTexture("tiles/river-bed-highlights-1.png");
    gl.activeTexture(gl.TEXTURE0);
@@ -1370,7 +1370,7 @@ export function renderRivers(): void {
    
    gl.useProgram(noiseProgram);
       
-   const noiseAnimationOffset = Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000;
+   const noiseAnimationOffset = time * WATER_VISUAL_FLOW_SPEED / 1000;
                
    const noiseTexture = getTexture("tiles/water-noise.png");
    gl.activeTexture(gl.TEXTURE0);
@@ -1430,7 +1430,7 @@ export function renderRivers(): void {
    }
    
 
-   const foamTextureOffset = Game.lastTime * WATER_VISUAL_FLOW_SPEED / 1000;
+   const foamTextureOffset = time * WATER_VISUAL_FLOW_SPEED / 1000;
    
    for (const renderChunkRiverInfo of visibleRenderChunks) {
       const vao = renderChunkRiverInfo.foamVAO;

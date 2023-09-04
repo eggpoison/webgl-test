@@ -1,7 +1,8 @@
 import { FoodItemInfo, ItemType, SETTINGS } from "webgl-test-shared";
 import Player from "../entities/Player";
 import Item from "./Item";
-import Game from "../Game";
+import Board from "../Board";
+import { definiteGameState, latencyGameState } from "../game-state/game-states";
 
 class FoodItem extends Item implements FoodItemInfo {
    public readonly stackSize: number;
@@ -23,7 +24,7 @@ class FoodItem extends Item implements FoodItemInfo {
    public tick(): void {
       super.tick();
       
-      if (this.isActive() && Game.latencyGameState.playerIsEating) {
+      if (this.isActive() && latencyGameState.playerIsEating) {
          if (this.canEat()) {
             this.eatTimer -= 1 / SETTINGS.TPS;
    
@@ -31,14 +32,14 @@ class FoodItem extends Item implements FoodItemInfo {
                this.eatTimer = this.eatTime;
                this.sendUsePacket();
    
-               // If all the food has been eaten, stop the player from eating
+               // If all the food has been eaten, stop eating
                if (this.count === 1) {
-                  Game.latencyGameState.playerIsEating = false;
+                  this.stopEating();
                }
             }
          } else {
             // If the player can no longer eat food without wasting it, stop eating
-            Game.latencyGameState.playerIsEating = false;
+            this.stopEating();
          }
       }
    }
@@ -47,27 +48,35 @@ class FoodItem extends Item implements FoodItemInfo {
     * Calculates whether or not food can be eaten without wasting it.
     */
    private canEat(): boolean {
-      return Game.definiteGameState.playerHealth < Player.MAX_HEALTH;
+      return definiteGameState.playerHealth < Player.MAX_HEALTH;
    }
 
    public onRightMouseButtonDown(): void {
       if (this.canEat()) {
          this.eatTimer = this.eatTime;
          
-         Game.latencyGameState.playerIsEating = true;
+         this.startEating();
 
-         if (Player.instance !== null) {
-            Player.instance.lastEatTicks = Game.ticks;
-         }
+         Player.instance!.lastEatTicks = Board.ticks;
       }
    }
 
    public onRightMouseButtonUp(): void {
-      Game.latencyGameState.playerIsEating = false;
+      this.stopEating();
    }
 
    protected onDeselect(): void {
-      Game.latencyGameState.playerIsEating = false;
+      this.stopEating();
+   }
+
+   private startEating(): void {
+      latencyGameState.playerIsEating = true;
+      Player.instance!.foodEatingType = this.type;
+   }
+
+   private stopEating(): void {
+      latencyGameState.playerIsEating = false;
+      Player.instance!.foodEatingType = -1;
    }
 }
 

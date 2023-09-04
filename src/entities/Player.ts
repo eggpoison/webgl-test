@@ -1,7 +1,6 @@
-import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitData, Point, SETTINGS, Vector, clampToBoardDimensions, TribeType, ItemType } from "webgl-test-shared";
+import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitData, Point, SETTINGS, Vector, clampToBoardDimensions, TribeType, ItemType, EntityData } from "webgl-test-shared";
 import Camera from "../Camera";
 import { setCraftingMenuAvailableRecipes, setCraftingMenuAvailableCraftingStations } from "../components/game/menus/CraftingMenu";
-import Game from "../Game";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import Item, { ItemSlot } from "../items/Item";
 import RenderPart from "../render-parts/RenderPart";
@@ -11,6 +10,8 @@ import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import DroppedItem from "../items/DroppedItem";
 import { Tile } from "../Tile";
 import TribeMember from "./TribeMember";
+import Board from "../Board";
+import { definiteGameState, latencyGameState } from "../game-state/game-states";
 
 /** Maximum distance from a crafting station which will allow its recipes to be crafted. */
 const MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION = 250;
@@ -59,7 +60,7 @@ export function updateAvailableCraftingRecipes(): void {
 
    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
-         const chunk = Game.board.getChunk(chunkX, chunkY);
+         const chunk = Board.getChunk(chunkX, chunkY);
          for (const entity of chunk.getEntities()) {
             const distance = Player.instance!.position.calculateDistanceBetween(entity.position);
             if (distance <= MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION) {
@@ -90,19 +91,10 @@ export function updateAvailableCraftingRecipes(): void {
 }
 
 export function getPlayerSelectedItem(): ItemSlot {
-   if (Player.instance === null || Game.definiteGameState.hotbar === null) return null;
+   if (Player.instance === null || definiteGameState.hotbar === null) return null;
 
-   const item: Item | undefined = Game.definiteGameState.hotbar.itemSlots[Game.latencyGameState.selectedHotbarItemSlot];
+   const item: Item | undefined = definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot];
    return item || null;
-}
-
-/** As the player time since hit is not updated from  */
-export function tickPlayerInstanceTimeSinceHit(): void {
-   if (Player.instance === null) return;
-
-   if (Player.instance.secondsSinceLastHit !== null) {
-      Player.instance.secondsSinceLastHit += 1 / SETTINGS.TPS;
-   }
 }
 
 enum TileCollisionAxis {
@@ -124,8 +116,8 @@ class Player extends TribeMember {
    
    public readonly username: string;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, activeItem: ItemType | null, lastAttackTicks: number, lastEatTicks: number, username: string) {
-      super(position, hitboxes, id, secondsSinceLastHit, tribeID, tribeType, armour, activeItem, lastAttackTicks, lastEatTicks);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, activeItem: ItemType | null, foodEatingType: ItemType | -1, lastAttackTicks: number, lastEatTicks: number, username: string) {
+      super(position, hitboxes, id, tribeID, tribeType, armour, activeItem, foodEatingType, lastAttackTicks, lastEatTicks);
 
       this.attachRenderParts([
          new RenderPart({
@@ -148,8 +140,8 @@ class Player extends TribeMember {
 
       Camera.position = player.position;
 
-      Game.definiteGameState.setPlayerHealth(Player.MAX_HEALTH);
-      Game.definiteGameState.hotbar = {
+      definiteGameState.setPlayerHealth(Player.MAX_HEALTH);
+      definiteGameState.hotbar = {
          itemSlots: {},
          width: SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE,
          height: 1,
@@ -157,27 +149,25 @@ class Player extends TribeMember {
       };
    }
 
-   /** Registers a server-side hit for the client */
-   public static registerHit(hitData: HitData) {
-      if (this.instance === null) return;
-
-      // Add force
-      if (hitData.hitDirection !== null) {
-         if (this.instance.velocity !== null) {
-            this.instance.velocity.magnitude *= 0.5;
+   protected onHit(hitData: HitData): void {
+      super.onHit(hitData);
+      
+      // Knockback
+      if (this === Player.instance && hitData.angleFromAttacker !== null) {
+         if (this.velocity !== null) {
+            this.velocity.magnitude *= 0.5;
          }
 
-         const pushForce = new Vector(hitData.knockback, hitData.hitDirection);
-         if (this.instance.velocity !== null) {
-            this.instance.velocity.add(pushForce);
+         const pushForce = new Vector(hitData.knockback, hitData.angleFromAttacker);
+         if (this.velocity !== null) {
+            this.velocity.add(pushForce);
          } else {
-            this.instance.velocity = pushForce;
+            this.velocity = pushForce;
          }
       }
    }
 
    public static resolveCollisions(): void {
-      // console.log(Player.instance?.position);
       // this.resolveWallTileCollisions();
       this.resolveWallCollisions();
       this.resolveGameObjectCollisions();
@@ -251,7 +241,7 @@ class Player extends TribeMember {
 
       for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
          for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
-            const tile = Game.board.getTile(tileX, tileY);
+            const tile = Board.getTile(tileX, tileY);
             if (tile.isWall) {
                const collisionAxis = this.checkForTileCollision(tile);
                switch (collisionAxis) {

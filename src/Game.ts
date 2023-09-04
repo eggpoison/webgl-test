@@ -1,5 +1,5 @@
 import Board from "./Board";
-import Player, { tickPlayerInstanceTimeSinceHit, updateAvailableCraftingRecipes, updatePlayerRotation } from "./entities/Player";
+import Player, { updateAvailableCraftingRecipes, updatePlayerRotation } from "./entities/Player";
 import { isDev } from "./utils";
 import { renderPlayerNames, createTextCanvasContext } from "./text-canvas";
 import Camera from "./Camera";
@@ -17,8 +17,6 @@ import Item from "./items/Item";
 import { clearPressedKeys } from "./keyboard-input";
 import { createHitboxShaders, renderEntityHitboxes } from "./rendering/hitbox-rendering";
 import { updateInteractInventory, updatePlayerMovement } from "./player-input";
-import DefiniteGameState from "./game-state/definite-game-state";
-import LatencyGameState from "./game-state/latency-game-state";
 import { clearServerTicks, updateDebugScreenCurrentTime, updateDebugScreenFPS, updateDebugScreenRenderTime } from "./components/game/dev/GameInfoDisplay";
 import { createWorldBorderShaders, renderWorldBorder } from "./rendering/world-border-rendering";
 import { createSolidTileShaders, renderSolidTiles } from "./rendering/tile-rendering/solid-tile-rendering";
@@ -29,7 +27,7 @@ import { setFrameProgress } from "./GameObject";
 import { createDebugDataShaders, renderLineDebugData, renderTriangleDebugData } from "./rendering/debug-data-rendering";
 import { createAmbientOcclusionShaders, recalculateAmbientOcclusion, renderAmbientOcclusion } from "./rendering/ambient-occlusion-rendering";
 import { createWallBorderShaders, renderWallBorders } from "./rendering/wall-border-rendering";
-import { createParticleShaders, renderTexturedParticles } from "./rendering/particle-rendering";
+import { createParticleShaders, renderMonocolourParticles, renderTexturedParticles } from "./rendering/particle-rendering";
 import Tribe from "./Tribe";
 import OPTIONS from "./options";
 import { createRenderChunks } from "./rendering/tile-rendering/render-chunks";
@@ -37,6 +35,7 @@ import { generateFoodEatingParticleColours } from "./food-eating-particles";
 import { registerFrame, updateFrameGraph } from "./components/game/dev/FrameGraph";
 import { createNightShaders, renderNight } from "./rendering/night-rendering";
 import { createPlaceableItemProgram, renderGhostPlaceableItem } from "./rendering/placeable-item-rendering";
+import { definiteGameState } from "./game-state/game-states";
 
 let listenersHaveBeenCreated = false;
 
@@ -63,12 +62,9 @@ const createEventListeners = (): void => {
 let lastRenderTime = Math.floor(new Date().getTime() / 1000);
 
 abstract class Game {
-   public static queuedPackets = new Array<GameDataPacket>();
+   private static lastTime = 0;
    
-   public static ticks: number;
-   private static _time: number;
-
-   public static board: Board;
+   public static queuedPackets = new Array<GameDataPacket>();
    
    public static isRunning: boolean = false;
    private static isPaused: boolean = false;
@@ -78,35 +74,14 @@ abstract class Game {
 
    public static hasInitialised = false;
 
-   public static lastTime = 0;
    /** Amount of time the game is through the current frame */
    private static lag = 0;
 
    public static cursorPosition: Point | null;
 
-   public static definiteGameState = new DefiniteGameState();
-   public static latencyGameState = new LatencyGameState();
-
    private static gameObjectDebugData: GameObjectDebugData | null = null;
 
    public static tribe: Tribe | null = null;
-
-   public static get time(): number {
-      return this._time;
-   }
-
-   public static set time(time: number) {
-      this._time = time;
-      updateDebugScreenCurrentTime(time);
-   }
-
-   public static tickIntervalHasPassed(intervalSeconds: number): boolean {
-      const ticksPerInterval = intervalSeconds * SETTINGS.TPS;
-      
-      const previousCheck = (this.ticks - 1) / ticksPerInterval;
-      const check = this.ticks / ticksPerInterval;
-      return Math.floor(previousCheck) !== Math.floor(check);
-   }
 
    public static setGameObjectDebugData(gameObjectDebugData: GameObjectDebugData | undefined): void {
       if (typeof gameObjectDebugData === "undefined") {
@@ -208,11 +183,59 @@ abstract class Game {
       }
    }
 
+   public static main(currentTime: number): void {
+      if (this.isSynced) {
+         const deltaTime = currentTime - Game.lastTime;
+         Game.lastTime = currentTime;
+      
+         // updateFrameCounter(deltaTime / 1000);
+
+         this.lag += deltaTime;
+         while (this.lag >= 1000 / SETTINGS.TPS) {
+            if (this.queuedPackets.length > 0) {
+               // Done before so that server data can override particles
+               Board.updateParticles();
+               
+               // If there are multiple packets in the queue, register the first one first.
+               Client.unloadGameDataPacket(this.queuedPackets[0]);
+               this.queuedPackets.splice(0, 1);
+
+               Board.tickGameObjects();
+               this.update();
+               this.updatePlayer();
+            } else {
+               console.log("No packets!");
+               
+               Board.updateParticles();
+               Board.updateGameObjects();
+               this.update();
+            }
+            Client.sendPlayerDataPacket();
+            this.lag -= 1000 / SETTINGS.TPS;
+         }
+
+         const renderStartTime = performance.now();
+
+         const frameProgress = this.lag / 1000 * SETTINGS.TPS;
+         this.render(frameProgress);
+
+         const renderEndTime = performance.now();
+
+         const renderTime = renderEndTime - renderStartTime;
+         registerFrame(renderStartTime, renderEndTime);
+         updateFrameGraph();
+         updateDebugScreenRenderTime(renderTime);
+      }
+
+      if (this.isRunning) {
+         requestAnimationFrame(time => this.main(time));
+      }
+   }
+
    private static update(): void {
       updateSpamFilter();
 
       updatePlayerMovement();
-      tickPlayerInstanceTimeSinceHit();
       updateAvailableCraftingRecipes();
 
       this.tickPlayerItems();
@@ -232,11 +255,11 @@ abstract class Game {
    }
 
    private static tickPlayerItems(): void {
-      if (Game.definiteGameState.hotbar === null) {
+      if (definiteGameState.hotbar === null) {
          return;
       }
       
-      for (const item of Object.values(Game.definiteGameState.hotbar.itemSlots)) {
+      for (const item of Object.values(definiteGameState.hotbar.itemSlots)) {
          if (typeof item.tick !== "undefined") {
             item.tick();
          }
@@ -281,7 +304,7 @@ abstract class Game {
       renderRivers();
       // renderAmbientOcclusion();
       // renderWallBorders();
-      if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Game.board.gameObjects.hasOwnProperty(this.gameObjectDebugData.gameObjectID)) {
+      if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Board.gameObjects.hasOwnProperty(this.gameObjectDebugData.gameObjectID)) {
          renderTriangleDebugData(this.gameObjectDebugData);
       }
       renderWorldBorder();
@@ -289,18 +312,20 @@ abstract class Game {
          renderChunkBorders();
       }
 
-      renderTexturedParticles(Object.values(this.board.lowParticlesTextured));
+      renderMonocolourParticles(Object.values(Board.lowParticlesMonocolour));
+      renderTexturedParticles(Object.values(Board.lowParticlesTextured));
 
-      renderGameObjects(Object.values(this.board.droppedItems));
-      renderGameObjects(Object.values(this.board.entities));
-      renderGameObjects(Object.values(this.board.projectiles));
-
-      renderTexturedParticles(Object.values(this.board.highParticlesTextured));
+      renderGameObjects(Object.values(Board.droppedItems));
+      renderGameObjects(Object.values(Board.entities));
+      renderGameObjects(Object.values(Board.projectiles));
+      
+      renderMonocolourParticles(Object.values(Board.highParticlesMonocolour));
+      renderTexturedParticles(Object.values(Board.highParticlesTextured));
 
       if (nerdVisionIsVisible() && OPTIONS.showHitboxes) {
          renderEntityHitboxes();
       }
-      if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Game.board.gameObjects.hasOwnProperty(this.gameObjectDebugData.gameObjectID)) {
+      if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Board.gameObjects.hasOwnProperty(this.gameObjectDebugData.gameObjectID)) {
          renderLineDebugData(this.gameObjectDebugData);
       }
 
@@ -321,56 +346,6 @@ abstract class Game {
       updateInteractInventory();
 
       updateDebugScreenFPS();
-   }
-
-   public static main(currentTime: number): void {
-      if (this.isSynced) {
-         const deltaTime = currentTime - this.lastTime;
-         this.lastTime = currentTime;
-      
-         // updateFrameCounter(deltaTime / 1000);
-
-         this.lag += deltaTime;
-         while (this.lag >= 1000 / SETTINGS.TPS) {
-            if (this.queuedPackets.length > 0) {
-               // Done before so that server data can override particles
-               this.board.updateParticles();
-               
-               // If there are multiple packets in the queue, register the first one first.
-               Client.unloadGameDataPacket(this.queuedPackets[0]);
-               this.queuedPackets.splice(0, 1);
-
-               this.board.tickGameObjects();
-               this.update();
-               this.updatePlayer();
-            } else {
-               console.log("No packets!");
-               
-               this.board.updateParticles();
-               this.board.updateGameObjects();
-               this.update();
-            }
-            Client.sendPlayerDataPacket();
-            this.lag -= 1000 / SETTINGS.TPS;
-         }
-
-         const renderStartTime = performance.now();
-
-         const frameProgress = this.lag / 1000 * SETTINGS.TPS;
-         this.render(frameProgress);
-         // console.log("render. frame progress: " + frameProgress);
-
-         const renderEndTime = performance.now();
-
-         const renderTime = renderEndTime - renderStartTime;
-         registerFrame(renderStartTime, renderEndTime);
-         updateFrameGraph();
-         updateDebugScreenRenderTime(renderTime);
-      }
-
-      if (this.isRunning) {
-         requestAnimationFrame(time => this.main(time));
-      }
    }
 }
 

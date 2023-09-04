@@ -1,11 +1,15 @@
-import { GameObjectData, ParticleType, Point, RIVER_STEPPING_STONE_SIZES, SETTINGS, TILE_TYPE_INFO_RECORD, Vector, lerp, randFloat, randSign } from "webgl-test-shared";
+import { GameObjectData, Point, RIVER_STEPPING_STONE_SIZES, SETTINGS, TILE_TYPE_INFO_RECORD, Vector, lerp, randFloat, randSign } from "webgl-test-shared";
 import RenderPart, { RenderObject } from "./render-parts/RenderPart";
 import Chunk from "./Chunk";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
-import Game from "./Game";
 import { Tile } from "./Tile";
 import CircularHitbox from "./hitboxes/CircularHitbox";
-import Particle from "./Particle";
+import MonocolourParticle, { interpolateColours } from "./particles/MonocolourParticle";
+import { ParticleRenderLayer } from "./particles/Particle";
+import Board from "./Board";
+
+const WATER_DROPLET_COLOUR_LOW = [8/255, 197/255, 255/255] as const;
+const WATER_DROPLET_COLOUR_HIGH = [94/255, 231/255, 255/255] as const;
 
 let frameProgress: number;
 export function setFrameProgress(newFrameProgress: number): void {
@@ -66,29 +70,30 @@ abstract class GameObject extends RenderObject {
 
       // Calculate initial containing chunks
       this.recalculateContainingChunks();
-      
-      Game.board.gameObjects[this.id] = this;
    }
 
    protected overrideTileMoveSpeedMultiplier?(): number | null;
 
    public tick(): void {
-      if (this.isInRiver(this.findCurrentTile()) && Game.tickIntervalHasPassed(0.05)) {
+      if (this.isInRiver(this.findCurrentTile()) && Board.tickIntervalHasPassed(0.05)) {
          const lifetime = 1;
             
-         const particle = new Particle(
+         const particle = new MonocolourParticle(
             null,
-            ParticleType.waterDroplet,
+            6,
+            6,
             this.position.copy(),
             new Vector(randFloat(40, 60), 2 * Math.PI * Math.random()),
             null,
-            lifetime
+            lifetime,
+            interpolateColours(WATER_DROPLET_COLOUR_LOW, WATER_DROPLET_COLOUR_HIGH, Math.random())
          );
          particle.rotation = 2 * Math.PI * Math.random();
          particle.angularVelocity = randFloat(2, 3) * randSign();
          particle.getOpacity = (age: number): number => {
             return lerp(0.75, 0, age / lifetime);
          };
+         Board.addMonocolourParticle(particle, ParticleRenderLayer.low)
       }
    };
 
@@ -185,7 +190,7 @@ abstract class GameObject extends RenderObject {
 
       // If the game object is in a river, push them in the flow direction of the river
       if (this.isInRiver(tile)) {
-         const flowDirection = Game.board.getRiverFlowDirection(tile.x, tile.y);
+         const flowDirection = Board.getRiverFlowDirection(tile.x, tile.y);
          const pushVector = new Vector(240 / SETTINGS.TPS, flowDirection);
          if (this.velocity === null) {
             this.velocity = pushVector;
@@ -218,13 +223,7 @@ abstract class GameObject extends RenderObject {
    public findCurrentTile(): Tile {
       const tileX = Math.floor(this.position.x / SETTINGS.TILE_SIZE);
       const tileY = Math.floor(this.position.y / SETTINGS.TILE_SIZE);
-      return Game.board.getTile(tileX, tileY);
-   }
-
-   public getChunk(): Chunk {
-      const x = Math.floor(this.position.x / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE);
-      const y = Math.floor(this.position.y / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE);
-      return Game.board.getChunk(x, y);
+      return Board.getTile(tileX, tileY);
    }
 
    /** Recalculates which chunks the game object is contained in */
@@ -240,7 +239,7 @@ abstract class GameObject extends RenderObject {
          
          for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
             for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
-               const chunk = Game.board.getChunk(chunkX, chunkY);
+               const chunk = Board.getChunk(chunkX, chunkY);
                containingChunks.add(chunk);
             }
          }
@@ -319,8 +318,6 @@ abstract class GameObject extends RenderObject {
       // Recalculate the game object's containing chunks to account for the new position
       this.recalculateContainingChunks();
    }
-
-   public remove?(): void;
 }
 
 export default GameObject;

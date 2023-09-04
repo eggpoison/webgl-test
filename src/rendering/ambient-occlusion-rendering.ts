@@ -1,9 +1,9 @@
 import { SETTINGS } from "webgl-test-shared";
-import Game from "../Game"
 import { Tile } from "../Tile";
 import Camera from "../Camera";
 import { createWebGLProgram, gl } from "../webgl";
 import { getTexture } from "../textures";
+import Board from "../Board";
 
 /*
 Key:
@@ -168,8 +168,8 @@ const getTileAmbientOcclusionInfo = (tileX: number, tileY: number): TileAmbientO
    let key = "";
    for (let y = tileY + 1; y >= tileY - 1; y--) {
       for (let x = tileX - 1; x <= tileX + 1; x++) {
-         if (Game.board.tileIsInBoard(x, y)) {
-            const tile = Game.board.getTile(x, y);
+         if (Board.tileIsInBoard(x, y)) {
+            const tile = Board.getTile(x, y);
             const symbol = getTileSymbol(tile);
             key += symbol;
          } else {
@@ -182,7 +182,7 @@ const getTileAmbientOcclusionInfo = (tileX: number, tileY: number): TileAmbientO
       // Normal
       const type = getKeyCombination(key);
       if (type !== "") return {
-         tile: Game.board.getTile(tileX, tileY),
+         tile: Board.getTile(tileX, tileY),
          textureSource: type,
          numRotations: 0,
          isXFlipped: false,
@@ -192,7 +192,7 @@ const getTileAmbientOcclusionInfo = (tileX: number, tileY: number): TileAmbientO
       // x flipped
       const type = getKeyCombination(flipKeyX(key));
       if (type !== "") return {
-         tile: Game.board.getTile(tileX, tileY),
+         tile: Board.getTile(tileX, tileY),
          textureSource: type,
          numRotations: 0,
          isXFlipped: true,
@@ -202,7 +202,7 @@ const getTileAmbientOcclusionInfo = (tileX: number, tileY: number): TileAmbientO
       // 1 Rotation
       const type = getKeyCombination(rotateKey(key));
       if (type !== "") return {
-         tile: Game.board.getTile(tileX, tileY),
+         tile: Board.getTile(tileX, tileY),
          textureSource: type,
          numRotations: 1,
          isXFlipped: false,
@@ -212,7 +212,7 @@ const getTileAmbientOcclusionInfo = (tileX: number, tileY: number): TileAmbientO
       // 1 Rotation, x flip
       const type = getKeyCombination(flipKeyX(rotateKey(key)));
       if (type !== "") return {
-         tile: Game.board.getTile(tileX, tileY),
+         tile: Board.getTile(tileX, tileY),
          textureSource: type,
          numRotations: 1,
          isXFlipped: true
@@ -222,7 +222,7 @@ const getTileAmbientOcclusionInfo = (tileX: number, tileY: number): TileAmbientO
       // 2 Rotations
       const type = getKeyCombination(rotateKey(rotateKey(key)));
       if (type !== "") return {
-         tile: Game.board.getTile(tileX, tileY),
+         tile: Board.getTile(tileX, tileY),
          textureSource: type,
          numRotations: 2,
          isXFlipped: false,
@@ -232,7 +232,7 @@ const getTileAmbientOcclusionInfo = (tileX: number, tileY: number): TileAmbientO
       // 2 Rotations, x flip
       const type = getKeyCombination(flipKeyX(rotateKey(rotateKey(key))));
       if (type !== "") return {
-         tile: Game.board.getTile(tileX, tileY),
+         tile: Board.getTile(tileX, tileY),
          textureSource: type,
          numRotations: 2,
          isXFlipped: true
@@ -242,7 +242,7 @@ const getTileAmbientOcclusionInfo = (tileX: number, tileY: number): TileAmbientO
       // 3 Rotations
       const type = getKeyCombination(rotateKey(rotateKey(rotateKey(key))));
       if (type !== "") return {
-         tile: Game.board.getTile(tileX, tileY),
+         tile: Board.getTile(tileX, tileY),
          textureSource: type,
          numRotations: 3,
          isXFlipped: false,
@@ -252,7 +252,7 @@ const getTileAmbientOcclusionInfo = (tileX: number, tileY: number): TileAmbientO
       // 3 Rotations, x flip
       const type = getKeyCombination(flipKeyX(rotateKey(rotateKey(rotateKey(key)))));
       if (type !== "") return {
-         tile: Game.board.getTile(tileX, tileY),
+         tile: Board.getTile(tileX, tileY),
          textureSource: type,
          numRotations: 3,
          isXFlipped: true
@@ -298,7 +298,7 @@ const getVisibleTiles = (): ReadonlyArray<Tile> => {
    
    for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
       for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
-         const tile = Game.board.getTile(tileX, tileY);
+         const tile = Board.getTile(tileX, tileY);
          tiles.push(tile);
       }
    }

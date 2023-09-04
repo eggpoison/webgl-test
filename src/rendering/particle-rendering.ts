@@ -1,48 +1,87 @@
-import { ParticleType, Point, SETTINGS, Vector, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
+import { Point, SETTINGS, Vector, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import { createWebGLProgram, gl, halfWindowHeight, halfWindowWidth } from "../webgl";
 import Camera from "../Camera";
-import Particle, { PARTICLE_INFO, ParticleRenderType } from "../Particle";
+import Particle, { PARTICLE_INFO } from "../particles/Particle";
 import { getTexture } from "../textures";
 import { getFrameProgress } from "../GameObject";
+import MonocolourParticle from "../particles/MonocolourParticle";
+import TexturedParticle from "../particles/TexturedParticle";
 
-type FilterTexturedTypes<T extends ParticleType> = (typeof PARTICLE_INFO)[T]["renderType"] extends ParticleRenderType.textured ? T : never;
-type FilterMonocolourTypes<T extends ParticleType> = (typeof PARTICLE_INFO)[T]["renderType"] extends ParticleRenderType.monocolour ? T : never;
+export const PARTICLE_TEXTURE_MAPPINGS = {
+   "particles/blood-pool-small.png": 0,
+   "particles/blood-pool-medium.png": 1,
+   "particles/blood-pool-large.png": 2,
+   "particles/cactus-spine.png": 3,
+   "particles/dirt.png": 4,
+   "particles/leaf.png": 5,
+   "particles/rock.png": 6,
+   "particles/rock-large.png": 7,
+   "entities/cactus/cactus-flower-small-1.png": 8,
+   "entities/cactus/cactus-flower-large-1.png": 9,
+   "entities/cactus/cactus-flower-small-2.png": 10,
+   "entities/cactus/cactus-flower-large-2.png": 11,
+   "entities/cactus/cactus-flower-small-3.png": 12,
+   "entities/cactus/cactus-flower-large-3.png": 13,
+   "entities/cactus/cactus-flower-small-4.png": 14,
+   "entities/cactus/cactus-flower-large-4.png": 15,
+   "entities/cactus/cactus-flower-5.png": 16,
+   "particles/smoke-black.png": 17,
+   "particles/footprint.png": 18,
+   "particles/poison-droplet.png": 19,
+   "particles/slime-puddle.png": 20,
+   "particles/water-splash.png": 21,
+   "particles/leaf-small.png": 22
+} satisfies Record<string, number>;
 
-export const PARTICLE_TEXTURES: { [T in ParticleType as Exclude<T, FilterMonocolourTypes<T>>]: string } = {
-   [ParticleType.bloodPoolSmall]: "particles/blood-pool-small.png",
-   [ParticleType.bloodPoolMedium]: "particles/blood-pool-medium.png",
-   [ParticleType.bloodPoolLarge]: "particles/blood-pool-large.png",
-   [ParticleType.cactusSpine]: "particles/cactus-spine.png",
-   [ParticleType.dirt]: "particles/dirt.png",
-   [ParticleType.leaf]: "particles/leaf.png",
-   [ParticleType.rock]: "particles/rock.png",
-   [ParticleType.rockLarge]: "particles/rock-large.png",
-   [ParticleType.cactusFlower1]: "entities/cactus/cactus-flower-small-1.png",
-   [ParticleType.cactusFlower1_2]: "entities/cactus/cactus-flower-large-1.png",
-   [ParticleType.cactusFlower2]: "entities/cactus/cactus-flower-small-2.png",
-   [ParticleType.cactusFlower2_2]: "entities/cactus/cactus-flower-large-2.png",
-   [ParticleType.cactusFlower3]: "entities/cactus/cactus-flower-small-3.png",
-   [ParticleType.cactusFlower3_2]: "entities/cactus/cactus-flower-large-3.png",
-   [ParticleType.cactusFlower4]: "entities/cactus/cactus-flower-small-4.png",
-   [ParticleType.cactusFlower4_2]: "entities/cactus/cactus-flower-large-4.png",
-   [ParticleType.cactusFlower5]: "entities/cactus/cactus-flower-5.png",
-   [ParticleType.smokeBlack]: "particles/smoke-black.png",
-   [ParticleType.footprint]: "particles/footprint.png",
-   [ParticleType.poisonDroplet]: "particles/poison-droplet.png",
-   [ParticleType.slimePuddle]: "particles/slime-puddle.png",
-   [ParticleType.waterSplash]: "particles/water-splash.png"
-};
+export type ParticleTextureSource = keyof typeof PARTICLE_TEXTURE_MAPPINGS;
 
 export type ParticleColour = [r: number, g: number, b: number];
 
-export const PARTICLE_COLOURS: { [T in ParticleType as Exclude<T, FilterTexturedTypes<T>>]: ParticleColour } = {
-   [ParticleType.blood]: [212/255, 0, 0],
-   [ParticleType.bloodLarge]: [186/255, 0, 0],
-   [ParticleType.emberRed]: [255/255, 102/255, 0],
-   [ParticleType.emberOrange]: [255/255, 184/255, 61/255],
-   [ParticleType.waterDroplet]: [8/255, 197/255, 255/255],
-   [ParticleType.snow]: [199/255, 209/255, 209/255]
-};
+// export const PARTICLE_COLOURS: { [T in ParticleType as Exclude<T, FilterTexturedTypes<T>>]: ParticleColour } = {
+//    [ParticleType.blood]: [212/255, 0, 0],
+//    [ParticleType.bloodLarge]: [186/255, 0, 0],
+//    [ParticleType.emberRed]: [255/255, 102/255, 0],
+//    [ParticleType.emberOrange]: [255/255, 184/255, 61/255],
+//    [ParticleType.waterDroplet]: [8/255, 197/255, 255/255],
+//    [ParticleType.snow]: [199/255, 209/255, 209/255]
+// };
+
+const monocolourVertexShaderText = `#version 300 es
+precision mediump float;
+
+uniform vec2 u_playerPos;
+uniform vec2 u_halfWindowSize;
+uniform float u_zoom;
+
+layout(location = 0) in vec2 a_position;
+layout(location = 1) in float a_opacity;
+layout(location = 2) in vec3 a_tint;
+
+out float v_opacity;
+out vec3 v_tint;
+
+void main() {
+   vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
+   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+   gl_Position = vec4(clipSpacePos, 0.0, 1.0);
+
+   v_opacity = a_opacity;
+   v_tint = a_tint;
+}
+`;
+
+const monocolourFragmentShaderText = `#version 300 es
+precision mediump float;
+
+in float v_opacity;
+in vec3 v_tint;
+
+out vec4 outputColour;
+
+void main() {
+   outputColour = vec4(v_tint.r, v_tint.g, v_tint.b, v_opacity);
+}
+`;
 
 const texturedVertexShaderText = `#version 300 es
 precision mediump float;
@@ -52,9 +91,9 @@ uniform vec2 u_halfWindowSize;
 uniform float u_zoom;
 
 layout(location = 0) in vec2 a_position;
-in vec2 a_texCoord;
-in float a_opacity;
-in vec3 a_tint;
+layout(location = 1) in vec2 a_texCoord;
+layout(location = 2) in float a_opacity;
+layout(location = 3) in vec3 a_tint;
 
 out vec2 v_texCoord;
 out float v_opacity;
@@ -107,35 +146,46 @@ void main() {
 }
 `;
 
-let program: WebGLProgram;
+let monocolourProgram: WebGLProgram;
+let texturedProgram: WebGLProgram;
 
-let playerPositionUniformLocation: WebGLUniformLocation;
-let halfWindowSizeUniformLocation: WebGLUniformLocation;
-let zoomUniformLocation: WebGLUniformLocation;
-let textureUniformLocation: WebGLUniformLocation;
+let monocolourPlayerPositionUniformLocation: WebGLUniformLocation;
+let monocolourHalfWindowSizeUniformLocation: WebGLUniformLocation;
+let monocolourZoomUniformLocation: WebGLUniformLocation;
 
-let texCoordAttribLocation: number;
-let opacityAttribLocation: number;
-let tintAttribLocation: number;
+let texturedPlayerPositionUniformLocation: WebGLUniformLocation;
+let texturedHalfWindowSizeUniformLocation: WebGLUniformLocation;
+let texturedZoomUniformLocation: WebGLUniformLocation;
+let texturedTextureUniformLocation: WebGLUniformLocation;
 
 export function createParticleShaders(): void {
-   program = createWebGLProgram(gl, texturedVertexShaderText, texturedFragmentShaderText);
+   // 
+   // Textured program
+   // 
    
-   playerPositionUniformLocation = gl.getUniformLocation(program, "u_playerPos")!;
-   halfWindowSizeUniformLocation = gl.getUniformLocation(program, "u_halfWindowSize")!;
-   zoomUniformLocation = gl.getUniformLocation(program, "u_zoom")!;
-   textureUniformLocation = gl.getUniformLocation(program, "u_texture")!;
+   texturedProgram = createWebGLProgram(gl, texturedVertexShaderText, texturedFragmentShaderText);
    
-   texCoordAttribLocation = gl.getAttribLocation(program, "a_texCoord");
-   opacityAttribLocation = gl.getAttribLocation(program, "a_opacity");
-   tintAttribLocation = gl.getAttribLocation(program, "a_tint");
+   texturedPlayerPositionUniformLocation = gl.getUniformLocation(texturedProgram, "u_playerPos")!;
+   texturedHalfWindowSizeUniformLocation = gl.getUniformLocation(texturedProgram, "u_halfWindowSize")!;
+   texturedZoomUniformLocation = gl.getUniformLocation(texturedProgram, "u_zoom")!;
+   texturedTextureUniformLocation = gl.getUniformLocation(texturedProgram, "u_texture")!;
+
+   // 
+   // Monocolour program
+   // 
+   
+   monocolourProgram = createWebGLProgram(gl, monocolourVertexShaderText, monocolourFragmentShaderText);
+   
+   monocolourPlayerPositionUniformLocation = gl.getUniformLocation(monocolourProgram, "u_playerPos")!;
+   monocolourHalfWindowSizeUniformLocation = gl.getUniformLocation(monocolourProgram, "u_halfWindowSize")!;
+   monocolourZoomUniformLocation = gl.getUniformLocation(monocolourProgram, "u_zoom")!;
 }
 
-type GroupedParticles = Array<Array<Particle>>;
+type GroupedParticles = Array<Array<TexturedParticle>>;
 
 const numParticleTypes = Object.keys(PARTICLE_INFO).length;
 
-const groupParticles = (particles: ReadonlyArray<Particle>): GroupedParticles => {
+const groupParticles = (particles: ReadonlyArray<TexturedParticle>): GroupedParticles => {
    const groupedParticles: GroupedParticles = [];
 
    // Fill array initially with all particle types as empty
@@ -144,7 +194,7 @@ const groupParticles = (particles: ReadonlyArray<Particle>): GroupedParticles =>
    }
 
    for (const particle of particles) {
-      groupedParticles[particle.type].push(particle);
+      groupedParticles[PARTICLE_TEXTURE_MAPPINGS[particle.textureSource]].push(particle);
    }
 
    return groupedParticles;
@@ -185,29 +235,131 @@ const calculateParticleRenderPosition = (particle: Particle): Point => {
    return renderPosition;
 }
 
-export function renderTexturedParticles(particlesToRender: ReadonlyArray<Particle>): void {
-   const groupedParticles = groupParticles(particlesToRender);
+export function renderMonocolourParticles(particles: ReadonlyArray<MonocolourParticle>): void {
+   const vertexCount = particles.length * 6 * 6;
+   
+   // Create vertices
+   const vertexData = new Float32Array(vertexCount);
+   for (let i = 0; i < particles.length; i++) {
+      const particle = particles[i];
+         
+      const width = particle.width * particle.scale;
+      const height = particle.height * particle.scale;
+
+      const renderPosition = calculateParticleRenderPosition(particle);
+
+      const x1 = renderPosition.x - width / 2;
+      const x2 = renderPosition.x + width / 2;
+      const y1 = renderPosition.y - height / 2;
+      const y2 = renderPosition.y + height / 2;
+
+      const topLeftX = rotateXAroundPoint(x1, y2, renderPosition.x, renderPosition.y, particle.rotation);
+      const topLeftY = rotateYAroundPoint(x1, y2, renderPosition.x, renderPosition.y, particle.rotation);
+      const topRightX = rotateXAroundPoint(x2, y2, renderPosition.x, renderPosition.y, particle.rotation);
+      const topRightY = rotateYAroundPoint(x2, y2, renderPosition.x, renderPosition.y, particle.rotation);
+      const bottomLeftX = rotateXAroundPoint(x1, y1, renderPosition.x, renderPosition.y, particle.rotation);
+      const bottomLeftY = rotateYAroundPoint(x1, y1, renderPosition.x, renderPosition.y, particle.rotation);
+      const bottomRightX = rotateXAroundPoint(x2, y1, renderPosition.x, renderPosition.y, particle.rotation);
+      const bottomRightY = rotateYAroundPoint(x2, y1, renderPosition.x, renderPosition.y, particle.rotation);
+
+      particle.updateOpacity();
+
+      vertexData[i * 6 * 6] = bottomLeftX;
+      vertexData[i * 6 * 6 + 1] = bottomLeftY;
+      vertexData[i * 6 * 6 + 2] = particle.opacity;
+      vertexData[i * 6 * 6 + 3] = particle.colour[0];
+      vertexData[i * 6 * 6 + 4] = particle.colour[1];
+      vertexData[i * 6 * 6 + 5] = particle.colour[2];
+
+      vertexData[i * 6 * 6 + 6] = bottomRightX;
+      vertexData[i * 6 * 6 + 7] = bottomRightY;
+      vertexData[i * 6 * 6 + 8] = particle.opacity;
+      vertexData[i * 6 * 6 + 9] = particle.colour[0];
+      vertexData[i * 6 * 6 + 10] = particle.colour[1];
+      vertexData[i * 6 * 6 + 11] = particle.colour[2];
+
+      vertexData[i * 6 * 6 + 12] = topLeftX;
+      vertexData[i * 6 * 6 + 13] = topLeftY;
+      vertexData[i * 6 * 6 + 14] = particle.opacity;
+      vertexData[i * 6 * 6 + 15] = particle.colour[0];
+      vertexData[i * 6 * 6 + 16] = particle.colour[1];
+      vertexData[i * 6 * 6 + 17] = particle.colour[2];
+
+      vertexData[i * 6 * 6 + 18] = topLeftX;
+      vertexData[i * 6 * 6 + 19] = topLeftY;
+      vertexData[i * 6 * 6 + 20] = particle.opacity;
+      vertexData[i * 6 * 6 + 21] = particle.colour[0];
+      vertexData[i * 6 * 6 + 22] = particle.colour[1];
+      vertexData[i * 6 * 6 + 23] = particle.colour[2];
+
+      vertexData[i * 6 * 6 + 24] = bottomRightX;
+      vertexData[i * 6 * 6 + 25] = bottomRightY;
+      vertexData[i * 6 * 6 + 26] = particle.opacity;
+      vertexData[i * 6 * 6 + 27] = particle.colour[0];
+      vertexData[i * 6 * 6 + 28] = particle.colour[1];
+      vertexData[i * 6 * 6 + 29] = particle.colour[2];
+
+      vertexData[i * 6 * 6 + 30] = topRightX;
+      vertexData[i * 6 * 6 + 31] = topRightY;
+      vertexData[i * 6 * 6 + 32] = particle.opacity;
+      vertexData[i * 6 * 6 + 33] = particle.colour[0];
+      vertexData[i * 6 * 6 + 34] = particle.colour[1];
+      vertexData[i * 6 * 6 + 35] = particle.colour[2];
+   }
+
+   gl.useProgram(monocolourProgram);
+
+   gl.enable(gl.BLEND);
+   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+   // Create buffer
+   const buffer = gl.createBuffer();
+   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+   gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
+
+   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 0);
+   gl.vertexAttribPointer(1, 1, gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(2, 3, gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 3 * Float32Array.BYTES_PER_ELEMENT);
+
+   // Enable the attributes
+   gl.enableVertexAttribArray(0);
+   gl.enableVertexAttribArray(1);
+   gl.enableVertexAttribArray(2);
+
+   gl.uniform2f(monocolourPlayerPositionUniformLocation, Camera.position.x, Camera.position.y);
+   gl.uniform2f(monocolourHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
+   gl.uniform1f(monocolourZoomUniformLocation, Camera.zoom);
+
+   // Draw the vertices
+   gl.drawArrays(gl.TRIANGLES, 0, vertexCount / 6);
+
+   gl.disable(gl.BLEND);
+   gl.blendFunc(gl.ONE, gl.ZERO);
+}
+
+export function renderTexturedParticles(particles: ReadonlyArray<TexturedParticle>): void {
+   const groupedParticles = groupParticles(particles);
 
    // Create vertices
    const textureSources = new Array<string>();
    const vertexDatas = new Array<Float32Array>();
    const vertexCounts = new Array<number>();
-   for (let particleType: ParticleType = 0; particleType < numParticleTypes; particleType++) {
-      const particles = groupedParticles[particleType];
-      if (particles.length === 0) {
+   for (let textureMappingIdx = 0; textureMappingIdx < numParticleTypes; textureMappingIdx++) {
+      const currentParticles = groupedParticles[textureMappingIdx];
+      if (currentParticles.length === 0) {
          continue;
       }
-      
-      textureSources.push(PARTICLE_TEXTURES[particleType as keyof typeof PARTICLE_TEXTURES]);
-      vertexCounts.push(particles.length * 6 * 8);
 
-      const vertexData = new Float32Array(particles.length * 6 * 8);
-      for (let i = 0; i < particles.length; i++) {
-         const particle = particles[i];
+      const textureSource = currentParticles[0].textureSource;
+      textureSources.push(textureSource);
+      vertexCounts.push(currentParticles.length * 6 * 8);
+
+      const vertexData = new Float32Array(currentParticles.length * 6 * 8);
+      for (let i = 0; i < currentParticles.length; i++) {
+         const particle = currentParticles[i];
          
-         const particleInfo = PARTICLE_INFO[particle.type];
-         const width = particleInfo.width * particle.scale;
-         const height = particleInfo.height * particle.scale;
+         const width = particle.width * particle.scale;
+         const height = particle.height * particle.scale;
 
          const renderPosition = calculateParticleRenderPosition(particle);
 
@@ -285,7 +437,7 @@ export function renderTexturedParticles(particlesToRender: ReadonlyArray<Particl
       vertexDatas.push(vertexData);
    }
 
-   gl.useProgram(program);
+   gl.useProgram(texturedProgram);
 
    gl.enable(gl.BLEND);
    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -301,20 +453,20 @@ export function renderTexturedParticles(particlesToRender: ReadonlyArray<Particl
       gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
 
       gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 0);
-      gl.vertexAttribPointer(texCoordAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(opacityAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(tintAttribLocation, 3, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(2, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(3, 3, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
 
       // Enable the attributes
       gl.enableVertexAttribArray(0);
-      gl.enableVertexAttribArray(texCoordAttribLocation);
-      gl.enableVertexAttribArray(opacityAttribLocation);
-      gl.enableVertexAttribArray(tintAttribLocation);
+      gl.enableVertexAttribArray(1);
+      gl.enableVertexAttribArray(2);
+      gl.enableVertexAttribArray(3);
 
-      gl.uniform2f(playerPositionUniformLocation, Camera.position.x, Camera.position.y);
-      gl.uniform2f(halfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
-      gl.uniform1f(zoomUniformLocation, Camera.zoom);
-      gl.uniform1i(textureUniformLocation, 0);
+      gl.uniform2f(texturedPlayerPositionUniformLocation, Camera.position.x, Camera.position.y);
+      gl.uniform2f(texturedHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
+      gl.uniform1f(texturedZoomUniformLocation, Camera.zoom);
+      gl.uniform1i(texturedTextureUniformLocation, 0);
 
       const texture = getTexture(textureSource);
       gl.activeTexture(gl.TEXTURE0);

@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, InitialGameDataPacket, CraftingRecipe, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, ProjectileData, VisibleChunkBounds, ParticleData, TribeType, TribeData, InventoryData, CircularHitboxData, RectangularHitboxData } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, InitialGameDataPacket, CraftingRecipe, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, ProjectileData, VisibleChunkBounds, TribeType, TribeData, InventoryData, CircularHitboxData, RectangularHitboxData, MonocolourParticleData, TexturedParticleData, ParticleColour, ParticleType } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -21,10 +21,55 @@ import { registerServerTick, updateDebugScreenTicks } from "../components/game/d
 import createProjectile from "../projectiles/projectile-creation";
 import Camera from "../Camera";
 import { isDev } from "../utils";
-import Particle from "../Particle";
+import { PARTICLE_INFO, ParticleRenderType } from "../particles/Particle";
 import { updateTileAmbientOcclusion } from "../rendering/ambient-occlusion-rendering";
 import Tribe from "../Tribe";
 import { updateRenderChunkFromTileUpdate } from "../rendering/tile-rendering/render-chunks";
+import MonocolourParticle from "../particles/MonocolourParticle";
+import TexturedParticle from "../particles/TexturedParticle";
+import { ParticleTextureSource } from "../rendering/particle-rendering";
+import Entity from "../entities/Entity";
+import Board from "../Board";
+import { definiteGameState, latencyGameState } from "../game-state/game-states";
+import { hideNerdVision } from "../components/game/dev/NerdVision";
+
+type FilterTexturedTypes<T extends ParticleType> = (typeof PARTICLE_INFO)[T]["renderType"] extends ParticleRenderType.textured ? T : never;
+type FilterMonocolourTypes<T extends ParticleType> = (typeof PARTICLE_INFO)[T]["renderType"] extends ParticleRenderType.monocolour ? T : never;
+
+const PARTICLE_TEXTURES: { [T in ParticleType as Exclude<T, FilterMonocolourTypes<T>>]: ParticleTextureSource } = {
+   [ParticleType.bloodPoolSmall]: "particles/blood-pool-small.png",
+   [ParticleType.bloodPoolMedium]: "particles/blood-pool-medium.png",
+   [ParticleType.bloodPoolLarge]: "particles/blood-pool-large.png",
+   [ParticleType.cactusSpine]: "particles/cactus-spine.png",
+   [ParticleType.dirt]: "particles/dirt.png",
+   [ParticleType.leaf]: "particles/leaf.png",
+   [ParticleType.rock]: "particles/rock.png",
+   [ParticleType.rockLarge]: "particles/rock-large.png",
+   [ParticleType.cactusFlower1]: "entities/cactus/cactus-flower-small-1.png",
+   [ParticleType.cactusFlower1_2]: "entities/cactus/cactus-flower-large-1.png",
+   [ParticleType.cactusFlower2]: "entities/cactus/cactus-flower-small-2.png",
+   [ParticleType.cactusFlower2_2]: "entities/cactus/cactus-flower-large-2.png",
+   [ParticleType.cactusFlower3]: "entities/cactus/cactus-flower-small-3.png",
+   [ParticleType.cactusFlower3_2]: "entities/cactus/cactus-flower-large-3.png",
+   [ParticleType.cactusFlower4]: "entities/cactus/cactus-flower-small-4.png",
+   [ParticleType.cactusFlower4_2]: "entities/cactus/cactus-flower-large-4.png",
+   [ParticleType.cactusFlower5]: "entities/cactus/cactus-flower-5.png",
+   [ParticleType.smokeBlack]: "particles/smoke-black.png",
+   [ParticleType.footprint]: "particles/footprint.png",
+   [ParticleType.poisonDroplet]: "particles/poison-droplet.png",
+   [ParticleType.slimePuddle]: "particles/slime-puddle.png",
+   [ParticleType.waterSplash]: "particles/water-splash.png"
+};
+
+
+const PARTICLE_COLOURS: { [T in ParticleType as Exclude<T, FilterTexturedTypes<T>>]: ParticleColour } = {
+   [ParticleType.blood]: [212/255, 0, 0],
+   [ParticleType.bloodLarge]: [186/255, 0, 0],
+   [ParticleType.emberRed]: [255/255, 102/255, 0],
+   [ParticleType.emberOrange]: [255/255, 184/255, 61/255],
+   [ParticleType.waterDroplet]: [8/255, 197/255, 255/255],
+   [ParticleType.snow]: [199/255, 209/255, 209/255]
+};
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -170,13 +215,23 @@ abstract class Client {
    }
 
    public static unloadGameDataPacket(gameDataPacket: GameDataPacket): void {
-      Game.ticks = gameDataPacket.serverTicks;
+      Board.ticks = gameDataPacket.serverTicks;
       updateDebugScreenTicks(gameDataPacket.serverTicks);
-      Game.time = gameDataPacket.serverTime;
+      Board.time = gameDataPacket.serverTime;
 
 
       if (isDev()) {
          Game.setGameObjectDebugData(gameDataPacket.gameObjectDebugData);
+      }
+
+      // Register deaths
+      for (const killedEntityID of gameDataPacket.killedEntityIDs) {
+         if (Board.entities.hasOwnProperty(killedEntityID)) {
+            const entity = Board.entities[killedEntityID];
+            if (typeof entity.onDie !== "undefined") {
+               entity.onDie();
+            }
+         }
       }
 
       this.updateEntities(gameDataPacket.entityDataArray);
@@ -189,26 +244,9 @@ abstract class Client {
 
       this.updateTribe(gameDataPacket.tribeData);
 
-      // Register hits
-      for (const hitData of gameDataPacket.hitsTaken) {
-         Player.registerHit(hitData);
-      }
-
-      if (Player.instance !== null) {
-         if (gameDataPacket.hitsTaken.length >= 1) {
-            Player.instance.secondsSinceLastHit = 0;
-         }
-
-         Player.instance.statusEffects = gameDataPacket.statusEffects;
-      }
-
-
-      Game.definiteGameState.setPlayerHealth(gameDataPacket.playerHealth);
-      if (Game.definiteGameState.playerIsDead()) {
-         gameScreenSetIsDead(true);
-      
-         // If the player's inventory is open, close it
-         updateInventoryIsOpen(false);
+      definiteGameState.setPlayerHealth(gameDataPacket.playerHealth);
+      if (definiteGameState.playerIsDead()) {
+         this.killPlayer();
       }
    }
 
@@ -230,45 +268,62 @@ abstract class Client {
       }
    }
 
-   private static updateParticles(particles: ReadonlyArray<ParticleData>): void {
+   private static updateParticles(particles: ReadonlyArray<MonocolourParticleData | TexturedParticleData>): void {
       const sentParticleIDs = new Set(particles.map(particle => particle.id));
 
       // Destroy all server particles which aren't being sent anymore
-      for (const particleID of Game.board.serverParticleIDs) {
+      for (const particleID of Board.serverParticleIDs) {
          if (!sentParticleIDs.has(particleID)) {
-            delete Game.board.lowParticlesMonocolour[particleID];
-            delete Game.board.lowParticlesTextured[particleID];
-            delete Game.board.highParticlesMonocolour[particleID];
-            delete Game.board.highParticlesTextured[particleID];
+            delete Board.lowParticlesMonocolour[particleID];
+            delete Board.lowParticlesTextured[particleID];
+            delete Board.highParticlesMonocolour[particleID];
+            delete Board.highParticlesTextured[particleID];
          }
       }
 
       for (const particleData of particles) {
-         if (Game.board.lowParticlesMonocolour.hasOwnProperty(particleData.id)) {
-            Game.board.lowParticlesMonocolour[particleData.id].updateFromData(particleData);
-            Game.board.serverParticleIDs.add(particleData.id);
-         } else if (Game.board.lowParticlesTextured.hasOwnProperty(particleData.id)) {
-            Game.board.lowParticlesTextured[particleData.id].updateFromData(particleData);
-            Game.board.serverParticleIDs.add(particleData.id);
-         } else if (Game.board.highParticlesMonocolour.hasOwnProperty(particleData.id)) {
-            Game.board.highParticlesMonocolour[particleData.id].updateFromData(particleData);
-            Game.board.serverParticleIDs.add(particleData.id);
-         } else if (Game.board.highParticlesTextured.hasOwnProperty(particleData.id)) {
-            Game.board.highParticlesTextured[particleData.id].updateFromData(particleData);
-            Game.board.serverParticleIDs.add(particleData.id);
+         if (Board.lowParticlesMonocolour.hasOwnProperty(particleData.id)) {
+            Board.lowParticlesMonocolour[particleData.id].updateFromData(particleData as MonocolourParticleData);
+            Board.serverParticleIDs.add(particleData.id);
+         } else if (Board.lowParticlesTextured.hasOwnProperty(particleData.id)) {
+            Board.lowParticlesTextured[particleData.id].updateFromData(particleData as TexturedParticleData);
+            Board.serverParticleIDs.add(particleData.id);
+         } else if (Board.highParticlesMonocolour.hasOwnProperty(particleData.id)) {
+            Board.highParticlesMonocolour[particleData.id].updateFromData(particleData as MonocolourParticleData);
+            Board.serverParticleIDs.add(particleData.id);
+         } else if (Board.highParticlesTextured.hasOwnProperty(particleData.id)) {
+            Board.highParticlesTextured[particleData.id].updateFromData(particleData as TexturedParticleData);
+            Board.serverParticleIDs.add(particleData.id);
          } else {
             this.createParticleFromData(particleData);
-            Game.board.serverParticleIDs.delete(particleData.id);
+            Board.serverParticleIDs.delete(particleData.id);
          }
       }
    }
 
-   private static createParticleFromData(data: ParticleData): void {
+   private static createParticleFromData(data: MonocolourParticleData | TexturedParticleData): void {
       const position = Point.unpackage(data.position);
       const velocity = data.velocity !== null ? Vector.unpackage(data.velocity) : null;
       const acceleration = data.acceleration !== null ? Vector.unpackage(data.acceleration) : null;
 
-      const particle = new Particle(data.id, data.type, position, velocity, acceleration, data.lifetime);
+      const particleInfo = PARTICLE_INFO[data.type];
+      const width = particleInfo.width;
+      const height = particleInfo.height;
+      const renderLayer = particleInfo.renderLayer;
+      
+      let particle: MonocolourParticle | TexturedParticle;
+      if (data.hasOwnProperty("tint")) {
+         // Textured
+         if (!PARTICLE_TEXTURES.hasOwnProperty(data.type)) {
+            throw new Error(`Particle type '${ParticleType[data.type]}' doesn't have a matching texture.`);
+         }
+         particle = new TexturedParticle(data.id, width, height, position, velocity, acceleration, data.lifetime, PARTICLE_TEXTURES[data.type as keyof typeof PARTICLE_TEXTURES]);
+         Board.addTexturedParticle(particle, renderLayer);
+      } else {
+         // Monocolour
+         particle = new MonocolourParticle(data.id, width, height, position, velocity, acceleration, data.lifetime, PARTICLE_COLOURS[data.type as keyof typeof PARTICLE_COLOURS]);
+         Board.addMonocolourParticle(particle, renderLayer);
+      }
       particle.age = data.age;
       particle.rotation = data.rotation;
    }
@@ -277,7 +332,7 @@ abstract class Client {
     * Updates the client's entities to match those in the server
     */
    private static updateEntities(entityDataArray: ReadonlyArray<EntityData<EntityType>>): void {
-      const knownEntityIDs = new Set(Object.keys(Game.board.entities).map(idString => Number(idString)));
+      const knownEntityIDs = new Set(Object.keys(Board.entities).map(idString => Number(idString)));
       
       // Remove the player from the list of known entities so the player isn't removed
       if (Player.instance !== null) {
@@ -287,10 +342,19 @@ abstract class Client {
       // Update the game entities
       for (const entityData of entityDataArray) {
          // If it already exists, update it
-         if (Game.board.entities.hasOwnProperty(entityData.id)) {
-            Game.board.entities[entityData.id].updateFromData(entityData);
+         if (Board.entities.hasOwnProperty(entityData.id)) {
+            // We don't want the player to be updated from the server data
+            if (Board.entities[entityData.id] !== Player.instance) {
+               Board.entities[entityData.id].updateFromData(entityData);
+            }
+            for (const hit of entityData.hitsTaken) {
+               Board.entities[entityData.id].registerHit(hit);
+            }
          } else {
-            this.createEntityFromData(entityData);
+            const entity = this.createEntityFromData(entityData);
+            for (const hit of entityData.hitsTaken) {
+               entity.registerHit(hit);
+            }
          }
 
          knownEntityIDs.delete(entityData.id);
@@ -298,21 +362,21 @@ abstract class Client {
 
       // All known entity ids which haven't been removed are ones which are dead
       for (const id of knownEntityIDs) {
-         Game.board.removeGameObject(Game.board.entities[id]);
+         Board.removeGameObject(Board.entities[id]);
       }
    }
 
    private static updateDroppedItems(serverItemEntityDataArray: ReadonlyArray<DroppedItemData>): void {
-      const ids = new Set(Object.keys(Game.board.droppedItems).map(idString => Number(idString)));
+      const ids = new Set(Object.keys(Board.droppedItems).map(idString => Number(idString)));
 
       for (const serverItemData of serverItemEntityDataArray) {
          if (!ids.has(serverItemData.id)) {
             // New item
-            this.createItemFromServerItemData(serverItemData);
+            this.createDroppedItemFromServerItemData(serverItemData);
          } else {
             // Otherwise update it
-            if (Game.board.droppedItems.hasOwnProperty(serverItemData.id)) {
-               const itemEntity = Game.board.droppedItems[serverItemData.id];
+            if (Board.droppedItems.hasOwnProperty(serverItemData.id)) {
+               const itemEntity = Board.droppedItems[serverItemData.id];
                itemEntity.updateFromData(serverItemData);
             }
          }
@@ -322,12 +386,12 @@ abstract class Client {
 
       // All known entity ids which haven't been removed are ones which are dead
       for (const id of ids) {
-         Game.board.removeGameObject(Game.board.droppedItems[id]);
+         Board.removeGameObject(Board.droppedItems[id]);
       }
    }
 
    private static updateProjectiles(projectilesDataArray: ReadonlyArray<ProjectileData>): void {
-      const ids = new Set(Object.keys(Game.board.projectiles).map(idString => Number(idString)));
+      const ids = new Set(Object.keys(Board.projectiles).map(idString => Number(idString)));
 
       for (const projectileData of projectilesDataArray) {
          if (!ids.has(projectileData.id)) {
@@ -335,7 +399,7 @@ abstract class Client {
             this.createProjectileFromServerData(projectileData);
          } else {
             // Otherwise update it
-            const projectile = Game.board.projectiles[projectileData.id];
+            const projectile = Board.projectiles[projectileData.id];
             projectile.updateFromData(projectileData);
          }
 
@@ -344,7 +408,7 @@ abstract class Client {
 
       // All known entity ids which haven't been removed are ones which are dead
       for (const id of ids) {
-         Game.board.removeGameObject(Game.board.projectiles[id]);
+         Board.removeGameObject(Board.projectiles[id]);
       }
    }
 
@@ -389,61 +453,61 @@ abstract class Client {
 
    private static updatePlayerInventory(playerInventoryData: PlayerInventoryData) {
       // Hotbar
-      if (Game.definiteGameState.hotbar !== null) {
-         this.updateInventoryFromServerData(Game.definiteGameState.hotbar, playerInventoryData.hotbar);
+      if (definiteGameState.hotbar !== null) {
+         this.updateInventoryFromServerData(definiteGameState.hotbar, playerInventoryData.hotbar);
       } else {
-         Game.definiteGameState.hotbar = this.createInventoryFromServerData(playerInventoryData.hotbar);
+         definiteGameState.hotbar = this.createInventoryFromServerData(playerInventoryData.hotbar);
       }
-      Hotbar_updateHotbarInventory(Game.definiteGameState.hotbar);
+      Hotbar_updateHotbarInventory(definiteGameState.hotbar);
 
       updateActiveItem();
 
       // Backpack inventory
-      if (Game.definiteGameState.backpack !== null) {
-         this.updateInventoryFromServerData(Game.definiteGameState.backpack, playerInventoryData.backpackInventory);
-         BackpackInventoryMenu_setBackpackInventory(Object.assign({}, Game.definiteGameState.backpack));
+      if (definiteGameState.backpack !== null) {
+         this.updateInventoryFromServerData(definiteGameState.backpack, playerInventoryData.backpackInventory);
+         BackpackInventoryMenu_setBackpackInventory(Object.assign({}, definiteGameState.backpack));
       }
 
       // Crafting output item
-      if (Game.definiteGameState.craftingOutputSlot !== null) {
-         this.updateInventoryFromServerData(Game.definiteGameState.craftingOutputSlot, playerInventoryData.craftingOutputItemSlot);
-         CraftingMenu_setCraftingMenuOutputItem(Game.definiteGameState.craftingOutputSlot.itemSlots[1]);
+      if (definiteGameState.craftingOutputSlot !== null) {
+         this.updateInventoryFromServerData(definiteGameState.craftingOutputSlot, playerInventoryData.craftingOutputItemSlot);
+         CraftingMenu_setCraftingMenuOutputItem(definiteGameState.craftingOutputSlot.itemSlots[1]);
       } else {
-         Game.definiteGameState.craftingOutputSlot = this.createInventoryFromServerData(playerInventoryData.craftingOutputItemSlot);
+         definiteGameState.craftingOutputSlot = this.createInventoryFromServerData(playerInventoryData.craftingOutputItemSlot);
       }
-      CraftingMenu_setCraftingMenuOutputItem(Game.definiteGameState.craftingOutputSlot.itemSlots.hasOwnProperty(1) ? Game.definiteGameState.craftingOutputSlot.itemSlots[1] : null);
+      CraftingMenu_setCraftingMenuOutputItem(definiteGameState.craftingOutputSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.craftingOutputSlot.itemSlots[1] : null);
 
       // Backpack slot
-      if (Game.definiteGameState.backpackSlot !== null) {
-         this.updateInventoryFromServerData(Game.definiteGameState.backpackSlot, playerInventoryData.backpackSlot);
+      if (definiteGameState.backpackSlot !== null) {
+         this.updateInventoryFromServerData(definiteGameState.backpackSlot, playerInventoryData.backpackSlot);
       } else {
-         Game.definiteGameState.backpackSlot = this.createInventoryFromServerData(playerInventoryData.backpackSlot);
+         definiteGameState.backpackSlot = this.createInventoryFromServerData(playerInventoryData.backpackSlot);
       }
-      Hotbar_updateBackpackItemSlot(Game.definiteGameState.backpackSlot.itemSlots.hasOwnProperty(1) ? Game.definiteGameState.backpackSlot.itemSlots[1] : null);
+      Hotbar_updateBackpackItemSlot(definiteGameState.backpackSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.backpackSlot.itemSlots[1] : null);
 
       // Held item
-      if (Game.definiteGameState.heldItemSlot !== null) {
-         this.updateInventoryFromServerData(Game.definiteGameState.heldItemSlot, playerInventoryData.heldItemSlot);
+      if (definiteGameState.heldItemSlot !== null) {
+         this.updateInventoryFromServerData(definiteGameState.heldItemSlot, playerInventoryData.heldItemSlot);
       } else {
-         Game.definiteGameState.heldItemSlot = this.createInventoryFromServerData(playerInventoryData.heldItemSlot);
+         definiteGameState.heldItemSlot = this.createInventoryFromServerData(playerInventoryData.heldItemSlot);
       }
-      setHeldItemVisual(Game.definiteGameState.heldItemSlot.itemSlots.hasOwnProperty(1) ? Game.definiteGameState.heldItemSlot.itemSlots[1] : null);
+      setHeldItemVisual(definiteGameState.heldItemSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.heldItemSlot.itemSlots[1] : null);
 
       // Armour slot
-      if (Game.definiteGameState.armourSlot !== null) {
-         this.updateInventoryFromServerData(Game.definiteGameState.armourSlot, playerInventoryData.armourSlot);
+      if (definiteGameState.armourSlot !== null) {
+         this.updateInventoryFromServerData(definiteGameState.armourSlot, playerInventoryData.armourSlot);
       } else {
-         Game.definiteGameState.armourSlot = this.createInventoryFromServerData(playerInventoryData.armourSlot);
+         definiteGameState.armourSlot = this.createInventoryFromServerData(playerInventoryData.armourSlot);
       }
-      Hotbar_updateArmourItemSlot(Game.definiteGameState.armourSlot);
+      Hotbar_updateArmourItemSlot(definiteGameState.armourSlot);
       if (Player.instance !== null) {
-         const armourType = Game.definiteGameState.armourSlot.itemSlots.hasOwnProperty(1) ? Game.definiteGameState.armourSlot.itemSlots[1].type : null;
+         const armourType = definiteGameState.armourSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.armourSlot.itemSlots[1].type : null;
          Player.instance.updateArmourRenderPart(armourType);
          Player.instance.armourType = armourType;
       }
    }
 
-   private static createItemFromServerItemData(serverItemEntityData: DroppedItemData): void {
+   private static createDroppedItemFromServerItemData(serverItemEntityData: DroppedItemData): void {
       const position = Point.unpackage(serverItemEntityData.position); 
       const velocity = serverItemEntityData.velocity !== null ? Vector.unpackage(serverItemEntityData.velocity) : null;
 
@@ -452,6 +516,8 @@ abstract class Client {
       const droppedItem = new DroppedItem(position, hitboxes, serverItemEntityData.id, velocity, serverItemEntityData.type);
       droppedItem.rotation = serverItemEntityData.rotation;
       droppedItem.mass = serverItemEntityData.mass;
+
+      Board.addDroppedItem(droppedItem);
    }
 
    private static createProjectileFromServerData(projectileData: ProjectileData): void {
@@ -463,11 +529,13 @@ abstract class Client {
       projectile.rotation = projectileData.rotation;
       projectile.velocity = projectileData.velocity !== null ? Vector.unpackage(projectileData.velocity) : null;
       projectile.mass = projectileData.mass;
+
+      Board.addProjectile(projectile);
    }
    
    private static registerTileUpdates(tileUpdates: ReadonlyArray<ServerTileUpdateData>): void {
       for (const tileUpdate of tileUpdates) {
-         const tile = Game.board.getTile(tileUpdate.x, tileUpdate.y);
+         const tile = Board.getTile(tileUpdate.x, tileUpdate.y);
          tile.type = tileUpdate.type;
          tile.isWall = tileUpdate.isWall;
          
@@ -501,19 +569,23 @@ abstract class Client {
       return hitboxes;
    }
 
-   public static createEntityFromData(entityData: EntityData<EntityType>): void {
+   public static createEntityFromData(entityData: EntityData<EntityType>): Entity {
       const position = Point.unpackage(entityData.position);
 
       const hitboxes = this.createHitboxesFromData(entityData.hitboxes);
 
       // Create the entity
       const entityConstructor = ENTITY_CLASS_RECORD[entityData.type]() as EntityClassType<EntityType>;
-      const entity = new entityConstructor(position, hitboxes, entityData.id, entityData.secondsSinceLastHit, ...entityData.clientArgs);
+      const entity = new entityConstructor(position, hitboxes, entityData.id, ...entityData.clientArgs);
       
       entity.velocity = entityData.velocity !== null ? Vector.unpackage(entityData.velocity) : null;
       entity.rotation = entityData.rotation;
       entity.mass = entityData.mass;
-      entity.special = entityData.special;
+      entity.mobAIType = entityData.mobAIType;
+
+      Board.addEntity(entity);
+
+      return entity;
    }
 
    private static registerGameDataSyncPacket(gameDataSyncPacket: GameDataSyncPacket): void {
@@ -525,14 +597,11 @@ abstract class Client {
          Player.instance.acceleration = gameDataSyncPacket.acceleration !== null ? Vector.unpackage(gameDataSyncPacket.acceleration) : null;
          Player.instance.rotation = gameDataSyncPacket.rotation;
          Player.instance.terminalVelocity = gameDataSyncPacket.terminalVelocity;
-         Game.definiteGameState.setPlayerHealth(gameDataSyncPacket.health);
          this.updatePlayerInventory(gameDataSyncPacket.inventory);
-
-         if (Game.definiteGameState.playerIsDead()) {
-            gameScreenSetIsDead(true);
-            
-            // If the player's inventory is open, close it
-            updateInventoryIsOpen(false);
+         
+         definiteGameState.setPlayerHealth(gameDataSyncPacket.health);
+         if (definiteGameState.playerIsDead()) {
+            this.killPlayer();
          }
       }
 
@@ -540,12 +609,13 @@ abstract class Client {
    }
 
    private static respawnPlayer(respawnDataPacket: RespawnDataPacket): void {
-      Game.definiteGameState.setPlayerHealth(Player.MAX_HEALTH);
+      definiteGameState.setPlayerHealth(Player.MAX_HEALTH);
       updateHealthBar(Player.MAX_HEALTH);
       
       const spawnPosition = Point.unpackage(respawnDataPacket.spawnPosition);
-      const player = new Player(spawnPosition, new Set([Player.createNewPlayerHitbox()]), respawnDataPacket.playerID, null, null, TribeType.plainspeople, null, null, -99999, -99999, Game.definiteGameState.playerUsername);
+      const player = new Player(spawnPosition, new Set([Player.createNewPlayerHitbox()]), respawnDataPacket.playerID, null, TribeType.plainspeople, null, null, -1, -99999, -99999, definiteGameState.playerUsername);
       Player.setInstancePlayer(player);
+      Board.addEntity(player);
 
       gameScreenSetIsDead(false);
    }
@@ -577,8 +647,8 @@ abstract class Client {
             terminalVelocity: Player.instance.terminalVelocity,
             rotation: Player.instance.rotation,
             visibleChunkBounds: Camera.getVisibleChunkBounds(),
-            selectedItemSlot: Game.latencyGameState.selectedHotbarItemSlot,
-            isEating: Game.latencyGameState.playerIsEating
+            selectedItemSlot: latencyGameState.selectedHotbarItemSlot,
+            isEating: latencyGameState.playerIsEating
          };
 
          this.socket.emit("player_data_packet", packet);
@@ -611,7 +681,7 @@ abstract class Client {
 
    public static sendItemUsePacket(): void {
       if (Game.isRunning && this.socket !== null) {
-         const itemSlot = Game.latencyGameState.selectedHotbarItemSlot;
+         const itemSlot = latencyGameState.selectedHotbarItemSlot;
          this.socket.emit("item_use_packet", itemSlot);
       }
    }
@@ -650,6 +720,21 @@ abstract class Client {
       if (Game.isRunning && this.socket !== null) {
          this.socket.emit("track_game_object", id);
       }
+   }
+
+   private static killPlayer(): void {
+      if (Player.instance === null) return;
+
+      // Remove the player from the game
+      Board.removeGameObject(Player.instance);
+      Player.instance = null;
+
+      latencyGameState.resetFlags();
+      definiteGameState.resetFlags();
+
+      hideNerdVision();
+      gameScreenSetIsDead(true);
+      updateInventoryIsOpen(false);
    }
 }
 

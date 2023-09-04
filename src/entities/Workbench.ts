@@ -7,8 +7,8 @@ import RectangularHitbox from "../hitboxes/RectangularHitbox";
 class Workbench extends Entity {
    public readonly type = "workbench";
    
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null) {
-      super(position, hitboxes, id, secondsSinceLastHit);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number) {
+      super(position, hitboxes, id);
 
       this.attachRenderParts([
          new RenderPart({

@@ -4,8 +4,8 @@ import { Tile } from "../../Tile";
 import { getTexture } from "../../textures";
 import { TILE_TYPE_RENDER_INFO_RECORD, SolidTileTypeRenderInfo } from "../../tile-type-render-info";
 import { gl, halfWindowWidth, halfWindowHeight, createWebGLProgram } from "../../webgl";
-import Game from "../../Game";
 import { RENDER_CHUNK_SIZE, RenderChunkSolidTileInfo, getRenderChunkSolidTileInfo } from "./render-chunks";
+import Board from "../../Board";
 
 const vertexShaderText = `#version 300 es
 precision mediump float;
@@ -61,7 +61,7 @@ export function calculateSolidTileRenderChunkData(renderChunkX: number, renderCh
    const tilesCategorised: { [textureSource: string]: Array<Tile> } = {};
    for (let tileX = tileMinX; tileX <= tileMaxX; tileX++) {
       for (let tileY = tileMinY; tileY <= tileMaxY; tileY++) {
-         const tile = Game.board.getTile(tileX, tileY);
+         const tile = Board.getTile(tileX, tileY);
          if (!TILE_TYPE_INFO_RECORD[tile.type].isLiquid) {
             const textureSource = (TILE_TYPE_RENDER_INFO_RECORD[tile.type] as SolidTileTypeRenderInfo).textureSource;
 

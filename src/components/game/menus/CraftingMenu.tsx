@@ -5,9 +5,9 @@ import Client from "../../../client/Client";
 import Item, { ItemSlots } from "../../../items/Item";
 import { windowHeight } from "../../../webgl";
 import ItemSlot from "../inventories/ItemSlot";
-import Game from "../../../Game";
 import { leftClickItemSlot } from "../../../inventory-manipulation";
 import Player from "../../../entities/Player";
+import { definiteGameState } from "../../../game-state/game-states";
 
 const CRAFTING_STATION_TEXTURE_SOURCE_RECORD: Record<CraftingStation, string> = {
    workbench: "workbench.png",
@@ -54,12 +54,12 @@ const RecipeViewer = ({ recipe, hoverPosition, craftingMenuHeight }: RecipeViewe
 }
 
 const getNumItemsOfType = (itemType: ItemType): number => {
-   if (Game.definiteGameState.hotbar === null) {
+   if (definiteGameState.hotbar === null) {
       return 0;
    }
 
    let numItems = 0;
-   for (const item of Object.values(Game.definiteGameState.hotbar.itemSlots)) {
+   for (const item of Object.values(definiteGameState.hotbar.itemSlots)) {
       if (item.type === itemType) {
          numItems += item.count;
       }
@@ -183,18 +183,18 @@ const CraftingMenu = () => {
    }
 
    const pickUpCraftingOutputItem = (e: MouseEvent): void => {
-      leftClickItemSlot(e, Player.instance!.id, Game.definiteGameState.craftingOutputSlot!, 1);
+      leftClickItemSlot(e, Player.instance!.id, definiteGameState.craftingOutputSlot!, 1);
    }
 
    // Find which of the available recipes can be crafted
    useEffect(() => {
       // Find which item slots are available for use in crafting
       const availableItemSlots = new Array<ItemSlots>();
-      if (Game.definiteGameState.hotbar !== null) {
-         availableItemSlots.push(Game.definiteGameState.hotbar.itemSlots)
+      if (definiteGameState.hotbar !== null) {
+         availableItemSlots.push(definiteGameState.hotbar.itemSlots)
       }
-      if (Game.definiteGameState.backpack !== null) {
-         availableItemSlots.push(Game.definiteGameState.backpack.itemSlots)
+      if (definiteGameState.backpack !== null) {
+         availableItemSlots.push(definiteGameState.backpack.itemSlots)
       }
       
       if (availableItemSlots.length === 0) {

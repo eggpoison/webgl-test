@@ -1,6 +1,7 @@
 import { ItemType } from "webgl-test-shared";
 import Item from "./Item";
 import Game from "../Game";
+import { latencyGameState } from "../game-state/game-states";
 
 type PlaceableEntityInfo = {
    readonly textureSource: string;
@@ -66,16 +67,16 @@ class PlaceableItem extends Item {
 
       // If the item would be consumed when used, clear the isPlacingEntity flag
       if (this.count === 1) {
-         Game.latencyGameState.playerIsPlacingEntity = false;
+         latencyGameState.playerIsPlacingEntity = false;
       }
    }
 
    protected onSelect(): void {
-      Game.latencyGameState.playerIsPlacingEntity = true;
+      latencyGameState.playerIsPlacingEntity = true;
    }
 
    protected onDeselect(): void {
-      Game.latencyGameState.playerIsPlacingEntity = false;
+      latencyGameState.playerIsPlacingEntity = false;
    }
 }
 

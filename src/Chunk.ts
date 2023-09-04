@@ -21,8 +21,8 @@ class Chunk {
    public addGameObject(gameObject: GameObject): void {
       this.gameObjects.push(gameObject);
       
-      if (gameObject instanceof Entity) {
-         this.entities.push(gameObject);
+      if (gameObject.hasOwnProperty("statusEffects")) {
+         this.entities.push(gameObject as Entity);
       }
    }
 
@@ -30,8 +30,8 @@ class Chunk {
       const idx = this.gameObjects.indexOf(gameObject);
       this.gameObjects.splice(idx, 1);
 
-      if (gameObject instanceof Entity) {
-         const entityIdx = this.entities.indexOf(gameObject);
+      if (gameObject.hasOwnProperty("statusEffects")) {
+         const entityIdx = this.entities.indexOf(gameObject as Entity);
          this.entities.splice(entityIdx, 1);
       }
    }

@@ -1,8 +1,9 @@
-import { CowSpecies, Point } from "webgl-test-shared";
+import { CowSpecies, HitData, Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
+import { createBloodParticle } from "../generic-particles";
 
 class Cow extends Entity {
    private static readonly HEAD_SIZE = 64;
@@ -15,8 +16,8 @@ class Cow extends Entity {
 
    public readonly type = "cow";
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, species: CowSpecies) {
-      super(position, hitboxes, id, secondsSinceLastHit);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, species: CowSpecies) {
+      super(position, hitboxes, id);
 
       const cowNum = species === CowSpecies.brown ? 1 : 2;
       this.attachRenderParts([
@@ -37,6 +38,14 @@ class Cow extends Entity {
             zIndex: 1
          })
       ]);
+   }
+
+   protected onHit(hitData: HitData): void {
+      if (hitData.angleFromAttacker !== null) {
+         for (let i = 0; i < 10; i++) {
+            createBloodParticle(this.position, hitData.angleFromAttacker, 32);
+         }
+      }
    }
 }
 

@@ -9,8 +9,8 @@ class Tombstone extends Entity {
    
    public readonly deathInfo: DeathInfo | null;
    
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, tombstoneType: number, deathInfo: DeathInfo | null) {
-      super(position, hitboxes, id, secondsSinceLastHit);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, tombstoneType: number, deathInfo: DeathInfo | null) {
+      super(position, hitboxes, id);
 
       this.attachRenderParts([
          new RenderPart({

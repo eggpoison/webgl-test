@@ -1,11 +1,11 @@
-import { Point, lerp, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
+import { lerp, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import Camera from "../Camera";
 import Entity from "../entities/Entity";
-import Game from "../Game";
 import RenderPart, { RenderObject } from "../render-parts/RenderPart";
 import { getTexture } from "../textures";
 import { createShaderString, createWebGLProgram, gl, halfWindowHeight, halfWindowWidth, MAX_ACTIVE_TEXTURE_UNITS } from "../webgl";
 import GameObject from "../GameObject";
+import Board from "../Board";
 
 /*
 - We only care about the draw orders within an entity, as game objects usually don't overlap.
@@ -120,7 +120,7 @@ export function createEntityShaders(): void {
 export function calculateVisibleGameObjects(): Array<GameObject> {
    const visibleGameObjects = new Array<GameObject>();
 
-   for (const gameObject of Object.values(Game.board.gameObjects)) {
+   for (const gameObject of Object.values(Board.gameObjects)) {
       visibleGameObjects.push(gameObject);
    }
 

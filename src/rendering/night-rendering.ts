@@ -1,6 +1,6 @@
 import { lerp } from "webgl-test-shared";
-import Game from "../Game";
 import { createWebGLProgram, gl } from "../webgl";
+import Board from "../Board";
 
 const vertexShaderText = `#version 300 es
 precision mediump float;
@@ -59,13 +59,13 @@ export function createNightShaders(): void {
 
 export function renderNight(): void {
    // Don't render nighttime if it is day
-   if (Game.time >= 6 && Game.time < 18) return;
+   if (Board.time >= 6 && Board.time < 18) return;
 
    let darkenFactor: number;
-   if (Game.time >= 18 && Game.time < 20) {
-      darkenFactor = lerp(0, NIGHT_DARKNESS, (Game.time - 18) / 2);
-   } else if (Game.time >= 4 && Game.time < 6) {
-      darkenFactor = lerp(0, NIGHT_DARKNESS, (6 - Game.time) / 2);
+   if (Board.time >= 18 && Board.time < 20) {
+      darkenFactor = lerp(0, NIGHT_DARKNESS, (Board.time - 18) / 2);
+   } else if (Board.time >= 4 && Board.time < 6) {
+      darkenFactor = lerp(0, NIGHT_DARKNESS, (6 - Board.time) / 2);
    } else {
       darkenFactor = NIGHT_DARKNESS;
    }

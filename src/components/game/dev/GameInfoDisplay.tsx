@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { roundNum } from "webgl-test-shared";
-import Game from "../../../Game";
 import OPTIONS from "../../../options";
+import Board from "../../../Board";
 
 let serverTicks = 0;
 
@@ -41,7 +41,7 @@ const formatTime = (time: number): string => {
 
 const GameInfoDisplay = () => {
    const [currentTime, setCurrentTime] = useState(0);
-   const [ticks, setTicks] = useState(Game.ticks);
+   const [ticks, setTicks] = useState(Board.ticks);
    // const [fps, setFPS] = useState(0);
    const [renderTime, setRenderTime] = useState(0);
 
@@ -50,8 +50,8 @@ const GameInfoDisplay = () => {
    const [showChunkBorders, setShowChunkBorders] = useState(OPTIONS.showChunkBorders);
 
    useEffect(() => {
-      if (typeof Game.time !== "undefined") {
-         setCurrentTime(Game.time);
+      if (typeof Board.time !== "undefined") {
+         setCurrentTime(Board.time);
       }
 
       updateDebugScreenCurrentTime = (time: number): void => {
@@ -112,13 +112,13 @@ const GameInfoDisplay = () => {
       </ul>
 
       <ul>
-         <li>{Object.keys(Game.board.gameObjects).length} Game Objects</li>
+         <li>{Object.keys(Board.gameObjects).length} Game Objects</li>
          <ul>
-            <li>{Object.keys(Game.board.entities).length} Entities</li>
-            <li>{Object.keys(Game.board.projectiles).length} Projectiles</li>
-            <li>{Object.keys(Game.board.droppedItems).length} Dropped Items</li>
+            <li>{Object.keys(Board.entities).length} Entities</li>
+            <li>{Object.keys(Board.projectiles).length} Projectiles</li>
+            <li>{Object.keys(Board.droppedItems).length} Dropped Items</li>
          </ul>
-         <li>{Object.keys(Game.board.lowParticlesMonocolour).length + Object.keys(Game.board.lowParticlesTextured).length + Object.keys(Game.board.highParticlesMonocolour).length + Object.keys(Game.board.highParticlesTextured).length} Particles</li>
+         <li>{Object.keys(Board.lowParticlesMonocolour).length + Object.keys(Board.lowParticlesTextured).length + Object.keys(Board.highParticlesMonocolour).length + Object.keys(Board.highParticlesTextured).length} Particles</li>
       </ul>
    </div>;
 }

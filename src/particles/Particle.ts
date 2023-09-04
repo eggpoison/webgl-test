@@ -1,5 +1,4 @@
-import { ParticleData, ParticleTint, ParticleType, Point, SETTINGS, Vector } from "webgl-test-shared";
-import Game from "./Game";
+import { BaseParticleData, ParticleType, Point, SETTINGS, Vector } from "webgl-test-shared";
 
 export enum ParticleRenderLayer {
    low, // Below game objects
@@ -57,7 +56,7 @@ export const PARTICLE_INFO = {
       renderLayer: ParticleRenderLayer.high,
       renderType: ParticleRenderType.monocolour
    },
-   // Client
+   // Client (DONE)
    [ParticleType.cactusSpine]: {
       width: 4,
       height: 16,
@@ -226,10 +225,11 @@ const getAvailableID = (): number => {
    return idCounter++;
 }
 
-class Particle {
+abstract class Particle {
    public readonly id: number;
 
-   public readonly type: ParticleType;
+   public readonly width: number;
+   public readonly height: number;
    
    public position: Point;
    public velocity: Vector | null;
@@ -245,14 +245,8 @@ class Particle {
 
    public age = 0;
    public readonly lifetime: number;
-
-   /**
-    * In a monocolour particle, each element indicates the corresponding RGB value from 0->1.
-    * In a textured particle, each element indicates the modifier for the texture's colour from -1->1, where 0 doesn't affect the colour
-    */
-   public tint: ParticleTint = [0, 0, 0];
    
-   constructor(id: number | null, type: ParticleType, position: Point, initialVelocity: Vector | null, initialAcceleration: Vector | null, lifetime: number) {
+   constructor(id: number | null, width: number, height: number, position: Point, initialVelocity: Vector | null, initialAcceleration: Vector | null, lifetime: number) {
       // TODO: This is bad. Ideally shouldn't have to define ID in constructor, but that may not be possible
       if (id === null) {
          this.id = getAvailableID();
@@ -260,41 +254,12 @@ class Particle {
          this.id = id;
       }
 
-      this.type = type;
+      this.width = width;
+      this.height = height;
       this.position = position;
       this.velocity = initialVelocity;
       this.acceleration = initialAcceleration;
       this.lifetime = lifetime;
-
-      // Add itself to the board
-      const renderLayer = PARTICLE_INFO[type].renderLayer;
-      const renderType = PARTICLE_INFO[type].renderType;
-      if (renderLayer === ParticleRenderLayer.low) {
-         if (renderType === ParticleRenderType.monocolour) {
-            Game.board.lowParticlesMonocolour[this.id] = this;
-         } else {
-            Game.board.lowParticlesTextured[this.id] = this;
-         }
-      } else {
-         if (renderType === ParticleRenderType.monocolour) {
-            Game.board.highParticlesMonocolour[this.id] = this;
-         } else {
-            Game.board.highParticlesTextured[this.id] = this;
-         }
-      }
-      // this.rotation = data.rotation;
-      // this.opacity = data.opacity;
-      // this.scale = data.scale;
-      // this.tint = data.tint;
-
-      // TODO: Rework
-      // if (data.foodItemType !== -1) {
-      //    const colour = getRandomFoodEatingParticleColour(data.foodItemType);
-      //    this.tint[0] = colour[0] / 255 - 1;
-      //    this.tint[1] = colour[1] / 255 - 1;
-      //    this.tint[2] = colour[2] / 255 - 1;
-      //    this.opacity *= colour[3] / 255;
-      // }
    }
    
    public tick(): void {
@@ -354,7 +319,7 @@ class Particle {
 
    public getOpacity?(age: number): number;
    
-   public updateFromData(data: ParticleData): void {
+   public updateFromData(data: BaseParticleData): void {
       this.position = Point.unpackage(data.position);
       this.velocity = data.velocity !== null ? Vector.unpackage(data.velocity) : null;
       this.acceleration = data.acceleration !== null ? Vector.unpackage(data.acceleration) : null;

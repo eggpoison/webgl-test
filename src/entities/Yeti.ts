@@ -1,8 +1,9 @@
-import { EntityType, Point, Vector, EntityData, lerp } from "webgl-test-shared";
+import { EntityType, Point, Vector, EntityData, lerp, HitData } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
+import { createBloodParticle } from "../generic-particles";
 
 class Yeti extends Entity {
    private static readonly SIZE = 128;
@@ -16,8 +17,8 @@ class Yeti extends Entity {
 
    private attackProgress = 1;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, attackProgress: number) {
-      super(position, hitboxes, id, secondsSinceLastHit);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, attackProgress: number) {
+      super(position, hitboxes, id);
 
       this.attachRenderPart(
          new RenderPart({
@@ -57,6 +58,14 @@ class Yeti extends Entity {
       super.updateFromData(entityData);
 
       this.attackProgress = entityData.clientArgs[0];
+   }
+
+   protected onHit(hitData: HitData): void {
+      if (hitData.angleFromAttacker !== null) {
+         for (let i = 0; i < 10; i++) {
+            createBloodParticle(this.position, hitData.angleFromAttacker, Yeti.SIZE / 2);
+         }
+      }
    }
 }
 

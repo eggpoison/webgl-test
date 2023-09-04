@@ -1,21 +1,6 @@
-import Game from "../Game";
 import { updateHealthBar } from "../components/game/HealthBar";
-import { hideNerdVision } from "../components/game/dev/NerdVision";
-import Player from "../entities/Player";
-import GameState from "./game-state";
-
-const killPlayer = (): void => {
-   if (Player.instance === null) return;
-
-   // Remove the player from the game
-   Game.board.removeGameObject(Player.instance);
-   Player.instance = null;
-
-   Game.latencyGameState.resetFlags();
-   Game.definiteGameState.resetFlags();
-
-   hideNerdVision();
-}
+// import Player from "../entities/Player";
+import GameState from "./GameState";
 
 /** Stores the definite, 100% known correct information about the game state. */
 class DefiniteGameState extends GameState {
@@ -23,7 +8,7 @@ class DefiniteGameState extends GameState {
    public playerUsername: string = "";
 
    /** Health of the instance player */
-   private _playerHealth: number = Player.MAX_HEALTH;
+   private _playerHealth: number = 20;
 
    public get playerHealth(): number {
       return this._playerHealth;
@@ -36,10 +21,6 @@ class DefiniteGameState extends GameState {
 
       if (healthHasChanged && typeof updateHealthBar !== "undefined") {
          updateHealthBar(this._playerHealth);
-      }
-
-      if (this._playerHealth <= 0) {
-         killPlayer();
       }
    }
 

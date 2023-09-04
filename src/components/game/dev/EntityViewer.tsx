@@ -52,10 +52,10 @@ const EntityViewer = () => {
 
       <p>Chunks: {chunkDisplayText}</p>
 
-      {typeof entity.special !== "undefined" ? <>
+      {typeof entity.mobAIType !== "undefined" ? <>
          <br />
 
-         <p>Current Mob AI: <span className="highlight">{entity.special.mobAIType}</span></p>
+         <p>Current Mob AI: <span className="highlight">{entity.mobAIType}</span></p>
       </> : null}
    </div>;
 }

@@ -23,7 +23,7 @@ import Snowball from "./entities/Snowball";
 import CircularHitbox from "./hitboxes/CircularHitbox";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
 
-export type EntityClassType<T extends EntityType> = new (position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, ...clientParams: Parameters<EntityInfoClientArgs[T]>) => Entity;
+export type EntityClassType<T extends EntityType> = new (position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, ...clientParams: Parameters<EntityInfoClientArgs[T]>) => Entity;
 
 const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
    cow: () => Cow,

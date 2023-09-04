@@ -6,8 +6,11 @@ import { Tile } from "./Tile";
 import GameObject from "./GameObject";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import Projectile from "./projectiles/Projectile";
-import Particle from "./Particle";
+import Particle, { ParticleRenderLayer } from "./particles/Particle";
 import CircularHitbox from "./hitboxes/CircularHitbox";
+import MonocolourParticle from "./particles/MonocolourParticle";
+import TexturedParticle from "./particles/TexturedParticle";
+import { updateDebugScreenCurrentTime } from "./components/game/dev/GameInfoDisplay";
 
 export interface EntityHitboxInfo {
    readonly vertexPositions: readonly [Point, Point, Point, Point];
@@ -20,26 +23,39 @@ export interface RiverSteppingStone {
    readonly size: RiverSteppingStoneSize;
 }
 
-class Board {
-   private readonly tiles: Array<Array<Tile>>;
-   private readonly chunks: Array<Array<Chunk>>;
+abstract class Board {
+   public static ticks: number;
+   private static _time: number;
 
-   public readonly gameObjects: Record<number, GameObject> = {};
-   public readonly entities: Record<number, Entity> = {};
-   public readonly droppedItems: Record<number, DroppedItem> = {};
-   public readonly projectiles: Record<number, Projectile> = {};
+   private static tiles: Array<Array<Tile>>;
+   private static chunks: Array<Array<Chunk>>;
+
+   public static readonly gameObjects: Record<number, GameObject> = {};
+   public static readonly entities: Record<number, Entity> = {};
+   public static readonly droppedItems: Record<number, DroppedItem> = {};
+   public static readonly projectiles: Record<number, Projectile> = {};
 
    // TODO: This is too messy
-   public readonly lowParticlesMonocolour: Record<number, Particle> = {};
-   public readonly lowParticlesTextured: Record<number, Particle> = {};
-   public readonly highParticlesMonocolour: Record<number, Particle> = {};
-   public readonly highParticlesTextured: Record<number, Particle> = {};
+   public static readonly lowParticlesMonocolour: Record<number, MonocolourParticle> = {};
+   public static readonly lowParticlesTextured: Record<number, TexturedParticle> = {};
+   public static readonly highParticlesMonocolour: Record<number, MonocolourParticle> = {};
+   public static readonly highParticlesTextured: Record<number, TexturedParticle> = {};
    /** Stores the IDs of all particles sent by the server */
-   public readonly serverParticleIDs = new Set<number>();
+   public static readonly serverParticleIDs = new Set<number>();
 
-   private readonly riverFlowDirections: Record<number, Record<number, number>>;
+   private static riverFlowDirections: Record<number, Record<number, number>>;
 
-   constructor(tiles: Array<Array<Tile>>, waterRocks: ReadonlyArray<WaterRockData>, riverSteppingStones: ReadonlyArray<RiverSteppingStoneData>, riverFlowDirections: Record<number, Record<number, number>>) {
+   // TODO: Remove these getters and setters
+   public static get time(): number {
+      return this._time;
+   }
+
+   public static set time(time: number) {
+      this._time = time;
+      updateDebugScreenCurrentTime(time);
+   }
+
+   public static initialise(tiles: Array<Array<Tile>>, waterRocks: ReadonlyArray<WaterRockData>, riverSteppingStones: ReadonlyArray<RiverSteppingStoneData>, riverFlowDirections: Record<number, Record<number, number>>): void {
       this.tiles = tiles;
       
       // Create the chunk array
@@ -86,7 +102,62 @@ class Board {
       }
    }
 
-   public getRiverFlowDirection(tileX: number, tileY: number): number {
+   public static tickIntervalHasPassed(intervalSeconds: number): boolean {
+      const ticksPerInterval = intervalSeconds * SETTINGS.TPS;
+      
+      const previousCheck = (Board.ticks - 1) / ticksPerInterval;
+      const check = Board.ticks / ticksPerInterval;
+      return Math.floor(previousCheck) !== Math.floor(check);
+   }
+
+   public static addEntity(entity: Entity): void {
+      this.gameObjects[entity.id] = entity;
+      this.entities[entity.id] = entity;
+   }
+
+   public static addDroppedItem(droppedItem: DroppedItem): void {
+      this.gameObjects[droppedItem.id] = droppedItem;
+      this.droppedItems[droppedItem.id] = droppedItem;
+   }
+
+   public static addProjectile(projectile: Projectile): void {
+      this.gameObjects[projectile.id] = projectile;
+      this.projectiles[projectile.id] = projectile;
+   }
+
+   public static removeGameObject(gameObject: GameObject): void {
+      if (typeof gameObject === "undefined") {
+         throw new Error("Tried to remove an undefined game object.");
+      }
+
+      for (const chunk of gameObject.chunks) {
+         chunk.removeGameObject(gameObject);
+      }
+
+      delete this.gameObjects[gameObject.id];
+      delete this.projectiles[gameObject.id];
+      delete this.entities[gameObject.id];
+      delete this.droppedItems[gameObject.id];
+   }
+
+   public static addMonocolourParticle(particle: MonocolourParticle, renderLayer: ParticleRenderLayer): void {
+      // Add itself to the board
+      if (renderLayer === ParticleRenderLayer.low) {
+         this.lowParticlesMonocolour[particle.id] = particle;
+      } else {
+         this.highParticlesMonocolour[particle.id] = particle;
+      }
+   }
+
+   public static addTexturedParticle(particle: TexturedParticle, renderLayer: ParticleRenderLayer): void {
+      if (renderLayer === ParticleRenderLayer.low) {
+         this.lowParticlesTextured[particle.id] = particle;
+      } else {
+         this.highParticlesTextured[particle.id] = particle;
+      }
+   }
+
+   public static getRiverFlowDirection(tileX: number, tileY: number): number {
       if (!this.riverFlowDirections.hasOwnProperty(tileX) || !this.riverFlowDirections[tileX].hasOwnProperty(tileY)) {
          throw new Error("Tried to get the river flow direction of a non-water tile.");
       }
@@ -94,17 +165,17 @@ class Board {
       return this.riverFlowDirections[tileX][tileY];
    }
 
-   public getTile(tileX: number, tileY: number): Tile {
+   public static getTile(tileX: number, tileY: number): Tile {
       if (tileX < 0 || tileX >= SETTINGS.BOARD_DIMENSIONS) throw new Error(`Tile x coordinate '${tileX}' is not a valid tile coordinate.`);
       if (tileY < 0 || tileY >= SETTINGS.BOARD_DIMENSIONS) throw new Error(`Tile x coordinate '${tileY}' is not a valid tile coordinate.`);
       return this.tiles[tileX][tileY];
    }
 
-   public getChunk(x: number, y: number): Chunk {
+   public static getChunk(x: number, y: number): Chunk {
       return this.chunks[x][y];
    }
 
-   public updateParticles(): void {
+   public static updateParticles(): void {
       {
          const removedParticles = new Array<Particle>();
          for (const particle of Object.values(this.lowParticlesMonocolour)) {
@@ -164,7 +235,7 @@ class Board {
    }
 
    /** Ticks all game objects without updating them */
-   public tickGameObjects(): void {
+   public static tickGameObjects(): void {
       for (const gameObject of Object.values(this.gameObjects)) {
          if (typeof gameObject.tick !== "undefined") {
             gameObject.tick();
@@ -172,7 +243,7 @@ class Board {
       }
    }
 
-   public updateGameObjects(): void {
+   public static updateGameObjects(): void {
       for (const gameObject of Object.values(this.gameObjects)) {
          gameObject.applyPhysics();
          if (typeof gameObject.tick !== "undefined") gameObject.tick();
@@ -192,7 +263,7 @@ class Board {
    }
 
    /** Updates the client's copy of the tiles array to match any tile updates that have occurred */
-   public loadTileUpdates(tileUpdates: ReadonlyArray<ServerTileUpdateData>): void {
+   public static loadTileUpdates(tileUpdates: ReadonlyArray<ServerTileUpdateData>): void {
       for (const update of tileUpdates) {
          let tile = this.getTile(update.x, update.y);
          tile.type = update.type;
@@ -200,23 +271,7 @@ class Board {
       }
    }
 
-   public removeGameObject(gameObject: GameObject): void {
-      if (typeof gameObject === "undefined") {
-         throw new Error("Tried to remove an undefined game object.");
-      }
-
-      if (typeof gameObject.remove !== "undefined") {
-         gameObject.remove();
-      }
-
-      for (const chunk of gameObject.chunks) {
-         chunk.removeGameObject(gameObject);
-      }
-
-      delete this.gameObjects[gameObject.id];
-   }
-
-   public calculateDistanceBetweenPointAndGameObject(position: Point, gameObject: GameObject): number {
+   public static calculateDistanceBetweenPointAndGameObject(position: Point, gameObject: GameObject): number {
       let minDist = Number.MAX_SAFE_INTEGER;
       for (const hitbox of gameObject.hitboxes) {
          let distance: number;
@@ -242,7 +297,7 @@ class Board {
       return minDist;
    }
 
-   public tileIsInBoard(tileX: number, tileY: number): boolean {
+   public static tileIsInBoard(tileX: number, tileY: number): boolean {
       return tileX >= 0 && tileX < SETTINGS.BOARD_DIMENSIONS && tileY >= 0 && tileY < SETTINGS.BOARD_DIMENSIONS;
    }
 }

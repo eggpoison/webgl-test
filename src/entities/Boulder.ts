@@ -10,8 +10,8 @@ class Boulder extends Entity {
 
    public type: EntityType = "boulder";
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, boulderType: number) {
-      super(position, hitboxes, id, secondsSinceLastHit);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, boulderType: number) {
+      super(position, hitboxes, id);
 
       this.attachRenderParts([
          new RenderPart({

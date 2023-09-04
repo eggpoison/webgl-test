@@ -1,11 +1,32 @@
-import { EntityData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, ItemType, Point, SETTINGS, ToolItemInfo, TribeType, Vector, lerp } from "webgl-test-shared";
+import { EntityData, HitData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, ItemType, ParticleColour, Point, SETTINGS, ToolItemInfo, TribeType, Vector, lerp, randFloat, randItem } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import CLIENT_ITEM_INFO_RECORD from "../client-item-info";
-import Game from "../Game";
 import { getFrameProgress } from "../GameObject";
+import MonocolourParticle from "../particles/MonocolourParticle";
+import { ParticleRenderLayer } from "../particles/Particle";
+import { createBloodParticle } from "../generic-particles";
+import Board from "../Board";
+import { latencyGameState } from "../game-state/game-states";
+
+type FilterFoodItemTypes<T extends ItemType> = (typeof ITEM_TYPE_RECORD)[T] extends "food" ? never : T;
+
+const FOOD_EATING_COLOURS: { [T in ItemType as Exclude<T, FilterFoodItemTypes<T>>]: Array<ParticleColour> } = {
+   [ItemType.berry]: [
+      [222/255, 57/255, 42/255],
+      [181/255, 12/255, 9/255],
+      [217/255, 26/255, 20/255],
+      [227/255, 137/255, 129/255]
+   ],
+   [ItemType.raw_beef]: [
+      [0, 0, 0]
+   ],
+   [ItemType.cooked_beef]: [
+      [0, 0, 0]
+   ]
+}
 
 abstract class TribeMember extends Entity {
    private static readonly FOOD_EAT_INTERVAL = 0.3;
@@ -34,11 +55,13 @@ abstract class TribeMember extends Entity {
 
    protected activeItem: ItemType | null;
 
+   public foodEatingType: ItemType | -1;
+
    public lastAttackTicks: number;
    public lastEatTicks: number;
    
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, activeItem: ItemType | null, lastAttackTicks: number, lastEatTicks: number) {
-      super(position, hitboxes, id, secondsSinceLastHit);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, activeItem: ItemType | null, foodEatingType: ItemType | -1, lastAttackTicks: number, lastEatTicks: number) {
+      super(position, hitboxes, id);
 
       this.tribeID = tribeID;
       this.tribeType = tribeType;
@@ -48,6 +71,7 @@ abstract class TribeMember extends Entity {
       this.activeItem = activeItem;
       this.lastAttackTicks = lastAttackTicks;
       this.lastEatTicks = lastEatTicks;
+      this.foodEatingType = foodEatingType;
       
       this.activeItemRenderPart = new RenderPart({
          textureSource: activeItem !== null ? CLIENT_ITEM_INFO_RECORD[activeItem].textureSource : "",
@@ -70,7 +94,7 @@ abstract class TribeMember extends Entity {
                itemSize = this.activeItemRenderPart.width;
             }
 
-            if (Game.latencyGameState.playerIsEating) {
+            if (latencyGameState.playerIsEating) {
                // Food eating animation
                
                const secondsSinceLastEat = this.getSecondsSinceLastAction(this.lastEatTicks);
@@ -105,7 +129,7 @@ abstract class TribeMember extends Entity {
             }
          },
          getRotation: () => {
-            if (Game.latencyGameState.playerIsEating) {
+            if (latencyGameState.playerIsEating) {
                // Eating animation
 
                const secondsSinceLastEat = this.getSecondsSinceLastAction(this.lastEatTicks);
@@ -146,7 +170,7 @@ abstract class TribeMember extends Entity {
    }
 
    private getSecondsSinceLastAction(lastActionTicks: number): number {
-      const ticksSinceLastAction = Game.ticks - lastActionTicks;
+      const ticksSinceLastAction = Board.ticks - lastActionTicks;
       let secondsSinceLastAction = ticksSinceLastAction / SETTINGS.TPS;
 
       // Account for frame progress
@@ -169,6 +193,52 @@ abstract class TribeMember extends Entity {
       }
 
       return attackProgress;
+   }
+
+   protected onHit(hitData: HitData): void {
+      if (hitData.angleFromAttacker !== null) {
+         for (let i = 0; i < 10; i++) {
+            createBloodParticle(this.position, hitData.angleFromAttacker, 32);
+         }
+      }
+   }
+
+   public tick(): void {
+      super.tick();
+
+      if (this.foodEatingType !== -1 && Board.tickIntervalHasPassed(0.25)) {
+         for (let i = 0; i < 3; i++) {
+            const spawnPosition = this.position.copy();
+            const offset = new Vector(37, this.rotation).convertToPoint();
+            spawnPosition.add(offset);
+            const offset2 = new Vector(randFloat(0, 6), 2 * Math.PI * Math.random()).convertToPoint();
+            spawnPosition.add(offset2);
+
+            const velocity = new Vector(randFloat(90, 130), 2 * Math.PI * Math.random());
+            if (this.velocity !== null) {
+               velocity.add(this.velocity);
+            }
+            
+            const lifetime = randFloat(0.3, 0.4);
+            
+            const particle = new MonocolourParticle(
+               null,
+               6,
+               6,
+               spawnPosition,
+               velocity,
+               null,
+               lifetime,
+               randItem(FOOD_EATING_COLOURS[this.foodEatingType as keyof typeof FOOD_EATING_COLOURS])
+            );
+            particle.rotation = 2 * Math.PI * Math.random();
+            particle.drag = velocity.magnitude * 0.75;
+            particle.getOpacity = (age: number) => {
+               return 1 - Math.pow(age / lifetime, 3);
+            }
+            Board.addMonocolourParticle(particle, ParticleRenderLayer.low);
+         }
+      }
    }
 
    protected overrideTileMoveSpeedMultiplier(): number | null {
@@ -254,7 +324,8 @@ abstract class TribeMember extends Entity {
       super.updateFromData(entityData);
 
       this.activeItem = entityData.clientArgs[3];
-      this.lastAttackTicks = entityData.clientArgs[4];
+      this.foodEatingType = entityData.clientArgs[4]
+      this.lastAttackTicks = entityData.clientArgs[5];
       this.updateActiveItemRenderPart(this.activeItem);
 
       this.tribeID = entityData.clientArgs[0];

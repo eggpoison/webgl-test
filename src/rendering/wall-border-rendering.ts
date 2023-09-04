@@ -1,8 +1,8 @@
 import { SETTINGS } from "webgl-test-shared";
 import Camera from "../Camera";
-import Game from "../Game";
 import { Tile } from "../Tile";
 import { createWebGLProgram, gl } from "../webgl";
+import Board from "../Board";
 
 const BORDER_THICKNESS = 5;
 
@@ -46,7 +46,7 @@ const getVisibleTiles = (): ReadonlyArray<Tile> => {
    
    for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
       for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
-         const tile = Game.board.getTile(tileX, tileY);
+         const tile = Board.getTile(tileX, tileY);
          tiles.push(tile);
       }
    }
@@ -62,10 +62,10 @@ export function renderWallBorders(): void {
    for (const tile of visibleTiles) {
       if (!tile.isWall) continue;
 
-      const topTile = tile.y < SETTINGS.BOARD_DIMENSIONS - 1 ? Game.board.getTile(tile.x, tile.y + 1) : null;
-      const leftTile = tile.x > 0 ? Game.board.getTile(tile.x - 1, tile.y) : null;
-      const bottomTile = tile.y > 0 ? Game.board.getTile(tile.x, tile.y - 1) : null;
-      const rightTile = tile.x < SETTINGS.BOARD_DIMENSIONS - 1 ? Game.board.getTile(tile.x + 1, tile.y) : null;
+      const topTile = tile.y < SETTINGS.BOARD_DIMENSIONS - 1 ? Board.getTile(tile.x, tile.y + 1) : null;
+      const leftTile = tile.x > 0 ? Board.getTile(tile.x - 1, tile.y) : null;
+      const bottomTile = tile.y > 0 ? Board.getTile(tile.x, tile.y - 1) : null;
+      const rightTile = tile.x < SETTINGS.BOARD_DIMENSIONS - 1 ? Board.getTile(tile.x + 1, tile.y) : null;
 
       const topOvershoot = topTile !== null && topTile.isWall ? BORDER_THICKNESS : 0;
       const leftOvershoot = leftTile !== null && leftTile.isWall ? BORDER_THICKNESS : 0;
@@ -106,7 +106,7 @@ export function renderWallBorders(): void {
 
       // Bottom border
       if (tile.y > 0) {
-         const bottomTile = Game.board.getTile(tile.x, tile.y - 1)
+         const bottomTile = Board.getTile(tile.x, tile.y - 1)
          if (!bottomTile.isWall) {
             const x1 = Camera.calculateXCanvasPosition(tile.x * SETTINGS.TILE_SIZE - leftOvershoot);
             const x2 = Camera.calculateXCanvasPosition((tile.x + 1) * SETTINGS.TILE_SIZE + rightOvershoot);
@@ -125,7 +125,7 @@ export function renderWallBorders(): void {
 
       // Right border
       if (tile.x < SETTINGS.BOARD_DIMENSIONS - 1) {
-         const rightTile = Game.board.getTile(tile.x + 1, tile.y)
+         const rightTile = Board.getTile(tile.x + 1, tile.y)
          if (!rightTile.isWall) {
             const x1 = Camera.calculateXCanvasPosition((tile.x + 1) * SETTINGS.TILE_SIZE - BORDER_THICKNESS);
             const x2 = Camera.calculateXCanvasPosition((tile.x + 1) * SETTINGS.TILE_SIZE);

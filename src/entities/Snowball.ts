@@ -18,8 +18,8 @@ const getTextureSource = (size: SnowballSize): string => {
 class Snowball extends Entity {
    public type: EntityType = "snowball";
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, size: SnowballSize) {
-      super(position, hitboxes, id, secondsSinceLastHit);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, size: SnowballSize) {
+      super(position, hitboxes, id);
 
       const textureSize = SNOWBALL_SIZES[size];
 

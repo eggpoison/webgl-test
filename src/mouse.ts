@@ -7,6 +7,7 @@ import Game from "./Game";
 import Camera from "./Camera";
 import { updateDevEntityViewer } from "./components/game/dev/EntityViewer";
 import { isDev } from "./utils";
+import Board from "./Board";
 
 let cursorX: number | null = null;
 let cursorY: number | null = null;
@@ -54,7 +55,7 @@ export function getMouseTargetEntity(): Entity | null {
    let minDistance = Number.MAX_SAFE_INTEGER;
    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
-         const chunk = Game.board.getChunk(chunkX, chunkY);
+         const chunk = Board.getChunk(chunkX, chunkY);
          for (const gameObject of chunk.getGameObjects()) {
             if (gameObject instanceof Entity) {
                const distance = Game.cursorPosition.calculateDistanceBetween(gameObject.renderPosition);

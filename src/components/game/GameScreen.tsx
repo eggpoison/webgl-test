@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import Game from "../../Game";
 import ChatBox from "./ChatBox";
 import NerdVision from "./dev/NerdVision";
 import HealthBar from "./HealthBar";
@@ -10,6 +9,7 @@ import HeldItem from "./HeldItem";
 import DeathScreen from "./DeathScreen";
 import BackpackInventoryMenu from "./inventories/BackpackInventory";
 import InteractInventory from "./inventories/InteractInventory";
+import Game from "../../Game";
 
 export let showPauseScreen: () => void;
 export let hidePauseScreen: () => void;
@@ -39,7 +39,7 @@ const GameScreen = () => {
          gameScreenSetIsDead = (isDead: boolean): void => {
             setIsDead(isDead);
          }
-         
+
          Game.start();
       }
    }, []);
