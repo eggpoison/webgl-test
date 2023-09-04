@@ -21,7 +21,7 @@ import { registerServerTick, updateDebugScreenCurrentTime, updateDebugScreenTick
 import createProjectile from "../projectiles/projectile-creation";
 import Camera from "../Camera";
 import { isDev } from "../utils";
-import { PARTICLE_INFO, ParticleRenderType } from "../particles/Particle";
+import { PARTICLE_INFO, ParticleRenderLayer, ParticleRenderType } from "../particles/Particle";
 import { updateTileAmbientOcclusion } from "../rendering/ambient-occlusion-rendering";
 import Tribe from "../Tribe";
 import { updateRenderChunkFromTileUpdate } from "../rendering/tile-rendering/render-chunks";
@@ -308,9 +308,6 @@ abstract class Client {
       const acceleration = data.acceleration !== null ? Vector.unpackage(data.acceleration) : null;
 
       const particleInfo = PARTICLE_INFO[data.type];
-      const width = particleInfo.width;
-      const height = particleInfo.height;
-      const renderLayer = particleInfo.renderLayer;
       
       let particle: MonocolourParticle | TexturedParticle;
       if (data.hasOwnProperty("tint")) {
@@ -318,15 +315,24 @@ abstract class Client {
          if (!PARTICLE_TEXTURES.hasOwnProperty(data.type)) {
             throw new Error(`Particle type '${ParticleType[data.type]}' doesn't have a matching texture.`);
          }
-         particle = new TexturedParticle(data.id, width, height, position, velocity, acceleration, data.lifetime, PARTICLE_TEXTURES[data.type as keyof typeof PARTICLE_TEXTURES]);
-         Board.addTexturedParticle(particle, renderLayer);
+         particle = new TexturedParticle(data.id, particleInfo.width, particleInfo.height, position, velocity, acceleration, data.lifetime, PARTICLE_TEXTURES[data.type as keyof typeof PARTICLE_TEXTURES]);
+         if (particleInfo.renderLayer === ParticleRenderLayer.low) {
+            Board.lowParticlesTextured[particle.id] = particle;
+         } else {
+            Board.highParticlesTextured[particle.id] = particle;
+         }
       } else {
          // Monocolour
-         particle = new MonocolourParticle(data.id, width, height, position, velocity, acceleration, data.lifetime, PARTICLE_COLOURS[data.type as keyof typeof PARTICLE_COLOURS]);
-         Board.addMonocolourParticle(particle, renderLayer);
+         particle = new MonocolourParticle(data.id, particleInfo.width, particleInfo.height, position, velocity, acceleration, data.lifetime, PARTICLE_COLOURS[data.type as keyof typeof PARTICLE_COLOURS]);
+         if (particleInfo.renderLayer === ParticleRenderLayer.low) {
+            Board.lowParticlesMonocolour[particle.id] = particle;
+         } else {
+            Board.highParticlesMonocolour[particle.id] = particle;
+         }
       }
       particle.age = data.age;
       particle.rotation = data.rotation;
+      particle.opacity = data.opacity;
    }
 
    /**

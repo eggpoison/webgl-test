@@ -1,22 +1,5 @@
 import { Point, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 
-// export interface RenderPartInfo {
-//    /** The render part's offset from its parent */
-//    readonly offset?: Point | (() => Point);
-//    /** Width of the render part */
-//    readonly width: number;
-//    /** Height of the render part */
-//    readonly height: number;
-//    readonly textureSource: string;
-//    /** Render priority of the render part in relation to its entity's other render parts. */
-//    readonly zIndex: number;
-//    /** Rotation of the render part in radians */
-//    readonly getRotation?: () => number;
-//    readonly inheritParentRotation?: boolean;
-//    readonly opacity?: number;
-//    readonly flipX?: boolean;
-// }
-
 /** A thing which is able to hold render parts */
 export class RenderObject {
    /** Estimated position of the object during the current frame */

@@ -248,6 +248,7 @@ abstract class Particle {
    
    constructor(id: number | null, width: number, height: number, position: Point, initialVelocity: Vector | null, initialAcceleration: Vector | null, lifetime: number) {
       // TODO: This is bad. Ideally shouldn't have to define ID in constructor, but that may not be possible
+      // Note that clientside particles don't require an ID
       if (id === null) {
          this.id = getAvailableID();
       } else {

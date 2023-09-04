@@ -110,6 +110,7 @@ abstract class Game {
       // Start the game loop
       this.isSynced = true;
       this.isRunning = true;
+      this.lastTime = performance.now();
       requestAnimationFrame(time => this.main(time));
    }
 

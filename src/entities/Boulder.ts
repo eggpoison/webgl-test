@@ -10,6 +10,11 @@ class Boulder extends Entity {
 
    public type: EntityType = "boulder";
 
+   private static readonly TEXTURE_SOURCES = [
+      "entities/boulder/boulder1.png",
+      "entities/boulder/boulder2.png"
+   ];
+
    constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, boulderType: number) {
       super(position, hitboxes, id);
 
@@ -17,7 +22,7 @@ class Boulder extends Entity {
          new RenderPart(
             Boulder.WIDTH,
             Boulder.HEIGHT,
-            `entities/boulder/boulder${boulderType + 1}.png`,
+            Boulder.TEXTURE_SOURCES[boulderType],
             0,
             0
          )

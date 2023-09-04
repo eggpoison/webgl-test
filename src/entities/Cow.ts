@@ -40,7 +40,7 @@ class Cow extends Entity {
          1,
          0
       );
-      new Point(0, (Cow.BODY_HEIGHT - Cow.HEAD_OVERLAP) / 2);
+      headRenderPart.offset = new Point(0, (Cow.BODY_HEIGHT - Cow.HEAD_OVERLAP) / 2);
       this.attachRenderPart(headRenderPart);
    }
 

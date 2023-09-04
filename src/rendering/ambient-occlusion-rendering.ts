@@ -150,16 +150,14 @@ const flipKeyX = (key: string): string => {
 
 const getKeyCombination = (key: string): string => {
    // Find the index of the matching combination
+   mainLoop:
    for (const [combination, textureSource] of Object.entries(ATLAS)) {
-      let doesMatch = true;
       for (let charIndex = 0; charIndex < 9; charIndex++) {
          if (!symbolsDoMatch(combination[charIndex], key[charIndex])) {
-            doesMatch = false;
+            continue mainLoop;
          }
       }
-      if (doesMatch) {
-         return textureSource;
-      }
+      return textureSource;
    }
    return "";
 }
