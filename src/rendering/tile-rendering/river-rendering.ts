@@ -1,4 +1,4 @@
-import { Point, RIVER_STEPPING_STONE_SIZES, RiverSteppingStoneSize, SETTINGS, Vector, WaterRockSize, lerp, randFloat, rotatePoint } from "webgl-test-shared";
+import { Point, RIVER_STEPPING_STONE_SIZES, RiverSteppingStoneSize, SETTINGS, WaterRockSize, lerp, randFloat, rotatePoint } from "webgl-test-shared";
 import { createWebGLProgram, gl, halfWindowHeight, halfWindowWidth } from "../../webgl";
 import { getTexture } from "../../textures";
 import Camera from "../../Camera";
@@ -402,7 +402,7 @@ in float a_textureOffset;
 out vec2 v_texCoord;
 out vec2 v_flowDirection;
 out float v_textureOffset;
- 
+
 void main() {
    vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
    vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
@@ -783,7 +783,7 @@ const calculateFoamVertices = (steppingStones: ReadonlySet<RiverSteppingStone>):
       const tileY = Math.floor(steppingStone.position.y / SETTINGS.TILE_SIZE);
       const flowDirection = Board.getRiverFlowDirection(tileX, tileY);
 
-      const offset = new Vector(FOAM_OFFSET, flowDirection).convertToPoint();
+      const offset = Point.fromVectorForm(FOAM_OFFSET, flowDirection);
       topLeft.x -= offset.x;
       topRight.x -= offset.x;
       bottomLeft.x -= offset.x;
@@ -1210,7 +1210,6 @@ const calculateSteppingStoneVertices = (visibleSteppingStones: ReadonlySet<River
 
       const pos = new Point(steppingStone.position.x, steppingStone.position.y);
 
-      // Rotate the points to match the entity's rotation
       topLeft = rotatePoint(topLeft, pos, steppingStone.rotation);
       topRight = rotatePoint(topRight, pos, steppingStone.rotation);
       bottomRight = rotatePoint(bottomRight, pos, steppingStone.rotation);

@@ -63,6 +63,8 @@ let lastRenderTime = Math.floor(new Date().getTime() / 1000);
 
 abstract class Game {
    private static lastTime = 0;
+
+   private static numSkippablePackets = 0;
    
    public static queuedPackets = new Array<GameDataPacket>();
    
@@ -197,16 +199,29 @@ abstract class Game {
                // Done before so that server data can override particles
                Board.updateParticles();
                
-               // If there are multiple packets in the queue, register the first one first.
-               Client.unloadGameDataPacket(this.queuedPackets[0]);
-               this.queuedPackets.splice(0, 1);
+               // If there is a backlog of packets and none are able to be skipped, skip to the final packet
+               if (this.numSkippablePackets === 0 && this.queuedPackets.length >= 2) {
+                  Client.unloadGameDataPacket(this.queuedPackets[this.queuedPackets.length - 1]);
+                  this.queuedPackets.splice(0, this.queuedPackets.length);
+               } else {
+                  const numSkippedPackets = Math.min(this.numSkippablePackets, this.queuedPackets.length - 1);
+                  Client.unloadGameDataPacket(this.queuedPackets[numSkippedPackets]);
+                  this.queuedPackets.splice(0, numSkippedPackets + 1);
+                  this.numSkippablePackets--;
+                  
+                  if (this.queuedPackets.length === 0 || this.numSkippablePackets < 0) {
+                     this.numSkippablePackets = 0;
+                  }
+               }
 
+               Board.updateTickCallbacks();
                Board.tickGameObjects();
                this.update();
                this.updatePlayer();
             } else {
-               console.log("No packets!");
+               this.numSkippablePackets++;
                
+               Board.updateTickCallbacks();
                Board.updateParticles();
                Board.updateGameObjects();
                this.update();

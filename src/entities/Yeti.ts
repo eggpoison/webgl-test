@@ -1,4 +1,4 @@
-import { EntityType, Point, Vector, EntityData, lerp, HitData } from "webgl-test-shared";
+import { EntityType, Point, EntityData, lerp, HitData, randFloat, ParticleType } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -48,9 +48,9 @@ class Yeti extends Entity {
       paw.offset = () => {
          let attackProgress = this.attackProgress;
          attackProgress = Math.pow(attackProgress, 0.75);
+
          const angle = lerp(Yeti.PAW_END_ANGLE, Yeti.PAW_START_ANGLE, attackProgress) * (i === 0 ? 1 : -1);
-         const offset = new Vector(Yeti.SIZE/2, angle).convertToPoint();
-         return offset;
+         return Point.fromVectorForm(Yeti.SIZE/2, angle);
       }
       this.attachRenderPart(paw);
    }
@@ -64,7 +64,11 @@ class Yeti extends Entity {
    protected onHit(hitData: HitData): void {
       if (hitData.angleFromAttacker !== null) {
          for (let i = 0; i < 10; i++) {
-            createBloodParticle(this.position, hitData.angleFromAttacker, Yeti.SIZE / 2);
+            const spawnPosition = Point.fromVectorForm(Yeti.SIZE / 2, hitData.angleFromAttacker + Math.PI + 0.2 * Math.PI * (Math.random() - 0.5));
+            spawnPosition.x += this.position.x;
+            spawnPosition.y += this.position.y;
+
+            createBloodParticle(Math.random() < 0.6 ? ParticleType.blood : ParticleType.bloodLarge, spawnPosition, 2 * Math.PI * Math.random(), randFloat(150, 250), true);
          }
       }
    }

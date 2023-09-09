@@ -1,4 +1,4 @@
-import { EntityData, EntityType, HitData, ParticleColour, SETTINGS, StatusEffectData, StatusEffectType, Vector, lerp, randFloat, randItem } from "webgl-test-shared";
+import { EntityData, EntityType, HitData, ParticleColour, Point, SETTINGS, StatusEffectData, StatusEffectType, Vector, lerp, randFloat, randItem } from "webgl-test-shared";
 import GameObject from "../GameObject";
 import TexturedParticle from "../particles/TexturedParticle";
 import MonocolourParticle from "../particles/MonocolourParticle";
@@ -27,9 +27,8 @@ abstract class Entity extends GameObject {
       const poisonStatusEffect = this.getStatusEffect("poisoned");
       if (poisonStatusEffect !== null) {
          if (poisonStatusEffect.ticksElapsed % 2 === 0) {
-            const spawnPosition = this.position.copy();
-            const offset = new Vector(30 * Math.random(), 2 * Math.PI * Math.random()).convertToPoint();
-            spawnPosition.add(offset);
+            const spawnPosition = Point.fromVectorForm(30 * Math.random(), 2 * Math.PI * Math.random());
+            spawnPosition.add(this.position);
 
             const lifetime = 2;
             
@@ -54,10 +53,9 @@ abstract class Entity extends GameObject {
       const fireStatusEffect = this.getStatusEffect("burning");
       if (fireStatusEffect !== null) {
          // Embers
-         if (fireStatusEffect.ticksElapsed % 3 === 0) {
-            const spawnPosition = this.position.copy();
-            const offset = new Vector(30 * Math.random(), 2 * Math.PI * Math.random()).convertToPoint();
-            spawnPosition.add(offset);
+         if (fireStatusEffect.ticksElapsed % 2 === 0) {
+            const spawnPosition = Point.fromVectorForm(30 * Math.random(), 2 * Math.PI * Math.random());
+            spawnPosition.add(this.position);
 
             const lifetime = randFloat(0.6, 1.2);
 
@@ -75,7 +73,7 @@ abstract class Entity extends GameObject {
                lifetime,
                randItem(Entity.BURNING_PARTICLE_COLOURS)
             );
-            particle.drag = 60;
+            particle.drag = randFloat(30, 60);
             particle.rotation = 2 * Math.PI * Math.random();
             particle.getOpacity = (age: number): number => {
                const opacity = 1 - age / lifetime;

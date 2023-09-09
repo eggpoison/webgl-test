@@ -132,7 +132,7 @@ const Hotbar = () => {
       if (armourInventory.itemSlots.hasOwnProperty(1)) {
          const armourItemInfo = CLIENT_ITEM_INFO_RECORD[armourInventory.itemSlots[1].type];
          
-         const imageSrc = require("../../../images/items/" + armourItemInfo.textureSource);
+         const imageSrc = require("../../../images/" + armourItemInfo.textureSource);
          armourItemSlotElement = <ItemSlot onClick={e => leftClickItemSlot(e, Player.instance!.id, armourInventory, 1)} isSelected={false} picturedItemImageSrc={imageSrc} />
       } else {
          const imageSrc = require("../../../images/miscellaneous/armour-wireframe.png");
@@ -146,7 +146,7 @@ const Hotbar = () => {
    return <div id="hotbar">
       <div className="flex-balancer inventory">
          <ItemSlot isSelected={false} />
-         {/* <ItemSlot isSelected={false} /> */}
+         <ItemSlot isSelected={false} />
       </div>
 
       <div className="inventory">
@@ -155,7 +155,7 @@ const Hotbar = () => {
 
       <div id="special-item-slots" className="inventory">
          {backpackItemSlotElement}
-         {/* {armourItemSlotElement} */}
+         {armourItemSlotElement}
       </div>
    </div>;
 }

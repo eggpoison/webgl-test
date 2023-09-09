@@ -45,10 +45,10 @@ class Tree extends Entity {
    protected onHit(): void {
       // Create leaf particles
       {
-         const spawnPosition = this.position.copy();
          const moveDirection = 2 * Math.PI * Math.random();
-         const offset = new Vector(this.getRadius(), moveDirection).convertToPoint();
-         spawnPosition.add(offset);
+
+         const spawnPosition = Point.fromVectorForm(this.getRadius(), moveDirection);
+         spawnPosition.add(this.position);
 
          createLeafParticle(spawnPosition, moveDirection + randFloat(-1, 1), Math.random() < 0.5 ? LeafParticleSize.large : LeafParticleSize.small);
       }
@@ -61,10 +61,8 @@ class Tree extends Entity {
          numLeaves = randInt(4, 5);
       }
       for (let i = 0; i < numLeaves; i++) {
-         const spawnPosition = this.position.copy();
-
-         const offset = new Vector(this.getRadius(), 2 * Math.PI * Math.random()).convertToPoint();
-         spawnPosition.add(offset);
+         const spawnPosition = Point.fromVectorForm(this.getRadius(), 2 * Math.PI * Math.random());
+         spawnPosition.add(this.position);
 
          const lifetime = randFloat(0.3, 0.5);
          
@@ -95,9 +93,8 @@ class Tree extends Entity {
          numLeaves = randInt(4, 5);
       }
       for (let i = 0; i < numLeaves; i++) {
-         const spawnPosition = this.position.copy();
-         const offset = new Vector(this.getRadius() * Math.random(), 2 * Math.PI * Math.random()).convertToPoint();
-         spawnPosition.add(offset);
+         const spawnPosition = Point.fromVectorForm(this.getRadius() * Math.random(), 2 * Math.PI * Math.random());
+         spawnPosition.add(this.position);
 
          createLeafParticle(spawnPosition, Math.random(), Math.random() < 0.5 ? LeafParticleSize.large : LeafParticleSize.small);
       }

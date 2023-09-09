@@ -1,4 +1,4 @@
-import { Point, Vector } from "webgl-test-shared";
+import { Point } from "webgl-test-shared";
 import { isDev } from "./utils";
 import Camera from "./Camera";
 
@@ -162,10 +162,10 @@ export function generateThickCircleWireframeVertices(position: Point, radius: nu
    // Add the outer vertices
    for (let radians = 0, n = 0; n < CIRCLE_VERTEX_COUNT; radians += step, n++) {
       // Trig shenanigans to get x and y coords
-      const bl = new Vector(radius, radians).convertToPoint();
-      const br = new Vector(radius, radians + step).convertToPoint();
-      const tl = new Vector(radius + thickness, radians).convertToPoint();
-      const tr = new Vector(radius + thickness, radians + step).convertToPoint();
+      const bl = Point.fromVectorForm(radius, radians);
+      const br = Point.fromVectorForm(radius, radians + step);
+      const tl = Point.fromVectorForm(radius + thickness, radians);
+      const tr = Point.fromVectorForm(radius + thickness, radians + step);
 
       bl.add(position);
       br.add(position);

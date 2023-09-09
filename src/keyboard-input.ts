@@ -78,6 +78,12 @@ const onKeyDown = (e: KeyboardEvent): void => {
 }
 
 const onKeyUp = (e: KeyboardEvent): void => {
+   // If the event's key is undefined, don't continue.
+   // This can occur when using autocomplete in a text input.
+   if (typeof e.key === "undefined") {
+      return;
+   }
+   
    const key = getKey(e);
    pressedKeys[key] = false;
 }

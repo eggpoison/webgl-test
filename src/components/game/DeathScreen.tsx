@@ -10,10 +10,6 @@ const DEATH_TIPS: ReadonlyArray<string> = [
    "Have you tried not dying?"
 ];
 
-const respawnPlayer = (): void => {
-   Client.sendRespawnRequest();
-}
-
 const quitGame = (): void => {
    resetUsername();
    setLoadingScreenInitialStatus("establishing_connection");
@@ -41,7 +37,7 @@ const DeathScreen = () => {
          <p className="tip">Tip: {tip}</p>
 
          <div className="button-container">
-            <button onClick={respawnPlayer}>Respawn</button>
+            <button onClick={Client.sendRespawnRequest}>Respawn</button>
             <button onClick={quitGame}>Quit</button>
          </div>
       </div>

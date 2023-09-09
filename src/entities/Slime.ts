@@ -1,4 +1,4 @@
-import { EntityData, EntityType, Point, SlimeOrbData, SlimeSize, Vector, lerp } from "webgl-test-shared";
+import { EntityData, EntityType, Point, SlimeOrbData, SlimeSize, lerp } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -95,7 +95,7 @@ class Slime extends Entity {
          1,
          orbData.rotation
       );
-      renderPart.offset = new Vector(offsetMagnitude, this.orbRotations[i]).convertToPoint();
+      renderPart.offset = Point.fromVectorForm(offsetMagnitude, this.orbRotations[i]);
       this.attachRenderPart(renderPart);
    }
 

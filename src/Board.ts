@@ -22,6 +22,11 @@ export interface RiverSteppingStone {
    readonly size: RiverSteppingStoneSize;
 }
 
+interface TickCallback {
+   time: number;
+   readonly callback: () => void;
+}
+
 abstract class Board {
    public static ticks: number;
    public static time: number;
@@ -43,6 +48,8 @@ abstract class Board {
    public static readonly serverParticleIDs = new Set<number>();
 
    private static riverFlowDirections: Record<number, Record<number, number>>;
+
+   private static tickCallbacks = new Array<TickCallback>();
 
    public static initialise(tiles: Array<Array<Tile>>, waterRocks: ReadonlyArray<WaterRockData>, riverSteppingStones: ReadonlyArray<RiverSteppingStoneData>, riverFlowDirections: Record<number, Record<number, number>>): void {
       this.tiles = tiles;
@@ -87,6 +94,24 @@ abstract class Board {
                const chunk = this.getChunk(chunkX, chunkY);
                chunk.riverSteppingStones.push(steppingStone);
             }
+         }
+      }
+   }
+
+   public static addTickCallback(time: number, callback: () => void): void {
+      this.tickCallbacks.push({
+         time: time,
+         callback: callback
+      });
+   }
+
+   public static updateTickCallbacks(): void {
+      for (let i = this.tickCallbacks.length - 1; i >= 0; i--) {
+         const tickCallbackInfo = this.tickCallbacks[i];
+         tickCallbackInfo.time -= 1 / SETTINGS.TPS;
+         if (tickCallbackInfo.time <= 0) {
+            tickCallbackInfo.callback();
+            this.tickCallbacks.splice(i, 1);
          }
       }
    }

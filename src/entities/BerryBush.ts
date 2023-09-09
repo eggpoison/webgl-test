@@ -1,4 +1,4 @@
-import { EntityData, EntityType, Point, Vector, randFloat } from "webgl-test-shared";
+import { EntityData, EntityType, Point, randFloat } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -44,7 +44,7 @@ class BerryBush extends Entity {
    protected onHit(): void {
       const spawnPosition = this.position.copy();
       const moveDirection = 2 * Math.PI * Math.random();
-      const offset = new Vector(BerryBush.RADIUS, moveDirection).convertToPoint();
+      const offset = Point.fromVectorForm(BerryBush.RADIUS, moveDirection);
       spawnPosition.add(offset);
 
       createLeafParticle(spawnPosition, moveDirection + randFloat(-1, 1), LeafParticleSize.small);
@@ -53,10 +53,10 @@ class BerryBush extends Entity {
    public onDie(): void {
       for (let i = 0; i < 6; i++) {
          const spawnPosition = this.position.copy();
-         const offset = new Vector(BerryBush.RADIUS * Math.random(), Math.random()).convertToPoint();
+         const offset = Point.fromVectorForm(BerryBush.RADIUS * Math.random(), 2 * Math.PI * Math.random());
          spawnPosition.add(offset);
 
-         createLeafParticle(spawnPosition, Math.random(), LeafParticleSize.small);
+         createLeafParticle(spawnPosition, 2 * Math.PI * Math.random(), LeafParticleSize.small);
       }
    }
 }

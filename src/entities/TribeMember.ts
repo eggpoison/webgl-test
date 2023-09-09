@@ -1,4 +1,4 @@
-import { EntityData, HitData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, ItemType, ParticleColour, Point, SETTINGS, ToolItemInfo, TribeType, Vector, lerp, randFloat, randItem } from "webgl-test-shared";
+import { EntityData, HitData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, ItemType, ParticleColour, ParticleType, Point, SETTINGS, ToolItemInfo, TribeType, Vector, lerp, randFloat, randItem } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -21,12 +21,23 @@ const FOOD_EATING_COLOURS: { [T in ItemType as Exclude<T, FilterFoodItemTypes<T>
       [227/255, 137/255, 129/255]
    ],
    [ItemType.raw_beef]: [
-      [0, 0, 0]
+      [117/255, 25/255, 40/255],
+      [153/255, 29/255, 37/255],
+      [217/255, 41/255, 41/255],
+      [222/255, 58/255, 58/255],
+      [222/255, 87/255, 87/255],
+      [217/255, 124/255, 124/255],
+      [217/255, 173/255, 173/255]
    ],
    [ItemType.cooked_beef]: [
-      [0, 0, 0]
+      [33/255, 24/255, 12/255],
+      [92/255, 55/255, 43/255],
+      [123/255, 78/255, 54/255],
+      [150/255, 106/255, 73/255],
+      [159/255, 124/255, 86/255],
+      [164/255, 131/255, 96/255]
    ]
-}
+};
 
 abstract class TribeMember extends Entity {
    private static readonly FOOD_EAT_INTERVAL = 0.3;
@@ -111,7 +122,7 @@ abstract class TribeMember extends Entity {
 
             const insetAmount = lerp(0, 17, eatIntervalProgress);
 
-            return new Vector(26 + itemSize / 2 - insetAmount, direction).convertToPoint();
+            return Point.fromVectorForm(26 + itemSize / 2 - insetAmount, direction);
          } else {
             // Attack animation
             
@@ -128,7 +139,7 @@ abstract class TribeMember extends Entity {
                direction = lerp(TribeMember.ITEM_RESTING_DIRECTION - TribeMember.ITEM_SWING_RANGE, TribeMember.ITEM_RESTING_DIRECTION, returnProgress);
             }
 
-            return new Vector(26 + itemSize / 2, direction).convertToPoint();
+            return Point.fromVectorForm(26 + itemSize / 2, direction);
          }
       };
       this.activeItemRenderPart.getRotation = () => {
@@ -199,7 +210,11 @@ abstract class TribeMember extends Entity {
    protected onHit(hitData: HitData): void {
       if (hitData.angleFromAttacker !== null) {
          for (let i = 0; i < 10; i++) {
-            createBloodParticle(this.position, hitData.angleFromAttacker, 32);
+            const spawnPosition = Point.fromVectorForm(32, hitData.angleFromAttacker + Math.PI + 0.2 * Math.PI * (Math.random() - 0.5));
+            spawnPosition.x += this.position.x;
+            spawnPosition.y += this.position.y;
+
+            createBloodParticle(Math.random() < 0.6 ? ParticleType.blood : ParticleType.bloodLarge, spawnPosition, 2 * Math.PI * Math.random(), randFloat(150, 250), true);
          }
       }
    }
@@ -209,10 +224,10 @@ abstract class TribeMember extends Entity {
 
       if (this.foodEatingType !== -1 && Board.tickIntervalHasPassed(0.25)) {
          for (let i = 0; i < 3; i++) {
-            const spawnPosition = this.position.copy();
-            const offset = new Vector(37, this.rotation).convertToPoint();
-            spawnPosition.add(offset);
-            const offset2 = new Vector(randFloat(0, 6), 2 * Math.PI * Math.random()).convertToPoint();
+            const spawnPosition = Point.fromVectorForm(37, this.rotation);
+            spawnPosition.add(this.position);
+
+            const offset2 = Point.fromVectorForm(randFloat(0, 6), 2 * Math.PI * Math.random());
             spawnPosition.add(offset2);
 
             const velocity = new Vector(randFloat(90, 130), 2 * Math.PI * Math.random());

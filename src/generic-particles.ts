@@ -8,16 +8,9 @@ import Board from "./Board";
 const BLOOD_COLOUR_LOW: Readonly<ParticleColour> = [150, 0, 0];
 const BLOOD_COLOUR_HIGH: Readonly<ParticleColour> = [212, 0, 0];
 
-export function createBloodParticle(hurtEntityPosition: Point, directionFromAttacker: number, offset: number): void {
-   const spawnPosition = Point.fromVectorForm(offset, directionFromAttacker + Math.PI + 0.2 * Math.PI * (Math.random() - 0.5));
-   spawnPosition.x += hurtEntityPosition.x;
-   spawnPosition.y += hurtEntityPosition.y;
-
+export function createBloodParticle(type: ParticleType.blood | ParticleType.bloodLarge, spawnPosition: Point, moveDirection: number, moveSpeed: number, hasDrag: boolean): void {
    const lifetime = randFloat(0.3, 0.4);
    
-   const velocityMagnitude = randFloat(150, 250);
-
-   const type = Math.random() < 0.6 ? ParticleType.blood : ParticleType.bloodLarge;
    const size = type === ParticleType.bloodLarge ? 8 : 4;
 
    const particle = new MonocolourParticle(
@@ -25,7 +18,7 @@ export function createBloodParticle(hurtEntityPosition: Point, directionFromAtta
       size,
       size,
       spawnPosition,
-      new Vector(velocityMagnitude, 4 * Math.PI * (Math.random() - 0.5)),
+      new Vector(moveSpeed, moveDirection),
       null,
       lifetime,
       interpolateColours(BLOOD_COLOUR_LOW, BLOOD_COLOUR_HIGH, Math.random())
@@ -34,7 +27,9 @@ export function createBloodParticle(hurtEntityPosition: Point, directionFromAtta
    particle.getOpacity = (age: number): number => {
       return 1 - age / lifetime;
    };
-   particle.drag = velocityMagnitude / lifetime / 1.1;
+   if (hasDrag) {
+      particle.drag = moveSpeed / lifetime / 1.1;
+   }
    Board.addMonocolourParticle(particle, ParticleRenderLayer.high);
 }
 

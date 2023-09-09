@@ -1,4 +1,4 @@
-import { BowItemInfo, ItemType } from "webgl-test-shared";
+import { BowItemInfo, ItemType, SETTINGS } from "webgl-test-shared";
 import Item from "./Item";
 import { rightMouseButtonIsPressed } from "../player-input";
 
@@ -6,6 +6,8 @@ class BowItem extends Item {
    public readonly projectileDamage: number;
    public readonly projectileKnockback: number;
    public readonly projectileAttackCooldown: number;
+
+   private cooldown = 0;
 
    constructor(itemType: ItemType, count: number, id: number, itemInfo: BowItemInfo) {
       super(itemType, count, id);
@@ -17,14 +19,16 @@ class BowItem extends Item {
    
    public tick(): void {
       super.tick();
-      
-      if (rightMouseButtonIsPressed && this.isActive()) {
-         this.fire();
-      }
-   }
 
-   private fire(): void {
-      this.sendUsePacket();
+      this.cooldown -= 1 / SETTINGS.TPS;
+      if (this.cooldown < 0) {
+         this.cooldown = 0;
+      }
+      
+      if (this.cooldown === 0 && rightMouseButtonIsPressed && this.isActive()) {
+         this.sendUsePacket();
+         this.cooldown = this.projectileAttackCooldown;
+      }
    }
 }
 

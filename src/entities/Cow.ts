@@ -1,4 +1,4 @@
-import { CowSpecies, HitData, Point } from "webgl-test-shared";
+import { CowSpecies, HitData, ParticleType, Point, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -47,7 +47,10 @@ class Cow extends Entity {
    protected onHit(hitData: HitData): void {
       if (hitData.angleFromAttacker !== null) {
          for (let i = 0; i < 10; i++) {
-            createBloodParticle(this.position, hitData.angleFromAttacker, 32);
+            const spawnPosition = Point.fromVectorForm(32, hitData.angleFromAttacker + Math.PI + 0.2 * Math.PI * (Math.random() - 0.5));
+            spawnPosition.x += this.position.x;
+            spawnPosition.y += this.position.y;
+            createBloodParticle(Math.random() < 0.6 ? ParticleType.blood : ParticleType.bloodLarge, spawnPosition, 2 * Math.PI * Math.random(), randFloat(150, 250), true);
          }
       }
    }

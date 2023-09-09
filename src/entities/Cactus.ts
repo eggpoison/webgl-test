@@ -52,7 +52,7 @@ class Cactus extends Entity {
       for (let i = 0; i < limbs.length; i++) {
          const limbInfo = limbs[i];
 
-         const offset = new Vector(Cactus.RADIUS, limbInfo.direction).convertToPoint();
+         const offset = Point.fromVectorForm(Cactus.RADIUS, limbInfo.direction);
 
          const renderPart = new RenderPart(
             Cactus.LIMB_SIZE,
@@ -67,7 +67,7 @@ class Cactus extends Entity {
          if (typeof limbInfo.flower !== "undefined") {
             const flowerInfo = limbInfo.flower;
 
-            const flowerOffset = new Vector(flowerInfo.height, flowerInfo.direction).convertToPoint();
+            const flowerOffset = Point.fromVectorForm(flowerInfo.height, flowerInfo.direction);
             flowerOffset.add(offset);
 
             const flowerRenderPart = new RenderPart(
@@ -100,9 +100,8 @@ class Cactus extends Entity {
    }
 
    private createCactusSpineParticle(flyDirection: number): void {
-      const spawnPosition = this.position.copy();
-      const offset = new Vector(Cactus.RADIUS - 5, flyDirection).convertToPoint();
-      spawnPosition.add(offset);
+      const spawnPosition = Point.fromVectorForm(Cactus.RADIUS - 5, flyDirection);
+      spawnPosition.add(this.position);
       
       const lifetime = randFloat(0.2, 0.3);
 

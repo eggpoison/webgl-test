@@ -246,7 +246,7 @@ abstract class Client {
       this.updateTribe(gameDataPacket.tribeData);
 
       definiteGameState.setPlayerHealth(gameDataPacket.playerHealth);
-      if (definiteGameState.playerIsDead()) {
+      if (Player.instance !== null && definiteGameState.playerIsDead()) {
          this.killPlayer();
       }
    }
@@ -625,6 +625,9 @@ abstract class Client {
       Board.addEntity(player);
 
       gameScreenSetIsDead(false);
+
+      // Clear any queued packets, as they contain data from when the player wasn't respawned.
+      Game.queuedPackets.splice(0, Game.queuedPackets.length);
    }
 
    /**
@@ -670,13 +673,13 @@ abstract class Client {
 
    public static sendItemPickupPacket(entityID: number, inventoryName: string, itemSlot: number, amount: number): void {
       if (Game.isRunning && this.socket !== null) {
-         this.socket.emit("item_pickup_packet", entityID, inventoryName, itemSlot, amount);
+         this.socket.emit("item_pickup", entityID, inventoryName, itemSlot, amount);
       }
    }
 
    public static sendItemReleasePacket(entityID: number, inventoryName: string, itemSlot: number, amount: number): void {
       if (Game.isRunning && this.socket !== null) {
-         this.socket.emit("item_release_packet", entityID, inventoryName, itemSlot, amount);
+         this.socket.emit("item_release", entityID, inventoryName, itemSlot, amount);
       }
    }
 
@@ -712,8 +715,8 @@ abstract class Client {
    }
 
    public static sendRespawnRequest(): void {
-      if (Game.isRunning && this.socket !== null) {
-         this.socket.emit("respawn");
+      if (Game.isRunning && Client.socket !== null) {
+         Client.socket.emit("respawn");
       }
    }
 
@@ -730,10 +733,8 @@ abstract class Client {
    }
 
    private static killPlayer(): void {
-      if (Player.instance === null) return;
-
       // Remove the player from the game
-      Board.removeGameObject(Player.instance);
+      Board.removeGameObject(Player.instance!);
       Player.instance = null;
 
       latencyGameState.resetFlags();
