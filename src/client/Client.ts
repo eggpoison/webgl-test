@@ -12,7 +12,7 @@ import { createItem } from "../items/item-creation";
 import { gameScreenSetIsDead } from "../components/game/GameScreen";
 import Item, { Inventory, ItemSlots } from "../items/Item";
 import { updateActiveItem, updateInventoryIsOpen } from "../player-input";
-import { Hotbar_updateArmourItemSlot, Hotbar_update } from "../components/game/inventories/Hotbar";
+import { Hotbar_update } from "../components/game/inventories/Hotbar";
 import { setHeldItemVisual } from "../components/game/HeldItem";
 import { CraftingMenu_setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
 import { updateHealthBar } from "../components/game/HealthBar";
@@ -490,27 +490,20 @@ abstract class Client {
       this.updateInventoryFromServerData(definiteGameState.backpackSlot, playerInventoryData.backpackSlot);
 
       // Held item
-      if (definiteGameState.heldItemSlot !== null) {
-         this.updateInventoryFromServerData(definiteGameState.heldItemSlot, playerInventoryData.heldItemSlot);
-      } else {
-         definiteGameState.heldItemSlot = this.createInventoryFromServerData(playerInventoryData.heldItemSlot);
-      }
+      this.updateInventoryFromServerData(definiteGameState.heldItemSlot, playerInventoryData.heldItemSlot);
       setHeldItemVisual(definiteGameState.heldItemSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.heldItemSlot.itemSlots[1] : null);
 
       // Armour slot
-      if (definiteGameState.armourSlot !== null) {
-         this.updateInventoryFromServerData(definiteGameState.armourSlot, playerInventoryData.armourSlot);
-      } else {
-         definiteGameState.armourSlot = this.createInventoryFromServerData(playerInventoryData.armourSlot);
-      }
-      Hotbar_updateArmourItemSlot(definiteGameState.armourSlot);
-      if (Player.instance !== null) {
+      const armourSlotHasChanged = this.inventoryHasChanged(definiteGameState.armourSlot, playerInventoryData.armourSlot);
+      this.updateInventoryFromServerData(definiteGameState.armourSlot, playerInventoryData.armourSlot);
+      
+      if (Player.instance !== null && armourSlotHasChanged) {
          const armourType = definiteGameState.armourSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.armourSlot.itemSlots[1].type : null;
          Player.instance.updateArmourRenderPart(armourType);
          Player.instance.armourType = armourType;
       }
 
-      if (hotbarHasChanged || backpackSlotHasChanged) {
+      if (hotbarHasChanged || backpackSlotHasChanged || armourSlotHasChanged) {
          Hotbar_update();
       }
       // @Cleanup is the backpackSlotHasChanged check really necessary?

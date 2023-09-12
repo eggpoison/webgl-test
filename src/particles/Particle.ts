@@ -239,7 +239,6 @@ abstract class Particle {
    public opacity: number = 1;
    public scale: number = 1;
 
-   public drag: number = 0;
    public angularVelocity: number = 0;
    public angularAcceleration: number = 0;
    public angularDrag: number = 0;
@@ -294,14 +293,6 @@ abstract class Particle {
             this.velocity.add(acceleration);
          } else {
             this.velocity = acceleration;
-         }
-      }
-
-      // Drag
-      if (this.velocity !== null) {
-         this.velocity.magnitude -= this.drag / SETTINGS.TPS;
-         if (this.velocity.magnitude < 0) {
-            this.velocity = null;
          }
       }
       

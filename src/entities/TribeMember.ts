@@ -243,12 +243,11 @@ abstract class TribeMember extends Entity {
                6,
                spawnPosition,
                velocity,
-               null,
+               new Vector(velocity.magnitude / lifetime / 1.2, velocity.direction + Math.PI),
                lifetime,
                randItem(FOOD_EATING_COLOURS[this.foodEatingType as keyof typeof FOOD_EATING_COLOURS])
             );
             particle.rotation = 2 * Math.PI * Math.random();
-            particle.drag = velocity.magnitude * 0.75;
             particle.getOpacity = (age: number) => {
                return 1 - Math.pow(age / lifetime, 3);
             }

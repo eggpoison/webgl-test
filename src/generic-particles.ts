@@ -19,7 +19,7 @@ export function createBloodParticle(type: ParticleType.blood | ParticleType.bloo
       size,
       spawnPosition,
       new Vector(moveSpeed, moveDirection),
-      null,
+      hasDrag ? new Vector(moveSpeed / lifetime / 1.2, moveDirection + Math.PI) : null, // Slow down the blood particle
       lifetime,
       interpolateColours(BLOOD_COLOUR_LOW, BLOOD_COLOUR_HIGH, Math.random())
    );
@@ -27,9 +27,6 @@ export function createBloodParticle(type: ParticleType.blood | ParticleType.bloo
    particle.getOpacity = (age: number): number => {
       return 1 - age / lifetime;
    };
-   if (hasDrag) {
-      particle.drag = moveSpeed / lifetime / 1.1;
-   }
    Board.addMonocolourParticle(particle, ParticleRenderLayer.high);
 }
 
@@ -53,6 +50,7 @@ export function createLeafParticle(spawnPosition: Point, moveDirection: number, 
       height = 20;
       textureSource = "particles/leaf.png";
    }
+
       
    const particle = new TexturedParticle(
       null,
@@ -64,7 +62,6 @@ export function createLeafParticle(spawnPosition: Point, moveDirection: number, 
       lifetime,
       textureSource
    );
-   particle.drag = 75;
    particle.rotation = 2 * Math.PI * Math.random();
    particle.angularVelocity = Math.PI * randFloat(-1, 1);
    particle.angularDrag = 1.5 * Math.PI;

@@ -73,7 +73,6 @@ abstract class Entity extends GameObject {
                lifetime,
                randItem(Entity.BURNING_PARTICLE_COLOURS)
             );
-            particle.drag = randFloat(30, 60);
             particle.rotation = 2 * Math.PI * Math.random();
             particle.getOpacity = (age: number): number => {
                const opacity = 1 - age / lifetime;

@@ -76,14 +76,13 @@ class Tombstone extends Entity {
          size,
          spawnPosition,
          new Vector(velocityMagnitude, moveDirection),
-         null,
+         new Vector(velocityMagnitude / lifetime / 1.25, moveDirection + Math.PI),
          lifetime,
          textureSource
       );
       particle.rotation = 2 * Math.PI * Math.random();
       particle.angularVelocity = 2 * Math.PI * randFloat(-1, 1);
       particle.angularDrag = Math.PI;
-      particle.drag = velocityMagnitude / lifetime / 1.25;
       particle.getOpacity = (age: number): number => {
          return 1 - age/lifetime;
       };

@@ -76,7 +76,6 @@ class Tree extends Entity {
             lifetime,
             interpolateColours(Tree.LEAF_SPECK_COLOUR_LOW, Tree.LEAF_SPECK_COLOUR_HIGH, Math.random())
          );
-         particle.drag = 30;
          particle.rotation = 2 * Math.PI * Math.random();
          particle.getOpacity = (age: number): number => {
             return Math.pow(1 - age / lifetime, 0.3);

@@ -190,6 +190,7 @@ abstract class Board {
    }
 
    public static updateParticles(): void {
+      // @Cleanup waaay too much repetition
       {
          const removedParticles = new Array<Particle>();
          for (const particle of Object.values(this.lowParticlesMonocolour)) {

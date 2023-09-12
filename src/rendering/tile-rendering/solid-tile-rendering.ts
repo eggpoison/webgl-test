@@ -236,6 +236,8 @@ export function createSolidTileShaders(): void {
 export function renderSolidTiles(): void {
    gl.useProgram(program);
 
+   gl.activeTexture(gl.TEXTURE0);
+   
    for (let renderChunkX = Camera.visibleRenderChunkBounds[0]; renderChunkX <= Camera.visibleRenderChunkBounds[1]; renderChunkX++) {
       for (let renderChunkY = Camera.visibleRenderChunkBounds[2]; renderChunkY <= Camera.visibleRenderChunkBounds[3]; renderChunkY++) {
          const renderChunkInfo = getRenderChunkSolidTileInfo(renderChunkX, renderChunkY);
@@ -247,7 +249,6 @@ export function renderSolidTiles(): void {
          gl.uniform1f(zoomUniformLocation, Camera.zoom);
          gl.uniform1i(samplerUniformLocation, 0);
 
-         gl.activeTexture(gl.TEXTURE0);
          gl.bindTexture(gl.TEXTURE_2D_ARRAY, renderChunkInfo.texture);
          
          // Draw the tiles
