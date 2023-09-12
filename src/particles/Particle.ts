@@ -213,7 +213,7 @@ const getAvailableID = (): number => {
 }
 
 abstract class Particle {
-   public readonly id: number;
+   public readonly id = getAvailableID();
 
    public opacity: number = 1;
    public scale: number = 1;
@@ -221,15 +221,7 @@ abstract class Particle {
    public age = 0;
    public readonly lifetime: number;
    
-   constructor(id: number | null, lifetime: number) {
-      // TODO: This is bad. Ideally shouldn't have to define ID in constructor, but that may not be possible
-      // Note that clientside particles don't require an ID
-      if (id === null) {
-         this.id = getAvailableID();
-      } else {
-         this.id = id;
-      }
-
+   constructor(lifetime: number) {
       this.lifetime = lifetime;
    }
 

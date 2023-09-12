@@ -70,11 +70,12 @@ class Tree extends Entity {
 
          const lifetime = randFloat(0.3, 0.5);
          
-         const particle = new MonocolourParticle(null, lifetime, interpolateColours(Tree.LEAF_SPECK_COLOUR_LOW, Tree.LEAF_SPECK_COLOUR_HIGH, Math.random()));
+         const particle = new MonocolourParticle(lifetime, interpolateColours(Tree.LEAF_SPECK_COLOUR_LOW, Tree.LEAF_SPECK_COLOUR_HIGH, Math.random()));
          // particle.rotation = 2 * Math.PI * Math.random();
          particle.getOpacity = (age: number): number => {
             return Math.pow(1 - age / lifetime, 0.3);
          }
+         
          // @Incomplete
          addMonocolourParticleToBufferContainer(particle, 6, 6, spawnPosition.x, spawnPosition.y, velocity.x, velocity.y, 0, 0, 0, 0, 0);
          Board.addMonocolourParticle(particle, ParticleRenderLayer.low);

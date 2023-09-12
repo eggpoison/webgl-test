@@ -248,11 +248,12 @@ abstract class TribeMember extends Entity {
             acceleration.x *= -1 / lifetime / 1.2;
             acceleration.y *= -1 / lifetime / 1.2;
             
-            const particle = new MonocolourParticle(null, lifetime, randItem(FOOD_EATING_COLOURS[this.foodEatingType as keyof typeof FOOD_EATING_COLOURS]));
+            const particle = new MonocolourParticle(lifetime, randItem(FOOD_EATING_COLOURS[this.foodEatingType as keyof typeof FOOD_EATING_COLOURS]));
             // particle.rotation = 2 * Math.PI * Math.random();
             particle.getOpacity = (age: number) => {
                return 1 - Math.pow(age / lifetime, 3);
             }
+            
             // @Incomplete
             addMonocolourParticleToBufferContainer(particle, 6, 6, spawnPosition.x, spawnPosition.y, velocity.x, velocity.y, acceleration.x, acceleration.y, 0, 0, 0);
             Board.addMonocolourParticle(particle, ParticleRenderLayer.low);

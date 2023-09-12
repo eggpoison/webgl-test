@@ -30,7 +30,7 @@ abstract class Entity extends GameObject {
       if (this.isInRiver(this.findCurrentTile()) && Board.tickIntervalHasPassed(0.15) && this.acceleration !== null) {
          const lifetime = 1.5;
 
-         const particle = new TexturedParticle(null, lifetime);
+         const particle = new TexturedParticle(lifetime);
          particle.getOpacity = (age: number): number => {
             return lerp(0.75, 0, age / lifetime);
          }
@@ -49,12 +49,13 @@ abstract class Entity extends GameObject {
 
             const lifetime = 2;
             
-            const particle = new TexturedParticle(null, lifetime);
+            const particle = new TexturedParticle(lifetime);
             particle.getOpacity = (age: number) => {
                return lerp(0.75, 0, age / lifetime);
             }
+
             // @Incomplete
-            addTexturedParticleToBufferContainer(particle, 12, 12, spawnPosition.x, spawnPosition.y, 0, 0, 0, 0, 6, 2 * Math.PI * Math.random(), 0, 0);
+            addTexturedParticleToBufferContainer(particle, 64, 64, spawnPosition.x, spawnPosition.y, 0, 0, 0, 0, 6, 2 * Math.PI * Math.random(), 0, 0);
             Board.addTexturedParticle(particle, ParticleRenderLayer.low);
          }
       }
@@ -75,7 +76,7 @@ abstract class Entity extends GameObject {
 
             const acceleration = Point.fromVectorForm(randFloat(0, 80), 2 * Math.PI * Math.random());
             
-            const particle = new MonocolourParticle(null, lifetime, randItem(Entity.BURNING_PARTICLE_COLOURS));
+            const particle = new MonocolourParticle(lifetime, randItem(Entity.BURNING_PARTICLE_COLOURS));
             particle.getOpacity = (age: number): number => {
                const opacity = 1 - age / lifetime;
                return Math.pow(opacity, 0.3);
@@ -98,7 +99,7 @@ abstract class Entity extends GameObject {
 
             const fadeInTime = 0.15;
 
-            const particle = new TexturedParticle(null, lifetime);
+            const particle = new TexturedParticle(lifetime);
             particle.getOpacity = (age: number): number => {
                if (age <= fadeInTime) {
                   return age / fadeInTime;

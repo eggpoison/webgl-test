@@ -53,9 +53,14 @@ class ObjectBufferContainer {
       const bufferIndex = Math.floor(index / this.objectsPerBuffer);
       const buffer = this.buffers[bufferIndex];
 
+      
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
       const indexInBuffer = index % this.objectsPerBuffer;
-      gl.bufferSubData(gl.ARRAY_BUFFER, indexInBuffer * this.objectSize * 8, data)
+      // @Temporary
+      if (indexInBuffer >= this.objectsPerBuffer) {
+         console.warn("AAA");
+      }
+      gl.bufferSubData(gl.ARRAY_BUFFER, indexInBuffer * this.objectSize * Float32Array.BYTES_PER_ELEMENT, data)
 
       this.availableIndexes.splice(0, 1);
    }
@@ -74,7 +79,11 @@ class ObjectBufferContainer {
 
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
       const indexInBuffer = index % this.objectsPerBuffer;
-      gl.bufferSubData(gl.ARRAY_BUFFER, indexInBuffer * this.objectSize * 8, blankData);
+      // @Temporary
+      if (indexInBuffer >= this.objectsPerBuffer) {
+         console.warn("BBB");
+      }
+      gl.bufferSubData(gl.ARRAY_BUFFER, indexInBuffer * this.objectSize * Float32Array.BYTES_PER_ELEMENT, blankData);
 
       delete this.objectEntryIndexes[objectID];
       this.availableIndexes.push(index);

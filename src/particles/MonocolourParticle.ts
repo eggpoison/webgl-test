@@ -13,8 +13,8 @@ export function interpolateColours(startColour: Readonly<ParticleColour>, endCol
 class MonocolourParticle extends Particle {
    public colour: ParticleColour;
 
-   constructor(id: number | null, lifetime: number, colour: ParticleColour) {
-      super(id, lifetime);
+   constructor(lifetime: number, colour: ParticleColour) {
+      super(lifetime);
 
       this.colour = colour;
    }

@@ -82,12 +82,13 @@ abstract class GameObject extends RenderObject {
          // @Speed garbage collection
          const velocity = Point.fromVectorForm(randFloat(40, 60), 2 * Math.PI * Math.random());
             
-         const particle = new MonocolourParticle(null, lifetime, interpolateColours(WATER_DROPLET_COLOUR_LOW, WATER_DROPLET_COLOUR_HIGH, Math.random()) );
+         const particle = new MonocolourParticle(lifetime, interpolateColours(WATER_DROPLET_COLOUR_LOW, WATER_DROPLET_COLOUR_HIGH, Math.random()) );
          // particle.rotation = 2 * Math.PI * Math.random();
          // particle.angularVelocity = randFloat(2, 3) * randSign();
          particle.getOpacity = (age: number): number => {
             return lerp(0.75, 0, age / lifetime);
          };
+         
          // @Incomplete
          addMonocolourParticleToBufferContainer(particle, 6, 6, this.position.x, this.position.y, velocity.x, velocity.y, 0, 0, 0, 0, 0);
          Board.addMonocolourParticle(particle, ParticleRenderLayer.low)

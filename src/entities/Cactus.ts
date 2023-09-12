@@ -119,7 +119,7 @@ class Cactus extends Entity {
 
       const velocity = Point.fromVectorForm(randFloat(150, 200), flyDirection);
 
-      const particle = new MonocolourParticle(null, lifetime, Cactus.CACTUS_SPINE_PARTICLE_COLOUR);
+      const particle = new MonocolourParticle(lifetime, Cactus.CACTUS_SPINE_PARTICLE_COLOUR);
       particle.getOpacity = (age: number) => {
          return 1 - age / lifetime;
       };
@@ -160,7 +160,7 @@ class Cactus extends Entity {
       
       const lifetime = randFloat(3, 5);
       
-      const particle = new TexturedParticle(null, lifetime);
+      const particle = new TexturedParticle(lifetime);
       
       // @Incomplete
       const textureIndex = this.getFlowerTextureIndex(flowerType, size);

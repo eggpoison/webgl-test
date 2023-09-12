@@ -3,7 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import { BloodParticleSize, createBloodParticle, createBloodPoolParticle, createFootprintParticle } from "../generic-particles";
+import { BloodParticleSize, createBloodParticle, createBloodPoolParticle, createFootprintParticle, createSnowParticle } from "../generic-particles";
 import Board from "../Board";
 
 class Yeti extends Entity {
@@ -14,10 +14,13 @@ class Yeti extends Entity {
    private static readonly PAW_START_ANGLE = Math.PI/3;
    private static readonly PAW_END_ANGLE = Math.PI/6;
 
+   private static readonly SNOW_THROW_OFFSET = 64;
+
    public type: EntityType = "yeti";
 
    private numFootstepsTaken = 0;
 
+   private lastAttackProgress = 1;
    private attackProgress = 1;
 
    constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, attackProgress: number) {
@@ -67,6 +70,22 @@ class Yeti extends Entity {
 
          this.numFootstepsTaken++;
       }
+
+      // Create snow impact particles when the Yeti does a throw attack
+      if (this.attackProgress === 0 && this.lastAttackProgress !== 0) {
+         const impactPosition = this.position.copy();
+         const offset = Point.fromVectorForm(Yeti.SNOW_THROW_OFFSET + 20, this.rotation);
+         impactPosition.add(offset);
+         
+         for (let i = 0; i < 30; i++) {
+            const position = impactPosition.copy();
+            const offset = Point.fromVectorForm(randFloat(0, 20), 2 * Math.PI * Math.random());
+            position.add(offset);
+            
+            createSnowParticle(position.x, position.y, randFloat(40, 100));
+         }
+      }
+      this.lastAttackProgress = this.attackProgress;
    }
 
    public updateFromData(entityData: EntityData<"yeti">): void {

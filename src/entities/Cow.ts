@@ -1,9 +1,9 @@
-import { CowSpecies, HitData, Point, randFloat } from "webgl-test-shared";
+import { CowSpecies, EntityData, HitData, Point, SETTINGS, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import { BloodParticleSize, createBloodParticle, createBloodPoolParticle, createFootprintParticle } from "../generic-particles";
+import { BloodParticleSize, createBloodParticle, createBloodPoolParticle, createDirtParticle, createFootprintParticle } from "../generic-particles";
 import Board from "../Board";
 
 class Cow extends Entity {
@@ -17,10 +17,14 @@ class Cow extends Entity {
 
    public readonly type = "cow";
 
+   private grazeProgress: number;
+
    private numFootstepsTaken = 0;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, species: CowSpecies) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, species: CowSpecies, grazeProgress: number) {
       super(position, hitboxes, id);
+
+      this.grazeProgress = grazeProgress;
 
       const cowNum = species === CowSpecies.brown ? 1 : 2;
 
@@ -56,6 +60,14 @@ class Cow extends Entity {
 
          this.numFootstepsTaken++;
       }
+
+      if (this.grazeProgress !== -1 && Board.tickIntervalHasPassed(0.1)) {
+         // @Speed garbage collection
+         const spawnPosition = this.position.copy();
+         const offset = Point.fromVectorForm(30 * Math.random(), 2 * Math.PI * Math.random());
+         spawnPosition.add(offset);
+         createDirtParticle(spawnPosition.x, spawnPosition.y);
+      }
    }
 
    protected onHit(hitData: HitData): void {
@@ -73,6 +85,21 @@ class Cow extends Entity {
             createBloodParticle(Math.random() < 0.6 ? BloodParticleSize.small : BloodParticleSize.large, spawnPosition, 2 * Math.PI * Math.random(), randFloat(150, 250), true);
          }
       }
+   }
+
+   public updateFromData(entityData: EntityData<"cow">): void {
+      super.updateFromData(entityData);
+
+      // When the cow has finished grazing, create a bunch of dirt particles
+      if (entityData.clientArgs[1] < this.grazeProgress) {
+         const tile = this.findCurrentTile();
+         for (let i = 0; i < 15; i++) {
+            const x = (tile.x + Math.random()) * SETTINGS.TILE_SIZE;
+            const y = (tile.y + Math.random()) * SETTINGS.TILE_SIZE;
+            createDirtParticle(x, y);
+         }
+      }
+      this.grazeProgress = entityData.clientArgs[1];
    }
 }
 
