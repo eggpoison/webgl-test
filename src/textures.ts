@@ -108,6 +108,8 @@ const TEXTURE_SOURCES: Array<string> = [
    "tiles/river-bed-highlights-3.png"
 ];
 
+export const AAAA: Record<string, HTMLImageElement> = {};
+
 const textureSourceIsAlreadyIncluded = (src: string): boolean => {
    return TEXTURE_SOURCES.includes(src);
 }
@@ -117,7 +119,7 @@ export function loadTextures(): Promise<void> {
       // Add solid tile textures
       for (const tileTypeInfo of Object.values(TILE_TYPE_RENDER_INFO_RECORD)) {
          if (!textureSourceIsAlreadyIncluded(tileTypeInfo.textureSource)) {
-            TEXTURE_SOURCES.push(`tiles/${tileTypeInfo.textureSource}`);
+            TEXTURE_SOURCES.push(tileTypeInfo.textureSource);
          }
       }
 
@@ -154,6 +156,8 @@ export function loadTextures(): Promise<void> {
             
             TEXTURES[textureSource] = texture;
          });
+
+         AAAA[textureSource] = image;
       }
       
       resolve();

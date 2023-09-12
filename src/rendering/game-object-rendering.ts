@@ -7,9 +7,10 @@ import { createShaderString, createWebGLProgram, gl, halfWindowHeight, halfWindo
 import GameObject from "../GameObject";
 import Board from "../Board";
 
-/*
-- We only care about the draw orders within an entity, as game objects usually don't overlap.
-*/
+
+/** Amount of seconds that the hit flash occurs for */
+const ATTACK_HIT_FLASH_DURATION = 0.4;
+const MAX_REDNESS = 0.85;
 
 const vertexShaderText = `
 precision highp float;
@@ -146,17 +147,9 @@ export function renderGameObjects(gameObjects: ReadonlyArray<GameObject>): void 
    if (gameObjects.length === 0) return;
 
    // Classify all render parts
-   const categorisedRenderParts = categoriseGameObjectsByRenderPart(gameObjects);
-
-   renderRenderParts(categorisedRenderParts);
-}
-
-/** Sort the render parts based on their textures */
-const categoriseGameObjectsByRenderPart = (visibleGameObjects: ReadonlyArray<GameObject>): CategorisedRenderParts => {
    const categorisedRenderParts: CategorisedRenderParts = {};
-
    let totalRotation = 0;
-
+   // @Cleanup This really should be defined outside the renderGameObjects function
    const addRenderPart = (baseRenderObject: RenderObject, renderPart: RenderPart, parentRenderObject: RenderObject): void => {
       // Don't render inactive render parts
       if (!renderPart.isActive) {
@@ -192,7 +185,7 @@ const categoriseGameObjectsByRenderPart = (visibleGameObjects: ReadonlyArray<Gam
       totalRotation -= renderPart.rotation;
    }
 
-   for (const gameObject of visibleGameObjects) {
+   for (const gameObject of gameObjects) {
       gameObject.updateRenderPosition();
       
       totalRotation = gameObject.rotation;
@@ -202,26 +195,11 @@ const categoriseGameObjectsByRenderPart = (visibleGameObjects: ReadonlyArray<Gam
       }
    }
 
-   return categorisedRenderParts;
-}
-
-/** Amount of seconds that the hit flash occurs for */
-const ATTACK_HIT_FLASH_DURATION = 0.4;
-const MAX_REDNESS = 0.85;
-
-/** Calculates how red the entity should be if in an attack */
-const calculateEntityRedness = (entity: Entity): number => {
-   if (entity.secondsSinceLastHit === null || entity.secondsSinceLastHit > ATTACK_HIT_FLASH_DURATION) return 0;
-
-   return MAX_REDNESS * (1 - entity.secondsSinceLastHit / ATTACK_HIT_FLASH_DURATION);
-}
-
-const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
    // Calculate how many render parts will be in each draw call
    let numTextureUnitsUsed = 0;
    let partCounter = 0;
    const numPartsPerDrawCall = new Array<number>();
-   for (const zIndexRenderInfo of Object.values(renderParts) as ReadonlyArray<TexturedRenderParts>) {
+   for (const zIndexRenderInfo of Object.values(categorisedRenderParts) as ReadonlyArray<TexturedRenderParts>) {
       for (const texturedRenderParts of Object.values(zIndexRenderInfo)) {
          partCounter += texturedRenderParts.length;
          if (numTextureUnitsUsed % MAX_ACTIVE_TEXTURE_UNITS === MAX_ACTIVE_TEXTURE_UNITS - 1) {
@@ -240,7 +218,7 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
    let partIndex = 0;
    const vertexDatas = new Array<Float32Array>();
    const textureSources = new Array<string>();
-   for (const zIndexRenderPartInfo of Object.values(renderParts) as ReadonlyArray<TexturedRenderParts>) {
+   for (const zIndexRenderPartInfo of Object.values(categorisedRenderParts) as ReadonlyArray<TexturedRenderParts>) {
       for (const [textureSource, texturedRenderParts] of Object.entries(zIndexRenderPartInfo)) {
          if (numTextureUnitsUsed % MAX_ACTIVE_TEXTURE_UNITS === 0) {
             const idx = Math.floor(numTextureUnitsUsed / MAX_ACTIVE_TEXTURE_UNITS);
@@ -262,7 +240,13 @@ const renderRenderParts = (renderParts: CategorisedRenderParts): void => {
                   redTint -= 0.15;
                }
 
-               const redness = calculateEntityRedness(renderInfo.baseRenderObject);
+               let redness: number;
+               if (renderInfo.baseRenderObject.secondsSinceLastHit === null || renderInfo.baseRenderObject.secondsSinceLastHit > ATTACK_HIT_FLASH_DURATION) {
+                  redness = 0;
+               } else {
+                  redness = MAX_REDNESS * (1 - renderInfo.baseRenderObject.secondsSinceLastHit / ATTACK_HIT_FLASH_DURATION);
+               }
+
                redTint = lerp(redTint, 1, redness);
                greenTint = lerp(greenTint, -1, redness);
                blueTint = lerp(blueTint, -1, redness);

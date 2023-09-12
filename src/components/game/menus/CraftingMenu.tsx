@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { canCraftRecipe, CraftingRecipe, CraftingStation, ItemType, SETTINGS } from "webgl-test-shared";
+import { canCraftRecipe, CRAFTING_RECIPES, CraftingRecipe, CraftingStation, ItemType, SETTINGS } from "webgl-test-shared";
 import CLIENT_ITEM_INFO_RECORD from "../../../client-item-info";
 import Client from "../../../client/Client";
 import Item, { ItemSlots } from "../../../items/Item";
@@ -59,9 +59,12 @@ const getNumItemsOfType = (itemType: ItemType): number => {
    }
 
    let numItems = 0;
-   for (const item of Object.values(definiteGameState.hotbar.itemSlots)) {
-      if (item.type === itemType) {
-         numItems += item.count;
+   for (let itemSlot = 1; itemSlot <= definiteGameState.hotbar.width; itemSlot++) {
+      if (definiteGameState.hotbar.itemSlots.hasOwnProperty(itemSlot)) {
+         const item = definiteGameState.hotbar.itemSlots[itemSlot];
+         if (item.type === itemType) {
+            numItems += item.count;
+         }
       }
    }
 
@@ -115,7 +118,7 @@ interface IngredientsProps {
 const Ingredients = ({ recipe }: IngredientsProps) => {
    const ingredientElements = new Array<JSX.Element>();
    for (let i = 0; i < Object.keys(recipe.ingredients).length; i++) {
-      const [ingredientType, ingredientCount] = (Object.entries(recipe.ingredients) as unknown as ReadonlyArray<[ItemType, number]>)[i];
+      const [ingredientType, ingredientCount] = (Object.entries(recipe.ingredients).map(entry => [Number(entry[0]), entry[1]]) as ReadonlyArray<[ItemType, number]>)[i];
 
       ingredientElements[i] = <Ingredient ingredientType={ingredientType} amountRequiredForRecipe={ingredientCount} key={i} />
    }
@@ -143,6 +146,7 @@ const CraftingMenu = () => {
    const [craftingOutputItem, setCraftingOutputItem] = useState<Item | null>(null);
 
    const [selectedRecipe, setSelectedRecipe] = useState<CraftingRecipe | null>(null);
+   const selectedRecipeIndex = useRef(-1);
    
    const craftableRecipes = useRef<Array<CraftingRecipe>>([]);
    const [hoveredRecipe, setHoveredRecipe] = useState<CraftingRecipe | null>(null);
@@ -159,6 +163,7 @@ const CraftingMenu = () => {
 
    const selectRecipe = (recipe: CraftingRecipe): void => {
       setSelectedRecipe(recipe);
+      selectedRecipeIndex.current = CRAFTING_RECIPES.indexOf(recipe);
    }
 
    const craftRecipe = useCallback((): void => {
@@ -166,7 +171,7 @@ const CraftingMenu = () => {
          return;
       }
 
-      Client.sendCraftingPacket(selectedRecipe);
+      Client.sendCraftingPacket(selectedRecipeIndex.current);
    }, [selectedRecipe, craftableRecipes]);
 
    const hoverRecipe = (recipe: CraftingRecipe, e: MouseEvent): void => {
@@ -214,6 +219,7 @@ const CraftingMenu = () => {
    useEffect(() => {
       if (selectedRecipe !== null && !availableRecipes.includes(selectedRecipe)) {
          setSelectedRecipe(null);
+         selectedRecipeIndex.current = -1;
       }
    }, [availableRecipes, selectedRecipe]);
 

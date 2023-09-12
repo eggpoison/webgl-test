@@ -105,7 +105,6 @@ abstract class Entity extends GameObject {
    public updateFromData(entityData: EntityData<EntityType>): void {
       super.updateFromData(entityData);
 
-      this.statusEffects = entityData.statusEffects;
       this.mobAIType = entityData.mobAIType;
    }
 

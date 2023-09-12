@@ -1,13 +1,15 @@
-import { EntityType, Point, Vector, CactusFlowerSize, CactusBodyFlowerData, CactusLimbData, randFloat, randInt } from "webgl-test-shared";
+import { EntityType, Point, Vector, CactusFlowerSize, CactusBodyFlowerData, CactusLimbData, randFloat, randInt, ParticleColour } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import TexturedParticle from "../particles/TexturedParticle";
 import { ParticleRenderLayer } from "../particles/Particle";
 import Board from "../Board";
+import MonocolourParticle from "../particles/MonocolourParticle";
 
 class Cactus extends Entity {
+   private static readonly CACTUS_SPINE_PARTICLE_COLOUR: ParticleColour = [0, 0, 0];
+   
    private static readonly RADIUS = 40;
 
    private static readonly LIMB_SIZE = 36;
@@ -105,7 +107,7 @@ class Cactus extends Entity {
       
       const lifetime = randFloat(0.2, 0.3);
 
-      const particle = new TexturedParticle(
+      const particle = new MonocolourParticle(
          null,
          4,
          16,
@@ -113,13 +115,13 @@ class Cactus extends Entity {
          new Vector(randFloat(150, 200), flyDirection),
          null,
          lifetime,
-         "particles/cactus-spine.png"
+         Cactus.CACTUS_SPINE_PARTICLE_COLOUR
       );
       particle.rotation = flyDirection;
       particle.getOpacity = (age: number) => {
          return 1 - age / lifetime;
       };
-      Board.addTexturedParticle(particle, ParticleRenderLayer.high)
+      Board.addMonocolourParticle(particle, ParticleRenderLayer.high)
    }
 }
 

@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, InitialGameDataPacket, CraftingRecipe, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, ProjectileData, VisibleChunkBounds, TribeType, TribeData, InventoryData, CircularHitboxData, RectangularHitboxData, MonocolourParticleData, TexturedParticleData, ParticleColour, ParticleType } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, ProjectileData, VisibleChunkBounds, TribeType, TribeData, InventoryData, CircularHitboxData, RectangularHitboxData, MonocolourParticleData, TexturedParticleData, ParticleColour, ParticleType } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -12,8 +12,7 @@ import { createItem } from "../items/item-creation";
 import { gameScreenSetIsDead } from "../components/game/GameScreen";
 import Item, { Inventory, ItemSlots } from "../items/Item";
 import { updateActiveItem, updateInventoryIsOpen } from "../player-input";
-import { Hotbar_updateArmourItemSlot, Hotbar_updateBackpackItemSlot, Hotbar_updateHotbarInventory } from "../components/game/inventories/Hotbar";
-import { BackpackInventoryMenu_setBackpackInventory } from "../components/game/inventories/BackpackInventory";
+import { Hotbar_updateArmourItemSlot, Hotbar_update } from "../components/game/inventories/Hotbar";
 import { setHeldItemVisual } from "../components/game/HeldItem";
 import { CraftingMenu_setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
 import { updateHealthBar } from "../components/game/HealthBar";
@@ -32,6 +31,7 @@ import Entity from "../entities/Entity";
 import Board from "../Board";
 import { definiteGameState, latencyGameState } from "../game-state/game-states";
 import { hideNerdVision } from "../components/game/dev/NerdVision";
+import { BackpackInventoryMenu_update } from "../components/game/inventories/BackpackInventory";
 
 type FilterTexturedTypes<T extends ParticleType> = (typeof PARTICLE_INFO)[T]["renderType"] extends ParticleRenderType.textured ? T : never;
 type FilterMonocolourTypes<T extends ParticleType> = (typeof PARTICLE_INFO)[T]["renderType"] extends ParticleRenderType.monocolour ? T : never;
@@ -40,7 +40,6 @@ const PARTICLE_TEXTURES: { [T in ParticleType as Exclude<T, FilterMonocolourType
    [ParticleType.bloodPoolSmall]: "particles/blood-pool-small.png",
    [ParticleType.bloodPoolMedium]: "particles/blood-pool-medium.png",
    [ParticleType.bloodPoolLarge]: "particles/blood-pool-large.png",
-   [ParticleType.cactusSpine]: "particles/cactus-spine.png",
    [ParticleType.dirt]: "particles/dirt.png",
    [ParticleType.leaf]: "particles/leaf.png",
    [ParticleType.rock]: "particles/rock.png",
@@ -68,7 +67,8 @@ const PARTICLE_COLOURS: { [T in ParticleType as Exclude<T, FilterTexturedTypes<T
    [ParticleType.emberRed]: [255/255, 102/255, 0],
    [ParticleType.emberOrange]: [255/255, 184/255, 61/255],
    [ParticleType.waterDroplet]: [8/255, 197/255, 255/255],
-   [ParticleType.snow]: [199/255, 209/255, 209/255]
+   [ParticleType.snow]: [199/255, 209/255, 209/255],
+   [ParticleType.cactusSpine]: [0, 0, 0]
 };
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
@@ -273,6 +273,7 @@ abstract class Client {
       const sentParticleIDs = new Set(particles.map(particle => particle.id));
 
       // Destroy all server particles which aren't being sent anymore
+      // @Speed This is very slow
       for (const particleID of Board.serverParticleIDs) {
          if (!sentParticleIDs.has(particleID)) {
             delete Board.lowParticlesMonocolour[particleID];
@@ -357,6 +358,7 @@ abstract class Client {
             for (const hit of entityData.hitsTaken) {
                Board.entities[entityData.id].registerHit(hit);
             }
+            Board.entities[entityData.id].statusEffects = entityData.statusEffects;
          } else {
             const entity = this.createEntityFromData(entityData);
             for (const hit of entityData.hitsTaken) {
@@ -420,6 +422,9 @@ abstract class Client {
    }
 
    private static updateInventoryFromServerData(inventory: Inventory, inventoryData: InventoryData): void {
+      inventory.width = inventoryData.width;
+      inventory.height = inventoryData.height;
+      
       // Remove any items which have been removed from the inventory
       for (const [itemSlot, item] of Object.entries(inventory.itemSlots) as unknown as ReadonlyArray<[number, Item]>) {
          // If it doesn't exist in the server data, remove it
@@ -459,38 +464,30 @@ abstract class Client {
    }
 
    private static updatePlayerInventory(playerInventoryData: PlayerInventoryData) {
-      // Hotbar
-      if (definiteGameState.hotbar !== null) {
-         this.updateInventoryFromServerData(definiteGameState.hotbar, playerInventoryData.hotbar);
-      } else {
-         definiteGameState.hotbar = this.createInventoryFromServerData(playerInventoryData.hotbar);
-      }
-      Hotbar_updateHotbarInventory(definiteGameState.hotbar);
+      const hotbarHasChanged = this.inventoryHasChanged(definiteGameState.hotbar, playerInventoryData.hotbar);
+      this.updateInventoryFromServerData(definiteGameState.hotbar, playerInventoryData.hotbar);
 
+      // @Cleanup should this be here?
       updateActiveItem();
 
-      // Backpack inventory
+      const backpackHasChanged = this.inventoryHasChanged(definiteGameState.backpack, playerInventoryData.backpackInventory);
       if (definiteGameState.backpack !== null) {
          this.updateInventoryFromServerData(definiteGameState.backpack, playerInventoryData.backpackInventory);
-         BackpackInventoryMenu_setBackpackInventory(Object.assign({}, definiteGameState.backpack));
+      } else {
+         definiteGameState.backpack = this.createInventoryFromServerData(playerInventoryData.backpackInventory);
       }
 
       // Crafting output item
       if (definiteGameState.craftingOutputSlot !== null) {
          this.updateInventoryFromServerData(definiteGameState.craftingOutputSlot, playerInventoryData.craftingOutputItemSlot);
-         CraftingMenu_setCraftingMenuOutputItem(definiteGameState.craftingOutputSlot.itemSlots[1]);
       } else {
          definiteGameState.craftingOutputSlot = this.createInventoryFromServerData(playerInventoryData.craftingOutputItemSlot);
       }
       CraftingMenu_setCraftingMenuOutputItem(definiteGameState.craftingOutputSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.craftingOutputSlot.itemSlots[1] : null);
 
       // Backpack slot
-      if (definiteGameState.backpackSlot !== null) {
-         this.updateInventoryFromServerData(definiteGameState.backpackSlot, playerInventoryData.backpackSlot);
-      } else {
-         definiteGameState.backpackSlot = this.createInventoryFromServerData(playerInventoryData.backpackSlot);
-      }
-      Hotbar_updateBackpackItemSlot(definiteGameState.backpackSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.backpackSlot.itemSlots[1] : null);
+      const backpackSlotHasChanged = this.inventoryHasChanged(definiteGameState.backpackSlot, playerInventoryData.backpackSlot);
+      this.updateInventoryFromServerData(definiteGameState.backpackSlot, playerInventoryData.backpackSlot);
 
       // Held item
       if (definiteGameState.heldItemSlot !== null) {
@@ -512,6 +509,54 @@ abstract class Client {
          Player.instance.updateArmourRenderPart(armourType);
          Player.instance.armourType = armourType;
       }
+
+      if (hotbarHasChanged || backpackSlotHasChanged) {
+         Hotbar_update();
+      }
+      // @Cleanup is the backpackSlotHasChanged check really necessary?
+      if (backpackHasChanged || backpackSlotHasChanged) {
+         BackpackInventoryMenu_update();
+      }
+   }
+
+   private static inventoryHasChanged(previousInventory: Inventory | null, newInventoryData: InventoryData): boolean {
+      // If the previous inventory is null, check if there are any items in the new inventory data
+      if (previousInventory === null) {
+         for (let itemSlot = 1; itemSlot <= newInventoryData.width * newInventoryData.height; itemSlot++) {
+            if (newInventoryData.itemSlots.hasOwnProperty(itemSlot)) {
+               return true;
+            }
+         }
+         return false;
+      }
+      
+      for (let itemSlot = 1; itemSlot <= newInventoryData.width * newInventoryData.height; itemSlot++) {
+         if (!newInventoryData.itemSlots.hasOwnProperty(itemSlot)) {
+            // If there is no item in the server data but there is one in the game state
+            if (previousInventory.itemSlots.hasOwnProperty(itemSlot)) {
+               return true;
+            }
+
+            // Since we then know both inventories don't have an item there, we don't do any other checks
+            continue;
+         }
+
+         // If the item has changed, update it
+         if (previousInventory.itemSlots.hasOwnProperty(itemSlot)) {
+            // Update type
+            if (newInventoryData.itemSlots[itemSlot].type !== previousInventory.itemSlots[itemSlot].type) {
+               return true;
+            }
+            // Update count
+            if (newInventoryData.itemSlots[itemSlot].count !== previousInventory.itemSlots[itemSlot].count) {
+               return true;
+            }
+         } else {
+            // Server inventory data has item but game state doesn't
+            return true;
+         }
+      }
+      return false;
    }
 
    private static createDroppedItemFromServerItemData(serverItemEntityData: DroppedItemData): void {
@@ -665,9 +710,9 @@ abstract class Client {
       }
    }
 
-   public static sendCraftingPacket(craftingRecipe: CraftingRecipe): void {
+   public static sendCraftingPacket(recipeIndex: number): void {
       if (Game.isRunning && this.socket !== null) {
-         this.socket.emit("crafting_packet", craftingRecipe);
+         this.socket.emit("crafting_packet", recipeIndex);
       }
    }
 

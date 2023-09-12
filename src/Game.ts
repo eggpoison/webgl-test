@@ -36,6 +36,9 @@ import { registerFrame, updateFrameGraph } from "./components/game/dev/FrameGrap
 import { createNightShaders, renderNight } from "./rendering/night-rendering";
 import { createPlaceableItemProgram, renderGhostPlaceableItem } from "./rendering/placeable-item-rendering";
 import { definiteGameState } from "./game-state/game-states";
+import Entity from "./entities/Entity";
+import DroppedItem from "./items/DroppedItem";
+import Projectile from "./projectiles/Projectile";
 
 let listenersHaveBeenCreated = false;
 
@@ -155,6 +158,8 @@ abstract class Game {
             createShaderStrings();
             createTextCanvasContext();
             
+            await loadTextures();
+            
             createSolidTileShaders();
             createWaterShaders();
             createEntityShaders();
@@ -173,8 +178,6 @@ abstract class Game {
             recalculateAmbientOcclusion();
 
             generateFoodEatingParticleColours();
-            
-            await loadTextures();
    
             this.hasInitialised = true;
    
@@ -315,7 +318,26 @@ abstract class Game {
          Camera.updateVisiblePositionBounds();
       }
 
-      renderPlayerNames();
+      // Categorise the game objects
+      const playersToRenderNames = new Array<Player>();
+      const entities = new Array<Entity>();
+      const droppedItems = new Array<DroppedItem>();
+      const projectiles = new Array<Projectile>();
+      for (const gameObject of Object.values(Board.gameObjects)) {
+         // @Cleanup this is pretty bad
+         if (gameObject.hasOwnProperty("statusEffects")) {
+            entities.push(gameObject as Entity);
+            if ((gameObject as Entity).type === "player" && gameObject !== Player.instance) {
+               playersToRenderNames.push(gameObject as Player);
+            }
+         } else if (gameObject.hasOwnProperty("itemType")) {
+            droppedItems.push(gameObject as DroppedItem);
+         } else {
+            projectiles.push(gameObject as Projectile);
+         }
+      }
+
+      renderPlayerNames(playersToRenderNames);
 
       renderSolidTiles();
       renderRivers();
@@ -332,9 +354,9 @@ abstract class Game {
       renderMonocolourParticles(Object.values(Board.lowParticlesMonocolour));
       renderTexturedParticles(Object.values(Board.lowParticlesTextured));
 
-      renderGameObjects(Object.values(Board.droppedItems));
-      renderGameObjects(Object.values(Board.entities));
-      renderGameObjects(Object.values(Board.projectiles));
+      renderGameObjects(droppedItems);
+      renderGameObjects(entities);
+      renderGameObjects(projectiles);
       
       renderMonocolourParticles(Object.values(Board.highParticlesMonocolour));
       renderTexturedParticles(Object.values(Board.highParticlesTextured));

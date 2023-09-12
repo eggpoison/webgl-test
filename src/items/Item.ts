@@ -8,8 +8,8 @@ export type ItemSlots = { [itemSlot: number]: Item };
 
 export interface Inventory {
    itemSlots: ItemSlots;
-   readonly width: number;
-   readonly height: number;
+   width: number;
+   height: number;
    readonly inventoryName: string;
 }
 
@@ -22,7 +22,7 @@ class Item {
    /** Unique identifier for the item */
    public readonly id: number;
    
-   public readonly type: ItemType;
+   public type: ItemType;
 
    public count: number;
 

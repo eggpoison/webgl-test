@@ -11,40 +11,30 @@ export const PARTICLE_TEXTURE_MAPPINGS = {
    "particles/blood-pool-small.png": 0,
    "particles/blood-pool-medium.png": 1,
    "particles/blood-pool-large.png": 2,
-   "particles/cactus-spine.png": 3,
-   "particles/dirt.png": 4,
-   "particles/leaf.png": 5,
-   "particles/rock.png": 6,
-   "particles/rock-large.png": 7,
-   "entities/cactus/cactus-flower-small-1.png": 8,
-   "entities/cactus/cactus-flower-large-1.png": 9,
-   "entities/cactus/cactus-flower-small-2.png": 10,
-   "entities/cactus/cactus-flower-large-2.png": 11,
-   "entities/cactus/cactus-flower-small-3.png": 12,
-   "entities/cactus/cactus-flower-large-3.png": 13,
-   "entities/cactus/cactus-flower-small-4.png": 14,
-   "entities/cactus/cactus-flower-large-4.png": 15,
-   "entities/cactus/cactus-flower-5.png": 16,
-   "particles/smoke-black.png": 17,
-   "particles/footprint.png": 18,
-   "particles/poison-droplet.png": 19,
-   "particles/slime-puddle.png": 20,
-   "particles/water-splash.png": 21,
-   "particles/leaf-small.png": 22
+   "particles/dirt.png": 3,
+   "particles/leaf.png": 4,
+   "particles/rock.png": 5,
+   "particles/rock-large.png": 6,
+   "entities/cactus/cactus-flower-small-1.png": 7,
+   "entities/cactus/cactus-flower-large-1.png": 8,
+   "entities/cactus/cactus-flower-small-2.png": 9,
+   "entities/cactus/cactus-flower-large-2.png": 10,
+   "entities/cactus/cactus-flower-small-3.png": 11,
+   "entities/cactus/cactus-flower-large-3.png": 12,
+   "entities/cactus/cactus-flower-small-4.png": 13,
+   "entities/cactus/cactus-flower-large-4.png": 14,
+   "entities/cactus/cactus-flower-5.png": 15,
+   "particles/smoke-black.png": 16,
+   "particles/footprint.png": 17,
+   "particles/poison-droplet.png": 18,
+   "particles/slime-puddle.png": 19,
+   "particles/water-splash.png": 20,
+   "particles/leaf-small.png": 21
 } satisfies Record<string, number>;
 
 export type ParticleTextureSource = keyof typeof PARTICLE_TEXTURE_MAPPINGS;
 
 export type ParticleColour = [r: number, g: number, b: number];
-
-// export const PARTICLE_COLOURS: { [T in ParticleType as Exclude<T, FilterTexturedTypes<T>>]: ParticleColour } = {
-//    [ParticleType.blood]: [212/255, 0, 0],
-//    [ParticleType.bloodLarge]: [186/255, 0, 0],
-//    [ParticleType.emberRed]: [255/255, 102/255, 0],
-//    [ParticleType.emberOrange]: [255/255, 184/255, 61/255],
-//    [ParticleType.waterDroplet]: [8/255, 197/255, 255/255],
-//    [ParticleType.snow]: [199/255, 209/255, 209/255]
-// };
 
 const monocolourVertexShaderText = `#version 300 es
 precision mediump float;
@@ -458,7 +448,7 @@ export function renderTexturedParticles(particles: ReadonlyArray<TexturedParticl
       // Create buffer
       const buffer = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
+      gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.DYNAMIC_DRAW);
 
       gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 0);
       gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);

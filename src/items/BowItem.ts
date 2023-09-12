@@ -5,7 +5,7 @@ import { rightMouseButtonIsPressed } from "../player-input";
 class BowItem extends Item {
    public readonly projectileDamage: number;
    public readonly projectileKnockback: number;
-   public readonly projectileAttackCooldown: number;
+   public readonly shotCooldown: number;
 
    private cooldown = 0;
 
@@ -14,7 +14,7 @@ class BowItem extends Item {
 
       this.projectileDamage = itemInfo.projectileDamage;
       this.projectileKnockback = itemInfo.projectileKnockback;
-      this.projectileAttackCooldown = itemInfo.projectileAttackCooldown;
+      this.shotCooldown = itemInfo.shotCooldown;
    }
    
    public tick(): void {
@@ -27,7 +27,7 @@ class BowItem extends Item {
       
       if (this.cooldown === 0 && rightMouseButtonIsPressed && this.isActive()) {
          this.sendUsePacket();
-         this.cooldown = this.projectileAttackCooldown;
+         this.cooldown = this.shotCooldown;
       }
    }
 }

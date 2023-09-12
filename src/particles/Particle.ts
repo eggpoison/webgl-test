@@ -20,6 +20,7 @@ interface ParticleInfo {
 // Particles can be server and client
 // Server particles 
 
+// @Cleanup this is messy, probably shouldn't be here as well
 export const PARTICLE_INFO = {
    // Server
    [ParticleType.bloodPoolSmall]: {
@@ -61,7 +62,7 @@ export const PARTICLE_INFO = {
       width: 4,
       height: 16,
       renderLayer: ParticleRenderLayer.high,
-      renderType: ParticleRenderType.textured
+      renderType: ParticleRenderType.monocolour
    },
    // Client
    [ParticleType.dirt]: {

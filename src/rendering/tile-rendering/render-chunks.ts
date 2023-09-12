@@ -8,9 +8,10 @@ export const RENDER_CHUNK_SIZE = 8;
 export const WORLD_RENDER_CHUNK_SIZE = SETTINGS.BOARD_DIMENSIONS / RENDER_CHUNK_SIZE;
 
 export interface RenderChunkSolidTileInfo {
-   vaos: Array<WebGLVertexArrayObject>;
-   vertexCounts: Array<number>;
-   indexedTextureSources: Array<string>;
+   readonly buffer: WebGLBuffer;
+   vao: WebGLVertexArrayObject;
+   vertexCount: number;
+   texture: WebGLTexture;
 }
 
 export interface RenderChunkRiverInfo {
@@ -60,7 +61,7 @@ export function updateRenderChunkFromTileUpdate(tileUpdate: ServerTileUpdateData
    const renderChunkX = Math.floor(tileUpdate.x / RENDER_CHUNK_SIZE);
    const renderChunkY = Math.floor(tileUpdate.y / RENDER_CHUNK_SIZE);
 
-   recalculateSolidTileRenderChunkData(renderChunkX, renderChunkY, renderChunks[renderChunkX][renderChunkY].solidTileInfo);
+   recalculateSolidTileRenderChunkData(renderChunkX, renderChunkY);
 }
 
 export function getRenderChunkSolidTileInfo(renderChunkX: number, renderChunkY: number): RenderChunkSolidTileInfo {
