@@ -1,12 +1,9 @@
-import { DeathInfo, Point, Vector, randFloat } from "webgl-test-shared";
+import { DeathInfo, Point, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import TexturedParticle from "../particles/TexturedParticle";
-import Board from "../Board";
-import { ParticleRenderLayer } from "../particles/Particle";
-import { ParticleTextureSource } from "../rendering/particle-rendering";
+import { createRockParticle } from "../generic-particles";
 
 class Tombstone extends Entity {
    public readonly type = "tombstone";
@@ -40,7 +37,7 @@ class Tombstone extends Entity {
          let moveDirection = this.position.calculateAngleBetween(spawnPosition);
          moveDirection += randFloat(-1, 1);
          
-         this.createRockParticle(spawnPosition, moveDirection);
+         createRockParticle(spawnPosition, moveDirection);
       }
    }
 
@@ -49,44 +46,8 @@ class Tombstone extends Entity {
          const spawnPosition = new Point(randFloat(-Tombstone.HITBOX_WIDTH/2, Tombstone.HITBOX_WIDTH/2), randFloat(-Tombstone.HITBOX_HEIGHT/2, Tombstone.HITBOX_HEIGHT/2));
          spawnPosition.add(this.position);
 
-         this.createRockParticle(spawnPosition, 2 * Math.PI * Math.random());
+         createRockParticle(spawnPosition, 2 * Math.PI * Math.random());
       }
-   }
-   
-   private createRockParticle(spawnPosition: Point, moveDirection: number): void {
-      const lifetime = randFloat(0.3, 0.6);
-
-      let size: number;
-      let textureSource: ParticleTextureSource;
-      if (Math.random() < 0.5) {
-         // Large rock
-         size = 16;
-         textureSource = "particles/rock-large.png";
-      } else {
-         // Small rock
-         size = 12;
-         textureSource = "particles/rock.png";
-      }
-
-      const velocityMagnitude = randFloat(80, 125);
-      
-      const particle = new TexturedParticle(
-         null,
-         size,
-         size,
-         spawnPosition,
-         new Vector(velocityMagnitude, moveDirection),
-         new Vector(velocityMagnitude / lifetime / 1.25, moveDirection + Math.PI),
-         lifetime,
-         textureSource
-      );
-      particle.rotation = 2 * Math.PI * Math.random();
-      particle.angularVelocity = 2 * Math.PI * randFloat(-1, 1);
-      particle.angularDrag = Math.PI;
-      particle.getOpacity = (age: number): number => {
-         return 1 - age/lifetime;
-      };
-      Board.addTexturedParticle(particle, ParticleRenderLayer.low);
    }
 }
 

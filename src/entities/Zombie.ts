@@ -1,9 +1,9 @@
-import { HitData, ParticleType, Point, randFloat } from "webgl-test-shared";
+import { HitData, Point, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import { createBloodParticle } from "../generic-particles";
+import { BloodParticleSize, createBloodParticle, createBloodPoolParticle, createFootprintParticle } from "../generic-particles";
 import Board from "../Board";
 
 const ZOMBIE_TEXTURE_SOURCES: { [zombieType: number]: string } = {
@@ -20,6 +20,8 @@ class Zombie extends Entity {
    private static readonly RADIUS = 32;
    
    public readonly type = "zombie";
+
+   private numFootstepsTaken = 0;
    
    constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, zombieType: number) {
       super(position, hitboxes, id);
@@ -35,14 +37,29 @@ class Zombie extends Entity {
       );
    }
 
+   public tick(): void {
+      super.tick();
+
+      // Create footsteps
+      if (this.velocity !== null && Board.tickIntervalHasPassed(0.3)) {
+         createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 4);
+
+         this.numFootstepsTaken++;
+      }
+   }
+
    protected onHit(hitData: HitData): void {
+      // Blood pool particle
+      createBloodPoolParticle(this.position);
+      
+      // Blood particles
       if (hitData.angleFromAttacker !== null) {
          for (let i = 0; i < 10; i++) {
             const spawnPosition = Point.fromVectorForm(Zombie.RADIUS, hitData.angleFromAttacker + Math.PI + 0.2 * Math.PI * (Math.random() - 0.5));
             spawnPosition.x += this.position.x;
             spawnPosition.y += this.position.y;
          
-            createBloodParticle(Math.random() < 0.6 ? ParticleType.blood : ParticleType.bloodLarge, spawnPosition, 2 * Math.PI * Math.random(), randFloat(150, 250), true);
+            createBloodParticle(Math.random() < 0.6 ? BloodParticleSize.small : BloodParticleSize.large, spawnPosition, 2 * Math.PI * Math.random(), randFloat(150, 250), true);
          }
       }
    }
@@ -59,7 +76,7 @@ class Zombie extends Entity {
                let moveDirection = 2 * Math.PI / Zombie.DEATH_PARTICLE_RAY_COUNT * j + offset;
                moveDirection += randFloat(-0.3, 0.3);
 
-               createBloodParticle(ParticleType.bloodLarge, spawnPosition, moveDirection, randFloat(100, 200), false);
+               createBloodParticle(BloodParticleSize.large, spawnPosition, moveDirection, randFloat(100, 200), false);
             }
          });
       }

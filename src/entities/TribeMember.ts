@@ -1,4 +1,4 @@
-import { EntityData, HitData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, ItemType, ParticleColour, ParticleType, Point, SETTINGS, ToolItemInfo, TribeType, Vector, lerp, randFloat, randItem } from "webgl-test-shared";
+import { EntityData, HitData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, ItemType, Point, SETTINGS, ToolItemInfo, TribeType, lerp, randFloat, randItem } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -7,9 +7,10 @@ import CLIENT_ITEM_INFO_RECORD from "../client-item-info";
 import { getFrameProgress } from "../GameObject";
 import MonocolourParticle from "../particles/MonocolourParticle";
 import { ParticleRenderLayer } from "../particles/Particle";
-import { createBloodParticle } from "../generic-particles";
+import { BloodParticleSize, createBloodParticle, createBloodPoolParticle } from "../generic-particles";
 import Board from "../Board";
 import { latencyGameState } from "../game-state/game-states";
+import { ParticleColour, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 
 type FilterFoodItemTypes<T extends ItemType> = (typeof ITEM_TYPE_RECORD)[T] extends "food" ? never : T;
 
@@ -208,13 +209,17 @@ abstract class TribeMember extends Entity {
    }
 
    protected onHit(hitData: HitData): void {
+      // Blood pool particle
+      createBloodPoolParticle(this.position);
+      
+      // Blood particles
       if (hitData.angleFromAttacker !== null) {
          for (let i = 0; i < 10; i++) {
             const spawnPosition = Point.fromVectorForm(32, hitData.angleFromAttacker + Math.PI + 0.2 * Math.PI * (Math.random() - 0.5));
             spawnPosition.x += this.position.x;
             spawnPosition.y += this.position.y;
 
-            createBloodParticle(Math.random() < 0.6 ? ParticleType.blood : ParticleType.bloodLarge, spawnPosition, 2 * Math.PI * Math.random(), randFloat(150, 250), true);
+            createBloodParticle(Math.random() < 0.6 ? BloodParticleSize.small : BloodParticleSize.large, spawnPosition, 2 * Math.PI * Math.random(), randFloat(150, 250), true);
          }
       }
    }
@@ -224,33 +229,32 @@ abstract class TribeMember extends Entity {
 
       if (this.foodEatingType !== -1 && Board.tickIntervalHasPassed(0.25)) {
          for (let i = 0; i < 3; i++) {
+            // @Speed garbage collection
+            
             const spawnPosition = Point.fromVectorForm(37, this.rotation);
             spawnPosition.add(this.position);
 
             const offset2 = Point.fromVectorForm(randFloat(0, 6), 2 * Math.PI * Math.random());
             spawnPosition.add(offset2);
 
-            const velocity = new Vector(randFloat(90, 130), 2 * Math.PI * Math.random());
+            const velocity = Point.fromVectorForm(randFloat(90, 130), 2 * Math.PI * Math.random());
             if (this.velocity !== null) {
-               velocity.add(this.velocity);
+               velocity.add(this.velocity.convertToPoint());
             }
             
             const lifetime = randFloat(0.3, 0.4);
+
+            const acceleration = velocity.copy();
+            acceleration.x *= -1 / lifetime / 1.2;
+            acceleration.y *= -1 / lifetime / 1.2;
             
-            const particle = new MonocolourParticle(
-               null,
-               6,
-               6,
-               spawnPosition,
-               velocity,
-               new Vector(velocity.magnitude / lifetime / 1.2, velocity.direction + Math.PI),
-               lifetime,
-               randItem(FOOD_EATING_COLOURS[this.foodEatingType as keyof typeof FOOD_EATING_COLOURS])
-            );
-            particle.rotation = 2 * Math.PI * Math.random();
+            const particle = new MonocolourParticle(null, lifetime, randItem(FOOD_EATING_COLOURS[this.foodEatingType as keyof typeof FOOD_EATING_COLOURS]));
+            // particle.rotation = 2 * Math.PI * Math.random();
             particle.getOpacity = (age: number) => {
                return 1 - Math.pow(age / lifetime, 3);
             }
+            // @Incomplete
+            addMonocolourParticleToBufferContainer(particle, 6, 6, spawnPosition.x, spawnPosition.y, velocity.x, velocity.y, acceleration.x, acceleration.y, 0, 0, 0);
             Board.addMonocolourParticle(particle, ParticleRenderLayer.low);
          }
       }

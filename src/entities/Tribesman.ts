@@ -5,6 +5,8 @@ import { Inventory, ItemSlots } from "../items/Item";
 import { createItem } from "../items/item-creation";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
+import { createFootprintParticle } from "../generic-particles";
+import Board from "../Board";
 
 class Tribesman extends TribeMember {
    public readonly type = "tribesman";
@@ -17,6 +19,8 @@ class Tribesman extends TribeMember {
    private static readonly GOBLIN_EAR_ANGLE = Math.PI / 2.5;
 
    public readonly inventory: Inventory;
+
+   private numFootstepsTaken = 0;
 
    constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, activeItem: ItemType | null, foodEatingType: ItemType | -1, lastAttackTicks: number, lastEatTicks: number, inventoryData: InventoryData) {
       super(position, hitboxes, id, tribeID, tribeType, armour, activeItem, foodEatingType, lastAttackTicks, lastEatTicks);
@@ -85,6 +89,16 @@ class Tribesman extends TribeMember {
       };
 
       return inventory;
+   }
+
+   public tick(): void {
+      super.tick();
+
+      // Footsteps
+      if (this.velocity !== null && Board.tickIntervalHasPassed(0.15)) {
+         createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 4);
+         this.numFootstepsTaken++;
+      }
    }
 
    public updateFromData(entityData: EntityData<"tribesman">): void {

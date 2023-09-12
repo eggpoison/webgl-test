@@ -1,4 +1,4 @@
-import { Point, TreeSize, Vector, randFloat, randInt } from "webgl-test-shared";
+import { Point, TreeSize, randFloat, randInt } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -7,6 +7,7 @@ import MonocolourParticle, { interpolateColours } from "../particles/MonocolourP
 import { ParticleRenderLayer } from "../particles/Particle";
 import { LeafParticleSize, createLeafParticle } from "../generic-particles";
 import Board from "../Board";
+import { addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 
 const treeTextures: { [T in TreeSize]: string } = {
    [TreeSize.small]: "entities/tree/tree-small.png",
@@ -61,25 +62,21 @@ class Tree extends Entity {
          numLeaves = randInt(4, 5);
       }
       for (let i = 0; i < numLeaves; i++) {
+         // @Speed garbage collection
          const spawnPosition = Point.fromVectorForm(this.getRadius(), 2 * Math.PI * Math.random());
          spawnPosition.add(this.position);
 
+         const velocity = Point.fromVectorForm(randFloat(60, 80), 2 * Math.PI * Math.random());
+
          const lifetime = randFloat(0.3, 0.5);
          
-         const particle = new MonocolourParticle(
-            null,
-            6,
-            6,
-            spawnPosition,
-            new Vector(randFloat(60, 80), 2 * Math.PI * Math.random()),
-            null,
-            lifetime,
-            interpolateColours(Tree.LEAF_SPECK_COLOUR_LOW, Tree.LEAF_SPECK_COLOUR_HIGH, Math.random())
-         );
-         particle.rotation = 2 * Math.PI * Math.random();
+         const particle = new MonocolourParticle(null, lifetime, interpolateColours(Tree.LEAF_SPECK_COLOUR_LOW, Tree.LEAF_SPECK_COLOUR_HIGH, Math.random()));
+         // particle.rotation = 2 * Math.PI * Math.random();
          particle.getOpacity = (age: number): number => {
             return Math.pow(1 - age / lifetime, 0.3);
          }
+         // @Incomplete
+         addMonocolourParticleToBufferContainer(particle, 6, 6, spawnPosition.x, spawnPosition.y, velocity.x, velocity.y, 0, 0, 0, 0, 0);
          Board.addMonocolourParticle(particle, ParticleRenderLayer.low);
       }
    }

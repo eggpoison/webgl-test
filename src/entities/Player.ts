@@ -12,6 +12,7 @@ import { Tile } from "../Tile";
 import TribeMember from "./TribeMember";
 import Board from "../Board";
 import { definiteGameState, latencyGameState } from "../game-state/game-states";
+import { createFootprintParticle } from "../generic-particles";
 
 /** Maximum distance from a crafting station which will allow its recipes to be crafted. */
 const MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION = 250;
@@ -114,6 +115,8 @@ class Player extends TribeMember {
 
    public readonly type = "player";
    
+   private numFootstepsTaken = 0;
+   
    public readonly username: string;
 
    constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, activeItem: ItemType | null, foodEatingType: ItemType | -1, lastAttackTicks: number, lastEatTicks: number, username: string) {
@@ -148,6 +151,16 @@ class Player extends TribeMember {
          height: 1,
          inventoryName: "hotbar"
       };
+   }
+
+   public tick(): void {
+      super.tick();
+
+      // Footsteps
+      if (this.velocity !== null && Board.tickIntervalHasPassed(0.15)) {
+         createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 4);
+         this.numFootstepsTaken++;
+      }
    }
 
    protected onHit(hitData: HitData): void {

@@ -2,7 +2,6 @@ import { gl } from "./webgl";
 import CLIENT_ITEM_INFO_RECORD from "./client-item-info";
 import { TILE_TYPE_RENDER_INFO_RECORD } from "./tile-type-render-info";
 import { imageIsLoaded } from "./utils";
-import { PARTICLE_TEXTURE_MAPPINGS } from "./rendering/particle-rendering";
 
 let TEXTURES: { [key: string]: WebGLTexture } = {};
 
@@ -105,7 +104,8 @@ const TEXTURE_SOURCES: Array<string> = [
    "tiles/water-foam.png",
    "tiles/river-bed-highlights-1.png",
    "tiles/river-bed-highlights-2.png",
-   "tiles/river-bed-highlights-3.png"
+   "tiles/river-bed-highlights-3.png",
+   "miscellaneous/particle-texture-atlas.png"
 ];
 
 export const AAAA: Record<string, HTMLImageElement> = {};
@@ -120,13 +120,6 @@ export function loadTextures(): Promise<void> {
       for (const tileTypeInfo of Object.values(TILE_TYPE_RENDER_INFO_RECORD)) {
          if (!textureSourceIsAlreadyIncluded(tileTypeInfo.textureSource)) {
             TEXTURE_SOURCES.push(tileTypeInfo.textureSource);
-         }
-      }
-
-      // Particle textures
-      for (const particleTexture of Object.keys(PARTICLE_TEXTURE_MAPPINGS)) {
-         if (!textureSourceIsAlreadyIncluded(particleTexture))  {
-            TEXTURE_SOURCES.push(particleTexture);
          }
       }
 

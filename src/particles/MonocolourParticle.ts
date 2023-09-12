@@ -1,5 +1,6 @@
-import { ParticleColour, Point, Vector, lerp } from "webgl-test-shared";
+import { lerp } from "webgl-test-shared";
 import Particle from "./Particle";
+import { ParticleColour } from "../rendering/particle-rendering";
 
 export function interpolateColours(startColour: Readonly<ParticleColour>, endColour: Readonly<ParticleColour>, amount: number): ParticleColour {
    return [
@@ -12,8 +13,8 @@ export function interpolateColours(startColour: Readonly<ParticleColour>, endCol
 class MonocolourParticle extends Particle {
    public colour: ParticleColour;
 
-   constructor(id: number | null, width: number, height: number, position: Point, initialVelocity: Vector | null, initialAcceleration: Vector | null, lifetime: number, colour: ParticleColour) {
-      super(id, width, height, position, initialVelocity, initialAcceleration, lifetime);
+   constructor(id: number | null, lifetime: number, colour: ParticleColour) {
+      super(id, lifetime);
 
       this.colour = colour;
    }

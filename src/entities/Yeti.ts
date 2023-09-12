@@ -1,9 +1,10 @@
-import { EntityType, Point, EntityData, lerp, HitData, randFloat, ParticleType } from "webgl-test-shared";
+import { EntityType, Point, EntityData, lerp, HitData, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import { createBloodParticle } from "../generic-particles";
+import { BloodParticleSize, createBloodParticle, createBloodPoolParticle, createFootprintParticle } from "../generic-particles";
+import Board from "../Board";
 
 class Yeti extends Entity {
    private static readonly SIZE = 128;
@@ -14,6 +15,8 @@ class Yeti extends Entity {
    private static readonly PAW_END_ANGLE = Math.PI/6;
 
    public type: EntityType = "yeti";
+
+   private numFootstepsTaken = 0;
 
    private attackProgress = 1;
 
@@ -55,6 +58,17 @@ class Yeti extends Entity {
       this.attachRenderPart(paw);
    }
 
+   public tick(): void {
+      super.tick();
+
+      // Create footsteps
+      if (this.velocity !== null && Board.tickIntervalHasPassed(0.55)) {
+         createFootprintParticle(this, this.numFootstepsTaken, 40, 96, 8);
+
+         this.numFootstepsTaken++;
+      }
+   }
+
    public updateFromData(entityData: EntityData<"yeti">): void {
       super.updateFromData(entityData);
 
@@ -62,13 +76,17 @@ class Yeti extends Entity {
    }
 
    protected onHit(hitData: HitData): void {
+      // Blood pool particle
+      createBloodPoolParticle(this.position);
+      
+      // Blood particles
       if (hitData.angleFromAttacker !== null) {
          for (let i = 0; i < 10; i++) {
             const spawnPosition = Point.fromVectorForm(Yeti.SIZE / 2, hitData.angleFromAttacker + Math.PI + 0.2 * Math.PI * (Math.random() - 0.5));
             spawnPosition.x += this.position.x;
             spawnPosition.y += this.position.y;
 
-            createBloodParticle(Math.random() < 0.6 ? ParticleType.blood : ParticleType.bloodLarge, spawnPosition, 2 * Math.PI * Math.random(), randFloat(150, 250), true);
+            createBloodParticle(Math.random() < 0.6 ? BloodParticleSize.small : BloodParticleSize.large, spawnPosition, 2 * Math.PI * Math.random(), randFloat(150, 250), true);
          }
       }
    }

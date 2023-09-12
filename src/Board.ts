@@ -6,10 +6,11 @@ import { Tile } from "./Tile";
 import GameObject from "./GameObject";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import Projectile from "./projectiles/Projectile";
-import Particle, { ParticleRenderLayer } from "./particles/Particle";
+import { ParticleRenderLayer } from "./particles/Particle";
 import CircularHitbox from "./hitboxes/CircularHitbox";
 import MonocolourParticle from "./particles/MonocolourParticle";
 import TexturedParticle from "./particles/TexturedParticle";
+import { testFunction2, testFunction3 } from "./rendering/particle-rendering";
 
 export interface EntityHitboxInfo {
    readonly vertexPositions: readonly [Point, Point, Point, Point];
@@ -192,10 +193,8 @@ abstract class Board {
    public static updateParticles(): void {
       // @Cleanup waaay too much repetition
       {
-         const removedParticles = new Array<Particle>();
+         const removedParticles = new Array<MonocolourParticle>();
          for (const particle of Object.values(this.lowParticlesMonocolour)) {
-            particle.tick();
-            
             particle.age += 1 / SETTINGS.TPS;
             if (particle.age >= particle.lifetime) {
                removedParticles.push(particle);
@@ -203,13 +202,12 @@ abstract class Board {
          }
          for (const removedParticle of removedParticles) {
             delete this.lowParticlesMonocolour[removedParticle.id];
+            testFunction2(removedParticle);
          }
       }
       {
-         const removedParticles = new Array<Particle>();
+         const removedParticles = new Array<TexturedParticle>();
          for (const particle of Object.values(this.lowParticlesTextured)) {
-            particle.tick();
-            
             particle.age += 1 / SETTINGS.TPS;
             if (particle.age >= particle.lifetime) {
                removedParticles.push(particle);
@@ -217,13 +215,12 @@ abstract class Board {
          }
          for (const removedParticle of removedParticles) {
             delete this.lowParticlesTextured[removedParticle.id];
+            testFunction3(removedParticle);
          }
       }
       {
-         const removedParticles = new Array<Particle>();
+         const removedParticles = new Array<MonocolourParticle>();
          for (const particle of Object.values(this.highParticlesMonocolour)) {
-            particle.tick();
-            
             particle.age += 1 / SETTINGS.TPS;
             if (particle.age >= particle.lifetime) {
                removedParticles.push(particle);
@@ -231,13 +228,12 @@ abstract class Board {
          }
          for (const removedParticle of removedParticles) {
             delete this.highParticlesMonocolour[removedParticle.id];
+            testFunction2(removedParticle);
          }
       }
       {
-         const removedParticles = new Array<Particle>();
+         const removedParticles = new Array<TexturedParticle>();
          for (const particle of Object.values(this.highParticlesTextured)) {
-            particle.tick();
-            
             particle.age += 1 / SETTINGS.TPS;
             if (particle.age >= particle.lifetime) {
                removedParticles.push(particle);
@@ -245,6 +241,7 @@ abstract class Board {
          }
          for (const removedParticle of removedParticles) {
             delete this.highParticlesTextured[removedParticle.id];
+            testFunction3(removedParticle);
          }
       }
    }

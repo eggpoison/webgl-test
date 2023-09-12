@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, ProjectileData, VisibleChunkBounds, TribeType, TribeData, InventoryData, CircularHitboxData, RectangularHitboxData, MonocolourParticleData, TexturedParticleData, ParticleColour, ParticleType } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, ProjectileData, VisibleChunkBounds, TribeType, TribeData, InventoryData, CircularHitboxData, RectangularHitboxData } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -20,56 +20,54 @@ import { registerServerTick, updateDebugScreenCurrentTime, updateDebugScreenTick
 import createProjectile from "../projectiles/projectile-creation";
 import Camera from "../Camera";
 import { isDev } from "../utils";
-import { PARTICLE_INFO, ParticleRenderLayer, ParticleRenderType } from "../particles/Particle";
 import { updateTileAmbientOcclusion } from "../rendering/ambient-occlusion-rendering";
 import Tribe from "../Tribe";
 import { updateRenderChunkFromTileUpdate } from "../rendering/tile-rendering/render-chunks";
-import MonocolourParticle from "../particles/MonocolourParticle";
-import TexturedParticle from "../particles/TexturedParticle";
-import { ParticleTextureSource } from "../rendering/particle-rendering";
 import Entity from "../entities/Entity";
 import Board from "../Board";
 import { definiteGameState, latencyGameState } from "../game-state/game-states";
 import { hideNerdVision } from "../components/game/dev/NerdVision";
 import { BackpackInventoryMenu_update } from "../components/game/inventories/BackpackInventory";
 
-type FilterTexturedTypes<T extends ParticleType> = (typeof PARTICLE_INFO)[T]["renderType"] extends ParticleRenderType.textured ? T : never;
-type FilterMonocolourTypes<T extends ParticleType> = (typeof PARTICLE_INFO)[T]["renderType"] extends ParticleRenderType.monocolour ? T : never;
+// @Incomplete
+// type FilterTexturedTypes<T extends ParticleType> = (typeof PARTICLE_INFO)[T]["renderType"] extends ParticleRenderType.textured ? T : never;
+// type FilterMonocolourTypes<T extends ParticleType> = (typeof PARTICLE_INFO)[T]["renderType"] extends ParticleRenderType.monocolour ? T : never;
 
-const PARTICLE_TEXTURES: { [T in ParticleType as Exclude<T, FilterMonocolourTypes<T>>]: ParticleTextureSource } = {
-   [ParticleType.bloodPoolSmall]: "particles/blood-pool-small.png",
-   [ParticleType.bloodPoolMedium]: "particles/blood-pool-medium.png",
-   [ParticleType.bloodPoolLarge]: "particles/blood-pool-large.png",
-   [ParticleType.dirt]: "particles/dirt.png",
-   [ParticleType.leaf]: "particles/leaf.png",
-   [ParticleType.rock]: "particles/rock.png",
-   [ParticleType.rockLarge]: "particles/rock-large.png",
-   [ParticleType.cactusFlower1]: "entities/cactus/cactus-flower-small-1.png",
-   [ParticleType.cactusFlower1_2]: "entities/cactus/cactus-flower-large-1.png",
-   [ParticleType.cactusFlower2]: "entities/cactus/cactus-flower-small-2.png",
-   [ParticleType.cactusFlower2_2]: "entities/cactus/cactus-flower-large-2.png",
-   [ParticleType.cactusFlower3]: "entities/cactus/cactus-flower-small-3.png",
-   [ParticleType.cactusFlower3_2]: "entities/cactus/cactus-flower-large-3.png",
-   [ParticleType.cactusFlower4]: "entities/cactus/cactus-flower-small-4.png",
-   [ParticleType.cactusFlower4_2]: "entities/cactus/cactus-flower-large-4.png",
-   [ParticleType.cactusFlower5]: "entities/cactus/cactus-flower-5.png",
-   [ParticleType.smokeBlack]: "particles/smoke-black.png",
-   [ParticleType.footprint]: "particles/footprint.png",
-   [ParticleType.poisonDroplet]: "particles/poison-droplet.png",
-   [ParticleType.slimePuddle]: "particles/slime-puddle.png",
-   [ParticleType.waterSplash]: "particles/water-splash.png"
-};
+// @Incomplete
+// const PARTICLE_TEXTURES: { [T in ParticleType as Exclude<T, FilterMonocolourTypes<T>>]: ParticleTextureSource } = {
+//    [ParticleType.bloodPoolSmall]: "particles/blood-pool-small.png",
+//    [ParticleType.bloodPoolMedium]: "particles/blood-pool-medium.png",
+//    [ParticleType.bloodPoolLarge]: "particles/blood-pool-large.png",
+//    [ParticleType.dirt]: "particles/dirt.png",
+//    [ParticleType.leaf]: "particles/leaf.png",
+//    [ParticleType.rock]: "particles/rock.png",
+//    [ParticleType.rockLarge]: "particles/rock-large.png",
+//    [ParticleType.cactusFlower1]: "entities/cactus/cactus-flower-small-1.png",
+//    [ParticleType.cactusFlower1_2]: "entities/cactus/cactus-flower-large-1.png",
+//    [ParticleType.cactusFlower2]: "entities/cactus/cactus-flower-small-2.png",
+//    [ParticleType.cactusFlower2_2]: "entities/cactus/cactus-flower-large-2.png",
+//    [ParticleType.cactusFlower3]: "entities/cactus/cactus-flower-small-3.png",
+//    [ParticleType.cactusFlower3_2]: "entities/cactus/cactus-flower-large-3.png",
+//    [ParticleType.cactusFlower4]: "entities/cactus/cactus-flower-small-4.png",
+//    [ParticleType.cactusFlower4_2]: "entities/cactus/cactus-flower-large-4.png",
+//    [ParticleType.cactusFlower5]: "entities/cactus/cactus-flower-5.png",
+//    [ParticleType.smokeBlack]: "particles/smoke-black.png",
+//    [ParticleType.footprint]: "particles/footprint.png",
+//    [ParticleType.poisonDroplet]: "particles/poison-droplet.png",
+//    [ParticleType.slimePuddle]: "particles/slime-puddle.png",
+//    [ParticleType.waterSplash]: "particles/water-splash.png"
+// };
 
-
-const PARTICLE_COLOURS: { [T in ParticleType as Exclude<T, FilterTexturedTypes<T>>]: ParticleColour } = {
-   [ParticleType.blood]: [212/255, 0, 0],
-   [ParticleType.bloodLarge]: [186/255, 0, 0],
-   [ParticleType.emberRed]: [255/255, 102/255, 0],
-   [ParticleType.emberOrange]: [255/255, 184/255, 61/255],
-   [ParticleType.waterDroplet]: [8/255, 197/255, 255/255],
-   [ParticleType.snow]: [199/255, 209/255, 209/255],
-   [ParticleType.cactusSpine]: [0, 0, 0]
-};
+// @Incomplete
+// const PARTICLE_COLOURS: { [T in ParticleType as Exclude<T, FilterTexturedTypes<T>>]: ParticleColour } = {
+//    [ParticleType.blood]: [212/255, 0, 0],
+//    [ParticleType.bloodLarge]: [186/255, 0, 0],
+//    [ParticleType.emberRed]: [255/255, 102/255, 0],
+//    [ParticleType.emberOrange]: [255/255, 184/255, 61/255],
+//    [ParticleType.waterDroplet]: [8/255, 197/255, 255/255],
+//    [ParticleType.snow]: [199/255, 209/255, 209/255],
+//    [ParticleType.cactusSpine]: [0, 0, 0]
+// };
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -238,7 +236,6 @@ abstract class Client {
       this.updateEntities(gameDataPacket.entityDataArray);
       this.updateDroppedItems(gameDataPacket.droppedItemDataArray);
       this.updateProjectiles(gameDataPacket.projectileDataArray);
-      this.updateParticles(gameDataPacket.particles);
       
       this.updatePlayerInventory(gameDataPacket.inventory);
       this.registerTileUpdates(gameDataPacket.tileUpdates);
@@ -267,73 +264,6 @@ abstract class Client {
             Game.tribe.numHuts = tribeData.numHuts;
          }
       }
-   }
-
-   private static updateParticles(particles: ReadonlyArray<MonocolourParticleData | TexturedParticleData>): void {
-      const sentParticleIDs = new Set(particles.map(particle => particle.id));
-
-      // Destroy all server particles which aren't being sent anymore
-      // @Speed This is very slow
-      for (const particleID of Board.serverParticleIDs) {
-         if (!sentParticleIDs.has(particleID)) {
-            delete Board.lowParticlesMonocolour[particleID];
-            delete Board.lowParticlesTextured[particleID];
-            delete Board.highParticlesMonocolour[particleID];
-            delete Board.highParticlesTextured[particleID];
-         }
-      }
-
-      for (const particleData of particles) {
-         if (Board.lowParticlesMonocolour.hasOwnProperty(particleData.id)) {
-            Board.lowParticlesMonocolour[particleData.id].updateFromData(particleData as MonocolourParticleData);
-            Board.serverParticleIDs.add(particleData.id);
-         } else if (Board.lowParticlesTextured.hasOwnProperty(particleData.id)) {
-            Board.lowParticlesTextured[particleData.id].updateFromData(particleData as TexturedParticleData);
-            Board.serverParticleIDs.add(particleData.id);
-         } else if (Board.highParticlesMonocolour.hasOwnProperty(particleData.id)) {
-            Board.highParticlesMonocolour[particleData.id].updateFromData(particleData as MonocolourParticleData);
-            Board.serverParticleIDs.add(particleData.id);
-         } else if (Board.highParticlesTextured.hasOwnProperty(particleData.id)) {
-            Board.highParticlesTextured[particleData.id].updateFromData(particleData as TexturedParticleData);
-            Board.serverParticleIDs.add(particleData.id);
-         } else {
-            this.createParticleFromData(particleData);
-            Board.serverParticleIDs.delete(particleData.id);
-         }
-      }
-   }
-
-   private static createParticleFromData(data: MonocolourParticleData | TexturedParticleData): void {
-      const position = Point.unpackage(data.position);
-      const velocity = data.velocity !== null ? Vector.unpackage(data.velocity) : null;
-      const acceleration = data.acceleration !== null ? Vector.unpackage(data.acceleration) : null;
-
-      const particleInfo = PARTICLE_INFO[data.type];
-      
-      let particle: MonocolourParticle | TexturedParticle;
-      if (data.hasOwnProperty("tint")) {
-         // Textured
-         if (!PARTICLE_TEXTURES.hasOwnProperty(data.type)) {
-            throw new Error(`Particle type '${ParticleType[data.type]}' doesn't have a matching texture.`);
-         }
-         particle = new TexturedParticle(data.id, particleInfo.width, particleInfo.height, position, velocity, acceleration, data.lifetime, PARTICLE_TEXTURES[data.type as keyof typeof PARTICLE_TEXTURES]);
-         if (particleInfo.renderLayer === ParticleRenderLayer.low) {
-            Board.lowParticlesTextured[particle.id] = particle;
-         } else {
-            Board.highParticlesTextured[particle.id] = particle;
-         }
-      } else {
-         // Monocolour
-         particle = new MonocolourParticle(data.id, particleInfo.width, particleInfo.height, position, velocity, acceleration, data.lifetime, PARTICLE_COLOURS[data.type as keyof typeof PARTICLE_COLOURS]);
-         if (particleInfo.renderLayer === ParticleRenderLayer.low) {
-            Board.lowParticlesMonocolour[particle.id] = particle;
-         } else {
-            Board.highParticlesMonocolour[particle.id] = particle;
-         }
-      }
-      particle.age = data.age;
-      particle.rotation = data.rotation;
-      particle.opacity = data.opacity;
    }
 
    /**

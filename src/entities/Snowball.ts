@@ -1,4 +1,4 @@
-import { EntityType, ParticleColour, Point, SNOWBALL_SIZES, SnowballSize, Vector, randFloat, randInt } from "webgl-test-shared";
+import { EntityType, Point, SNOWBALL_SIZES, SnowballSize, randFloat, randInt } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -6,6 +6,7 @@ import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import Board from "../Board";
 import MonocolourParticle, { interpolateColours } from "../particles/MonocolourParticle";
 import { ParticleRenderLayer } from "../particles/Particle";
+import { ParticleColour, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 
 const getTextureSource = (size: SnowballSize): string => {
    switch (size) {
@@ -52,22 +53,16 @@ class Snowball extends Entity {
 
    private createSnowParticle(): void {
       const lifetime = randFloat(0.6, 0.8);
+
+      // @Speed garbage collection
+      const velocity = Point.fromVectorForm(randFloat(40, 60), 2 * Math.PI * Math.random());
       
-      const particle = new MonocolourParticle(
-         null,
-         4,
-         4,
-         this.position.copy(),
-         new Vector(randFloat(40, 60), 2 * Math.PI * Math.random()),
-         null,
-         lifetime,
-         interpolateColours(Snowball.SNOW_PARTICLE_COLOUR_LOW, Snowball.SNOW_PARTICLE_COLOUR_HIGH, Math.random())
-      );
+      const particle = new MonocolourParticle(null, lifetime, interpolateColours(Snowball.SNOW_PARTICLE_COLOUR_LOW, Snowball.SNOW_PARTICLE_COLOUR_HIGH, Math.random()) );
       particle.getOpacity = (age: number): number => {
          return 1 - age / lifetime;
       };
-      particle.rotation = 2 * Math.PI * Math.random();
       particle.scale = randInt(1, 2);
+      addMonocolourParticleToBufferContainer(particle, 4, 4, this.position.x, this.position.y, velocity.x, velocity.y, 0, 0, 2 * Math.PI * Math.random(), 0, 0);
       Board.addMonocolourParticle(particle, ParticleRenderLayer.low);
    }
 }

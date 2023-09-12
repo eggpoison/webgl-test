@@ -1,4 +1,4 @@
-import { GameObjectData, Point, RIVER_STEPPING_STONE_SIZES, SETTINGS, TILE_TYPE_INFO_RECORD, Vector, lerp, randFloat, randSign } from "webgl-test-shared";
+import { GameObjectData, Point, RIVER_STEPPING_STONE_SIZES, SETTINGS, TILE_TYPE_INFO_RECORD, Vector, lerp, randFloat } from "webgl-test-shared";
 import RenderPart, { RenderObject } from "./render-parts/RenderPart";
 import Chunk from "./Chunk";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
@@ -7,6 +7,7 @@ import CircularHitbox from "./hitboxes/CircularHitbox";
 import MonocolourParticle, { interpolateColours } from "./particles/MonocolourParticle";
 import { ParticleRenderLayer } from "./particles/Particle";
 import Board from "./Board";
+import { addMonocolourParticleToBufferContainer } from "./rendering/particle-rendering";
 
 const WATER_DROPLET_COLOUR_LOW = [8/255, 197/255, 255/255] as const;
 const WATER_DROPLET_COLOUR_HIGH = [94/255, 231/255, 255/255] as const;
@@ -77,27 +78,23 @@ abstract class GameObject extends RenderObject {
    public tick(): void {
       if (this.isInRiver(this.findCurrentTile()) && Board.tickIntervalHasPassed(0.05)) {
          const lifetime = 1;
+
+         // @Speed garbage collection
+         const velocity = Point.fromVectorForm(randFloat(40, 60), 2 * Math.PI * Math.random());
             
-         const particle = new MonocolourParticle(
-            null,
-            6,
-            6,
-            this.position.copy(),
-            new Vector(randFloat(40, 60), 2 * Math.PI * Math.random()),
-            null,
-            lifetime,
-            interpolateColours(WATER_DROPLET_COLOUR_LOW, WATER_DROPLET_COLOUR_HIGH, Math.random())
-         );
-         particle.rotation = 2 * Math.PI * Math.random();
-         particle.angularVelocity = randFloat(2, 3) * randSign();
+         const particle = new MonocolourParticle(null, lifetime, interpolateColours(WATER_DROPLET_COLOUR_LOW, WATER_DROPLET_COLOUR_HIGH, Math.random()) );
+         // particle.rotation = 2 * Math.PI * Math.random();
+         // particle.angularVelocity = randFloat(2, 3) * randSign();
          particle.getOpacity = (age: number): number => {
             return lerp(0.75, 0, age / lifetime);
          };
+         // @Incomplete
+         addMonocolourParticleToBufferContainer(particle, 6, 6, this.position.x, this.position.y, velocity.x, velocity.y, 0, 0, 0, 0, 0);
          Board.addMonocolourParticle(particle, ParticleRenderLayer.low)
       }
    };
 
-   private isInRiver(tile: Tile): boolean {
+   protected isInRiver(tile: Tile): boolean {
       if (tile.type !== "water") {
          return false;
       }
@@ -220,6 +217,7 @@ abstract class GameObject extends RenderObject {
       }
    }
 
+   // @Cleanup this is pretty bad
    public findCurrentTile(): Tile {
       const tileX = Math.floor(this.position.x / SETTINGS.TILE_SIZE);
       const tileY = Math.floor(this.position.y / SETTINGS.TILE_SIZE);
