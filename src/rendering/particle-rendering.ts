@@ -401,10 +401,12 @@ export function addTexturedParticleToBufferContainer(particle: TexturedParticle,
    lowTexturedBufferContainer.addObjectData(particle.id, vertexData);
 }
 
+// @Temporary name
 export function testFunction2(particle: MonocolourParticle): void {
    lowMonocolourBufferContainer.removeObject(particle.id);
 }
 
+// @Temporary name
 export function testFunction3(particle: TexturedParticle): void {
    lowTexturedBufferContainer.removeObject(particle.id);
 }

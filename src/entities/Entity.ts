@@ -1,4 +1,4 @@
-import { EntityData, EntityType, HitData, Point, SETTINGS, StatusEffectData, StatusEffectType, lerp, randFloat, randItem } from "webgl-test-shared";
+import { EntityData, EntityType, HitData, HitFlags, Point, SETTINGS, StatusEffectData, StatusEffectType, lerp, randFloat, randItem } from "webgl-test-shared";
 import GameObject from "../GameObject";
 import TexturedParticle from "../particles/TexturedParticle";
 import MonocolourParticle from "../particles/MonocolourParticle";
@@ -145,6 +145,25 @@ abstract class Entity extends GameObject {
    protected onHit?(hitData: HitData): void;
 
    public registerHit(hitData: HitData): void {
+      // If the entity is hit by a flesh sword, create slime puddles
+      if (hitData.flags & HitFlags.HIT_BY_FLESH_SWORD) {
+         // @Speed garbage collection
+         
+         const spawnPosition = this.position.copy();
+         const offset = Point.fromVectorForm(30 * Math.random(), 2 * Math.PI * Math.random());
+         spawnPosition.add(offset);
+   
+         const lifetime = 7.5;
+
+         const particle = new TexturedParticle(lifetime);
+         particle.getOpacity = (age: number): number => {
+            return lerp(0.75, 0, age / lifetime);
+         }
+
+         addTexturedParticleToBufferContainer(particle, 64, 64, spawnPosition.x, spawnPosition.y, 0, 0, 0, 0, 8 * 1 + 4, 2 * Math.PI * Math.random(), 0, 0);
+         Board.addTexturedParticle(particle, ParticleRenderLayer.low);
+      }
+      
       if (typeof this.onHit !== "undefined") {
          this.onHit(hitData);
       }
