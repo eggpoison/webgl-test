@@ -1,8 +1,8 @@
 import { Point, lerp, randFloat, randInt, randSign } from "webgl-test-shared";
-import MonocolourParticle, { interpolateColours } from "./particles/MonocolourParticle";
+import MonocolourParticle from "./particles/MonocolourParticle";
 import { ParticleRenderLayer } from "./particles/Particle";
 import TexturedParticle from "./particles/TexturedParticle";
-import { ParticleColour, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "./rendering/particle-rendering";
+import { ParticleColour, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer, interpolateColours } from "./rendering/particle-rendering";
 import Board from "./Board";
 import Entity from "./entities/Entity";
 
@@ -35,12 +35,12 @@ export function createBloodParticle(size: BloodParticleSize, spawnPosition: Poin
       accelerationY = 0;
    }
 
-   const particle = new MonocolourParticle(lifetime, interpolateColours(BLOOD_COLOUR_LOW, BLOOD_COLOUR_HIGH, Math.random()));
+   const particle = new MonocolourParticle(lifetime);
    particle.getOpacity = (age: number): number => {
       return 1 - age / lifetime;
    };
 
-   addMonocolourParticleToBufferContainer(particle, pixelSize, pixelSize, spawnPosition.x, spawnPosition.y, velocity.x, velocity.y, accelerationX, accelerationY, 2 * Math.PI * Math.random(), 0, 0);
+   addMonocolourParticleToBufferContainer(particle, pixelSize, pixelSize, spawnPosition.x, spawnPosition.y, velocity.x, velocity.y, accelerationX, accelerationY, 2 * Math.PI * Math.random(), 0, 0, interpolateColours(BLOOD_COLOUR_LOW, BLOOD_COLOUR_HIGH, Math.random()));
    Board.addMonocolourParticle(particle, ParticleRenderLayer.high);
 }
 
@@ -186,12 +186,12 @@ export function createSnowParticle(spawnPositionX: number, spawnPositionY: numbe
    // @Speed garbage collection
    const velocity = Point.fromVectorForm(moveSpeed, 2 * Math.PI * Math.random());
    
-   const particle = new MonocolourParticle(lifetime, interpolateColours(SNOW_PARTICLE_COLOUR_LOW, SNOW_PARTICLE_COLOUR_HIGH, Math.random()) );
+   const particle = new MonocolourParticle(lifetime);
    particle.getOpacity = (age: number): number => {
       return 1 - age / lifetime;
    };
    particle.scale = randInt(1, 2);
    
-   addMonocolourParticleToBufferContainer(particle, 4, 4, spawnPositionX, spawnPositionY, velocity.x, velocity.y, 0, 0, 2 * Math.PI * Math.random(), 0, 0);
+   addMonocolourParticleToBufferContainer(particle, 4, 4, spawnPositionX, spawnPositionY, velocity.x, velocity.y, 0, 0, 2 * Math.PI * Math.random(), 0, 0, interpolateColours(SNOW_PARTICLE_COLOUR_LOW, SNOW_PARTICLE_COLOUR_HIGH, Math.random()));
    Board.addMonocolourParticle(particle, ParticleRenderLayer.low);
 }

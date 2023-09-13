@@ -119,12 +119,12 @@ class Cactus extends Entity {
 
       const velocity = Point.fromVectorForm(randFloat(150, 200), flyDirection);
 
-      const particle = new MonocolourParticle(lifetime, Cactus.CACTUS_SPINE_PARTICLE_COLOUR);
+      const particle = new MonocolourParticle(lifetime);
       particle.getOpacity = (age: number) => {
          return 1 - age / lifetime;
       };
 
-      addMonocolourParticleToBufferContainer(particle, 4, 16, spawnPosition.x, spawnPosition.y, velocity.x, velocity.y, 0, 0, flyDirection, 0, 0);
+      addMonocolourParticleToBufferContainer(particle, 4, 16, spawnPosition.x, spawnPosition.y, velocity.x, velocity.y, 0, 0, flyDirection, 0, 0, Cactus.CACTUS_SPINE_PARTICLE_COLOUR);
       Board.addMonocolourParticle(particle, ParticleRenderLayer.high)
    }
 

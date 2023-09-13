@@ -1,4 +1,4 @@
-import { rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
+import { lerp, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import { createWebGLProgram, gl, halfWindowHeight, halfWindowWidth } from "../webgl";
 import Camera from "../Camera";
 import MonocolourParticle from "../particles/MonocolourParticle";
@@ -9,12 +9,44 @@ import { getTexture } from "../textures";
 const TEXTURE_ATLAS_SIZE = 8;
 
 const OBJECT_BUFFER_CONTAINER_SIZE = 4096;
-const MONOCOLOUR_PROGRAM_VERTEX_SIZE = 14;
 const TEXTURED_PROGRAM_VERTEX_SIZE = 13;
 
 export type ParticleColour = [r: number, g: number, b: number];
 
+export function interpolateColours(startColour: Readonly<ParticleColour>, endColour: Readonly<ParticleColour>, amount: number): ParticleColour {
+   return [
+      lerp(startColour[0], endColour[0], amount),
+      lerp(startColour[1], endColour[1], amount),
+      lerp(startColour[2], endColour[2], amount)
+   ];
+}
+
 const monocolourVertexShaderText = `#version 300 es
+precision mediump float;
+
+uniform vec2 u_playerPos;
+uniform vec2 u_halfWindowSize;
+uniform float u_zoom;
+uniform float u_currentTime;
+
+layout(location = 0) in vec2 a_position;
+
+void main() {
+   vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
+   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+   gl_Position = vec4(a_position, 0.0, 1.0);
+}
+`;
+const monocolourFragmentShaderText = `#version 300 es
+precision mediump float;
+
+out vec4 outputColour;
+
+void main() {
+   outputColour = vec4(1.0, 0.0, 0.5, 1.0);
+}
+`;
+const monocolourVertexShaderText2 = `#version 300 es
 precision mediump float;
 
 uniform vec2 u_playerPos;
@@ -48,7 +80,7 @@ void main() {
    
    vec2 position = a_position + a_velocity * age + a_acceleration * age * age * 0.5;
 
-   vec2 screenPos = (position - u_playerPos) * u_zoom + u_halfWindowSize;
+   vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
    vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
    gl_Position = vec4(clipSpacePos, 0.0, 1.0);
 
@@ -59,7 +91,7 @@ void main() {
 }
 `;
 
-const monocolourFragmentShaderText = `#version 300 es
+const monocolourFragmentShaderText2 = `#version 300 es
 precision mediump float;
 
 in float v_opacity;
@@ -156,261 +188,6 @@ void main() {
 let lowMonocolourBufferContainer: ObjectBufferContainer;
 let lowTexturedBufferContainer: ObjectBufferContainer;
 
-export function addMonocolourParticleToBufferContainer(particle: MonocolourParticle, width: number, height: number, positionX: number, positionY: number, velocityX: number, velocityY: number, accelerationX: number, accelerationY: number, initialRotation: number, angularVelocity: number, angularAcceleration: number): void {
-   const spawnTime = performance.now();
-   
-   const scaledWidth = width * particle.scale;
-   const scaledHeight = height * particle.scale;
-
-   const x1 = positionX - scaledWidth / 2;
-   const x2 = positionX + scaledWidth / 2;
-   const y1 = positionY - scaledHeight / 2;
-   const y2 = positionY + scaledHeight / 2;
-
-   // @Incomplete
-   const topLeftX = rotateXAroundPoint(x1, y2, positionX, positionY, initialRotation);
-   const topLeftY = rotateYAroundPoint(x1, y2, positionX, positionY, initialRotation);
-   const topRightX = rotateXAroundPoint(x2, y2, positionX, positionY, initialRotation);
-   const topRightY = rotateYAroundPoint(x2, y2, positionX, positionY, initialRotation);
-   const bottomLeftX = rotateXAroundPoint(x1, y1, positionX, positionY, initialRotation);
-   const bottomLeftY = rotateYAroundPoint(x1, y1, positionX, positionY, initialRotation);
-   const bottomRightX = rotateXAroundPoint(x2, y1, positionX, positionY, initialRotation);
-   const bottomRightY = rotateYAroundPoint(x2, y1, positionX, positionY, initialRotation);
-
-   // Update opacity
-   let opacity = particle.opacity;
-   if (typeof particle.getOpacity !== "undefined") {
-      opacity = particle.getOpacity(particle.age);
-   }
-
-   const vertexData = new Float32Array(6 * MONOCOLOUR_PROGRAM_VERTEX_SIZE);
-
-   vertexData[0] = bottomLeftX;
-   vertexData[1] = bottomLeftY;
-   vertexData[2] = velocityX;
-   vertexData[3] = velocityY;
-   vertexData[4] = accelerationX;
-   vertexData[5] = accelerationY;
-   vertexData[6] = opacity;
-   vertexData[7] = particle.colour[0];
-   vertexData[8] = particle.colour[1];
-   vertexData[9] = particle.colour[2];
-   vertexData[10] = initialRotation;
-   vertexData[11] = angularVelocity;
-   vertexData[12] = angularAcceleration;
-   vertexData[13] = spawnTime;
-
-   vertexData[14] = bottomRightX;
-   vertexData[15] = bottomRightY;
-   vertexData[16] = velocityX;
-   vertexData[17] = velocityY;
-   vertexData[18] = accelerationX;
-   vertexData[19] = accelerationY;
-   vertexData[20] = opacity;
-   vertexData[21] = particle.colour[0];
-   vertexData[22] = particle.colour[1];
-   vertexData[23] = particle.colour[2];
-   vertexData[24] = initialRotation;
-   vertexData[25] = angularVelocity;
-   vertexData[26] = angularAcceleration;
-   vertexData[27] = spawnTime;
-
-   vertexData[28] = topLeftX;
-   vertexData[29] = topLeftY;
-   vertexData[30] = velocityX;
-   vertexData[31] = velocityY;
-   vertexData[32] = accelerationX;
-   vertexData[33] = accelerationY;
-   vertexData[34] = opacity;
-   vertexData[35] = particle.colour[0];
-   vertexData[36] = particle.colour[1];
-   vertexData[37] = particle.colour[2];
-   vertexData[38] = initialRotation;
-   vertexData[39] = angularVelocity;
-   vertexData[40] = angularAcceleration;
-   vertexData[41] = spawnTime;
-
-   vertexData[42] = topLeftX;
-   vertexData[43] = topLeftY;
-   vertexData[44] = velocityX;
-   vertexData[45] = velocityY;
-   vertexData[46] = accelerationX;
-   vertexData[47] = accelerationY;
-   vertexData[48] = opacity;
-   vertexData[49] = particle.colour[0];
-   vertexData[50] = particle.colour[1];
-   vertexData[51] = particle.colour[2];
-   vertexData[52] = initialRotation;
-   vertexData[53] = angularVelocity;
-   vertexData[54] = angularAcceleration;
-   vertexData[55] = spawnTime;
-
-   vertexData[56] = bottomRightX;
-   vertexData[57] = bottomRightY;
-   vertexData[58] = velocityX;
-   vertexData[59] = velocityY;
-   vertexData[60] = accelerationX;
-   vertexData[61] = accelerationY;
-   vertexData[62] = opacity;
-   vertexData[63] = particle.colour[0];
-   vertexData[64] = particle.colour[1];
-   vertexData[65] = particle.colour[2];
-   vertexData[66] = initialRotation;
-   vertexData[67] = angularVelocity;
-   vertexData[68] = angularAcceleration;
-   vertexData[69] = spawnTime;
-
-   vertexData[70] = topRightX;
-   vertexData[71] = topRightY;
-   vertexData[72] = velocityX;
-   vertexData[73] = velocityY;
-   vertexData[74] = accelerationX;
-   vertexData[75] = accelerationY;
-   vertexData[76] = opacity;
-   vertexData[77] = particle.colour[0];
-   vertexData[78] = particle.colour[1];
-   vertexData[79] = particle.colour[2];
-   vertexData[80] = initialRotation;
-   vertexData[81] = angularVelocity;
-   vertexData[82] = angularAcceleration;
-   vertexData[83] = spawnTime;
-
-   lowMonocolourBufferContainer.addObjectData(particle.id, vertexData);
-}
-
-export function addTexturedParticleToBufferContainer(particle: TexturedParticle, width: number, height: number, positionX: number, positionY: number, velocityX: number, velocityY: number, accelerationX: number, accelerationY: number, textureIndex: number, initialRotation: number, angularVelocity: number, angularAcceleration: number): void {
-   const spawnTime = performance.now();
-   
-   const scaledWidth = width * particle.scale;
-   const scaledHeight = height * particle.scale;
-
-   const x1 = positionX - scaledWidth / 2;
-   const x2 = positionX + scaledWidth / 2;
-   const y1 = positionY - scaledHeight / 2;
-   const y2 = positionY + scaledHeight / 2;
-
-   const topLeftX = rotateXAroundPoint(x1, y2, positionX, positionY, initialRotation);
-   const topLeftY = rotateYAroundPoint(x1, y2, positionX, positionY, initialRotation);
-   const topRightX = rotateXAroundPoint(x2, y2, positionX, positionY, initialRotation);
-   const topRightY = rotateYAroundPoint(x2, y2, positionX, positionY, initialRotation);
-   const bottomLeftX = rotateXAroundPoint(x1, y1, positionX, positionY, initialRotation);
-   const bottomLeftY = rotateYAroundPoint(x1, y1, positionX, positionY, initialRotation);
-   const bottomRightX = rotateXAroundPoint(x2, y1, positionX, positionY, initialRotation);
-   const bottomRightY = rotateYAroundPoint(x2, y1, positionX, positionY, initialRotation);
-
-   // Update opacity
-   let opacity = particle.opacity;
-   if (typeof particle.getOpacity !== "undefined") {
-      opacity = particle.getOpacity(particle.age);
-   }
-
-   const vertexData = new Float32Array(6 * TEXTURED_PROGRAM_VERTEX_SIZE);
-
-   const textureXIndex = textureIndex % TEXTURE_ATLAS_SIZE;
-   const textureYIndex = Math.floor(textureIndex / TEXTURE_ATLAS_SIZE);
-
-   let texCoordX0 = textureXIndex / TEXTURE_ATLAS_SIZE;
-   let texCoordX1 = (textureXIndex + 1) / TEXTURE_ATLAS_SIZE;
-   let texCoordY0 = 1 - textureYIndex / TEXTURE_ATLAS_SIZE;
-   let texCoordY1 = 1 - (textureYIndex + 1) / TEXTURE_ATLAS_SIZE;
-
-   vertexData[0] = bottomLeftX;
-   vertexData[1] = bottomLeftY;
-   vertexData[2] = velocityX;
-   vertexData[3] = velocityY;
-   vertexData[4] = accelerationX;
-   vertexData[5] = accelerationY;
-   vertexData[6] = texCoordX0;
-   vertexData[7] = texCoordY0;
-   vertexData[8] = opacity;
-   vertexData[9] = particle.tint[0];
-   vertexData[10] = particle.tint[1];
-   vertexData[11] = particle.tint[2];
-   vertexData[12] = spawnTime;
-
-   vertexData[13] = bottomRightX;
-   vertexData[14] = bottomRightY;
-   vertexData[15] = velocityX;
-   vertexData[16] = velocityY;
-   vertexData[17] = accelerationX;
-   vertexData[18] = accelerationY;
-   vertexData[19] = texCoordX1;
-   vertexData[20] = texCoordY0;
-   vertexData[21] = opacity;
-   vertexData[22] = particle.tint[0];
-   vertexData[23] = particle.tint[1];
-   vertexData[24] = particle.tint[2];
-   vertexData[25] = spawnTime;
-
-   vertexData[26] = topLeftX;
-   vertexData[27] = topLeftY;
-   vertexData[28] = velocityX;
-   vertexData[29] = velocityY;
-   vertexData[30] = accelerationX;
-   vertexData[31] = accelerationY;
-   vertexData[32] = texCoordX0;
-   vertexData[33] = texCoordY1;
-   vertexData[34] = opacity;
-   vertexData[35] = particle.tint[0];
-   vertexData[36] = particle.tint[1];
-   vertexData[37] = particle.tint[2];
-   vertexData[38] = spawnTime;
-
-   vertexData[39] = topLeftX;
-   vertexData[40] = topLeftY;
-   vertexData[41] = velocityX;
-   vertexData[42] = velocityY;
-   vertexData[43] = accelerationX;
-   vertexData[44] = accelerationY;
-   vertexData[45] = texCoordX0;
-   vertexData[46] = texCoordY1;
-   vertexData[47] = opacity;
-   vertexData[48] = particle.tint[0];
-   vertexData[49] = particle.tint[1];
-   vertexData[50] = particle.tint[2];
-   vertexData[51] = spawnTime;
-
-   vertexData[52] = bottomRightX;
-   vertexData[53] = bottomRightY;
-   vertexData[54] = velocityX;
-   vertexData[55] = velocityY;
-   vertexData[56] = accelerationX;
-   vertexData[57] = accelerationY;
-   vertexData[58] = texCoordX1;
-   vertexData[59] = texCoordY0;
-   vertexData[60] = opacity;
-   vertexData[61] = particle.tint[0];
-   vertexData[62] = particle.tint[1];
-   vertexData[63] = particle.tint[2];
-   vertexData[64] = spawnTime;
-
-   vertexData[65] = topRightX;
-   vertexData[66] = topRightY;
-   vertexData[67] = velocityX;
-   vertexData[68] = velocityY;
-   vertexData[69] = accelerationX;
-   vertexData[70] = accelerationY;
-   vertexData[71] = texCoordX1;
-   vertexData[72] = texCoordY1;
-   vertexData[73] = opacity;
-   vertexData[74] = particle.tint[0];
-   vertexData[75] = particle.tint[1];
-   vertexData[76] = particle.tint[2];
-   vertexData[77] = spawnTime;
-
-   lowTexturedBufferContainer.addObjectData(particle.id, vertexData);
-}
-
-// @Temporary name
-export function testFunction2(particle: MonocolourParticle): void {
-   lowMonocolourBufferContainer.removeObject(particle.id);
-}
-
-// @Temporary name
-export function testFunction3(particle: TexturedParticle): void {
-   lowTexturedBufferContainer.removeObject(particle.id);
-}
-
 let monocolourProgram: WebGLProgram;
 let texturedProgram: WebGLProgram;
 
@@ -426,8 +203,18 @@ let texturedTextureUniformLocation: WebGLUniformLocation;
 let texturedCurrentTimeUniformLocation: WebGLUniformLocation;
 
 export function createParticleShaders(): void {
-   lowMonocolourBufferContainer = new ObjectBufferContainer(OBJECT_BUFFER_CONTAINER_SIZE, 6 * MONOCOLOUR_PROGRAM_VERTEX_SIZE);
-   lowTexturedBufferContainer = new ObjectBufferContainer(OBJECT_BUFFER_CONTAINER_SIZE, 6 * TEXTURED_PROGRAM_VERTEX_SIZE);
+   lowMonocolourBufferContainer = new ObjectBufferContainer(OBJECT_BUFFER_CONTAINER_SIZE);
+   lowMonocolourBufferContainer.registerNewBufferType(6 * 2); // Position
+   // lowMonocolourBufferContainer.registerNewBufferType(2);     // Velocity
+   // lowMonocolourBufferContainer.registerNewBufferType(2);     // Acceleration
+   // lowMonocolourBufferContainer.registerNewBufferType(1);     // Opacity
+   // lowMonocolourBufferContainer.registerNewBufferType(3);     // Colour
+   // lowMonocolourBufferContainer.registerNewBufferType(1);     // Initial rotation
+   // lowMonocolourBufferContainer.registerNewBufferType(1);     // Angular velocity
+   // lowMonocolourBufferContainer.registerNewBufferType(1);     // Angular acceleration
+   // lowMonocolourBufferContainer.registerNewBufferType(1);     // Spawn time
+
+   lowTexturedBufferContainer = new ObjectBufferContainer(OBJECT_BUFFER_CONTAINER_SIZE);
 
    // 
    // Monocolour program
@@ -453,6 +240,236 @@ export function createParticleShaders(): void {
    texturedCurrentTimeUniformLocation = gl.getUniformLocation(texturedProgram, "u_currentTime")!;
 }
 
+// @Speed colour array garbage collection, just pass in r g b as parameters
+export function addMonocolourParticleToBufferContainer(particle: MonocolourParticle, width: number, height: number, positionX: number, positionY: number, velocityX: number, velocityY: number, accelerationX: number, accelerationY: number, initialRotation: number, angularVelocity: number, angularAcceleration: number, colour: ParticleColour): void {
+   lowMonocolourBufferContainer.registerNewObject(particle.id);
+   
+   const spawnTime = performance.now();
+   
+   const scaledWidth = width * particle.scale;
+   const scaledHeight = height * particle.scale;
+
+   const x1 = positionX - scaledWidth / 2;
+   const x2 = positionX + scaledWidth / 2;
+   const y1 = positionY - scaledHeight / 2;
+   const y2 = positionY + scaledHeight / 2;
+
+   // const x1 = 10;
+   // const x2 = 20;
+   // const y1 = 10;
+   // const y2 = 20;
+
+   // @Incomplete
+   const topLeftX = rotateXAroundPoint(x1, y2, positionX, positionY, initialRotation);
+   const topLeftY = rotateYAroundPoint(x1, y2, positionX, positionY, initialRotation);
+   const topRightX = rotateXAroundPoint(x2, y2, positionX, positionY, initialRotation);
+   const topRightY = rotateYAroundPoint(x2, y2, positionX, positionY, initialRotation);
+   const bottomLeftX = rotateXAroundPoint(x1, y1, positionX, positionY, initialRotation);
+   const bottomLeftY = rotateYAroundPoint(x1, y1, positionX, positionY, initialRotation);
+   const bottomRightX = rotateXAroundPoint(x2, y1, positionX, positionY, initialRotation);
+   const bottomRightY = rotateYAroundPoint(x2, y1, positionX, positionY, initialRotation);
+   // const topLeftX = x1;
+   // const topLeftY = y2;
+   // const topRightX = x2;
+   // const topRightY = y2;
+   // const bottomLeftX = x1;
+   // const bottomLeftY = y1;
+   // const bottomRightX = x2;
+   // const bottomRightY = y1;
+
+   // Update opacity
+   let opacity: number;
+   if (typeof particle.getOpacity !== "undefined") {
+      opacity = particle.getOpacity(particle.age);
+   } else {
+      opacity = particle.opacity;
+   }
+
+   const positionData = new Float32Array(6 * 2);
+   positionData[0] = bottomLeftX;
+   positionData[1] = bottomLeftY;
+   positionData[2] = bottomRightX;
+   positionData[3] = bottomRightY;
+   positionData[4] = topLeftX;
+   positionData[5] = topLeftY;
+   positionData[6] = topLeftX;
+   positionData[7] = topLeftY;
+   positionData[8] = bottomRightX;
+   positionData[9] = bottomRightY;
+   positionData[10] = topRightX;
+   positionData[11] = topRightY;
+   lowMonocolourBufferContainer.addObjectData(particle.id, 0, positionData);
+
+   // const velocityData = new Float32Array(2);
+   // velocityData[0] = velocityX;
+   // velocityData[1] = velocityY;
+   // lowMonocolourBufferContainer.addObjectData(particle.id, 1, velocityData);
+
+   // const accelerationData = new Float32Array(2);
+   // accelerationData[0] = accelerationX;
+   // accelerationData[1] = accelerationY;
+   // lowMonocolourBufferContainer.addObjectData(particle.id, 2, accelerationData);
+
+   // const opacityData = new Float32Array(1);
+   // opacityData[0] = opacity;
+   // lowMonocolourBufferContainer.addObjectData(particle.id, 3, opacityData);
+
+   // const colourData = new Float32Array(3);
+   // colourData[0] = colour[0];
+   // colourData[1] = colour[1];
+   // colourData[2] = colour[2];
+   // lowMonocolourBufferContainer.addObjectData(particle.id, 4, colourData);
+
+   // const initialRotationData = new Float32Array(1);
+   // initialRotationData[0] = initialRotation;
+   // lowMonocolourBufferContainer.addObjectData(particle.id, 5, initialRotationData);
+
+   // const angularVelocityData = new Float32Array(1);
+   // angularVelocityData[0] = angularVelocity;
+   // lowMonocolourBufferContainer.addObjectData(particle.id, 6, angularVelocityData);
+
+   // const angularAccelerationData = new Float32Array(1);
+   // angularAccelerationData[0] = angularAcceleration;
+   // lowMonocolourBufferContainer.addObjectData(particle.id, 7, angularAccelerationData);
+
+   // const spawnTimeData = new Float32Array(1);
+   // spawnTimeData[0] = spawnTime;
+   // lowMonocolourBufferContainer.addObjectData(particle.id, 8, spawnTimeData);
+}
+
+export function addTexturedParticleToBufferContainer(particle: TexturedParticle, width: number, height: number, positionX: number, positionY: number, velocityX: number, velocityY: number, accelerationX: number, accelerationY: number, textureIndex: number, initialRotation: number, angularVelocity: number, angularAcceleration: number): void {
+   lowTexturedBufferContainer.registerNewObject(particle.id);
+   // const spawnTime = performance.now();
+   
+   // const scaledWidth = width * particle.scale;
+   // const scaledHeight = height * particle.scale;
+
+   // const x1 = positionX - scaledWidth / 2;
+   // const x2 = positionX + scaledWidth / 2;
+   // const y1 = positionY - scaledHeight / 2;
+   // const y2 = positionY + scaledHeight / 2;
+
+   // const topLeftX = rotateXAroundPoint(x1, y2, positionX, positionY, initialRotation);
+   // const topLeftY = rotateYAroundPoint(x1, y2, positionX, positionY, initialRotation);
+   // const topRightX = rotateXAroundPoint(x2, y2, positionX, positionY, initialRotation);
+   // const topRightY = rotateYAroundPoint(x2, y2, positionX, positionY, initialRotation);
+   // const bottomLeftX = rotateXAroundPoint(x1, y1, positionX, positionY, initialRotation);
+   // const bottomLeftY = rotateYAroundPoint(x1, y1, positionX, positionY, initialRotation);
+   // const bottomRightX = rotateXAroundPoint(x2, y1, positionX, positionY, initialRotation);
+   // const bottomRightY = rotateYAroundPoint(x2, y1, positionX, positionY, initialRotation);
+
+   // // Update opacity
+   // let opacity = particle.opacity;
+   // if (typeof particle.getOpacity !== "undefined") {
+   //    opacity = particle.getOpacity(particle.age);
+   // }
+
+   // const vertexData = new Float32Array(6 * TEXTURED_PROGRAM_VERTEX_SIZE);
+
+   // const textureXIndex = textureIndex % TEXTURE_ATLAS_SIZE;
+   // const textureYIndex = Math.floor(textureIndex / TEXTURE_ATLAS_SIZE);
+
+   // let texCoordX0 = textureXIndex / TEXTURE_ATLAS_SIZE;
+   // let texCoordX1 = (textureXIndex + 1) / TEXTURE_ATLAS_SIZE;
+   // let texCoordY0 = 1 - textureYIndex / TEXTURE_ATLAS_SIZE;
+   // let texCoordY1 = 1 - (textureYIndex + 1) / TEXTURE_ATLAS_SIZE;
+
+   // vertexData[0] = bottomLeftX;
+   // vertexData[1] = bottomLeftY;
+   // vertexData[2] = velocityX;
+   // vertexData[3] = velocityY;
+   // vertexData[4] = accelerationX;
+   // vertexData[5] = accelerationY;
+   // vertexData[6] = texCoordX0;
+   // vertexData[7] = texCoordY0;
+   // vertexData[8] = opacity;
+   // vertexData[9] = particle.tint[0];
+   // vertexData[10] = particle.tint[1];
+   // vertexData[11] = particle.tint[2];
+   // vertexData[12] = spawnTime;
+
+   // vertexData[13] = bottomRightX;
+   // vertexData[14] = bottomRightY;
+   // vertexData[15] = velocityX;
+   // vertexData[16] = velocityY;
+   // vertexData[17] = accelerationX;
+   // vertexData[18] = accelerationY;
+   // vertexData[19] = texCoordX1;
+   // vertexData[20] = texCoordY0;
+   // vertexData[21] = opacity;
+   // vertexData[22] = particle.tint[0];
+   // vertexData[23] = particle.tint[1];
+   // vertexData[24] = particle.tint[2];
+   // vertexData[25] = spawnTime;
+
+   // vertexData[26] = topLeftX;
+   // vertexData[27] = topLeftY;
+   // vertexData[28] = velocityX;
+   // vertexData[29] = velocityY;
+   // vertexData[30] = accelerationX;
+   // vertexData[31] = accelerationY;
+   // vertexData[32] = texCoordX0;
+   // vertexData[33] = texCoordY1;
+   // vertexData[34] = opacity;
+   // vertexData[35] = particle.tint[0];
+   // vertexData[36] = particle.tint[1];
+   // vertexData[37] = particle.tint[2];
+   // vertexData[38] = spawnTime;
+
+   // vertexData[39] = topLeftX;
+   // vertexData[40] = topLeftY;
+   // vertexData[41] = velocityX;
+   // vertexData[42] = velocityY;
+   // vertexData[43] = accelerationX;
+   // vertexData[44] = accelerationY;
+   // vertexData[45] = texCoordX0;
+   // vertexData[46] = texCoordY1;
+   // vertexData[47] = opacity;
+   // vertexData[48] = particle.tint[0];
+   // vertexData[49] = particle.tint[1];
+   // vertexData[50] = particle.tint[2];
+   // vertexData[51] = spawnTime;
+
+   // vertexData[52] = bottomRightX;
+   // vertexData[53] = bottomRightY;
+   // vertexData[54] = velocityX;
+   // vertexData[55] = velocityY;
+   // vertexData[56] = accelerationX;
+   // vertexData[57] = accelerationY;
+   // vertexData[58] = texCoordX1;
+   // vertexData[59] = texCoordY0;
+   // vertexData[60] = opacity;
+   // vertexData[61] = particle.tint[0];
+   // vertexData[62] = particle.tint[1];
+   // vertexData[63] = particle.tint[2];
+   // vertexData[64] = spawnTime;
+
+   // vertexData[65] = topRightX;
+   // vertexData[66] = topRightY;
+   // vertexData[67] = velocityX;
+   // vertexData[68] = velocityY;
+   // vertexData[69] = accelerationX;
+   // vertexData[70] = accelerationY;
+   // vertexData[71] = texCoordX1;
+   // vertexData[72] = texCoordY1;
+   // vertexData[73] = opacity;
+   // vertexData[74] = particle.tint[0];
+   // vertexData[75] = particle.tint[1];
+   // vertexData[76] = particle.tint[2];
+   // vertexData[77] = spawnTime;
+
+   // lowTexturedBufferContainer.addObjectData(particle.id, vertexData);
+}
+
+// @Temporary name
+export function testFunction2(particle: MonocolourParticle): void {
+   lowMonocolourBufferContainer.removeObject(particle.id);
+}
+
+// @Temporary name
+export function testFunction3(particle: TexturedParticle): void {
+   lowTexturedBufferContainer.removeObject(particle.id);
+}
 
 export function renderMonocolourParticles(particles: ReadonlyArray<MonocolourParticle>): void {
    gl.useProgram(monocolourProgram);
@@ -460,83 +477,141 @@ export function renderMonocolourParticles(particles: ReadonlyArray<MonocolourPar
    gl.enable(gl.BLEND);
    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-   for (const buffer of lowMonocolourBufferContainer.getBuffers()) {
+   const positionBuffers = lowMonocolourBufferContainer.getBuffers(0);
+   // const velocityBuffers = lowMonocolourBufferContainer.getBuffers(1);
+   // const accelerationBuffers = lowMonocolourBufferContainer.getBuffers(2);
+   // const opacityBuffers = lowMonocolourBufferContainer.getBuffers(3);
+   // const colourBuffers = lowMonocolourBufferContainer.getBuffers(4);
+   // const initialRotationBuffers = lowMonocolourBufferContainer.getBuffers(5);
+   // const angularVelocityBuffers = lowMonocolourBufferContainer.getBuffers(6);
+   // const angularAccelerationBuffers = lowMonocolourBufferContainer.getBuffers(7);
+   // const spawnTimeBuffers = lowMonocolourBufferContainer.getBuffers(8);
+
+   for (let i = 0; i < lowMonocolourBufferContainer.getNumBuffers(); i++) {
+      const vertices = [
+         -1, -1,
+         1, -1,
+         -1, 1,
+         -1, 1,
+         1, -1,
+         1, 1,
+      ];
+      const data = new Float32Array(vertices);
+      const buffer = gl.createBuffer()!;
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-   
-      gl.vertexAttribPointer(0, 2, gl.FLOAT, false, MONOCOLOUR_PROGRAM_VERTEX_SIZE * Float32Array.BYTES_PER_ELEMENT, 0);
-      gl.vertexAttribPointer(1, 2, gl.FLOAT, false, MONOCOLOUR_PROGRAM_VERTEX_SIZE * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(2, 2, gl.FLOAT, false, MONOCOLOUR_PROGRAM_VERTEX_SIZE * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(3, 1, gl.FLOAT, false, MONOCOLOUR_PROGRAM_VERTEX_SIZE * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(4, 3, gl.FLOAT, false, MONOCOLOUR_PROGRAM_VERTEX_SIZE * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(5, 1, gl.FLOAT, false, MONOCOLOUR_PROGRAM_VERTEX_SIZE * Float32Array.BYTES_PER_ELEMENT, 10 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(6, 1, gl.FLOAT, false, MONOCOLOUR_PROGRAM_VERTEX_SIZE * Float32Array.BYTES_PER_ELEMENT, 11 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(7, 1, gl.FLOAT, false, MONOCOLOUR_PROGRAM_VERTEX_SIZE * Float32Array.BYTES_PER_ELEMENT, 12 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(8, 1, gl.FLOAT, false, MONOCOLOUR_PROGRAM_VERTEX_SIZE * Float32Array.BYTES_PER_ELEMENT, 13 * Float32Array.BYTES_PER_ELEMENT);
-   
-      // Enable the attributes
+      gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+      
+      // gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffers[i]);
+      gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
       gl.enableVertexAttribArray(0);
-      gl.enableVertexAttribArray(1);
-      gl.enableVertexAttribArray(2);
-      gl.enableVertexAttribArray(3);
-      gl.enableVertexAttribArray(4);
-      gl.enableVertexAttribArray(5);
-      gl.enableVertexAttribArray(6);
-      gl.enableVertexAttribArray(7);
-      gl.enableVertexAttribArray(8);
+      gl.vertexAttribDivisor(0, 1);
+
+   
+      // gl.bindBuffer(gl.ARRAY_BUFFER, velocityBuffers[i]);
+      // gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 0, 0);
+      // gl.enableVertexAttribArray(1);
+      // gl.vertexAttribDivisor(1, 1);
+
+      // gl.bindBuffer(gl.ARRAY_BUFFER, accelerationBuffers[i]);
+      // gl.vertexAttribPointer(2, 2, gl.FLOAT, false, 0, 0);
+      // gl.enableVertexAttribArray(2);
+      // gl.vertexAttribDivisor(2, 1);
+
+      // gl.bindBuffer(gl.ARRAY_BUFFER, opacityBuffers[i]);
+      // gl.vertexAttribPointer(3, 1, gl.FLOAT, false, 0, 0);
+      // gl.enableVertexAttribArray(3);
+      // gl.vertexAttribDivisor(3, 1);
+
+      // gl.bindBuffer(gl.ARRAY_BUFFER, colourBuffers[i]);
+      // gl.enableVertexAttribArray(4);
+      // gl.vertexAttribPointer(4, 3, gl.FLOAT, false, 0, 0);
+      // gl.vertexAttribDivisor(4, 1);
+
+      // gl.bindBuffer(gl.ARRAY_BUFFER, initialRotationBuffers[i]);
+      // gl.enableVertexAttribArray(5);
+      // gl.vertexAttribPointer(5, 1, gl.FLOAT, false, 0, 0);
+      // gl.vertexAttribDivisor(5, 1);
+
+      // gl.bindBuffer(gl.ARRAY_BUFFER, angularVelocityBuffers[i]);
+      // gl.enableVertexAttribArray(6);
+      // gl.vertexAttribPointer(6, 1, gl.FLOAT, false, 0, 0);
+      // gl.vertexAttribDivisor(6, 1);
+
+      // gl.bindBuffer(gl.ARRAY_BUFFER, angularAccelerationBuffers[i]);
+      // gl.enableVertexAttribArray(7);
+      // gl.vertexAttribPointer(7, 1, gl.FLOAT, false, 0, 0);
+      // gl.vertexAttribDivisor(7, 1);
+
+      // gl.bindBuffer(gl.ARRAY_BUFFER, spawnTimeBuffers[i]);
+      // gl.enableVertexAttribArray(8);
+      // gl.vertexAttribPointer(8, 1, gl.FLOAT, false, 0, 0);
+      // gl.vertexAttribDivisor(8, 1);
    
       gl.uniform2f(monocolourPlayerPositionUniformLocation, Camera.position.x, Camera.position.y);
       gl.uniform2f(monocolourHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
       gl.uniform1f(monocolourZoomUniformLocation, Camera.zoom);
       gl.uniform1f(monocolourCurrentTimeUniformLocation, performance.now());
    
-      gl.drawArrays(gl.TRIANGLES, 0, OBJECT_BUFFER_CONTAINER_SIZE * 6);
+      // gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, OBJECT_BUFFER_CONTAINER_SIZE);
+      gl.drawArraysInstanced(gl.TRIANGLES, 0, 3, 4);
+      // gl.drawArrays(gl.TRIANGLES, 0, 6);
    }
+
+   gl.vertexAttribDivisor(0, 0);
+   // gl.vertexAttribDivisor(1, 0);
+   // gl.vertexAttribDivisor(2, 0);
+   // gl.vertexAttribDivisor(3, 0);
+   // gl.vertexAttribDivisor(4, 0);
+   // gl.vertexAttribDivisor(5, 0);
+   // gl.vertexAttribDivisor(6, 0);
+   // gl.vertexAttribDivisor(7, 0);
+   // gl.vertexAttribDivisor(8, 0);
    
    gl.disable(gl.BLEND);
    gl.blendFunc(gl.ONE, gl.ZERO);
 }
 
 export function renderTexturedParticles(particles: ReadonlyArray<TexturedParticle>): void {
-   gl.useProgram(texturedProgram);
+   // gl.useProgram(texturedProgram);
 
-   gl.enable(gl.BLEND);
-   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+   // gl.enable(gl.BLEND);
+   // gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-   const atlasTexture = getTexture("miscellaneous/particle-texture-atlas.png");
-   gl.activeTexture(gl.TEXTURE0);
-   gl.bindTexture(gl.TEXTURE_2D, atlasTexture);
+   // const atlasTexture = getTexture("miscellaneous/particle-texture-atlas.png");
+   // gl.activeTexture(gl.TEXTURE0);
+   // gl.bindTexture(gl.TEXTURE_2D, atlasTexture);
 
-   for (const buffer of lowTexturedBufferContainer.getBuffers()) {
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+   // for (const buffer of lowTexturedBufferContainer.getBuffers()) {
+   //    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
    
-      gl.vertexAttribPointer(0, 2, gl.FLOAT, false, TEXTURED_PROGRAM_VERTEX_SIZE * Float32Array.BYTES_PER_ELEMENT, 0);
-      gl.vertexAttribPointer(1, 2, gl.FLOAT, false, TEXTURED_PROGRAM_VERTEX_SIZE * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(2, 2, gl.FLOAT, false, TEXTURED_PROGRAM_VERTEX_SIZE * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(3, 2, gl.FLOAT, false, TEXTURED_PROGRAM_VERTEX_SIZE * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(4, 1, gl.FLOAT, false, TEXTURED_PROGRAM_VERTEX_SIZE * Float32Array.BYTES_PER_ELEMENT, 8 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(5, 3, gl.FLOAT, false, TEXTURED_PROGRAM_VERTEX_SIZE * Float32Array.BYTES_PER_ELEMENT, 9 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(6, 1, gl.FLOAT, false, TEXTURED_PROGRAM_VERTEX_SIZE * Float32Array.BYTES_PER_ELEMENT, 12 * Float32Array.BYTES_PER_ELEMENT);
+   //    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, TEXTURED_PROGRAM_VERTEX_SIZE * Float32Array.BYTES_PER_ELEMENT, 0);
+   //    gl.vertexAttribPointer(1, 2, gl.FLOAT, false, TEXTURED_PROGRAM_VERTEX_SIZE * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   //    gl.vertexAttribPointer(2, 2, gl.FLOAT, false, TEXTURED_PROGRAM_VERTEX_SIZE * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+   //    gl.vertexAttribPointer(3, 2, gl.FLOAT, false, TEXTURED_PROGRAM_VERTEX_SIZE * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
+   //    gl.vertexAttribPointer(4, 1, gl.FLOAT, false, TEXTURED_PROGRAM_VERTEX_SIZE * Float32Array.BYTES_PER_ELEMENT, 8 * Float32Array.BYTES_PER_ELEMENT);
+   //    gl.vertexAttribPointer(5, 3, gl.FLOAT, false, TEXTURED_PROGRAM_VERTEX_SIZE * Float32Array.BYTES_PER_ELEMENT, 9 * Float32Array.BYTES_PER_ELEMENT);
+   //    gl.vertexAttribPointer(6, 1, gl.FLOAT, false, TEXTURED_PROGRAM_VERTEX_SIZE * Float32Array.BYTES_PER_ELEMENT, 12 * Float32Array.BYTES_PER_ELEMENT);
    
-      // Enable the attributes
-      gl.enableVertexAttribArray(0);
-      gl.enableVertexAttribArray(1);
-      gl.enableVertexAttribArray(2);
-      gl.enableVertexAttribArray(3);
-      gl.enableVertexAttribArray(4);
-      gl.enableVertexAttribArray(5);
-      gl.enableVertexAttribArray(6);
+   //    // Enable the attributes
+   //    gl.enableVertexAttribArray(0);
+   //    gl.enableVertexAttribArray(1);
+   //    gl.enableVertexAttribArray(2);
+   //    gl.enableVertexAttribArray(3);
+   //    gl.enableVertexAttribArray(4);
+   //    gl.enableVertexAttribArray(5);
+   //    gl.enableVertexAttribArray(6);
    
-      gl.uniform2f(texturedPlayerPositionUniformLocation, Camera.position.x, Camera.position.y);
-      gl.uniform2f(texturedHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
-      gl.uniform1f(texturedZoomUniformLocation, Camera.zoom);
-      gl.uniform1i(texturedTextureUniformLocation, 0);
-      gl.uniform1f(texturedCurrentTimeUniformLocation, performance.now());
+   //    gl.uniform2f(texturedPlayerPositionUniformLocation, Camera.position.x, Camera.position.y);
+   //    gl.uniform2f(texturedHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
+   //    gl.uniform1f(texturedZoomUniformLocation, Camera.zoom);
+   //    gl.uniform1i(texturedTextureUniformLocation, 0);
+   //    gl.uniform1f(texturedCurrentTimeUniformLocation, performance.now());
    
-      gl.drawArrays(gl.TRIANGLES, 0, OBJECT_BUFFER_CONTAINER_SIZE * 6);
-   }
+   //    gl.drawArrays(gl.TRIANGLES, 0, OBJECT_BUFFER_CONTAINER_SIZE * 6);
+   // }
    
-   gl.disable(gl.BLEND);
-   gl.blendFunc(gl.ONE, gl.ZERO);
+   // gl.disable(gl.BLEND);
+   // gl.blendFunc(gl.ONE, gl.ZERO);
    // @Incomplete
 
    // const groupedParticles = groupParticles(particles);

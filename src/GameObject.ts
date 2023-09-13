@@ -4,10 +4,10 @@ import Chunk from "./Chunk";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import { Tile } from "./Tile";
 import CircularHitbox from "./hitboxes/CircularHitbox";
-import MonocolourParticle, { interpolateColours } from "./particles/MonocolourParticle";
+import MonocolourParticle from "./particles/MonocolourParticle";
 import { ParticleRenderLayer } from "./particles/Particle";
 import Board from "./Board";
-import { addMonocolourParticleToBufferContainer } from "./rendering/particle-rendering";
+import { addMonocolourParticleToBufferContainer, interpolateColours } from "./rendering/particle-rendering";
 
 const WATER_DROPLET_COLOUR_LOW = [8/255, 197/255, 255/255] as const;
 const WATER_DROPLET_COLOUR_HIGH = [94/255, 231/255, 255/255] as const;
@@ -82,15 +82,15 @@ abstract class GameObject extends RenderObject {
          // @Speed garbage collection
          const velocity = Point.fromVectorForm(randFloat(40, 60), 2 * Math.PI * Math.random());
             
-         const particle = new MonocolourParticle(lifetime, interpolateColours(WATER_DROPLET_COLOUR_LOW, WATER_DROPLET_COLOUR_HIGH, Math.random()) );
+         const particle = new MonocolourParticle(lifetime);
          // particle.rotation = 2 * Math.PI * Math.random();
          // particle.angularVelocity = randFloat(2, 3) * randSign();
          particle.getOpacity = (age: number): number => {
             return lerp(0.75, 0, age / lifetime);
          };
-         
+
          // @Incomplete
-         addMonocolourParticleToBufferContainer(particle, 6, 6, this.position.x, this.position.y, velocity.x, velocity.y, 0, 0, 0, 0, 0);
+         addMonocolourParticleToBufferContainer(particle, 6, 6, this.position.x, this.position.y, velocity.x, velocity.y, 0, 0, 0, 0, 0, interpolateColours(WATER_DROPLET_COLOUR_LOW, WATER_DROPLET_COLOUR_HIGH, Math.random()));
          Board.addMonocolourParticle(particle, ParticleRenderLayer.low)
       }
    };

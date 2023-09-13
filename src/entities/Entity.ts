@@ -76,14 +76,14 @@ abstract class Entity extends GameObject {
 
             const acceleration = Point.fromVectorForm(randFloat(0, 80), 2 * Math.PI * Math.random());
             
-            const particle = new MonocolourParticle(lifetime, randItem(Entity.BURNING_PARTICLE_COLOURS));
+            const particle = new MonocolourParticle(lifetime);
             particle.getOpacity = (age: number): number => {
                const opacity = 1 - age / lifetime;
                return Math.pow(opacity, 0.3);
             }
 
             // @Incomplete
-            addMonocolourParticleToBufferContainer(particle, 4, 4, spawnPosition.x, spawnPosition.y, velocity.x, velocity.y, acceleration.x, acceleration.y, 2 * Math.PI * Math.random(), 0, 0);
+            addMonocolourParticleToBufferContainer(particle, 4, 4, spawnPosition.x, spawnPosition.y, velocity.x, velocity.y, acceleration.x, acceleration.y, 2 * Math.PI * Math.random(), 0, 0, randItem(Entity.BURNING_PARTICLE_COLOURS));
             Board.addMonocolourParticle(particle, ParticleRenderLayer.high);
          }
 
