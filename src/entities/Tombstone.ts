@@ -42,11 +42,11 @@ class Tombstone extends Entity {
          // Create zombie digging particles
          if (this.zombieSpawnProgress < 0.8) {
             if (Math.random() < 7.5 / SETTINGS.TPS) {
-               createDirtParticle(this.zombieSpawnX, this.zombieSpawnY);
+               createDirtParticle(new Point(this.zombieSpawnX, this.zombieSpawnY));
             }
          } else {
             if (Math.random() < 20 / SETTINGS.TPS) {
-               createDirtParticle(this.zombieSpawnX, this.zombieSpawnY);
+               createDirtParticle(new Point(this.zombieSpawnX, this.zombieSpawnY));
             }
          }
       }

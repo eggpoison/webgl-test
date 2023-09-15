@@ -41,7 +41,7 @@ class Zombie extends Entity {
       super.tick();
 
       // Create footsteps
-      if (this.velocity !== null && Board.tickIntervalHasPassed(0.3)) {
+      if (this.velocity !== null && !this.isInRiver(this.findCurrentTile()) && Board.tickIntervalHasPassed(0.3)) {
          createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 4);
 
          this.numFootstepsTaken++;
@@ -50,16 +50,16 @@ class Zombie extends Entity {
 
    protected onHit(hitData: HitData): void {
       // Blood pool particle
-      createBloodPoolParticle(this.position);
+      createBloodPoolParticle(this.position.x, this.position.y, 20);
       
       // Blood particles
       if (hitData.angleFromAttacker !== null) {
          for (let i = 0; i < 10; i++) {
-            const spawnPosition = Point.fromVectorForm(Zombie.RADIUS, hitData.angleFromAttacker + Math.PI + 0.2 * Math.PI * (Math.random() - 0.5));
-            spawnPosition.x += this.position.x;
-            spawnPosition.y += this.position.y;
+            const offsetDirection = hitData.angleFromAttacker + Math.PI + 0.2 * Math.PI * (Math.random() - 0.5);
+            const spawnPositionX = this.position.x + Zombie.RADIUS * Math.sin(offsetDirection);
+            const spawnPositionY = this.position.y + Zombie.RADIUS * Math.cos(offsetDirection);
          
-            createBloodParticle(Math.random() < 0.6 ? BloodParticleSize.small : BloodParticleSize.large, spawnPosition, 2 * Math.PI * Math.random(), randFloat(150, 250), true);
+            createBloodParticle(Math.random() < 0.6 ? BloodParticleSize.small : BloodParticleSize.large, spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(150, 250), true);
          }
       }
    }
@@ -71,12 +71,10 @@ class Zombie extends Entity {
       for (let i = 0; i < 4; i++) {
          Board.addTickCallback(Zombie.DEATH_PARTICLE_SPAWN_INTERVAL * (i + 1), () => {
             for (let j = 0; j < Zombie.DEATH_PARTICLE_RAY_COUNT; j++) {
-               const spawnPosition = origin.copy();
-
                let moveDirection = 2 * Math.PI / Zombie.DEATH_PARTICLE_RAY_COUNT * j + offset;
                moveDirection += randFloat(-0.3, 0.3);
 
-               createBloodParticle(BloodParticleSize.large, spawnPosition, moveDirection, randFloat(100, 200), false);
+               createBloodParticle(BloodParticleSize.large, this.position.x, this.position.y, moveDirection, randFloat(100, 200), false);
             }
          });
       }

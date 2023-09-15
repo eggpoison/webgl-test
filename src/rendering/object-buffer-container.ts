@@ -2,6 +2,8 @@ import { gl } from "../webgl";
 
 /** Stores a set of buffers to use in instanced rendering */
 class ObjectBufferContainer {
+   // @Cleanup Access buffers using a string (key) instead of a buffer index
+   
    private readonly objectsPerBuffer: number;
    private readonly dataLengths = new Array<number>();
 
@@ -39,13 +41,6 @@ class ObjectBufferContainer {
       gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
 
       this.bufferArrays[bufferType].push(buffer);
-
-      // Add available indexes
-      // @Temporary
-      // const bufferIdx = this.bufferArrays[bufferType].length - 1;
-      // for (let i = bufferIdx * this.objectsPerBuffer; i < (bufferIdx + 1) * this.objectsPerBuffer; i++) {
-      //    this.availableIndexes.push(i);
-      // }
    }
 
    public registerNewObject(objectID: number): void {
@@ -58,12 +53,17 @@ class ObjectBufferContainer {
 
       // Choose an available index to add the object to
       const index = this.availableIndexes[0];
+      // @Temporary
+      if (this.objectEntryIndexes.hasOwnProperty(objectID)) {
+         console.log(Object.assign({}, this.objectEntryIndexes));
+         console.warn("already exists " + index);
+      }
       this.objectEntryIndexes[objectID] = index;
 
       this.availableIndexes.splice(0, 1);
    }
 
-   public addObjectData(objectID: number, bufferType: number, data: Float32Array): void {
+   public setData(objectID: number, bufferType: number, data: Float32Array): void {
       if (!this.objectEntryIndexes.hasOwnProperty(objectID)) {
          throw new Error("No index for entity with ID " + objectID + ".");
       }
@@ -72,22 +72,17 @@ class ObjectBufferContainer {
          throw new Error("No buffer type '" + bufferType + "'.");
       }
       
-      const dataLength = data.byteLength / Float32Array.BYTES_PER_ELEMENT;
-      if (dataLength !== this.dataLengths[bufferType]) {
-         throw new Error("Object data length (" + dataLength + ") didn't match objectSize (" + this.dataLengths[bufferType] + ").");
+      if (data.byteLength !== this.dataLengths[bufferType] * Float32Array.BYTES_PER_ELEMENT) {
+         throw new Error("Object data length (" + (data.byteLength / Float32Array.BYTES_PER_ELEMENT) + ") didn't match objectSize (" + this.dataLengths[bufferType] + ").");
       }
       
       const index = this.objectEntryIndexes[objectID];
       const bufferIndex = Math.floor(index / this.objectsPerBuffer);
-      const buffer = this.bufferArrays[bufferType][bufferIndex];
-      
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
       const indexInBuffer = index % this.objectsPerBuffer;
-      // @Temporary
-      if (indexInBuffer >= this.objectsPerBuffer) {
-         console.warn("AAA");
-      }
-      gl.bufferSubData(gl.ARRAY_BUFFER, indexInBuffer * this.dataLengths[bufferType] * Float32Array.BYTES_PER_ELEMENT, data);
+      
+      const buffer = this.bufferArrays[bufferType][bufferIndex];
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferSubData(gl.ARRAY_BUFFER, indexInBuffer * data.byteLength, data);
    }
 
    public removeObject(objectID: number) {
@@ -97,11 +92,11 @@ class ObjectBufferContainer {
       
       const index = this.objectEntryIndexes[objectID];
 
-      const blankData = new Float32Array(this.dataLengths);
-
       // Remove the object from all buffer types
       const bufferIndex = Math.floor(index / this.objectsPerBuffer);
       for (let bufferType = 0; bufferType < this.bufferArrays.length; bufferType++) {
+         const blankData = new Float32Array(this.dataLengths[bufferType]);
+
          const buffer = this.bufferArrays[bufferType][bufferIndex];
 
          gl.bindBuffer(gl.ARRAY_BUFFER, buffer);

@@ -65,7 +65,7 @@ class Yeti extends Entity {
       super.tick();
 
       // Create footsteps
-      if (this.velocity !== null && Board.tickIntervalHasPassed(0.55)) {
+      if (this.velocity !== null && !this.isInRiver(this.findCurrentTile()) && Board.tickIntervalHasPassed(0.55)) {
          createFootprintParticle(this, this.numFootstepsTaken, 40, 96, 8);
 
          this.numFootstepsTaken++;
@@ -73,16 +73,17 @@ class Yeti extends Entity {
 
       // Create snow impact particles when the Yeti does a throw attack
       if (this.attackProgress === 0 && this.lastAttackProgress !== 0) {
-         const impactPosition = this.position.copy();
-         const offset = Point.fromVectorForm(Yeti.SNOW_THROW_OFFSET + 20, this.rotation);
-         impactPosition.add(offset);
+         const offsetMagnitude = Yeti.SNOW_THROW_OFFSET + 20;
+         const impactPositionX = this.position.x + offsetMagnitude * Math.cos(this.rotation);
+         const impactPositionY = this.position.y + offsetMagnitude * Math.sin(this.rotation);
          
          for (let i = 0; i < 30; i++) {
-            const position = impactPosition.copy();
-            const offset = Point.fromVectorForm(randFloat(0, 20), 2 * Math.PI * Math.random());
-            position.add(offset);
+            const offsetMagnitude = randFloat(0, 20);
+            const offsetDirection = 2 * Math.PI * Math.random();
+            const positionX = impactPositionX + offsetMagnitude * Math.sin(offsetDirection);
+            const positionY = impactPositionY + offsetMagnitude * Math.cos(offsetDirection);
             
-            createSnowParticle(position.x, position.y, randFloat(40, 100));
+            createSnowParticle(positionX, positionY, randFloat(40, 100));
          }
       }
       this.lastAttackProgress = this.attackProgress;
@@ -96,16 +97,15 @@ class Yeti extends Entity {
 
    protected onHit(hitData: HitData): void {
       // Blood pool particle
-      createBloodPoolParticle(this.position);
+      createBloodPoolParticle(this.position.x, this.position.y, 30);
       
       // Blood particles
       if (hitData.angleFromAttacker !== null) {
          for (let i = 0; i < 10; i++) {
-            const spawnPosition = Point.fromVectorForm(Yeti.SIZE / 2, hitData.angleFromAttacker + Math.PI + 0.2 * Math.PI * (Math.random() - 0.5));
-            spawnPosition.x += this.position.x;
-            spawnPosition.y += this.position.y;
-
-            createBloodParticle(Math.random() < 0.6 ? BloodParticleSize.small : BloodParticleSize.large, spawnPosition, 2 * Math.PI * Math.random(), randFloat(150, 250), true);
+            const offsetDirection = hitData.angleFromAttacker + Math.PI + 0.2 * Math.PI * (Math.random() - 0.5);
+            const spawnPositionX = this.position.x + Yeti.SIZE / 2 * Math.sin(offsetDirection);
+            const spawnPositionY = this.position.y + Yeti.SIZE / 2 * Math.cos(offsetDirection);
+            createBloodParticle(Math.random() < 0.6 ? BloodParticleSize.small : BloodParticleSize.large, spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(150, 250), true);
          }
       }
    }

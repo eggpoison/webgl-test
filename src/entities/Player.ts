@@ -157,7 +157,7 @@ class Player extends TribeMember {
       super.tick();
 
       // Footsteps
-      if (this.velocity !== null && Board.tickIntervalHasPassed(0.15)) {
+      if (this.velocity !== null && !this.isInRiver(this.findCurrentTile()) && Board.tickIntervalHasPassed(0.15)) {
          createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 4);
          this.numFootstepsTaken++;
       }

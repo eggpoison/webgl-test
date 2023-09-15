@@ -55,7 +55,7 @@ class Cow extends Entity {
       super.tick();
 
       // Create footsteps
-      if (this.velocity !== null && Board.tickIntervalHasPassed(0.3)) {
+      if (this.velocity !== null && !this.isInRiver(this.findCurrentTile()) && Board.tickIntervalHasPassed(0.3)) {
          createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 5);
 
          this.numFootstepsTaken++;
@@ -66,23 +66,23 @@ class Cow extends Entity {
          const spawnPosition = this.position.copy();
          const offset = Point.fromVectorForm(30 * Math.random(), 2 * Math.PI * Math.random());
          spawnPosition.add(offset);
-         createDirtParticle(spawnPosition.x, spawnPosition.y);
+         createDirtParticle(spawnPosition);
       }
    }
 
    protected onHit(hitData: HitData): void {
       // Blood pool particles
       for (let i = 0; i < 2; i++) {
-         createBloodPoolParticle(this.position);
+         createBloodPoolParticle(this.position.x, this.position.y, 20);
       }
       
       // Blood particles
       if (hitData.angleFromAttacker !== null) {
          for (let i = 0; i < 10; i++) {
-            const spawnPosition = Point.fromVectorForm(32, hitData.angleFromAttacker + Math.PI + 0.2 * Math.PI * (Math.random() - 0.5));
-            spawnPosition.x += this.position.x;
-            spawnPosition.y += this.position.y;
-            createBloodParticle(Math.random() < 0.6 ? BloodParticleSize.small : BloodParticleSize.large, spawnPosition, 2 * Math.PI * Math.random(), randFloat(150, 250), true);
+            const offsetDirection = hitData.angleFromAttacker + Math.PI + 0.2 * Math.PI * (Math.random() - 0.5);
+            const spawnPositionX = this.position.x + 32 * Math.sin(offsetDirection);
+            const spawnPositionY = this.position.y + 32 * Math.cos(offsetDirection);
+            createBloodParticle(Math.random() < 0.6 ? BloodParticleSize.small : BloodParticleSize.large, spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(150, 250), true);
          }
       }
    }
@@ -96,7 +96,7 @@ class Cow extends Entity {
          for (let i = 0; i < 15; i++) {
             const x = (tile.x + Math.random()) * SETTINGS.TILE_SIZE;
             const y = (tile.y + Math.random()) * SETTINGS.TILE_SIZE;
-            createDirtParticle(x, y);
+            createDirtParticle(new Point(x, y));
          }
       }
       this.grazeProgress = entityData.clientArgs[1];

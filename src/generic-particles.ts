@@ -1,8 +1,6 @@
 import { Point, lerp, randFloat, randInt, randSign } from "webgl-test-shared";
-import MonocolourParticle from "./particles/MonocolourParticle";
-import { ParticleRenderLayer } from "./particles/Particle";
-import TexturedParticle from "./particles/TexturedParticle";
-import { ParticleColour, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer, interpolateColours } from "./rendering/particle-rendering";
+import Particle from "./Particle";
+import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer, interpolateColours } from "./rendering/particle-rendering";
 import Board from "./Board";
 import Entity from "./entities/Entity";
 
@@ -14,34 +12,36 @@ export enum BloodParticleSize {
    large
 }
 
-export function createBloodParticle(size: BloodParticleSize, spawnPosition: Point, moveDirection: number, moveSpeed: number, hasDrag: boolean): void {
+export function createBloodParticle(size: BloodParticleSize, spawnPositionX: number, spawnPositionY: number, moveDirection: number, moveSpeed: number, hasDrag: boolean): void {
    const lifetime = randFloat(0.3, 0.4);
    
    const pixelSize = size === BloodParticleSize.large ? 8 : 4;
 
-   // @Speed garbage collection
-   const velocity = Point.fromVectorForm(moveSpeed, moveDirection);
+   const velocityX = moveSpeed * Math.sin(moveDirection);
+   const velocityY = moveSpeed * Math.cos(moveDirection);
 
-   let accelerationX: number;
-   let accelerationY: number;
-   if (hasDrag) {
-      // Slow down the blood particle
-      accelerationX = velocity.x;
-      accelerationY = velocity.y;
-      accelerationX *= -1 / lifetime / 1.2;
-      accelerationY *= -1 / lifetime / 1.2;
-   } else {
-      accelerationX = 0;
-      accelerationY = 0;
-   }
+   const friction = hasDrag ? moveSpeed / lifetime / 1.2 : 0;
 
-   const particle = new MonocolourParticle(lifetime);
-   particle.getOpacity = (age: number): number => {
-      return 1 - age / lifetime;
+   const particle = new Particle(lifetime);
+   particle.getOpacity = (): number => {
+      return 1 - particle.age / lifetime;
    };
 
-   addMonocolourParticleToBufferContainer(particle, pixelSize, pixelSize, spawnPosition.x, spawnPosition.y, velocity.x, velocity.y, accelerationX, accelerationY, 2 * Math.PI * Math.random(), 0, 0, interpolateColours(BLOOD_COLOUR_LOW, BLOOD_COLOUR_HIGH, Math.random()));
-   Board.addMonocolourParticle(particle, ParticleRenderLayer.high);
+   addMonocolourParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.high,
+      pixelSize, pixelSize,
+      spawnPositionX, spawnPositionY,
+      velocityX, velocityY,
+      0, 0,
+      friction,
+      2 * Math.PI * Math.random(),
+      0,
+      0,
+      0,
+      interpolateColours(BLOOD_COLOUR_LOW, BLOOD_COLOUR_HIGH, Math.random())
+   );
+   Board.highMonocolourParticles.push(particle);
 }
 
 export enum LeafParticleSize {
@@ -63,17 +63,27 @@ export function createLeafParticle(spawnPosition: Point, moveDirection: number, 
 
    const velocity = Point.fromVectorForm(randFloat(30, 50), moveDirection);
 
-   const particle = new TexturedParticle(lifetime);
-   // @Incomplete
-   // particle.rotation = 2 * Math.PI * Math.random();
-   // particle.angularVelocity = Math.PI * randFloat(-1, 1);
-   // particle.angularDrag = 1.5 * Math.PI;
-   particle.getOpacity = (age: number): number => {
-      return Math.pow(1 - age / lifetime, 0.5);
+   const particle = new Particle(lifetime);
+   particle.getOpacity = (): number => {
+      return Math.pow(1 - particle.age / lifetime, 0.5);
    };
-   // @Incomplete
-   addTexturedParticleToBufferContainer(particle, 64, 64, spawnPosition.x, spawnPosition.y, velocity.x, velocity.y, 0, 0, textureIndex, 0, 0, 0);
-   Board.addTexturedParticle(particle, ParticleRenderLayer.low);
+
+   addTexturedParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.low,
+      64, 64,
+      spawnPosition.x, spawnPosition.y,
+      velocity.x, velocity.y,
+      0, 0,
+      60,
+      2 * Math.PI * Math.random(),
+      Math.PI * randFloat(-1, 1),
+      0,
+      1.5 * Math.PI,
+      textureIndex,
+      [0, 0, 0]
+   );
+   Board.lowTexturedParticles.push(particle);
 }
 
 export function createFootprintParticle(entity: Entity, numFootstepsTaken: number, footstepOffset: number, size: number, lifetime: number): void {
@@ -92,12 +102,29 @@ export function createFootprintParticle(entity: Entity, numFootstepsTaken: numbe
    const offset = Point.fromVectorForm(footstepOffset / 2, entity.velocity.direction + footstepAngleOffset + Math.PI/2);
    spawnPosition.add(offset);
 
-   const particle = new TexturedParticle(lifetime);
-   particle.getOpacity = (age: number): number => {
-      return lerp(0.75, 0, age / lifetime);
+   const particle = new Particle(lifetime);
+   particle.getOpacity = (): number => {
+      // return lerp(0.75, 0, particle.age / lifetime);
+      // @Temporary
+      return 1 - particle.age / lifetime;
    };
-   addTexturedParticleToBufferContainer(particle, size, size, spawnPosition.x, spawnPosition.y, 0, 0, 0, 0, 4, entity.velocity.direction, 0, 0);
-   Board.addTexturedParticle(particle, ParticleRenderLayer.low);
+
+   addTexturedParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.low,
+      size, size,
+      spawnPosition.x, spawnPosition.y,
+      0, 0,
+      0, 0,
+      0,
+      entity.velocity.direction,
+      0,
+      0,
+      0,
+      4,
+      [0, 0, 0]
+   );
+   Board.lowTexturedParticles.push(particle);
 }
 
 export enum BloodPoolSize {
@@ -106,23 +133,36 @@ export enum BloodPoolSize {
    large
 }
 
-export function createBloodPoolParticle(origin: Point): void {
+export function createBloodPoolParticle(originX: number, originY: number, spawnRange: number): void {
    const lifetime = 7.5;
 
-   // @Speed garbage collection
+   const offsetMagnitude = spawnRange * Math.random();
+   const offsetDirection = 2 * Math.PI * Math.random();
+   const spawnPositionX = originX + offsetMagnitude * Math.sin(offsetDirection);
+   const spawnPositionY = originY + offsetMagnitude * Math.cos(offsetDirection);
 
-   const spawnPosition = origin.copy();
-   const offset = Point.fromVectorForm(20 * Math.random(), 2 * Math.PI * Math.random());
-   spawnPosition.add(offset);
-
-   const particle = new TexturedParticle(lifetime);
-   particle.getOpacity = (age: number) => {
-      return 1 - age / lifetime;
+   const particle = new Particle(lifetime);
+   particle.getOpacity = () => {
+      return 1 - particle.age / lifetime;
    };
    
    const textureIndex = randInt(0, 2);
-   addTexturedParticleToBufferContainer(particle, 64, 64, spawnPosition.x, spawnPosition.y, 0, 0, 0, 0, textureIndex, 2 * Math.PI * Math.random(), 0, 0);
-   Board.addTexturedParticle(particle, ParticleRenderLayer.low);
+   addTexturedParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.low,
+      64, 64,
+      spawnPositionX, spawnPositionY,
+      0, 0,
+      0, 0,
+      0,
+      2 * Math.PI * Math.random(),
+      0,
+      0,
+      0,
+      textureIndex,
+      [0, 0, 0]
+   );
+   Board.lowTexturedParticles.push(particle);
 }
    
 export function createRockParticle(spawnPosition: Point, moveDirection: number): void {
@@ -144,25 +184,32 @@ export function createRockParticle(spawnPosition: Point, moveDirection: number):
    const velocity = Point.fromVectorForm(velocityMagnitude, moveDirection);
    const acceleration = Point.fromVectorForm(velocityMagnitude / lifetime / 1.25, moveDirection + Math.PI);
 
-   // const spinDirection = randFloat(-1, 1);
+   const spinDirection = randFloat(-1, 1);
    
-   const particle = new TexturedParticle(lifetime);
-   // @Incomplete
-   // particle.rotation = 2 * Math.PI * Math.random();
-   // particle.angularVelocity = 2 * Math.PI * spinDirection;
-   // particle.angularDrag = Math.PI * -spinDirection;
-   particle.getOpacity = (age: number): number => {
-      return 1 - age/lifetime;
+   const particle = new Particle(lifetime);
+   particle.getOpacity = (): number => {
+      return 1 - particle.age / lifetime;
    };
-   // @Incomplete
-   addTexturedParticleToBufferContainer(particle, 64, 64, spawnPosition.x, spawnPosition.y, velocity.x, velocity.y, acceleration.x, acceleration.y, textureIndex, 0, 0, 0);
-   Board.addTexturedParticle(particle, ParticleRenderLayer.low);
+
+   addTexturedParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.low,
+      64, 64,
+      spawnPosition.x, spawnPosition.y,
+      velocity.x, velocity.y,
+      acceleration.x, acceleration.y,
+      0,
+      2 * Math.PI * Math.random(),
+      2 * Math.PI * spinDirection,
+      0,
+      Math.abs(Math.PI * spinDirection),
+      textureIndex, [0, 0, 0]);
+   Board.lowTexturedParticles.push(particle);
 }
 
-export function createDirtParticle(spawnX: number, spawnY: number): void {
+export function createDirtParticle(spawnPosition: Point): void {
    // @Speed Garbage collection
    
-   const spawnPosition = new Point(spawnX, spawnY);
    const offset = Point.fromVectorForm(10 * Math.random(), 2 * Math.PI * Math.random());
    spawnPosition.add(offset);
 
@@ -170,11 +217,24 @@ export function createDirtParticle(spawnX: number, spawnY: number): void {
 
    const velocity = Point.fromVectorForm(80 * speedMultiplier, 2 * Math.PI * Math.random());
 
-   const particle = new TexturedParticle(1.5);
+   const particle = new Particle(1.5);
 
-   // @Incomplete: Add 300 drag/friction
-   addTexturedParticleToBufferContainer(particle, 64, 64, spawnPosition.x, spawnPosition.y, velocity.x, velocity.y, 0, 0, 3, 2 * Math.PI * Math.random(),  Math.PI * randFloat(3, 4) * randSign(), -4 * speedMultiplier);
-   Board.addTexturedParticle(particle, ParticleRenderLayer.low);
+   addTexturedParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.low,
+      64, 64,
+      spawnPosition.x, spawnPosition.y,
+      velocity.x, velocity.y,
+      0, 0,
+      300,
+      2 * Math.PI * Math.random(),
+      Math.PI * randFloat(3, 4) * randSign(),
+      0,
+      Math.PI,
+      3,
+      [0, 0, 0]
+   );
+   Board.lowTexturedParticles.push(particle);
 }
 
 const SNOW_PARTICLE_COLOUR_LOW: ParticleColour = [164/255, 175/255, 176/255];
@@ -186,12 +246,26 @@ export function createSnowParticle(spawnPositionX: number, spawnPositionY: numbe
    // @Speed garbage collection
    const velocity = Point.fromVectorForm(moveSpeed, 2 * Math.PI * Math.random());
    
-   const particle = new MonocolourParticle(lifetime);
-   particle.getOpacity = (age: number): number => {
-      return 1 - age / lifetime;
+   const particle = new Particle(lifetime);
+   particle.getOpacity = (): number => {
+      return 1 - particle.age / lifetime;
    };
-   particle.scale = randInt(1, 2);
+
+   const pixelSize = 4 * randInt(1, 2);
    
-   addMonocolourParticleToBufferContainer(particle, 4, 4, spawnPositionX, spawnPositionY, velocity.x, velocity.y, 0, 0, 2 * Math.PI * Math.random(), 0, 0, interpolateColours(SNOW_PARTICLE_COLOUR_LOW, SNOW_PARTICLE_COLOUR_HIGH, Math.random()));
-   Board.addMonocolourParticle(particle, ParticleRenderLayer.low);
+   addMonocolourParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.low,
+      pixelSize, pixelSize,
+      spawnPositionX, spawnPositionY,
+      velocity.x, velocity.y,
+      0, 0,
+      0,
+      2 * Math.PI * Math.random(),
+      0,
+      0,
+      0,
+      interpolateColours(SNOW_PARTICLE_COLOUR_LOW, SNOW_PARTICLE_COLOUR_HIGH, Math.random())
+   );
+   Board.lowMonocolourParticles.push(particle);
 }

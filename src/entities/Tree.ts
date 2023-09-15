@@ -3,8 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import MonocolourParticle from "../particles/MonocolourParticle";
-import { ParticleRenderLayer } from "../particles/Particle";
+import Particle, { ParticleRenderLayer } from "../Particle";
 import { LeafParticleSize, createLeafParticle } from "../generic-particles";
 import Board from "../Board";
 import { addMonocolourParticleToBufferContainer, interpolateColours } from "../rendering/particle-rendering";
@@ -70,15 +69,26 @@ class Tree extends Entity {
 
          const lifetime = randFloat(0.3, 0.5);
          
-         const particle = new MonocolourParticle(lifetime);
-         // particle.rotation = 2 * Math.PI * Math.random();
-         particle.getOpacity = (age: number): number => {
-            return Math.pow(1 - age / lifetime, 0.3);
+         const particle = new Particle(lifetime);
+         particle.getOpacity = (): number => {
+            return Math.pow(1 - particle.age / lifetime, 0.3);
          }
 
-         // @Incomplete
-         addMonocolourParticleToBufferContainer(particle, 6, 6, spawnPosition.x, spawnPosition.y, velocity.x, velocity.y, 0, 0, 0, 0, 0, interpolateColours(Tree.LEAF_SPECK_COLOUR_LOW, Tree.LEAF_SPECK_COLOUR_HIGH, Math.random()));
-         Board.addMonocolourParticle(particle, ParticleRenderLayer.low);
+         addMonocolourParticleToBufferContainer(
+            particle,
+            ParticleRenderLayer.low,
+            6, 6,
+            spawnPosition.x, spawnPosition.y,
+            velocity.x, velocity.y,
+            0, 0,
+            0,
+            2 * Math.PI * Math.random(),
+            0,
+            0,
+            0,
+            interpolateColours(Tree.LEAF_SPECK_COLOUR_LOW, Tree.LEAF_SPECK_COLOUR_HIGH, Math.random())
+         );
+         Board.lowMonocolourParticles.push(particle);
       }
    }
 

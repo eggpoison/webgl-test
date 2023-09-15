@@ -6,11 +6,11 @@ import { Tile } from "./Tile";
 import GameObject from "./GameObject";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import Projectile from "./projectiles/Projectile";
-import { ParticleRenderLayer } from "./particles/Particle";
+import Particle from "./Particle";
 import CircularHitbox from "./hitboxes/CircularHitbox";
-import MonocolourParticle from "./particles/MonocolourParticle";
-import TexturedParticle from "./particles/TexturedParticle";
-import { testFunction2, testFunction3 } from "./rendering/particle-rendering";
+import { highMonocolourBufferContainer, highTexturedBufferContainer, lowMonocolourBufferContainer, lowTexturedBufferContainer } from "./rendering/particle-rendering";
+import ObjectBufferContainer from "./rendering/object-buffer-container";
+import { tempFloat32ArrayLength1 } from "./webgl";
 
 export interface EntityHitboxInfo {
    readonly vertexPositions: readonly [Point, Point, Point, Point];
@@ -40,11 +40,11 @@ abstract class Board {
    public static readonly droppedItems: Record<number, DroppedItem> = {};
    public static readonly projectiles: Record<number, Projectile> = {};
 
-   // TODO: This is too messy
-   public static readonly lowParticlesMonocolour: Record<number, MonocolourParticle> = {};
-   public static readonly lowParticlesTextured: Record<number, TexturedParticle> = {};
-   public static readonly highParticlesMonocolour: Record<number, MonocolourParticle> = {};
-   public static readonly highParticlesTextured: Record<number, TexturedParticle> = {};
+   // @Cleanup This is too messy
+   public static readonly lowMonocolourParticles = new Array<Particle>();
+   public static readonly lowTexturedParticles = new Array<Particle>();
+   public static readonly highMonocolourParticles = new Array<Particle>();
+   public static readonly highTexturedParticles = new Array<Particle>();
    /** Stores the IDs of all particles sent by the server */
    public static readonly serverParticleIDs = new Set<number>();
 
@@ -155,23 +155,6 @@ abstract class Board {
       delete this.droppedItems[gameObject.id];
    }
 
-   public static addMonocolourParticle(particle: MonocolourParticle, renderLayer: ParticleRenderLayer): void {
-      // Add itself to the board
-      if (renderLayer === ParticleRenderLayer.low) {
-         this.lowParticlesMonocolour[particle.id] = particle;
-      } else {
-         this.highParticlesMonocolour[particle.id] = particle;
-      }
-   }
-
-   public static addTexturedParticle(particle: TexturedParticle, renderLayer: ParticleRenderLayer): void {
-      if (renderLayer === ParticleRenderLayer.low) {
-         this.lowParticlesTextured[particle.id] = particle;
-      } else {
-         this.highParticlesTextured[particle.id] = particle;
-      }
-   }
-
    public static getRiverFlowDirection(tileX: number, tileY: number): number {
       if (!this.riverFlowDirections.hasOwnProperty(tileX) || !this.riverFlowDirections[tileX].hasOwnProperty(tileY)) {
          throw new Error("Tried to get the river flow direction of a non-water tile.");
@@ -190,60 +173,45 @@ abstract class Board {
       return this.chunks[x][y];
    }
 
+   private static updateParticleArray(particles: Array<Particle>, bufferContainer: ObjectBufferContainer): void {
+      const removedParticleIndexes = new Array<number>();
+      for (let i = 0; i < particles.length; i++) {
+         const particle = particles[i];
+
+         particle.age += 1 / SETTINGS.TPS;
+         if (particle.age >= particle.lifetime) {
+            removedParticleIndexes.push(i);
+         } else {
+            // Update opacity
+            if (typeof particle.getOpacity !== "undefined") {
+               const opacity = particle.getOpacity();
+               tempFloat32ArrayLength1[0] = opacity;
+               bufferContainer.setData(particle.id, 10, tempFloat32ArrayLength1);
+            }
+            // Update scale
+            if (typeof particle.getScale !== "undefined") {
+               const scale = particle.getScale();
+               tempFloat32ArrayLength1[0] = scale;
+               bufferContainer.setData(particle.id, 11, tempFloat32ArrayLength1);
+            }
+         }
+      }
+
+      // Remove removed particles
+      for (let i = removedParticleIndexes.length - 1; i >= 0; i--) {
+         const idx = removedParticleIndexes[i];
+         const particle = particles[idx];
+
+         bufferContainer.removeObject(particle.id);
+         particles.splice(idx, 1);
+      }
+   }
+
    public static updateParticles(): void {
-      // @Cleanup waaay too much repetition
-      {
-         const removedParticles = new Array<MonocolourParticle>();
-         for (const particle of Object.values(this.lowParticlesMonocolour)) {
-            particle.age += 1 / SETTINGS.TPS;
-            if (particle.age >= particle.lifetime) {
-               removedParticles.push(particle);
-            }
-         }
-         for (const removedParticle of removedParticles) {
-            delete this.lowParticlesMonocolour[removedParticle.id];
-            testFunction2(removedParticle);
-         }
-      }
-      {
-         const removedParticles = new Array<TexturedParticle>();
-         for (const particle of Object.values(this.lowParticlesTextured)) {
-            particle.age += 1 / SETTINGS.TPS;
-            if (particle.age >= particle.lifetime) {
-               removedParticles.push(particle);
-            }
-         }
-         for (const removedParticle of removedParticles) {
-            delete this.lowParticlesTextured[removedParticle.id];
-            testFunction3(removedParticle);
-         }
-      }
-      {
-         const removedParticles = new Array<MonocolourParticle>();
-         for (const particle of Object.values(this.highParticlesMonocolour)) {
-            particle.age += 1 / SETTINGS.TPS;
-            if (particle.age >= particle.lifetime) {
-               removedParticles.push(particle);
-            }
-         }
-         for (const removedParticle of removedParticles) {
-            delete this.highParticlesMonocolour[removedParticle.id];
-            testFunction2(removedParticle);
-         }
-      }
-      {
-         const removedParticles = new Array<TexturedParticle>();
-         for (const particle of Object.values(this.highParticlesTextured)) {
-            particle.age += 1 / SETTINGS.TPS;
-            if (particle.age >= particle.lifetime) {
-               removedParticles.push(particle);
-            }
-         }
-         for (const removedParticle of removedParticles) {
-            delete this.highParticlesTextured[removedParticle.id];
-            testFunction3(removedParticle);
-         }
-      }
+      this.updateParticleArray(this.lowMonocolourParticles, lowMonocolourBufferContainer);
+      this.updateParticleArray(this.lowTexturedParticles, lowTexturedBufferContainer);
+      this.updateParticleArray(this.highMonocolourParticles, highMonocolourBufferContainer);
+      this.updateParticleArray(this.highTexturedParticles, highTexturedBufferContainer);
    }
 
    /** Ticks all game objects without updating them */

@@ -3,11 +3,9 @@ import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import { ParticleRenderLayer } from "../particles/Particle";
+import Particle from "../Particle";
 import Board from "../Board";
-import MonocolourParticle from "../particles/MonocolourParticle";
-import { ParticleColour, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
-import TexturedParticle from "../particles/TexturedParticle";
+import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
 
 class Cactus extends Entity {
    private static readonly CACTUS_SPINE_PARTICLE_COLOUR: ParticleColour = [0, 0, 0];
@@ -119,13 +117,26 @@ class Cactus extends Entity {
 
       const velocity = Point.fromVectorForm(randFloat(150, 200), flyDirection);
 
-      const particle = new MonocolourParticle(lifetime);
-      particle.getOpacity = (age: number) => {
-         return 1 - age / lifetime;
+      const particle = new Particle(lifetime);
+      particle.getOpacity = () => {
+         return 1 - particle.age / lifetime;
       };
 
-      addMonocolourParticleToBufferContainer(particle, 4, 16, spawnPosition.x, spawnPosition.y, velocity.x, velocity.y, 0, 0, flyDirection, 0, 0, Cactus.CACTUS_SPINE_PARTICLE_COLOUR);
-      Board.addMonocolourParticle(particle, ParticleRenderLayer.high)
+      addMonocolourParticleToBufferContainer(
+         particle,
+         ParticleRenderLayer.high,
+         4, 16,
+         spawnPosition.x, spawnPosition.y,
+         velocity.x, velocity.y,
+         0, 0,
+         0,
+         flyDirection,
+         0,
+         0,
+         0,
+         Cactus.CACTUS_SPINE_PARTICLE_COLOUR
+      );
+      Board.highMonocolourParticles.push(particle);
    }
 
    public onDie(): void {
@@ -156,16 +167,32 @@ class Cactus extends Entity {
    }
 
    private createFlowerParticle(spawnPosition: Point, flowerType: number, size: CactusFlowerSize, rotation: number): void {
+      // @Speed Garbage collection
+      
       const velocity = Point.fromVectorForm(randFloat(30, 50), 2 * Math.PI * Math.random());
       
       const lifetime = randFloat(3, 5);
       
-      const particle = new TexturedParticle(lifetime);
+      // @Incomplete Needs friction
+      const particle = new Particle(lifetime);
       
-      // @Incomplete
       const textureIndex = this.getFlowerTextureIndex(flowerType, size);
-      addTexturedParticleToBufferContainer(particle, 64, 64, spawnPosition.x, spawnPosition.y, velocity.x, velocity.y, 0, 0, textureIndex, rotation, Math.PI * randFloat(-1, 1), 1.5 * Math.PI);
-      Board.addTexturedParticle(particle, ParticleRenderLayer.low);
+      addTexturedParticleToBufferContainer(
+         particle,
+         ParticleRenderLayer.low,
+         64, 64,
+         spawnPosition.x, spawnPosition.y,
+         velocity.x, velocity.y,
+         0, 0,
+         0,
+         rotation,
+         Math.PI * randFloat(-1, 1),
+         0,
+         1.5 * Math.PI,
+         textureIndex,
+         [0, 0, 0]
+      );
+      Board.lowTexturedParticles.push(particle);
    }
 
    private getFlowerTextureIndex(flowerType: number, size: CactusFlowerSize): number {

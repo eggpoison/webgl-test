@@ -27,7 +27,7 @@ import { setFrameProgress } from "./GameObject";
 import { createDebugDataShaders, renderLineDebugData, renderTriangleDebugData } from "./rendering/debug-data-rendering";
 import { createAmbientOcclusionShaders, recalculateAmbientOcclusion, renderAmbientOcclusion } from "./rendering/ambient-occlusion-rendering";
 import { createWallBorderShaders, renderWallBorders } from "./rendering/wall-border-rendering";
-import { createParticleShaders, renderMonocolourParticles, renderTexturedParticles } from "./rendering/particle-rendering";
+import { ParticleRenderLayer, createParticleShaders, renderMonocolourParticles, renderTexturedParticles } from "./rendering/particle-rendering";
 import Tribe from "./Tribe";
 import OPTIONS from "./options";
 import { createRenderChunks } from "./rendering/tile-rendering/render-chunks";
@@ -351,15 +351,15 @@ abstract class Game {
          renderChunkBorders();
       }
 
-      renderMonocolourParticles(Object.values(Board.lowParticlesMonocolour));
-      renderTexturedParticles(Object.values(Board.lowParticlesTextured));
+      renderMonocolourParticles(ParticleRenderLayer.low);
+      renderTexturedParticles(ParticleRenderLayer.low);
 
       renderGameObjects(droppedItems);
       renderGameObjects(entities);
       renderGameObjects(projectiles);
       
-      renderMonocolourParticles(Object.values(Board.highParticlesMonocolour));
-      renderTexturedParticles(Object.values(Board.highParticlesTextured));
+      renderMonocolourParticles(ParticleRenderLayer.high);
+      renderTexturedParticles(ParticleRenderLayer.high);
 
       if (nerdVisionIsVisible() && OPTIONS.showHitboxes) {
          renderEntityHitboxes();

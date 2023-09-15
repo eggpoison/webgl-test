@@ -1,11 +1,10 @@
-import { GameObjectData, Point, RIVER_STEPPING_STONE_SIZES, SETTINGS, TILE_TYPE_INFO_RECORD, Vector, lerp, randFloat } from "webgl-test-shared";
+import { GameObjectData, Point, RIVER_STEPPING_STONE_SIZES, SETTINGS, TILE_TYPE_INFO_RECORD, Vector, lerp, randFloat, randSign } from "webgl-test-shared";
 import RenderPart, { RenderObject } from "./render-parts/RenderPart";
 import Chunk from "./Chunk";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import { Tile } from "./Tile";
 import CircularHitbox from "./hitboxes/CircularHitbox";
-import MonocolourParticle from "./particles/MonocolourParticle";
-import { ParticleRenderLayer } from "./particles/Particle";
+import Particle, { ParticleRenderLayer } from "./Particle";
 import Board from "./Board";
 import { addMonocolourParticleToBufferContainer, interpolateColours } from "./rendering/particle-rendering";
 
@@ -76,22 +75,36 @@ abstract class GameObject extends RenderObject {
    protected overrideTileMoveSpeedMultiplier?(): number | null;
 
    public tick(): void {
+      // Water droplet particles
       if (this.isInRiver(this.findCurrentTile()) && Board.tickIntervalHasPassed(0.05)) {
+         // @Speed garbage collection
+         
          const lifetime = 1;
 
-         // @Speed garbage collection
+         const position = this.position.copy();
+
          const velocity = Point.fromVectorForm(randFloat(40, 60), 2 * Math.PI * Math.random());
             
-         const particle = new MonocolourParticle(lifetime);
-         // particle.rotation = 2 * Math.PI * Math.random();
-         // particle.angularVelocity = randFloat(2, 3) * randSign();
-         particle.getOpacity = (age: number): number => {
-            return lerp(0.75, 0, age / lifetime);
+         const particle = new Particle(lifetime);
+         particle.getOpacity = (): number => {
+            return lerp(0.75, 0, particle.age / lifetime);
          };
 
-         // @Incomplete
-         addMonocolourParticleToBufferContainer(particle, 6, 6, this.position.x, this.position.y, velocity.x, velocity.y, 0, 0, 0, 0, 0, interpolateColours(WATER_DROPLET_COLOUR_LOW, WATER_DROPLET_COLOUR_HIGH, Math.random()));
-         Board.addMonocolourParticle(particle, ParticleRenderLayer.low)
+         addMonocolourParticleToBufferContainer(
+            particle,
+            ParticleRenderLayer.low,
+            6, 6,
+            position.x, position.y,
+            velocity.x, velocity.y,
+            0, 0,
+            0,
+            2 * Math.PI * Math.random(),
+            randFloat(2, 3) * randSign(),
+            0,
+            0,
+            interpolateColours(WATER_DROPLET_COLOUR_LOW, WATER_DROPLET_COLOUR_HIGH, Math.random())
+         );
+         Board.lowMonocolourParticles.push(particle);
       }
    };
 

@@ -29,46 +29,6 @@ import { definiteGameState, latencyGameState } from "../game-state/game-states";
 import { hideNerdVision } from "../components/game/dev/NerdVision";
 import { BackpackInventoryMenu_update } from "../components/game/inventories/BackpackInventory";
 
-// @Incomplete
-// type FilterTexturedTypes<T extends ParticleType> = (typeof PARTICLE_INFO)[T]["renderType"] extends ParticleRenderType.textured ? T : never;
-// type FilterMonocolourTypes<T extends ParticleType> = (typeof PARTICLE_INFO)[T]["renderType"] extends ParticleRenderType.monocolour ? T : never;
-
-// @Incomplete
-// const PARTICLE_TEXTURES: { [T in ParticleType as Exclude<T, FilterMonocolourTypes<T>>]: ParticleTextureSource } = {
-//    [ParticleType.bloodPoolSmall]: "particles/blood-pool-small.png",
-//    [ParticleType.bloodPoolMedium]: "particles/blood-pool-medium.png",
-//    [ParticleType.bloodPoolLarge]: "particles/blood-pool-large.png",
-//    [ParticleType.dirt]: "particles/dirt.png",
-//    [ParticleType.leaf]: "particles/leaf.png",
-//    [ParticleType.rock]: "particles/rock.png",
-//    [ParticleType.rockLarge]: "particles/rock-large.png",
-//    [ParticleType.cactusFlower1]: "entities/cactus/cactus-flower-small-1.png",
-//    [ParticleType.cactusFlower1_2]: "entities/cactus/cactus-flower-large-1.png",
-//    [ParticleType.cactusFlower2]: "entities/cactus/cactus-flower-small-2.png",
-//    [ParticleType.cactusFlower2_2]: "entities/cactus/cactus-flower-large-2.png",
-//    [ParticleType.cactusFlower3]: "entities/cactus/cactus-flower-small-3.png",
-//    [ParticleType.cactusFlower3_2]: "entities/cactus/cactus-flower-large-3.png",
-//    [ParticleType.cactusFlower4]: "entities/cactus/cactus-flower-small-4.png",
-//    [ParticleType.cactusFlower4_2]: "entities/cactus/cactus-flower-large-4.png",
-//    [ParticleType.cactusFlower5]: "entities/cactus/cactus-flower-5.png",
-//    [ParticleType.smokeBlack]: "particles/smoke-black.png",
-//    [ParticleType.footprint]: "particles/footprint.png",
-//    [ParticleType.poisonDroplet]: "particles/poison-droplet.png",
-//    [ParticleType.slimePuddle]: "particles/slime-puddle.png",
-//    [ParticleType.waterSplash]: "particles/water-splash.png"
-// };
-
-// @Incomplete
-// const PARTICLE_COLOURS: { [T in ParticleType as Exclude<T, FilterTexturedTypes<T>>]: ParticleColour } = {
-//    [ParticleType.blood]: [212/255, 0, 0],
-//    [ParticleType.bloodLarge]: [186/255, 0, 0],
-//    [ParticleType.emberRed]: [255/255, 102/255, 0],
-//    [ParticleType.emberOrange]: [255/255, 184/255, 61/255],
-//    [ParticleType.waterDroplet]: [8/255, 197/255, 255/255],
-//    [ParticleType.snow]: [199/255, 209/255, 209/255],
-//    [ParticleType.cactusSpine]: [0, 0, 0]
-// };
-
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
 export type GameData = {
