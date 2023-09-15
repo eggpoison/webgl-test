@@ -42,21 +42,22 @@ class BerryBush extends Entity {
    }
 
    protected onHit(): void {
-      const spawnPosition = this.position.copy();
       const moveDirection = 2 * Math.PI * Math.random();
-      const offset = Point.fromVectorForm(BerryBush.RADIUS, moveDirection);
-      spawnPosition.add(offset);
+      
+      const spawnPositionX = this.position.x + BerryBush.RADIUS * Math.sin(moveDirection);
+      const spawnPositionY = this.position.y + BerryBush.RADIUS * Math.cos(moveDirection);
 
-      createLeafParticle(spawnPosition, moveDirection + randFloat(-1, 1), LeafParticleSize.small);
+      createLeafParticle(spawnPositionX, spawnPositionY, moveDirection + randFloat(-1, 1), LeafParticleSize.small);
    }
 
    public onDie(): void {
       for (let i = 0; i < 6; i++) {
-         const spawnPosition = this.position.copy();
-         const offset = Point.fromVectorForm(BerryBush.RADIUS * Math.random(), 2 * Math.PI * Math.random());
-         spawnPosition.add(offset);
+         const offsetMagnitude = BerryBush.RADIUS * Math.random();
+         const spawnOffsetDirection = 2 * Math.PI * Math.random();
+         const spawnPositionX = this.position.x + offsetMagnitude * Math.sin(spawnOffsetDirection);
+         const spawnPositionY = this.position.y + offsetMagnitude * Math.cos(spawnOffsetDirection);
 
-         createLeafParticle(spawnPosition, 2 * Math.PI * Math.random(), LeafParticleSize.small);
+         createLeafParticle(spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), LeafParticleSize.small);
       }
    }
 }

@@ -1,6 +1,6 @@
 import { gl } from "../webgl";
 
-/** Stores a set of buffers to use in instanced rendering */
+/** Stores a group of buffers for use in instanced rendering */
 class ObjectBufferContainer {
    // @Cleanup Access buffers using a string (key) instead of a buffer index
    

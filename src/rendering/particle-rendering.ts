@@ -11,8 +11,8 @@ export type ParticleColour = [r: number, g: number, b: number];
 export type ParticleTint = [r: number, g: number, b: number];
 
 export enum ParticleRenderLayer {
-   low,
-   high
+   low, // Below game objects
+   high // Above game objects
 }
 
 export function interpolateColours(startColour: Readonly<ParticleColour>, endColour: Readonly<ParticleColour>, amount: number): ParticleColour {

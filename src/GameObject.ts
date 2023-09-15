@@ -4,9 +4,9 @@ import Chunk from "./Chunk";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import { Tile } from "./Tile";
 import CircularHitbox from "./hitboxes/CircularHitbox";
-import Particle, { ParticleRenderLayer } from "./Particle";
+import Particle from "./Particle";
 import Board from "./Board";
-import { addMonocolourParticleToBufferContainer, interpolateColours } from "./rendering/particle-rendering";
+import { ParticleRenderLayer, addMonocolourParticleToBufferContainer, interpolateColours } from "./rendering/particle-rendering";
 
 const WATER_DROPLET_COLOUR_LOW = [8/255, 197/255, 255/255] as const;
 const WATER_DROPLET_COLOUR_HIGH = [94/255, 231/255, 255/255] as const;

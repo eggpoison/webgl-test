@@ -74,8 +74,8 @@ class Yeti extends Entity {
       // Create snow impact particles when the Yeti does a throw attack
       if (this.attackProgress === 0 && this.lastAttackProgress !== 0) {
          const offsetMagnitude = Yeti.SNOW_THROW_OFFSET + 20;
-         const impactPositionX = this.position.x + offsetMagnitude * Math.cos(this.rotation);
-         const impactPositionY = this.position.y + offsetMagnitude * Math.sin(this.rotation);
+         const impactPositionX = this.position.x + offsetMagnitude * Math.sin(this.rotation);
+         const impactPositionY = this.position.y + offsetMagnitude * Math.cos(this.rotation);
          
          for (let i = 0; i < 30; i++) {
             const offsetMagnitude = randFloat(0, 20);

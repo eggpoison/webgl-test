@@ -5,8 +5,8 @@ import { Inventory } from "../items/Item";
 import { createInventoryFromData } from "../items/item-creation";
 import Entity from "./Entity";
 import Board from "../Board";
-import Particle, { ParticleRenderLayer } from "../Particle";
-import { addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
+import Particle from "../Particle";
+import { ParticleRenderLayer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
 
 abstract class CookingEntity extends Entity {
    public fuelInventory: Inventory;

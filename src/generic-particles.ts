@@ -49,9 +49,7 @@ export enum LeafParticleSize {
    large
 }
 
-export function createLeafParticle(spawnPosition: Point, moveDirection: number, size: LeafParticleSize): void {
-   // @Speed garbage collection
-   
+export function createLeafParticle(spawnPositionX: number, spawnPositionY: number, moveDirection: number, size: LeafParticleSize): void {
    const lifetime = randFloat(2, 2.5);
 
    let textureIndex: number;
@@ -61,7 +59,9 @@ export function createLeafParticle(spawnPosition: Point, moveDirection: number, 
       textureIndex = 8 * 1 + 1;
    }
 
-   const velocity = Point.fromVectorForm(randFloat(30, 50), moveDirection);
+   const velocityMagnitude = randFloat(30, 50);
+   const velocityX = velocityMagnitude * Math.sin(moveDirection);
+   const velocityY = velocityMagnitude * Math.cos(moveDirection);
 
    const particle = new Particle(lifetime);
    particle.getOpacity = (): number => {
@@ -72,8 +72,8 @@ export function createLeafParticle(spawnPosition: Point, moveDirection: number, 
       particle,
       ParticleRenderLayer.low,
       64, 64,
-      spawnPosition.x, spawnPosition.y,
-      velocity.x, velocity.y,
+      spawnPositionX, spawnPositionY,
+      velocityX, velocityY,
       0, 0,
       60,
       2 * Math.PI * Math.random(),

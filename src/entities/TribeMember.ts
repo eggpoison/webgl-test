@@ -5,11 +5,11 @@ import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import CLIENT_ITEM_INFO_RECORD from "../client-item-info";
 import { getFrameProgress } from "../GameObject";
-import Particle, { ParticleRenderLayer } from "../Particle";
+import Particle from "../Particle";
 import { BloodParticleSize, createBloodParticle, createBloodPoolParticle } from "../generic-particles";
 import Board from "../Board";
 import { latencyGameState } from "../game-state/game-states";
-import { ParticleColour, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
+import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 
 type FilterFoodItemTypes<T extends ItemType> = (typeof ITEM_TYPE_RECORD)[T] extends "food" ? never : T;
 

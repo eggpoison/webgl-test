@@ -1,8 +1,8 @@
 import { EntityData, EntityType, HitData, HitFlags, Point, SETTINGS, StatusEffectData, StatusEffectType, lerp, randFloat, randItem } from "webgl-test-shared";
 import GameObject from "../GameObject";
-import Particle, { ParticleRenderLayer } from "../Particle";
+import Particle from "../Particle";
 import Board from "../Board";
-import { ParticleColour, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
+import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
 
 abstract class Entity extends GameObject {
    private static readonly BURNING_PARTICLE_COLOURS: ReadonlyArray<ParticleColour> = [
@@ -31,6 +31,9 @@ abstract class Entity extends GameObject {
          const particle = new Particle(lifetime);
          particle.getOpacity = (): number => {
             return lerp(0.75, 0, particle.age / lifetime);
+         }
+         particle.getScale = (): number => {
+            return 1 + particle.age / lifetime;
          }
 
          addTexturedParticleToBufferContainer(

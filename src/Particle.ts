@@ -1,14 +1,3 @@
-// @Cleanup this shouldn't be here
-export enum ParticleRenderLayer {
-   low, // Below game objects
-   high // Above game objects
-}
-
-export enum ParticleRenderType {
-   monocolour = 0, // Particle with one colour
-   textured = 1    // Particle with texture
-}
-
 let idCounter = 0;
 
 const getAvailableID = (): number => {
