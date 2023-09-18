@@ -3,9 +3,8 @@ import { Inventory } from "../../../items/Item";
 import Entity from "../../../entities/Entity";
 import BarrelInventory from "./BarrelInventory";
 import TribesmanInventory from "./TribesmanInventory";
-import CampfireInventory from "./CampfireInventory";
-import FurnaceInventory from "./FurnaceInventory";
 import TombstoneEpitaph from "./TombstoneEpitaph";
+import CookingInventory from "./CookingInventory";
 
 export interface InteractInventoryInfo {
    readonly inventory: Inventory;
@@ -65,10 +64,10 @@ const InteractInventory = (): null | JSX.Element => {
          return <TribesmanInventory entity={entity} />
       }
       case InteractInventoryType.campfire: {
-         return <CampfireInventory entity={entity} />
+         return <CookingInventory entity={entity} />
       }
       case InteractInventoryType.furnace: {
-         return <FurnaceInventory entity={entity} />
+         return <CookingInventory entity={entity} />
       }
       case InteractInventoryType.tombstoneEpitaph: {
          return <TombstoneEpitaph entity={entity} />;

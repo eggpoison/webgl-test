@@ -1,4 +1,4 @@
-import { Point, TreeSize, randFloat, randInt } from "webgl-test-shared";
+import { Point, TreeSize, lerp, randFloat, randInt } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -6,7 +6,7 @@ import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import Particle from "../Particle";
 import { LeafParticleSize, createLeafParticle } from "../generic-particles";
 import Board from "../Board";
-import { ParticleRenderLayer, addMonocolourParticleToBufferContainer, interpolateColours } from "../rendering/particle-rendering";
+import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 
 const treeTextures: { [T in TreeSize]: string } = {
    [TreeSize.small]: "entities/tree/tree-small.png",
@@ -51,19 +51,14 @@ class Tree extends Entity {
       }
       
       // Create leaf specks
-      let numSpecks: number;
-      if (this.treeSize === TreeSize.small) {
-         numSpecks = randInt(2, 3);
-      } else {
-         numSpecks = randInt(4, 5);
-      }
+      const numSpecks = this.treeSize === TreeSize.small ? 4 : 7;
       for (let i = 0; i < numSpecks; i++) {
          const spawnOffsetDirection = 2 * Math.PI * Math.random();
          const spawnPositionX = this.position.x + this.radius * Math.sin(spawnOffsetDirection);
          const spawnPositionY = this.position.y + this.radius * Math.cos(spawnOffsetDirection);
 
          const velocityMagnitude = randFloat(60, 80);
-         const velocityDirection = 2 * Math.PI * Math.random();
+         const velocityDirection = spawnOffsetDirection + randFloat(1, -1);
          const velocityX = velocityMagnitude * Math.sin(velocityDirection);
          const velocityY = velocityMagnitude * Math.cos(velocityDirection);
 
@@ -73,6 +68,11 @@ class Tree extends Entity {
          particle.getOpacity = (): number => {
             return Math.pow(1 - particle.age / lifetime, 0.3);
          }
+         
+         const colourLerp = Math.random();
+         const r = lerp(Tree.LEAF_SPECK_COLOUR_LOW[0], Tree.LEAF_SPECK_COLOUR_HIGH[0], colourLerp);
+         const g = lerp(Tree.LEAF_SPECK_COLOUR_LOW[1], Tree.LEAF_SPECK_COLOUR_HIGH[1], colourLerp);
+         const b = lerp(Tree.LEAF_SPECK_COLOUR_LOW[2], Tree.LEAF_SPECK_COLOUR_HIGH[2], colourLerp);
 
          addMonocolourParticleToBufferContainer(
             particle,
@@ -86,7 +86,7 @@ class Tree extends Entity {
             0,
             0,
             0,
-            interpolateColours(Tree.LEAF_SPECK_COLOUR_LOW, Tree.LEAF_SPECK_COLOUR_HIGH, Math.random())
+            r, g, b
          );
          Board.lowMonocolourParticles.push(particle);
       }

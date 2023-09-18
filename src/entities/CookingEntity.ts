@@ -24,6 +24,8 @@ abstract class CookingEntity extends Entity {
    }
 
    public tick(): void {
+      super.tick();
+      
       if (this.heatingProgress !== -1) {
          if (Board.tickIntervalHasPassed(0.1)) {
             const spawnPosition = this.position.copy();
@@ -59,7 +61,7 @@ abstract class CookingEntity extends Entity {
                0.75 * Math.PI * randFloat(-1, 1),
                0,
                5,
-               [0, 0, 0]
+               0, 0, 0
             );
             Board.highTexturedParticles.push(particle);
          }

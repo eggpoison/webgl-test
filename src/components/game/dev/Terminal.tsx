@@ -53,7 +53,6 @@ interface TerminalParams {
 
 const Terminal = ({ startingIsVisible }: TerminalParams) => {
    const lineInputRef = useRef<HTMLInputElement | null>(null);
-   const caretRef = useRef<HTMLDivElement | null>(null);
    const [isVisible, setIsVisible] = useState(startingIsVisible);
    const [isInFocus, setIsInFocus] = useState(startingIsVisible);
    const [lineInputValue, setLineInputValue] = useState("");
@@ -110,22 +109,11 @@ const Terminal = ({ startingIsVisible }: TerminalParams) => {
       setIsInFocus(false);
    }
 
-   const resetCaretFlicker = (): void => {
-      if (caretRef.current === null) return;
-
-      caretRef.current.style.animation = "none";
-      void(caretRef.current.offsetHeight); // Trigger reflow
-      caretRef.current.style.animation = "";
-   }
-
-   const updateCaretPosition = (): void => {
-      resetCaretFlicker();
-   }
-
    // Whenever the command input changes, update the input's length
    useEffect(() => {
       if (lineInputRef.current === null) return;
-      lineInputRef.current.style.width = lineInputValue.length + "ch";
+      // Keep the input at least one character long
+      lineInputRef.current.style.width = Math.max(lineInputValue.length, 1) + "ch";
    }, [lineInputValue]);
 
    const enterCommand = (): void => {
@@ -165,19 +153,9 @@ const Terminal = ({ startingIsVisible }: TerminalParams) => {
       selectedCommandIndex = enteredCommands.length;
 
       setLineInputValue(e.target.value);
-      
-      updateCaretPosition();
    }
 
    const enterKey = (e: KeyboardEvent): void => {
-      const resetCaretPosition = (): void => {
-         if (lineInputRef.current !== null) {
-            lineInputRef.current.style.width = "0";
-         }
-   
-         resetCaretFlicker();
-      }
-
       switch (e.key) {
          case "Escape": {
             setTerminalVisibility(false);
@@ -185,7 +163,6 @@ const Terminal = ({ startingIsVisible }: TerminalParams) => {
          }
          case "Enter": {
             enterCommand();
-            resetCaretPosition();
             break;
          }
          case "ArrowUp": {
@@ -201,7 +178,6 @@ const Terminal = ({ startingIsVisible }: TerminalParams) => {
             const command = enteredCommands[selectedCommandIndex];
             if (lineInputRef.current !== null) {
                setLineInputValue(command);
-               updateCaretPosition();
             }
             break;
          }
@@ -226,7 +202,6 @@ const Terminal = ({ startingIsVisible }: TerminalParams) => {
 
             if (lineInputRef.current !== null) {
                setLineInputValue(command);
-               updateCaretPosition();
             }
             break;
          }
@@ -284,8 +259,6 @@ const Terminal = ({ startingIsVisible }: TerminalParams) => {
             <input ref={lineInputRef} name="line-input" type="text" className="line-input" value={lineInputValue} onChange={e => enterLineCharacter(e)} onKeyDown={e => enterKey(e.nativeEvent)} />
             <div className="dummy-line-input"></div>
          </div>
-
-         {isInFocus ? <div ref={caretRef} className="caret"></div> : null}
       </div>
    </div>;
 }

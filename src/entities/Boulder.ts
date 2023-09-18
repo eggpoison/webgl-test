@@ -31,28 +31,25 @@ class Boulder extends Entity {
 
    protected onHit(): void {
       for (let i = 0; i < 2; i++) {
-         // @Speed garbage collection
-
          let moveDirection = 2 * Math.PI * Math.random();
 
-         const spawnPosition = this.position.copy();
-         const offset = Point.fromVectorForm(Boulder.RADIUS, moveDirection);
-         spawnPosition.add(offset);
+         const spawnPositionX = this.position.x + Boulder.RADIUS * Math.sin(moveDirection);
+         const spawnPositionY = this.position.y + Boulder.RADIUS * Math.cos(moveDirection);
 
          moveDirection += randFloat(-1, 1);
 
-         createRockParticle(spawnPosition, moveDirection);
+         createRockParticle(spawnPositionX, spawnPositionY, moveDirection);
       }
    }
 
    public onDie(): void {
       for (let i = 0; i < 5; i++) {
-         // @Speed garbage collection
+         const spawnOffsetMagnitude = Boulder.RADIUS * Math.random();
+         const spawnOffsetDirection = 2 * Math.PI * Math.random();
+         const spawnPositionX = this.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
+         const spawnPositionY = this.position.y + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
 
-         const spawnPosition = this.position.copy();
-         const offset = Point.fromVectorForm(Boulder.RADIUS * Math.random(), 2 * Math.PI * Math.random());
-         spawnPosition.add(offset);
-         createRockParticle(spawnPosition, 2 * Math.PI * Math.random());
+         createRockParticle(spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random());
       }
    }
 }

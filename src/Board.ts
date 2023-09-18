@@ -9,7 +9,7 @@ import Projectile from "./projectiles/Projectile";
 import Particle from "./Particle";
 import CircularHitbox from "./hitboxes/CircularHitbox";
 import { highMonocolourBufferContainer, highTexturedBufferContainer, lowMonocolourBufferContainer, lowTexturedBufferContainer } from "./rendering/particle-rendering";
-import ObjectBufferContainer from "./rendering/object-buffer-container";
+import ObjectBufferContainer from "./rendering/ObjectBufferContainer";
 import { tempFloat32ArrayLength1 } from "./webgl";
 
 export interface EntityHitboxInfo {
@@ -126,16 +126,19 @@ abstract class Board {
    }
 
    public static addEntity(entity: Entity): void {
+      entity.recalculateContainingChunks();
       this.gameObjects[entity.id] = entity;
       this.entities[entity.id] = entity;
    }
 
    public static addDroppedItem(droppedItem: DroppedItem): void {
+      droppedItem.recalculateContainingChunks();
       this.gameObjects[droppedItem.id] = droppedItem;
       this.droppedItems[droppedItem.id] = droppedItem;
    }
 
    public static addProjectile(projectile: Projectile): void {
+      projectile.recalculateContainingChunks();
       this.gameObjects[projectile.id] = projectile;
       this.projectiles[projectile.id] = projectile;
    }

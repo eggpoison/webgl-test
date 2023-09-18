@@ -1,7 +1,7 @@
 import { lerp } from "webgl-test-shared";
 import { createWebGLProgram, gl, halfWindowHeight, halfWindowWidth, tempFloat32ArrayLength1, tempFloat32ArrayLength2, tempFloat32ArrayLength3 } from "../webgl";
 import Camera from "../Camera";
-import ObjectBufferContainer from "./object-buffer-container";
+import ObjectBufferContainer from "./ObjectBufferContainer";
 import { getTexture } from "../textures";
 import Particle from "../Particle";
 
@@ -335,8 +335,7 @@ export function createParticleShaders(): void {
 
 // @Cleanup a bunch of the code in these functions are the same
 
-// @Speed colour array garbage collection, just pass in r g b as parameters
-export function addMonocolourParticleToBufferContainer(particle: Particle, renderLayer: ParticleRenderLayer, width: number, height: number, positionX: number, positionY: number, velocityX: number, velocityY: number, accelerationX: number, accelerationY: number, friction: number, rotation: number, angularVelocity: number, angularAcceleration: number, angularFriction: number, colour: ParticleColour): void {
+export function addMonocolourParticleToBufferContainer(particle: Particle, renderLayer: ParticleRenderLayer, width: number, height: number, positionX: number, positionY: number, velocityX: number, velocityY: number, accelerationX: number, accelerationY: number, friction: number, rotation: number, angularVelocity: number, angularAcceleration: number, angularFriction: number, colourR: number, colourG: number, colourB: number): void {
    // Acceleration and friction can't be both defined at once
    if ((accelerationX !== 0 || accelerationY !== 0) && friction !== 0) {
       throw new Error("Can't define both acceleration and friction");
@@ -395,9 +394,9 @@ export function addMonocolourParticleToBufferContainer(particle: Particle, rende
    bufferContainer.setData(particle.id, 8, tempFloat32ArrayLength1);
 
    // Colour
-   tempFloat32ArrayLength3[0] = colour[0];
-   tempFloat32ArrayLength3[1] = colour[1];
-   tempFloat32ArrayLength3[2] = colour[2];
+   tempFloat32ArrayLength3[0] = colourR;
+   tempFloat32ArrayLength3[1] = colourG;
+   tempFloat32ArrayLength3[2] = colourB;
    bufferContainer.setData(particle.id, 9, tempFloat32ArrayLength3);
 
    // Opacity
@@ -413,8 +412,7 @@ export function addMonocolourParticleToBufferContainer(particle: Particle, rende
    bufferContainer.setData(particle.id, 12, tempFloat32ArrayLength1);
 }
 
-// @Speed tint garbage collection
-export function addTexturedParticleToBufferContainer(particle: Particle, renderLayer: ParticleRenderLayer, width: number, height: number, positionX: number, positionY: number, velocityX: number, velocityY: number, accelerationX: number, accelerationY: number, friction: number, rotation: number, angularVelocity: number, angularAcceleration: number, angularFriction: number, textureIndex: number, tint: ParticleTint): void {
+export function addTexturedParticleToBufferContainer(particle: Particle, renderLayer: ParticleRenderLayer, width: number, height: number, positionX: number, positionY: number, velocityX: number, velocityY: number, accelerationX: number, accelerationY: number, friction: number, rotation: number, angularVelocity: number, angularAcceleration: number, angularFriction: number, textureIndex: number, tintR: number, tintG: number, tintB: number): void {
    const bufferContainer = renderLayer === ParticleRenderLayer.low ? lowTexturedBufferContainer : highTexturedBufferContainer;
    
    bufferContainer.registerNewObject(particle.id);
@@ -462,9 +460,9 @@ export function addTexturedParticleToBufferContainer(particle: Particle, renderL
    bufferContainer.setData(particle.id, 8, tempFloat32ArrayLength1);
 
    // Tint
-   tempFloat32ArrayLength3[0] = tint[0];
-   tempFloat32ArrayLength3[1] = tint[1];
-   tempFloat32ArrayLength3[2] = tint[2];
+   tempFloat32ArrayLength3[0] = tintR;
+   tempFloat32ArrayLength3[1] = tintG;
+   tempFloat32ArrayLength3[2] = tintB;
    bufferContainer.setData(particle.id, 9, tempFloat32ArrayLength3);
 
    // Opacity

@@ -134,42 +134,35 @@ class Cactus extends Entity {
          0,
          0,
          0,
-         Cactus.CACTUS_SPINE_PARTICLE_COLOUR
+         Cactus.CACTUS_SPINE_PARTICLE_COLOUR[0], Cactus.CACTUS_SPINE_PARTICLE_COLOUR[1], Cactus.CACTUS_SPINE_PARTICLE_COLOUR[2]
       );
       Board.highMonocolourParticles.push(particle);
    }
 
    public onDie(): void {
-      // @Speed Garbage collection
-      
       for (const flower of this.flowerData) {
-         const flowerPosition = this.position.copy();
          const offsetDirection = flower.column * Math.PI / 4;
-         const flowerOffset = Point.fromVectorForm(flower.height, offsetDirection);
-         flowerPosition.add(flowerOffset);
+         const spawnPositionX = this.position.x + flower.height * Math.sin(offsetDirection);
+         const spawnPositionY = this.position.y + flower.height * Math.cos(offsetDirection);
 
-         this.createFlowerParticle(flowerPosition, flower.type, flower.size, flower.rotation);
+         this.createFlowerParticle(spawnPositionX, spawnPositionY, flower.type, flower.size, flower.rotation);
       }
 
       for (const limb of this.limbData) {
          if (typeof limb.flower !== "undefined") {
-            const limbPosition = this.position.copy();
-            const offset = Point.fromVectorForm(Cactus.RADIUS, limb.direction);
-            limbPosition.add(offset);
+            const spawnPositionX = this.position.x + Cactus.RADIUS * Math.sin(limb.direction) + limb.flower.height * Math.sin(limb.flower.direction);
+            const spawnPositionY = this.position.y + Cactus.RADIUS * Math.cos(limb.direction) + limb.flower.height * Math.cos(limb.flower.direction);
 
-            const flowerPosition = limbPosition.copy();
-            const flowerOffset = Point.fromVectorForm(limb.flower.height, limb.flower.direction);
-            flowerPosition.add(flowerOffset);
-
-            this.createFlowerParticle(flowerPosition, limb.flower.type, CactusFlowerSize.small, limb.flower.rotation);
+            this.createFlowerParticle(spawnPositionX, spawnPositionY, limb.flower.type, CactusFlowerSize.small, limb.flower.rotation);
          }
       }
    }
 
-   private createFlowerParticle(spawnPosition: Point, flowerType: number, size: CactusFlowerSize, rotation: number): void {
-      // @Speed Garbage collection
-      
-      const velocity = Point.fromVectorForm(randFloat(30, 50), 2 * Math.PI * Math.random());
+   private createFlowerParticle(spawnPositionX: number, spawnPositionY: number, flowerType: number, size: CactusFlowerSize, rotation: number): void {
+      const velocityMagnitude = randFloat(30, 50);
+      const velocityDirection = 2 * Math.PI * Math.random();
+      const velocityX = velocityMagnitude * Math.sin(velocityDirection);
+      const velocityY = velocityMagnitude * Math.cos(velocityDirection);
       
       const lifetime = randFloat(3, 5);
       
@@ -181,8 +174,8 @@ class Cactus extends Entity {
          particle,
          ParticleRenderLayer.low,
          64, 64,
-         spawnPosition.x, spawnPosition.y,
-         velocity.x, velocity.y,
+         spawnPositionX, spawnPositionY,
+         velocityX, velocityY,
          0, 0,
          0,
          rotation,
@@ -190,7 +183,7 @@ class Cactus extends Entity {
          0,
          1.5 * Math.PI,
          textureIndex,
-         [0, 0, 0]
+         0, 0, 0
       );
       Board.lowTexturedParticles.push(particle);
    }

@@ -9,6 +9,8 @@ class ObjectBufferContainer {
 
    private readonly bufferArrays = new Array<Array<WebGLBuffer>>();
 
+   private readonly emptyBufferDatas = new Array<Float32Array>();
+
    private readonly objectEntryIndexes: Record<number, number> = {};
 
    private readonly availableIndexes = new Array<number>();
@@ -25,6 +27,7 @@ class ObjectBufferContainer {
    public registerNewBufferType(dataLength: number): void {
       this.dataLengths.push(dataLength);
       this.bufferArrays.push([]);
+      this.emptyBufferDatas.push(new Float32Array(dataLength));
       
       const bufferType = this.dataLengths.length - 1;
       this.createNewBuffer(bufferType);
@@ -95,8 +98,6 @@ class ObjectBufferContainer {
       // Remove the object from all buffer types
       const bufferIndex = Math.floor(index / this.objectsPerBuffer);
       for (let bufferType = 0; bufferType < this.bufferArrays.length; bufferType++) {
-         const blankData = new Float32Array(this.dataLengths[bufferType]);
-
          const buffer = this.bufferArrays[bufferType][bufferIndex];
 
          gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
@@ -105,7 +106,7 @@ class ObjectBufferContainer {
          if (indexInBuffer >= this.objectsPerBuffer) {
             console.warn("BBB");
          }
-         gl.bufferSubData(gl.ARRAY_BUFFER, indexInBuffer * this.dataLengths[bufferType] * Float32Array.BYTES_PER_ELEMENT, blankData);
+         gl.bufferSubData(gl.ARRAY_BUFFER, indexInBuffer * this.dataLengths[bufferType] * Float32Array.BYTES_PER_ELEMENT, this.emptyBufferDatas[bufferType]);
       }
 
       delete this.objectEntryIndexes[objectID];

@@ -204,7 +204,10 @@ abstract class Game {
                
                // If there is a backlog of packets and none are able to be skipped, skip to the final packet
                if (this.numSkippablePackets === 0 && this.queuedPackets.length >= 2) {
-                  Client.unloadGameDataPacket(this.queuedPackets[this.queuedPackets.length - 1]);
+                  // Unload all the packets so that things like hits taken aren't skipped
+                  for (let i = 0; i < this.queuedPackets.length; i++) {
+                     Client.unloadGameDataPacket(this.queuedPackets[i]);
+                  }
                   this.queuedPackets.splice(0, this.queuedPackets.length);
                } else {
                   const numSkippedPackets = Math.min(this.numSkippablePackets, this.queuedPackets.length - 1);

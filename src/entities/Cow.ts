@@ -62,11 +62,11 @@ class Cow extends Entity {
       }
 
       if (this.grazeProgress !== -1 && Board.tickIntervalHasPassed(0.1)) {
-         // @Speed garbage collection
-         const spawnPosition = this.position.copy();
-         const offset = Point.fromVectorForm(30 * Math.random(), 2 * Math.PI * Math.random());
-         spawnPosition.add(offset);
-         createDirtParticle(spawnPosition);
+         const spawnOffsetMagnitude = 30 * Math.random();
+         const spawnOffsetDirection = 2 * Math.PI * Math.random();
+         const spawnPositionX = this.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
+         const spawnPositionY = this.position.y + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
+         createDirtParticle(spawnPositionX, spawnPositionY);
       }
    }
 
@@ -96,7 +96,7 @@ class Cow extends Entity {
          for (let i = 0; i < 15; i++) {
             const x = (tile.x + Math.random()) * SETTINGS.TILE_SIZE;
             const y = (tile.y + Math.random()) * SETTINGS.TILE_SIZE;
-            createDirtParticle(new Point(x, y));
+            createDirtParticle(x, y);
          }
       }
       this.grazeProgress = entityData.clientArgs[1];

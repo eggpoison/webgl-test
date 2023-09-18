@@ -42,11 +42,11 @@ class Tombstone extends Entity {
          // Create zombie digging particles
          if (this.zombieSpawnProgress < 0.8) {
             if (Math.random() < 7.5 / SETTINGS.TPS) {
-               createDirtParticle(new Point(this.zombieSpawnX, this.zombieSpawnY));
+               createDirtParticle(this.zombieSpawnX, this.zombieSpawnY);
             }
          } else {
             if (Math.random() < 20 / SETTINGS.TPS) {
-               createDirtParticle(new Point(this.zombieSpawnX, this.zombieSpawnY));
+               createDirtParticle(this.zombieSpawnX, this.zombieSpawnY);
             }
          }
       }
@@ -54,22 +54,25 @@ class Tombstone extends Entity {
    
    protected onHit(): void {
       for (let i = 0; i < 4; i++) {
-         const spawnPosition = new Point(randFloat(-Tombstone.HITBOX_WIDTH/2, Tombstone.HITBOX_WIDTH/2), randFloat(-Tombstone.HITBOX_HEIGHT/2, Tombstone.HITBOX_HEIGHT/2));
-         spawnPosition.add(this.position);
+         let spawnPositionX = randFloat(-Tombstone.HITBOX_WIDTH/2, Tombstone.HITBOX_WIDTH/2);
+         let spawnPositionY = randFloat(-Tombstone.HITBOX_HEIGHT/2, Tombstone.HITBOX_HEIGHT/2);
 
-         let moveDirection = this.position.calculateAngleBetween(spawnPosition);
+         let moveDirection = Math.PI/2 - Math.atan2(spawnPositionY, spawnPositionX);
          moveDirection += randFloat(-1, 1);
+
+         spawnPositionX += this.position.x;
+         spawnPositionY += this.position.y;
          
-         createRockParticle(spawnPosition, moveDirection);
+         createRockParticle(spawnPositionX, spawnPositionY, moveDirection);
       }
    }
 
    public onDie(): void {
       for (let i = 0; i < 8; i++) {
-         const spawnPosition = new Point(randFloat(-Tombstone.HITBOX_WIDTH/2, Tombstone.HITBOX_WIDTH/2), randFloat(-Tombstone.HITBOX_HEIGHT/2, Tombstone.HITBOX_HEIGHT/2));
-         spawnPosition.add(this.position);
+         const spawnPositionX = this.position.x + randFloat(-Tombstone.HITBOX_WIDTH/2, Tombstone.HITBOX_WIDTH/2);
+         const spawnPositionY = this.position.y + randFloat(-Tombstone.HITBOX_HEIGHT/2, Tombstone.HITBOX_HEIGHT/2);
 
-         createRockParticle(spawnPosition, 2 * Math.PI * Math.random());
+         createRockParticle(spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random());
       }
    }
 

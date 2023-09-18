@@ -6,7 +6,7 @@ import { Tile } from "./Tile";
 import CircularHitbox from "./hitboxes/CircularHitbox";
 import Particle from "./Particle";
 import Board from "./Board";
-import { ParticleRenderLayer, addMonocolourParticleToBufferContainer, interpolateColours } from "./rendering/particle-rendering";
+import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "./rendering/particle-rendering";
 
 const WATER_DROPLET_COLOUR_LOW = [8/255, 197/255, 255/255] as const;
 const WATER_DROPLET_COLOUR_HIGH = [94/255, 231/255, 255/255] as const;
@@ -68,8 +68,8 @@ abstract class GameObject extends RenderObject {
          hitbox.updatePosition();
       }
 
-      // Calculate initial containing chunks
-      this.recalculateContainingChunks();
+      // Note: The chunks are calculated outside of the constructor immediately after the game object is created
+      // so that all constructors have time to run
    }
 
    protected overrideTileMoveSpeedMultiplier?(): number | null;
@@ -77,37 +77,42 @@ abstract class GameObject extends RenderObject {
    public tick(): void {
       // Water droplet particles
       if (this.isInRiver(this.findCurrentTile()) && Board.tickIntervalHasPassed(0.05)) {
-         // @Speed garbage collection
-         
          const lifetime = 1;
 
-         const position = this.position.copy();
-
-         const velocity = Point.fromVectorForm(randFloat(40, 60), 2 * Math.PI * Math.random());
+         const velocityMagnitude = randFloat(40, 60);
+         const velocityDirection = 2 * Math.PI * Math.random()
+         const velocityX = velocityMagnitude * Math.sin(velocityDirection);
+         const velocityY = velocityMagnitude * Math.cos(velocityDirection);
             
          const particle = new Particle(lifetime);
          particle.getOpacity = (): number => {
             return lerp(0.75, 0, particle.age / lifetime);
          };
 
+         const colourLerp = Math.random();
+         const r = lerp(WATER_DROPLET_COLOUR_LOW[0], WATER_DROPLET_COLOUR_HIGH[0], colourLerp);
+         const g = lerp(WATER_DROPLET_COLOUR_LOW[1], WATER_DROPLET_COLOUR_HIGH[1], colourLerp);
+         const b = lerp(WATER_DROPLET_COLOUR_LOW[2], WATER_DROPLET_COLOUR_HIGH[2], colourLerp);
+
          addMonocolourParticleToBufferContainer(
             particle,
             ParticleRenderLayer.low,
             6, 6,
-            position.x, position.y,
-            velocity.x, velocity.y,
+            this.position.x, this.position.y,
+            velocityX, velocityY,
             0, 0,
             0,
             2 * Math.PI * Math.random(),
             randFloat(2, 3) * randSign(),
             0,
             0,
-            interpolateColours(WATER_DROPLET_COLOUR_LOW, WATER_DROPLET_COLOUR_HIGH, Math.random())
+            r, g, b
          );
          Board.lowMonocolourParticles.push(particle);
       }
    };
 
+   // @Cleanup this shouldn't need a tile parameter
    protected isInRiver(tile: Tile): boolean {
       if (tile.type !== "water") {
          return false;

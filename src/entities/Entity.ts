@@ -1,4 +1,4 @@
-import { EntityData, EntityType, HitData, HitFlags, Point, SETTINGS, StatusEffectData, StatusEffectType, lerp, randFloat, randItem } from "webgl-test-shared";
+import { EntityData, EntityType, HitData, HitFlags, SETTINGS, StatusEffectData, StatusEffectType, lerp, randFloat, randItem } from "webgl-test-shared";
 import GameObject from "../GameObject";
 import Particle from "../Particle";
 import Board from "../Board";
@@ -49,7 +49,7 @@ abstract class Entity extends GameObject {
             0,
             0,
             8 * 1 + 5,
-            [0, 0, 0]
+            0, 0, 0
          );
          Board.lowTexturedParticles.push(particle);
       }
@@ -58,9 +58,10 @@ abstract class Entity extends GameObject {
       if (poisonStatusEffect !== null) {
          // Poison particles
          if (poisonStatusEffect.ticksElapsed % 2 === 0) {
-            // @Speed garbage collection
-            const spawnPosition = Point.fromVectorForm(30 * Math.random(), 2 * Math.PI * Math.random());
-            spawnPosition.add(this.position);
+            const spawnOffsetMagnitude = 30 * Math.random();
+            const spawnOffsetDirection = 2 * Math.PI * Math.random()
+            const spawnPositionX = this.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
+            const spawnPositionY = this.position.y + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
 
             const lifetime = 2;
             
@@ -73,7 +74,7 @@ abstract class Entity extends GameObject {
                particle,
                ParticleRenderLayer.low,
                64, 64,
-               spawnPosition.x, spawnPosition.y,
+               spawnPositionX, spawnPositionY,
                0, 0,
                0, 0,
                0,
@@ -82,7 +83,7 @@ abstract class Entity extends GameObject {
                0,
                0,
                6,
-               [0, 0, 0]
+               0, 0, 0
             );
             Board.lowTexturedParticles.push(particle);
          }
@@ -92,17 +93,22 @@ abstract class Entity extends GameObject {
       if (fireStatusEffect !== null) {
          // Ember particles
          if (fireStatusEffect.ticksElapsed % 2 === 0) {
-            // @Speed garbage collection
-            const spawnPosition = Point.fromVectorForm(30 * Math.random(), 2 * Math.PI * Math.random());
-            spawnPosition.add(this.position);
+            const spawnOffsetMagnitude = 30 * Math.random();
+            const spawnOffsetDirection = 2 * Math.PI * Math.random();
+            const spawnPositionX = this.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
+            const spawnPositionY = this.position.y + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
 
             const lifetime = randFloat(0.6, 1.2);
 
-            const velocity = Point.fromVectorForm(randFloat(100, 140), 2 * Math.PI * Math.random());
-            const velocityOffset = Point.fromVectorForm(30, Math.PI);
-            velocity.add(velocityOffset);
+            const velocityMagnitude = randFloat(100, 140);
+            const velocityDirection = 2 * Math.PI * Math.random();
+            const velocityX = velocityMagnitude * Math.sin(velocityDirection);
+            const velocityY = velocityMagnitude * Math.cos(velocityDirection);
 
-            const acceleration = Point.fromVectorForm(randFloat(0, 80), 2 * Math.PI * Math.random());
+            const accelerationMagnitude = randFloat(0, 80);
+            const accelerationDirection = 2 * Math.PI * Math.random();
+            const accelerationX = accelerationMagnitude * Math.sin(accelerationDirection);
+            const accelerationY = accelerationDirection * Math.cos(accelerationDirection);
             
             const particle = new Particle(lifetime);
             particle.getOpacity = (): number => {
@@ -110,30 +116,35 @@ abstract class Entity extends GameObject {
                return Math.pow(opacity, 0.3);
             }
 
-            // @Incomplete
+            const colour = randItem(Entity.BURNING_PARTICLE_COLOURS);
+
             addMonocolourParticleToBufferContainer(
                particle,
                ParticleRenderLayer.high,
                4, 4,
-               spawnPosition.x, spawnPosition.y,
-               velocity.x, velocity.y,
-               acceleration.x, acceleration.y,
+               spawnPositionX, spawnPositionY,
+               velocityX, velocityY,
+               accelerationX, accelerationY,
                0,
                2 * Math.PI * Math.random(),
                0, 
                0,
                0,
-               randItem(Entity.BURNING_PARTICLE_COLOURS));
+               colour[0], colour[1], colour[2]
+            );
             Board.highMonocolourParticles.push(particle);
          }
 
          // Smoke particles
          if (fireStatusEffect.ticksElapsed % 2 === 0) {
-            const spawnPosition = this.position.copy();
-            const offset = Point.fromVectorForm(20 * Math.random(), 2 * Math.PI * Math.random());
-            spawnPosition.add(offset);
+            const spawnOffsetMagnitude = 20 * Math.random();
+            const spawnOffsetDirection = 2 * Math.PI * Math.random();
+            const spawnPositionX = this.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
+            const spawnPositionY = this.position.x + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
 
-            const acceleration = Point.fromVectorForm(40, Math.random());
+            const accelerationDirection = 2 * Math.PI * Math.random();
+            const accelerationX = 40 * Math.sin(accelerationDirection);
+            const accelerationY = 40 * Math.cos(accelerationDirection);
 
             const lifetime = randFloat(1, 1.25);
 
@@ -156,16 +167,16 @@ abstract class Entity extends GameObject {
                particle,
                ParticleRenderLayer.high,
                64, 64,
-               spawnPosition.x, spawnPosition.y,
-               0, 30,
-               acceleration.x, acceleration.y,
+               spawnPositionX, spawnPositionY,
+               0, 70,
+               accelerationX, accelerationY,
                0,
                2 * Math.PI * Math.random(),
                0,
                0,
                0,
                5,
-               [0, 0, 0]
+               0, 0, 0
             );
             Board.highTexturedParticles.push(particle);
          }
@@ -203,9 +214,10 @@ abstract class Entity extends GameObject {
       if (hitData.flags & HitFlags.HIT_BY_FLESH_SWORD) {
          // @Speed garbage collection
          
-         const spawnPosition = this.position.copy();
-         const offset = Point.fromVectorForm(30 * Math.random(), 2 * Math.PI * Math.random());
-         spawnPosition.add(offset);
+         const spawnOffsetMagnitude = 30 * Math.random()
+         const spawnOffsetDirection = 2 * Math.PI * Math.random();
+         const spawnPositionX = this.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
+         const spawnPositionY = this.position.y + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
    
          const lifetime = 7.5;
 
@@ -218,7 +230,7 @@ abstract class Entity extends GameObject {
             particle,
             ParticleRenderLayer.low,
             64, 64,
-            spawnPosition.x, spawnPosition.y,
+            spawnPositionX, spawnPositionY,
             0, 0,
             0, 0,
             0,
@@ -226,7 +238,9 @@ abstract class Entity extends GameObject {
             0,
             0,
             0,
-            8 * 1 + 4, [0, 0, 0]);
+            8 * 1 + 4,
+            0, 0, 0
+         );
          Board.lowTexturedParticles.push(particle);
       }
       

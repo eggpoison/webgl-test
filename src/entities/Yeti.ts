@@ -3,7 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import { BloodParticleSize, createBloodParticle, createBloodPoolParticle, createFootprintParticle, createSnowParticle } from "../generic-particles";
+import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle, createSnowParticle } from "../generic-particles";
 import Board from "../Board";
 
 class Yeti extends Entity {
@@ -15,6 +15,9 @@ class Yeti extends Entity {
    private static readonly PAW_END_ANGLE = Math.PI/6;
 
    private static readonly SNOW_THROW_OFFSET = 64;
+
+   private static readonly BLOOD_POOL_SIZE = 30;
+   private static readonly BLOOD_FOUNTAIN_INTERVAL = 0.15;
 
    public type: EntityType = "yeti";
 
@@ -97,7 +100,7 @@ class Yeti extends Entity {
 
    protected onHit(hitData: HitData): void {
       // Blood pool particle
-      createBloodPoolParticle(this.position.x, this.position.y, 30);
+      createBloodPoolParticle(this.position.x, this.position.y, Yeti.BLOOD_POOL_SIZE);
       
       // Blood particles
       if (hitData.angleFromAttacker !== null) {
@@ -108,6 +111,12 @@ class Yeti extends Entity {
             createBloodParticle(Math.random() < 0.6 ? BloodParticleSize.small : BloodParticleSize.large, spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(150, 250), true);
          }
       }
+   }
+
+   public onDie(): void {
+      createBloodPoolParticle(this.position.x, this.position.y, Yeti.BLOOD_POOL_SIZE);
+
+      createBloodParticleFountain(this, Yeti.BLOOD_FOUNTAIN_INTERVAL, 1.6);
    }
 }
 

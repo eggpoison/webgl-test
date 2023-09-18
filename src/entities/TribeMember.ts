@@ -6,7 +6,7 @@ import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import CLIENT_ITEM_INFO_RECORD from "../client-item-info";
 import { getFrameProgress } from "../GameObject";
 import Particle from "../Particle";
-import { BloodParticleSize, createBloodParticle, createBloodPoolParticle } from "../generic-particles";
+import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle } from "../generic-particles";
 import Board from "../Board";
 import { latencyGameState } from "../game-state/game-states";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
@@ -53,6 +53,8 @@ abstract class TribeMember extends Entity {
    
    private static readonly ITEM_RESTING_DIRECTION = Math.PI / 4;
    private static readonly ITEM_SWING_RANGE = Math.PI / 2;
+
+   private static readonly BLOOD_FOUNTAIN_INTERVAL = 0.1;
    
    private readonly tribeType: TribeType;
 
@@ -222,48 +224,58 @@ abstract class TribeMember extends Entity {
       }
    }
 
+   public onDie(): void {
+      createBloodPoolParticle(this.position.x, this.position.y, 20);
+
+      createBloodParticleFountain(this, TribeMember.BLOOD_FOUNTAIN_INTERVAL, 1);
+   }
+
    public tick(): void {
       super.tick();
 
+      // Create food eating particles
       if (this.foodEatingType !== -1 && Board.tickIntervalHasPassed(0.25)) {
          for (let i = 0; i < 3; i++) {
-            // @Speed garbage collection
-            
-            const spawnPosition = Point.fromVectorForm(37, this.rotation);
-            spawnPosition.add(this.position);
+            let spawnPositionX = this.position.x + 37 * Math.sin(this.rotation);
+            let spawnPositionY = this.position.y + 37 * Math.cos(this.rotation);
 
-            const offset2 = Point.fromVectorForm(randFloat(0, 6), 2 * Math.PI * Math.random());
-            spawnPosition.add(offset2);
+            const spawnOffsetMagnitude = randFloat(0, 6);
+            const spawnOffsetDirection = 2 * Math.PI * Math.random();
+            spawnPositionX += spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
+            spawnPositionY += spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
 
-            const velocity = Point.fromVectorForm(randFloat(90, 130), 2 * Math.PI * Math.random());
+            let velocityMagnitude = randFloat(130, 170);
+            const velocityDirection = 2 * Math.PI * Math.random();
+            let velocityX = velocityMagnitude * Math.sin(velocityDirection);
+            let velocityY = velocityMagnitude * Math.cos(velocityDirection);
             if (this.velocity !== null) {
-               velocity.add(this.velocity.convertToPoint());
+               velocityX += this.velocity.magnitude * Math.sin(this.velocity.direction);
+               velocityY += this.velocity.magnitude * Math.cos(this.velocity.direction);
+               velocityMagnitude += this.velocity.magnitude;
             }
             
             const lifetime = randFloat(0.3, 0.4);
 
-            const acceleration = velocity.copy();
-            acceleration.x *= -1 / lifetime / 1.2;
-            acceleration.y *= -1 / lifetime / 1.2;
-            
             const particle = new Particle(lifetime);
             particle.getOpacity = () => {
                return 1 - Math.pow(particle.age / lifetime, 3);
             }
 
+            const colour = randItem(FOOD_EATING_COLOURS[this.foodEatingType as keyof typeof FOOD_EATING_COLOURS]);
+
             addMonocolourParticleToBufferContainer(
                particle,
                ParticleRenderLayer.low,
                6, 6,
-               spawnPosition.x, spawnPosition.y,
-               velocity.x, velocity.y,
-               acceleration.x, acceleration.y,
-               0,
+               spawnPositionX, spawnPositionY,
+               velocityX, velocityY,
+               0, 0,
+               velocityMagnitude / lifetime / 1.3,
                2 * Math.PI * Math.random(),
                0,
                0,
                0,
-               randItem(FOOD_EATING_COLOURS[this.foodEatingType as keyof typeof FOOD_EATING_COLOURS])
+               colour[0], colour[1], colour[2]
             );
             Board.lowMonocolourParticles.push(particle);
          }
