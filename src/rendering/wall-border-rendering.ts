@@ -1,7 +1,7 @@
 import { SETTINGS } from "webgl-test-shared";
 import Camera from "../Camera";
 import { Tile } from "../Tile";
-import { createWebGLProgram, gl } from "../webgl";
+import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 import Board from "../Board";
 
 const BORDER_THICKNESS = 5;
@@ -9,10 +9,18 @@ const BORDER_THICKNESS = 5;
 const vertexShaderText = `#version 300 es
 precision mediump float;
 
+layout(std140) uniform Camera {
+   uniform vec2 u_playerPos;
+   uniform vec2 u_halfWindowSize;
+   uniform float u_zoom;
+};
+
 layout(location = 0) in vec2 a_position;
 
 void main() {
-   gl_Position = vec4(a_position, 0.0, 1.0);
+   vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
+   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+   gl_Position = vec4(clipSpacePos, 0.0, 1.0);
 }
 `;
 
@@ -30,6 +38,9 @@ let program: WebGLProgram;
 
 export function createWallBorderShaders(): void {
    program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
+
+   const cameraBlockIndex = gl.getUniformBlockIndex(program, "Camera");
+   gl.uniformBlockBinding(program, cameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);
 }
 
 export function renderWallBorders(): void {
@@ -75,10 +86,10 @@ export function renderWallBorders(): void {
 
       // Top border
       if (topTile !== null && !topTile.isWall) {
-         const x1 = Camera.calculateXCanvasPosition(tile.x * SETTINGS.TILE_SIZE - leftOvershoot);
-         const x2 = Camera.calculateXCanvasPosition((tile.x + 1) * SETTINGS.TILE_SIZE + rightOvershoot);
-         const y1 = Camera.calculateYCanvasPosition((tile.y + 1) * SETTINGS.TILE_SIZE - BORDER_THICKNESS);
-         const y2 = Camera.calculateYCanvasPosition((tile.y + 1) * SETTINGS.TILE_SIZE);
+         const x1 = tile.x * SETTINGS.TILE_SIZE - leftOvershoot;
+         const x2 = (tile.x + 1) * SETTINGS.TILE_SIZE + rightOvershoot;
+         const y1 = (tile.y + 1) * SETTINGS.TILE_SIZE - BORDER_THICKNESS;
+         const y2 = (tile.y + 1) * SETTINGS.TILE_SIZE;
          const dataOffset = borderIdx * 2 * 6;
          vertexData[dataOffset] = x1;
          vertexData[dataOffset + 1] = y1;
@@ -97,10 +108,10 @@ export function renderWallBorders(): void {
 
       // Left border
       if (leftTile !== null && !leftTile.isWall) {
-         const x1 = Camera.calculateXCanvasPosition(tile.x * SETTINGS.TILE_SIZE);
-         const x2 = Camera.calculateXCanvasPosition(tile.x * SETTINGS.TILE_SIZE + BORDER_THICKNESS);
-         const y1 = Camera.calculateYCanvasPosition(tile.y * SETTINGS.TILE_SIZE - bottomOvershoot);
-         const y2 = Camera.calculateYCanvasPosition((tile.y + 1) * SETTINGS.TILE_SIZE + topOvershoot);
+         const x1 = tile.x * SETTINGS.TILE_SIZE;
+         const x2 = tile.x * SETTINGS.TILE_SIZE + BORDER_THICKNESS;
+         const y1 = tile.y * SETTINGS.TILE_SIZE - bottomOvershoot;
+         const y2 = (tile.y + 1) * SETTINGS.TILE_SIZE + topOvershoot;
          const dataOffset = borderIdx * 2 * 6;
          vertexData[dataOffset] = x1;
          vertexData[dataOffset + 1] = y1;
@@ -121,10 +132,10 @@ export function renderWallBorders(): void {
       if (tile.y > 0) {
          const bottomTile = Board.getTile(tile.x, tile.y - 1)
          if (!bottomTile.isWall) {
-            const x1 = Camera.calculateXCanvasPosition(tile.x * SETTINGS.TILE_SIZE - leftOvershoot);
-            const x2 = Camera.calculateXCanvasPosition((tile.x + 1) * SETTINGS.TILE_SIZE + rightOvershoot);
-            const y1 = Camera.calculateYCanvasPosition(tile.y * SETTINGS.TILE_SIZE);
-            const y2 = Camera.calculateYCanvasPosition(tile.y * SETTINGS.TILE_SIZE + BORDER_THICKNESS);
+            const x1 = tile.x * SETTINGS.TILE_SIZE - leftOvershoot;
+            const x2 = (tile.x + 1) * SETTINGS.TILE_SIZE + rightOvershoot;
+            const y1 = tile.y * SETTINGS.TILE_SIZE;
+            const y2 = tile.y * SETTINGS.TILE_SIZE + BORDER_THICKNESS;
             const dataOffset = borderIdx * 2 * 6;
             vertexData[dataOffset] = x1;
             vertexData[dataOffset + 1] = y1;
@@ -146,10 +157,10 @@ export function renderWallBorders(): void {
       if (tile.x < SETTINGS.BOARD_DIMENSIONS - 1) {
          const rightTile = Board.getTile(tile.x + 1, tile.y)
          if (!rightTile.isWall) {
-            const x1 = Camera.calculateXCanvasPosition((tile.x + 1) * SETTINGS.TILE_SIZE - BORDER_THICKNESS);
-            const x2 = Camera.calculateXCanvasPosition((tile.x + 1) * SETTINGS.TILE_SIZE);
-            const y1 = Camera.calculateYCanvasPosition(tile.y * SETTINGS.TILE_SIZE - bottomOvershoot);
-            const y2 = Camera.calculateYCanvasPosition((tile.y + 1) * SETTINGS.TILE_SIZE + topOvershoot);
+            const x1 = (tile.x + 1) * SETTINGS.TILE_SIZE - BORDER_THICKNESS;
+            const x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
+            const y1 = tile.y * SETTINGS.TILE_SIZE - bottomOvershoot;
+            const y2 = (tile.y + 1) * SETTINGS.TILE_SIZE + topOvershoot;
             const dataOffset = borderIdx * 2 * 6;
             vertexData[dataOffset] = x1;
             vertexData[dataOffset + 1] = y1;
