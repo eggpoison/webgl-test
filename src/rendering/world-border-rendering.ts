@@ -1,13 +1,15 @@
 import { SETTINGS } from "webgl-test-shared";
 import Camera from "../Camera";
-import { createWebGLProgram, gl, halfWindowHeight, halfWindowWidth } from "../webgl";
+import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 
 const vertexShaderText = `#version 300 es
 precision mediump float;
 
-uniform vec2 u_playerPos;
-uniform vec2 u_halfWindowSize;
-uniform float u_zoom;
+layout(std140) uniform Camera {
+   uniform vec2 u_playerPos;
+   uniform vec2 u_halfWindowSize;
+   uniform float u_zoom;
+};
 
 layout(location = 0) in vec2 a_position;
 
@@ -27,18 +29,13 @@ void main() {
 }
 `;
 
-let playerPosUniformLocation: WebGLUniformLocation;
-let halfWindowSizeUniformLocation: WebGLUniformLocation;
-let zoomUniformLocation: WebGLUniformLocation;
-
 let program: WebGLProgram;
 
 export function createWorldBorderShaders(): void {
    program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
 
-   playerPosUniformLocation = gl.getUniformLocation(program, "u_playerPos")!;
-   halfWindowSizeUniformLocation = gl.getUniformLocation(program, "u_halfWindowSize")!;
-   zoomUniformLocation = gl.getUniformLocation(program, "u_zoom")!;
+   const cameraBlockIndex = gl.getUniformBlockIndex(program, "Camera");
+   gl.uniformBlockBinding(program, cameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);
 }
 
 export function renderWorldBorder(): void {
@@ -186,10 +183,6 @@ export function renderWorldBorder(): void {
    gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
 
    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
-
-   gl.uniform2f(playerPosUniformLocation, Camera.position.x, Camera.position.y);
-   gl.uniform2f(halfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
-   gl.uniform1f(zoomUniformLocation, Camera.zoom);
 
    // Enable the attributes
    gl.enableVertexAttribArray(0);

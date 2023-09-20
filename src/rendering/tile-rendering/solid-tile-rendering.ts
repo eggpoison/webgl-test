@@ -2,16 +2,18 @@ import { SETTINGS, TILE_TYPE_INFO_RECORD } from "webgl-test-shared";
 import Camera from "../../Camera";
 import { AAAA } from "../../textures";
 import { TILE_TYPE_RENDER_INFO_RECORD } from "../../tile-type-render-info";
-import { gl, halfWindowWidth, halfWindowHeight, createWebGLProgram } from "../../webgl";
+import { gl, createWebGLProgram, CAMERA_UNIFORM_BUFFER_BINDING_INDEX } from "../../webgl";
 import { RENDER_CHUNK_SIZE, RenderChunkSolidTileInfo, getRenderChunkSolidTileInfo } from "./render-chunks";
 import Board from "../../Board";
 
 const vertexShaderText = `#version 300 es
 precision mediump float;
 
-uniform vec2 u_playerPos;
-uniform vec2 u_halfWindowSize;
-uniform float u_zoom;
+layout(std140) uniform Camera {
+   uniform vec2 u_playerPos;
+   uniform vec2 u_halfWindowSize;
+   uniform float u_zoom;
+};
 
 layout(location = 0) in vec2 a_tilePos;
 layout(location = 1) in vec2 a_texCoord;
@@ -47,10 +49,17 @@ void main() {
 
 let program: WebGLProgram;
 
-let playerPosUniformLocation: WebGLUniformLocation;
-let halfWindowSizeUniformLocation: WebGLUniformLocation;
-let zoomUniformLocation: WebGLUniformLocation;
-let samplerUniformLocation: WebGLUniformLocation;
+export function createSolidTileShaders(): void {
+   program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText, "a_tilePos");
+
+   const cameraBlockIndex = gl.getUniformBlockIndex(program, "Camera");
+   gl.uniformBlockBinding(program, cameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);
+
+   gl.useProgram(program);
+   
+   const samplerUniformLocation = gl.getUniformLocation(program, "u_sampler")!;
+   gl.uniform1i(samplerUniformLocation, 0);
+}
 
 const updateVertexData = (textureSources: Array<string>, data: Float32Array, renderChunkX: number, renderChunkY: number): void => {
    const tileMinX = renderChunkX * RENDER_CHUNK_SIZE;
@@ -224,15 +233,6 @@ export function recalculateSolidTileRenderChunkData(renderChunkX: number, render
    info.texture = texture;
 }
 
-export function createSolidTileShaders(): void {
-   program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText, "a_tilePos");
-
-   playerPosUniformLocation = gl.getUniformLocation(program, "u_playerPos")!;
-   halfWindowSizeUniformLocation = gl.getUniformLocation(program, "u_halfWindowSize")!;
-   zoomUniformLocation = gl.getUniformLocation(program, "u_zoom")!;
-   samplerUniformLocation = gl.getUniformLocation(program, "u_sampler")!;
-}
-
 export function renderSolidTiles(): void {
    gl.useProgram(program);
 
@@ -241,13 +241,7 @@ export function renderSolidTiles(): void {
    for (let renderChunkX = Camera.visibleRenderChunkBounds[0]; renderChunkX <= Camera.visibleRenderChunkBounds[1]; renderChunkX++) {
       for (let renderChunkY = Camera.visibleRenderChunkBounds[2]; renderChunkY <= Camera.visibleRenderChunkBounds[3]; renderChunkY++) {
          const renderChunkInfo = getRenderChunkSolidTileInfo(renderChunkX, renderChunkY);
-
          gl.bindVertexArray(renderChunkInfo.vao);
-         
-         gl.uniform2f(playerPosUniformLocation, Camera.position.x, Camera.position.y);
-         gl.uniform2f(halfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
-         gl.uniform1f(zoomUniformLocation, Camera.zoom);
-         gl.uniform1i(samplerUniformLocation, 0);
 
          gl.bindTexture(gl.TEXTURE_2D_ARRAY, renderChunkInfo.texture);
          

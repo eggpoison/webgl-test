@@ -18,8 +18,8 @@ export interface RenderChunkSolidTileInfo {
 export interface RenderChunkRiverInfo {
    readonly baseVAO: WebGLVertexArrayObject;
    readonly baseVertexCount: number;
-   readonly rockVAOs: ReadonlyArray<WebGLVertexArrayObject>;
-   readonly rockVertexCounts: ReadonlyArray<number>;
+   readonly rockVAO: WebGLVertexArrayObject;
+   readonly rockVertexCount: number;
    readonly highlightsVAO: WebGLVertexArrayObject;
    readonly highlightsVertexCount: number;
    readonly noiseVAO: WebGLVertexArrayObject;
@@ -34,7 +34,6 @@ export interface RenderChunkRiverInfo {
 
 export interface RenderChunkAmbientOcclusionInfo {
    readonly vao: WebGLVertexArrayObject;
-   data: Float32Array;
    readonly vertexCount: number;
 }
 

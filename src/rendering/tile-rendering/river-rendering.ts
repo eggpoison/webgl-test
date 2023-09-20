@@ -1,11 +1,11 @@
 import { Point, RIVER_STEPPING_STONE_SIZES, RiverSteppingStoneSize, SETTINGS, WaterRockSize, lerp, randFloat, rotatePoint } from "webgl-test-shared";
-import { createWebGLProgram, gl, halfWindowHeight, halfWindowWidth } from "../../webgl";
+import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../../webgl";
 import { getTexture } from "../../textures";
 import Camera from "../../Camera";
 import Board, { RiverSteppingStone } from "../../Board";
 import { RENDER_CHUNK_SIZE, RenderChunkRiverInfo, getRenderChunkRiverInfo } from "./render-chunks";
 import { Tile } from "../../Tile";
-import { ADJACENT_OFFSETS, NEIGHBOUR_OFFSETS } from "../../utils";
+import { NEIGHBOUR_OFFSETS } from "../../utils";
 
 const SHALLOW_WATER_COLOUR = [118/255, 185/255, 242/255] as const;
 const DEEP_WATER_COLOUR = [86/255, 141/255, 184/255] as const;
@@ -38,9 +38,11 @@ const RIVER_STEPPING_STONE_TEXTURES: Record<RiverSteppingStoneSize, string> = {
 const baseVertexShaderText = `#version 300 es
 precision mediump float;
 
-uniform vec2 u_playerPos;
-uniform vec2 u_halfWindowSize;
-uniform float u_zoom;
+layout(std140) uniform Camera {
+   uniform vec2 u_playerPos;
+   uniform vec2 u_halfWindowSize;
+   uniform float u_zoom;
+};
 
 layout(location = 0) in vec2 a_position;
 layout(location = 1) in vec2 a_coord;
@@ -72,8 +74,6 @@ const baseFragmentShaderText = `#version 300 es
 precision mediump float;
 
 uniform sampler2D u_baseTexture;
-uniform vec3 u_shallowWaterColour;
-uniform vec3 u_deepWaterColour;
  
 in vec2 v_coord;
 in float v_topLeftLandDistance;
@@ -84,12 +84,14 @@ in float v_bottomRightLandDistance;
 out vec4 outputColour;
 
 void main() {
-   float a = mix(v_bottomLeftLandDistance, v_bottomRightLandDistance, v_coord.x);
-   float b = mix(v_topLeftLandDistance, v_topRightLandDistance, v_coord.x);
-   float dist = mix(a, b, v_coord.y);
+   float bottomLerp = mix(v_bottomLeftLandDistance, v_bottomRightLandDistance, v_coord.x);
+   float topLerp = mix(v_topLeftLandDistance, v_topRightLandDistance, v_coord.x);
+   float dist = mix(bottomLerp, topLerp, v_coord.y);
 
-   vec3 colour = mix(u_shallowWaterColour, u_deepWaterColour, dist);
-   vec4 colourWithAlpha = vec4(colour, 1.0);
+   float r = mix(${SHALLOW_WATER_COLOUR[0]}, ${DEEP_WATER_COLOUR[0]}, dist);
+   float g = mix(${SHALLOW_WATER_COLOUR[1]}, ${DEEP_WATER_COLOUR[1]}, dist);
+   float b = mix(${SHALLOW_WATER_COLOUR[2]}, ${DEEP_WATER_COLOUR[2]}, dist);
+   vec4 colourWithAlpha = vec4(r, g, b, 1.0);
 
    vec4 textureColour = texture(u_baseTexture, v_coord);
 
@@ -102,16 +104,20 @@ void main() {
 const rockVertexShaderText = `#version 300 es
 precision mediump float;
 
-uniform vec2 u_playerPos;
-uniform vec2 u_halfWindowSize;
-uniform float u_zoom;
+layout(std140) uniform Camera {
+   uniform vec2 u_playerPos;
+   uniform vec2 u_halfWindowSize;
+   uniform float u_zoom;
+};
 
 layout(location = 0) in vec2 a_position;
 layout(location = 1) in vec2 a_texCoord;
 layout(location = 2) in float a_opacity;
+layout(location = 3) in float a_textureIdx;
 
 out vec2 v_texCoord;
 out float v_opacity;
+out float v_textureIdx;
  
 void main() {
    vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
@@ -120,21 +126,28 @@ void main() {
 
    v_texCoord = a_texCoord;
    v_opacity = a_opacity;
+   v_textureIdx = a_textureIdx;
 }
 `;
 
 const rockFragmentShaderText = `#version 300 es
 precision mediump float;
  
-uniform sampler2D u_texture;
+uniform sampler2D u_texture1;
+uniform sampler2D u_texture2;
  
 in vec2 v_texCoord;
 in float v_opacity;
+in float v_textureIdx;
 
 out vec4 outputColour;
  
 void main() {
-   outputColour = texture(u_texture, v_texCoord);
+   if (v_textureIdx < 0.5) {
+      outputColour = texture(u_texture1, v_texCoord);
+   } else {
+      outputColour = texture(u_texture2, v_texCoord);
+   }
    outputColour.a *= v_opacity;
 }
 `;
@@ -146,9 +159,11 @@ void main() {
 const highlightsVertexShaderText = `#version 300 es
 precision mediump float;
 
-uniform vec2 u_playerPos;
-uniform vec2 u_halfWindowSize;
-uniform float u_zoom;
+layout(std140) uniform Camera {
+   uniform vec2 u_playerPos;
+   uniform vec2 u_halfWindowSize;
+   uniform float u_zoom;
+};
 
 layout(location = 0) in vec2 a_position;
 layout(location = 1) in vec2 a_texCoord;
@@ -209,9 +224,11 @@ void main() {
 const noiseVertexShaderText = `#version 300 es
 precision mediump float;
 
-uniform vec2 u_playerPos;
-uniform vec2 u_halfWindowSize;
-uniform float u_zoom;
+layout(std140) uniform Camera {
+   uniform vec2 u_playerPos;
+   uniform vec2 u_halfWindowSize;
+   uniform float u_zoom;
+};
 
 layout(location = 0) in vec2 a_position;
 layout(location = 1) in vec2 a_texCoord;
@@ -272,9 +289,11 @@ void main() {
 const transitionVertexShaderText = `#version 300 es
 precision mediump float;
 
-uniform vec2 u_playerPos;
-uniform vec2 u_halfWindowSize;
-uniform float u_zoom;
+layout(std140) uniform Camera {
+   uniform vec2 u_playerPos;
+   uniform vec2 u_halfWindowSize;
+   uniform float u_zoom;
+};
 
 layout(location = 0) in vec2 a_position;
 layout(location = 1) in vec2 a_texCoord;
@@ -381,9 +400,11 @@ void main() {
 const foamVertexShaderText = `#version 300 es
 precision mediump float;
 
-uniform vec2 u_playerPos;
-uniform vec2 u_halfWindowSize;
-uniform float u_zoom;
+layout(std140) uniform Camera {
+   uniform vec2 u_playerPos;
+   uniform vec2 u_halfWindowSize;
+   uniform float u_zoom;
+};
 
 layout(location = 0) in vec2 a_position;
 layout(location = 1) in vec2 a_texCoord;
@@ -436,9 +457,11 @@ void main() {
 const steppingStoneVertexShaderText = `#version 300 es
 precision mediump float;
 
-uniform vec2 u_playerPos;
-uniform vec2 u_halfWindowSize;
-uniform float u_zoom;
+layout(std140) uniform Camera {
+   uniform vec2 u_playerPos;
+   uniform vec2 u_halfWindowSize;
+   uniform float u_zoom;
+};
 
 layout(location = 0) in vec2 a_position;
 layout(location = 1) in vec2 a_texCoord;
@@ -488,63 +511,26 @@ let transitionProgram: WebGLProgram;
 let foamProgram: WebGLProgram;
 let steppingStoneProgram: WebGLProgram;
 
-let baseProgramPlayerPosUniformLocation: WebGLUniformLocation;
-let baseProgramHalfWindowSizeUniformLocation: WebGLUniformLocation;
-let baseProgramZoomUniformLocation: WebGLUniformLocation;
-let baseTextureUniformLocation: WebGLUniformLocation;
-let shallowWaterColourUniformLocation: WebGLUniformLocation;
-let deepWaterColourUniformLocation: WebGLUniformLocation;
-
-let rockProgramPlayerPosUniformLocation: WebGLUniformLocation;
-let rockProgramHalfWindowSizeUniformLocation: WebGLUniformLocation;
-let rockProgramZoomUniformLocation: WebGLUniformLocation;
-let rockProgramTextureUniformLocation: WebGLUniformLocation;
-
-let highlightsProgramPlayerPosUniformLocation: WebGLUniformLocation;
-let highlightsProgramHalfWindowSizeUniformLocation: WebGLUniformLocation;
-let highlightsProgramZoomUniformLocation: WebGLUniformLocation;
 let highlightsProgramFadeProgressUniformLocation: WebGLUniformLocation;
-let highlightsProgramTexture1UniformLocation: WebGLUniformLocation;
-let highlightsProgramTexture2UniformLocation: WebGLUniformLocation;
-let highlightsProgramTexture3UniformLocation: WebGLUniformLocation;
 
-let noiseProgramPlayerPosUniformLocation: WebGLUniformLocation;
-let noiseProgramHalfWindowSizeUniformLocation: WebGLUniformLocation;
-let noiseProgramZoomUniformLocation: WebGLUniformLocation;
-let noiseTextureUniformLocation: WebGLUniformLocation;
 let noiseAnimationOffsetUniformLocation: WebGLUniformLocation;
 
-let transitionProgramPlayerPosUniformLocation: WebGLUniformLocation;
-let transitionProgramHalfWindowSizeUniformLocation: WebGLUniformLocation;
-let transitionProgramZoomUniformLocation: WebGLUniformLocation;
-let transitionTextureUniformLocation: WebGLUniformLocation;
-
-let foamProgramPlayerPosUniformLocation: WebGLUniformLocation;
-let foamProgramHalfWindowSizeUniformLocation: WebGLUniformLocation;
-let foamProgramZoomUniformLocation: WebGLUniformLocation;
-let foamProgramFoamTextureUniformLocation: WebGLUniformLocation;
 let foamProgramTextureOffsetUniformLocation: WebGLUniformLocation;
 
-let steppingStoneProgramPlayerPosUniformLocation: WebGLUniformLocation;
-let steppingStoneProgramHalfWindowSizeUniformLocation: WebGLUniformLocation;
-let steppingStoneProgramZoomUniformLocation: WebGLUniformLocation;
-let steppingStoneTexture1UniformLocation: WebGLUniformLocation;
-let steppingStoneTexture2UniformLocation: WebGLUniformLocation;
-let steppingStoneTexture3UniformLocation: WebGLUniformLocation;
-
-export function createWaterShaders(): void {
+export function createRiverShaders(): void {
    // 
    // Base program
    // 
 
    baseProgram = createWebGLProgram(gl, baseVertexShaderText, baseFragmentShaderText);
 
-   baseProgramPlayerPosUniformLocation = gl.getUniformLocation(baseProgram, "u_playerPos")!;
-   baseProgramHalfWindowSizeUniformLocation = gl.getUniformLocation(baseProgram, "u_halfWindowSize")!;
-   baseProgramZoomUniformLocation = gl.getUniformLocation(baseProgram, "u_zoom")!;
-   baseTextureUniformLocation = gl.getUniformLocation(baseProgram, "u_baseTexture")!;
-   shallowWaterColourUniformLocation = gl.getUniformLocation(baseProgram, "u_shallowWaterColour")!;
-   deepWaterColourUniformLocation = gl.getUniformLocation(baseProgram, "u_deepWaterColour")!;
+   const baseCameraBlockIndex = gl.getUniformBlockIndex(baseProgram, "Camera");
+   gl.uniformBlockBinding(baseProgram, baseCameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);
+
+   const baseTextureUniformLocation = gl.getUniformLocation(baseProgram, "u_baseTexture")!;
+
+   gl.useProgram(baseProgram);
+   gl.uniform1i(baseTextureUniformLocation, 0);
 
    // 
    // Rock program
@@ -552,10 +538,15 @@ export function createWaterShaders(): void {
 
    rockProgram = createWebGLProgram(gl, rockVertexShaderText, rockFragmentShaderText);
 
-   rockProgramPlayerPosUniformLocation = gl.getUniformLocation(rockProgram, "u_playerPos")!;
-   rockProgramHalfWindowSizeUniformLocation = gl.getUniformLocation(rockProgram, "u_halfWindowSize")!;
-   rockProgramZoomUniformLocation = gl.getUniformLocation(rockProgram, "u_zoom")!;
-   rockProgramTextureUniformLocation = gl.getUniformLocation(rockProgram, "u_texture")!;
+   const rockCameraBlockIndex = gl.getUniformBlockIndex(rockProgram, "Camera");
+   gl.uniformBlockBinding(rockProgram, rockCameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);
+
+   const rockProgramTexture1UniformLocation = gl.getUniformLocation(rockProgram, "u_texture1")!;
+   const rockProgramTexture2UniformLocation = gl.getUniformLocation(rockProgram, "u_texture2")!;
+
+   gl.useProgram(rockProgram);
+   gl.uniform1i(rockProgramTexture1UniformLocation, 0);
+   gl.uniform1i(rockProgramTexture2UniformLocation, 1);
    
    // 
    // Highlights program
@@ -563,13 +554,18 @@ export function createWaterShaders(): void {
 
    highlightsProgram = createWebGLProgram(gl, highlightsVertexShaderText, highlightsFragmentShaderText);
 
-   highlightsProgramPlayerPosUniformLocation = gl.getUniformLocation(highlightsProgram, "u_playerPos")!;
-   highlightsProgramHalfWindowSizeUniformLocation = gl.getUniformLocation(highlightsProgram, "u_halfWindowSize")!;
-   highlightsProgramZoomUniformLocation = gl.getUniformLocation(highlightsProgram, "u_zoom")!;
+   const highlightsCameraBlockIndex = gl.getUniformBlockIndex(highlightsProgram, "Camera");
+   gl.uniformBlockBinding(highlightsProgram, highlightsCameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);
+
    highlightsProgramFadeProgressUniformLocation = gl.getUniformLocation(highlightsProgram, "u_fadeProgress")!;
-   highlightsProgramTexture1UniformLocation = gl.getUniformLocation(highlightsProgram, "u_texture1")!;
-   highlightsProgramTexture2UniformLocation = gl.getUniformLocation(highlightsProgram, "u_texture2")!;
-   highlightsProgramTexture3UniformLocation = gl.getUniformLocation(highlightsProgram, "u_texture3")!;
+   const highlightsProgramTexture1UniformLocation = gl.getUniformLocation(highlightsProgram, "u_texture1")!;
+   const highlightsProgramTexture2UniformLocation = gl.getUniformLocation(highlightsProgram, "u_texture2")!;
+   const highlightsProgramTexture3UniformLocation = gl.getUniformLocation(highlightsProgram, "u_texture3")!;
+
+   gl.useProgram(highlightsProgram);
+   gl.uniform1i(highlightsProgramTexture1UniformLocation, 0);
+   gl.uniform1i(highlightsProgramTexture2UniformLocation, 1);
+   gl.uniform1i(highlightsProgramTexture3UniformLocation, 2);
    
    // 
    // Noise program
@@ -577,11 +573,14 @@ export function createWaterShaders(): void {
 
    noiseProgram = createWebGLProgram(gl, noiseVertexShaderText, noiseFragmentShaderText);
 
-   noiseProgramPlayerPosUniformLocation = gl.getUniformLocation(noiseProgram, "u_playerPos")!;
-   noiseProgramHalfWindowSizeUniformLocation = gl.getUniformLocation(noiseProgram, "u_halfWindowSize")!;
-   noiseProgramZoomUniformLocation = gl.getUniformLocation(noiseProgram, "u_zoom")!;
-   noiseTextureUniformLocation = gl.getUniformLocation(noiseProgram, "u_noiseTexture")!;
+   const noiseCameraBlockIndex = gl.getUniformBlockIndex(noiseProgram, "Camera");
+   gl.uniformBlockBinding(noiseProgram, noiseCameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);
+
+   const noiseTextureUniformLocation = gl.getUniformLocation(noiseProgram, "u_noiseTexture")!;
    noiseAnimationOffsetUniformLocation = gl.getUniformLocation(noiseProgram, "u_animationOffset")!;
+
+   gl.useProgram(noiseProgram);
+   gl.uniform1i(noiseTextureUniformLocation, 0);
 
    // 
    // Transition program
@@ -589,10 +588,13 @@ export function createWaterShaders(): void {
 
    transitionProgram = createWebGLProgram(gl, transitionVertexShaderText, transitionFragmentShaderText);
 
-   transitionProgramPlayerPosUniformLocation = gl.getUniformLocation(transitionProgram, "u_playerPos")!;
-   transitionProgramHalfWindowSizeUniformLocation = gl.getUniformLocation(transitionProgram, "u_halfWindowSize")!;
-   transitionProgramZoomUniformLocation = gl.getUniformLocation(transitionProgram, "u_zoom")!;
-   transitionTextureUniformLocation = gl.getUniformLocation(transitionProgram, "u_transitionTexture")!;
+   const transitionCameraBlockIndex = gl.getUniformBlockIndex(transitionProgram, "Camera");
+   gl.uniformBlockBinding(transitionProgram, transitionCameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);
+
+   const transitionTextureUniformLocation = gl.getUniformLocation(transitionProgram, "u_transitionTexture")!;
+
+   gl.useProgram(transitionProgram);
+   gl.uniform1i(transitionTextureUniformLocation, 0);
    
    // 
    // Foam program
@@ -600,11 +602,14 @@ export function createWaterShaders(): void {
 
    foamProgram = createWebGLProgram(gl, foamVertexShaderText, foamFragmentShaderText);
 
-   foamProgramPlayerPosUniformLocation = gl.getUniformLocation(foamProgram, "u_playerPos")!;
-   foamProgramHalfWindowSizeUniformLocation = gl.getUniformLocation(foamProgram, "u_halfWindowSize")!;
-   foamProgramZoomUniformLocation = gl.getUniformLocation(foamProgram, "u_zoom")!;
-   foamProgramFoamTextureUniformLocation = gl.getUniformLocation(foamProgram, "u_foamTexture")!;
+   const foamCameraBlockIndex = gl.getUniformBlockIndex(foamProgram, "Camera");
+   gl.uniformBlockBinding(foamProgram, foamCameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);
+
+   const foamProgramFoamTextureUniformLocation = gl.getUniformLocation(foamProgram, "u_foamTexture")!;
    foamProgramTextureOffsetUniformLocation = gl.getUniformLocation(foamProgram, "u_textureOffset")!;
+
+   gl.useProgram(foamProgram);
+   gl.uniform1i(foamProgramFoamTextureUniformLocation, 0);
    
    // 
    // Stepping stone program
@@ -612,12 +617,17 @@ export function createWaterShaders(): void {
 
    steppingStoneProgram = createWebGLProgram(gl, steppingStoneVertexShaderText, steppingStoneFragmentShaderText);
 
-   steppingStoneProgramPlayerPosUniformLocation = gl.getUniformLocation(steppingStoneProgram, "u_playerPos")!;
-   steppingStoneProgramHalfWindowSizeUniformLocation = gl.getUniformLocation(steppingStoneProgram, "u_halfWindowSize")!;
-   steppingStoneProgramZoomUniformLocation = gl.getUniformLocation(steppingStoneProgram, "u_zoom")!;
-   steppingStoneTexture1UniformLocation = gl.getUniformLocation(steppingStoneProgram, "u_texture1")!;
-   steppingStoneTexture2UniformLocation = gl.getUniformLocation(steppingStoneProgram, "u_texture2")!;
-   steppingStoneTexture3UniformLocation = gl.getUniformLocation(steppingStoneProgram, "u_texture3")!;
+   const steppingStoneCameraBlockIndex = gl.getUniformBlockIndex(steppingStoneProgram, "Camera");
+   gl.uniformBlockBinding(steppingStoneProgram, steppingStoneCameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);
+
+   const steppingStoneTexture1UniformLocation = gl.getUniformLocation(steppingStoneProgram, "u_texture1")!;
+   const steppingStoneTexture2UniformLocation = gl.getUniformLocation(steppingStoneProgram, "u_texture2")!;
+   const steppingStoneTexture3UniformLocation = gl.getUniformLocation(steppingStoneProgram, "u_texture3")!;
+
+   gl.useProgram(steppingStoneProgram);
+   gl.uniform1i(steppingStoneTexture1UniformLocation, 0);
+   gl.uniform1i(steppingStoneTexture2UniformLocation, 1);
+   gl.uniform1i(steppingStoneTexture3UniformLocation, 2);
 }
 
 const tileIsWaterInt = (tileX: number, tileY: number): number => {
@@ -767,8 +777,8 @@ const calculateTransitionVertexData = (renderChunkX: number, renderChunkY: numbe
    return vertexData;
 }
 
-const calculateRockVertices = (renderChunkX: number, renderChunkY: number): Array<Array<number>> => {
-   const vertexArrays = [ [], [] ] as Array<Array<number>>;
+const calculateRockVertices = (renderChunkX: number, renderChunkY: number): Array<number> => {
+   const vertices = new Array<number>();
 
    const minChunkX = Math.floor(renderChunkX * RENDER_CHUNK_SIZE / SETTINGS.CHUNK_SIZE);
    const maxChunkX = Math.floor((renderChunkX + 1) * RENDER_CHUNK_SIZE / SETTINGS.CHUNK_SIZE) - 1;
@@ -800,19 +810,21 @@ const calculateRockVertices = (renderChunkX: number, renderChunkY: number): Arra
 
             const opacity = lerp(0.15, 0.4, waterRock.opacity);
 
-            vertexArrays[waterRock.size].push(
-               bottomLeft.x, bottomLeft.y, 0, 0, opacity,
-               bottomRight.x, bottomRight.y, 1, 0, opacity,
-               topLeft.x, topLeft.y, 0, 1, opacity,
-               topLeft.x, topLeft.y, 0, 1, opacity,
-               bottomRight.x, bottomRight.y, 1, 0, opacity,
-               topRight.x, topRight.y, 1, 1, opacity
+            const textureIdx = waterRock.size as number;
+
+            vertices.push(
+               bottomLeft.x, bottomLeft.y, 0, 0, opacity, textureIdx,
+               bottomRight.x, bottomRight.y, 1, 0, opacity, textureIdx,
+               topLeft.x, topLeft.y, 0, 1, opacity, textureIdx,
+               topLeft.x, topLeft.y, 0, 1, opacity, textureIdx,
+               bottomRight.x, bottomRight.y, 1, 0, opacity, textureIdx,
+               topRight.x, topRight.y, 1, 1, opacity, textureIdx
             );
          }
       }
    }
 
-   return vertexArrays;
+   return vertices;
 }
 
 const calculateBaseVertexData = (waterTiles: ReadonlyArray<Tile>): Float32Array => {
@@ -825,10 +837,19 @@ const calculateBaseVertexData = (waterTiles: ReadonlyArray<Tile>): Float32Array 
       let y1 = tile.y * SETTINGS.TILE_SIZE;
       let y2 = (tile.y + 1) * SETTINGS.TILE_SIZE;
 
-      const bottomLeftLandDistance = calculateDistanceToLand(tile.x, tile.y);
-      const bottomRightLandDistance = calculateDistanceToLand(tile.x + 1, tile.y);
-      const topLeftLandDistance = calculateDistanceToLand(tile.x, tile.y + 1);
-      const topRightLandDistance = calculateDistanceToLand(tile.x + 1, tile.y + 1);
+      const topIsWater = 1 - tileIsWaterInt(tile.x, tile.y + 1);
+      const topRightIsWater = 1 - tileIsWaterInt(tile.x + 1, tile.y + 1);
+      const rightIsWater = 1 - tileIsWaterInt(tile.x + 1, tile.y);
+      const bottomRightIsWater = 1 - tileIsWaterInt(tile.x + 1, tile.y - 1);
+      const bottomIsWater = 1 - tileIsWaterInt(tile.x, tile.y - 1);
+      const bottomLeftIsWater = 1 - tileIsWaterInt(tile.x - 1, tile.y - 1);
+      const leftIsWater = 1 - tileIsWaterInt(tile.x - 1, tile.y);
+      const topLeftIsWater = 1 - tileIsWaterInt(tile.x - 1, tile.y + 1);
+
+      const bottomLeftLandDistance = 1 - (bottomLeftIsWater || bottomIsWater || leftIsWater);
+      const bottomRightLandDistance = 1 - (bottomRightIsWater || bottomIsWater || rightIsWater);
+      const topLeftLandDistance = 1 - (topLeftIsWater || topIsWater || leftIsWater);
+      const topRightLandDistance = 1 - (topRightIsWater || topIsWater || rightIsWater);
 
       const dataOffset = i * 6 * 8;
       
@@ -1021,13 +1042,15 @@ const createRockVAO = (buffer: WebGLBuffer): WebGLVertexArrayObject => {
 
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 
-   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
-   gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(2, 1, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 0);
+   gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(2, 1, gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(3, 1, gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
    
    gl.enableVertexAttribArray(0);
    gl.enableVertexAttribArray(1);
    gl.enableVertexAttribArray(2);
+   gl.enableVertexAttribArray(3);
 
    gl.bindVertexArray(null);
 
@@ -1232,17 +1255,17 @@ export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY
    gl.bindBuffer(gl.ARRAY_BUFFER, baseBuffer);
    gl.bufferData(gl.ARRAY_BUFFER, baseVertexData, gl.STATIC_DRAW);
 
-   const rockVertexArrays = calculateRockVertices(renderChunkX, renderChunkY);
-   const rockBuffers = new Array<WebGLBuffer>();
-   const rockVertexCounts = new Array<number>();
-   for (const vertices of rockVertexArrays) {
-      const buffer = gl.createBuffer()!;
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+   const rockVertices = calculateRockVertices(renderChunkX, renderChunkY);
+   const rockBuffer = gl.createBuffer()!;
+   gl.bindBuffer(gl.ARRAY_BUFFER, rockBuffer);
+   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(rockVertices), gl.STATIC_DRAW);
+   // const rockVertexCounts = new Array<number>();
+   // for (const vertices of rockVertices) {
+   //    const buffer = gl.createBuffer()!;
 
-      rockBuffers.push(buffer);
-      rockVertexCounts.push(vertices.length);
-   }
+   //    rockBuffers.push(buffer);
+   //    rockVertexCounts.push(vertices.length / 5);
+   // }
 
    const highlightsVertexData = calculateHighlightsVertexData(waterTiles);
    const highlightsBuffer = gl.createBuffer()!;
@@ -1273,39 +1296,20 @@ export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY
 
    return {
       baseVAO: createBaseVAO(baseBuffer),
-      baseVertexCount: baseVertexData.length,
-      rockVAOs: rockBuffers.map(buffer => createRockVAO(buffer)),
-      rockVertexCounts: rockVertexCounts,
+      baseVertexCount: baseVertexData.length / 8,
+      rockVAO: createRockVAO(rockBuffer),
+      rockVertexCount: rockVertices.length / 6,
       highlightsVAO: createHighlightsVAO(highlightsBuffer),
-      highlightsVertexCount: highlightsVertexData.length,
+      highlightsVertexCount: highlightsVertexData.length / 5,
       transitionVAO: createTransitionVAO(transitionBuffer),
-      transitionVertexCount: transitionVertexData.length,
+      transitionVertexCount: transitionVertexData.length / 12,
       noiseVAO: createNoiseVAO(noiseBuffer),
-      noiseVertexCount: noiseVertexData.length,
+      noiseVertexCount: noiseVertexData.length / 8,
       foamVAO: createFoamVAO(foamBuffer),
-      foamVertexCount: foamVertexData.length,
+      foamVertexCount: foamVertexData.length / 7,
       steppingStoneVAO: createSteppingStoneVAO(steppingStoneBuffer),
-      steppingStoneVertexCount: steppingStoneVertexData.length
+      steppingStoneVertexCount: steppingStoneVertexData.length / 5
    };
-}
-
-// @Cleanup: Remove this
-const calculateDistanceToLand = (tileX: number, tileY: number): number => {
-   // Check if any neighbouring tiles are land tiles
-   for (const offset of ADJACENT_OFFSETS) {
-      const x = tileX + offset[0];
-      const y = tileY + offset[1];
-      if (!Board.tileIsInBoard(x, y)) {
-         continue;
-      }
-
-      const tile = Board.getTile(x, y);
-      if (tile.type !== "water") {
-         return 0;
-      }
-   }
-
-   return 1;
 }
 
 const calculateNoiseVertexData = (waterTiles: ReadonlyArray<Tile>): Float32Array => {
@@ -1541,8 +1545,7 @@ const calculateVisibleRenderChunks = (): ReadonlyArray<RenderChunkRiverInfo> => 
    return renderChunks;
 }
 
-export function renderRivers(): void {
-   const time = performance.now();
+export function renderRivers(renderTime: number): void {
    const visibleRenderChunks = calculateVisibleRenderChunks();
 
    // 
@@ -1558,15 +1561,7 @@ export function renderRivers(): void {
 
    for (const renderChunkInfo of visibleRenderChunks) {
       gl.bindVertexArray(renderChunkInfo.baseVAO);
-      
-      gl.uniform2f(baseProgramPlayerPosUniformLocation, Camera.position.x, Camera.position.y);
-      gl.uniform2f(baseProgramHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
-      gl.uniform1f(baseProgramZoomUniformLocation, Camera.zoom);
-      gl.uniform1i(baseTextureUniformLocation, 0);
-      gl.uniform3f(shallowWaterColourUniformLocation, SHALLOW_WATER_COLOUR[0], SHALLOW_WATER_COLOUR[1], SHALLOW_WATER_COLOUR[2]);
-      gl.uniform3f(deepWaterColourUniformLocation, DEEP_WATER_COLOUR[0], DEEP_WATER_COLOUR[1], DEEP_WATER_COLOUR[2]);
-      
-      gl.drawArrays(gl.TRIANGLES, 0, renderChunkInfo.baseVertexCount / 8);
+      gl.drawArrays(gl.TRIANGLES, 0, renderChunkInfo.baseVertexCount);
    }
    
    // 
@@ -1582,21 +1577,13 @@ export function renderRivers(): void {
    for (let rockSize: WaterRockSize = 0; rockSize < 2; rockSize++) {
       const textureSource = WATER_ROCK_TEXTURES[rockSize];
       const texture = getTexture(textureSource);
-      gl.activeTexture(gl.TEXTURE0);
+      gl.activeTexture(gl.TEXTURE0 + rockSize);
       gl.bindTexture(gl.TEXTURE_2D, texture);
    }
-   
+
    for (const renderChunkRiverInfo of visibleRenderChunks) {
-      for (let rockSize: WaterRockSize = 0; rockSize < 2; rockSize++) {
-         gl.bindVertexArray(renderChunkRiverInfo.rockVAOs[rockSize]);
-         
-         gl.uniform2f(rockProgramPlayerPosUniformLocation, Camera.position.x, Camera.position.y);
-         gl.uniform2f(rockProgramHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
-         gl.uniform1f(rockProgramZoomUniformLocation, Camera.zoom);
-         gl.uniform1i(rockProgramTextureUniformLocation, 0);
-         
-         gl.drawArrays(gl.TRIANGLES, 0, renderChunkRiverInfo.rockVertexCounts[rockSize] / 5);
-      }
+      gl.bindVertexArray(renderChunkRiverInfo.rockVAO);
+      gl.drawArrays(gl.TRIANGLES, 0, renderChunkRiverInfo.rockVertexCount);
    }
 
    // 
@@ -1605,7 +1592,8 @@ export function renderRivers(): void {
 
    gl.useProgram(highlightsProgram);
       
-   const highlightsFadeProgress = (time / 3000) % 3;
+   const highlightsFadeProgress = (renderTime / 3000) % 3;
+   gl.uniform1f(highlightsProgramFadeProgressUniformLocation, highlightsFadeProgress);
 
    const texture1 = getTexture("tiles/river-bed-highlights-1.png");
    gl.activeTexture(gl.TEXTURE0);
@@ -1621,16 +1609,7 @@ export function renderRivers(): void {
    
    for (const renderChunkRiverInfo of visibleRenderChunks) {
       gl.bindVertexArray(renderChunkRiverInfo.highlightsVAO);
-
-      gl.uniform2f(highlightsProgramPlayerPosUniformLocation, Camera.position.x, Camera.position.y);
-      gl.uniform2f(highlightsProgramHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
-      gl.uniform1f(highlightsProgramZoomUniformLocation, Camera.zoom);
-      gl.uniform1f(highlightsProgramFadeProgressUniformLocation, highlightsFadeProgress);
-      gl.uniform1i(highlightsProgramTexture1UniformLocation, 0);
-      gl.uniform1i(highlightsProgramTexture2UniformLocation, 1);
-      gl.uniform1i(highlightsProgramTexture3UniformLocation, 2);
-      
-      gl.drawArrays(gl.TRIANGLES, 0, renderChunkRiverInfo.highlightsVertexCount / 5);
+      gl.drawArrays(gl.TRIANGLES, 0, renderChunkRiverInfo.highlightsVertexCount);
    }
    
    // 
@@ -1639,7 +1618,8 @@ export function renderRivers(): void {
    
    gl.useProgram(noiseProgram);
       
-   const noiseAnimationOffset = time * WATER_VISUAL_FLOW_SPEED / 1000;
+   const noiseAnimationOffset = renderTime * WATER_VISUAL_FLOW_SPEED / 1000;
+   gl.uniform1f(noiseAnimationOffsetUniformLocation, noiseAnimationOffset);
                
    const noiseTexture = getTexture("tiles/water-noise.png");
    gl.activeTexture(gl.TEXTURE0);
@@ -1647,14 +1627,7 @@ export function renderRivers(): void {
 
    for (const renderChunkInfo of visibleRenderChunks) {
       gl.bindVertexArray(renderChunkInfo.noiseVAO);
-      
-      gl.uniform2f(noiseProgramPlayerPosUniformLocation, Camera.position.x, Camera.position.y);
-      gl.uniform2f(noiseProgramHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
-      gl.uniform1f(noiseProgramZoomUniformLocation, Camera.zoom);
-      gl.uniform1i(noiseTextureUniformLocation, 0);
-      gl.uniform1f(noiseAnimationOffsetUniformLocation, noiseAnimationOffset);
-   
-      gl.drawArrays(gl.TRIANGLES, 0, renderChunkInfo.noiseVertexCount / 8);
+      gl.drawArrays(gl.TRIANGLES, 0, renderChunkInfo.noiseVertexCount);
    }
 
    // 
@@ -1670,13 +1643,7 @@ export function renderRivers(): void {
 
    for (const renderChunkRiverInfo of visibleRenderChunks) {
       gl.bindVertexArray(renderChunkRiverInfo.transitionVAO);
-      
-      gl.uniform2f(transitionProgramPlayerPosUniformLocation, Camera.position.x, Camera.position.y);
-      gl.uniform2f(transitionProgramHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
-      gl.uniform1f(transitionProgramZoomUniformLocation, Camera.zoom);
-      gl.uniform1i(transitionTextureUniformLocation, 0);
-   
-      gl.drawArrays(gl.TRIANGLES, 0, renderChunkRiverInfo.transitionVertexCount / 12);
+      gl.drawArrays(gl.TRIANGLES, 0, renderChunkRiverInfo.transitionVertexCount);
    }
    
    // 
@@ -1689,6 +1656,9 @@ export function renderRivers(): void {
    const foamTexture = getTexture("tiles/water-foam.png");
    gl.activeTexture(gl.TEXTURE0);
    gl.bindTexture(gl.TEXTURE_2D, foamTexture);
+   
+   const foamTextureOffset = renderTime * WATER_VISUAL_FLOW_SPEED / 1000;
+   gl.uniform1f(foamProgramTextureOffsetUniformLocation, foamTextureOffset);
 
    // Bind stepping stone textures
    for (let size: RiverSteppingStoneSize = 0; size < 3; size++) {
@@ -1697,21 +1667,10 @@ export function renderRivers(): void {
       gl.activeTexture(gl.TEXTURE1 + size);
       gl.bindTexture(gl.TEXTURE_2D, steppingStoneTexture);
    }
-   
 
-   const foamTextureOffset = time * WATER_VISUAL_FLOW_SPEED / 1000;
-   
    for (const renderChunkRiverInfo of visibleRenderChunks) {
-      const vao = renderChunkRiverInfo.foamVAO;
-      gl.bindVertexArray(vao);
-      
-      gl.uniform2f(foamProgramPlayerPosUniformLocation, Camera.position.x, Camera.position.y);
-      gl.uniform2f(foamProgramHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
-      gl.uniform1f(foamProgramZoomUniformLocation, Camera.zoom);
-      gl.uniform1i(foamProgramFoamTextureUniformLocation, 0);
-      gl.uniform1f(foamProgramTextureOffsetUniformLocation, foamTextureOffset);
-      
-      gl.drawArrays(gl.TRIANGLES, 0, renderChunkRiverInfo.foamVertexCount / 7);
+      gl.bindVertexArray(renderChunkRiverInfo.foamVAO);
+      gl.drawArrays(gl.TRIANGLES, 0, renderChunkRiverInfo.foamVertexCount);
    }
    
    // 
@@ -1734,15 +1693,7 @@ export function renderRivers(): void {
    
    for (const renderChunkRiverInfo of visibleRenderChunks) {
       gl.bindVertexArray(renderChunkRiverInfo.steppingStoneVAO);
-      
-      gl.uniform2f(steppingStoneProgramPlayerPosUniformLocation, Camera.position.x, Camera.position.y);
-      gl.uniform2f(steppingStoneProgramHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
-      gl.uniform1f(steppingStoneProgramZoomUniformLocation, Camera.zoom);
-      gl.uniform1i(steppingStoneTexture1UniformLocation, 0);
-      gl.uniform1i(steppingStoneTexture2UniformLocation, 1);
-      gl.uniform1i(steppingStoneTexture3UniformLocation, 2);
-      
-      gl.drawArrays(gl.TRIANGLES, 0, renderChunkRiverInfo.steppingStoneVertexCount / 5);
+      gl.drawArrays(gl.TRIANGLES, 0, renderChunkRiverInfo.steppingStoneVertexCount);
    }
 
    gl.bindVertexArray(null);

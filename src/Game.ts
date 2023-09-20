@@ -9,7 +9,7 @@ import { createEntityShaders, renderGameObjects } from "./rendering/game-object-
 import Client from "./client/Client";
 import { calculateCursorWorldPosition, getCursorX, getCursorY, getMouseTargetEntity, handleMouseMovement, renderCursorTooltip } from "./mouse";
 import { updateDevEntityViewer } from "./components/game/dev/EntityViewer";
-import { createShaderStrings, createWebGLContext, gl, resizeCanvas } from "./webgl";
+import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createShaderStrings, createWebGLContext, gl, halfWindowHeight, halfWindowWidth, resizeCanvas } from "./webgl";
 import { loadTextures } from "./textures";
 import { hidePauseScreen, showPauseScreen, toggleSettingsMenu } from "./components/game/GameScreen";
 import { getGameState } from "./components/App";
@@ -20,7 +20,7 @@ import { updateInteractInventory, updatePlayerMovement } from "./player-input";
 import { clearServerTicks, updateDebugScreenCurrentTime, updateDebugScreenFPS, updateDebugScreenRenderTime } from "./components/game/dev/GameInfoDisplay";
 import { createWorldBorderShaders, renderWorldBorder } from "./rendering/world-border-rendering";
 import { createSolidTileShaders, renderSolidTiles } from "./rendering/tile-rendering/solid-tile-rendering";
-import { createWaterShaders, renderRivers } from "./rendering/tile-rendering/river-rendering";
+import { createRiverShaders, renderRivers } from "./rendering/tile-rendering/river-rendering";
 import { createChunkBorderShaders, renderChunkBorders } from "./rendering/chunk-border-rendering";
 import { nerdVisionIsVisible } from "./components/game/dev/NerdVision";
 import { setFrameProgress } from "./GameObject";
@@ -30,7 +30,7 @@ import { createWallBorderShaders, renderWallBorders } from "./rendering/wall-bor
 import { ParticleRenderLayer, createParticleShaders, renderMonocolourParticles, renderTexturedParticles } from "./rendering/particle-rendering";
 import Tribe from "./Tribe";
 import OPTIONS from "./options";
-import { createRenderChunks } from "./rendering/tile-rendering/render-chunks";
+import { RENDER_CHUNK_SIZE, createRenderChunks } from "./rendering/tile-rendering/render-chunks";
 import { generateFoodEatingParticleColours } from "./food-eating-particles";
 import { registerFrame, updateFrameGraph } from "./components/game/dev/FrameGraph";
 import { createNightShaders, renderNight } from "./rendering/night-rendering";
@@ -87,6 +87,9 @@ abstract class Game {
    private static gameObjectDebugData: GameObjectDebugData | null = null;
 
    public static tribe: Tribe | null = null;
+   
+   private static cameraData = new Float32Array(8);
+   private static cameraBuffer: WebGLBuffer;
 
    public static setGameObjectDebugData(gameObjectDebugData: GameObjectDebugData | undefined): void {
       if (typeof gameObjectDebugData === "undefined") {
@@ -157,11 +160,18 @@ abstract class Game {
             createWebGLContext();
             createShaderStrings();
             createTextCanvasContext();
+
+            // Create the camera uniform buffer
+            this.cameraBuffer = gl.createBuffer()!;
+            gl.bindBufferBase(gl.UNIFORM_BUFFER, CAMERA_UNIFORM_BUFFER_BINDING_INDEX, this.cameraBuffer);
+            gl.bufferData(gl.UNIFORM_BUFFER, this.cameraData.byteLength, gl.DYNAMIC_DRAW);
             
+            // We load the textures before we create the shaders because some shader initialisations stitch textures together
             await loadTextures();
             
+            // Create shaders
             createSolidTileShaders();
-            createWaterShaders();
+            createRiverShaders();
             createEntityShaders();
             createWorldBorderShaders();
             createPlaceableItemProgram();
@@ -169,10 +179,10 @@ abstract class Game {
             createHitboxShaders();
             createDebugDataShaders();
             createNightShaders();
-
             createParticleShaders();
             createWallBorderShaders();
             createAmbientOcclusionShaders();
+
             createRenderChunks();
 
             generateFoodEatingParticleColours();
@@ -308,6 +318,7 @@ abstract class Game {
       gl.clear(gl.COLOR_BUFFER_BIT);
 
       setFrameProgress(frameProgress);
+      const renderTime = performance.now();
 
       // Update the camera
       if (Player.instance !== null) {
@@ -317,6 +328,15 @@ abstract class Game {
          Camera.updateVisibleRenderChunkBounds();
          Camera.updateVisiblePositionBounds();
       }
+
+      // Update the camera buffer
+      gl.bindBuffer(gl.UNIFORM_BUFFER, this.cameraBuffer);
+      this.cameraData[0] = Camera.position.x;
+      this.cameraData[1] = Camera.position.y;
+      this.cameraData[2] = halfWindowWidth;
+      this.cameraData[3] = halfWindowHeight;
+      this.cameraData[4] = Camera.zoom;
+      gl.bufferSubData(gl.UNIFORM_BUFFER, 0, this.cameraData);
 
       // Categorise the game objects
       const playersToRenderNames = new Array<Player>();
@@ -340,7 +360,7 @@ abstract class Game {
       renderPlayerNames(playersToRenderNames);
 
       renderSolidTiles();
-      renderRivers();
+      renderRivers(renderTime);
       renderAmbientOcclusion();
       renderWallBorders();
       if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Board.gameObjects.hasOwnProperty(this.gameObjectDebugData.gameObjectID)) {
@@ -348,18 +368,21 @@ abstract class Game {
       }
       renderWorldBorder();
       if (nerdVisionIsVisible() && OPTIONS.showChunkBorders) {
-         renderChunkBorders();
+         renderChunkBorders(Camera.visibleChunkBounds, SETTINGS.CHUNK_SIZE, 1);
+      }
+      if (nerdVisionIsVisible() && OPTIONS.showRenderChunkBorders) {
+         renderChunkBorders(Camera.visibleRenderChunkBounds, RENDER_CHUNK_SIZE, 2);
       }
 
-      renderMonocolourParticles(ParticleRenderLayer.low);
-      renderTexturedParticles(ParticleRenderLayer.low);
+      renderMonocolourParticles(ParticleRenderLayer.low, renderTime);
+      renderTexturedParticles(ParticleRenderLayer.low, renderTime);
 
       renderGameObjects(droppedItems);
       renderGameObjects(entities);
       renderGameObjects(projectiles);
       
-      renderMonocolourParticles(ParticleRenderLayer.high);
-      renderTexturedParticles(ParticleRenderLayer.high);
+      renderMonocolourParticles(ParticleRenderLayer.high, renderTime);
+      renderTexturedParticles(ParticleRenderLayer.high, renderTime);
 
       if (nerdVisionIsVisible() && OPTIONS.showHitboxes) {
          renderEntityHitboxes();

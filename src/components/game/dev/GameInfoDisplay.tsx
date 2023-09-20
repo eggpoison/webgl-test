@@ -42,12 +42,14 @@ const formatTime = (time: number): string => {
 const GameInfoDisplay = () => {
    const [currentTime, setCurrentTime] = useState(0);
    const [ticks, setTicks] = useState(Board.ticks);
+   // @Cleanup @Incomplete
    // const [fps, setFPS] = useState(0);
    const [renderTime, setRenderTime] = useState(0);
 
    const [nightVisionIsEnabled, setNightvisionIsEnabled] = useState(OPTIONS.nightVisionIsEnabled);
    const [showHitboxes, setShowEntityHitboxes] = useState(OPTIONS.showHitboxes);
    const [showChunkBorders, setShowChunkBorders] = useState(OPTIONS.showChunkBorders);
+   const [showRenderChunkBorders, setShowRenderChunkBorders] = useState(OPTIONS.showRenderChunkBorders);
 
    useEffect(() => {
       if (typeof Board.time !== "undefined") {
@@ -82,10 +84,16 @@ const GameInfoDisplay = () => {
       OPTIONS.showChunkBorders = !showChunkBorders;
       setShowChunkBorders(!showChunkBorders);
    }, [showChunkBorders]);
+
+   const toggleSetShowRenderChunkBorders = useCallback(() => {
+      OPTIONS.showRenderChunkBorders = !showRenderChunkBorders;
+      setShowRenderChunkBorders(!showRenderChunkBorders);
+   }, [showRenderChunkBorders]);
    
    return <div id="game-info-display">
       <p>Time: {formatTime(roundNum(currentTime, 2))}</p>
       <p>Ticks: {roundNum(ticks, 2)}</p>
+      {/* @Incomplete */}
       {/* <p>FPS: {fps}</p>
       <p>Render time ms: {renderTime.toFixed(2)}</p> */}
       <p>TPS: {tps}</p>
@@ -107,6 +115,12 @@ const GameInfoDisplay = () => {
             <label className={showChunkBorders ? "enabled" : undefined}>
                <input checked={showChunkBorders} name="chunk-borders-checkbox" type="checkbox" onChange={toggleSetShowChunkBorders} />
                Chunk borders
+            </label>
+         </li>
+         <li>
+            <label className={showRenderChunkBorders ? "enabled" : undefined}>
+               <input checked={showRenderChunkBorders} name="render-chunk-borders-checkbox" type="checkbox" onChange={toggleSetShowRenderChunkBorders} />
+               Render chunk borders
             </label>
          </li>
       </ul>

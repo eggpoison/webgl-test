@@ -60,10 +60,10 @@ export function setupFrameGraph(): void {
    createShaders();
 }
 
-export function renderFrameGraph(frames: ReadonlyArray<FrameInfo>): void {
+export function renderFrameGraph(renderTime: number, frames: ReadonlyArray<FrameInfo>): void {
    const vertexData = new Float32Array(frames.length * 6 * 5);
    
-   const currentTimeSeconds = performance.now() / 1000;
+   const currentTimeSeconds = renderTime / 1000;
    
    // Calculate vertices
    for (let i = 0; i < frames.length; i++) {

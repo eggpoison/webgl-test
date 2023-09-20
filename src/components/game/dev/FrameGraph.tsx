@@ -32,7 +32,8 @@ const FrameGraph = (): JSX.Element => {
       setupFrameGraph();
 
       updateFrameGraph = (): void => {
-         const now = performance.now() / 1000;
+         const renderTime = performance.now();
+         const now = renderTime / 1000;
          // Remove old frames
          for (let i = trackedFrames.length - 1; i >= 0; i--) {
             const frame = trackedFrames[i];
@@ -42,7 +43,7 @@ const FrameGraph = (): JSX.Element => {
             }
          }
          
-         renderFrameGraph(trackedFrames);
+         renderFrameGraph(renderTime, trackedFrames);
       }
 
       return () => {

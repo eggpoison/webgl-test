@@ -1,6 +1,5 @@
 import { lerp } from "webgl-test-shared";
-import { createWebGLProgram, gl, halfWindowHeight, halfWindowWidth, tempFloat32ArrayLength1, tempFloat32ArrayLength2, tempFloat32ArrayLength3 } from "../webgl";
-import Camera from "../Camera";
+import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl, tempFloat32ArrayLength1, tempFloat32ArrayLength2, tempFloat32ArrayLength3 } from "../webgl";
 import ObjectBufferContainer from "./ObjectBufferContainer";
 import { getTexture } from "../textures";
 import Particle from "../Particle";
@@ -28,9 +27,11 @@ precision mediump float;
 
 #define TPS 20.0
 
-uniform vec2 u_playerPos;
-uniform vec2 u_halfWindowSize;
-uniform float u_zoom;
+layout(std140) uniform Camera {
+   vec2 u_playerPos;
+   vec2 u_halfWindowSize;
+   float u_zoom;
+};
 uniform float u_currentTime;
 
 layout(location = 0) in vec2 a_vertPosition;
@@ -115,9 +116,11 @@ precision mediump float;
 
 #define TPS 20.0
 
-uniform vec2 u_playerPos;
-uniform vec2 u_halfWindowSize;
-uniform float u_zoom;
+layout(std140) uniform Camera {
+   uniform vec2 u_playerPos;
+   uniform vec2 u_halfWindowSize;
+   uniform float u_zoom;
+};
 uniform float u_currentTime;
 
 layout(location = 0) in vec2 a_vertPosition;
@@ -242,15 +245,8 @@ export let highTexturedBufferContainer: ObjectBufferContainer;
 let monocolourProgram: WebGLProgram;
 let texturedProgram: WebGLProgram;
 
-let monocolourPlayerPositionUniformLocation: WebGLUniformLocation;
-let monocolourHalfWindowSizeUniformLocation: WebGLUniformLocation;
-let monocolourZoomUniformLocation: WebGLUniformLocation;
 let monocolourCurrentTimeUniformLocation: WebGLUniformLocation;
 
-let texturedPlayerPositionUniformLocation: WebGLUniformLocation;
-let texturedHalfWindowSizeUniformLocation: WebGLUniformLocation;
-let texturedZoomUniformLocation: WebGLUniformLocation;
-let texturedTextureUniformLocation: WebGLUniformLocation;
 let texturedCurrentTimeUniformLocation: WebGLUniformLocation;
 
 export function createParticleShaders(): void {
@@ -314,10 +310,10 @@ export function createParticleShaders(): void {
    // 
    
    monocolourProgram = createWebGLProgram(gl, monocolourVertexShaderText, monocolourFragmentShaderText);
-   
-   monocolourPlayerPositionUniformLocation = gl.getUniformLocation(monocolourProgram, "u_playerPos")!;
-   monocolourHalfWindowSizeUniformLocation = gl.getUniformLocation(monocolourProgram, "u_halfWindowSize")!;
-   monocolourZoomUniformLocation = gl.getUniformLocation(monocolourProgram, "u_zoom")!;
+
+   const monocolourCameraBlockIndex = gl.getUniformBlockIndex(monocolourProgram, "Camera");
+   gl.uniformBlockBinding(monocolourProgram, monocolourCameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);
+
    monocolourCurrentTimeUniformLocation = gl.getUniformLocation(monocolourProgram, "u_currentTime")!
 
    // 
@@ -325,12 +321,15 @@ export function createParticleShaders(): void {
    // 
    
    texturedProgram = createWebGLProgram(gl, texturedVertexShaderText, texturedFragmentShaderText);
+
+   const texturedCameraBlockIndex = gl.getUniformBlockIndex(texturedProgram, "Camera");
+   gl.uniformBlockBinding(texturedProgram, texturedCameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);
    
-   texturedPlayerPositionUniformLocation = gl.getUniformLocation(texturedProgram, "u_playerPos")!;
-   texturedHalfWindowSizeUniformLocation = gl.getUniformLocation(texturedProgram, "u_halfWindowSize")!;
-   texturedZoomUniformLocation = gl.getUniformLocation(texturedProgram, "u_zoom")!;
-   texturedTextureUniformLocation = gl.getUniformLocation(texturedProgram, "u_texture")!;
+   const texturedTextureUniformLocation = gl.getUniformLocation(texturedProgram, "u_texture")!;
    texturedCurrentTimeUniformLocation = gl.getUniformLocation(texturedProgram, "u_currentTime")!;
+
+   gl.useProgram(texturedProgram);
+   gl.uniform1i(texturedTextureUniformLocation, 0);
 }
 
 // @Cleanup a bunch of the code in these functions are the same
@@ -482,7 +481,7 @@ export function addTexturedParticleToBufferContainer(particle: Particle, renderL
    bufferContainer.setData(particle.id, 13, tempFloat32ArrayLength1);
 }
 
-export function renderMonocolourParticles(renderLayer: ParticleRenderLayer): void {
+export function renderMonocolourParticles(renderLayer: ParticleRenderLayer, renderTime: number): void {
    // @Incomplete use VBOs and UBOs
 
    const bufferContainer = renderLayer === ParticleRenderLayer.low ? lowMonocolourBufferContainer : highMonocolourBufferContainer;
@@ -506,7 +505,7 @@ export function renderMonocolourParticles(renderLayer: ParticleRenderLayer): voi
    const scaleBuffers = bufferContainer.getBuffers(11);
    const spawnTimeBuffers = bufferContainer.getBuffers(12);
 
-   const currentTime = performance.now();
+   gl.uniform1f(monocolourCurrentTimeUniformLocation, renderTime);
 
    for (let i = 0; i < bufferContainer.getNumBuffers(); i++) {
       gl.bindBuffer(gl.ARRAY_BUFFER, vertPositionBuffer);
@@ -592,11 +591,6 @@ export function renderMonocolourParticles(renderLayer: ParticleRenderLayer): voi
       gl.vertexAttribPointer(13, 1, gl.FLOAT, false, 0, 0);
       gl.enableVertexAttribArray(13);
       gl.vertexAttribDivisor(13, 1);
-
-      gl.uniform2f(monocolourPlayerPositionUniformLocation, Camera.position.x, Camera.position.y);
-      gl.uniform2f(monocolourHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
-      gl.uniform1f(monocolourZoomUniformLocation, Camera.zoom);
-      gl.uniform1f(monocolourCurrentTimeUniformLocation, currentTime);
    
       gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, OBJECT_BUFFER_CONTAINER_SIZE);
    }
@@ -619,7 +613,7 @@ export function renderMonocolourParticles(renderLayer: ParticleRenderLayer): voi
    gl.blendFunc(gl.ONE, gl.ZERO);
 }
 
-export function renderTexturedParticles(renderLayer: ParticleRenderLayer): void {
+export function renderTexturedParticles(renderLayer: ParticleRenderLayer, renderTime: number): void {
    // @Incomplete use VBOs and UBOs
    
    gl.useProgram(texturedProgram);
@@ -647,6 +641,8 @@ export function renderTexturedParticles(renderLayer: ParticleRenderLayer): void 
    const scaleBuffers = bufferContainer.getBuffers(11);
    const spawnTimeBuffers = bufferContainer.getBuffers(12);
    const textureIndexBuffers = bufferContainer.getBuffers(13);
+
+   gl.uniform1f(texturedCurrentTimeUniformLocation, renderTime);
 
    for (let i = 0; i < bufferContainer.getNumBuffers(); i++) {
       // Vert positions
@@ -737,12 +733,6 @@ export function renderTexturedParticles(renderLayer: ParticleRenderLayer): void 
       gl.vertexAttribPointer(14, 1, gl.FLOAT, false, 0, 0);
       gl.enableVertexAttribArray(14);
       gl.vertexAttribDivisor(14, 1);
-
-      gl.uniform2f(texturedPlayerPositionUniformLocation, Camera.position.x, Camera.position.y);
-      gl.uniform2f(texturedHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
-      gl.uniform1f(texturedZoomUniformLocation, Camera.zoom);
-      gl.uniform1i(texturedTextureUniformLocation, 0);
-      gl.uniform1f(texturedCurrentTimeUniformLocation, performance.now());
    
       gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, OBJECT_BUFFER_CONTAINER_SIZE);
    }

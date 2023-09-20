@@ -1,7 +1,7 @@
 import { SETTINGS } from "webgl-test-shared";
 import { Tile } from "../Tile";
 import Camera from "../Camera";
-import { createWebGLProgram, gl, halfWindowHeight, halfWindowWidth } from "../webgl";
+import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 import Board from "../Board";
 import { RenderChunkAmbientOcclusionInfo, RENDER_CHUNK_SIZE, getRenderChunkAmbientOcclusionInfo } from "./tile-rendering/render-chunks";
 import { NEIGHBOUR_OFFSETS } from "../utils";
@@ -9,9 +9,11 @@ import { NEIGHBOUR_OFFSETS } from "../utils";
 const vertexShaderText = `#version 300 es
 precision mediump float;
 
-uniform vec2 u_playerPos;
-uniform vec2 u_halfWindowSize;
-uniform float u_zoom;
+layout(std140) uniform Camera {
+   uniform vec2 u_playerPos;
+   uniform vec2 u_halfWindowSize;
+   uniform float u_zoom;
+};
 
 layout(location = 0) in vec2 a_position;
 layout(location = 1) in vec2 a_texCoord;
@@ -113,16 +115,11 @@ void main() {
 
 let program: WebGLProgram;
 
-let playerPosUniformLocation: WebGLUniformLocation;
-let halfWindowSizeUniformLocation: WebGLUniformLocation;
-let zoomUniformLocation: WebGLUniformLocation;
-
 export function createAmbientOcclusionShaders(): void {
    program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
 
-   playerPosUniformLocation = gl.getUniformLocation(program, "u_playerPos")!;
-   halfWindowSizeUniformLocation = gl.getUniformLocation(program, "u_halfWindowSize")!;
-   zoomUniformLocation = gl.getUniformLocation(program, "u_zoom")!;
+   const cameraBlockIndex = gl.getUniformBlockIndex(program, "Camera");
+   gl.uniformBlockBinding(program, cameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);
 }
 
 const tileIsWallInt = (tileX: number, tileY: number): number => {
@@ -306,7 +303,6 @@ export function calculateAmbientOcclusionInfo(renderChunkX: number, renderChunkY
 
    return {
       vao: vao,
-      data: vertexData,
       vertexCount: edgeTiles.length * 6
    };
 }
@@ -325,10 +321,6 @@ export function renderAmbientOcclusion(): void {
          }
 
          gl.bindVertexArray(renderInfo.vao);
-
-         gl.uniform2f(playerPosUniformLocation, Camera.position.x, Camera.position.y);
-         gl.uniform2f(halfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
-         gl.uniform1f(zoomUniformLocation, Camera.zoom);
 
          gl.drawArrays(gl.TRIANGLES, 0, renderInfo.vertexCount);
       }

@@ -18,6 +18,8 @@ export const tempFloat32ArrayLength1 = new Float32Array(1);
 export const tempFloat32ArrayLength2 = new Float32Array(2);
 export const tempFloat32ArrayLength3 = new Float32Array(3);
 
+export const CAMERA_UNIFORM_BUFFER_BINDING_INDEX = 0;
+
 export function resizeCanvas(): void {
    if (typeof canvas === "undefined") return;
 
