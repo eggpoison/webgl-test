@@ -3,14 +3,13 @@ import Camera from "../Camera";
 import { Tile } from "../Tile";
 import { createWebGLProgram, gl } from "../webgl";
 import Board from "../Board";
-import { RENDER_CHUNK_SIZE, RenderChunkAmbientOcclusionInfo } from "./tile-rendering/render-chunks";
 
 const BORDER_THICKNESS = 5;
 
 const vertexShaderText = `#version 300 es
 precision mediump float;
 
-in vec2 a_position;
+layout(location = 0) in vec2 a_position;
 
 void main() {
    gl_Position = vec4(a_position, 0.0, 1.0);
@@ -31,8 +30,6 @@ let program: WebGLProgram;
 
 export function createWallBorderShaders(): void {
    program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
-
-   gl.bindAttribLocation(program, 0, "a_position");
 }
 
 export function renderWallBorders(): void {

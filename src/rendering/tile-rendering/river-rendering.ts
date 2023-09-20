@@ -139,7 +139,9 @@ void main() {
 }
 `;
 
+// 
 // Highlights shaders
+// 
 
 const highlightsVertexShaderText = `#version 300 es
 precision mediump float;
@@ -200,7 +202,9 @@ void main() {
 }
 `;
 
+// 
 // Noise shaders
+// 
 
 const noiseVertexShaderText = `#version 300 es
 precision mediump float;
@@ -261,7 +265,9 @@ void main() {
 }
 `;
 
+// 
 // Transition shaders
+// 
 
 const transitionVertexShaderText = `#version 300 es
 precision mediump float;
@@ -368,7 +374,9 @@ void main() {
 }
 `;
 
+// 
 // Foam shaders
+// 
 
 const foamVertexShaderText = `#version 300 es
 precision mediump float;
@@ -421,7 +429,9 @@ void main() {
 }
 `;
 
+// 
 // Stepping stone shaders
+// 
 
 const steppingStoneVertexShaderText = `#version 300 es
 precision mediump float;
@@ -610,57 +620,151 @@ export function createWaterShaders(): void {
    steppingStoneTexture3UniformLocation = gl.getUniformLocation(steppingStoneProgram, "u_texture3")!;
 }
 
-const calculateTransitionVertices = (waterTiles: ReadonlyArray<Tile>): Array<number> => {
-   const edgeTileIndexes = new Set<number>();
+const tileIsWaterInt = (tileX: number, tileY: number): number => {
+   if (!Board.tileIsInBoard(tileX, tileY)) {
+      return 0;
+   }
+   
+   const tile = Board.getTile(tileX, tileY);
+   return tile.type === "water" ? 1 : 0;
+}
 
-   for (const tile of waterTiles) {
-      for (const offset of NEIGHBOUR_OFFSETS) {
-         const tileX = tile.x + offset[0];
-         const tileY = tile.y + offset[1];
-         if (Board.tileIsInBoard(tileX, tileY)) {
-            const tile = Board.getTile(tileX, tileY);
-            if (tile.type !== "water") {
-               const tileIndex = tileY * SETTINGS.BOARD_DIMENSIONS + tileX;
-               edgeTileIndexes.add(tileIndex);
+const calculateTransitionVertexData = (renderChunkX: number, renderChunkY: number): Float32Array => {
+   const minTileX = renderChunkX * RENDER_CHUNK_SIZE;
+   const maxTileX = (renderChunkX + 1) * RENDER_CHUNK_SIZE - 1;
+   const minTileY = renderChunkY * RENDER_CHUNK_SIZE;
+   const maxTileY = (renderChunkY + 1) * RENDER_CHUNK_SIZE - 1;
+
+   // Find all tiles neighbouring water in the render chunk
+   const edgeTiles = new Array<Tile>();
+   for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
+      for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
+         const tile = Board.getTile(tileX, tileY);
+         if (tile.type === "water") {
+            continue;
+         }
+
+         // Check for neighbouring water tiles
+         for (const offset of NEIGHBOUR_OFFSETS) {
+            const neighbourTileX = tile.x + offset[0];
+            const neighbourTileY = tile.y + offset[1];
+
+            // Don't add tiles which aren't in the board
+            if (!Board.tileIsInBoard(neighbourTileX, neighbourTileY)) {
+               continue;
+            }
+
+            // If the tile is neighbouring water, add it and move on to the next tile
+            const neighbourTile = Board.getTile(neighbourTileX, neighbourTileY);
+            if (neighbourTile.type === "water") {
+               edgeTiles.push(tile);
+               break;
             }
          }
       }
    }
 
-   const vertices = new Array<number>();
-   
-   for (const tileIndex of edgeTileIndexes) {
-      const tileX = tileIndex % SETTINGS.BOARD_DIMENSIONS;
-      const tileY = Math.floor(tileIndex / SETTINGS.BOARD_DIMENSIONS);
-
-      const tile = Board.getTile(tileX, tileY);
+   const vertexData = new Float32Array(edgeTiles.length * 6 * 12);
+   for (let i = 0; i < edgeTiles.length; i++) {
+      const tile = edgeTiles[i];
 
       let x1 = tile.x * SETTINGS.TILE_SIZE;
       let x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
       let y1 = tile.y * SETTINGS.TILE_SIZE;
       let y2 = (tile.y + 1) * SETTINGS.TILE_SIZE;
 
-      const bottomLeftWaterDistance = calculateDistanceToWater(tile.x, tile.y);
-      const bottomRightWaterDistance = calculateDistanceToWater(tile.x + 1, tile.y);
-      const topLeftWaterDistance = calculateDistanceToWater(tile.x, tile.y + 1);
-      const topRightWaterDistance = calculateDistanceToWater(tile.x + 1, tile.y + 1);
+      const topLeftWaterDistance = 1 - tileIsWaterInt(tile.x - 1, tile.y + 1);
+      const topRightWaterDistance = 1 - tileIsWaterInt(tile.x + 1, tile.y + 1);
+      const bottomLeftWaterDistance = 1 - tileIsWaterInt(tile.x - 1, tile.y - 1);
+      const bottomRightWaterDistance = 1 - tileIsWaterInt(tile.x + 1, tile.y - 1);
 
-      const topMarker = waterEdgeDist(tile.x, tile.y + 1);
-      const rightMarker = waterEdgeDist(tile.x - 1, tile.y);
-      const leftMarker = waterEdgeDist(tile.x + 1, tile.y);
-      const bottomMarker = waterEdgeDist(tile.x, tile.y - 1);
-      
-      vertices.push(
-         x1, y1, 0, 0, topLeftWaterDistance, topRightWaterDistance, bottomLeftWaterDistance, bottomRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
-         x2, y1, 1, 0, topLeftWaterDistance, topRightWaterDistance, bottomLeftWaterDistance, bottomRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
-         x1, y2, 0, 1, topLeftWaterDistance, topRightWaterDistance, bottomLeftWaterDistance, bottomRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
-         x1, y2, 0, 1, topLeftWaterDistance, topRightWaterDistance, bottomLeftWaterDistance, bottomRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
-         x2, y1, 1, 0, topLeftWaterDistance, topRightWaterDistance, bottomLeftWaterDistance, bottomRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
-         x2, y2, 1, 1, topLeftWaterDistance, topRightWaterDistance, bottomLeftWaterDistance, bottomRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker
-      );
+      const topMarker = 1 - tileIsWaterInt(tile.x, tile.y + 1);
+      const rightMarker = 1 - tileIsWaterInt(tile.x - 1, tile.y);
+      const leftMarker = 1 - tileIsWaterInt(tile.x + 1, tile.y);
+      const bottomMarker = 1 - tileIsWaterInt(tile.x, tile.y - 1);
+
+      const dataOffset = i * 6 * 12;
+
+      vertexData[dataOffset] = x1;
+      vertexData[dataOffset + 1] = y1;
+      vertexData[dataOffset + 2] = 0;
+      vertexData[dataOffset + 3] = 0;
+      vertexData[dataOffset + 4] = topLeftWaterDistance;
+      vertexData[dataOffset + 5] = topRightWaterDistance;
+      vertexData[dataOffset + 6] = bottomLeftWaterDistance;
+      vertexData[dataOffset + 7] = bottomRightWaterDistance;
+      vertexData[dataOffset + 8] = topMarker;
+      vertexData[dataOffset + 9] = rightMarker;
+      vertexData[dataOffset + 10] = leftMarker;
+      vertexData[dataOffset + 11] = bottomMarker;
+
+      vertexData[dataOffset + 12] = x2;
+      vertexData[dataOffset + 13] = y1;
+      vertexData[dataOffset + 14] = 1;
+      vertexData[dataOffset + 15] = 0;
+      vertexData[dataOffset + 16] = topLeftWaterDistance;
+      vertexData[dataOffset + 17] = topRightWaterDistance;
+      vertexData[dataOffset + 18] = bottomLeftWaterDistance;
+      vertexData[dataOffset + 19] = bottomRightWaterDistance;
+      vertexData[dataOffset + 20] = topMarker;
+      vertexData[dataOffset + 21] = rightMarker;
+      vertexData[dataOffset + 22] = leftMarker;
+      vertexData[dataOffset + 23] = bottomMarker;
+
+      vertexData[dataOffset + 24] = x1;
+      vertexData[dataOffset + 25] = y2;
+      vertexData[dataOffset + 26] = 0;
+      vertexData[dataOffset + 27] = 1;
+      vertexData[dataOffset + 28] = topLeftWaterDistance;
+      vertexData[dataOffset + 29] = topRightWaterDistance;
+      vertexData[dataOffset + 30] = bottomLeftWaterDistance;
+      vertexData[dataOffset + 31] = bottomRightWaterDistance;
+      vertexData[dataOffset + 32] = topMarker;
+      vertexData[dataOffset + 33] = rightMarker;
+      vertexData[dataOffset + 34] = leftMarker;
+      vertexData[dataOffset + 35] = bottomMarker;
+
+      vertexData[dataOffset + 36] = x1;
+      vertexData[dataOffset + 37] = y2;
+      vertexData[dataOffset + 38] = 0;
+      vertexData[dataOffset + 39] = 1;
+      vertexData[dataOffset + 40] = topLeftWaterDistance;
+      vertexData[dataOffset + 41] = topRightWaterDistance;
+      vertexData[dataOffset + 42] = bottomLeftWaterDistance;
+      vertexData[dataOffset + 43] = bottomRightWaterDistance;
+      vertexData[dataOffset + 44] = topMarker;
+      vertexData[dataOffset + 45] = rightMarker;
+      vertexData[dataOffset + 46] = leftMarker;
+      vertexData[dataOffset + 47] = bottomMarker;
+
+      vertexData[dataOffset + 48] = x2;
+      vertexData[dataOffset + 49] = y1;
+      vertexData[dataOffset + 50] = 1;
+      vertexData[dataOffset + 51] = 0;
+      vertexData[dataOffset + 52] = topLeftWaterDistance;
+      vertexData[dataOffset + 53] = topRightWaterDistance;
+      vertexData[dataOffset + 54] = bottomLeftWaterDistance;
+      vertexData[dataOffset + 55] = bottomRightWaterDistance;
+      vertexData[dataOffset + 56] = topMarker;
+      vertexData[dataOffset + 57] = rightMarker;
+      vertexData[dataOffset + 58] = leftMarker;
+      vertexData[dataOffset + 59] = bottomMarker;
+
+      vertexData[dataOffset + 60] = x2;
+      vertexData[dataOffset + 61] = y2;
+      vertexData[dataOffset + 62] = 1;
+      vertexData[dataOffset + 63] = 1;
+      vertexData[dataOffset + 64] = topLeftWaterDistance;
+      vertexData[dataOffset + 65] = topRightWaterDistance;
+      vertexData[dataOffset + 66] = bottomLeftWaterDistance;
+      vertexData[dataOffset + 67] = bottomRightWaterDistance;
+      vertexData[dataOffset + 68] = topMarker;
+      vertexData[dataOffset + 69] = rightMarker;
+      vertexData[dataOffset + 70] = leftMarker;
+      vertexData[dataOffset + 71] = bottomMarker;
    }
 
-   return vertices;
+   return vertexData;
 }
 
 const calculateRockVertices = (renderChunkX: number, renderChunkY: number): Array<Array<number>> => {
@@ -711,10 +815,11 @@ const calculateRockVertices = (renderChunkX: number, renderChunkY: number): Arra
    return vertexArrays;
 }
 
-const calculateBaseVertices = (waterTiles: ReadonlyArray<Tile>): ReadonlyArray<number> => {
-   const vertices = new Array<number>();
+const calculateBaseVertexData = (waterTiles: ReadonlyArray<Tile>): Float32Array => {
+   const vertexData = new Float32Array(waterTiles.length * 6 * 8);
 
-   for (const tile of waterTiles) {
+   for (let i = 0; i < waterTiles.length; i++) {
+      const tile = waterTiles[i];
       let x1 = tile.x * SETTINGS.TILE_SIZE;
       let x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
       let y1 = tile.y * SETTINGS.TILE_SIZE;
@@ -725,22 +830,70 @@ const calculateBaseVertices = (waterTiles: ReadonlyArray<Tile>): ReadonlyArray<n
       const topLeftLandDistance = calculateDistanceToLand(tile.x, tile.y + 1);
       const topRightLandDistance = calculateDistanceToLand(tile.x + 1, tile.y + 1);
 
-      vertices.push(
-         x1, y1, 0, 0, topLeftLandDistance, topRightLandDistance, bottomLeftLandDistance, bottomRightLandDistance,
-         x2, y1, 1, 0, topLeftLandDistance, topRightLandDistance, bottomLeftLandDistance, bottomRightLandDistance,
-         x1, y2, 0, 1, topLeftLandDistance, topRightLandDistance, bottomLeftLandDistance, bottomRightLandDistance,
-         x1, y2, 0, 1, topLeftLandDistance, topRightLandDistance, bottomLeftLandDistance, bottomRightLandDistance,
-         x2, y1, 1, 0, topLeftLandDistance, topRightLandDistance, bottomLeftLandDistance, bottomRightLandDistance,
-         x2, y2, 1, 1, topLeftLandDistance, topRightLandDistance, bottomLeftLandDistance, bottomRightLandDistance,
-      );
+      const dataOffset = i * 6 * 8;
+      
+      vertexData[dataOffset] = x1;
+      vertexData[dataOffset + 1] = y1;
+      vertexData[dataOffset + 2] = 0;
+      vertexData[dataOffset + 3] = 0;
+      vertexData[dataOffset + 4] = topLeftLandDistance;
+      vertexData[dataOffset + 5] = topRightLandDistance;
+      vertexData[dataOffset + 6] = bottomLeftLandDistance;
+      vertexData[dataOffset + 7] = bottomRightLandDistance;
+
+      vertexData[dataOffset + 8] = x2;
+      vertexData[dataOffset + 9] = y1;
+      vertexData[dataOffset + 10] = 1;
+      vertexData[dataOffset + 11] = 0;
+      vertexData[dataOffset + 12] = topLeftLandDistance;
+      vertexData[dataOffset + 13] = topRightLandDistance;
+      vertexData[dataOffset + 14] = bottomLeftLandDistance;
+      vertexData[dataOffset + 15] = bottomRightLandDistance;
+
+      vertexData[dataOffset + 16] = x1;
+      vertexData[dataOffset + 17] = y2;
+      vertexData[dataOffset + 18] = 0;
+      vertexData[dataOffset + 19] = 1;
+      vertexData[dataOffset + 20] = topLeftLandDistance;
+      vertexData[dataOffset + 21] = topRightLandDistance;
+      vertexData[dataOffset + 22] = bottomLeftLandDistance;
+      vertexData[dataOffset + 23] = bottomRightLandDistance;
+
+      vertexData[dataOffset + 24] = x1;
+      vertexData[dataOffset + 25] = y2;
+      vertexData[dataOffset + 26] = 0;
+      vertexData[dataOffset + 27] = 1;
+      vertexData[dataOffset + 28] = topLeftLandDistance;
+      vertexData[dataOffset + 29] = topRightLandDistance;
+      vertexData[dataOffset + 30] = bottomLeftLandDistance;
+      vertexData[dataOffset + 31] = bottomRightLandDistance;
+
+      vertexData[dataOffset + 32] = x2;
+      vertexData[dataOffset + 33] = y1;
+      vertexData[dataOffset + 34] = 1;
+      vertexData[dataOffset + 35] = 0;
+      vertexData[dataOffset + 36] = topLeftLandDistance;
+      vertexData[dataOffset + 37] = topRightLandDistance;
+      vertexData[dataOffset + 38] = bottomLeftLandDistance;
+      vertexData[dataOffset + 39] = bottomRightLandDistance;
+
+      vertexData[dataOffset + 40] = x2;
+      vertexData[dataOffset + 41] = y2;
+      vertexData[dataOffset + 42] = 1;
+      vertexData[dataOffset + 43] = 1;
+      vertexData[dataOffset + 44] = topLeftLandDistance;
+      vertexData[dataOffset + 45] = topRightLandDistance;
+      vertexData[dataOffset + 46] = bottomLeftLandDistance;
+      vertexData[dataOffset + 47] = bottomRightLandDistance;
    }
 
-   return vertices;
+   return vertexData;
 }
 
-const calculateFoamVertices = (steppingStones: ReadonlySet<RiverSteppingStone>): Array<number> => {
-   const vertices = new Array<number>();
+const calculateFoamVertexData = (steppingStones: ReadonlySet<RiverSteppingStone>): Float32Array => {
+   const vertexData = new Float32Array(steppingStones.size * 6 * 7);
 
+   let i = 0;
    for (const steppingStone of steppingStones) {
       const renderSize = RIVER_STEPPING_STONE_SIZES[steppingStone.size];
       
@@ -781,17 +934,60 @@ const calculateFoamVertices = (steppingStones: ReadonlySet<RiverSteppingStone>):
 
       const textureOffset = Math.random();
 
-      vertices.push(
-         bottomLeft.x, bottomLeft.y, 0, 0, flowDirectionX, flowDirectionY, textureOffset,
-         bottomRight.x, bottomRight.y, 1, 0, flowDirectionX, flowDirectionY, textureOffset,
-         topLeft.x, topLeft.y, 0, 1, flowDirectionX, flowDirectionY, textureOffset,
-         topLeft.x, topLeft.y, 0, 1, flowDirectionX, flowDirectionY, textureOffset,
-         bottomRight.x, bottomRight.y, 1, 0, flowDirectionX, flowDirectionY, textureOffset,
-         topRight.x, topRight.y, 1, 1, flowDirectionX, flowDirectionY, textureOffset
-      );
+      const dataOffset = i * 6 * 7;
+
+      vertexData[dataOffset] = bottomLeft.x;
+      vertexData[dataOffset + 1] = bottomLeft.y;
+      vertexData[dataOffset + 2] = 0;
+      vertexData[dataOffset + 3] = 0;
+      vertexData[dataOffset + 4] = flowDirectionX;
+      vertexData[dataOffset + 5] = flowDirectionY;
+      vertexData[dataOffset + 6] = textureOffset;
+
+      vertexData[dataOffset + 7] = bottomRight.x;
+      vertexData[dataOffset + 8] = bottomRight.y;
+      vertexData[dataOffset + 9] = 1;
+      vertexData[dataOffset + 10] = 0;
+      vertexData[dataOffset + 11] = flowDirectionX;
+      vertexData[dataOffset + 12] = flowDirectionY;
+      vertexData[dataOffset + 13] = textureOffset;
+
+      vertexData[dataOffset + 14] = topLeft.x;
+      vertexData[dataOffset + 15] = topLeft.y;
+      vertexData[dataOffset + 16] = 0;
+      vertexData[dataOffset + 17] = 1;
+      vertexData[dataOffset + 18] = flowDirectionX;
+      vertexData[dataOffset + 19] = flowDirectionY;
+      vertexData[dataOffset + 20] = textureOffset;
+
+      vertexData[dataOffset + 21] = topLeft.x;
+      vertexData[dataOffset + 22] = topLeft.y;
+      vertexData[dataOffset + 23] = 0;
+      vertexData[dataOffset + 24] = 1;
+      vertexData[dataOffset + 25] = flowDirectionX;
+      vertexData[dataOffset + 26] = flowDirectionY;
+      vertexData[dataOffset + 27] = textureOffset;
+
+      vertexData[dataOffset + 28] = bottomRight.x;
+      vertexData[dataOffset + 29] = bottomRight.y;
+      vertexData[dataOffset + 30] = 1;
+      vertexData[dataOffset + 31] = 0;
+      vertexData[dataOffset + 32] = flowDirectionX;
+      vertexData[dataOffset + 33] = flowDirectionY;
+      vertexData[dataOffset + 34] = textureOffset;
+
+      vertexData[dataOffset + 35] = topRight.x;
+      vertexData[dataOffset + 36] = topRight.y;
+      vertexData[dataOffset + 37] = 1;
+      vertexData[dataOffset + 38] = 1;
+      vertexData[dataOffset + 39] = flowDirectionX;
+      vertexData[dataOffset + 40] = flowDirectionY;
+      vertexData[dataOffset + 41] = textureOffset;
+
+      i++;
    }
 
-   return vertices;
+   return vertexData;
 }
 
 const createBaseVAO = (buffer: WebGLBuffer): WebGLVertexArrayObject => {
@@ -953,7 +1149,7 @@ const createSteppingStoneVAO = (buffer: WebGLBuffer): WebGLVertexArrayObject => 
    return vao;
 }
 
-const getWaterChunkWaterTiles = (renderChunkX: number, renderChunkY: number): Array<Tile> => {
+const getRenderChunkWaterTiles = (renderChunkX: number, renderChunkY: number): ReadonlyArray<Tile> => {
    const minTileX = renderChunkX * RENDER_CHUNK_SIZE;
    const maxTileX = (renderChunkX + 1) * RENDER_CHUNK_SIZE - 1;
    const minTileY = renderChunkY * RENDER_CHUNK_SIZE;
@@ -972,21 +1168,71 @@ const getWaterChunkWaterTiles = (renderChunkX: number, renderChunkY: number): Ar
    return tiles;
 }
 
+const renderChunkHasBorderingWaterTiles = (renderChunkX: number, renderChunkY: number): boolean => {
+   const leftTileX = renderChunkX * RENDER_CHUNK_SIZE - 1;
+   const rightTileX = (renderChunkX + 1) * RENDER_CHUNK_SIZE;
+   const topTileY = (renderChunkY + 1) * RENDER_CHUNK_SIZE;
+   const bottomTileY = renderChunkY * RENDER_CHUNK_SIZE - 1;
+
+   // Left border tiles
+   for (let tileY = bottomTileY; tileY <= topTileY; tileY++) {
+      if (Board.tileIsInBoard(leftTileX, tileY)) {
+         const tile = Board.getTile(leftTileX, tileY);
+         if (tile.type === "water") {
+            return true;
+         }
+      }
+   }
+   
+   // Right border tiles
+   for (let tileY = bottomTileY; tileY <= topTileY; tileY++) {
+      if (Board.tileIsInBoard(rightTileX, tileY)) {
+         const tile = Board.getTile(rightTileX, tileY);
+         if (tile.type === "water") {
+            return true;
+         }
+      }
+   }
+
+   // Top border tiles
+   for (let tileX = leftTileX; tileX <= rightTileX; tileX++) {
+      if (Board.tileIsInBoard(tileX, topTileY)) {
+         const tile = Board.getTile(tileX, topTileY);
+         if (tile.type === "water") {
+            return true;
+         }
+      }
+   }
+
+   // Bottom border tiles
+   for (let tileX = leftTileX; tileX <= rightTileX; tileX++) {
+      if (Board.tileIsInBoard(tileX, bottomTileY)) {
+         const tile = Board.getTile(tileX, bottomTileY);
+         if (tile.type === "water") {
+            return true;
+         }
+      }
+   }
+
+   return false;
+}
+
 export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY: number): RenderChunkRiverInfo | null {
-   const waterTiles = getWaterChunkWaterTiles(renderChunkX, renderChunkY);
+   const waterTiles = getRenderChunkWaterTiles(renderChunkX, renderChunkY);
 
    // If there are no water tiles don't calculate any data
-   if (waterTiles.length === 0) {
+   // Check for any bordering tiles just outside the render chunk. This is to account for transitions
+   // in the current render chunk which happen due to a tile in a different render chunk.
+   if (waterTiles.length === 0 && !renderChunkHasBorderingWaterTiles(renderChunkX, renderChunkY)) {
       return null;
    }
    
-   const baseVertices = calculateBaseVertices(waterTiles);
+   const baseVertexData = calculateBaseVertexData(waterTiles);
    const baseBuffer = gl.createBuffer()!;
    gl.bindBuffer(gl.ARRAY_BUFFER, baseBuffer);
-   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(baseVertices), gl.STATIC_DRAW);
+   gl.bufferData(gl.ARRAY_BUFFER, baseVertexData, gl.STATIC_DRAW);
 
    const rockVertexArrays = calculateRockVertices(renderChunkX, renderChunkY);
-
    const rockBuffers = new Array<WebGLBuffer>();
    const rockVertexCounts = new Array<number>();
    for (const vertices of rockVertexArrays) {
@@ -998,51 +1244,52 @@ export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY
       rockVertexCounts.push(vertices.length);
    }
 
-   const highlightsVertices = calculateHighlightsVertices(waterTiles);
+   const highlightsVertexData = calculateHighlightsVertexData(waterTiles);
    const highlightsBuffer = gl.createBuffer()!;
    gl.bindBuffer(gl.ARRAY_BUFFER, highlightsBuffer);
-   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(highlightsVertices), gl.STATIC_DRAW);
+   gl.bufferData(gl.ARRAY_BUFFER, highlightsVertexData, gl.STATIC_DRAW);
 
-   const noiseVertices = calculateNoiseVertices(waterTiles);
+   const noiseVertexData = calculateNoiseVertexData(waterTiles);
    const noiseBuffer = gl.createBuffer()!;
    gl.bindBuffer(gl.ARRAY_BUFFER, noiseBuffer);
-   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(noiseVertices), gl.STATIC_DRAW);
+   gl.bufferData(gl.ARRAY_BUFFER, noiseVertexData, gl.STATIC_DRAW);
 
-   const transitionVertices = calculateTransitionVertices(waterTiles);
+   const transitionVertexData = calculateTransitionVertexData(renderChunkX, renderChunkY);
    const transitionBuffer = gl.createBuffer()!;
    gl.bindBuffer(gl.ARRAY_BUFFER, transitionBuffer);
-   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(transitionVertices), gl.STATIC_DRAW);
+   gl.bufferData(gl.ARRAY_BUFFER, transitionVertexData, gl.STATIC_DRAW);
 
    const steppingStones = calculateRenderChunkSteppingStones(renderChunkX, renderChunkY);
 
-   const foamVertices = calculateFoamVertices(steppingStones);
+   const foamVertexData = calculateFoamVertexData(steppingStones);
    const foamBuffer = gl.createBuffer()!;
    gl.bindBuffer(gl.ARRAY_BUFFER, foamBuffer);
-   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(foamVertices), gl.STATIC_DRAW);
+   gl.bufferData(gl.ARRAY_BUFFER, foamVertexData, gl.STATIC_DRAW);
 
-   const steppingStoneVertices = calculateSteppingStoneVertices(steppingStones);
+   const steppingStoneVertexData = calculateSteppingStoneVertexData(steppingStones);
    const steppingStoneBuffer = gl.createBuffer()!;
    gl.bindBuffer(gl.ARRAY_BUFFER, steppingStoneBuffer);
-   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(steppingStoneVertices), gl.STATIC_DRAW);
+   gl.bufferData(gl.ARRAY_BUFFER, steppingStoneVertexData, gl.STATIC_DRAW);
 
    return {
       baseVAO: createBaseVAO(baseBuffer),
-      baseVertexCount: baseVertices.length,
+      baseVertexCount: baseVertexData.length,
       rockVAOs: rockBuffers.map(buffer => createRockVAO(buffer)),
       rockVertexCounts: rockVertexCounts,
       highlightsVAO: createHighlightsVAO(highlightsBuffer),
-      highlightsVertexCount: highlightsVertices.length,
+      highlightsVertexCount: highlightsVertexData.length,
       transitionVAO: createTransitionVAO(transitionBuffer),
-      transitionVertexCount: transitionVertices.length,
+      transitionVertexCount: transitionVertexData.length,
       noiseVAO: createNoiseVAO(noiseBuffer),
-      noiseVertexCount: noiseVertices.length,
+      noiseVertexCount: noiseVertexData.length,
       foamVAO: createFoamVAO(foamBuffer),
-      foamVertexCount: foamVertices.length,
+      foamVertexCount: foamVertexData.length,
       steppingStoneVAO: createSteppingStoneVAO(steppingStoneBuffer),
-      steppingStoneVertexCount: steppingStoneVertices.length
+      steppingStoneVertexCount: steppingStoneVertexData.length
    };
 }
 
+// @Cleanup: Remove this
 const calculateDistanceToLand = (tileX: number, tileY: number): number => {
    // Check if any neighbouring tiles are land tiles
    for (const offset of ADJACENT_OFFSETS) {
@@ -1061,28 +1308,11 @@ const calculateDistanceToLand = (tileX: number, tileY: number): number => {
    return 1;
 }
 
-const calculateDistanceToWater = (tileX: number, tileY: number): number => {
-   // Check if any neighbouring tiles are water tiles
-   for (const offset of ADJACENT_OFFSETS) {
-      const x = tileX + offset[0];
-      const y = tileY + offset[1];
-      if (!Board.tileIsInBoard(x, y)) {
-         continue;
-      }
-
-      const tile = Board.getTile(x, y);
-      if (tile.type === "water") {
-         return 0;
-      }
-   }
-
-   return 1;
-}
-
-const calculateNoiseVertices = (waterTiles: ReadonlyArray<Tile>): ReadonlyArray<number> => {
-   const vertices = new Array<number>();
+const calculateNoiseVertexData = (waterTiles: ReadonlyArray<Tile>): Float32Array => {
+   const vertexData = new Float32Array(waterTiles.length * 6 * 8);
    
-   for (const tile of waterTiles) {
+   for (let i = 0; i < waterTiles.length; i++) {
+      const tile = waterTiles[i];
       const flowDirection = Board.getRiverFlowDirection(tile.x, tile.y);
       
       const x1 = (tile.x - 0.5) * SETTINGS.TILE_SIZE;
@@ -1096,29 +1326,64 @@ const calculateNoiseVertices = (waterTiles: ReadonlyArray<Tile>): ReadonlyArray<
       const flowDirectionX = Math.sin(flowDirection);
       const flowDirectionY = Math.cos(flowDirection);
 
-      vertices.push(
-         x1, y1, 0, 0, flowDirectionX, flowDirectionY, animationOffset, animationSpeed,
-         x2, y1, 1, 0, flowDirectionX, flowDirectionY, animationOffset, animationSpeed,
-         x1, y2, 0, 1, flowDirectionX, flowDirectionY, animationOffset, animationSpeed,
-         x1, y2, 0, 1, flowDirectionX, flowDirectionY, animationOffset, animationSpeed,
-         x2, y1, 1, 0, flowDirectionX, flowDirectionY, animationOffset, animationSpeed,
-         x2, y2, 1, 1, flowDirectionX, flowDirectionY, animationOffset, animationSpeed
-      );
+      const dataOffset = i * 6 * 8;
+
+      vertexData[dataOffset] = x1;
+      vertexData[dataOffset + 1] = y1;
+      vertexData[dataOffset + 2] = 0;
+      vertexData[dataOffset + 3] = 0;
+      vertexData[dataOffset + 4] = flowDirectionX;
+      vertexData[dataOffset + 5] = flowDirectionY;
+      vertexData[dataOffset + 6] = animationOffset;
+      vertexData[dataOffset + 7] = animationSpeed;
+
+      vertexData[dataOffset + 8] = x2;
+      vertexData[dataOffset + 9] = y1;
+      vertexData[dataOffset + 10] = 1;
+      vertexData[dataOffset + 11] = 0;
+      vertexData[dataOffset + 12] = flowDirectionX;
+      vertexData[dataOffset + 13] = flowDirectionY;
+      vertexData[dataOffset + 14] = animationOffset;
+      vertexData[dataOffset + 15] = animationSpeed;
+
+      vertexData[dataOffset + 16] = x1;
+      vertexData[dataOffset + 17] = y2;
+      vertexData[dataOffset + 18] = 0;
+      vertexData[dataOffset + 19] = 1;
+      vertexData[dataOffset + 20] = flowDirectionX;
+      vertexData[dataOffset + 21] = flowDirectionY;
+      vertexData[dataOffset + 22] = animationOffset;
+      vertexData[dataOffset + 23] = animationSpeed;
+
+      vertexData[dataOffset + 24] = x1;
+      vertexData[dataOffset + 25] = y2;
+      vertexData[dataOffset + 26] = 0;
+      vertexData[dataOffset + 27] = 1;
+      vertexData[dataOffset + 28] = flowDirectionX;
+      vertexData[dataOffset + 29] = flowDirectionY;
+      vertexData[dataOffset + 30] = animationOffset;
+      vertexData[dataOffset + 31] = animationSpeed;
+
+      vertexData[dataOffset + 32] = x2;
+      vertexData[dataOffset + 33] = y1;
+      vertexData[dataOffset + 34] = 1;
+      vertexData[dataOffset + 35] = 0;
+      vertexData[dataOffset + 36] = flowDirectionX;
+      vertexData[dataOffset + 37] = flowDirectionY;
+      vertexData[dataOffset + 38] = animationOffset;
+      vertexData[dataOffset + 39] = animationSpeed;
+
+      vertexData[dataOffset + 40] = x2;
+      vertexData[dataOffset + 41] = y2;
+      vertexData[dataOffset + 42] = 1;
+      vertexData[dataOffset + 43] = 1;
+      vertexData[dataOffset + 44] = flowDirectionX;
+      vertexData[dataOffset + 45] = flowDirectionY;
+      vertexData[dataOffset + 46] = animationOffset;
+      vertexData[dataOffset + 47] = animationSpeed;
    }
 
-   return vertices;
-}
-
-const waterEdgeDist = (tileX: number, tileY: number): number => {
-   if (!Board.tileIsInBoard(tileX, tileY)) {
-      return 1;
-   }
-
-   const tile = Board.getTile(tileX, tileY);
-   if (tile.type === "water") {
-      return 0;
-   }
-   return 1;
+   return vertexData;
 }
 
 const calculateRenderChunkSteppingStones = (renderChunkX: number, renderChunkY: number): ReadonlySet<RiverSteppingStone> => {
@@ -1136,9 +1401,10 @@ const calculateRenderChunkSteppingStones = (renderChunkX: number, renderChunkY: 
    return steppingStones;
 }
 
-const calculateSteppingStoneVertices = (visibleSteppingStones: ReadonlySet<RiverSteppingStone>): ReadonlyArray<number> => {
-   const vertices = new Array<number>();
+const calculateSteppingStoneVertexData = (visibleSteppingStones: ReadonlySet<RiverSteppingStone>): Float32Array => {
+   const vertexData = new Float32Array(visibleSteppingStones.size * 6 * 5);
 
+   let i = 0;
    for (const steppingStone of visibleSteppingStones) {
       const size = RIVER_STEPPING_STONE_SIZES[steppingStone.size];
       
@@ -1147,6 +1413,7 @@ const calculateSteppingStoneVertices = (visibleSteppingStones: ReadonlySet<River
       let y1 = (steppingStone.position.y - size/2);
       let y2 = (steppingStone.position.y + size/2);
 
+      // Speed: Garbage collection
       let topLeft = new Point(x1, y2);
       let topRight = new Point(x2, y2);
       let bottomRight = new Point(x2, y1);
@@ -1159,25 +1426,57 @@ const calculateSteppingStoneVertices = (visibleSteppingStones: ReadonlySet<River
       bottomRight = rotatePoint(bottomRight, pos, steppingStone.rotation);
       bottomLeft = rotatePoint(bottomLeft, pos, steppingStone.rotation);
 
-      const textureIdx: number = steppingStone.size;
+      const textureIdx = steppingStone.size as number;
 
-      vertices.push(
-         bottomLeft.x, bottomLeft.y, 0, 0, textureIdx,
-         bottomRight.x, bottomRight.y, 1, 0, textureIdx,
-         topLeft.x, topLeft.y, 0, 1, textureIdx,
-         topLeft.x, topLeft.y, 0, 1, textureIdx,
-         bottomRight.x, bottomRight.y, 1, 0, textureIdx,
-         topRight.x, topRight.y, 1, 1, textureIdx
-      );
+      const dataOffset = i * 6 * 5;
+
+      vertexData[dataOffset] = bottomLeft.x;
+      vertexData[dataOffset + 1] = bottomLeft.y;
+      vertexData[dataOffset + 2] = 0;
+      vertexData[dataOffset + 3] = 0;
+      vertexData[dataOffset + 4] = textureIdx;
+
+      vertexData[dataOffset + 5] = bottomRight.x;
+      vertexData[dataOffset + 6] = bottomRight.y;
+      vertexData[dataOffset + 7] = 1;
+      vertexData[dataOffset + 8] = 0;
+      vertexData[dataOffset + 9] = textureIdx;
+
+      vertexData[dataOffset + 10] = topLeft.x;
+      vertexData[dataOffset + 11] = topLeft.y;
+      vertexData[dataOffset + 12] = 0;
+      vertexData[dataOffset + 13] = 1;
+      vertexData[dataOffset + 14] = textureIdx;
+
+      vertexData[dataOffset + 15] = topLeft.x;
+      vertexData[dataOffset + 16] = topLeft.y;
+      vertexData[dataOffset + 17] = 0;
+      vertexData[dataOffset + 18] = 1;
+      vertexData[dataOffset + 19] = textureIdx;
+
+      vertexData[dataOffset + 20] = bottomRight.x;
+      vertexData[dataOffset + 21] = bottomRight.y;
+      vertexData[dataOffset + 22] = 1;
+      vertexData[dataOffset + 23] = 0;
+      vertexData[dataOffset + 24] = textureIdx;
+
+      vertexData[dataOffset + 25] = topRight.x;
+      vertexData[dataOffset + 26] = topRight.y;
+      vertexData[dataOffset + 27] = 1;
+      vertexData[dataOffset + 28] = 1;
+      vertexData[dataOffset + 29] = textureIdx;
+
+      i++;
    }
 
-   return vertices;
+   return vertexData;
 }
 
-const calculateHighlightsVertices = (waterTiles: ReadonlyArray<Tile>): ReadonlyArray<number> => {
-   const vertices = new Array<number>();
+const calculateHighlightsVertexData = (waterTiles: ReadonlyArray<Tile>): Float32Array => {
+   const vertexData = new Float32Array(waterTiles.length * 6 * 5);
    
-   for (const tile of waterTiles) {
+   for (let i = 0; i < waterTiles.length; i++) {
+      const tile = waterTiles[i];
       const x1 = tile.x * SETTINGS.TILE_SIZE;
       const x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
       const y1 = tile.y * SETTINGS.TILE_SIZE;
@@ -1185,17 +1484,46 @@ const calculateHighlightsVertices = (waterTiles: ReadonlyArray<Tile>): ReadonlyA
 
       const fadeOffset = Math.random() * 3;
 
-      vertices.push(
-         x1, y1, 0, 0, fadeOffset,
-         x2, y1, 1, 0, fadeOffset,
-         x1, y2, 0, 1, fadeOffset,
-         x1, y2, 0, 1, fadeOffset,
-         x2, y1, 1, 0, fadeOffset,
-         x2, y2, 1, 1, fadeOffset
-      );
+      const dataOffset = i * 6 * 5;
+
+      vertexData[dataOffset] = x1;
+      vertexData[dataOffset + 1] = y1;
+      vertexData[dataOffset + 2] = 0;
+      vertexData[dataOffset + 3] = 0;
+      vertexData[dataOffset + 4] = fadeOffset;
+
+      vertexData[dataOffset + 5] = x2;
+      vertexData[dataOffset + 6] = y1;
+      vertexData[dataOffset + 7] = 1;
+      vertexData[dataOffset + 8] = 0;
+      vertexData[dataOffset + 9] = fadeOffset;
+
+      vertexData[dataOffset + 10] = x1;
+      vertexData[dataOffset + 11] = y2;
+      vertexData[dataOffset + 12] = 0;
+      vertexData[dataOffset + 13] = 1;
+      vertexData[dataOffset + 14] = fadeOffset;
+
+      vertexData[dataOffset + 15] = x1;
+      vertexData[dataOffset + 16] = y2;
+      vertexData[dataOffset + 17] = 0;
+      vertexData[dataOffset + 18] = 1;
+      vertexData[dataOffset + 19] = fadeOffset;
+
+      vertexData[dataOffset + 20] = x2;
+      vertexData[dataOffset + 21] = y1;
+      vertexData[dataOffset + 22] = 1;
+      vertexData[dataOffset + 23] = 0;
+      vertexData[dataOffset + 24] = fadeOffset;
+
+      vertexData[dataOffset + 25] = x1;
+      vertexData[dataOffset + 26] = y2;
+      vertexData[dataOffset + 27] = 1;
+      vertexData[dataOffset + 28] = 0;
+      vertexData[dataOffset + 29] = fadeOffset;
    }
 
-   return vertices;
+   return vertexData;
 }
 
 const calculateVisibleRenderChunks = (): ReadonlyArray<RenderChunkRiverInfo> => {

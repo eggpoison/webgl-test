@@ -7,7 +7,7 @@ const chunkBorderColour = "1.0, 0.0, 0.0";
 const vertexShaderText = `#version 300 es
 precision lowp float;
 
-in vec2 vertPosition;
+layout(location = 0) in vec2 vertPosition;
 
 void main() {
    gl_Position = vec4(vertPosition, 0.0, 1.0);
@@ -26,8 +26,6 @@ let program: WebGLProgram;
 
 export function createChunkBorderShaders(): void {
    program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
-
-   gl.bindAttribLocation(program, 0, "vertPosition");
 }
 
 export function renderChunkBorders(): void {

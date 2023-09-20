@@ -10,7 +10,7 @@ const CIRCLE_VERTEX_COUNT = 20;
 const vertexShaderText = `#version 300 es
 precision mediump float;
 
-in vec2 a_position;
+layout(location = 0) in vec2 a_position;
 
 void main() {
    gl_Position = vec4(a_position, 0.0, 1.0);   
@@ -30,8 +30,6 @@ let program: WebGLProgram;
 
 export function createHitboxShaders(): void {
    program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
-
-   gl.bindAttribLocation(program, 0, "a_position");
 }
 
 /** Renders all hitboxes of a specified set of entities */
