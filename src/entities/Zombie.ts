@@ -40,7 +40,7 @@ class Zombie extends Entity {
       super.tick();
 
       // Create footsteps
-      if (this.velocity !== null && !this.isInRiver(this.findCurrentTile()) && Board.tickIntervalHasPassed(0.3)) {
+      if (this.velocity !== null && !this.isInRiver() && Board.tickIntervalHasPassed(0.3)) {
          createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 4);
 
          this.numFootstepsTaken++;

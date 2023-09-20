@@ -42,6 +42,7 @@ export function renderWallBorders(): void {
    const minTileY = Camera.visibleChunkBounds[2] * SETTINGS.CHUNK_SIZE;
    const maxTileY = (Camera.visibleChunkBounds[3] + 1) * SETTINGS.CHUNK_SIZE - 1;
 
+   // @Speed: This shouldn't have to loop over all visible tiles
    const wallTiles = new Array<Tile>();
    for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
       for (let tileX = minTileX; tileX <= maxTileX; tileX++) {

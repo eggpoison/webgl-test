@@ -3,7 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle, createSnowParticle } from "../generic-particles";
+import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle, createSnowParticle, createWhiteSmokeParticle } from "../generic-particles";
 import Board from "../Board";
 
 class Yeti extends Entity {
@@ -68,7 +68,7 @@ class Yeti extends Entity {
       super.tick();
 
       // Create footsteps
-      if (this.velocity !== null && !this.isInRiver(this.findCurrentTile()) && Board.tickIntervalHasPassed(0.55)) {
+      if (this.velocity !== null && !this.isInRiver() && Board.tickIntervalHasPassed(0.55)) {
          createFootprintParticle(this, this.numFootstepsTaken, 40, 96, 8);
 
          this.numFootstepsTaken++;
@@ -87,6 +87,13 @@ class Yeti extends Entity {
             const positionY = impactPositionY + offsetMagnitude * Math.cos(offsetDirection);
             
             createSnowParticle(positionX, positionY, randFloat(40, 100));
+         }
+
+         // White smoke particles
+         for (let i = 0; i < 10; i++) {
+            const spawnPositionX = impactPositionX;
+            const spawnPositionY = impactPositionY;
+            createWhiteSmokeParticle(spawnPositionX, spawnPositionY, 1);
          }
       }
       this.lastAttackProgress = this.attackProgress;

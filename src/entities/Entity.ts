@@ -25,7 +25,7 @@ abstract class Entity extends GameObject {
 
       // Water splash particles
       // @Incomplete
-      if (this.isInRiver(this.findCurrentTile()) && Board.tickIntervalHasPassed(0.15) && this.acceleration !== null) {
+      if (this.isInRiver() && Board.tickIntervalHasPassed(0.15) && this.acceleration !== null) {
          const lifetime = 1.5;
 
          const particle = new Particle(lifetime);
@@ -212,8 +212,6 @@ abstract class Entity extends GameObject {
    public registerHit(hitData: HitData): void {
       // If the entity is hit by a flesh sword, create slime puddles
       if (hitData.flags & HitFlags.HIT_BY_FLESH_SWORD) {
-         // @Speed garbage collection
-         
          const spawnOffsetMagnitude = 30 * Math.random()
          const spawnOffsetDirection = 2 * Math.PI * Math.random();
          const spawnPositionX = this.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);

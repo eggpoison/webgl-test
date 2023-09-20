@@ -37,6 +37,8 @@ abstract class GameObject extends RenderObject {
 
    public ageTicks = 0;
 
+   public tile!: Tile;
+
    /** Stores all render parts attached to the object, in ascending order of their z-indexes. */
    public readonly renderParts = new Array<RenderPart>();
 
@@ -70,6 +72,8 @@ abstract class GameObject extends RenderObject {
          hitbox.updatePosition();
       }
 
+      this.updateCurrentTile();
+
       // Note: The chunks are calculated outside of the constructor immediately after the game object is created
       // so that all constructors have time to run
    }
@@ -77,8 +81,10 @@ abstract class GameObject extends RenderObject {
    protected overrideTileMoveSpeedMultiplier?(): number | null;
 
    public tick(): void {
+      this.updateCurrentTile();
+      
       // Water droplet particles
-      if (this.isInRiver(this.findCurrentTile()) && Board.tickIntervalHasPassed(0.05)) {
+      if (this.isInRiver() && Board.tickIntervalHasPassed(0.05)) {
          const lifetime = 1;
 
          const velocityMagnitude = randFloat(40, 60);
@@ -114,9 +120,8 @@ abstract class GameObject extends RenderObject {
       }
    };
 
-   // @Cleanup this shouldn't need a tile parameter
-   protected isInRiver(tile: Tile): boolean {
-      if (tile.type !== "water") {
+   protected isInRiver(): boolean {
+      if (this.tile.type !== "water") {
          return false;
       }
 
@@ -136,11 +141,10 @@ abstract class GameObject extends RenderObject {
    }
 
    public applyPhysics(): void {
-      const tile = this.findCurrentTile();
-      const tileTypeInfo = TILE_TYPE_INFO_RECORD[tile.type];
+      const tileTypeInfo = TILE_TYPE_INFO_RECORD[this.tile.type];
 
       let tileMoveSpeedMultiplier = tileTypeInfo.moveSpeedMultiplier || 1;
-      if (tile.type === "water" && !this.isInRiver(tile)) {
+      if (this.tile.type === "water" && !this.isInRiver()) {
          tileMoveSpeedMultiplier = 1;
       }
 
@@ -207,8 +211,8 @@ abstract class GameObject extends RenderObject {
       }
 
       // If the game object is in a river, push them in the flow direction of the river
-      if (this.isInRiver(tile)) {
-         const flowDirection = Board.getRiverFlowDirection(tile.x, tile.y);
+      if (this.isInRiver()) {
+         const flowDirection = Board.getRiverFlowDirection(this.tile.x, this.tile.y);
          const pushVector = new Vector(240 / SETTINGS.TPS, flowDirection);
          if (this.velocity === null) {
             this.velocity = pushVector;
@@ -238,11 +242,10 @@ abstract class GameObject extends RenderObject {
       }
    }
 
-   // @Cleanup this is pretty bad
-   public findCurrentTile(): Tile {
+   private updateCurrentTile(): void {
       const tileX = Math.floor(this.position.x / SETTINGS.TILE_SIZE);
       const tileY = Math.floor(this.position.y / SETTINGS.TILE_SIZE);
-      return Board.getTile(tileX, tileY);
+      this.tile = Board.getTile(tileX, tileY);
    }
 
    /** Recalculates which chunks the game object is contained in */

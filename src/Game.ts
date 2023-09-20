@@ -351,15 +351,15 @@ abstract class Game {
          renderChunkBorders();
       }
 
-      // renderMonocolourParticles(ParticleRenderLayer.low);
-      // renderTexturedParticles(ParticleRenderLayer.low);
+      renderMonocolourParticles(ParticleRenderLayer.low);
+      renderTexturedParticles(ParticleRenderLayer.low);
 
       renderGameObjects(droppedItems);
       renderGameObjects(entities);
       renderGameObjects(projectiles);
       
-      // renderMonocolourParticles(ParticleRenderLayer.high);
-      // renderTexturedParticles(ParticleRenderLayer.high);
+      renderMonocolourParticles(ParticleRenderLayer.high);
+      renderTexturedParticles(ParticleRenderLayer.high);
 
       if (nerdVisionIsVisible() && OPTIONS.showHitboxes) {
          renderEntityHitboxes();

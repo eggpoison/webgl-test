@@ -285,7 +285,7 @@ abstract class TribeMember extends Entity {
    protected overrideTileMoveSpeedMultiplier(): number | null {
       // If snow armour is equipped, move at normal speed on snow tiles
       if (this.armourType === ItemType.frost_armour) {
-         if (this.findCurrentTile().type === "snow") {
+         if (this.tile.type === "snow") {
             return 1;
          }
       }

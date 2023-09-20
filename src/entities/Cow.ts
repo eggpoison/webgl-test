@@ -57,7 +57,7 @@ class Cow extends Entity {
       super.tick();
 
       // Create footsteps
-      if (this.velocity !== null && !this.isInRiver(this.findCurrentTile()) && Board.tickIntervalHasPassed(0.3)) {
+      if (this.velocity !== null && !this.isInRiver() && Board.tickIntervalHasPassed(0.3)) {
          createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 5);
 
          this.numFootstepsTaken++;
@@ -102,10 +102,9 @@ class Cow extends Entity {
 
       // When the cow has finished grazing, create a bunch of dirt particles
       if (entityData.clientArgs[1] < this.grazeProgress) {
-         const tile = this.findCurrentTile();
          for (let i = 0; i < 15; i++) {
-            const x = (tile.x + Math.random()) * SETTINGS.TILE_SIZE;
-            const y = (tile.y + Math.random()) * SETTINGS.TILE_SIZE;
+            const x = (this.tile.x + Math.random()) * SETTINGS.TILE_SIZE;
+            const y = (this.tile.y + Math.random()) * SETTINGS.TILE_SIZE;
             createDirtParticle(x, y);
          }
       }
