@@ -288,3 +288,36 @@ export function createSnowParticle(spawnPositionX: number, spawnPositionY: numbe
    );
    Board.lowMonocolourParticles.push(particle);
 }
+
+export function createWhiteSmokeParticle(spawnPositionX: number, spawnPositionY: number, strength: number): void {
+   const velocityMagnitude = 125 * randFloat(0.8, 1.2) * strength;
+   const velocityDirection = 2 * Math.PI * Math.random();
+   const velocityX = velocityMagnitude * Math.sin(velocityDirection);
+   const velocityY = velocityMagnitude * Math.cos(velocityDirection);
+
+   const lifetime = strength;
+
+   const particle = new Particle(lifetime);
+   particle.getOpacity = () => {
+      return 1 - particle.age / lifetime;
+   }
+
+   const sizeMultiplier = randFloat(0.7, 1);
+
+   addTexturedParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.low,
+      64 * sizeMultiplier, 64 * sizeMultiplier,
+      spawnPositionX, spawnPositionY,
+      velocityX, velocityY,
+      0, 0,
+      velocityMagnitude / lifetime / 1.5,
+      2 * Math.PI * Math.random(),
+      Math.PI * randFloat(3, 4) * randSign(),
+      0,
+      Math.PI,
+      7,
+      0, 0, 0
+   );
+   Board.lowTexturedParticles.push(particle);
+}

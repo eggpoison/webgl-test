@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, ProjectileData, VisibleChunkBounds, TribeType, TribeData, InventoryData, CircularHitboxData, RectangularHitboxData } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, ProjectileData, VisibleChunkBounds, TribeType, TribeData, InventoryData, CircularHitboxData, RectangularHitboxData, randFloat } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -20,7 +20,6 @@ import { registerServerTick, updateDebugScreenCurrentTime, updateDebugScreenTick
 import createProjectile from "../projectiles/projectile-creation";
 import Camera from "../Camera";
 import { isDev } from "../utils";
-import { updateTileAmbientOcclusion } from "../rendering/ambient-occlusion-rendering";
 import Tribe from "../Tribe";
 import { updateRenderChunkFromTileUpdate } from "../rendering/tile-rendering/render-chunks";
 import Entity from "../entities/Entity";
@@ -28,6 +27,9 @@ import Board from "../Board";
 import { definiteGameState, latencyGameState } from "../game-state/game-states";
 import { hideNerdVision } from "../components/game/dev/NerdVision";
 import { BackpackInventoryMenu_update } from "../components/game/inventories/BackpackInventory";
+import { createWhiteSmokeParticle } from "../generic-particles";
+import Particle from "../Particle";
+import { addMonocolourParticleToBufferContainer, ParticleRenderLayer } from "../rendering/particle-rendering";
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -442,15 +444,16 @@ abstract class Client {
       return false;
    }
 
-   private static createDroppedItemFromServerItemData(serverItemEntityData: DroppedItemData): void {
-      const position = Point.unpackage(serverItemEntityData.position); 
-      const velocity = serverItemEntityData.velocity !== null ? Vector.unpackage(serverItemEntityData.velocity) : null;
+   private static createDroppedItemFromServerItemData(droppedItemData: DroppedItemData): void {
+      const position = Point.unpackage(droppedItemData.position); 
+      const velocity = droppedItemData.velocity !== null ? Vector.unpackage(droppedItemData.velocity) : null;
 
-      const hitboxes = this.createHitboxesFromData(serverItemEntityData.hitboxes);
+      const hitboxes = this.createHitboxesFromData(droppedItemData.hitboxes);
 
-      const droppedItem = new DroppedItem(position, hitboxes, serverItemEntityData.id, velocity, serverItemEntityData.type);
-      droppedItem.rotation = serverItemEntityData.rotation;
-      droppedItem.mass = serverItemEntityData.mass;
+      const droppedItem = new DroppedItem(position, hitboxes, droppedItemData.id, velocity, droppedItemData.type);
+      droppedItem.rotation = droppedItemData.rotation;
+      droppedItem.mass = droppedItemData.mass;
+      droppedItem.ageTicks = droppedItemData.ageTicks;
 
       Board.addDroppedItem(droppedItem);
    }
@@ -464,6 +467,7 @@ abstract class Client {
       projectile.rotation = projectileData.rotation;
       projectile.velocity = projectileData.velocity !== null ? Vector.unpackage(projectileData.velocity) : null;
       projectile.mass = projectileData.mass;
+      projectile.ageTicks = projectileData.ageTicks;
 
       Board.addProjectile(projectile);
    }
@@ -475,17 +479,6 @@ abstract class Client {
          tile.isWall = tileUpdate.isWall;
          
          updateRenderChunkFromTileUpdate(tileUpdate);
-
-         // Update the ambient occlusion of nearby tiles
-         const minTileX = Math.max(tile.x - 1, 0);
-         const maxTileX = Math.min(tile.x + 1, SETTINGS.BOARD_DIMENSIONS - 1);
-         const minTileY = Math.max(tile.y - 1, 0);
-         const maxTileY = Math.min(tile.y + 1, SETTINGS.BOARD_DIMENSIONS - 1);
-         for (let tileY = maxTileY; tileY >= minTileY; tileY--) {
-            for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
-               updateTileAmbientOcclusion(tileX, tileY);
-            }
-         }
       }
    }
 
@@ -517,8 +510,61 @@ abstract class Client {
       entity.rotation = entityData.rotation;
       entity.mass = entityData.mass;
       entity.mobAIType = entityData.mobAIType;
+      entity.ageTicks = entityData.ageTicks;
 
       Board.addEntity(entity);
+
+      // if (entity.type === "cow") {
+      //    console.log(entityData.ageTicks);
+      // }
+
+      // If the entity has just spawned in, create white smoke particles.
+      if (entityData.ageTicks === 0) {
+         const strength = 1;
+         
+         // White smoke particles
+         for (let i = 0; i < 10; i++) {
+            const spawnPositionX = entity.position.x;
+            const spawnPositionY = entity.position.y;
+            createWhiteSmokeParticle(spawnPositionX, spawnPositionY, strength);
+         }
+
+         // Speck particles
+         for (let i = 0; i < 20; i++) {
+            const spawnPositionX = entity.position.x;
+            const spawnPositionY = entity.position.y;
+
+            const velocityMagnitude = 80 * randFloat(0.9, 1.1);
+            const velocityDirection = 2 * Math.PI * Math.random();
+            const velocityX = velocityMagnitude * Math.sin(velocityDirection);
+            const velocityY = velocityMagnitude * Math.cos(velocityDirection);
+
+            const lifetime = strength;
+            
+            const particle = new Particle(lifetime);
+            particle.getOpacity = () => {
+               return 1 - Math.pow(particle.age / lifetime, 2);
+            }
+
+            addMonocolourParticleToBufferContainer(
+               particle,
+               ParticleRenderLayer.low,
+               4, 4,
+               spawnPositionX, spawnPositionY,
+               velocityX, velocityY,
+               0, 0,
+               velocityMagnitude / lifetime / 1.2,
+               2 * Math.PI * Math.random(),
+               randFloat(-Math.PI, Math.PI),
+               0,
+               Math.PI,
+               1,
+               1,
+               1
+            );
+            Board.lowMonocolourParticles.push(particle);
+         }
+      }
 
       return entity;
    }

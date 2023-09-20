@@ -55,14 +55,7 @@ class ObjectBufferContainer {
       }
 
       // Choose an available index to add the object to
-      const index = this.availableIndexes[0];
-      // @Temporary
-      if (this.objectEntryIndexes.hasOwnProperty(objectID)) {
-         console.log(Object.assign({}, this.objectEntryIndexes));
-         console.warn("already exists " + index);
-      }
-      this.objectEntryIndexes[objectID] = index;
-
+      this.objectEntryIndexes[objectID] = this.availableIndexes[0];
       this.availableIndexes.splice(0, 1);
    }
 

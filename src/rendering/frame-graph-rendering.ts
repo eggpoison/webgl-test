@@ -11,7 +11,7 @@ const vertexShaderText = `#version 300 es
 precision highp float;
 
 layout(location = 0) in vec2 a_position;
-in vec3 a_colour;
+layout(location = 1) in vec3 a_colour;
 
 out vec3 v_colour;
 
@@ -38,8 +38,6 @@ let gl: WebGL2RenderingContext;
 
 let program: WebGLProgram;
 
-let colourAttribLocation: GLint;
-
 const createGLContext = (): void => {
    const canvas = document.getElementById("frame-graph-canvas") as HTMLCanvasElement;
    const glAttempt = canvas.getContext("webgl2");
@@ -55,8 +53,6 @@ const createGLContext = (): void => {
 
 const createShaders = (): void => {
    program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
-
-   colourAttribLocation = gl.getAttribLocation(program, "a_colour");
 }
 
 export function setupFrameGraph(): void {
@@ -131,10 +127,10 @@ export function renderFrameGraph(frames: ReadonlyArray<FrameInfo>): void {
    gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
 
    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
-   gl.vertexAttribPointer(colourAttribLocation, 3, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
 
    gl.enableVertexAttribArray(0);
-   gl.enableVertexAttribArray(colourAttribLocation);
+   gl.enableVertexAttribArray(1);
 
    gl.drawArrays(gl.TRIANGLES, 0, frames.length * 6);
 }

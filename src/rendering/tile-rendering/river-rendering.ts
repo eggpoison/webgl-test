@@ -5,6 +5,7 @@ import Camera from "../../Camera";
 import Board, { RiverSteppingStone } from "../../Board";
 import { RENDER_CHUNK_SIZE, RenderChunkRiverInfo, getRenderChunkRiverInfo } from "./render-chunks";
 import { Tile } from "../../Tile";
+import { ADJACENT_OFFSETS, NEIGHBOUR_OFFSETS } from "../../utils";
 
 const SHALLOW_WATER_COLOUR = [118/255, 185/255, 242/255] as const;
 const DEEP_WATER_COLOUR = [86/255, 141/255, 184/255] as const;
@@ -15,24 +16,6 @@ const WATER_VISUAL_FLOW_SPEED = 0.3;
 const FOAM_OFFSET = 3;
 /** Extra size given to the foam under stepping stones */
 const FOAM_PADDING = 3.5;
-
-const ADJACENT_TILE_OFFSETS = [
-   [0, 0],
-   [-1, 0],
-   [0, -1],
-   [-1, -1]
-];
-
-const NEIGHBOURING_TILE_OFFSETS = [
-   [1, 0],
-   [-1, 0],
-   [0, -1],
-   [-1, -1],
-   [1, 1],
-   [-1, 1],
-   [0, 1],
-   [1, -1]
-];
 
 const WATER_ROCK_SIZES: Record<WaterRockSize, number> = {
    [WaterRockSize.small]: 24,
@@ -59,12 +42,12 @@ uniform vec2 u_playerPos;
 uniform vec2 u_halfWindowSize;
 uniform float u_zoom;
 
-in vec2 a_position;
-in vec2 a_coord;
-in float a_topLeftLandDistance;
-in float a_topRightLandDistance;
-in float a_bottomLeftLandDistance;
-in float a_bottomRightLandDistance;
+layout(location = 0) in vec2 a_position;
+layout(location = 1) in vec2 a_coord;
+layout(location = 2) in float a_topLeftLandDistance;
+layout(location = 3) in float a_topRightLandDistance;
+layout(location = 4) in float a_bottomLeftLandDistance;
+layout(location = 5) in float a_bottomRightLandDistance;
 
 out vec2 v_coord;
 out float v_topLeftLandDistance;
@@ -123,9 +106,9 @@ uniform vec2 u_playerPos;
 uniform vec2 u_halfWindowSize;
 uniform float u_zoom;
 
-in vec2 a_position;
-in vec2 a_texCoord;
-in float a_opacity;
+layout(location = 0) in vec2 a_position;
+layout(location = 1) in vec2 a_texCoord;
+layout(location = 2) in float a_opacity;
 
 out vec2 v_texCoord;
 out float v_opacity;
@@ -165,9 +148,9 @@ uniform vec2 u_playerPos;
 uniform vec2 u_halfWindowSize;
 uniform float u_zoom;
 
-in vec2 a_position;
-in vec2 a_texCoord;
-in float a_fadeOffset;
+layout(location = 0) in vec2 a_position;
+layout(location = 1) in vec2 a_texCoord;
+layout(location = 2) in float a_fadeOffset;
 
 out vec2 v_texCoord;
 out float v_fadeOffset;
@@ -226,11 +209,11 @@ uniform vec2 u_playerPos;
 uniform vec2 u_halfWindowSize;
 uniform float u_zoom;
 
-in vec2 a_position;
-in vec2 a_texCoord;
-in vec2 a_flowDirection;
-in float a_animationOffset;
-in float a_animationSpeed;
+layout(location = 0) in vec2 a_position;
+layout(location = 1) in vec2 a_texCoord;
+layout(location = 2) in vec2 a_flowDirection;
+layout(location = 3) in float a_animationOffset;
+layout(location = 4) in float a_animationSpeed;
 
 out vec2 v_texCoord;
 out vec2 v_flowDirection;
@@ -287,16 +270,16 @@ uniform vec2 u_playerPos;
 uniform vec2 u_halfWindowSize;
 uniform float u_zoom;
 
-in vec2 a_position;
-in vec2 a_texCoord;
-in float a_topLeftMarker;
-in float a_topRightMarker;
-in float a_bottomLeftMarker;
-in float a_bottomRightMarker;
-in float a_topMarker;
-in float a_rightMarker;
-in float a_leftMarker;
-in float a_bottomMarker;
+layout(location = 0) in vec2 a_position;
+layout(location = 1) in vec2 a_texCoord;
+layout(location = 2) in float a_topLeftMarker;
+layout(location = 3) in float a_topRightMarker;
+layout(location = 4) in float a_bottomLeftMarker;
+layout(location = 5) in float a_bottomRightMarker;
+layout(location = 6) in float a_topMarker;
+layout(location = 7) in float a_rightMarker;
+layout(location = 8) in float a_leftMarker;
+layout(location = 9) in float a_bottomMarker;
 
 out vec2 v_texCoord;
 out float v_topLeftMarker;
@@ -395,9 +378,9 @@ uniform vec2 u_halfWindowSize;
 uniform float u_zoom;
 
 layout(location = 0) in vec2 a_position;
-in vec2 a_texCoord;
-in vec2 a_flowDirection;
-in float a_textureOffset;
+layout(location = 1) in vec2 a_texCoord;
+layout(location = 2) in vec2 a_flowDirection;
+layout(location = 3) in float a_textureOffset;
 
 out vec2 v_texCoord;
 out vec2 v_flowDirection;
@@ -448,8 +431,8 @@ uniform vec2 u_halfWindowSize;
 uniform float u_zoom;
 
 layout(location = 0) in vec2 a_position;
-in vec2 a_texCoord;
-in float a_textureIdx;
+layout(location = 1) in vec2 a_texCoord;
+layout(location = 2) in float a_textureIdx;
 
 out vec2 v_texCoord;
 out float v_textureIdx;
@@ -631,7 +614,7 @@ const calculateTransitionVertices = (waterTiles: ReadonlyArray<Tile>): Array<num
    const edgeTileIndexes = new Set<number>();
 
    for (const tile of waterTiles) {
-      for (const offset of NEIGHBOURING_TILE_OFFSETS) {
+      for (const offset of NEIGHBOUR_OFFSETS) {
          const tileX = tile.x + offset[0];
          const tileY = tile.y + offset[1];
          if (Board.tileIsInBoard(tileX, tileY)) {
@@ -668,12 +651,12 @@ const calculateTransitionVertices = (waterTiles: ReadonlyArray<Tile>): Array<num
       const bottomMarker = waterEdgeDist(tile.x, tile.y - 1);
       
       vertices.push(
-         x1, y1, 0, 0, bottomLeftWaterDistance, bottomRightWaterDistance, topLeftWaterDistance, topRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
-         x2, y1, 1, 0, bottomLeftWaterDistance, bottomRightWaterDistance, topLeftWaterDistance, topRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
-         x1, y2, 0, 1, bottomLeftWaterDistance, bottomRightWaterDistance, topLeftWaterDistance, topRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
-         x1, y2, 0, 1, bottomLeftWaterDistance, bottomRightWaterDistance, topLeftWaterDistance, topRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
-         x2, y1, 1, 0, bottomLeftWaterDistance, bottomRightWaterDistance, topLeftWaterDistance, topRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
-         x2, y2, 1, 1, bottomLeftWaterDistance, bottomRightWaterDistance, topLeftWaterDistance, topRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker
+         x1, y1, 0, 0, topLeftWaterDistance, topRightWaterDistance, bottomLeftWaterDistance, bottomRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
+         x2, y1, 1, 0, topLeftWaterDistance, topRightWaterDistance, bottomLeftWaterDistance, bottomRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
+         x1, y2, 0, 1, topLeftWaterDistance, topRightWaterDistance, bottomLeftWaterDistance, bottomRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
+         x1, y2, 0, 1, topLeftWaterDistance, topRightWaterDistance, bottomLeftWaterDistance, bottomRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
+         x2, y1, 1, 0, topLeftWaterDistance, topRightWaterDistance, bottomLeftWaterDistance, bottomRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker,
+         x2, y2, 1, 1, topLeftWaterDistance, topRightWaterDistance, bottomLeftWaterDistance, bottomRightWaterDistance, topMarker, rightMarker, leftMarker, bottomMarker
       );
    }
 
@@ -743,12 +726,12 @@ const calculateBaseVertices = (waterTiles: ReadonlyArray<Tile>): ReadonlyArray<n
       const topRightLandDistance = calculateDistanceToLand(tile.x + 1, tile.y + 1);
 
       vertices.push(
-         x1, y1, 0, 0, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance,
-         x2, y1, 1, 0, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance,
-         x1, y2, 0, 1, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance,
-         x1, y2, 0, 1, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance,
-         x2, y1, 1, 0, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance,
-         x2, y2, 1, 1, bottomLeftLandDistance, bottomRightLandDistance, topLeftLandDistance, topRightLandDistance
+         x1, y1, 0, 0, topLeftLandDistance, topRightLandDistance, bottomLeftLandDistance, bottomRightLandDistance,
+         x2, y1, 1, 0, topLeftLandDistance, topRightLandDistance, bottomLeftLandDistance, bottomRightLandDistance,
+         x1, y2, 0, 1, topLeftLandDistance, topRightLandDistance, bottomLeftLandDistance, bottomRightLandDistance,
+         x1, y2, 0, 1, topLeftLandDistance, topRightLandDistance, bottomLeftLandDistance, bottomRightLandDistance,
+         x2, y1, 1, 0, topLeftLandDistance, topRightLandDistance, bottomLeftLandDistance, bottomRightLandDistance,
+         x2, y2, 1, 1, topLeftLandDistance, topRightLandDistance, bottomLeftLandDistance, bottomRightLandDistance,
       );
    }
 
@@ -808,7 +791,6 @@ const calculateFoamVertices = (steppingStones: ReadonlySet<RiverSteppingStone>):
       );
    }
 
-   // return vertexRecord;
    return vertices;
 }
 
@@ -817,27 +799,20 @@ const createBaseVAO = (buffer: WebGLBuffer): WebGLVertexArrayObject => {
    gl.bindVertexArray(vao);
 
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-
-   const baseProgramCoordAttribLocation = gl.getAttribLocation(baseProgram, "a_coord");
-   const baseProgramTopLeftLandDistanceAttribLocation = gl.getAttribLocation(baseProgram, "a_topLeftLandDistance");
-   const baseProgramTopRightLandDistanceAttribLocation = gl.getAttribLocation(baseProgram, "a_topRightLandDistance");
-   const baseProgramBottomLeftLandDistanceAttribLocation = gl.getAttribLocation(baseProgram, "a_bottomLeftLandDistance");
-   const baseProgramBottomRightLandDistanceAttribLocation = gl.getAttribLocation(baseProgram, "a_bottomRightLandDistance");
       
    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 0);
-   gl.vertexAttribPointer(baseProgramCoordAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(baseProgramBottomLeftLandDistanceAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(baseProgramBottomRightLandDistanceAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(baseProgramTopLeftLandDistanceAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(baseProgramTopRightLandDistanceAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(2, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(3, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(4, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(5, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
    
-   // Enable the attributes
    gl.enableVertexAttribArray(0);
-   gl.enableVertexAttribArray(baseProgramCoordAttribLocation);
-   gl.enableVertexAttribArray(baseProgramBottomLeftLandDistanceAttribLocation);
-   gl.enableVertexAttribArray(baseProgramBottomRightLandDistanceAttribLocation);
-   gl.enableVertexAttribArray(baseProgramTopLeftLandDistanceAttribLocation);
-   gl.enableVertexAttribArray(baseProgramTopRightLandDistanceAttribLocation);
+   gl.enableVertexAttribArray(1);
+   gl.enableVertexAttribArray(2);
+   gl.enableVertexAttribArray(3);
+   gl.enableVertexAttribArray(4);
+   gl.enableVertexAttribArray(5);
 
    gl.bindVertexArray(null);
 
@@ -850,16 +825,13 @@ const createRockVAO = (buffer: WebGLBuffer): WebGLVertexArrayObject => {
 
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 
-   const rockProgramCoordAttribLocation = gl.getAttribLocation(rockProgram, "a_texCoord");
-   const rockProgramOpacityAttribLocation = gl.getAttribLocation(rockProgram, "a_opacity");
-      
    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
-   gl.vertexAttribPointer(rockProgramCoordAttribLocation, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(rockProgramOpacityAttribLocation, 1, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(2, 1, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
    
    gl.enableVertexAttribArray(0);
-   gl.enableVertexAttribArray(rockProgramCoordAttribLocation);
-   gl.enableVertexAttribArray(rockProgramOpacityAttribLocation);
+   gl.enableVertexAttribArray(1);
+   gl.enableVertexAttribArray(2);
 
    gl.bindVertexArray(null);
 
@@ -872,16 +844,13 @@ const createHighlightsVAO = (buffer: WebGLBuffer): WebGLVertexArrayObject => {
 
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 
-   const highlightsProgramCoordAttribLocation = gl.getAttribLocation(highlightsProgram, "a_texCoord");
-   const highlightsProgramFadeOffsetAttribLocation = gl.getAttribLocation(highlightsProgram, "a_fadeOffset");
-
    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
-   gl.vertexAttribPointer(highlightsProgramCoordAttribLocation, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(highlightsProgramFadeOffsetAttribLocation, 1, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(2, 1, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
    
    gl.enableVertexAttribArray(0);
-   gl.enableVertexAttribArray(highlightsProgramCoordAttribLocation);
-   gl.enableVertexAttribArray(highlightsProgramFadeOffsetAttribLocation);
+   gl.enableVertexAttribArray(1);
+   gl.enableVertexAttribArray(2);
 
    gl.bindVertexArray(null);
 
@@ -894,23 +863,17 @@ const createNoiseVAO = (buffer: WebGLBuffer): WebGLVertexArrayObject => {
 
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 
-   const noiseProgramTexCoordAttribLocation = gl.getAttribLocation(noiseProgram, "a_texCoord");
-   const noiseFlowDirectionAttribLocation = gl.getAttribLocation(noiseProgram, "a_flowDirection");
-   const noiseAnimationOffsetAttribLocation = gl.getAttribLocation(noiseProgram, "a_animationOffset");
-   const noiseAnimationSpeedAttribLocation = gl.getAttribLocation(noiseProgram, "a_animationSpeed");
-   
    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 0);
-   gl.vertexAttribPointer(noiseProgramTexCoordAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(noiseFlowDirectionAttribLocation, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(noiseAnimationOffsetAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(noiseAnimationSpeedAttribLocation, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(2, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(3, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(4, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
 
-   // Enable the attributes
    gl.enableVertexAttribArray(0);
-   gl.enableVertexAttribArray(noiseProgramTexCoordAttribLocation);
-   gl.enableVertexAttribArray(noiseFlowDirectionAttribLocation);
-   gl.enableVertexAttribArray(noiseAnimationOffsetAttribLocation);
-   gl.enableVertexAttribArray(noiseAnimationSpeedAttribLocation);
+   gl.enableVertexAttribArray(1);
+   gl.enableVertexAttribArray(2);
+   gl.enableVertexAttribArray(3);
+   gl.enableVertexAttribArray(4);
 
    gl.bindVertexArray(null);
 
@@ -922,38 +885,28 @@ const createTransitionVAO = (buffer: WebGLBuffer): WebGLVertexArrayObject => {
    gl.bindVertexArray(vao);
 
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-
-   const transitionProgramTexCoordAttribLocation = gl.getAttribLocation(transitionProgram, "a_texCoord");
-   const transitionProgramTopLeftMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_topLeftMarker");
-   const transitionProgramTopRightMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_topRightMarker");
-   const transitionProgramBottomLeftMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_bottomLeftMarker");
-   const transitionProgramBottomRightMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_bottomRightMarker");
-   const transitionProgramTopMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_topMarker");
-   const transitionProgramRightMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_rightMarker");
-   const transitionProgramLeftMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_leftMarker");
-   const transitionProgramBottomMarkerAttribLocation = gl.getAttribLocation(transitionProgram, "a_bottomMarker");
    
    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 0);
-   gl.vertexAttribPointer(transitionProgramTexCoordAttribLocation, 2, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(transitionProgramBottomLeftMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(transitionProgramBottomRightMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(transitionProgramTopLeftMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(transitionProgramTopRightMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(transitionProgramTopMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 8 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(transitionProgramRightMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 9 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(transitionProgramLeftMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 10 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(transitionProgramBottomMarkerAttribLocation, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 11 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(2, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(3, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(4, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(5, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(6, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 8 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(7, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 9 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(8, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 10 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(9, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 11 * Float32Array.BYTES_PER_ELEMENT);
 
    gl.enableVertexAttribArray(0);
-   gl.enableVertexAttribArray(transitionProgramTexCoordAttribLocation);
-   gl.enableVertexAttribArray(transitionProgramBottomLeftMarkerAttribLocation);
-   gl.enableVertexAttribArray(transitionProgramBottomRightMarkerAttribLocation);
-   gl.enableVertexAttribArray(transitionProgramTopLeftMarkerAttribLocation);
-   gl.enableVertexAttribArray(transitionProgramTopRightMarkerAttribLocation);
-   gl.enableVertexAttribArray(transitionProgramTopMarkerAttribLocation);
-   gl.enableVertexAttribArray(transitionProgramRightMarkerAttribLocation);
-   gl.enableVertexAttribArray(transitionProgramLeftMarkerAttribLocation);
-   gl.enableVertexAttribArray(transitionProgramBottomMarkerAttribLocation);
+   gl.enableVertexAttribArray(1);
+   gl.enableVertexAttribArray(2);
+   gl.enableVertexAttribArray(3);
+   gl.enableVertexAttribArray(4);
+   gl.enableVertexAttribArray(5);
+   gl.enableVertexAttribArray(6);
+   gl.enableVertexAttribArray(7);
+   gl.enableVertexAttribArray(8);
+   gl.enableVertexAttribArray(9);
 
    gl.bindVertexArray(null);
 
@@ -966,20 +919,15 @@ const createFoamVAO = (buffer: WebGLBuffer): WebGLVertexArrayObject => {
 
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
    
-   const foamProgramTexCoordAttribLocation = gl.getAttribLocation(foamProgram, "a_texCoord");
-   const foamProgramFlowDirectionAttribLocation = gl.getAttribLocation(foamProgram, "a_flowDirection");
-   const foamProgramTextureOffsetAttribLocation = gl.getAttribLocation(foamProgram, "a_textureOffset");
-   
    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 0);
-   gl.vertexAttribPointer(foamProgramTexCoordAttribLocation, 2, gl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(foamProgramFlowDirectionAttribLocation, 2, gl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(foamProgramTextureOffsetAttribLocation, 1, gl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(2, 2, gl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(3, 1, gl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
    
-   // Enable the attributes
    gl.enableVertexAttribArray(0);
-   gl.enableVertexAttribArray(foamProgramTexCoordAttribLocation);
-   gl.enableVertexAttribArray(foamProgramFlowDirectionAttribLocation);
-   gl.enableVertexAttribArray(foamProgramTextureOffsetAttribLocation);
+   gl.enableVertexAttribArray(1);
+   gl.enableVertexAttribArray(2);
+   gl.enableVertexAttribArray(3);
 
    gl.bindVertexArray(null);
 
@@ -992,17 +940,13 @@ const createSteppingStoneVAO = (buffer: WebGLBuffer): WebGLVertexArrayObject => 
 
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 
-   const texCoordAttribLocation = gl.getAttribLocation(steppingStoneProgram, "a_texCoord");
-   const textureIdxAttribLocation = gl.getAttribLocation(steppingStoneProgram, "a_textureIdx");
-   
    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
-   gl.vertexAttribPointer(texCoordAttribLocation, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(textureIdxAttribLocation, 1, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(2, 1, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
    
-   // Enable the attributes
    gl.enableVertexAttribArray(0);
-   gl.enableVertexAttribArray(texCoordAttribLocation);
-   gl.enableVertexAttribArray(textureIdxAttribLocation);
+   gl.enableVertexAttribArray(1);
+   gl.enableVertexAttribArray(2);
 
    gl.bindVertexArray(null);
 
@@ -1101,7 +1045,7 @@ export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY
 
 const calculateDistanceToLand = (tileX: number, tileY: number): number => {
    // Check if any neighbouring tiles are land tiles
-   for (const offset of ADJACENT_TILE_OFFSETS) {
+   for (const offset of ADJACENT_OFFSETS) {
       const x = tileX + offset[0];
       const y = tileY + offset[1];
       if (!Board.tileIsInBoard(x, y)) {
@@ -1119,7 +1063,7 @@ const calculateDistanceToLand = (tileX: number, tileY: number): number => {
 
 const calculateDistanceToWater = (tileX: number, tileY: number): number => {
    // Check if any neighbouring tiles are water tiles
-   for (const offset of ADJACENT_TILE_OFFSETS) {
+   for (const offset of ADJACENT_OFFSETS) {
       const x = tileX + offset[0];
       const y = tileY + offset[1];
       if (!Board.tileIsInBoard(x, y)) {

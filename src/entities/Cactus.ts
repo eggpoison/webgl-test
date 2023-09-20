@@ -166,7 +166,6 @@ class Cactus extends Entity {
       
       const lifetime = randFloat(3, 5);
       
-      // @Incomplete Needs friction
       const particle = new Particle(lifetime);
       
       const textureIndex = this.getFlowerTextureIndex(flowerType, size);
@@ -177,7 +176,7 @@ class Cactus extends Entity {
          spawnPositionX, spawnPositionY,
          velocityX, velocityY,
          0, 0,
-         0,
+         75,
          rotation,
          Math.PI * randFloat(-1, 1),
          0,

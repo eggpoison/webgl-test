@@ -35,6 +35,8 @@ abstract class GameObject extends RenderObject {
 
    public mass = 1;
 
+   public ageTicks = 0;
+
    /** Stores all render parts attached to the object, in ascending order of their z-indexes. */
    public readonly renderParts = new Array<RenderPart>();
 
@@ -325,8 +327,18 @@ abstract class GameObject extends RenderObject {
    }
 
    public updateFromData(data: GameObjectData): void {
-      this.position = Point.unpackage(data.position);
-      this.velocity = data.velocity !== null ? Vector.unpackage(data.velocity) : null;
+      this.position.x = data.position[0];
+      this.position.y = data.position[1];
+      if (this.velocity !== null) {
+         if (data.velocity !== null) {
+            this.velocity.magnitude = data.velocity[0];
+            this.velocity.direction = data.velocity[1];
+         } else {
+            this.velocity = null;
+         }
+      } else if (data.velocity !== null) {
+         this.velocity = Vector.unpackage(data.velocity);
+      }
       this.rotation = data.rotation;
       this.mass = data.mass;
 

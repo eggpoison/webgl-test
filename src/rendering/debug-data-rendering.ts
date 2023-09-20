@@ -8,7 +8,7 @@ const lineVertexShaderText = `#version 300 es
 precision mediump float;
 
 layout(location = 0) in vec2 a_position;
-in vec3 a_colour;
+layout(location = 1) in vec3 a_colour;
 
 out vec3 v_colour;
 
@@ -34,7 +34,7 @@ const triangleVertexShaderText = `#version 300 es
 precision mediump float;
 
 layout(location = 0) in vec2 a_position;
-in vec3 a_colour;
+layout(location = 1) in vec3 a_colour;
 
 out vec3 v_colour;
 
@@ -56,22 +56,13 @@ void main() {
 }
 `;
 
-let lineProgramColourAttribLocation: GLint;
-
 let lineProgram: WebGLProgram;
-
-let triangleProgramColourAttribLocation: GLint;
 
 let triangleProgram: WebGLProgram;
 
 export function createDebugDataShaders(): void {
    lineProgram = createWebGLProgram(gl, lineVertexShaderText, lineFragmentShaderText);
-
-   lineProgramColourAttribLocation = gl.getAttribLocation(lineProgram, "a_colour");
-
    triangleProgram = createWebGLProgram(gl, triangleVertexShaderText, triangleFragmentShaderText);
-
-   triangleProgramColourAttribLocation = gl.getAttribLocation(triangleProgram, "a_colour");
 }
 
 const addCircleVertices = (vertices: Array<number>, debugData: GameObjectDebugData, gameObject: GameObject): void => {
@@ -106,10 +97,10 @@ export function renderLineDebugData(debugData: GameObjectDebugData): void {
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
-   gl.vertexAttribPointer(lineProgramColourAttribLocation, 3, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
 
    gl.enableVertexAttribArray(0);
-   gl.enableVertexAttribArray(lineProgramColourAttribLocation);
+   gl.enableVertexAttribArray(1);
 
    gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 5);
 }
@@ -150,10 +141,10 @@ export function renderTriangleDebugData(debugData: GameObjectDebugData): void {
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
-   gl.vertexAttribPointer(triangleProgramColourAttribLocation, 3, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
 
    gl.enableVertexAttribArray(0);
-   gl.enableVertexAttribArray(triangleProgramColourAttribLocation);
+   gl.enableVertexAttribArray(1);
 
    gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 5);
 

@@ -3,7 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import { BloodParticleSize, createBloodParticle, createBloodPoolParticle, createDirtParticle, createFootprintParticle } from "../generic-particles";
+import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createDirtParticle, createFootprintParticle } from "../generic-particles";
 import Board from "../Board";
 
 class Cow extends Entity {
@@ -14,6 +14,8 @@ class Cow extends Entity {
    private static readonly HEAD_OVERLAP = 24;
    private static readonly BODY_WIDTH = 64;
    private static readonly BODY_HEIGHT = 96;
+
+   private static readonly BLOOD_FOUNTAIN_INTERVAL = 0.1;
 
    public readonly type = "cow";
 
@@ -85,6 +87,14 @@ class Cow extends Entity {
             createBloodParticle(Math.random() < 0.6 ? BloodParticleSize.small : BloodParticleSize.large, spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(150, 250), true);
          }
       }
+   }
+
+   public onDie(): void {
+      for (let i = 0; i < 3; i++) {
+         createBloodPoolParticle(this.position.x, this.position.y, 35);
+      }
+
+      createBloodParticleFountain(this, Cow.BLOOD_FOUNTAIN_INTERVAL, 1.1);
    }
 
    public updateFromData(entityData: EntityData<"cow">): void {

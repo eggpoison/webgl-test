@@ -25,7 +25,7 @@ import { createChunkBorderShaders, renderChunkBorders } from "./rendering/chunk-
 import { nerdVisionIsVisible } from "./components/game/dev/NerdVision";
 import { setFrameProgress } from "./GameObject";
 import { createDebugDataShaders, renderLineDebugData, renderTriangleDebugData } from "./rendering/debug-data-rendering";
-import { createAmbientOcclusionShaders, recalculateAmbientOcclusion, renderAmbientOcclusion } from "./rendering/ambient-occlusion-rendering";
+import { createAmbientOcclusionShaders, renderAmbientOcclusion } from "./rendering/ambient-occlusion-rendering";
 import { createWallBorderShaders, renderWallBorders } from "./rendering/wall-border-rendering";
 import { ParticleRenderLayer, createParticleShaders, renderMonocolourParticles, renderTexturedParticles } from "./rendering/particle-rendering";
 import Tribe from "./Tribe";
@@ -175,8 +175,6 @@ abstract class Game {
             createAmbientOcclusionShaders();
             createRenderChunks();
 
-            recalculateAmbientOcclusion();
-
             generateFoodEatingParticleColours();
    
             this.hasInitialised = true;
@@ -185,7 +183,6 @@ abstract class Game {
          });
       } else {
          createRenderChunks();
-         recalculateAmbientOcclusion();
       }
    }
 
@@ -344,8 +341,8 @@ abstract class Game {
 
       renderSolidTiles();
       renderRivers();
-      // renderAmbientOcclusion();
-      // renderWallBorders();
+      renderAmbientOcclusion();
+      renderWallBorders();
       if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Board.gameObjects.hasOwnProperty(this.gameObjectDebugData.gameObjectID)) {
          renderTriangleDebugData(this.gameObjectDebugData);
       }
@@ -354,15 +351,15 @@ abstract class Game {
          renderChunkBorders();
       }
 
-      renderMonocolourParticles(ParticleRenderLayer.low);
-      renderTexturedParticles(ParticleRenderLayer.low);
+      // renderMonocolourParticles(ParticleRenderLayer.low);
+      // renderTexturedParticles(ParticleRenderLayer.low);
 
       renderGameObjects(droppedItems);
       renderGameObjects(entities);
       renderGameObjects(projectiles);
       
-      renderMonocolourParticles(ParticleRenderLayer.high);
-      renderTexturedParticles(ParticleRenderLayer.high);
+      // renderMonocolourParticles(ParticleRenderLayer.high);
+      // renderTexturedParticles(ParticleRenderLayer.high);
 
       if (nerdVisionIsVisible() && OPTIONS.showHitboxes) {
          renderEntityHitboxes();

@@ -1,431 +1,341 @@
 import { SETTINGS } from "webgl-test-shared";
 import { Tile } from "../Tile";
 import Camera from "../Camera";
-import { createWebGLProgram, gl } from "../webgl";
-import { getTexture } from "../textures";
+import { createWebGLProgram, gl, halfWindowHeight, halfWindowWidth } from "../webgl";
 import Board from "../Board";
-
-/*
-Key:
-* = any
-1 = wall
-0 = ground
-*/
-
-const ATLAS: Record<string, string> = {
-   // * 1 *
-   // 1 0 1
-   // * 1 *
-   "*1*101*1*": "4edge.png",
-   // * 1 *
-   // 1 0 0
-   // * 1 *
-   "*1*100*1*": "3edge.png",
-   // * 1 *
-   // 1 0 0
-   // * 0 1
-   "*1*100*01": "2edge1corner.png",
-   // 1 0 1
-   // 0 0 0
-   // 1 0 1
-   "101000101": "4edge.png",
-   // * 0 *
-   // 1 0 1
-   // * 0 *
-   "*0*101*0*": "2edge.png",
-   // * 1 *
-   // 1 0 0
-   // * 0 *
-   "*1*100*0*": "2edge-2.png",
-   // * 1 *
-   // 0 0 0
-   // 0 0 0
-   "*1*000000": "1edge.png",
-   // 1 0 0
-   // 0 0 0
-   // 0 0 0
-   "100000000": "1corner.png",
-   // 1 0 1
-   // 0 0 0
-   // 0 0 0
-   "101000000": "2corner.png",
-   // 1 0 0
-   // 0 0 0
-   // 0 0 1
-   "100000001": "2corner-2.png",
-   // 1 0 1
-   // 0 0 0
-   // 1 0 0
-   "101000100": "3corner.png",
-   // * 1 *
-   // 0 0 0
-   // 1 0 0
-   "*1*000100": "1edge1corner.png",
-   // * 1 *
-   // 0 0 0
-   // 1 0 1
-   "*1*000101": "1edge2corner.png",
-};
+import { RenderChunkAmbientOcclusionInfo, RENDER_CHUNK_SIZE, getRenderChunkAmbientOcclusionInfo } from "./tile-rendering/render-chunks";
+import { NEIGHBOUR_OFFSETS } from "../utils";
 
 const vertexShaderText = `#version 300 es
 precision mediump float;
 
-in vec2 a_position;
-in vec2 a_texCoord;
+uniform vec2 u_playerPos;
+uniform vec2 u_halfWindowSize;
+uniform float u_zoom;
+
+layout(location = 0) in vec2 a_position;
+layout(location = 1) in vec2 a_texCoord;
+layout(location = 2) in float a_topLeftMarker;
+layout(location = 3) in float a_topRightMarker;
+layout(location = 4) in float a_bottomLeftMarker;
+layout(location = 5) in float a_bottomRightMarker;
+layout(location = 6) in float a_topMarker;
+layout(location = 7) in float a_rightMarker;
+layout(location = 8) in float a_leftMarker;
+layout(location = 9) in float a_bottomMarker;
 
 out vec2 v_texCoord;
+out float v_topLeftMarker;
+out float v_topRightMarker;
+out float v_bottomLeftMarker;
+out float v_bottomRightMarker;
+out float v_topMarker;
+out float v_rightMarker;
+out float v_leftMarker;
+out float v_bottomMarker;
 
 void main() {
-   gl_Position = vec4(a_position, 0.0, 1.0);
+   vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
+   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+   gl_Position = vec4(clipSpacePos, 0.0, 1.0);
 
    v_texCoord = a_texCoord;
+   v_topLeftMarker = a_topLeftMarker;
+   v_topRightMarker = a_topRightMarker;
+   v_bottomLeftMarker = a_bottomLeftMarker;
+   v_bottomRightMarker = a_bottomRightMarker;
+   v_topMarker = a_topMarker;
+   v_rightMarker = a_rightMarker;
+   v_leftMarker = a_leftMarker;
+   v_bottomMarker = a_bottomMarker;
 }
 `;
 
 const fragmentShaderText = `#version 300 es
 precision mediump float;
-
-uniform sampler2D u_texture;
-
+ 
 in vec2 v_texCoord;
+in float v_topLeftMarker;
+in float v_topRightMarker;
+in float v_bottomLeftMarker;
+in float v_bottomRightMarker;
+in float v_topMarker;
+in float v_rightMarker;
+in float v_leftMarker;
+in float v_bottomMarker;
 
 out vec4 outputColour;
- 
+
 void main() {
-   vec4 col = texture(u_texture, v_texCoord);
-   outputColour = vec4(col.r, col.g, col.b, col.a * 0.3);
+   outputColour = vec4(0.0, 0.0, 0.0, 0.0);
+
+   float dist = 0.0;
+   if (v_topLeftMarker > 0.5) {
+      float topLeftDist = 1.0 - distance(vec2(0.0, 1.0), v_texCoord);
+      dist = max(dist, topLeftDist - 0.5);
+   }
+   if (v_topRightMarker > 0.5) {
+      float topRightDist = 1.0 - distance(vec2(1.0, 1.0), v_texCoord);
+      dist = max(dist, topRightDist - 0.5);
+   }
+   if (v_bottomLeftMarker > 0.5) {
+      float bottomLeftDist = 1.0 - distance(vec2(0.0, 0.0), v_texCoord);
+      dist = max(dist, bottomLeftDist - 0.5);
+   }
+   if (v_bottomRightMarker > 0.5) {
+      float bottomRightDist = 1.0 - distance(vec2(1.0, 0.0), v_texCoord);
+      dist = max(dist, bottomRightDist - 0.5);
+   }
+
+   if (v_topMarker > 0.5) {
+      float topDist = v_texCoord.y;
+      dist = max(dist, topDist - 0.5);
+   }
+   // If there is a wall to the right, darken according to distance from the right wall
+   if (v_rightMarker > 0.5) {
+      float rightDist = v_texCoord.x;
+      dist = max(dist, rightDist - 0.5);
+   }
+   if (v_leftMarker > 0.5) {
+      float leftDist = 1.0 - v_texCoord.x;
+      dist = max(dist, leftDist - 0.5);
+   }
+   if (v_bottomMarker > 0.5) {
+      float bottomDist = (1.0 - v_texCoord.y);
+      dist = max(dist, bottomDist - 0.5);
+   }
+
+   dist -= 0.2;
+
+   outputColour = vec4(0.0, 0.0, 0.0, dist);
 }
 `;
 
 let program: WebGLProgram;
 
-let textureUniformLocation: WebGLUniformLocation;
-
-let texCoordAttribLocation: GLint;
+let playerPosUniformLocation: WebGLUniformLocation;
+let halfWindowSizeUniformLocation: WebGLUniformLocation;
+let zoomUniformLocation: WebGLUniformLocation;
 
 export function createAmbientOcclusionShaders(): void {
    program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
 
-   textureUniformLocation = gl.getUniformLocation(program, "u_textures")!;
-
-   gl.bindAttribLocation(program, 0, "a_position");
-   texCoordAttribLocation = gl.getAttribLocation(program, "a_texCoord");
+   playerPosUniformLocation = gl.getUniformLocation(program, "u_playerPos")!;
+   halfWindowSizeUniformLocation = gl.getUniformLocation(program, "u_halfWindowSize")!;
+   zoomUniformLocation = gl.getUniformLocation(program, "u_zoom")!;
 }
 
-const getTileSymbol = (tile: Tile): string => {
-   return tile.isWall ? "1" : "0";
-}
-
-const symbolsDoMatch = (combinationSymbol: string, keySymbol: string): boolean => {
-   switch (combinationSymbol) {
-      case "*": {
-         return true;
-      }
-      case "1": {
-         return keySymbol === "1";
-      }
-      case "0": {
-         return keySymbol === "0";
-      }
-      default: {
-         throw new Error(`Unknown symbol '${combinationSymbol}'.`);
-      }
-   }
-}
-
-interface TileAmbientOcclusionInfo {
-   readonly tile: Tile;
-   readonly textureSource: string;
-   readonly numRotations: number;
-   readonly isXFlipped: boolean;
-}
-
-const rotateKey = (key: string): string => {
-   return key[6] + key[3] + key[0] + key[7] + key[4] + key[1] + key[8] + key[5] + key[2];
-}
-
-const flipKeyX = (key: string): string => {
-   return key[2] + key[1] + key[0] + key[5] + key[4] + key[3] + key[8] + key[7] + key[6];
-}
-
-const getKeyCombination = (key: string): string => {
-   // Find the index of the matching combination
-   mainLoop:
-   for (const [combination, textureSource] of Object.entries(ATLAS)) {
-      for (let charIndex = 0; charIndex < 9; charIndex++) {
-         if (!symbolsDoMatch(combination[charIndex], key[charIndex])) {
-            continue mainLoop;
-         }
-      }
-      return textureSource;
-   }
-   return "";
-}
-
-const getTileAmbientOcclusionInfo = (tileX: number, tileY: number): TileAmbientOcclusionInfo | null => {
-   let key = "";
-   for (let y = tileY + 1; y >= tileY - 1; y--) {
-      for (let x = tileX - 1; x <= tileX + 1; x++) {
-         if (Board.tileIsInBoard(x, y)) {
-            const tile = Board.getTile(x, y);
-            const symbol = getTileSymbol(tile);
-            key += symbol;
-         } else {
-            key += "0";
-         }
-      }
-   }
-
-   {
-      // Normal
-      const type = getKeyCombination(key);
-      if (type !== "") return {
-         tile: Board.getTile(tileX, tileY),
-         textureSource: type,
-         numRotations: 0,
-         isXFlipped: false,
-      };
-   }
-   {
-      // x flipped
-      const type = getKeyCombination(flipKeyX(key));
-      if (type !== "") return {
-         tile: Board.getTile(tileX, tileY),
-         textureSource: type,
-         numRotations: 0,
-         isXFlipped: true,
-      };
-   }
-   {
-      // 1 Rotation
-      const type = getKeyCombination(rotateKey(key));
-      if (type !== "") return {
-         tile: Board.getTile(tileX, tileY),
-         textureSource: type,
-         numRotations: 1,
-         isXFlipped: false,
-      };
-   }
-   {
-      // 1 Rotation, x flip
-      const type = getKeyCombination(flipKeyX(rotateKey(key)));
-      if (type !== "") return {
-         tile: Board.getTile(tileX, tileY),
-         textureSource: type,
-         numRotations: 1,
-         isXFlipped: true
-      };
-   }
-   {
-      // 2 Rotations
-      const type = getKeyCombination(rotateKey(rotateKey(key)));
-      if (type !== "") return {
-         tile: Board.getTile(tileX, tileY),
-         textureSource: type,
-         numRotations: 2,
-         isXFlipped: false,
-      };
-   }
-   {
-      // 2 Rotations, x flip
-      const type = getKeyCombination(flipKeyX(rotateKey(rotateKey(key))));
-      if (type !== "") return {
-         tile: Board.getTile(tileX, tileY),
-         textureSource: type,
-         numRotations: 2,
-         isXFlipped: true
-      };
-   }
-   {
-      // 3 Rotations
-      const type = getKeyCombination(rotateKey(rotateKey(rotateKey(key))));
-      if (type !== "") return {
-         tile: Board.getTile(tileX, tileY),
-         textureSource: type,
-         numRotations: 3,
-         isXFlipped: false,
-      };
-   }
-   {
-      // 3 Rotations, x flip
-      const type = getKeyCombination(flipKeyX(rotateKey(rotateKey(rotateKey(key)))));
-      if (type !== "") return {
-         tile: Board.getTile(tileX, tileY),
-         textureSource: type,
-         numRotations: 3,
-         isXFlipped: true
-      };
+const tileIsWallInt = (tileX: number, tileY: number): number => {
+   if (!Board.tileIsInBoard(tileX, tileY)) {
+      return 0;
    }
    
-   return null;
+   const tile = Board.getTile(tileX, tileY);
+   return tile.isWall ? 1 : 0;
 }
 
-/** Stores the ambient occlusion index of every tile which has ambient occlusion */
-const ambientOcclusionRecord: Record<number, TileAmbientOcclusionInfo> = {};
+export function calculateAmbientOcclusionInfo(renderChunkX: number, renderChunkY: number): RenderChunkAmbientOcclusionInfo | null {
+   const minTileX = renderChunkX * RENDER_CHUNK_SIZE;
+   const maxTileX = (renderChunkX + 1) * RENDER_CHUNK_SIZE - 1;
+   const minTileY = renderChunkY * RENDER_CHUNK_SIZE;
+   const maxTileY = (renderChunkY + 1) * RENDER_CHUNK_SIZE - 1;
 
-/** Updates the given tile's ambient occlusion */
-export function updateTileAmbientOcclusion(tileX: number, tileY: number): void {
-   const tileIndex = tileY * SETTINGS.BOARD_DIMENSIONS + tileX;
-   
-   const ambientOcclusionInfo = getTileAmbientOcclusionInfo(tileX, tileY);
-   if (ambientOcclusionInfo !== null) {
-      ambientOcclusionRecord[tileIndex] = ambientOcclusionInfo;
-   } else {
-      delete ambientOcclusionRecord[tileIndex];
-   }
-}
-
-/** Recalculates the ambient occlusion for all tiles */
-export function recalculateAmbientOcclusion(): void {
-   for (let tileX = 0; tileX < SETTINGS.BOARD_DIMENSIONS; tileX++) {
-      for (let tileY = 0; tileY < SETTINGS.BOARD_DIMENSIONS; tileY++) {
-         updateTileAmbientOcclusion(tileX, tileY);
-      }
-   }
-}
-
-const getVisibleTiles = (): ReadonlyArray<Tile> => {
-   const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
-
-   const minTileX = minChunkX * SETTINGS.CHUNK_SIZE;
-   const maxTileX = (maxChunkX + 1) * SETTINGS.CHUNK_SIZE - 1;
-   const minTileY = minChunkY * SETTINGS.CHUNK_SIZE;
-   const maxTileY = (maxChunkY + 1) * SETTINGS.CHUNK_SIZE - 1;
-
-   const tiles = new Array<Tile>();
-   
-   for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
-      for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
+   // Find all tiles bordering a wall in the render chunk
+   const edgeTiles = new Array<Tile>();
+   for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
+      for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
          const tile = Board.getTile(tileX, tileY);
-         tiles.push(tile);
-      }
-   }
-
-   return tiles;
-}
-
-type AmbientOcclusionInfo = Record<string, Array<TileAmbientOcclusionInfo>>;
-
-const categoriseTiles = (visibleTiles: ReadonlyArray<Tile>): AmbientOcclusionInfo => {
-   const ambientOcclusionInfo: AmbientOcclusionInfo = {};
-
-   for (const textureSource of Object.values(ATLAS)) {
-      ambientOcclusionInfo[textureSource] = [];
-   }
-
-   for (const tile of visibleTiles) {
-      const tileIndex = tile.y * SETTINGS.BOARD_DIMENSIONS + tile.x;
-      if (ambientOcclusionRecord.hasOwnProperty(tileIndex)) {
-         const info = ambientOcclusionRecord[tileIndex]!;
-         ambientOcclusionInfo[info.textureSource].push(info);
-      }
-   }  
-
-   return ambientOcclusionInfo;
-}
-
-const rotateUV = (u: number, v: number): [0 | 1, 0 | 1] => {
-   if (u === 0) {
-      if (v === 0) {
-         return [0, 1];
-      } else {
-         return [1, 1];
-      }
-   } else {
-      if (v === 0) {
-         return [0, 0];
-      } else {
-         return [1, 0];
-      }
-   }
-}
-
-const render = (ambientOcclusionInfo: AmbientOcclusionInfo): void => {
-   // Create vertices
-   const vertexArrays = new Array<Array<number>>();
-   const textureSources = new Array<string>();
-
-   for (const [textureSource, infos] of Object.entries(ambientOcclusionInfo)) {
-      textureSources.push(textureSource);
-
-      const vertices = new Array<number>();
-
-      for (const info of infos) {
-         const x1 = Camera.calculateXCanvasPosition(info.tile.x * SETTINGS.TILE_SIZE);
-         const x2 = Camera.calculateXCanvasPosition((info.tile.x + 1) * SETTINGS.TILE_SIZE);
-         const y1 = Camera.calculateYCanvasPosition(info.tile.y * SETTINGS.TILE_SIZE);
-         const y2 = Camera.calculateYCanvasPosition((info.tile.y + 1) * SETTINGS.TILE_SIZE);
-
-         let [bl_u, bl_v] = [0, 0];
-         let [br_u, br_v] = [1, 0];
-         let [tl_u, tl_v] = [0, 1];
-         let [tr_u, tr_v] = [1, 1];
-
-         for (let i = 0; i < info.numRotations; i++) {
-            [bl_u, bl_v] = rotateUV(bl_u, bl_v);
-            [br_u, br_v] = rotateUV(br_u, br_v);
-            [tl_u, tl_v] = rotateUV(tl_u, tl_v);
-            [tr_u, tr_v] = rotateUV(tr_u, tr_v);
+         if (tile.isWall) {
+            continue;
          }
 
-         if (info.isXFlipped) {
-            bl_u = (1 - bl_u);
-            br_u = (1 - br_u);
-            tl_u = (1 - tl_u);
-            tr_u = (1 - tr_u);
+         // Check for neighbouring wall tiles
+         for (const offset of NEIGHBOUR_OFFSETS) {
+            const neighbourTileX = tile.x + offset[0];
+            const neighbourTileY = tile.y + offset[1];
+
+            // Don't add tiles which aren't in the board
+            if (!Board.tileIsInBoard(neighbourTileX, neighbourTileY)) {
+               continue;
+            }
+
+            // If the tile is bordering a wall, add it and move on to the next tile
+            const neighbourTile = Board.getTile(neighbourTileX, neighbourTileY);
+            if (neighbourTile.isWall) {
+               edgeTiles.push(tile);
+               break;
+            }
          }
-
-         vertices.push(
-            x1, y1, bl_u, bl_v,
-            x2, y1, br_u, br_v,
-            x1, y2, tl_u, tl_v,
-            x1, y2, tl_u, tl_v,
-            x2, y1, br_u, br_v,
-            x2, y2, tr_u, tr_v
-         );
       }
-
-      vertexArrays.push(vertices);
    }
 
+   if (edgeTiles.length === 0) {
+      return null;
+   }
+
+   const vertexData = new Float32Array(edgeTiles.length * 6 * 12);
+   for (let i = 0; i < edgeTiles.length; i++) {
+      const tile = edgeTiles[i];
+
+      let x1 = tile.x * SETTINGS.TILE_SIZE;
+      let x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
+      let y1 = tile.y * SETTINGS.TILE_SIZE;
+      let y2 = (tile.y + 1) * SETTINGS.TILE_SIZE;
+
+      const bottomLeftWallDistance = tileIsWallInt(tile.x - 1, tile.y - 1);
+      const bottomRightWallDistance = tileIsWallInt(tile.x + 1, tile.y - 1);
+      const topLeftWallDistance = tileIsWallInt(tile.x - 1, tile.y + 1);
+      const topRightWallDistance = tileIsWallInt(tile.x + 1, tile.y + 1);
+
+      const topMarker = tileIsWallInt(tile.x, tile.y + 1);
+      const rightMarker = tileIsWallInt(tile.x + 1, tile.y);
+      const leftMarker = tileIsWallInt(tile.x - 1, tile.y);
+      const bottomMarker = tileIsWallInt(tile.x, tile.y - 1);
+      
+      const dataOffset = i * 6 * 12;
+
+      vertexData[dataOffset] = x1;
+      vertexData[dataOffset + 1] = y1;
+      vertexData[dataOffset + 2] = 0;
+      vertexData[dataOffset + 3] = 0;
+      vertexData[dataOffset + 4] = topLeftWallDistance;
+      vertexData[dataOffset + 5] = topRightWallDistance;
+      vertexData[dataOffset + 6] = bottomLeftWallDistance;
+      vertexData[dataOffset + 7] = bottomRightWallDistance;
+      vertexData[dataOffset + 8] = topMarker;
+      vertexData[dataOffset + 9] = rightMarker;
+      vertexData[dataOffset + 10] = leftMarker;
+      vertexData[dataOffset + 11] = bottomMarker;
+
+      vertexData[dataOffset + 12] = x2;
+      vertexData[dataOffset + 13] = y1;
+      vertexData[dataOffset + 14] = 1;
+      vertexData[dataOffset + 15] = 0;
+      vertexData[dataOffset + 16] = topLeftWallDistance;
+      vertexData[dataOffset + 17] = topRightWallDistance;
+      vertexData[dataOffset + 18] = bottomLeftWallDistance;
+      vertexData[dataOffset + 19] = bottomRightWallDistance;
+      vertexData[dataOffset + 20] = topMarker;
+      vertexData[dataOffset + 21] = rightMarker;
+      vertexData[dataOffset + 22] = leftMarker;
+      vertexData[dataOffset + 23] = bottomMarker;
+
+      vertexData[dataOffset + 24] = x1;
+      vertexData[dataOffset + 25] = y2;
+      vertexData[dataOffset + 26] = 0;
+      vertexData[dataOffset + 27] = 1;
+      vertexData[dataOffset + 28] = topLeftWallDistance;
+      vertexData[dataOffset + 29] = topRightWallDistance;
+      vertexData[dataOffset + 30] = bottomLeftWallDistance;
+      vertexData[dataOffset + 31] = bottomRightWallDistance;
+      vertexData[dataOffset + 32] = topMarker;
+      vertexData[dataOffset + 33] = rightMarker;
+      vertexData[dataOffset + 34] = leftMarker;
+      vertexData[dataOffset + 35] = bottomMarker;
+
+      vertexData[dataOffset + 36] = x1;
+      vertexData[dataOffset + 37] = y2;
+      vertexData[dataOffset + 38] = 0;
+      vertexData[dataOffset + 39] = 1;
+      vertexData[dataOffset + 40] = topLeftWallDistance;
+      vertexData[dataOffset + 41] = topRightWallDistance;
+      vertexData[dataOffset + 42] = bottomLeftWallDistance;
+      vertexData[dataOffset + 43] = bottomRightWallDistance;
+      vertexData[dataOffset + 44] = topMarker;
+      vertexData[dataOffset + 45] = rightMarker;
+      vertexData[dataOffset + 46] = leftMarker;
+      vertexData[dataOffset + 47] = bottomMarker;
+
+      vertexData[dataOffset + 48] = x2;
+      vertexData[dataOffset + 49] = y1;
+      vertexData[dataOffset + 50] = 1;
+      vertexData[dataOffset + 51] = 0;
+      vertexData[dataOffset + 52] = topLeftWallDistance;
+      vertexData[dataOffset + 53] = topRightWallDistance;
+      vertexData[dataOffset + 54] = bottomLeftWallDistance;
+      vertexData[dataOffset + 55] = bottomRightWallDistance;
+      vertexData[dataOffset + 56] = topMarker;
+      vertexData[dataOffset + 57] = rightMarker;
+      vertexData[dataOffset + 58] = leftMarker;
+      vertexData[dataOffset + 59] = bottomMarker;
+
+      vertexData[dataOffset + 60] = x2;
+      vertexData[dataOffset + 61] = y2;
+      vertexData[dataOffset + 62] = 1;
+      vertexData[dataOffset + 63] = 1;
+      vertexData[dataOffset + 64] = topLeftWallDistance;
+      vertexData[dataOffset + 65] = topRightWallDistance;
+      vertexData[dataOffset + 66] = bottomLeftWallDistance;
+      vertexData[dataOffset + 67] = bottomRightWallDistance;
+      vertexData[dataOffset + 68] = topMarker;
+      vertexData[dataOffset + 69] = rightMarker;
+      vertexData[dataOffset + 70] = leftMarker;
+      vertexData[dataOffset + 71] = bottomMarker;
+   }
+
+   const vao = gl.createVertexArray()!;
+   gl.bindVertexArray(vao);
+
+   const buffer = gl.createBuffer()!;
+   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+   gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
+
+   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 0);
+   gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(2, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(3, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(4, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(5, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(6, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 8 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(7, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 9 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(8, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 10 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(9, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 11 * Float32Array.BYTES_PER_ELEMENT);
+   
+   gl.enableVertexAttribArray(0);
+   gl.enableVertexAttribArray(1);
+   gl.enableVertexAttribArray(2);
+   gl.enableVertexAttribArray(3);
+   gl.enableVertexAttribArray(4);
+   gl.enableVertexAttribArray(5);
+   gl.enableVertexAttribArray(6);
+   gl.enableVertexAttribArray(7);
+   gl.enableVertexAttribArray(8);
+   gl.enableVertexAttribArray(9);
+
+   gl.bindVertexArray(null);
+
+   return {
+      vao: vao,
+      data: vertexData,
+      vertexCount: edgeTiles.length * 6
+   };
+}
+
+export function renderAmbientOcclusion(): void {
    gl.useProgram(program);
 
    gl.enable(gl.BLEND);
    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-   for (let i = 0; i < textureSources.length; i++) {
-      const textureSource = textureSources[i];
-      const vertices = vertexArrays[i];
-      if (vertices.length === 0) continue;
-      
-      // Create buffer
-      const buffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+   for (let renderChunkX = Camera.visibleRenderChunkBounds[0]; renderChunkX <= Camera.visibleRenderChunkBounds[1]; renderChunkX++) {
+      for (let renderChunkY = Camera.visibleRenderChunkBounds[2]; renderChunkY <= Camera.visibleRenderChunkBounds[3]; renderChunkY++) {
+         const renderInfo = getRenderChunkAmbientOcclusionInfo(renderChunkX, renderChunkY);
+         if (renderInfo === null) {
+            continue;
+         }
 
-      gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0);
-      gl.vertexAttribPointer(texCoordAttribLocation, 2, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+         gl.bindVertexArray(renderInfo.vao);
 
-      // Enable the attributes
-      gl.enableVertexAttribArray(0);
-      gl.enableVertexAttribArray(texCoordAttribLocation);
+         gl.uniform2f(playerPosUniformLocation, Camera.position.x, Camera.position.y);
+         gl.uniform2f(halfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
+         gl.uniform1f(zoomUniformLocation, Camera.zoom);
 
-      gl.uniform1i(textureUniformLocation, 0);
-
-      const texture = getTexture("ambient-occlusion/" + textureSource);
-      gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, texture);
-
-      // Draw the vertices
-      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 4);
+         gl.drawArrays(gl.TRIANGLES, 0, renderInfo.vertexCount);
+      }
    }
 
    gl.disable(gl.BLEND);
    gl.blendFunc(gl.ONE, gl.ZERO);
-}
 
-export function renderAmbientOcclusion(): void {
-   const visibleTiles = getVisibleTiles();
-   const ambientOcclusionInfo = categoriseTiles(visibleTiles);
-   render(ambientOcclusionInfo);
+   gl.bindVertexArray(null);
 }

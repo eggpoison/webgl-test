@@ -3,6 +3,7 @@ import Camera from "../Camera";
 import { Tile } from "../Tile";
 import { createWebGLProgram, gl } from "../webgl";
 import Board from "../Board";
+import { RENDER_CHUNK_SIZE, RenderChunkAmbientOcclusionInfo } from "./tile-rendering/render-chunks";
 
 const BORDER_THICKNESS = 5;
 
@@ -34,34 +35,36 @@ export function createWallBorderShaders(): void {
    gl.bindAttribLocation(program, 0, "a_position");
 }
 
-const getVisibleTiles = (): ReadonlyArray<Tile> => {
-   const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
+export function renderWallBorders(): void {
+   // 
+   // Find visible wall tiles
+   // 
 
-   const minTileX = minChunkX * SETTINGS.CHUNK_SIZE;
-   const maxTileX = (maxChunkX + 1) * SETTINGS.CHUNK_SIZE - 1;
-   const minTileY = minChunkY * SETTINGS.CHUNK_SIZE;
-   const maxTileY = (maxChunkY + 1) * SETTINGS.CHUNK_SIZE - 1;
+   const minTileX = Camera.visibleChunkBounds[0] * SETTINGS.CHUNK_SIZE;
+   const maxTileX = (Camera.visibleChunkBounds[1] + 1) * SETTINGS.CHUNK_SIZE - 1;
+   const minTileY = Camera.visibleChunkBounds[2] * SETTINGS.CHUNK_SIZE;
+   const maxTileY = (Camera.visibleChunkBounds[3] + 1) * SETTINGS.CHUNK_SIZE - 1;
 
-   const tiles = new Array<Tile>();
-   
+   const wallTiles = new Array<Tile>();
    for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
       for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
          const tile = Board.getTile(tileX, tileY);
-         tiles.push(tile);
+         if (tile.isWall) {
+            wallTiles.push(tile);
+         }
       }
    }
 
-   return tiles;
-}
+   if (wallTiles.length === 0) {
+      return;
+   }
 
-export function renderWallBorders(): void {
-   const visibleTiles = getVisibleTiles();
+   // @Cleanup: This requests way more space than is usually required. Find better way
+   const vertexData = new Float32Array(2 * 6 * wallTiles.length * 4); // x4 because each wall tile could potentially have 4 borders
 
    // Create vertices
-   const vertices = new Array<number>();
-   for (const tile of visibleTiles) {
-      if (!tile.isWall) continue;
-
+   let borderIdx = 0;
+   for (const tile of wallTiles) {
       const topTile = tile.y < SETTINGS.BOARD_DIMENSIONS - 1 ? Board.getTile(tile.x, tile.y + 1) : null;
       const leftTile = tile.x > 0 ? Board.getTile(tile.x - 1, tile.y) : null;
       const bottomTile = tile.y > 0 ? Board.getTile(tile.x, tile.y - 1) : null;
@@ -78,14 +81,20 @@ export function renderWallBorders(): void {
          const x2 = Camera.calculateXCanvasPosition((tile.x + 1) * SETTINGS.TILE_SIZE + rightOvershoot);
          const y1 = Camera.calculateYCanvasPosition((tile.y + 1) * SETTINGS.TILE_SIZE - BORDER_THICKNESS);
          const y2 = Camera.calculateYCanvasPosition((tile.y + 1) * SETTINGS.TILE_SIZE);
-         vertices.push(
-            x1, y1,
-            x2, y1,
-            x1, y2,
-            x1, y2,
-            x2, y1,
-            x2, y2
-         );
+         const dataOffset = borderIdx * 2 * 6;
+         vertexData[dataOffset] = x1;
+         vertexData[dataOffset + 1] = y1;
+         vertexData[dataOffset + 2] = x2;
+         vertexData[dataOffset + 3] = y1;
+         vertexData[dataOffset + 4] = x1;
+         vertexData[dataOffset + 5] = y2;
+         vertexData[dataOffset + 6] = x1;
+         vertexData[dataOffset + 7] = y2;
+         vertexData[dataOffset + 8] = x2;
+         vertexData[dataOffset + 9] = y1;
+         vertexData[dataOffset + 10] = x2;
+         vertexData[dataOffset + 11] = y2;
+         borderIdx++;
       }
 
       // Left border
@@ -94,14 +103,20 @@ export function renderWallBorders(): void {
          const x2 = Camera.calculateXCanvasPosition(tile.x * SETTINGS.TILE_SIZE + BORDER_THICKNESS);
          const y1 = Camera.calculateYCanvasPosition(tile.y * SETTINGS.TILE_SIZE - bottomOvershoot);
          const y2 = Camera.calculateYCanvasPosition((tile.y + 1) * SETTINGS.TILE_SIZE + topOvershoot);
-         vertices.push(
-            x1, y1,
-            x2, y1,
-            x1, y2,
-            x1, y2,
-            x2, y1,
-            x2, y2
-         );
+         const dataOffset = borderIdx * 2 * 6;
+         vertexData[dataOffset] = x1;
+         vertexData[dataOffset + 1] = y1;
+         vertexData[dataOffset + 2] = x2;
+         vertexData[dataOffset + 3] = y1;
+         vertexData[dataOffset + 4] = x1;
+         vertexData[dataOffset + 5] = y2;
+         vertexData[dataOffset + 6] = x1;
+         vertexData[dataOffset + 7] = y2;
+         vertexData[dataOffset + 8] = x2;
+         vertexData[dataOffset + 9] = y1;
+         vertexData[dataOffset + 10] = x2;
+         vertexData[dataOffset + 11] = y2;
+         borderIdx++;
       }
 
       // Bottom border
@@ -112,14 +127,20 @@ export function renderWallBorders(): void {
             const x2 = Camera.calculateXCanvasPosition((tile.x + 1) * SETTINGS.TILE_SIZE + rightOvershoot);
             const y1 = Camera.calculateYCanvasPosition(tile.y * SETTINGS.TILE_SIZE);
             const y2 = Camera.calculateYCanvasPosition(tile.y * SETTINGS.TILE_SIZE + BORDER_THICKNESS);
-            vertices.push(
-               x1, y1,
-               x2, y1,
-               x1, y2,
-               x1, y2,
-               x2, y1,
-               x2, y2
-            );
+            const dataOffset = borderIdx * 2 * 6;
+            vertexData[dataOffset] = x1;
+            vertexData[dataOffset + 1] = y1;
+            vertexData[dataOffset + 2] = x2;
+            vertexData[dataOffset + 3] = y1;
+            vertexData[dataOffset + 4] = x1;
+            vertexData[dataOffset + 5] = y2;
+            vertexData[dataOffset + 6] = x1;
+            vertexData[dataOffset + 7] = y2;
+            vertexData[dataOffset + 8] = x2;
+            vertexData[dataOffset + 9] = y1;
+            vertexData[dataOffset + 10] = x2;
+            vertexData[dataOffset + 11] = y2;
+            borderIdx++;
          }
       }
 
@@ -131,26 +152,30 @@ export function renderWallBorders(): void {
             const x2 = Camera.calculateXCanvasPosition((tile.x + 1) * SETTINGS.TILE_SIZE);
             const y1 = Camera.calculateYCanvasPosition(tile.y * SETTINGS.TILE_SIZE - bottomOvershoot);
             const y2 = Camera.calculateYCanvasPosition((tile.y + 1) * SETTINGS.TILE_SIZE + topOvershoot);
-            vertices.push(
-               x1, y1,
-               x2, y1,
-               x1, y2,
-               x1, y2,
-               x2, y1,
-               x2, y2
-            );
+            const dataOffset = borderIdx * 2 * 6;
+            vertexData[dataOffset] = x1;
+            vertexData[dataOffset + 1] = y1;
+            vertexData[dataOffset + 2] = x2;
+            vertexData[dataOffset + 3] = y1;
+            vertexData[dataOffset + 4] = x1;
+            vertexData[dataOffset + 5] = y2;
+            vertexData[dataOffset + 6] = x1;
+            vertexData[dataOffset + 7] = y2;
+            vertexData[dataOffset + 8] = x2;
+            vertexData[dataOffset + 9] = y1;
+            vertexData[dataOffset + 10] = x2;
+            vertexData[dataOffset + 11] = y2;
+            borderIdx++;
          }
       }
    }
 
    gl.useProgram(program);
 
-   if (vertices.length === 0) return;
-      
    // Create buffer
    const buffer = gl.createBuffer();
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+   gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
 
    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
 
@@ -158,5 +183,5 @@ export function renderWallBorders(): void {
    gl.enableVertexAttribArray(0);
 
    // Draw the vertices
-   gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 2);
+   gl.drawArrays(gl.TRIANGLES, 0, wallTiles.length * 6 * 4);
 }

@@ -14,7 +14,7 @@ uniform vec2 u_playerRotation;
 uniform vec2 u_halfWindowSize;
 
 layout(location = 0) in vec2 a_vertWorldPosition;
-in vec2 a_texCoord;
+layout(location = 1) in vec2 a_texCoord;
 
 out vec2 v_texCoord;
 
@@ -63,8 +63,16 @@ let programPreTranslationUniformLocation: WebGLUniformLocation;
 let programPlayerRotationUniformLocation: WebGLUniformLocation;
 let programHalfWindowSizeUniformLocation: WebGLUniformLocation;
 let programTextureUniformLocation: WebGLUniformLocation;
-let programVertWorldPositionAttribLocation: number;
-let programTexCoordAttribLocation: number;
+
+export function createPlaceableItemProgram(): void {
+   program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText, "a_vertWorldPosition");
+   
+   zoomUniformLocation = gl.getUniformLocation(program, "u_zoom")!;
+   programPreTranslationUniformLocation = gl.getUniformLocation(program, "u_preTranslation")!;
+   programPlayerRotationUniformLocation = gl.getUniformLocation(program, "u_playerRotation")!;
+   programHalfWindowSizeUniformLocation = gl.getUniformLocation(program, "u_halfWindowSize")!;
+   programTextureUniformLocation = gl.getUniformLocation(program, "u_texture")!;
+}
 
 export function renderGhostPlaceableItem(): void {
    // Don't render a placeable item if there is no placeable item selected
@@ -110,6 +118,12 @@ export function renderGhostPlaceableItem(): void {
    } else {
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
    }
+
+   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0);
+   gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+
+   gl.enableVertexAttribArray(0);
+   gl.enableVertexAttribArray(1);
    
    gl.uniform1f(zoomUniformLocation, Camera.zoom);
    gl.uniform1f(programPreTranslationUniformLocation, SETTINGS.ITEM_PLACE_DISTANCE);
@@ -117,12 +131,6 @@ export function renderGhostPlaceableItem(): void {
    gl.uniform2f(programHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
 
    gl.uniform1i(programTextureUniformLocation, 0);
-
-   gl.vertexAttribPointer(programVertWorldPositionAttribLocation, 2, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0);
-   gl.vertexAttribPointer(programTexCoordAttribLocation, 2, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-
-   gl.enableVertexAttribArray(programVertWorldPositionAttribLocation);
-   gl.enableVertexAttribArray(programTexCoordAttribLocation);
 
    const texture = getTexture("entities/" + placeableEntityInfo.textureSource);
    gl.activeTexture(gl.TEXTURE0);
@@ -132,17 +140,4 @@ export function renderGhostPlaceableItem(): void {
 
    gl.disable(gl.BLEND);
    gl.blendFunc(gl.ONE, gl.ZERO);
-}
-
-export function createPlaceableItemProgram(): void {
-   program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText, "a_vertWorldPosition");
-   
-   zoomUniformLocation = gl.getUniformLocation(program, "u_zoom")!;
-   programPreTranslationUniformLocation = gl.getUniformLocation(program, "u_preTranslation")!;
-   programPlayerRotationUniformLocation = gl.getUniformLocation(program, "u_playerRotation")!;
-   programHalfWindowSizeUniformLocation = gl.getUniformLocation(program, "u_halfWindowSize")!;
-   programTextureUniformLocation = gl.getUniformLocation(program, "u_texture")!;
-
-   programVertWorldPositionAttribLocation = gl.getAttribLocation(program, "a_vertWorldPosition");
-   programTexCoordAttribLocation = gl.getAttribLocation(program, "a_texCoord");
 }

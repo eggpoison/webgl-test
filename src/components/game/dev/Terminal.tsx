@@ -112,6 +112,7 @@ const Terminal = ({ startingIsVisible }: TerminalParams) => {
    // Whenever the command input changes, update the input's length
    useEffect(() => {
       if (lineInputRef.current === null) return;
+      
       // Keep the input at least one character long
       lineInputRef.current.style.width = Math.max(lineInputValue.length, 1) + "ch";
    }, [lineInputValue]);
