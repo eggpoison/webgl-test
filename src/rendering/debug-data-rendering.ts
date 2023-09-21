@@ -1,11 +1,16 @@
 import { GameObjectDebugData, Point, SETTINGS } from "webgl-test-shared";
-import Camera from "../Camera";
-import { createWebGLProgram, generateLine, generateThickCircleWireframeVertices, gl } from "../webgl";
+import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, generateLine, generateThickCircleWireframeVertices, gl } from "../webgl";
 import GameObject from "../GameObject";
 import Board from "../Board";
 
 const lineVertexShaderText = `#version 300 es
 precision mediump float;
+
+layout(std140) uniform Camera {
+   uniform vec2 u_playerPos;
+   uniform vec2 u_halfWindowSize;
+   uniform float u_zoom;
+};
 
 layout(location = 0) in vec2 a_position;
 layout(location = 1) in vec3 a_colour;
@@ -13,9 +18,11 @@ layout(location = 1) in vec3 a_colour;
 out vec3 v_colour;
 
 void main() {
+   vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
+   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+   gl_Position = vec4(clipSpacePos, 0.0, 1.0);
+
    v_colour = a_colour;
-   
-   gl_Position = vec4(a_position, 0.0, 1.0);   
 }
 `;
 const lineFragmentShaderText = `#version 300 es
@@ -33,15 +40,23 @@ void main() {
 const triangleVertexShaderText = `#version 300 es
 precision mediump float;
 
+layout(std140) uniform Camera {
+   uniform vec2 u_playerPos;
+   uniform vec2 u_halfWindowSize;
+   uniform float u_zoom;
+};
+
 layout(location = 0) in vec2 a_position;
 layout(location = 1) in vec3 a_colour;
 
 out vec3 v_colour;
 
 void main() {
+   vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
+   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+   gl_Position = vec4(clipSpacePos, 0.0, 1.0);
+
    v_colour = a_colour;
-   
-   gl_Position = vec4(a_position, 0.0, 1.0);   
 }
 `;
 const triangleFragmentShaderText = `#version 300 es
@@ -62,7 +77,14 @@ let triangleProgram: WebGLProgram;
 
 export function createDebugDataShaders(): void {
    lineProgram = createWebGLProgram(gl, lineVertexShaderText, lineFragmentShaderText);
+
+   const lineCameraBlockIndex = gl.getUniformBlockIndex(lineProgram, "Camera");
+   gl.uniformBlockBinding(lineProgram, lineCameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);
+
    triangleProgram = createWebGLProgram(gl, triangleVertexShaderText, triangleFragmentShaderText);
+
+   const triangleCameraBlockIndex = gl.getUniformBlockIndex(triangleProgram, "Camera");
+   gl.uniformBlockBinding(triangleProgram, triangleCameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);
 }
 
 const addCircleVertices = (vertices: Array<number>, debugData: GameObjectDebugData, gameObject: GameObject): void => {
@@ -105,13 +127,13 @@ export function renderLineDebugData(debugData: GameObjectDebugData): void {
    gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 5);
 }
 
-const addTileHighlightVertices = (vertices: Array<number>, debugData: GameObjectDebugData, gameObject: GameObject): void => {
+const addTileHighlightVertices = (vertices: Array<number>, debugData: GameObjectDebugData): void => {
    for (const tileHighlight of debugData.tileHighlights) {
-      const x1 = Camera.calculateXCanvasPosition(tileHighlight.tilePosition[0] * SETTINGS.TILE_SIZE);
-      const x2 = Camera.calculateXCanvasPosition((tileHighlight.tilePosition[0] + 1) * SETTINGS.TILE_SIZE);
+      const x1 = tileHighlight.tilePosition[0] * SETTINGS.TILE_SIZE;
+      const x2 = (tileHighlight.tilePosition[0] + 1) * SETTINGS.TILE_SIZE;
 
-      const y1 = Camera.calculateYCanvasPosition(tileHighlight.tilePosition[1] * SETTINGS.TILE_SIZE);
-      const y2 = Camera.calculateYCanvasPosition((tileHighlight.tilePosition[1] + 1) * SETTINGS.TILE_SIZE);
+      const y1 = tileHighlight.tilePosition[1] * SETTINGS.TILE_SIZE;
+      const y2 = (tileHighlight.tilePosition[1] + 1) * SETTINGS.TILE_SIZE;
 
       vertices.push(
          x1, y1, tileHighlight.colour[0], tileHighlight.colour[1], tileHighlight.colour[2],
@@ -125,8 +147,6 @@ const addTileHighlightVertices = (vertices: Array<number>, debugData: GameObject
 }
 
 export function renderTriangleDebugData(debugData: GameObjectDebugData): void {
-   const gameObject = Board.gameObjects[debugData.gameObjectID];
-
    const vertices = new Array<number>();
    
    gl.useProgram(triangleProgram);
@@ -134,7 +154,7 @@ export function renderTriangleDebugData(debugData: GameObjectDebugData): void {
    gl.enable(gl.BLEND);
    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-   addTileHighlightVertices(vertices, debugData, gameObject);
+   addTileHighlightVertices(vertices, debugData);
 
    const buffer = gl.createBuffer();
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);

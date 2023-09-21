@@ -71,21 +71,6 @@ abstract class Camera {
       return playerRelativePosition * this.zoom + halfWindowHeight;
    }
 
-   public static calculateXCanvasPosition(x: number): number {
-      const screenX = this.calculateXScreenPos(x);
-
-      const canvasX = screenX / windowWidth * 2 - 1;
-      return canvasX;
-   }
-   
-   public static calculateYCanvasPosition(y: number): number {
-      // Account for the player position
-      const screenY = this.calculateYScreenPos(y);
-      
-      const canvasY = screenY / windowHeight * 2 - 1;
-      return canvasY;
-   }
-
    public static pointIsVisible(point: Point): boolean {
       const unitsInChunk = SETTINGS.TILE_SIZE * SETTINGS.CHUNK_SIZE;
 

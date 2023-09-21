@@ -1,6 +1,5 @@
 import { Point } from "webgl-test-shared";
 import { isDev } from "./utils";
-import Camera from "./Camera";
 
 export const CIRCLE_VERTEX_COUNT = 50;
 
@@ -141,15 +140,6 @@ export function generateLine(startPosition: Point, endPosition: Point, thickness
    const tr = endPosition.copy();
    tr.add(rightOffset);
 
-   bl.x = Camera.calculateXCanvasPosition(bl.x);
-   bl.y = Camera.calculateYCanvasPosition(bl.y);
-   br.x = Camera.calculateXCanvasPosition(br.x);
-   br.y = Camera.calculateYCanvasPosition(br.y);
-   tl.x = Camera.calculateXCanvasPosition(tl.x);
-   tl.y = Camera.calculateYCanvasPosition(tl.y);
-   tr.x = Camera.calculateXCanvasPosition(tr.x);
-   tr.y = Camera.calculateYCanvasPosition(tr.y);
-
    const vertices: Array<number> = [
       bl.x, bl.y, r, g, b,
       br.x, br.y, r, g, b,
@@ -179,15 +169,6 @@ export function generateThickCircleWireframeVertices(position: Point, radius: nu
       tl.add(position);
       tr.add(position);
 
-      bl.x = Camera.calculateXCanvasPosition(bl.x);
-      bl.y = Camera.calculateYCanvasPosition(bl.y);
-      br.x = Camera.calculateXCanvasPosition(br.x);
-      br.y = Camera.calculateYCanvasPosition(br.y);
-      tl.x = Camera.calculateXCanvasPosition(tl.x);
-      tl.y = Camera.calculateYCanvasPosition(tl.y);
-      tr.x = Camera.calculateXCanvasPosition(tr.x);
-      tr.y = Camera.calculateYCanvasPosition(tr.y);
-      
       vertices.push(
          bl.x, bl.y, r, g, b,
          br.x, br.y, r, g, b,

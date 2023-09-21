@@ -1,6 +1,5 @@
 import { Point, rotatePoint } from "webgl-test-shared";
-import Camera from "../Camera";
-import { createWebGLProgram, gl } from "../webgl";
+import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 import { calculateVisibleGameObjects } from "./game-object-rendering";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -10,10 +9,18 @@ const CIRCLE_VERTEX_COUNT = 20;
 const vertexShaderText = `#version 300 es
 precision mediump float;
 
+layout(std140) uniform Camera {
+   uniform vec2 u_playerPos;
+   uniform vec2 u_halfWindowSize;
+   uniform float u_zoom;
+};
+
 layout(location = 0) in vec2 a_position;
 
 void main() {
-   gl_Position = vec4(a_position, 0.0, 1.0);   
+   vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
+   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+   gl_Position = vec4(clipSpacePos, 0.0, 1.0); 
 }
 `;
 const fragmentShaderText = `#version 300 es
@@ -30,6 +37,9 @@ let program: WebGLProgram;
 
 export function createHitboxShaders(): void {
    program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
+
+   const cameraBlockIndex = gl.getUniformBlockIndex(program, "Camera");
+   gl.uniformBlockBinding(program, cameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);
 }
 
 /** Renders all hitboxes of a specified set of entities */
@@ -56,6 +66,8 @@ export function renderEntityHitboxes(): void {
             const y1 = hitboxRenderPosition.y - (hitbox as RectangularHitbox).height / 2;
             const y2 = hitboxRenderPosition.y + (hitbox as RectangularHitbox).height / 2;
 
+            // @Speed: Garbage collection
+
             let topLeft = new Point(x1, y2);
             let topRight = new Point(x2, y2);
             let bottomRight = new Point(x2, y1);
@@ -66,11 +78,6 @@ export function renderEntityHitboxes(): void {
             topRight = rotatePoint(topRight, hitboxRenderPosition, gameObject.rotation);
             bottomRight = rotatePoint(bottomRight, hitboxRenderPosition, gameObject.rotation);
             bottomLeft = rotatePoint(bottomLeft, hitboxRenderPosition, gameObject.rotation);
-
-            topLeft = new Point(Camera.calculateXCanvasPosition(topLeft.x), Camera.calculateYCanvasPosition(topLeft.y));
-            topRight = new Point(Camera.calculateXCanvasPosition(topRight.x), Camera.calculateYCanvasPosition(topRight.y));
-            bottomRight = new Point(Camera.calculateXCanvasPosition(bottomRight.x), Camera.calculateYCanvasPosition(bottomRight.y));
-            bottomLeft = new Point(Camera.calculateXCanvasPosition(bottomLeft.x), Camera.calculateYCanvasPosition(bottomLeft.y));
 
             vertices.push(
                topLeft.x, topLeft.y,
@@ -100,13 +107,10 @@ export function renderEntityHitboxes(): void {
                const worldX = Math.cos(radians) * (hitbox as CircularHitbox).radius + hitboxRenderPosition.x;
                const worldY = Math.sin(radians) * (hitbox as CircularHitbox).radius + hitboxRenderPosition.y;
                
-               const screenX = Camera.calculateXCanvasPosition(worldX);
-               const screenY = Camera.calculateYCanvasPosition(worldY);
-               
-               vertices.push(screenX, screenY);
+               vertices.push(worldX, worldY);
 
-               previousX = screenX;
-               previousY = screenY;
+               previousX = worldX;
+               previousY = worldY;
             }
          }
       }
