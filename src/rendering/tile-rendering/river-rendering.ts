@@ -1259,13 +1259,6 @@ export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY
    const rockBuffer = gl.createBuffer()!;
    gl.bindBuffer(gl.ARRAY_BUFFER, rockBuffer);
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(rockVertices), gl.STATIC_DRAW);
-   // const rockVertexCounts = new Array<number>();
-   // for (const vertices of rockVertices) {
-   //    const buffer = gl.createBuffer()!;
-
-   //    rockBuffers.push(buffer);
-   //    rockVertexCounts.push(vertices.length / 5);
-   // }
 
    const highlightsVertexData = calculateHighlightsVertexData(waterTiles);
    const highlightsBuffer = gl.createBuffer()!;
@@ -1417,7 +1410,7 @@ const calculateSteppingStoneVertexData = (visibleSteppingStones: ReadonlySet<Riv
       let y1 = (steppingStone.position.y - size/2);
       let y2 = (steppingStone.position.y + size/2);
 
-      // Speed: Garbage collection
+      // @Speed: Garbage collection
       let topLeft = new Point(x1, y2);
       let topRight = new Point(x2, y2);
       let bottomRight = new Point(x2, y1);

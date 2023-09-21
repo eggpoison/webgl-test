@@ -3,10 +3,13 @@ import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import { LeafParticleSize, createLeafParticle } from "../generic-particles";
+import { LeafParticleSize, createLeafParticle, createLeafSpeck } from "../generic-particles";
 
 class BerryBush extends Entity {
    private static readonly RADIUS = 40;
+
+   private static readonly LEAF_SPECK_COLOUR_LOW = [63/255, 204/255, 91/255] as const;
+   private static readonly LEAF_SPECK_COLOUR_HIGH = [35/255, 158/255, 88/255] as const;
 
    public readonly type: EntityType = "berry_bush";
 
@@ -48,6 +51,11 @@ class BerryBush extends Entity {
       const spawnPositionY = this.position.y + BerryBush.RADIUS * Math.cos(moveDirection);
 
       createLeafParticle(spawnPositionX, spawnPositionY, moveDirection + randFloat(-1, 1), LeafParticleSize.small);
+      
+      // Create leaf specks
+      for (let i = 0; i < 5; i++) {
+         createLeafSpeck(this.position.x, this.position.y, BerryBush.RADIUS, BerryBush.LEAF_SPECK_COLOUR_LOW, BerryBush.LEAF_SPECK_COLOUR_HIGH);
+      }
    }
 
    public onDie(): void {
@@ -58,6 +66,11 @@ class BerryBush extends Entity {
          const spawnPositionY = this.position.y + offsetMagnitude * Math.cos(spawnOffsetDirection);
 
          createLeafParticle(spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), LeafParticleSize.small);
+      }
+      
+      // Create leaf specks
+      for (let i = 0; i < 5; i++) {
+         createLeafSpeck(this.position.x, this.position.y, BerryBush.RADIUS, BerryBush.LEAF_SPECK_COLOUR_LOW, BerryBush.LEAF_SPECK_COLOUR_HIGH);
       }
    }
 }
