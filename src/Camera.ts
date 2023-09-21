@@ -10,6 +10,8 @@ abstract class Camera {
 
    public static position: Point;
 
+   // @Speed expand these into 4 variables each
+   
    public static visibleChunkBounds: VisibleChunkBounds = [-1, -1, -1, -1];
 
    public static visibleRenderChunkBounds: VisibleChunkBounds = [-1, -1, -1, -1];

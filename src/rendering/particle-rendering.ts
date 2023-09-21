@@ -54,12 +54,35 @@ out vec3 v_colour;
 out float v_opacity;
 
 void main() {
+   float age = (u_currentTime - a_spawnTime) / 1000.0;
+
    // Scale the particle to its size
    vec2 position = a_vertPosition * a_halfParticleSize * a_scale;
+   
+   // Calculate rotation
+   float rotation = a_rotation;
+   if (a_angularFriction > 0.0) {
+      // Calculate the age at which friction meets velocity
+      float stopAge = a_angularVelocity / a_angularFriction * sign(a_angularVelocity);
 
+      // Apply angular friction and angular velocity
+      float unitAngularVelocity = sign(a_angularVelocity);
+      if (age < stopAge) {
+         rotation += a_angularVelocity * age;
+
+         float friction = age * age * a_angularFriction * unitAngularVelocity * 0.5;
+         rotation -= friction;
+      } else {
+         rotation += a_angularVelocity * stopAge - stopAge * stopAge * a_angularFriction * unitAngularVelocity * 0.5;
+      }
+   } else {
+      // Account for velocity and acceleration
+      rotation += a_angularVelocity * age + a_angularAcceleration * age * age * 0.5;
+   }
+   
    // Rotate
-   float cosRotation = cos(a_rotation);
-   float sinRotation = sin(a_rotation);
+   float cosRotation = cos(rotation);
+   float sinRotation = sin(rotation);
    float x = cosRotation * position.x + sinRotation * position.y;
    float y = -sinRotation * position.x + cosRotation * position.y;
    position.x = x;
@@ -67,8 +90,6 @@ void main() {
    
    // Translate to the particle's position
    position += a_position;
-
-   float age = (u_currentTime - a_spawnTime) / 1000.0;
 
    if (a_friction > 0.0) {
       // Calculate the age at which friction meets velocity
@@ -145,12 +166,35 @@ out float v_opacity;
 out float v_textureIndex;
 
 void main() {
+   float age = (u_currentTime - a_spawnTime) / 1000.0;
+
    // Scale the particle to its size
    vec2 position = a_vertPosition * a_halfParticleSize * a_scale;
 
+   // Calculate rotation
+   float rotation = a_rotation;
+   if (a_angularFriction > 0.0) {
+      // Calculate the age at which friction meets velocity
+      float stopAge = a_angularVelocity / a_angularFriction * sign(a_angularVelocity);
+
+      // Apply angular friction and angular velocity
+      float unitAngularVelocity = sign(a_angularVelocity);
+      if (age < stopAge) {
+         rotation += a_angularVelocity * age;
+
+         float friction = age * age * a_angularFriction * unitAngularVelocity * 0.5;
+         rotation -= friction;
+      } else {
+         rotation += a_angularVelocity * stopAge - stopAge * stopAge * a_angularFriction * unitAngularVelocity * 0.5;
+      }
+   } else {
+      // Account for velocity and acceleration
+      rotation += a_angularVelocity * age + a_angularAcceleration * age * age * 0.5;
+   }
+
    // Rotate
-   float cosRotation = cos(a_rotation);
-   float sinRotation = sin(a_rotation);
+   float cosRotation = cos(rotation);
+   float sinRotation = sin(rotation);
    float x = cosRotation * position.x + sinRotation * position.y;
    float y = -sinRotation * position.x + cosRotation * position.y;
    position.x = x;
@@ -158,8 +202,6 @@ void main() {
    
    // Translate to the particle's position
    position += a_position;
-
-   float age = (u_currentTime - a_spawnTime) / 1000.0;
 
    if (a_friction > 0.0) {
       // Calculate the age at which friction meets velocity

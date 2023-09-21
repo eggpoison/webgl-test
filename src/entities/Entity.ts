@@ -9,6 +9,8 @@ abstract class Entity extends GameObject {
       [255/255, 102/255, 0],
       [255/255, 184/255, 61/255]
    ];
+
+   private static readonly BURNING_SMOKE_PARTICLE_FADEIN_TIME = 0.15;
    
    public abstract readonly type: EntityType;
 
@@ -140,23 +142,20 @@ abstract class Entity extends GameObject {
             const spawnOffsetMagnitude = 20 * Math.random();
             const spawnOffsetDirection = 2 * Math.PI * Math.random();
             const spawnPositionX = this.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
-            const spawnPositionY = this.position.x + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
+            const spawnPositionY = this.position.y + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
 
             const accelerationDirection = 2 * Math.PI * Math.random();
             const accelerationX = 40 * Math.sin(accelerationDirection);
             const accelerationY = 40 * Math.cos(accelerationDirection);
 
-            const lifetime = randFloat(1, 1.25);
+            const lifetime = randFloat(1.75, 2.25);
 
-            const fadeInTime = 0.15;
-
-            // @Incomplete
             const particle = new Particle(lifetime);
             particle.getOpacity = (): number => {
-               if (particle.age <= fadeInTime) {
-                  return particle.age / fadeInTime;
+               if (particle.age <= Entity.BURNING_SMOKE_PARTICLE_FADEIN_TIME) {
+                  return particle.age / Entity.BURNING_SMOKE_PARTICLE_FADEIN_TIME;
                }
-               return lerp(0.75, 0, (particle.age - fadeInTime) / (lifetime - fadeInTime));
+               return lerp(0.75, 0, (particle.age - Entity.BURNING_SMOKE_PARTICLE_FADEIN_TIME) / (lifetime - Entity.BURNING_SMOKE_PARTICLE_FADEIN_TIME));
             }
             particle.getScale = (): number => {
                const deathProgress = particle.age / lifetime
@@ -168,12 +167,12 @@ abstract class Entity extends GameObject {
                ParticleRenderLayer.high,
                64, 64,
                spawnPositionX, spawnPositionY,
-               0, 70,
+               0, 50,
                accelerationX, accelerationY,
                0,
                2 * Math.PI * Math.random(),
-               0,
-               0,
+               randFloat(-Math.PI, Math.PI),
+               randFloat(-Math.PI, Math.PI) / 2,
                0,
                5,
                0, 0, 0
