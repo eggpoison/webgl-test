@@ -3,7 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import { createDirtParticle, createRockParticle } from "../generic-particles";
+import { createDirtParticle, createRockParticle, createRockSpeckParticle } from "../generic-particles";
 
 class Tombstone extends Entity {
    private static readonly HITBOX_WIDTH = 48;
@@ -51,6 +51,8 @@ class Tombstone extends Entity {
          }
       }
    }
+
+   // @Cleanup: copy and paste
    
    protected onHit(): void {
       for (let i = 0; i < 4; i++) {
@@ -65,6 +67,16 @@ class Tombstone extends Entity {
          
          createRockParticle(spawnPositionX, spawnPositionY, moveDirection);
       }
+
+      for (let i = 0; i < 8; i++) {
+         let spawnPositionX = randFloat(-Tombstone.HITBOX_WIDTH/2, Tombstone.HITBOX_WIDTH/2);
+         let spawnPositionY = randFloat(-Tombstone.HITBOX_HEIGHT/2, Tombstone.HITBOX_HEIGHT/2);
+
+         spawnPositionX += this.position.x;
+         spawnPositionY += this.position.y;
+
+         createRockSpeckParticle(spawnPositionX, spawnPositionY, 0);
+      }
    }
 
    public onDie(): void {
@@ -73,6 +85,13 @@ class Tombstone extends Entity {
          const spawnPositionY = this.position.y + randFloat(-Tombstone.HITBOX_HEIGHT/2, Tombstone.HITBOX_HEIGHT/2);
 
          createRockParticle(spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random());
+      }
+
+      for (let i = 0; i < 5; i++) {
+         const spawnPositionX = this.position.x + randFloat(-Tombstone.HITBOX_WIDTH/2, Tombstone.HITBOX_WIDTH/2);
+         const spawnPositionY = this.position.y + randFloat(-Tombstone.HITBOX_HEIGHT/2, Tombstone.HITBOX_HEIGHT/2);
+
+         createRockSpeckParticle(spawnPositionX, spawnPositionY, 0);
       }
    }
 

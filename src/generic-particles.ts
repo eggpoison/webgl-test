@@ -322,7 +322,7 @@ export function createWhiteSmokeParticle(spawnPositionX: number, spawnPositionY:
    Board.lowTexturedParticles.push(particle);
 }
 
-export function createLeafSpeck(originX: number, originY: number, offset: number, lowColour: Readonly<ParticleColour>, highColour: Readonly<ParticleColour>): void {
+export function createLeafSpeckParticle(originX: number, originY: number, offset: number, lowColour: Readonly<ParticleColour>, highColour: Readonly<ParticleColour>): void {
    const spawnOffsetDirection = 2 * Math.PI * Math.random();
    const spawnPositionX = originX + offset * Math.sin(spawnOffsetDirection);
    const spawnPositionY = originY + offset * Math.cos(spawnOffsetDirection);
@@ -361,6 +361,45 @@ export function createLeafSpeck(originX: number, originY: number, offset: number
       0,
       Math.abs(angularVelocity) / lifetime / 1.5,
       r, g, b
+   );
+   Board.lowMonocolourParticles.push(particle);
+}
+
+export function createRockSpeckParticle(originX: number, originY: number, offset: number): void {
+   const spawnOffsetDirection = 2 * Math.PI * Math.random();
+   const spawnPositionX = originX + offset * Math.sin(spawnOffsetDirection);
+   const spawnPositionY = originY + offset * Math.cos(spawnOffsetDirection);
+
+   const velocityMagnitude = randFloat(60, 80);
+   const velocityDirection = spawnOffsetDirection + randFloat(1, -1);
+   const velocityX = velocityMagnitude * Math.sin(velocityDirection);
+   const velocityY = velocityMagnitude * Math.cos(velocityDirection);
+
+   const lifetime = randFloat(0.3, 0.5);
+   
+   const particle = new Particle(lifetime);
+   particle.getOpacity = (): number => {
+      return Math.pow(1 - particle.age / lifetime, 0.3);
+   }
+   
+   const angularVelocity = randFloat(-Math.PI, Math.PI) * 2;
+   
+   const colour = randFloat(0.5, 0.75);
+   const scale = randFloat(1, 1.35);
+
+   addMonocolourParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.low,
+      6 * scale, 6 * scale,
+      spawnPositionX, spawnPositionY,
+      velocityX, velocityY,
+      0, 0,
+      velocityMagnitude / lifetime / 1.5,
+      2 * Math.PI * Math.random(),
+      angularVelocity,
+      0,
+      Math.abs(angularVelocity) / lifetime / 1.5,
+      colour, colour, colour
    );
    Board.lowMonocolourParticles.push(particle);
 }

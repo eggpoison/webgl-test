@@ -3,7 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import { createRockParticle } from "../generic-particles";
+import { createRockParticle, createRockSpeckParticle } from "../generic-particles";
 
 class Boulder extends Entity {
    private static readonly RADIUS = 40;
@@ -40,6 +40,10 @@ class Boulder extends Entity {
 
          createRockParticle(spawnPositionX, spawnPositionY, moveDirection);
       }
+
+      for (let i = 0; i < 5; i++) {
+         createRockSpeckParticle(this.position.x, this.position.y, Boulder.RADIUS);
+      }
    }
 
    public onDie(): void {
@@ -50,6 +54,10 @@ class Boulder extends Entity {
          const spawnPositionY = this.position.y + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
 
          createRockParticle(spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random());
+      }
+
+      for (let i = 0; i < 5; i++) {
+         createRockSpeckParticle(this.position.x, this.position.y, Boulder.RADIUS);
       }
    }
 }

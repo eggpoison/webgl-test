@@ -3,7 +3,7 @@ import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import { LeafParticleSize, createLeafParticle, createLeafSpeck } from "../generic-particles";
+import { LeafParticleSize, createLeafParticle, createLeafSpeckParticle } from "../generic-particles";
 
 class BerryBush extends Entity {
    private static readonly RADIUS = 40;
@@ -54,7 +54,7 @@ class BerryBush extends Entity {
       
       // Create leaf specks
       for (let i = 0; i < 5; i++) {
-         createLeafSpeck(this.position.x, this.position.y, BerryBush.RADIUS, BerryBush.LEAF_SPECK_COLOUR_LOW, BerryBush.LEAF_SPECK_COLOUR_HIGH);
+         createLeafSpeckParticle(this.position.x, this.position.y, BerryBush.RADIUS, BerryBush.LEAF_SPECK_COLOUR_LOW, BerryBush.LEAF_SPECK_COLOUR_HIGH);
       }
    }
 
@@ -70,7 +70,7 @@ class BerryBush extends Entity {
       
       // Create leaf specks
       for (let i = 0; i < 5; i++) {
-         createLeafSpeck(this.position.x, this.position.y, BerryBush.RADIUS, BerryBush.LEAF_SPECK_COLOUR_LOW, BerryBush.LEAF_SPECK_COLOUR_HIGH);
+         createLeafSpeckParticle(this.position.x, this.position.y, BerryBush.RADIUS, BerryBush.LEAF_SPECK_COLOUR_LOW, BerryBush.LEAF_SPECK_COLOUR_HIGH);
       }
    }
 }

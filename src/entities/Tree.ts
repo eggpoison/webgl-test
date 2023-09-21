@@ -3,7 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import { LeafParticleSize, createLeafParticle, createLeafSpeck } from "../generic-particles";
+import { LeafParticleSize, createLeafParticle, createLeafSpeckParticle } from "../generic-particles";
 
 const treeTextures: { [T in TreeSize]: string } = {
    [TreeSize.small]: "entities/tree/tree-small.png",
@@ -50,7 +50,7 @@ class Tree extends Entity {
       // Create leaf specks
       const numSpecks = this.treeSize === TreeSize.small ? 4 : 7;
       for (let i = 0; i < numSpecks; i++) {
-         createLeafSpeck(this.position.x, this.position.y, this.radius, Tree.LEAF_SPECK_COLOUR_LOW, Tree.LEAF_SPECK_COLOUR_HIGH);
+         createLeafSpeckParticle(this.position.x, this.position.y, this.radius, Tree.LEAF_SPECK_COLOUR_LOW, Tree.LEAF_SPECK_COLOUR_HIGH);
       }
    }
 
@@ -73,7 +73,7 @@ class Tree extends Entity {
       // Create leaf specks
       const numSpecks = this.treeSize === TreeSize.small ? 4 : 7;
       for (let i = 0; i < numSpecks; i++) {
-         createLeafSpeck(this.position.x, this.position.y, this.radius, Tree.LEAF_SPECK_COLOUR_LOW, Tree.LEAF_SPECK_COLOUR_HIGH);
+         createLeafSpeckParticle(this.position.x, this.position.y, this.radius, Tree.LEAF_SPECK_COLOUR_LOW, Tree.LEAF_SPECK_COLOUR_HIGH);
       }
    }
 }
