@@ -248,6 +248,7 @@ abstract class TribeMember extends Entity {
             const velocityDirection = 2 * Math.PI * Math.random();
             let velocityX = velocityMagnitude * Math.sin(velocityDirection);
             let velocityY = velocityMagnitude * Math.cos(velocityDirection);
+
             if (this.velocity !== null) {
                velocityX += this.velocity.magnitude * Math.sin(this.velocity.direction);
                velocityY += this.velocity.magnitude * Math.cos(this.velocity.direction);

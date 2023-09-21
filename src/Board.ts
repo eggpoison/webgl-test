@@ -152,10 +152,15 @@ abstract class Board {
          chunk.removeGameObject(gameObject);
       }
 
+      // @Speed
       delete this.gameObjects[gameObject.id];
       delete this.projectiles[gameObject.id];
       delete this.entities[gameObject.id];
       delete this.droppedItems[gameObject.id];
+
+      if (typeof gameObject.onRemove !== "undefined") {
+         gameObject.onRemove();
+      }
    }
 
    public static getRiverFlowDirection(tileX: number, tileY: number): number {

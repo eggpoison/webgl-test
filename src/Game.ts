@@ -31,7 +31,6 @@ import { ParticleRenderLayer, createParticleShaders, renderMonocolourParticles, 
 import Tribe from "./Tribe";
 import OPTIONS from "./options";
 import { RENDER_CHUNK_SIZE, createRenderChunks } from "./rendering/tile-rendering/render-chunks";
-import { generateFoodEatingParticleColours } from "./food-eating-particles";
 import { registerFrame, updateFrameGraph } from "./components/game/dev/FrameGraph";
 import { createNightShaders, renderNight } from "./rendering/night-rendering";
 import { createPlaceableItemProgram, renderGhostPlaceableItem } from "./rendering/placeable-item-rendering";
@@ -185,8 +184,6 @@ abstract class Game {
 
             createRenderChunks();
 
-            generateFoodEatingParticleColours();
-   
             this.hasInitialised = true;
    
             resolve();

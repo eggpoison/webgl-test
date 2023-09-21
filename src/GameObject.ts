@@ -78,6 +78,8 @@ abstract class GameObject extends RenderObject {
       // so that all constructors have time to run
    }
 
+   public onRemove?(): void;
+
    protected overrideTileMoveSpeedMultiplier?(): number | null;
 
    public tick(): void {

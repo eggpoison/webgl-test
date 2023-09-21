@@ -313,7 +313,7 @@ export function createWhiteSmokeParticle(spawnPositionX: number, spawnPositionY:
       0, 0,
       velocityMagnitude / lifetime / 1.5,
       2 * Math.PI * Math.random(),
-      Math.PI * randFloat(3, 4) * randSign(),
+      Math.PI * randFloat(2, 3) * randSign(),
       0,
       Math.PI,
       7,
