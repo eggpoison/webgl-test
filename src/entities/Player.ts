@@ -182,9 +182,12 @@ class Player extends TribeMember {
    }
 
    public static resolveCollisions(): void {
-      // this.resolveWallTileCollisions();
+      this.resolveWallTileCollisions();
       this.resolveWallCollisions();
       this.resolveGameObjectCollisions();
+
+      // Sometimes the player can get pushed out of the border by collisions (especially when clipping inside walls), so bring them back into the world when that happens
+      Player.instance!.resolveBorderCollisions();
    }
 
    private static checkForTileCollision(tile: Tile): TileCollisionAxis {

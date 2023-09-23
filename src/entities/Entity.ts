@@ -5,7 +5,7 @@ import Board from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
 
 abstract class Entity extends GameObject {
-   private static readonly BURNING_PARTICLE_COLOURS: ReadonlyArray<ParticleColour> = [
+   public static readonly BURNING_PARTICLE_COLOURS: ReadonlyArray<ParticleColour> = [
       [255/255, 102/255, 0],
       [255/255, 184/255, 61/255]
    ];
@@ -138,7 +138,7 @@ abstract class Entity extends GameObject {
          }
 
          // Smoke particles
-         if (fireStatusEffect.ticksElapsed % 2 === 0) {
+         if (fireStatusEffect.ticksElapsed % 3 === 0) {
             const spawnOffsetMagnitude = 20 * Math.random();
             const spawnOffsetDirection = 2 * Math.PI * Math.random();
             const spawnPositionX = this.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
@@ -146,7 +146,10 @@ abstract class Entity extends GameObject {
 
             const accelerationDirection = 2 * Math.PI * Math.random();
             const accelerationX = 40 * Math.sin(accelerationDirection);
-            const accelerationY = 40 * Math.cos(accelerationDirection);
+            let accelerationY = 40 * Math.cos(accelerationDirection);
+
+            // Weight the smoke to accelerate more upwards
+            accelerationY += 10;
 
             const lifetime = randFloat(1.75, 2.25);
 
@@ -159,7 +162,7 @@ abstract class Entity extends GameObject {
             }
             particle.getScale = (): number => {
                const deathProgress = particle.age / lifetime
-               return 1 + deathProgress;
+               return 1 + deathProgress * 1.5;
             }
 
             addTexturedParticleToBufferContainer(

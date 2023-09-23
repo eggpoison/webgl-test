@@ -230,17 +230,20 @@ abstract class GameObject extends RenderObject {
          
          this.position.add(velocity.convertToPoint());
 
-         // Clamp the position
-         if (this.position.x < 0) {
-            this.position.x = 0;
-         } else if (this.position.x >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
-            this.position.x = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE - 1;
-         }
-         if (this.position.y < 0) {
-            this.position.y = 0;
-         } else if (this.position.y >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
-            this.position.y = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE - 1;
-         }
+         this.resolveBorderCollisions();
+      }
+   }
+
+   protected resolveBorderCollisions(): void {
+      if (this.position.x < 0) {
+         this.position.x = 0;
+      } else if (this.position.x >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
+         this.position.x = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE - 1;
+      }
+      if (this.position.y < 0) {
+         this.position.y = 0;
+      } else if (this.position.y >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
+         this.position.y = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE - 1;
       }
    }
 

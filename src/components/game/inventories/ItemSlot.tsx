@@ -1,4 +1,4 @@
-interface ItemSlotParams {
+export interface ItemSlotParams {
    readonly picturedItemImageSrc?: any;
    readonly isSelected: boolean;
    readonly itemCount?: number;
