@@ -7,6 +7,9 @@ import BowItem from "./BowItem";
 
 type GenericItem<T extends ItemType> = new (itemType: T, count: number, id: number, itemInfo: ItemInfo<T>) => Item;
 
+// @Cleanup: This file and logic shouldn't even exist. Should just have one Item class which is used for everything,
+// like the server, and then one big switch statement to decide logic.
+
 const ITEM_CLASS_RECORD: { [T in ItemType]: () => GenericItem<T> } = {
    [ItemType.wood]: () => Item,
    [ItemType.workbench]: () => PlaceableItem,
@@ -34,7 +37,8 @@ const ITEM_CLASS_RECORD: { [T in ItemType]: () => GenericItem<T> } = {
    [ItemType.frost_armour]: () => ArmourItem,
    [ItemType.campfire]: () => PlaceableItem,
    [ItemType.furnace]: () => PlaceableItem,
-   [ItemType.wooden_bow]: () => BowItem
+   [ItemType.wooden_bow]: () => BowItem,
+   [ItemType.meat_suit]: () => ArmourItem
 };
 
 export function createItem(itemType: ItemType, count: number, id: number): Item {

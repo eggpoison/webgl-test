@@ -141,6 +141,11 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       textureSource: "items/wooden-bow.png",
       name: "Wooden Bow",
       description: ""
+   },
+   [ItemType.meat_suit]: {
+      textureSource: "items/meat-suit.png",
+      name: "Meat Suit",
+      description: "Your skin feels oily after wearing it, and you now have at least 5 NTDs. Looks cool though"
    }
 };
 
