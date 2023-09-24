@@ -39,6 +39,24 @@ const FOOD_EATING_COLOURS: { [T in ItemType as Exclude<T, FilterFoodItemTypes<T>
    ]
 };
 
+// @Cleanup: Maybe make this automatically require all armour types
+
+interface ArmourInfo {
+   readonly textureSource: string;
+   readonly pixelSize: number;
+}
+
+const ARMOUR_WORN_INFO: Partial<Record<ItemType, ArmourInfo>> = {
+   [ItemType.frost_armour]: {
+      textureSource: "armour/frost-armour.png",
+      pixelSize: 72
+   },
+   [ItemType.meat_suit]: {
+      textureSource: "armour/meat-suit.png",
+      pixelSize: 64
+   }
+};
+
 abstract class TribeMember extends Entity {
    private static readonly FOOD_EAT_INTERVAL = 0.3;
    
@@ -310,31 +328,37 @@ abstract class TribeMember extends Entity {
       }
    }
 
-   private getArmourTextureSource(armour: ItemType): string {
-      switch (armour) {
-         case ItemType.frost_armour: {
-            return "armour/frost-armour.png";
-         }
-         default: {
-            throw new Error("Can't find armour texture source");
-         }
+   private getArmourTextureSource(armourType: ItemType): string {
+      if (!ARMOUR_WORN_INFO.hasOwnProperty(armourType)) {
+         throw new Error("Can't find armour texture source");
       }
+
+      return ARMOUR_WORN_INFO[armourType]!.textureSource;
    }
 
-   public updateArmourRenderPart(armour: ItemType | null): void {
-      if (armour !== null) {
+   private getArmourPixelSize(armourType: ItemType): number {
+      if (!ARMOUR_WORN_INFO.hasOwnProperty(armourType)) {
+         throw new Error("Can't find armour texture source");
+      }
+
+      return ARMOUR_WORN_INFO[armourType]!.pixelSize;
+   }
+
+   public updateArmourRenderPart(armourType: ItemType | null): void {
+      if (armourType !== null) {
          if (this.armourRenderPart === null) {
+            const pixelSize = this.getArmourPixelSize(armourType);
             this.armourRenderPart = new RenderPart(
-               72,
-               72,
-               this.getArmourTextureSource(armour),
+               pixelSize,
+               pixelSize,
+               this.getArmourTextureSource(armourType),
                2,
                0
             );
             
             this.attachRenderPart(this.armourRenderPart);
          } else {
-            this.armourRenderPart.textureSource = this.getArmourTextureSource(armour);
+            this.armourRenderPart.textureSource = this.getArmourTextureSource(armourType);
          }
       } else if (this.armourRenderPart !== null) {
          this.removeRenderPart(this.armourRenderPart);
