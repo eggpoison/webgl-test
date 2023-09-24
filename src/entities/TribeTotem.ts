@@ -1,4 +1,4 @@
-import { Point, Vector, TribeTotemBanner, EntityData, TribeType } from "webgl-test-shared";
+import { Point, TribeTotemBanner, EntityData, TribeType } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -20,17 +20,17 @@ class TribeTotem extends Entity {
    private readonly banners: Record<number, TribeTotemBanner> = {};
    private readonly bannerRenderParts: Record<number, RenderPart> = {};
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, tribeID: number, tribeType: TribeType, banners: Array<TribeTotemBanner>) {
-      super(position, hitboxes, id, secondsSinceLastHit);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, tribeID: number, tribeType: TribeType, banners: Array<TribeTotemBanner>) {
+      super(position, hitboxes, id);
 
-      this.attachRenderParts([
-         new RenderPart({
-            width: TribeTotem.RADIUS * 2,
-            height: TribeTotem.RADIUS * 2,
-            textureSource: `entities/tribe-totem/tribe-totem.png`,
-            zIndex: 1
-         }, this)
-      ]);
+      const renderPart = new RenderPart(
+         TribeTotem.RADIUS * 2,
+         TribeTotem.RADIUS * 2,
+         `entities/tribe-totem/tribe-totem.png`,
+         1,
+         0
+      );
+      this.attachRenderPart(renderPart);
 
       this.tribeID = tribeID;
       this.tribeType = tribeType;
@@ -58,15 +58,14 @@ class TribeTotem extends Entity {
          }
       }
 
-      const renderPart = new RenderPart({
-         width: TribeTotem.BANNER_WIDTH,
-         height: TribeTotem.BANNER_HEIGHT,
-         textureSource: `entities/tribe-totem/${totemTextureSourceID}`,
-         offset: () => new Vector(TribeTotem.BANNER_LAYER_DISTANCES[banner.layer], banner.direction).convertToPoint(),
-         getRotation: () => banner.direction,
-         zIndex: 2
-      }, this);
-      
+      const renderPart = new RenderPart(
+         TribeTotem.BANNER_WIDTH,
+         TribeTotem.BANNER_HEIGHT,
+         `entities/tribe-totem/${totemTextureSourceID}`,
+         2,
+         banner.direction
+      );
+      renderPart.offset = Point.fromVectorForm(TribeTotem.BANNER_LAYER_DISTANCES[banner.layer], banner.direction);
       this.attachRenderPart(renderPart);
       this.bannerRenderParts[banner.hutNum] = renderPart;
    }

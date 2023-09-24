@@ -17,48 +17,48 @@ type TileTypeRenderInfo = SolidTileTypeRenderInfo | LiquidTileTypeRenderInfo;
 
 export const TILE_TYPE_RENDER_INFO_RECORD: Record<TileType, TileTypeRenderInfo> = {
    grass: {
-      textureSource: "grass.png"
+      textureSource: "tiles/grass.png"
    },
    dirt: {
-      textureSource: "dirt.png"
+      textureSource: "tiles/dirt.png"
    },
    water: {
       isLiquid: true,
-      textureSource: "water.png"
+      textureSource: "tiles/water.png"
    },
    sludge: {
       // textureSource: "sludge.png"
-      textureSource: "sludge-old.png"
+      textureSource: "tiles/sludge-old.png"
    },
    slime: {
-      textureSource: "slime.png"
+      textureSource: "tiles/slime.png"
    },
    rock: {
-      textureSource: "rock.png"
+      textureSource: "tiles/rock.png"
    },
    darkRock: {
-      textureSource: "dark-rock.png"
+      textureSource: "tiles/dark-rock.png"
    },
    sand: {
-      textureSource: "sand.png"
+      textureSource: "tiles/sand.png"
    },
    sandstone: {
-      textureSource: "sandstone.png"
+      textureSource: "tiles/sandstone.png"
    },
    snow: {
-      textureSource: "snow.png"
+      textureSource: "tiles/snow.png"
    },
    ice: {
       // textureSource: "ice.png"
-      textureSource: "ice-old.png"
+      textureSource: "tiles/ice-old.png"
    },
    magma: {
-      textureSource: "grass.png"
+      textureSource: "tiles/grass.png"
    },
    lava: {
-      textureSource: "grass.png"
+      textureSource: "tiles/grass.png"
    },
    permafrost: {
-      textureSource: "permafrost.png"
+      textureSource: "tiles/permafrost.png"
    }
 };

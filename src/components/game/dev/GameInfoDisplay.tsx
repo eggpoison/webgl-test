@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { roundNum } from "webgl-test-shared";
-import Game from "../../../Game";
 import OPTIONS from "../../../options";
-
-let _fps: number = -1;
+import Board from "../../../Board";
 
 let serverTicks = 0;
 
@@ -11,7 +9,8 @@ let tps = -1;
 
 export let updateDebugScreenCurrentTime: (time: number) => void = () => {};
 export let updateDebugScreenTicks: (time: number) => void = () => {};
-export let updateDebugScreenFPS: (fps: number) => void = (fps: number) => { _fps = fps};
+export let updateDebugScreenFPS: () => void = () => {};
+export let updateDebugScreenRenderTime: (renderTime: number) => void = () => {};
 
 export function registerServerTick(): void {
    serverTicks++;
@@ -42,16 +41,19 @@ const formatTime = (time: number): string => {
 
 const GameInfoDisplay = () => {
    const [currentTime, setCurrentTime] = useState(0);
-   const [ticks, setTicks] = useState(Game.ticks);
-   const [fps, setFPS] = useState(-1);
+   const [ticks, setTicks] = useState(Board.ticks);
+   // @Cleanup @Incomplete
+   // const [fps, setFPS] = useState(0);
+   const [renderTime, setRenderTime] = useState(0);
 
    const [nightVisionIsEnabled, setNightvisionIsEnabled] = useState(OPTIONS.nightVisionIsEnabled);
    const [showHitboxes, setShowEntityHitboxes] = useState(OPTIONS.showHitboxes);
    const [showChunkBorders, setShowChunkBorders] = useState(OPTIONS.showChunkBorders);
+   const [showRenderChunkBorders, setShowRenderChunkBorders] = useState(OPTIONS.showRenderChunkBorders);
 
    useEffect(() => {
-      if (typeof Game.time !== "undefined") {
-         setCurrentTime(Game.time);
+      if (typeof Board.time !== "undefined") {
+         setCurrentTime(Board.time);
       }
 
       updateDebugScreenCurrentTime = (time: number): void => {
@@ -60,9 +62,11 @@ const GameInfoDisplay = () => {
       updateDebugScreenTicks = (ticks: number): void => {
          setTicks(ticks);
       }
-      updateDebugScreenFPS = (fps: number): void => {
-         _fps = fps;
-         setFPS(fps);
+      // updateDebugScreenFPS = (): void => {
+      //    setFPS(fpsTimers.length);
+      // }
+      updateDebugScreenRenderTime = (renderTime: number): void => {
+         setRenderTime(renderTime);
       }
    }, []);
 
@@ -80,32 +84,55 @@ const GameInfoDisplay = () => {
       OPTIONS.showChunkBorders = !showChunkBorders;
       setShowChunkBorders(!showChunkBorders);
    }, [showChunkBorders]);
+
+   const toggleSetShowRenderChunkBorders = useCallback(() => {
+      OPTIONS.showRenderChunkBorders = !showRenderChunkBorders;
+      setShowRenderChunkBorders(!showRenderChunkBorders);
+   }, [showRenderChunkBorders]);
    
    return <div id="game-info-display">
       <p>Time: {formatTime(roundNum(currentTime, 2))}</p>
       <p>Ticks: {roundNum(ticks, 2)}</p>
-      <p>FPS: {_fps}</p>
+      {/* @Incomplete */}
+      {/* <p>FPS: {fps}</p>
+      <p>Render time ms: {renderTime.toFixed(2)}</p> */}
       <p>TPS: {tps}</p>
 
-      <ul>
+      <ul className="options">
          <li>
             <label className={nightVisionIsEnabled ? "enabled" : undefined}>
-               <input checked={nightVisionIsEnabled} type="checkbox" onChange={toggleNightvision} />
+               <input checked={nightVisionIsEnabled} name="nightvision-checkbox" type="checkbox" onChange={toggleNightvision} />
                Nightvision
             </label>
          </li>
          <li>
             <label className={showHitboxes ? "enabled" : undefined}>
-               <input checked={showHitboxes} type="checkbox" onChange={toggleShowHitboxes} />
+               <input checked={showHitboxes} name="hitboxes-checkbox" type="checkbox" onChange={toggleShowHitboxes} />
                Hitboxes
             </label>
          </li>
          <li>
             <label className={showChunkBorders ? "enabled" : undefined}>
-               <input checked={showChunkBorders} type="checkbox" onChange={toggleSetShowChunkBorders} />
+               <input checked={showChunkBorders} name="chunk-borders-checkbox" type="checkbox" onChange={toggleSetShowChunkBorders} />
                Chunk borders
             </label>
          </li>
+         <li>
+            <label className={showRenderChunkBorders ? "enabled" : undefined}>
+               <input checked={showRenderChunkBorders} name="render-chunk-borders-checkbox" type="checkbox" onChange={toggleSetShowRenderChunkBorders} />
+               Render chunk borders
+            </label>
+         </li>
+      </ul>
+
+      <ul>
+         <li>{Object.keys(Board.gameObjects).length} Game Objects</li>
+         <ul>
+            <li>{Object.keys(Board.entities).length} Entities</li>
+            <li>{Object.keys(Board.projectiles).length} Projectiles</li>
+            <li>{Object.keys(Board.droppedItems).length} Dropped Items</li>
+         </ul>
+         <li>{Board.lowMonocolourParticles.length + Board.lowTexturedParticles.length + Board.highMonocolourParticles.length + Board.highTexturedParticles.length} Particles</li>
       </ul>
    </div>;
 }

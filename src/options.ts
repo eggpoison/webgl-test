@@ -10,12 +10,18 @@ interface Options {
     * @default false
     */
    showChunkBorders: boolean;
+   /**
+    * If true, then render chunk borders will be displayed in a wireframe.
+    * @default false
+    */
+   showRenderChunkBorders: boolean;
 }
 
 const OPTIONS: Options = {
    nightVisionIsEnabled: false,
    showHitboxes: false,
-   showChunkBorders: false
+   showChunkBorders: false,
+   showRenderChunkBorders: false
 };
 
 export default OPTIONS;

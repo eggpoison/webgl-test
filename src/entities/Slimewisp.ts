@@ -9,18 +9,18 @@ class Slimewisp extends Entity {
 
    public type: EntityType = "slimewisp";
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null) {
-      super(position, hitboxes, id, secondsSinceLastHit);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number) {
+      super(position, hitboxes, id);
 
-      this.attachRenderParts([
-         new RenderPart({
-            width: Slimewisp.RADIUS * 2,
-            height: Slimewisp.RADIUS * 2,
-            textureSource: `entities/slimewisp/slimewisp.png`,
-            zIndex: 0,
-            opacity: 0.8
-         }, this)
-      ]);
+      const renderPart = new RenderPart(
+         Slimewisp.RADIUS * 2,
+         Slimewisp.RADIUS * 2,
+         `entities/slimewisp/slimewisp.png`,
+         0,
+         0
+      );
+      renderPart.opacity = 0.8;
+      this.attachRenderPart(renderPart);
    }
 }
 

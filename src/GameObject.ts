@@ -1,10 +1,15 @@
-import { GameObjectData, Point, RIVER_STEPPING_STONE_SIZES, SETTINGS, TILE_TYPE_INFO_RECORD, Vector } from "webgl-test-shared";
+import { GameObjectData, Point, RIVER_STEPPING_STONE_SIZES, SETTINGS, TILE_TYPE_INFO_RECORD, Vector, lerp, randFloat, randSign } from "webgl-test-shared";
 import RenderPart, { RenderObject } from "./render-parts/RenderPart";
 import Chunk from "./Chunk";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
-import Game from "./Game";
 import { Tile } from "./Tile";
 import CircularHitbox from "./hitboxes/CircularHitbox";
+import Particle from "./Particle";
+import Board from "./Board";
+import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "./rendering/particle-rendering";
+
+const WATER_DROPLET_COLOUR_LOW = [8/255, 197/255, 255/255] as const;
+const WATER_DROPLET_COLOUR_HIGH = [94/255, 231/255, 255/255] as const;
 
 let frameProgress: number;
 export function setFrameProgress(newFrameProgress: number): void {
@@ -13,67 +18,6 @@ export function setFrameProgress(newFrameProgress: number): void {
 
 export function getFrameProgress(): number {
    return frameProgress;
-}
-
-const calculateGameObjectRenderPosition = (gameObject: GameObject): Point => {
-   let renderPosition = gameObject.position.copy();
-   
-   // Account for frame progress
-   if (gameObject.velocity !== null) {
-      const tile = gameObject.findCurrentTile();
-      const tileTypeInfo = TILE_TYPE_INFO_RECORD[tile.type];
-
-      const tileMoveSpeedMultiplier = tileTypeInfo.moveSpeedMultiplier || 1;
-
-      const terminalVelocity = gameObject.terminalVelocity * tileMoveSpeedMultiplier;
-
-      // 
-      // Calculate the change in position that has occurred since the start of the frame
-      // 
-      let frameVelocity: Vector | null = gameObject.velocity.copy();
-      
-      // Accelerate
-      if (gameObject.acceleration !== null) {
-         const acceleration = gameObject.acceleration.copy();
-         acceleration.magnitude *= tileTypeInfo.friction * tileMoveSpeedMultiplier / SETTINGS.TPS;
-
-         const magnitudeBeforeAdd = gameObject.velocity?.magnitude || 0;
-
-         // Add acceleration to velocity
-         if (frameVelocity !== null) {
-            frameVelocity.add(acceleration);
-         } else {
-            frameVelocity = acceleration;
-         }
-
-         // Don't accelerate past terminal velocity
-         if (frameVelocity.magnitude > terminalVelocity && gameObject.velocity.magnitude > magnitudeBeforeAdd) {
-            frameVelocity.magnitude = terminalVelocity;
-         }
-      }
-
-      // Apply the frame velocity to the object's position
-      if (frameVelocity !== null) {
-         frameVelocity.magnitude *= frameProgress / SETTINGS.TPS;
-
-         const offset = frameVelocity.convertToPoint();
-         renderPosition.add(offset);
-      }
-   }
-
-   // Clamp the render position
-   if (renderPosition.x < 0) {
-      renderPosition.x = 0;
-   } else if (renderPosition.x >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
-      renderPosition.x = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE - 1;
-   }
-   if (renderPosition.y < 0) {
-      renderPosition.y = 0;
-   } else if (renderPosition.y >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
-      renderPosition.y = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE - 1;
-   }
-
-   return renderPosition;
 }
 
 abstract class GameObject extends RenderObject {
@@ -86,13 +30,14 @@ abstract class GameObject extends RenderObject {
    /** Acceleration of the object */
    public acceleration: Vector | null = null;
 
-   /** Estimated position of the object during the current frame */
-   public renderPosition!: Point;
-
    /** Angle the object is facing, taken counterclockwise from the positive x axis (radians) */
    public rotation = 0;
 
    public mass = 1;
+
+   public ageTicks = 0;
+
+   public tile!: Tile;
 
    /** Stores all render parts attached to the object, in ascending order of their z-indexes. */
    public readonly renderParts = new Array<RenderPart>();
@@ -103,42 +48,82 @@ abstract class GameObject extends RenderObject {
    /** Limit to how many units the object can move in a second */
    public terminalVelocity: number = 0;
 
-   public chunks!: Set<Chunk>;
+   public chunks = new Set<Chunk>();
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, a: boolean = false) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number) {
       super();
       
       this.position = position;
-      this.renderPosition = position;
+      this.renderPosition.x = position.x;
+      this.renderPosition.y = position.y;
 
       this.id = id;
 
       // Create hitbox using hitbox info
       this.hitboxes = hitboxes;
       
-      // Calculate initial containing chunks
       for (const hitbox of this.hitboxes) {
          hitbox.setObject(this); 
          if (hitbox.hasOwnProperty("width")) {
             (hitbox as RectangularHitbox).computeVertexPositions();
+            (hitbox as RectangularHitbox).computeSideAxes();
          }
          hitbox.updateHitboxBounds();
+         hitbox.updatePosition();
       }
-      this.chunks = this.calculateContainingChunks();
-      
-      // Add game object to chunks
-      for (const chunk of this.chunks) {
-         chunk.addGameObject(this);
-      }
-      Game.board.gameObjects[this.id] = this;
+
+      this.updateCurrentTile();
+
+      // Note: The chunks are calculated outside of the constructor immediately after the game object is created
+      // so that all constructors have time to run
    }
+
+   public onRemove?(): void;
 
    protected overrideTileMoveSpeedMultiplier?(): number | null;
 
-   public tick?(): void;
+   public tick(): void {
+      this.updateCurrentTile();
+      
+      // Water droplet particles
+      if (this.isInRiver() && Board.tickIntervalHasPassed(0.05)) {
+         const lifetime = 1;
 
-   private isInRiver(tile: Tile): boolean {
-      if (tile.type !== "water") {
+         const velocityMagnitude = randFloat(40, 60);
+         const velocityDirection = 2 * Math.PI * Math.random()
+         const velocityX = velocityMagnitude * Math.sin(velocityDirection);
+         const velocityY = velocityMagnitude * Math.cos(velocityDirection);
+            
+         const particle = new Particle(lifetime);
+         particle.getOpacity = (): number => {
+            return lerp(0.75, 0, particle.age / lifetime);
+         };
+
+         const colourLerp = Math.random();
+         const r = lerp(WATER_DROPLET_COLOUR_LOW[0], WATER_DROPLET_COLOUR_HIGH[0], colourLerp);
+         const g = lerp(WATER_DROPLET_COLOUR_LOW[1], WATER_DROPLET_COLOUR_HIGH[1], colourLerp);
+         const b = lerp(WATER_DROPLET_COLOUR_LOW[2], WATER_DROPLET_COLOUR_HIGH[2], colourLerp);
+
+         addMonocolourParticleToBufferContainer(
+            particle,
+            ParticleRenderLayer.low,
+            6, 6,
+            this.position.x, this.position.y,
+            velocityX, velocityY,
+            0, 0,
+            0,
+            2 * Math.PI * Math.random(),
+            randFloat(2, 3) * randSign(),
+            0,
+            0,
+            r, g, b
+         );
+         Board.lowMonocolourParticles.push(particle);
+      }
+   };
+
+   protected isInRiver(): boolean {
+      if (this.tile.type !== "water") {
          return false;
       }
 
@@ -158,13 +143,14 @@ abstract class GameObject extends RenderObject {
    }
 
    public applyPhysics(): void {
-      const tile = this.findCurrentTile();
-      const tileTypeInfo = TILE_TYPE_INFO_RECORD[tile.type];
+      const tileTypeInfo = TILE_TYPE_INFO_RECORD[this.tile.type];
 
       let tileMoveSpeedMultiplier = tileTypeInfo.moveSpeedMultiplier || 1;
-      if (tile.type === "water" && !this.isInRiver(tile)) {
+      if (this.tile.type === "water" && !this.isInRiver()) {
          tileMoveSpeedMultiplier = 1;
       }
+
+      // TODO: This is scuffed
       if (typeof this.overrideTileMoveSpeedMultiplier !== "undefined") {
          const speed = this.overrideTileMoveSpeedMultiplier();
          if (speed !== null) {
@@ -185,8 +171,9 @@ abstract class GameObject extends RenderObject {
          tileFrictionReduceAmount = 0;
       }
       
-      // Accelerate
       if (this.acceleration !== null) {
+         // Accelerate
+
          const acceleration = this.acceleration.copy();
          acceleration.magnitude *= tileTypeInfo.friction * tileMoveSpeedMultiplier / SETTINGS.TPS;
 
@@ -217,8 +204,8 @@ abstract class GameObject extends RenderObject {
                this.velocity.magnitude = magnitudeBeforeAdd;
             }
          }
-      // Friction
       } else if (this.velocity !== null) {
+         // If the game object isn't accelerating, apply friction
          this.velocity.magnitude -= 3 * SETTINGS.FRICTION_CONSTANT / SETTINGS.TPS * tileTypeInfo.friction;
          if (this.velocity.magnitude <= 0) {
             this.velocity = null;
@@ -226,8 +213,8 @@ abstract class GameObject extends RenderObject {
       }
 
       // If the game object is in a river, push them in the flow direction of the river
-      if (this.isInRiver(tile)) {
-         const flowDirection = Game.board.getRiverFlowDirection(tile.x, tile.y);
+      if (this.isInRiver()) {
+         const flowDirection = Board.getRiverFlowDirection(this.tile.x, this.tile.y);
          const pushVector = new Vector(240 / SETTINGS.TPS, flowDirection);
          if (this.velocity === null) {
             this.velocity = pushVector;
@@ -243,34 +230,34 @@ abstract class GameObject extends RenderObject {
          
          this.position.add(velocity.convertToPoint());
 
-         // Clamp the position
-         if (this.position.x < 0) {
-            this.position.x = 0;
-         } else if (this.position.x >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
-            this.position.x = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE - 1;
-         }
-         if (this.position.y < 0) {
-            this.position.y = 0;
-         } else if (this.position.y >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
-            this.position.y = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE - 1;
-         }
+         this.resolveBorderCollisions();
       }
    }
 
-   public findCurrentTile(): Tile {
+   protected resolveBorderCollisions(): void {
+      if (this.position.x < 0) {
+         this.position.x = 0;
+      } else if (this.position.x >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
+         this.position.x = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE - 1;
+      }
+      if (this.position.y < 0) {
+         this.position.y = 0;
+      } else if (this.position.y >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
+         this.position.y = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE - 1;
+      }
+   }
+
+   private updateCurrentTile(): void {
       const tileX = Math.floor(this.position.x / SETTINGS.TILE_SIZE);
       const tileY = Math.floor(this.position.y / SETTINGS.TILE_SIZE);
-      return Game.board.getTile(tileX, tileY);
+      this.tile = Board.getTile(tileX, tileY);
    }
 
-   public getChunk(): Chunk {
-      const x = Math.floor(this.position.x / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE);
-      const y = Math.floor(this.position.y / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE);
-      return Game.board.getChunk(x, y);
-   }
-
-   public calculateContainingChunks(): Set<Chunk> {
-      const chunks = new Set<Chunk>();
+   /** Recalculates which chunks the game object is contained in */
+   public recalculateContainingChunks(): void {
+      const containingChunks = new Set<Chunk>();
+      
+      // Find containing chunks
       for (const hitbox of this.hitboxes) {
          const minChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[0] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
          const maxChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[1] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
@@ -279,51 +266,95 @@ abstract class GameObject extends RenderObject {
          
          for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
             for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
-               const chunk = Game.board.getChunk(chunkX, chunkY);
-               if (!chunks.has(chunk)) {
-                  chunks.add(chunk);
-               }
+               const chunk = Board.getChunk(chunkX, chunkY);
+               containingChunks.add(chunk);
             }
          }
       }
 
-      return chunks;
-   }
-
-   public updateChunks(newChunks: ReadonlySet<Chunk>): void {
       // Find all chunks which aren't present in the new chunks and remove them
       for (const chunk of this.chunks) {
-         if (!newChunks.has(chunk)) {
-            chunk.removeGameObject(this);
+         if (!containingChunks.has(chunk)) {
+            chunk.removeGameObject(this as unknown as GameObject);
             this.chunks.delete(chunk);
          }
       }
 
       // Add all new chunks
-      for (const chunk of newChunks) {
+      for (const chunk of containingChunks) {
          if (!this.chunks.has(chunk)) {
-            chunk.addGameObject(this);
+            chunk.addGameObject(this as unknown as GameObject);
             this.chunks.add(chunk);
          }
       }
    }
 
    public updateRenderPosition(): void {
-      this.renderPosition = calculateGameObjectRenderPosition(this);
+      // Start the render position at the known position
+      this.renderPosition.x = this.position.x;
+      this.renderPosition.y = this.position.y;
+      
+      // Account for frame progress
+      if (this.velocity !== null) {
+         // 
+         // Calculate the change in position that has occurred since the start of the frame
+         // 
+         let frameVelocity: Vector | null = this.velocity.copy();
+   
+         // Apply the frame velocity to the object's position
+         if (frameVelocity !== null) {
+            frameVelocity.magnitude *= frameProgress / SETTINGS.TPS;
+   
+            const offset = frameVelocity.convertToPoint();
+            this.renderPosition.add(offset);
+         }
+      }
+   
+      // Clamp the render position
+      if (this.renderPosition.x < 0) {
+         this.renderPosition.x = 0;
+      } else if (this.renderPosition.x >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
+         this.renderPosition.x = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE - 1;
+      }
+      if (this.renderPosition.y < 0) {
+         this.renderPosition.y = 0;
+      } else if (this.renderPosition.y >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
+         this.renderPosition.y = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE - 1;
+      }
+   }
+
+   public updateHitboxes(): void {
+      for (const hitbox of this.hitboxes) {
+         if (hitbox.hasOwnProperty("width")) {
+            (hitbox as RectangularHitbox).computeVertexPositions();
+            (hitbox as RectangularHitbox).computeSideAxes();
+         }
+         hitbox.updateHitboxBounds();
+         hitbox.updatePosition();
+      }
    }
 
    public updateFromData(data: GameObjectData): void {
-      this.position = Point.unpackage(data.position);
-      this.velocity = data.velocity !== null ? Vector.unpackage(data.velocity) : null;
-      this.acceleration = data.acceleration !== null ? Vector.unpackage(data.acceleration) : null;
-      this.terminalVelocity = data.terminalVelocity;
+      this.position.x = data.position[0];
+      this.position.y = data.position[1];
+      if (this.velocity !== null) {
+         if (data.velocity !== null) {
+            this.velocity.magnitude = data.velocity[0];
+            this.velocity.direction = data.velocity[1];
+         } else {
+            this.velocity = null;
+         }
+      } else if (data.velocity !== null) {
+         this.velocity = Vector.unpackage(data.velocity);
+      }
       this.rotation = data.rotation;
       this.mass = data.mass;
 
-      this.updateChunks(new Set(data.chunkCoordinates.map(([x, y]) => Game.board.getChunk(x, y))));
-   }
+      this.updateHitboxes();
 
-   public remove?(): void;
+      // Recalculate the game object's containing chunks to account for the new position
+      this.recalculateContainingChunks();
+   }
 }
 
 export default GameObject;

@@ -1,4 +1,4 @@
-import { EntityData, EntityType, Point, SlimeOrbData, SlimeSize, Vector, lerp } from "webgl-test-shared";
+import { EntityData, EntityType, Point, SlimeOrbData, SlimeSize, lerp } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -27,38 +27,46 @@ class Slime extends Entity {
    private numOrbs: number;
    private readonly orbRotations = new Array<number>();
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, size: SlimeSize, _eyeRotation: number, orbs: ReadonlyArray<SlimeOrbData>) {
-      super(position, hitboxes, id, secondsSinceLastHit);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, size: SlimeSize, _eyeRotation: number, orbs: ReadonlyArray<SlimeOrbData>) {
+      super(position, hitboxes, id);
 
       const spriteSize = Slime.SIZES[size];
 
       const sizeString = Slime.SIZE_STRINGS[size];
 
-      this.attachRenderParts([
-         // Body
-         new RenderPart({
-            width: spriteSize,
-            height: spriteSize,
-            textureSource: `entities/slime/slime-${sizeString}-body.png`,
-            zIndex: 2
-         }, this),
-         // Eye
-         new RenderPart({
-            width: spriteSize,
-            height: spriteSize,
-            textureSource: `entities/slime/slime-${sizeString}-eye.png`,
-            zIndex: 3,
-            inheritParentRotation: false,
-            getRotation: () => this.eyeRotation
-         }, this),
-         // Shading
-         new RenderPart({
-            width: spriteSize,
-            height: spriteSize,
-            textureSource: `entities/slime/slime-${sizeString}-shading.png`,
-            zIndex: 0
-         }, this)
-      ]);
+      // Body
+      this.attachRenderPart(
+         new RenderPart(
+            spriteSize,
+            spriteSize,
+            `entities/slime/slime-${sizeString}-body.png`,
+            2,
+            0
+         )
+      );
+
+      // Eye
+      const eyeRenderPart = 
+      new RenderPart(
+         spriteSize,
+         spriteSize,
+         `entities/slime/slime-${sizeString}-eye.png`,
+         3,
+         this.eyeRotation
+      );
+      eyeRenderPart.inheritParentRotation = false;
+      this.attachRenderPart(eyeRenderPart);
+
+      // Shading
+      this.attachRenderPart(
+         new RenderPart(
+            spriteSize,
+            spriteSize,
+            `entities/slime/slime-${sizeString}-shading.png`,
+            0,
+            0
+         )
+      );
 
       this.size = size;
 
@@ -80,15 +88,14 @@ class Slime extends Entity {
 
       this.orbRotations.push(orbData.rotation);
 
-      const renderPart = new RenderPart({
-         width: orbSize,
-         height: orbSize,
-         textureSource: `entities/slime/slime-orb-${sizeString}.png`,
-         zIndex: 1,
-         offset: () => new Vector(offsetMagnitude, this.orbRotations[i]).convertToPoint(),
-         getRotation: () => orbData.rotation
-      }, this);
-      
+      const renderPart = new RenderPart(
+         orbSize,
+         orbSize,
+         `entities/slime/slime-orb-${sizeString}.png`,
+         1,
+         orbData.rotation
+      );
+      renderPart.offset = Point.fromVectorForm(offsetMagnitude, this.orbRotations[i]);
       this.attachRenderPart(renderPart);
    }
 

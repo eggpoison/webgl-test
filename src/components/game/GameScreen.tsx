@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import Game from "../../Game";
 import ChatBox from "./ChatBox";
-import NerdVision from "./nerd-vision/NerdVision";
+import NerdVision from "./dev/NerdVision";
 import HealthBar from "./HealthBar";
 import PauseScreen from "./PauseScreen";
 import Hotbar from "./inventories/Hotbar";
@@ -39,8 +38,6 @@ const GameScreen = () => {
          gameScreenSetIsDead = (isDead: boolean): void => {
             setIsDead(isDead);
          }
-         
-         Game.start();
       }
    }, []);
 

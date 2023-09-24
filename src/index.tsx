@@ -13,12 +13,10 @@ import "./css/game/pause-screen.css";
 import "./css/game/health-bar.css";
 import "./css/game/inventories/inventory.css";
 import "./css/game/inventories/hotbar.css";
-import "./css/game/inventories/campfire-inventory.css";
-import "./css/game/inventories/furnace-inventory.css";
+import "./css/game/inventories/cooking-inventory.css";
 import "./css/game/inventories/tribesman-inventory.css";
 import "./css/game/inventories/barrel-inventory.css";
 import "./css/game/inventories/backpack-inventory.css";
-import "./css/game/inventories/heating-inventories.css";
 import "./css/game/inventories/tombstone-epitaph.css";
 import "./css/game/menus/crafting-menu.css";
 import "./css/game/nerd-vision/nerd-vision.css";
@@ -27,6 +25,7 @@ import "./css/game/nerd-vision/cursor-tooltip.css";
 import "./css/game/nerd-vision/terminal-button.css";
 import "./css/game/nerd-vision/terminal.css";
 import "./css/game/nerd-vision/entity-viewer.css";
+import "./css/game/nerd-vision/frame-graph.css";
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement

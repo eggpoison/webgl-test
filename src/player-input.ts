@@ -3,25 +3,21 @@ import { addKeyListener, clearPressedKeys, keyIsPressed } from "./keyboard-input
 import { CraftingMenu_setIsVisible } from "./components/game/menus/CraftingMenu";
 import Player from "./entities/Player";
 import Client from "./client/Client";
-import Game from "./Game";
 import { Hotbar_setHotbarSelectedItemSlot } from "./components/game/inventories/Hotbar";
-import GameObject from "./GameObject";
 import { InteractInventoryType, InteractInventory_clearInventory, InteractInventory_forceUpdate, InteractInventory_setInventory } from "./components/game/inventories/InteractInventory";
 import { BackpackInventoryMenu_setIsVisible } from "./components/game/inventories/BackpackInventory";
 import Entity from "./entities/Entity";
 import Tribesman from "./entities/Tribesman";
 import Tombstone from "./entities/Tombstone";
+import Item from "./items/Item";
+import Board from "./Board";
+import { definiteGameState, latencyGameState } from "./game-state/game-states";
 
 let lightspeedIsActive = false;
 
 export function setLightspeedIsActive(isActive: boolean): void {
    lightspeedIsActive = isActive;
 }
-
-/** How far away from the entity the attack is done */
-const PLAYER_ATTACK_OFFSET = 80;
-/** Max distance from the attack position that the attack will be registered from */
-const PLAYER_ATTACK_TEST_RADIUS = 48;
 
 /** Terminal velocity of the player while moving without any modifiers. */
 const PLAYER_TERMINAL_VELOCITY = 300;
@@ -34,9 +30,9 @@ const PLAYER_ACCELERATION = 700;
 const PLAYER_LIGHTSPEED_ACCELERATION = 15000;
 
 /** Terminal velocity of the player while slowed. */
-const PLAYER_SLOW_TERMINAL_VELOCITY = 150;
+const PLAYER_SLOW_TERMINAL_VELOCITY = 100;
 /** Acceleration of the player while slowed. */
-const PLAYER_SLOW_ACCELERATION = 600;
+const PLAYER_SLOW_ACCELERATION = 400;
 
 const PLAYER_INTERACT_RANGE = 125;
 
@@ -46,58 +42,16 @@ let _inventoryIsOpen = false;
 let _interactInventoryIsOpen = false;
 let interactInventoryEntity: Entity | null = null;
 
-/** Calculates which entities would be the target of a player attack in the current game state. */
-export function calculatePlayerAttackTargets(): ReadonlyArray<GameObject> {
-   if (Player.instance === null) return [];
-   
-   const offset = new Vector(PLAYER_ATTACK_OFFSET, Player.instance.rotation);
-   const attackPosition = Player.instance.position.copy();
-   attackPosition.add(offset.convertToPoint());
-
-   const minChunkX = Math.max(Math.min(Math.floor((attackPosition.x - PLAYER_ATTACK_TEST_RADIUS) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-   const maxChunkX = Math.max(Math.min(Math.floor((attackPosition.x + PLAYER_ATTACK_TEST_RADIUS) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-   const minChunkY = Math.max(Math.min(Math.floor((attackPosition.y - PLAYER_ATTACK_TEST_RADIUS) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-   const maxChunkY = Math.max(Math.min(Math.floor((attackPosition.y + PLAYER_ATTACK_TEST_RADIUS) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-
-   // Find all attacked entities
-   const attackedGameObjects = new Array<GameObject>();
-   for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
-      for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
-         const chunk = Game.board.getChunk(chunkX, chunkY);
-
-         for (const gameObject of chunk.getGameObjects()) {
-            // Skip entities that are already in the array
-            if (attackedGameObjects.includes(gameObject)) continue;
-
-            const dist = Game.board.calculateDistanceBetweenPointAndGameObject(attackPosition, gameObject);
-            if (dist <= PLAYER_ATTACK_TEST_RADIUS) attackedGameObjects.push(gameObject);
-         }
-      }
-   }
-   
-   // Don't attack yourself
-   while (true) {
-      const idx = attackedGameObjects.indexOf(Player.instance);
-      if (idx !== -1) {
-         attackedGameObjects.splice(idx, 1);
-      } else {
-         break;
-      }
-   }
-
-   return attackedGameObjects;
-}
-
 const attack = (): void => {
    if (Player.instance === null) return;
       
-   const attackTargets = calculatePlayerAttackTargets();
    const attackPacket: AttackPacket = {
-      itemSlot: Game.latencyGameState.selectedHotbarItemSlot,
-      attackDirection: Player.instance.rotation,
-      targetEntities: attackTargets.map(entity => entity.id)
+      itemSlot: latencyGameState.selectedHotbarItemSlot,
+      attackDirection: Player.instance.rotation
    };
    Client.sendAttackPacket(attackPacket);
+
+   Player.instance.lastAttackTicks = Board.ticks;
 }
 
 export let rightMouseButtonIsPressed = false;
@@ -105,24 +59,32 @@ export let leftMouseButtonIsPressed = false;
 
 const createItemUseListeners = (): void => {
    document.addEventListener("mousedown", e => {
-      if (Player.instance === null || Game.definiteGameState.hotbar === null || Game.definiteGameState.playerIsDead()) return;
+      if (Player.instance === null || definiteGameState.hotbar === null || definiteGameState.playerIsDead()) return;
 
       // Only attempt to use an item if the game canvas was clicked
       if ((e.target as HTMLElement).id !== "game-canvas") {
          return;
       }
 
-      const selectedItem = Game.definiteGameState.hotbar.itemSlots[Game.latencyGameState.selectedHotbarItemSlot];
+      const selectedItem = definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot];
 
       if (e.button === 0) {
          // Left click
-         if (typeof selectedItem !== "undefined") {
-            selectedItem.resetAttackSwitchDelay();
-         }
-
+         
          leftMouseButtonIsPressed = true;
 
-         attack();
+         if (definiteGameState.hotbar.itemSlots.hasOwnProperty(latencyGameState.selectedHotbarItemSlot)) {
+            // Attack with item
+            if (selectedItem.canAttack()) {
+               attack();
+               selectedItem.resetAttackCooldownTimer();
+            }
+         } else {
+            // Attack without item
+            if (Item.canAttack()) {
+               attack();
+            }
+         }
       } else if (e.button === 2) {
          // Right click
          if (typeof selectedItem !== "undefined" && typeof selectedItem.onRightMouseButtonDown !== "undefined") {
@@ -134,14 +96,14 @@ const createItemUseListeners = (): void => {
    });
 
    document.addEventListener("mouseup", e => {
-      if (Player.instance === null || Game.definiteGameState.hotbar === null || Game.definiteGameState.playerIsDead()) return;
+      if (Player.instance === null || definiteGameState.hotbar === null || definiteGameState.playerIsDead()) return;
 
       // Only attempt to use an item if the game canvas was clicked
       if ((e.target as HTMLElement).id !== "game-canvas") {
          return;
       }
 
-      const selectedItem = Game.definiteGameState.hotbar.itemSlots[Game.latencyGameState.selectedHotbarItemSlot];
+      const selectedItem = definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot];
 
       if (typeof selectedItem === "undefined") {
          return;
@@ -179,11 +141,13 @@ const createItemUseListeners = (): void => {
 }
 
 const selectItemSlot = (itemSlot: number): void => {
-   if (Game.definiteGameState.hotbar === null) {
+   if (definiteGameState.hotbar === null) {
       return;
    }
 
-   Game.latencyGameState.selectedHotbarItemSlot = itemSlot;
+   latencyGameState.selectedHotbarItemSlot = itemSlot;
+
+   Item.resetGlobalAttackSwitchDelay();
    
    Hotbar_setHotbarSelectedItemSlot(itemSlot);
    updateActiveItem();
@@ -208,7 +172,7 @@ export function updateInventoryIsOpen(inventoryIsOpen: boolean): void {
    BackpackInventoryMenu_setIsVisible(_inventoryIsOpen);
 
    // If the player is holding an item when their inventory is closed, throw the item out
-   if (!_inventoryIsOpen && Game.definiteGameState.heldItemSlot !== null) {
+   if (!_inventoryIsOpen && definiteGameState.heldItemSlot !== null) {
       throwHeldItem();
    }
 }
@@ -225,7 +189,7 @@ const getInteractEntity = (): Entity | null => {
    let closestInteractableEntity: Entity | null = null;
    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
-         const chunk = Game.board.getChunk(chunkX, chunkY);
+         const chunk = Board.getChunk(chunkX, chunkY);
          for (const entity of chunk.getEntities()) {
             if (entity.type === "barrel") {
                const distance = Player.instance.position.calculateDistanceBetween(entity.position);
@@ -309,16 +273,6 @@ export function hideInteractInventory(): void {
    InteractInventory_clearInventory();
 }
 
-// export function updateInteractInventoryIsOpen(isOpen: boolean, inventoryType: InteractInventoryType | null): void {
-//    _interactInventoryIsOpen = isOpen;
-
-//    if (inventoryType !== null) {
-//       InteractInventory_setInventories(inventories);
-//    }
-   
-//    InteractInventory_setInventory()
-// }
-
 export function updateInteractInventory(): void {
    if (Player.instance === null) return;
    
@@ -328,7 +282,7 @@ export function updateInteractInventory(): void {
       }
 
       // If the interactable entity was removed, hide the interact inventory
-      if (!Game.board.gameObjects.hasOwnProperty(interactInventoryEntity.id)) {
+      if (!Board.gameObjects.hasOwnProperty(interactInventoryEntity.id)) {
          hideInteractInventory();
          return;
       }
@@ -346,7 +300,6 @@ export function updateInteractInventory(): void {
 const createInventoryToggleListeners = (): void => {
    addKeyListener("e", () => {
       if (_interactInventoryIsOpen) {
-         // updateInteractInventoryIsOpen(false, null);
          hideInteractInventory();
          return;
       }
@@ -386,7 +339,7 @@ export function createPlayerInputListeners(): void {
 }
 
 const getPlayerTerminalVelocity = (): number => {
-   if (Game.latencyGameState.playerIsEating || Game.latencyGameState.playerIsPlacingEntity) {
+   if (latencyGameState.playerIsEating || latencyGameState.playerIsPlacingEntity) {
       return PLAYER_SLOW_TERMINAL_VELOCITY;
    }
 
@@ -394,7 +347,7 @@ const getPlayerTerminalVelocity = (): number => {
 }
 
 const getPlayerAcceleration = (): number => {
-   if (Game.latencyGameState.playerIsEating || Game.latencyGameState.playerIsPlacingEntity) {
+   if (latencyGameState.playerIsEating || latencyGameState.playerIsPlacingEntity) {
       return PLAYER_SLOW_ACCELERATION;
    }
 
@@ -405,7 +358,7 @@ const getPlayerMoveSpeedMultiplier = (): number => {
    let moveSpeedMultiplier = 1;
 
    for (const statusEffect of Player.instance!.statusEffects) {
-      moveSpeedMultiplier *= STATUS_EFFECT_MODIFIERS[statusEffect].moveSpeedMultiplier;
+      moveSpeedMultiplier *= STATUS_EFFECT_MODIFIERS[statusEffect.type].moveSpeedMultiplier;
    }
 
    return moveSpeedMultiplier;
@@ -460,16 +413,24 @@ export function updatePlayerMovement(): void {
 }
 
 export function updateActiveItem(): void {
-   if (Game.definiteGameState.hotbar === null) {
+   if (definiteGameState.hotbar === null) {
       return;
    }
 
    for (let itemSlot = 1; itemSlot <= SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE; itemSlot++) {
-      if (Game.definiteGameState.hotbar.itemSlots.hasOwnProperty(itemSlot)) {
-         const isActive = itemSlot === Game.latencyGameState.selectedHotbarItemSlot;
+      if (definiteGameState.hotbar.itemSlots.hasOwnProperty(itemSlot)) {
+         const isActive = itemSlot === latencyGameState.selectedHotbarItemSlot;
 
-         const item = Game.definiteGameState.hotbar.itemSlots[itemSlot];
+         const item = definiteGameState.hotbar.itemSlots[itemSlot];
          item.setIsActive(isActive);
+      }
+   }
+
+   if (Player.instance !== null) {
+      if (definiteGameState.hotbar.itemSlots.hasOwnProperty(latencyGameState.selectedHotbarItemSlot)) {
+         Player.instance.updateActiveItem(definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot].type);
+      } else {
+         Player.instance.updateActiveItem(null);
       }
    }
 }

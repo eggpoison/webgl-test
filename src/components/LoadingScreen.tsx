@@ -6,6 +6,7 @@ import Player from "../entities/Player";
 import Game from "../Game";
 import { setGameState, setLoadingScreenInitialStatus } from "./App";
 import Camera from "../Camera";
+import { definiteGameState } from "../game-state/game-states";
 
 export type LoadingScreenStatus = "establishing_connection" | "receiving_spawn_position" | "sending_player_data" | "receiving_game_data" | "initialising_game" | "connection_error";
 
@@ -61,6 +62,8 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
          case "sending_player_data": {
             Camera.setCameraPosition(spawnPositionRef.current!);
             Camera.updateVisibleChunkBounds();
+            Camera.updateVisibleRenderChunkBounds();
+            Camera.updateVisiblePositionBounds();
             Client.sendInitialPlayerData(username, Camera.getVisibleChunkBounds());
 
             setStatus("receiving_game_data");
@@ -81,17 +84,20 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
                const initialGameDataPacket = initialGameDataPacketRef.current!;
 
                const tiles = Client.parseServerTileDataArray(initialGameDataPacket.tiles);
-               Game.board = new Board(tiles, initialGameDataPacket.waterRocks, initialGameDataPacket.riverSteppingStones, initialGameDataPacket.riverFlowDirections);
+               Board.initialise(tiles, initialGameDataPacket.waterRocks, initialGameDataPacket.riverSteppingStones, initialGameDataPacket.riverFlowDirections);
 
                await Game.initialise();
 
                // Spawn the player
-               Game.definiteGameState.playerUsername = username;
+               definiteGameState.playerUsername = username;
                const playerSpawnPosition = new Point(spawnPositionRef.current!.x, spawnPositionRef.current!.y);
-               const player = new Player(playerSpawnPosition, new Set([Player.createNewPlayerHitbox()]), initialGameDataPacket.playerID, null, null, TribeType.plainspeople, null, username);
+               const player = new Player(playerSpawnPosition, new Set([Player.createNewPlayerHitbox()]), initialGameDataPacket.playerID, null, TribeType.plainspeople, null, null, -1, -99999, -99999, username);
                Player.setInstancePlayer(player);
+               Board.addEntity(player);
 
                Client.unloadGameDataPacket(initialGameDataPacket);
+         
+               Game.start();
 
                setGameState("game");
             })();

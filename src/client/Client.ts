@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, InitialGameDataPacket, CraftingRecipe, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, ProjectileData, VisibleChunkBounds, ParticleData, TribeType, TribeData, InventoryData, CircularHitboxData, RectangularHitboxData } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, ProjectileData, VisibleChunkBounds, TribeType, TribeData, InventoryData, CircularHitboxData, RectangularHitboxData, randFloat, RESOURCE_ENTITY_TYPES, MOB_ENTITY_TYPES } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -10,22 +10,26 @@ import DroppedItem from "../items/DroppedItem";
 import { Tile } from "../Tile";
 import { createItem } from "../items/item-creation";
 import { gameScreenSetIsDead } from "../components/game/GameScreen";
-import Chunk from "../Chunk";
 import Item, { Inventory, ItemSlots } from "../items/Item";
 import { updateActiveItem, updateInventoryIsOpen } from "../player-input";
-import { Hotbar_updateArmourItemSlot, Hotbar_updateBackpackItemSlot, Hotbar_updateHotbarInventory } from "../components/game/inventories/Hotbar";
-import { BackpackInventoryMenu_setBackpackInventory } from "../components/game/inventories/BackpackInventory";
+import { Hotbar_update } from "../components/game/inventories/Hotbar";
 import { setHeldItemVisual } from "../components/game/HeldItem";
 import { CraftingMenu_setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
 import { updateHealthBar } from "../components/game/HealthBar";
-import { registerServerTick } from "../components/game/nerd-vision/GameInfoDisplay";
+import { registerServerTick, updateDebugScreenCurrentTime, updateDebugScreenTicks } from "../components/game/dev/GameInfoDisplay";
 import createProjectile from "../projectiles/projectile-creation";
 import Camera from "../Camera";
 import { isDev } from "../utils";
-import Particle from "../Particle";
-import { updateTileAmbientOcclusion } from "../rendering/ambient-occlusion-rendering";
 import Tribe from "../Tribe";
 import { updateRenderChunkFromTileUpdate } from "../rendering/tile-rendering/render-chunks";
+import Entity from "../entities/Entity";
+import Board from "../Board";
+import { definiteGameState, latencyGameState } from "../game-state/game-states";
+import { hideNerdVision } from "../components/game/dev/NerdVision";
+import { BackpackInventoryMenu_update } from "../components/game/inventories/BackpackInventory";
+import { createWhiteSmokeParticle } from "../generic-particles";
+import Particle from "../Particle";
+import { addMonocolourParticleToBufferContainer, ParticleRenderLayer } from "../rendering/particle-rendering";
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -71,16 +75,11 @@ abstract class Client {
          if (!socketAlreadyExists) {
             this.socket.on("game_data_packet", gameDataPacket => {
                // Only unload game packets when the game is running
-               if (Game.getIsPaused() || !Game.isRunning || !Game.isSynced) return;
+               if (Game.getIsPaused() || !Game.isRunning || !Game.isSynced || document.visibilityState === "hidden") return;
 
                registerServerTick();
-   
-               try {
-                  this.unloadGameDataPacket(gameDataPacket);
-               } catch (error: unknown) {
-                  console.warn(error);
-                  throw new Error("Error when trying to unload game data packet!");
-               }
+
+               Game.queuedPackets.push(gameDataPacket);
             });
    
             // When the connection to the server fails
@@ -176,43 +175,38 @@ abstract class Client {
    }
 
    public static unloadGameDataPacket(gameDataPacket: GameDataPacket): void {
-      Game.ticks = gameDataPacket.serverTicks;
-      Game.time = gameDataPacket.serverTime;
+      Board.ticks = gameDataPacket.serverTicks;
+      updateDebugScreenTicks(gameDataPacket.serverTicks);
+      Board.time = gameDataPacket.serverTime;
+      updateDebugScreenCurrentTime(gameDataPacket.serverTime);
+
 
       if (isDev()) {
          Game.setGameObjectDebugData(gameDataPacket.gameObjectDebugData);
       }
 
+      // Register deaths
+      for (const killedEntityID of gameDataPacket.killedEntityIDs) {
+         if (Board.entities.hasOwnProperty(killedEntityID)) {
+            const entity = Board.entities[killedEntityID];
+            if (typeof entity.onDie !== "undefined") {
+               entity.onDie();
+            }
+         }
+      }
+
       this.updateEntities(gameDataPacket.entityDataArray);
       this.updateDroppedItems(gameDataPacket.droppedItemDataArray);
       this.updateProjectiles(gameDataPacket.projectileDataArray);
-      this.updateParticles(gameDataPacket.particles);
       
       this.updatePlayerInventory(gameDataPacket.inventory);
       this.registerTileUpdates(gameDataPacket.tileUpdates);
 
       this.updateTribe(gameDataPacket.tribeData);
 
-      // Register hits
-      for (const hitData of gameDataPacket.hitsTaken) {
-         Player.registerHit(hitData);
-      }
-
-      if (Player.instance !== null) {
-         if (gameDataPacket.hitsTaken.length >= 1) {
-            Player.instance.secondsSinceLastHit = 0;
-         }
-
-         Player.instance.statusEffects = gameDataPacket.statusEffects;
-      }
-
-
-      Game.definiteGameState.setPlayerHealth(gameDataPacket.playerHealth);
-      if (Game.definiteGameState.playerIsDead()) {
-         gameScreenSetIsDead(true);
-      
-         // If the player's inventory is open, close it
-         updateInventoryIsOpen(false);
+      definiteGameState.setPlayerHealth(gameDataPacket.playerHealth);
+      if (Player.instance !== null && definiteGameState.playerIsDead()) {
+         this.killPlayer();
       }
    }
 
@@ -234,37 +228,11 @@ abstract class Client {
       }
    }
 
-   private static updateParticles(particles: ReadonlyArray<ParticleData>): void {
-      const knownIDs = new Set(Object.keys(Game.board.particles).map(idString => Number(idString)));
-      
-      // Remove the player from the list of known entities so the player isn't removed
-      if (Player.instance !== null) {
-         knownIDs.delete(Player.instance.id);
-      }
-
-      // Update the game entities
-      for (const particleData of particles) {// If it already exists, update it
-         if (Game.board.particles.hasOwnProperty(particleData.id)) {
-            Game.board.particles[particleData.id].updateFromData(particleData);
-         } else {
-            const particle = new Particle(particleData);
-            Game.board.particles[particleData.id] = particle;
-         }
-
-         knownIDs.delete(particleData.id);
-      }
-
-      // All known entity ids which haven't been removed are ones which are dead
-      for (const id of knownIDs) {
-         delete Game.board.particles[id];
-      }
-   }
-
    /**
     * Updates the client's entities to match those in the server
     */
    private static updateEntities(entityDataArray: ReadonlyArray<EntityData<EntityType>>): void {
-      const knownEntityIDs = new Set(Object.keys(Game.board.entities).map(idString => Number(idString)));
+      const knownEntityIDs = new Set(Object.keys(Board.entities).map(idString => Number(idString)));
       
       // Remove the player from the list of known entities so the player isn't removed
       if (Player.instance !== null) {
@@ -274,10 +242,20 @@ abstract class Client {
       // Update the game entities
       for (const entityData of entityDataArray) {
          // If it already exists, update it
-         if (Game.board.entities.hasOwnProperty(entityData.id)) {
-            Game.board.entities[entityData.id].updateFromData(entityData);
+         if (Board.entities.hasOwnProperty(entityData.id)) {
+            // We don't want the player to be updated from the server data
+            if (Board.entities[entityData.id] !== Player.instance) {
+               Board.entities[entityData.id].updateFromData(entityData);
+            }
+            for (const hit of entityData.hitsTaken) {
+               Board.entities[entityData.id].registerHit(hit);
+            }
+            Board.entities[entityData.id].statusEffects = entityData.statusEffects;
          } else {
-            this.createEntityFromData(entityData);
+            const entity = this.createEntityFromData(entityData);
+            for (const hit of entityData.hitsTaken) {
+               entity.registerHit(hit);
+            }
          }
 
          knownEntityIDs.delete(entityData.id);
@@ -285,21 +263,21 @@ abstract class Client {
 
       // All known entity ids which haven't been removed are ones which are dead
       for (const id of knownEntityIDs) {
-         Game.board.removeGameObject(Game.board.entities[id]);
+         Board.removeGameObject(Board.entities[id]);
       }
    }
 
    private static updateDroppedItems(serverItemEntityDataArray: ReadonlyArray<DroppedItemData>): void {
-      const ids = new Set(Object.keys(Game.board.droppedItems).map(idString => Number(idString)));
+      const ids = new Set(Object.keys(Board.droppedItems).map(idString => Number(idString)));
 
       for (const serverItemData of serverItemEntityDataArray) {
          if (!ids.has(serverItemData.id)) {
             // New item
-            this.createItemFromServerItemData(serverItemData);
+            this.createDroppedItemFromServerItemData(serverItemData);
          } else {
             // Otherwise update it
-            if (Game.board.droppedItems.hasOwnProperty(serverItemData.id)) {
-               const itemEntity = Game.board.droppedItems[serverItemData.id];
+            if (Board.droppedItems.hasOwnProperty(serverItemData.id)) {
+               const itemEntity = Board.droppedItems[serverItemData.id];
                itemEntity.updateFromData(serverItemData);
             }
          }
@@ -309,12 +287,12 @@ abstract class Client {
 
       // All known entity ids which haven't been removed are ones which are dead
       for (const id of ids) {
-         Game.board.removeGameObject(Game.board.droppedItems[id]);
+         Board.removeGameObject(Board.droppedItems[id]);
       }
    }
 
    private static updateProjectiles(projectilesDataArray: ReadonlyArray<ProjectileData>): void {
-      const ids = new Set(Object.keys(Game.board.projectiles).map(idString => Number(idString)));
+      const ids = new Set(Object.keys(Board.projectiles).map(idString => Number(idString)));
 
       for (const projectileData of projectilesDataArray) {
          if (!ids.has(projectileData.id)) {
@@ -322,7 +300,7 @@ abstract class Client {
             this.createProjectileFromServerData(projectileData);
          } else {
             // Otherwise update it
-            const projectile = Game.board.projectiles[projectileData.id];
+            const projectile = Board.projectiles[projectileData.id];
             projectile.updateFromData(projectileData);
          }
 
@@ -331,11 +309,14 @@ abstract class Client {
 
       // All known entity ids which haven't been removed are ones which are dead
       for (const id of ids) {
-         Game.board.removeGameObject(Game.board.projectiles[id]);
+         Board.removeGameObject(Board.projectiles[id]);
       }
    }
 
    private static updateInventoryFromServerData(inventory: Inventory, inventoryData: InventoryData): void {
+      inventory.width = inventoryData.width;
+      inventory.height = inventoryData.height;
+      
       // Remove any items which have been removed from the inventory
       for (const [itemSlot, item] of Object.entries(inventory.itemSlots) as unknown as ReadonlyArray<[number, Item]>) {
          // If it doesn't exist in the server data, remove it
@@ -375,121 +356,136 @@ abstract class Client {
    }
 
    private static updatePlayerInventory(playerInventoryData: PlayerInventoryData) {
-      // Hotbar
-      if (Game.definiteGameState.hotbar !== null) {
-         this.updateInventoryFromServerData(Game.definiteGameState.hotbar, playerInventoryData.hotbar);
-      } else {
-         Game.definiteGameState.hotbar = this.createInventoryFromServerData(playerInventoryData.hotbar);
-      }
-      Hotbar_updateHotbarInventory(Game.definiteGameState.hotbar);
+      const hotbarHasChanged = this.inventoryHasChanged(definiteGameState.hotbar, playerInventoryData.hotbar);
+      this.updateInventoryFromServerData(definiteGameState.hotbar, playerInventoryData.hotbar);
 
+      // @Cleanup should this be here?
       updateActiveItem();
 
-      // Backpack inventory
-      if (Game.definiteGameState.backpack !== null) {
-         this.updateInventoryFromServerData(Game.definiteGameState.backpack, playerInventoryData.backpackInventory);
-         BackpackInventoryMenu_setBackpackInventory(Object.assign({}, Game.definiteGameState.backpack));
+      const backpackHasChanged = this.inventoryHasChanged(definiteGameState.backpack, playerInventoryData.backpackInventory);
+      if (definiteGameState.backpack !== null) {
+         this.updateInventoryFromServerData(definiteGameState.backpack, playerInventoryData.backpackInventory);
+      } else {
+         definiteGameState.backpack = this.createInventoryFromServerData(playerInventoryData.backpackInventory);
       }
 
       // Crafting output item
-      if (Game.definiteGameState.craftingOutputSlot !== null) {
-         this.updateInventoryFromServerData(Game.definiteGameState.craftingOutputSlot, playerInventoryData.craftingOutputItemSlot);
-         CraftingMenu_setCraftingMenuOutputItem(Game.definiteGameState.craftingOutputSlot.itemSlots[1]);
+      if (definiteGameState.craftingOutputSlot !== null) {
+         this.updateInventoryFromServerData(definiteGameState.craftingOutputSlot, playerInventoryData.craftingOutputItemSlot);
       } else {
-         Game.definiteGameState.craftingOutputSlot = this.createInventoryFromServerData(playerInventoryData.craftingOutputItemSlot);
+         definiteGameState.craftingOutputSlot = this.createInventoryFromServerData(playerInventoryData.craftingOutputItemSlot);
       }
-      CraftingMenu_setCraftingMenuOutputItem(Game.definiteGameState.craftingOutputSlot.itemSlots.hasOwnProperty(1) ? Game.definiteGameState.craftingOutputSlot.itemSlots[1] : null);
+      CraftingMenu_setCraftingMenuOutputItem(definiteGameState.craftingOutputSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.craftingOutputSlot.itemSlots[1] : null);
 
       // Backpack slot
-      if (Game.definiteGameState.backpackSlot !== null) {
-         this.updateInventoryFromServerData(Game.definiteGameState.backpackSlot, playerInventoryData.backpackSlot);
-      } else {
-         Game.definiteGameState.backpackSlot = this.createInventoryFromServerData(playerInventoryData.backpackSlot);
-      }
-      Hotbar_updateBackpackItemSlot(Game.definiteGameState.backpackSlot.itemSlots.hasOwnProperty(1) ? Game.definiteGameState.backpackSlot.itemSlots[1] : null);
+      const backpackSlotHasChanged = this.inventoryHasChanged(definiteGameState.backpackSlot, playerInventoryData.backpackSlot);
+      this.updateInventoryFromServerData(definiteGameState.backpackSlot, playerInventoryData.backpackSlot);
 
       // Held item
-      if (Game.definiteGameState.heldItemSlot !== null) {
-         this.updateInventoryFromServerData(Game.definiteGameState.heldItemSlot, playerInventoryData.heldItemSlot);
-      } else {
-         Game.definiteGameState.heldItemSlot = this.createInventoryFromServerData(playerInventoryData.heldItemSlot);
-      }
-      setHeldItemVisual(Game.definiteGameState.heldItemSlot.itemSlots.hasOwnProperty(1) ? Game.definiteGameState.heldItemSlot.itemSlots[1] : null);
+      this.updateInventoryFromServerData(definiteGameState.heldItemSlot, playerInventoryData.heldItemSlot);
+      setHeldItemVisual(definiteGameState.heldItemSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.heldItemSlot.itemSlots[1] : null);
 
       // Armour slot
-      if (Game.definiteGameState.armourSlot !== null) {
-         this.updateInventoryFromServerData(Game.definiteGameState.armourSlot, playerInventoryData.armourSlot);
-      } else {
-         Game.definiteGameState.armourSlot = this.createInventoryFromServerData(playerInventoryData.armourSlot);
-      }
-      Hotbar_updateArmourItemSlot(Game.definiteGameState.armourSlot);
-      if (Player.instance !== null) {
-         const armourType = Game.definiteGameState.armourSlot.itemSlots.hasOwnProperty(1) ? Game.definiteGameState.armourSlot.itemSlots[1].type : null;
+      const armourSlotHasChanged = this.inventoryHasChanged(definiteGameState.armourSlot, playerInventoryData.armourSlot);
+      this.updateInventoryFromServerData(definiteGameState.armourSlot, playerInventoryData.armourSlot);
+      
+      if (Player.instance !== null && armourSlotHasChanged) {
+         const armourType = definiteGameState.armourSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.armourSlot.itemSlots[1].type : null;
          Player.instance.updateArmourRenderPart(armourType);
          Player.instance.armourType = armourType;
       }
+
+      if (hotbarHasChanged || backpackSlotHasChanged || armourSlotHasChanged) {
+         Hotbar_update();
+      }
+      // @Cleanup is the backpackSlotHasChanged check really necessary?
+      if (backpackHasChanged || backpackSlotHasChanged) {
+         BackpackInventoryMenu_update();
+      }
    }
 
-   private static createItemFromServerItemData(serverItemEntityData: DroppedItemData): void {
-      const position = Point.unpackage(serverItemEntityData.position); 
-      const velocity = serverItemEntityData.velocity !== null ? Vector.unpackage(serverItemEntityData.velocity) : null;
-
-      const containingChunks = new Set<Chunk>();
-      for (const [chunkX, chunkY] of serverItemEntityData.chunkCoordinates) {
-         const chunk = Game.board.getChunk(chunkX, chunkY);
-         containingChunks.add(chunk);
+   private static inventoryHasChanged(previousInventory: Inventory | null, newInventoryData: InventoryData): boolean {
+      // If the previous inventory is null, check if there are any items in the new inventory data
+      if (previousInventory === null) {
+         for (let itemSlot = 1; itemSlot <= newInventoryData.width * newInventoryData.height; itemSlot++) {
+            if (newInventoryData.itemSlots.hasOwnProperty(itemSlot)) {
+               return true;
+            }
+         }
+         return false;
       }
+      
+      for (let itemSlot = 1; itemSlot <= newInventoryData.width * newInventoryData.height; itemSlot++) {
+         if (!newInventoryData.itemSlots.hasOwnProperty(itemSlot)) {
+            // If there is no item in the server data but there is one in the game state
+            if (previousInventory.itemSlots.hasOwnProperty(itemSlot)) {
+               return true;
+            }
 
-      const hitboxes = this.createHitboxesFromData(serverItemEntityData.hitboxes);
+            // Since we then know both inventories don't have an item there, we don't do any other checks
+            continue;
+         }
 
-      const droppedItem = new DroppedItem(position, hitboxes, serverItemEntityData.id, velocity, serverItemEntityData.type);
-      droppedItem.rotation = serverItemEntityData.rotation;
-      droppedItem.mass = serverItemEntityData.mass;
+         // If the item has changed, update it
+         if (previousInventory.itemSlots.hasOwnProperty(itemSlot)) {
+            // Update type
+            if (newInventoryData.itemSlots[itemSlot].type !== previousInventory.itemSlots[itemSlot].type) {
+               return true;
+            }
+            // Update count
+            if (newInventoryData.itemSlots[itemSlot].count !== previousInventory.itemSlots[itemSlot].count) {
+               return true;
+            }
+         } else {
+            // Server inventory data has item but game state doesn't
+            return true;
+         }
+      }
+      return false;
+   }
+
+   private static createDroppedItemFromServerItemData(droppedItemData: DroppedItemData): void {
+      const position = Point.unpackage(droppedItemData.position); 
+      const velocity = droppedItemData.velocity !== null ? Vector.unpackage(droppedItemData.velocity) : null;
+
+      const hitboxes = this.createHitboxesFromData(droppedItemData.hitboxes);
+
+      const droppedItem = new DroppedItem(position, hitboxes, droppedItemData.id, velocity, droppedItemData.type);
+      droppedItem.rotation = droppedItemData.rotation;
+      droppedItem.mass = droppedItemData.mass;
+      droppedItem.ageTicks = droppedItemData.ageTicks;
+
+      Board.addDroppedItem(droppedItem);
    }
 
    private static createProjectileFromServerData(projectileData: ProjectileData): void {
       const position = Point.unpackage(projectileData.position); 
-
-      const containingChunks = new Set<Chunk>();
-      for (const [chunkX, chunkY] of projectileData.chunkCoordinates) {
-         const chunk = Game.board.getChunk(chunkX, chunkY);
-         containingChunks.add(chunk);
-      }
 
       const hitboxes = this.createHitboxesFromData(projectileData.hitboxes);
 
       const projectile = createProjectile(position, hitboxes, projectileData.id, projectileData.type);
       projectile.rotation = projectileData.rotation;
       projectile.velocity = projectileData.velocity !== null ? Vector.unpackage(projectileData.velocity) : null;
-      projectile.acceleration = projectileData.acceleration !== null ? Vector.unpackage(projectileData.acceleration) : null
       projectile.mass = projectileData.mass;
+      projectile.ageTicks = projectileData.ageTicks;
+
+      Board.addProjectile(projectile);
    }
    
    private static registerTileUpdates(tileUpdates: ReadonlyArray<ServerTileUpdateData>): void {
       for (const tileUpdate of tileUpdates) {
-         const tile = Game.board.getTile(tileUpdate.x, tileUpdate.y);
+         const tile = Board.getTile(tileUpdate.x, tileUpdate.y);
          tile.type = tileUpdate.type;
          tile.isWall = tileUpdate.isWall;
          
          updateRenderChunkFromTileUpdate(tileUpdate);
-
-         // Update the ambient occlusion of nearby tiles
-         const minTileX = Math.max(tile.x - 1, 0);
-         const maxTileX = Math.min(tile.x + 1, SETTINGS.BOARD_DIMENSIONS - 1);
-         const minTileY = Math.max(tile.y - 1, 0);
-         const maxTileY = Math.min(tile.y + 1, SETTINGS.BOARD_DIMENSIONS - 1);
-         for (let tileY = maxTileY; tileY >= minTileY; tileY--) {
-            for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
-               updateTileAmbientOcclusion(tileX, tileY);
-            }
-         }
       }
    }
 
    private static createHitboxesFromData(hitboxDataArray: ReadonlyArray<CircularHitboxData | RectangularHitboxData>): Set<CircularHitbox | RectangularHitbox> {
       const hitboxes = new Set<CircularHitbox | RectangularHitbox>();
       for (const hitboxData of hitboxDataArray) {
-         const offset = typeof hitboxData.offset !== "undefined" ? Point.unpackage(hitboxData.offset) : undefined;
+         const offset = (typeof hitboxData.offsetX !== "undefined" || typeof hitboxData.offsetY !== "undefined") ? new Point(hitboxData.offsetX || 0, hitboxData.offsetY || 0) : undefined;
          if (hitboxData.hasOwnProperty("radius")) {
             // Circular
             hitboxes.add(new CircularHitbox((hitboxData as CircularHitboxData).radius, offset));
@@ -501,20 +497,73 @@ abstract class Client {
       return hitboxes;
    }
 
-   public static createEntityFromData(entityData: EntityData<EntityType>): void {
+   public static createEntityFromData(entityData: EntityData<EntityType>): Entity {
       const position = Point.unpackage(entityData.position);
 
       const hitboxes = this.createHitboxesFromData(entityData.hitboxes);
 
       // Create the entity
       const entityConstructor = ENTITY_CLASS_RECORD[entityData.type]() as EntityClassType<EntityType>;
-      const entity = new entityConstructor(position, hitboxes, entityData.id, entityData.secondsSinceLastHit, ...entityData.clientArgs);
+      const entity = new entityConstructor(position, hitboxes, entityData.id, ...entityData.clientArgs);
       
       entity.velocity = entityData.velocity !== null ? Vector.unpackage(entityData.velocity) : null;
-      entity.acceleration = entityData.acceleration !== null ? Vector.unpackage(entityData.acceleration) : null
       entity.rotation = entityData.rotation;
       entity.mass = entityData.mass;
-      entity.special = entityData.special;
+      entity.mobAIType = entityData.mobAIType;
+      entity.ageTicks = entityData.ageTicks;
+
+      Board.addEntity(entity);
+
+      // If the entity has just spawned in, create white smoke particles.
+      // Only create particles for living entities: e.g. cows, tribesmen, etc.
+      if (entityData.ageTicks === 0 && !RESOURCE_ENTITY_TYPES.includes(entityData.type) && (MOB_ENTITY_TYPES.includes(entityData.type) || entityData.type === "player" || entityData.type === "tribesman")) {
+         const strength = 0.8 * entity.mass;
+         
+         // White smoke particles
+         for (let i = 0; i < 10; i++) {
+            const spawnPositionX = entity.position.x;
+            const spawnPositionY = entity.position.y;
+            createWhiteSmokeParticle(spawnPositionX, spawnPositionY, strength);
+         }
+
+         // Speck particles
+         for (let i = 0; i < 20; i++) {
+            const spawnPositionX = entity.position.x;
+            const spawnPositionY = entity.position.y;
+
+            const velocityMagnitude = 80 * randFloat(0.9, 1.1);
+            const velocityDirection = 2 * Math.PI * Math.random();
+            const velocityX = velocityMagnitude * Math.sin(velocityDirection);
+            const velocityY = velocityMagnitude * Math.cos(velocityDirection);
+
+            const lifetime = strength;
+            
+            const particle = new Particle(lifetime);
+            particle.getOpacity = () => {
+               return 1 - Math.pow(particle.age / lifetime, 2);
+            }
+
+            addMonocolourParticleToBufferContainer(
+               particle,
+               ParticleRenderLayer.low,
+               4, 4,
+               spawnPositionX, spawnPositionY,
+               velocityX, velocityY,
+               0, 0,
+               velocityMagnitude / lifetime / 1.2,
+               2 * Math.PI * Math.random(),
+               randFloat(-Math.PI, Math.PI),
+               0,
+               Math.PI,
+               1,
+               1,
+               1
+            );
+            Board.lowMonocolourParticles.push(particle);
+         }
+      }
+
+      return entity;
    }
 
    private static registerGameDataSyncPacket(gameDataSyncPacket: GameDataSyncPacket): void {
@@ -526,14 +575,11 @@ abstract class Client {
          Player.instance.acceleration = gameDataSyncPacket.acceleration !== null ? Vector.unpackage(gameDataSyncPacket.acceleration) : null;
          Player.instance.rotation = gameDataSyncPacket.rotation;
          Player.instance.terminalVelocity = gameDataSyncPacket.terminalVelocity;
-         Game.definiteGameState.setPlayerHealth(gameDataSyncPacket.health);
          this.updatePlayerInventory(gameDataSyncPacket.inventory);
-
-         if (Game.definiteGameState.playerIsDead()) {
-            gameScreenSetIsDead(true);
-            
-            // If the player's inventory is open, close it
-            updateInventoryIsOpen(false);
+         
+         definiteGameState.setPlayerHealth(gameDataSyncPacket.health);
+         if (definiteGameState.playerIsDead()) {
+            this.killPlayer();
          }
       }
 
@@ -541,14 +587,18 @@ abstract class Client {
    }
 
    private static respawnPlayer(respawnDataPacket: RespawnDataPacket): void {
-      Game.definiteGameState.setPlayerHealth(Player.MAX_HEALTH);
+      definiteGameState.setPlayerHealth(Player.MAX_HEALTH);
       updateHealthBar(Player.MAX_HEALTH);
       
       const spawnPosition = Point.unpackage(respawnDataPacket.spawnPosition);
-      const player = new Player(spawnPosition, new Set([Player.createNewPlayerHitbox()]), respawnDataPacket.playerID, null, null, TribeType.plainspeople, null, Game.definiteGameState.playerUsername);
+      const player = new Player(spawnPosition, new Set([Player.createNewPlayerHitbox()]), respawnDataPacket.playerID, null, TribeType.plainspeople, null, null, -1, -99999, -99999, definiteGameState.playerUsername);
       Player.setInstancePlayer(player);
+      Board.addEntity(player);
 
       gameScreenSetIsDead(false);
+
+      // Clear any queued packets, as they contain data from when the player wasn't respawned.
+      Game.queuedPackets.splice(0, Game.queuedPackets.length);
    }
 
    /**
@@ -577,28 +627,30 @@ abstract class Client {
             acceleration: Player.instance.acceleration?.package() || null,
             terminalVelocity: Player.instance.terminalVelocity,
             rotation: Player.instance.rotation,
-            visibleChunkBounds: Camera.getVisibleChunkBounds()
+            visibleChunkBounds: Camera.getVisibleChunkBounds(),
+            selectedItemSlot: latencyGameState.selectedHotbarItemSlot,
+            isEating: latencyGameState.playerIsEating
          };
 
          this.socket.emit("player_data_packet", packet);
       }
    }
 
-   public static sendCraftingPacket(craftingRecipe: CraftingRecipe): void {
+   public static sendCraftingPacket(recipeIndex: number): void {
       if (Game.isRunning && this.socket !== null) {
-         this.socket.emit("crafting_packet", craftingRecipe);
+         this.socket.emit("crafting_packet", recipeIndex);
       }
    }
 
    public static sendItemPickupPacket(entityID: number, inventoryName: string, itemSlot: number, amount: number): void {
       if (Game.isRunning && this.socket !== null) {
-         this.socket.emit("item_pickup_packet", entityID, inventoryName, itemSlot, amount);
+         this.socket.emit("item_pickup", entityID, inventoryName, itemSlot, amount);
       }
    }
 
    public static sendItemReleasePacket(entityID: number, inventoryName: string, itemSlot: number, amount: number): void {
       if (Game.isRunning && this.socket !== null) {
-         this.socket.emit("item_release_packet", entityID, inventoryName, itemSlot, amount);
+         this.socket.emit("item_release", entityID, inventoryName, itemSlot, amount);
       }
    }
 
@@ -610,7 +662,7 @@ abstract class Client {
 
    public static sendItemUsePacket(): void {
       if (Game.isRunning && this.socket !== null) {
-         const itemSlot = Game.latencyGameState.selectedHotbarItemSlot;
+         const itemSlot = latencyGameState.selectedHotbarItemSlot;
          this.socket.emit("item_use_packet", itemSlot);
       }
    }
@@ -634,8 +686,8 @@ abstract class Client {
    }
 
    public static sendRespawnRequest(): void {
-      if (Game.isRunning && this.socket !== null) {
-         this.socket.emit("respawn");
+      if (Game.isRunning && Client.socket !== null) {
+         Client.socket.emit("respawn");
       }
    }
 
@@ -649,6 +701,19 @@ abstract class Client {
       if (Game.isRunning && this.socket !== null) {
          this.socket.emit("track_game_object", id);
       }
+   }
+
+   private static killPlayer(): void {
+      // Remove the player from the game
+      Board.removeGameObject(Player.instance!);
+      Player.instance = null;
+
+      latencyGameState.resetFlags();
+      definiteGameState.resetFlags();
+
+      hideNerdVision();
+      gameScreenSetIsDead(true);
+      updateInventoryIsOpen(false);
    }
 }
 

@@ -1,59 +1,43 @@
 import Board from "./Board";
-import Player, { tickPlayerInstanceTimeSinceHit, updateAvailableCraftingRecipes, updatePlayerRotation } from "./entities/Player";
+import Player, { updateAvailableCraftingRecipes, updatePlayerRotation } from "./entities/Player";
 import { isDev } from "./utils";
 import { renderPlayerNames, createTextCanvasContext } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/game/ChatBox";
-import { GameObjectDebugData, lerp, Point, SETTINGS } from "webgl-test-shared";
+import { GameDataPacket, GameObjectDebugData, Point, SETTINGS } from "webgl-test-shared";
 import { createEntityShaders, renderGameObjects } from "./rendering/game-object-rendering";
 import Client from "./client/Client";
 import { calculateCursorWorldPosition, getCursorX, getCursorY, getMouseTargetEntity, handleMouseMovement, renderCursorTooltip } from "./mouse";
-import { updateDevEntityViewer } from "./components/game/nerd-vision/EntityViewer";
-import { createShaderStrings, createWebGLContext, createWebGLProgram, gl, resizeCanvas } from "./webgl";
+import { updateDevEntityViewer } from "./components/game/dev/EntityViewer";
+import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createShaderStrings, createWebGLContext, gl, halfWindowHeight, halfWindowWidth, resizeCanvas } from "./webgl";
 import { loadTextures } from "./textures";
 import { hidePauseScreen, showPauseScreen, toggleSettingsMenu } from "./components/game/GameScreen";
 import { getGameState } from "./components/App";
 import Item from "./items/Item";
-import { createPlaceableItemProgram, renderGhostPlaceableItem } from "./items/PlaceableItem";
 import { clearPressedKeys } from "./keyboard-input";
 import { createHitboxShaders, renderEntityHitboxes } from "./rendering/hitbox-rendering";
 import { updateInteractInventory, updatePlayerMovement } from "./player-input";
-import DefiniteGameState from "./game-state/definite-game-state";
-import LatencyGameState from "./game-state/latency-game-state";
-import { clearServerTicks, updateDebugScreenCurrentTime, updateDebugScreenFPS, updateDebugScreenTicks } from "./components/game/nerd-vision/GameInfoDisplay";
+import { clearServerTicks, updateDebugScreenCurrentTime, updateDebugScreenFPS, updateDebugScreenRenderTime } from "./components/game/dev/GameInfoDisplay";
 import { createWorldBorderShaders, renderWorldBorder } from "./rendering/world-border-rendering";
 import { createSolidTileShaders, renderSolidTiles } from "./rendering/tile-rendering/solid-tile-rendering";
-import { createWaterShaders, renderWater } from "./rendering/tile-rendering/river-rendering";
+import { createRiverShaders, renderRivers } from "./rendering/tile-rendering/river-rendering";
 import { createChunkBorderShaders, renderChunkBorders } from "./rendering/chunk-border-rendering";
-import { nerdVisionIsVisible } from "./components/game/nerd-vision/NerdVision";
+import { nerdVisionIsVisible } from "./components/game/dev/NerdVision";
 import { setFrameProgress } from "./GameObject";
 import { createDebugDataShaders, renderLineDebugData, renderTriangleDebugData } from "./rendering/debug-data-rendering";
-import { createAmbientOcclusionShaders, recalculateAmbientOcclusion, renderAmbientOcclusion } from "./rendering/ambient-occlusion-rendering";
+import { createAmbientOcclusionShaders, renderAmbientOcclusion } from "./rendering/ambient-occlusion-rendering";
 import { createWallBorderShaders, renderWallBorders } from "./rendering/wall-border-rendering";
-import { createParticleShaders, renderParticles } from "./rendering/particle-rendering";
-import { ParticleRenderLayer } from "./Particle";
+import { ParticleRenderLayer, createParticleShaders, renderMonocolourParticles, renderTexturedParticles } from "./rendering/particle-rendering";
 import Tribe from "./Tribe";
 import OPTIONS from "./options";
-import { createRenderChunks } from "./rendering/tile-rendering/render-chunks";
-
-const nightVertexShaderText = `
-precision mediump float;
-
-attribute vec2 a_vertPosition;
- 
-void main() {
-   gl_Position = vec4(a_vertPosition, 0.0, 1.0);
-}
-`;
-const nightFragmentShaderText = `
-precision mediump float;
-
-uniform float u_darkenFactor;
- 
-void main() {
-   gl_FragColor = vec4(0.0, 0.0, 0.0, u_darkenFactor);
-}
-`;
+import { RENDER_CHUNK_SIZE, createRenderChunks } from "./rendering/tile-rendering/render-chunks";
+import { registerFrame, updateFrameGraph } from "./components/game/dev/FrameGraph";
+import { createNightShaders, renderNight } from "./rendering/night-rendering";
+import { createPlaceableItemProgram, renderGhostPlaceableItem } from "./rendering/placeable-item-rendering";
+import { definiteGameState } from "./game-state/game-states";
+import Entity from "./entities/Entity";
+import DroppedItem from "./items/DroppedItem";
+import Projectile from "./projectiles/Projectile";
 
 let listenersHaveBeenCreated = false;
 
@@ -78,15 +62,13 @@ const createEventListeners = (): void => {
 }
 
 let lastRenderTime = Math.floor(new Date().getTime() / 1000);
-let numRenders = 0;
 
 abstract class Game {
-   private static readonly NIGHT_DARKNESS = 0.6;
+   private static lastTime = 0;
 
-   private static _ticks: number;
-   private static _time: number;
-
-   public static board: Board;
+   private static numSkippablePackets = 0;
+   
+   public static queuedPackets = new Array<GameDataPacket>();
    
    public static isRunning: boolean = false;
    private static isPaused: boolean = false;
@@ -96,41 +78,17 @@ abstract class Game {
 
    public static hasInitialised = false;
 
-   public static lastTime = 0;
    /** Amount of time the game is through the current frame */
    private static lag = 0;
 
    public static cursorPosition: Point | null;
 
-   private static nightProgram: WebGLProgram;
-   private static nightBuffer: WebGLBuffer;
-   private static nightProgramVertPosAttribLocation: GLint;
-   private static nightProgramDarkenFactorUniformLocation: WebGLUniformLocation;
-
-   public static definiteGameState = new DefiniteGameState();
-   public static latencyGameState = new LatencyGameState();
-
    private static gameObjectDebugData: GameObjectDebugData | null = null;
 
    public static tribe: Tribe | null = null;
-
-   public static get ticks(): number {
-      return this._ticks;
-   }
-
-   public static set ticks(ticks: number) {
-      this._ticks = ticks;
-      updateDebugScreenTicks(ticks);
-   }
-
-   public static get time(): number {
-      return this._time;
-   }
-
-   public static set time(time: number) {
-      this._time = time;
-      updateDebugScreenCurrentTime(time);
-   }
+   
+   private static cameraData = new Float32Array(8);
+   private static cameraBuffer: WebGLBuffer;
 
    public static setGameObjectDebugData(gameObjectDebugData: GameObjectDebugData | undefined): void {
       if (typeof gameObjectDebugData === "undefined") {
@@ -146,11 +104,6 @@ abstract class Game {
 
    /** Starts the game */
    public static start(): void {
-      this.nightProgram = createWebGLProgram(nightVertexShaderText, nightFragmentShaderText, "a_vertPosition");
-      this.nightProgramVertPosAttribLocation = gl.getAttribLocation(this.nightProgram, "a_vertPosition");
-      this.nightProgramDarkenFactorUniformLocation = gl.getUniformLocation(this.nightProgram, "u_darkenFactor")!;
-      this.createNightBuffer();
-
       createEventListeners();
       resizeCanvas();
 
@@ -164,26 +117,12 @@ abstract class Game {
       // Start the game loop
       this.isSynced = true;
       this.isRunning = true;
+      this.lastTime = performance.now();
       requestAnimationFrame(time => this.main(time));
    }
 
    public static stop(): void {
       this.isRunning = false;
-   }
-
-   private static createNightBuffer(): void {
-      const vertices = [
-         -1, -1,
-         1, 1,
-         -1, 1,
-         -1, -1,
-         1, -1,
-         1, 1
-      ];
-      
-      this.nightBuffer = gl.createBuffer()!;
-      gl.bindBuffer(gl.ARRAY_BUFFER, this.nightBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
    }
 
    public static pause(): void {
@@ -220,32 +159,102 @@ abstract class Game {
             createWebGLContext();
             createShaderStrings();
             createTextCanvasContext();
+
+            // Create the camera uniform buffer
+            this.cameraBuffer = gl.createBuffer()!;
+            gl.bindBufferBase(gl.UNIFORM_BUFFER, CAMERA_UNIFORM_BUFFER_BINDING_INDEX, this.cameraBuffer);
+            gl.bufferData(gl.UNIFORM_BUFFER, this.cameraData.byteLength, gl.DYNAMIC_DRAW);
             
+            // We load the textures before we create the shaders because some shader initialisations stitch textures together
+            await loadTextures();
+            
+            // Create shaders
             createSolidTileShaders();
-            createWaterShaders();
+            createRiverShaders();
             createEntityShaders();
             createWorldBorderShaders();
             createPlaceableItemProgram();
             createChunkBorderShaders();
             createHitboxShaders();
             createDebugDataShaders();
-
+            createNightShaders();
             createParticleShaders();
             createWallBorderShaders();
             createAmbientOcclusionShaders();
+
             createRenderChunks();
 
-            recalculateAmbientOcclusion();
-            
-            await loadTextures();
-   
             this.hasInitialised = true;
    
             resolve();
          });
       } else {
          createRenderChunks();
-         recalculateAmbientOcclusion();
+      }
+   }
+
+   public static main(currentTime: number): void {
+      if (this.isSynced) {
+         const deltaTime = currentTime - Game.lastTime;
+         Game.lastTime = currentTime;
+      
+         // updateFrameCounter(deltaTime / 1000);
+
+         this.lag += deltaTime;
+         while (this.lag >= 1000 / SETTINGS.TPS) {
+            if (this.queuedPackets.length > 0) {
+               // Done before so that server data can override particles
+               Board.updateParticles();
+               
+               // If there is a backlog of packets and none are able to be skipped, skip to the final packet
+               if (this.numSkippablePackets === 0 && this.queuedPackets.length >= 2) {
+                  // Unload all the packets so that things like hits taken aren't skipped
+                  for (let i = 0; i < this.queuedPackets.length; i++) {
+                     Client.unloadGameDataPacket(this.queuedPackets[i]);
+                  }
+                  this.queuedPackets.splice(0, this.queuedPackets.length);
+               } else {
+                  const numSkippedPackets = Math.min(this.numSkippablePackets, this.queuedPackets.length - 1);
+                  Client.unloadGameDataPacket(this.queuedPackets[numSkippedPackets]);
+                  this.queuedPackets.splice(0, numSkippedPackets + 1);
+                  this.numSkippablePackets--;
+                  
+                  if (this.queuedPackets.length === 0 || this.numSkippablePackets < 0) {
+                     this.numSkippablePackets = 0;
+                  }
+               }
+
+               Board.updateTickCallbacks();
+               Board.tickGameObjects();
+               this.update();
+               this.updatePlayer();
+            } else {
+               this.numSkippablePackets++;
+               
+               Board.updateTickCallbacks();
+               Board.updateParticles();
+               Board.updateGameObjects();
+               this.update();
+            }
+            Client.sendPlayerDataPacket();
+            this.lag -= 1000 / SETTINGS.TPS;
+         }
+
+         const renderStartTime = performance.now();
+
+         const frameProgress = this.lag / 1000 * SETTINGS.TPS;
+         this.render(frameProgress);
+
+         const renderEndTime = performance.now();
+
+         const renderTime = renderEndTime - renderStartTime;
+         registerFrame(renderStartTime, renderEndTime);
+         updateFrameGraph();
+         updateDebugScreenRenderTime(renderTime);
+      }
+
+      if (this.isRunning) {
+         requestAnimationFrame(time => this.main(time));
       }
    }
 
@@ -253,27 +262,30 @@ abstract class Game {
       updateSpamFilter();
 
       updatePlayerMovement();
-      tickPlayerInstanceTimeSinceHit();
       updateAvailableCraftingRecipes();
 
       this.tickPlayerItems();
 
       Item.decrementGlobalItemSwitchDelay();
 
-      this.board.updateGameObjects();
-      if (Player.instance !== null) {
-         Player.resolveCollisions();
-      }
-
       if (isDev()) updateDevEntityViewer();
    }
 
+   private static updatePlayer(): void {
+      if (Player.instance !== null) {
+         Player.instance.applyPhysics();
+         Player.instance.updateHitboxes();
+         Player.instance.recalculateContainingChunks();
+         Player.resolveCollisions();
+      }
+   }
+
    private static tickPlayerItems(): void {
-      if (Game.definiteGameState.hotbar === null) {
+      if (definiteGameState.hotbar === null) {
          return;
       }
       
-      for (const item of Object.values(Game.definiteGameState.hotbar.itemSlots)) {
+      for (const item of Object.values(definiteGameState.hotbar.itemSlots)) {
          if (typeof item.tick !== "undefined") {
             item.tick();
          }
@@ -293,11 +305,8 @@ abstract class Game {
       }
       
       const currentRenderTime = Math.floor(new Date().getTime() / 1000);
-      numRenders++;
       if (currentRenderTime !== lastRenderTime) {
-         updateDebugScreenFPS(numRenders);
          clearServerTicks();
-         numRenders = 0;
       }
       lastRenderTime = currentRenderTime;
 
@@ -306,40 +315,76 @@ abstract class Game {
       gl.clear(gl.COLOR_BUFFER_BIT);
 
       setFrameProgress(frameProgress);
+      const renderTime = performance.now();
 
       // Update the camera
       if (Player.instance !== null) {
          Player.instance.updateRenderPosition();
          Camera.setCameraPosition(Player.instance.renderPosition);
          Camera.updateVisibleChunkBounds();
+         Camera.updateVisibleRenderChunkBounds();
+         Camera.updateVisiblePositionBounds();
       }
 
-      renderPlayerNames();
+      // Update the camera buffer
+      gl.bindBuffer(gl.UNIFORM_BUFFER, this.cameraBuffer);
+      this.cameraData[0] = Camera.position.x;
+      this.cameraData[1] = Camera.position.y;
+      this.cameraData[2] = halfWindowWidth;
+      this.cameraData[3] = halfWindowHeight;
+      this.cameraData[4] = Camera.zoom;
+      gl.bufferSubData(gl.UNIFORM_BUFFER, 0, this.cameraData);
+
+      // Categorise the game objects
+      const playersToRenderNames = new Array<Player>();
+      const entities = new Array<Entity>();
+      const droppedItems = new Array<DroppedItem>();
+      const projectiles = new Array<Projectile>();
+      for (const gameObject of Object.values(Board.gameObjects)) {
+         // @Cleanup this is pretty bad
+         if (gameObject.hasOwnProperty("statusEffects")) {
+            entities.push(gameObject as Entity);
+            if ((gameObject as Entity).type === "player" && gameObject !== Player.instance) {
+               playersToRenderNames.push(gameObject as Player);
+            }
+         } else if (gameObject.hasOwnProperty("itemType")) {
+            droppedItems.push(gameObject as DroppedItem);
+         } else {
+            projectiles.push(gameObject as Projectile);
+         }
+      }
+
+      renderPlayerNames(playersToRenderNames);
 
       renderSolidTiles();
-      renderWater();
-      // renderAmbientOcclusion();
-      // renderWallBorders();
-      if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Game.board.gameObjects.hasOwnProperty(this.gameObjectDebugData.gameObjectID)) {
+      renderRivers(renderTime);
+      renderAmbientOcclusion();
+      renderWallBorders();
+      if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Board.gameObjects.hasOwnProperty(this.gameObjectDebugData.gameObjectID)) {
          renderTriangleDebugData(this.gameObjectDebugData);
       }
       renderWorldBorder();
       if (nerdVisionIsVisible() && OPTIONS.showChunkBorders) {
-         renderChunkBorders();
+         renderChunkBorders(Camera.visibleChunkBounds, SETTINGS.CHUNK_SIZE, 1);
+      }
+      if (nerdVisionIsVisible() && OPTIONS.showRenderChunkBorders) {
+         renderChunkBorders(Camera.visibleRenderChunkBounds, RENDER_CHUNK_SIZE, 2);
       }
 
-      // renderParticles(ParticleRenderLayer.low);
+      renderMonocolourParticles(ParticleRenderLayer.low, renderTime);
+      renderTexturedParticles(ParticleRenderLayer.low, renderTime);
 
-      renderGameObjects(Object.values(this.board.droppedItems));
-      renderGameObjects(Object.values(this.board.entities));
-      renderGameObjects(Object.values(this.board.projectiles));
-
-      // renderParticles(ParticleRenderLayer.high);
+      renderGameObjects(droppedItems);
+      renderGameObjects(entities);
+      renderGameObjects(projectiles);
+      
+      renderMonocolourParticles(ParticleRenderLayer.high, renderTime);
+      renderTexturedParticles(ParticleRenderLayer.high, renderTime);
 
       if (nerdVisionIsVisible() && OPTIONS.showHitboxes) {
          renderEntityHitboxes();
       }
-      if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Game.board.gameObjects.hasOwnProperty(this.gameObjectDebugData.gameObjectID)) {
+      if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Board.gameObjects.hasOwnProperty(this.gameObjectDebugData.gameObjectID)) {
          renderLineDebugData(this.gameObjectDebugData);
       }
 
@@ -354,63 +399,12 @@ abstract class Game {
       renderCursorTooltip();
 
       if (!OPTIONS.nightVisionIsEnabled) {
-         this.renderNight();
+         renderNight();
       }
 
       updateInteractInventory();
-   }
 
-   public static main(currentTime: number): void {
-      if (this.isSynced) {
-         const deltaTime = currentTime - this.lastTime;
-         this.lastTime = currentTime;
-
-         // Update
-         this.lag += deltaTime;
-         while (this.lag >= 1000 / SETTINGS.TPS) {
-            this.update();
-            Client.sendPlayerDataPacket();
-            this.lag -= 1000 / SETTINGS.TPS;
-         }
-
-         const frameProgress = this.lag / 1000 * SETTINGS.TPS;
-         this.render(frameProgress);
-      }
-
-      if (this.isRunning) {
-         requestAnimationFrame(time => this.main(time));
-      }
-   }
-
-   private static renderNight(): void {
-      // Don't render nighttime if it is day
-      if (this.time >= 6 && this.time < 18) return;
-
-      let darkenFactor: number;
-      if (this.time >= 18 && this.time < 20) {
-         darkenFactor = lerp(0, this.NIGHT_DARKNESS, (this.time - 18) / 2);
-      } else if (this.time >= 4 && this.time < 6) {
-         darkenFactor = lerp(0, this.NIGHT_DARKNESS, (6 - this.time) / 2);
-      } else {
-         darkenFactor = this.NIGHT_DARKNESS;
-      }
-
-      gl.useProgram(this.nightProgram);
-
-      gl.enable(gl.BLEND);
-      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-
-      gl.bindBuffer(gl.ARRAY_BUFFER, this.nightBuffer);
-
-      gl.vertexAttribPointer(this.nightProgramVertPosAttribLocation, 2, gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
-      gl.enableVertexAttribArray(this.nightProgramVertPosAttribLocation);
-
-      gl.uniform1f(this.nightProgramDarkenFactorUniformLocation, darkenFactor);
-
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-      gl.disable(gl.BLEND);
-      gl.blendFunc(gl.ONE, gl.ZERO);
+      updateDebugScreenFPS();
    }
 }
 

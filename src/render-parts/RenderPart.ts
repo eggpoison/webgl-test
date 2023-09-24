@@ -1,33 +1,13 @@
-import { Point } from "webgl-test-shared";
-
-export interface RenderPartInfo {
-   /** The render part's offset from its parent */
-   readonly offset?: () => Point;
-   /** Width of the render part */
-   readonly width: number;
-   /** Height of the render part */
-   readonly height: number;
-   readonly textureSource: string;
-   /** Render priority of the render part in relation to its entity's other render parts. */
-   readonly zIndex: number;
-   /** Rotation of the render part in radians */
-   readonly getRotation?: () => number;
-   readonly inheritParentRotation?: boolean;
-   readonly opacity?: number;
-   readonly flipX?: boolean;
-}
+import { Point, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 
 /** A thing which is able to hold render parts */
 export class RenderObject {
-   public renderPosition!: Point;
-   public rotation: number = 0;
-   public readonly renderParts = new Array<RenderPart>();
+   /** Estimated position of the object during the current frame */
+   public renderPosition = new Point(-1, -1);
 
-   public attachRenderParts(renderParts: ReadonlyArray<RenderPart>): void {
-      for (const renderPart of renderParts) {
-         this.attachRenderPart(renderPart);
-      }
-   }
+   public rotation = 0;
+   
+   public readonly renderParts = new Array<RenderPart>();
 
    public attachRenderPart(renderPart: RenderPart): void {
       // Find an index for the render part
@@ -51,60 +31,68 @@ export class RenderObject {
    }
 }
 
-class RenderPart extends RenderObject implements RenderPartInfo {
-   public readonly offset?: () => Point;
-   public readonly width: number;
-   public readonly height: number;
+class RenderPart extends RenderObject {
+   public offset?: Point | (() => Point);
+   public width: number;
+   public height: number;
    public textureSource: string;
    public readonly zIndex: number;
-   public readonly inheritParentRotation: boolean;
-   public readonly getRotation?: () => number;
-   public readonly opacity: number;
-   public readonly flipX: boolean;
+   public rotation = 0;
+   public opacity = 1;
 
+   public getRotation?: () => number;
+
+   /** Whether or not the render part will inherit its parents' rotation */
+   public inheritParentRotation = true;
    /** Whether the render part is being rendered or not */
    public isActive = true;
+   public flipX = false;
    
-   public readonly parentRenderObject: RenderObject;
-   
-   constructor(renderPartInfo: RenderPartInfo, parentRenderObject: RenderObject) {
+   constructor(width: number, height: number, textureSource: string, zIndex: number, rotation: number) {
       super();
       
-      if (typeof renderPartInfo.textureSource === "undefined") {
+      if (typeof textureSource === "undefined") {
          throw new Error("Tried to create a render part with an undefined texture source.");
       }
 
-      this.offset = renderPartInfo.offset;
-      this.width = renderPartInfo.width;
-      this.height = renderPartInfo.height;
-      this.textureSource = renderPartInfo.textureSource;
-      this.zIndex = renderPartInfo.zIndex;
-      if (typeof renderPartInfo.getRotation !== "undefined") this.rotation = renderPartInfo.getRotation();
-      this.inheritParentRotation = typeof renderPartInfo.inheritParentRotation !== "undefined" ? renderPartInfo.inheritParentRotation : true;
-      this.getRotation = renderPartInfo.getRotation;
-      this.opacity = renderPartInfo.opacity || 1;
-      this.flipX = renderPartInfo.flipX || false; // Don't flip X by default
-
-      this.parentRenderObject = parentRenderObject;
-
-      // As soon as the render part is created, calculate an initial position for it.
-      this.updateRenderPosition();
+      this.width = width;
+      this.height = height;
+      this.textureSource = textureSource;
+      this.zIndex = zIndex;
+      this.rotation = rotation;
    }
 
    /** Updates the render part's position based on its parent's position and rotation */
-   public updateRenderPosition(): void {
-      this.renderPosition = this.parentRenderObject.renderPosition.copy();
+   public updateRenderPosition(parentRenderObject: RenderObject): void {
+      this.renderPosition.x = parentRenderObject.renderPosition.x;
+      this.renderPosition.y = parentRenderObject.renderPosition.y;
 
       if (typeof this.offset !== "undefined") {
-         // Offset the parent object's render position
-         const offset = this.offset().convertToVector();
-         offset.direction += this.parentRenderObject.rotation;
+         let offset: Point;
+         if (typeof this.offset === "function") {
+            offset = this.offset();
+         } else {
+            offset = this.offset;
+         }
 
-         this.renderPosition.add(offset.convertToPoint());
+         // Rotate the offset to match the parent object's rotation
+         const rotatedOffsetX = rotateXAroundPoint(offset.x, offset.y, 0, 0, parentRenderObject.rotation);
+         const rotatedOffsetY = rotateYAroundPoint(offset.x, offset.y, 0, 0, parentRenderObject.rotation);
+
+         this.renderPosition.x += rotatedOffsetX;
+         this.renderPosition.y += rotatedOffsetY;
       }
 
+      this.recalculateRotation();
+   }
+
+   private recalculateRotation(): void {
       if (typeof this.getRotation !== "undefined") {
          this.rotation = this.getRotation();
+         if (isNaN(this.rotation)) {
+            console.warn(this);
+            throw new Error("Render part's rotation was NaN.");
+         }
       }
    }
 }

@@ -15,17 +15,18 @@ class Barrel extends Entity {
 
    public tribeID: number | null;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, tribeID: number | null, inventoryData: InventoryData) {
-      super(position, hitboxes, id, secondsSinceLastHit);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, tribeID: number | null, inventoryData: InventoryData) {
+      super(position, hitboxes, id);
 
-      this.attachRenderParts([
-         new RenderPart({
-            width: Barrel.RADIUS * 2,
-            height: Barrel.RADIUS * 2,
-            textureSource: "entities/barrel/barrel.png",
-            zIndex: 0
-         }, this)
-      ]);
+      this.attachRenderPart(
+         new RenderPart(
+            Barrel.RADIUS * 2,
+            Barrel.RADIUS * 2,
+            "entities/barrel/barrel.png",
+            0,
+            0
+         )
+      );
 
       this.inventory = this.createInventoryFromData(inventoryData);
 

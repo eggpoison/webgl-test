@@ -1,11 +1,10 @@
-import { Point, Vector } from "webgl-test-shared";
+import { Point } from "webgl-test-shared";
 import { isDev } from "./utils";
-import Camera from "./Camera";
 
 export const CIRCLE_VERTEX_COUNT = 50;
 
 let canvas: HTMLCanvasElement;
-export let gl: WebGLRenderingContext;
+export let gl: WebGL2RenderingContext;
 
 export let windowWidth = window.innerWidth;
 export let windowHeight = window.innerHeight;
@@ -13,6 +12,12 @@ export let halfWindowWidth = windowWidth / 2;
 export let halfWindowHeight = windowHeight / 2;
 
 export let MAX_ACTIVE_TEXTURE_UNITS = 8;
+
+export const tempFloat32ArrayLength1 = new Float32Array(1);
+export const tempFloat32ArrayLength2 = new Float32Array(2);
+export const tempFloat32ArrayLength3 = new Float32Array(3);
+
+export const CAMERA_UNIFORM_BUFFER_BINDING_INDEX = 0;
 
 export function resizeCanvas(): void {
    if (typeof canvas === "undefined") return;
@@ -39,7 +44,7 @@ window.addEventListener("resize", resizeCanvas);
 
 export function createWebGLContext(): void {
    canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
-   const glAttempt = canvas.getContext("webgl", { alpha: false });
+   const glAttempt = canvas.getContext("webgl2", { alpha: false });
 
    if (glAttempt === null) {
       alert("Your browser does not support WebGL.");
@@ -69,46 +74,47 @@ export function createShaderStrings(): void {
    }
 }
 
-export function createWebGLProgram(vertexShaderText: string, fragmentShaderText: string, attrib0Name?: string): WebGLProgram {
+// @Cleanup once the game object rendering thing is reworked, remove the attrib0Name parameter
+export function createWebGLProgram(glRenderingContext: WebGL2RenderingContext, vertexShaderText: string, fragmentShaderText: string, attrib0Name?: string): WebGLProgram {
    // Create shaders
-   const vertexShader = gl.createShader(gl.VERTEX_SHADER)!;
-   const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER)!;
+   const vertexShader = glRenderingContext.createShader(glRenderingContext.VERTEX_SHADER)!;
+   const fragmentShader = glRenderingContext.createShader(glRenderingContext.FRAGMENT_SHADER)!;
 
-   gl.shaderSource(vertexShader, vertexShaderText);
-   gl.shaderSource(fragmentShader, fragmentShaderText);
+   glRenderingContext.shaderSource(vertexShader, vertexShaderText);
+   glRenderingContext.shaderSource(fragmentShader, fragmentShaderText);
 
-   gl.compileShader(vertexShader);
-   if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
-      throw new Error("ERROR compiling vertex shader! " + gl.getShaderInfoLog(vertexShader));
+   glRenderingContext.compileShader(vertexShader);
+   if (!glRenderingContext.getShaderParameter(vertexShader, glRenderingContext.COMPILE_STATUS)) {
+      throw new Error("ERROR compiling vertex shader! " + glRenderingContext.getShaderInfoLog(vertexShader));
    }
 
-   gl.compileShader(fragmentShader);
-   if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
-      throw new Error("ERROR compiling fragment shader! " + gl.getShaderInfoLog(fragmentShader));
+   glRenderingContext.compileShader(fragmentShader);
+   if (!glRenderingContext.getShaderParameter(fragmentShader, glRenderingContext.COMPILE_STATUS)) {
+      throw new Error("ERROR compiling fragment shader! " + glRenderingContext.getShaderInfoLog(fragmentShader));
    }
 
    // 
    // Create the program and attach shaders to the program
    // 
 
-   const program = gl.createProgram()!;
+   const program = glRenderingContext.createProgram()!;
 
-   gl.attachShader(program, vertexShader);
-   gl.attachShader(program, fragmentShader);
+   glRenderingContext.attachShader(program, vertexShader);
+   glRenderingContext.attachShader(program, fragmentShader);
 
    if (typeof attrib0Name !== "undefined") {
-      gl.bindAttribLocation(program, 0, attrib0Name);
+      glRenderingContext.bindAttribLocation(program, 0, attrib0Name);
    }
 
-   gl.linkProgram(program);
-   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      throw new Error("ERROR linking program! " + gl.getProgramInfoLog(program));
+   glRenderingContext.linkProgram(program);
+   if (!glRenderingContext.getProgramParameter(program, glRenderingContext.LINK_STATUS)) {
+      throw new Error("ERROR linking program! " + glRenderingContext.getProgramInfoLog(program));
    }
 
    if (isDev()) {
-      gl.validateProgram(program);
-      if (!gl.getProgramParameter(program, gl.VALIDATE_STATUS)) {
-         throw new Error("ERROR validating program! " + gl.getProgramInfoLog(program));
+      glRenderingContext.validateProgram(program);
+      if (!glRenderingContext.getProgramParameter(program, glRenderingContext.VALIDATE_STATUS)) {
+         throw new Error("ERROR validating program! " + glRenderingContext.getProgramInfoLog(program));
       }
    }
 
@@ -134,15 +140,6 @@ export function generateLine(startPosition: Point, endPosition: Point, thickness
    const tr = endPosition.copy();
    tr.add(rightOffset);
 
-   bl.x = Camera.calculateXCanvasPosition(bl.x);
-   bl.y = Camera.calculateYCanvasPosition(bl.y);
-   br.x = Camera.calculateXCanvasPosition(br.x);
-   br.y = Camera.calculateYCanvasPosition(br.y);
-   tl.x = Camera.calculateXCanvasPosition(tl.x);
-   tl.y = Camera.calculateYCanvasPosition(tl.y);
-   tr.x = Camera.calculateXCanvasPosition(tr.x);
-   tr.y = Camera.calculateYCanvasPosition(tr.y);
-
    const vertices: Array<number> = [
       bl.x, bl.y, r, g, b,
       br.x, br.y, r, g, b,
@@ -162,25 +159,16 @@ export function generateThickCircleWireframeVertices(position: Point, radius: nu
    // Add the outer vertices
    for (let radians = 0, n = 0; n < CIRCLE_VERTEX_COUNT; radians += step, n++) {
       // Trig shenanigans to get x and y coords
-      const bl = new Vector(radius, radians).convertToPoint();
-      const br = new Vector(radius, radians + step).convertToPoint();
-      const tl = new Vector(radius + thickness, radians).convertToPoint();
-      const tr = new Vector(radius + thickness, radians + step).convertToPoint();
+      const bl = Point.fromVectorForm(radius, radians);
+      const br = Point.fromVectorForm(radius, radians + step);
+      const tl = Point.fromVectorForm(radius + thickness, radians);
+      const tr = Point.fromVectorForm(radius + thickness, radians + step);
 
       bl.add(position);
       br.add(position);
       tl.add(position);
       tr.add(position);
 
-      bl.x = Camera.calculateXCanvasPosition(bl.x);
-      bl.y = Camera.calculateYCanvasPosition(bl.y);
-      br.x = Camera.calculateXCanvasPosition(br.x);
-      br.y = Camera.calculateYCanvasPosition(br.y);
-      tl.x = Camera.calculateXCanvasPosition(tl.x);
-      tl.y = Camera.calculateYCanvasPosition(tl.y);
-      tr.x = Camera.calculateXCanvasPosition(tr.x);
-      tr.y = Camera.calculateYCanvasPosition(tr.y);
-      
       vertices.push(
          bl.x, bl.y, r, g, b,
          br.x, br.y, r, g, b,

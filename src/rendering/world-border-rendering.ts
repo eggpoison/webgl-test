@@ -1,124 +1,191 @@
 import { SETTINGS } from "webgl-test-shared";
 import Camera from "../Camera";
-import { createWebGLProgram, gl } from "../webgl";
+import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 
-const vertexShaderText = `
+const vertexShaderText = `#version 300 es
 precision mediump float;
 
-attribute vec2 a_vertPosition;
+layout(std140) uniform Camera {
+   uniform vec2 u_playerPos;
+   uniform vec2 u_halfWindowSize;
+   uniform float u_zoom;
+};
+
+layout(location = 0) in vec2 a_position;
 
 void main() {
-   gl_Position = vec4(a_vertPosition, 0.0, 1.0);
+   vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
+   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+   gl_Position = vec4(clipSpacePos, 0.0, 1.0);
 }`;
 
-const fragmentShaderText = `
+const fragmentShaderText = `#version 300 es
 precision mediump float;
 
+out vec4 outputColour;
+
 void main() {
-   gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+   outputColour = vec4(0.0, 0.0, 0.0, 1.0);
 }
 `;
 
 let program: WebGLProgram;
 
-let vertPositionAttribLocation: GLint;
-
 export function createWorldBorderShaders(): void {
-   program = createWebGLProgram(vertexShaderText, fragmentShaderText);
+   program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
 
-   vertPositionAttribLocation = gl.getAttribLocation(program, "a_vertPosition");
+   const cameraBlockIndex = gl.getUniformBlockIndex(program, "Camera");
+   gl.uniformBlockBinding(program, cameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);
 }
 
 export function renderWorldBorder(): void {
-   const [minChunkX, maxChunkX, minChunkY, maxChunkY] = Camera.getVisibleChunkBounds();
-
    const BORDER_WIDTH = 20;
 
-   const minChunkXPos = minChunkX * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
-   const maxChunkXPos = (maxChunkX + 1) * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
-   const minChunkYPos = minChunkY * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
-   const maxChunkYPos = (maxChunkY + 1) * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
+   const minChunkXPos = Camera.visibleChunkBounds[0] * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
+   const maxChunkXPos = (Camera.visibleChunkBounds[1] + 1) * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
+   const minChunkYPos = Camera.visibleChunkBounds[2] * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
+   const maxChunkYPos = (Camera.visibleChunkBounds[3] + 1) * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
 
-   const vertices = new Array<number>();
+   const leftBorderIsVisible = Camera.visibleChunkBounds[0] === 0;
+   const rightBorderIsVisible = Camera.visibleChunkBounds[1] === SETTINGS.BOARD_SIZE - 1;
+   const bottomBorderIsVisible = Camera.visibleChunkBounds[2] === 0;
+   const topBorderIsVisible = Camera.visibleChunkBounds[3] === SETTINGS.BOARD_SIZE - 1;
 
-   const calculateAndAddVertices = (x1: number, x2: number, y1: number, y2: number): void => {
-      // Calculate screen positions
-      const screenX1 = Camera.calculateXCanvasPosition(x1);
-      const screenX2 = Camera.calculateXCanvasPosition(x2);
-      const screenY1 = Camera.calculateYCanvasPosition(y1);
-      const screenY2 = Camera.calculateYCanvasPosition(y2);
-
-      vertices.push(
-         screenX1, screenY1, // Bottom left
-         screenX2, screenY1, // Bottom right
-         screenX2, screenY2, // Top right
-
-         screenX1, screenY1, // Bottom left
-         screenX2, screenY2, // Top right
-         screenX1, screenY2 // Top left
-      );
+   let numVisibleBorders = 0;
+   if (leftBorderIsVisible) {
+      numVisibleBorders++;
+   }
+   if (rightBorderIsVisible) {
+      numVisibleBorders++;
+   }
+   if (bottomBorderIsVisible) {
+      numVisibleBorders++;
+   }
+   if (topBorderIsVisible) {
+      numVisibleBorders++;
    }
 
-   // Left wall
-   if (minChunkX === 0) {
+   if (numVisibleBorders === 0) {
+      return;
+   }
+
+   const vertexData = new Float32Array(numVisibleBorders * 6 * 2);
+
+   // Left border
+   if (leftBorderIsVisible) {
       const x1 = -BORDER_WIDTH;
       const x2 = 0;
       const y1 = minChunkYPos - BORDER_WIDTH;
       const y2 = maxChunkYPos + BORDER_WIDTH;
 
-      calculateAndAddVertices(x1, x2, y1, y2);
+      vertexData[0] = x1;
+      vertexData[1] = y1;
+      vertexData[2] = x2;
+      vertexData[3] = y1;
+      vertexData[4] = x2;
+      vertexData[5] = y2;
+      vertexData[6] = x1;
+      vertexData[7] = y1;
+      vertexData[8] = x2;
+      vertexData[9] = y2;
+      vertexData[10] = x1;
+      vertexData[11] = y2;
    }
 
-   // Right wall
-   if (maxChunkX === SETTINGS.BOARD_SIZE - 1) {
+   // Right border
+   if (rightBorderIsVisible) {
       const x1 = maxChunkXPos;
       const x2 = maxChunkXPos + BORDER_WIDTH;
       const y1 = minChunkYPos - BORDER_WIDTH;
       const y2 = maxChunkYPos + BORDER_WIDTH;
 
-      calculateAndAddVertices(x1, x2, y1, y2);
+      const arrayOffset = leftBorderIsVisible ? 12 : 0;
+
+      vertexData[arrayOffset] = x1;
+      vertexData[arrayOffset + 1] = y1;
+      vertexData[arrayOffset + 2] = x2;
+      vertexData[arrayOffset + 3] = y1;
+      vertexData[arrayOffset + 4] = x2;
+      vertexData[arrayOffset + 5] = y2;
+      vertexData[arrayOffset + 6] = x1;
+      vertexData[arrayOffset + 7] = y1;
+      vertexData[arrayOffset + 8] = x2;
+      vertexData[arrayOffset + 9] = y2;
+      vertexData[arrayOffset + 10] = x1;
+      vertexData[arrayOffset + 11] = y2;
    }
 
-   // Bottom wall
-   if (minChunkY === 0) {
+   // Bottom border
+   if (bottomBorderIsVisible) {
       const x1 = minChunkXPos - BORDER_WIDTH;
       const x2 = maxChunkXPos + BORDER_WIDTH;
       const y1 = -BORDER_WIDTH;
       const y2 = 0;
 
-      calculateAndAddVertices(x1, x2, y1, y2);
+      let arrayOffset = 0;
+      if (leftBorderIsVisible) {
+         arrayOffset += 12;
+      }
+      if (rightBorderIsVisible) {
+         arrayOffset += 12;
+      }
+
+      vertexData[arrayOffset] = x1;
+      vertexData[arrayOffset + 1] = y1;
+      vertexData[arrayOffset + 2] = x2;
+      vertexData[arrayOffset + 3] = y1;
+      vertexData[arrayOffset + 4] = x2;
+      vertexData[arrayOffset + 5] = y2;
+      vertexData[arrayOffset + 6] = x1;
+      vertexData[arrayOffset + 7] = y1;
+      vertexData[arrayOffset + 8] = x2;
+      vertexData[arrayOffset + 9] = y2;
+      vertexData[arrayOffset + 10] = x1;
+      vertexData[arrayOffset + 11] = y2;
    }
 
-   // Top wall
-   if (maxChunkY === SETTINGS.BOARD_SIZE - 1) {
+   // Top border
+   if (topBorderIsVisible) {
       const x1 = minChunkXPos - BORDER_WIDTH;
       const x2 = maxChunkXPos + BORDER_WIDTH;
       const y1 = maxChunkYPos;
       const y2 = maxChunkYPos + BORDER_WIDTH;
 
-      calculateAndAddVertices(x1, x2, y1, y2);
+      let arrayOffset = 0;
+      if (leftBorderIsVisible) {
+         arrayOffset += 12;
+      }
+      if (rightBorderIsVisible) {
+         arrayOffset += 12;
+      }
+      if (bottomBorderIsVisible) {
+         arrayOffset += 12;
+      }
+
+      vertexData[arrayOffset] = x1;
+      vertexData[arrayOffset + 1] = y1;
+      vertexData[arrayOffset + 2] = x2;
+      vertexData[arrayOffset + 3] = y1;
+      vertexData[arrayOffset + 4] = x2;
+      vertexData[arrayOffset + 5] = y2;
+      vertexData[arrayOffset + 6] = x1;
+      vertexData[arrayOffset + 7] = y1;
+      vertexData[arrayOffset + 8] = x2;
+      vertexData[arrayOffset + 9] = y2;
+      vertexData[arrayOffset + 10] = x1;
+      vertexData[arrayOffset + 11] = y2;
    }
 
-   if (vertices.length > 0) {
-      gl.useProgram(program);
+   gl.useProgram(program);
 
-      const buffer = gl.createBuffer()!;
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-   
-      const positionAttribLocation = vertPositionAttribLocation;
-      gl.vertexAttribPointer(
-         positionAttribLocation,
-         2,
-         gl.FLOAT,
-         false,
-         2 * Float32Array.BYTES_PER_ELEMENT,
-         0
-      );
-   
-      // Enable the attributes
-      gl.enableVertexAttribArray(positionAttribLocation);
-   
-      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 2);
-   }
+   const buffer = gl.createBuffer()!;
+   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+   gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
+
+   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
+
+   // Enable the attributes
+   gl.enableVertexAttribArray(0);
+
+   gl.drawArrays(gl.TRIANGLES, 0, numVisibleBorders * 6);
 }

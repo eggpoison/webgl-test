@@ -1,4 +1,4 @@
-import { ItemData, ItemType, SETTINGS } from "webgl-test-shared";
+import { ITEM_INFO_RECORD, ITEM_TYPE_RECORD, ItemData, ItemType, SETTINGS, ToolItemInfo } from "webgl-test-shared";
 import Client from "../client/Client";
 
 export type ItemSlot = Item | null;
@@ -8,8 +8,8 @@ export type ItemSlots = { [itemSlot: number]: Item };
 
 export interface Inventory {
    itemSlots: ItemSlots;
-   readonly width: number;
-   readonly height: number;
+   width: number;
+   height: number;
    readonly inventoryName: string;
 }
 
@@ -22,16 +22,26 @@ class Item {
    /** Unique identifier for the item */
    public readonly id: number;
    
-   public readonly type: ItemType;
+   public type: ItemType;
 
    public count: number;
 
    private _isActive: boolean = false;
 
+   private attackCooldown: number;
+   private attackCooldownTimer = 0;
+
    constructor(itemType: ItemType, count: number, id: number) {
       this.type = itemType;
       this.count = count;
       this.id = id;
+
+      const itemTypeInfo = ITEM_TYPE_RECORD[itemType];
+      if (itemTypeInfo === "axe" || itemTypeInfo === "pickaxe" || itemTypeInfo === "sword") {
+         this.attackCooldown = (ITEM_INFO_RECORD[itemType] as ToolItemInfo).attackCooldown;
+      } else {
+         this.attackCooldown = SETTINGS.DEFAULT_ATTACK_COOLDOWN;
+      }
    }
 
    public static decrementGlobalItemSwitchDelay(): void {
@@ -41,7 +51,12 @@ class Item {
       }
    }
 
-   public tick?(): void;
+   public tick(): void {
+      this.attackCooldownTimer -= 1 / SETTINGS.TPS;
+      if (this.attackCooldownTimer < 0) {
+         this.attackCooldownTimer = 0;
+      }
+   }
 
    protected isActive(): boolean {
       return this._isActive;
@@ -63,11 +78,19 @@ class Item {
       this._isActive = isActive;
    }
 
-   public static canAttack(): boolean {
-      return this.globalAttackDelayTimer === 0;
+   public canAttack(): boolean {
+      return Item.canAttack() && this.attackCooldownTimer === 0;
    }
 
-   public resetAttackSwitchDelay(): void {
+   public resetAttackCooldownTimer(): void {
+      this.attackCooldownTimer = this.attackCooldown;
+   }
+
+   public static canAttack(): boolean {
+      return Item.globalAttackDelayTimer === 0;
+   }
+
+   public static resetGlobalAttackSwitchDelay(): void {
       Item.globalAttackDelayTimer = Item.GLOBAL_ATTACK_DELAY_ON_SWITCH;
    }
 
@@ -81,20 +104,6 @@ class Item {
    protected sendUsePacket(): void {
       Client.sendItemUsePacket();
    }
-
-   // private select(): void {
-   //    this._isActive = true;
-   //    if (typeof this.onSelect !== "undefined") {
-   //       this.onSelect();
-   //    }
-   // }
-
-   // private deselect(): void {
-   //    this._isActive = false;
-   //    if (typeof this.onDeselect !== "undefined") {
-   //       this.onDeselect();
-   //    }
-   // }
 
    protected onSelect?(): void;
 

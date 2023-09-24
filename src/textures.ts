@@ -2,7 +2,6 @@ import { gl } from "./webgl";
 import CLIENT_ITEM_INFO_RECORD from "./client-item-info";
 import { TILE_TYPE_RENDER_INFO_RECORD } from "./tile-type-render-info";
 import { imageIsLoaded } from "./utils";
-import { PARTICLE_TEXTURES } from "./rendering/particle-rendering";
 
 let TEXTURES: { [key: string]: WebGLTexture } = {};
 
@@ -105,8 +104,13 @@ const TEXTURE_SOURCES: Array<string> = [
    "tiles/water-foam.png",
    "tiles/river-bed-highlights-1.png",
    "tiles/river-bed-highlights-2.png",
-   "tiles/river-bed-highlights-3.png"
+   "tiles/river-bed-highlights-3.png",
+   "miscellaneous/particle-texture-atlas.png",
+   "entities/krumblid/krumblid.png"
 ];
+
+// @Incomplete: Name
+export const AAAA: Record<string, HTMLImageElement> = {};
 
 const textureSourceIsAlreadyIncluded = (src: string): boolean => {
    return TEXTURE_SOURCES.includes(src);
@@ -117,20 +121,13 @@ export function loadTextures(): Promise<void> {
       // Add solid tile textures
       for (const tileTypeInfo of Object.values(TILE_TYPE_RENDER_INFO_RECORD)) {
          if (!textureSourceIsAlreadyIncluded(tileTypeInfo.textureSource)) {
-            TEXTURE_SOURCES.push(`tiles/${tileTypeInfo.textureSource}`);
-         }
-      }
-
-      // Particle textures
-      for (const particleTexture of Object.values(PARTICLE_TEXTURES)) {
-         if (!textureSourceIsAlreadyIncluded(particleTexture))  {
-            TEXTURE_SOURCES.push(particleTexture);
+            TEXTURE_SOURCES.push(tileTypeInfo.textureSource);
          }
       }
 
       // Add item textures
       for (const clientItemInfo of Object.values(CLIENT_ITEM_INFO_RECORD)) {
-         TEXTURE_SOURCES.push(`items/${clientItemInfo.textureSource}`);
+         TEXTURE_SOURCES.push(clientItemInfo.textureSource);
       }
 
       for (const textureSource of TEXTURE_SOURCES) {
@@ -154,6 +151,8 @@ export function loadTextures(): Promise<void> {
             
             TEXTURES[textureSource] = texture;
          });
+
+         AAAA[textureSource] = image;
       }
       
       resolve();

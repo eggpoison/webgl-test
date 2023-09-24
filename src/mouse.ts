@@ -1,12 +1,13 @@
 import { Point, SETTINGS } from "webgl-test-shared";
 import { halfWindowHeight, halfWindowWidth } from "./webgl";
 import CLIENT_SETTINGS from "./client-settings";
-import { updateCursorTooltip } from "./components/game/nerd-vision/CursorTooltip";
+import { updateCursorTooltip } from "./components/game/dev/CursorTooltip";
 import Entity from "./entities/Entity";
 import Game from "./Game";
 import Camera from "./Camera";
-import { updateDevEntityViewer } from "./components/game/nerd-vision/EntityViewer";
+import { updateDevEntityViewer } from "./components/game/dev/EntityViewer";
 import { isDev } from "./utils";
+import Board from "./Board";
 
 let cursorX: number | null = null;
 let cursorY: number | null = null;
@@ -22,9 +23,6 @@ export function getCursorY(): number | null {
 export function calculateCursorWorldPosition(): Point | null {
    if (Game.getIsPaused()) return null;
    if (cursorX === null || cursorY === null) return null;
-
-   // const worldX = Camera.calculateXScreenPos(cursorX);
-   // const worldY = Camera.calculateYScreenPos(cursorY);
    
    const worldX = (cursorX - halfWindowWidth) / Camera.zoom + Camera.position.x;
    const worldY = (-cursorY + halfWindowHeight) / Camera.zoom + Camera.position.y;
@@ -57,7 +55,7 @@ export function getMouseTargetEntity(): Entity | null {
    let minDistance = Number.MAX_SAFE_INTEGER;
    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
-         const chunk = Game.board.getChunk(chunkX, chunkY);
+         const chunk = Board.getChunk(chunkX, chunkY);
          for (const gameObject of chunk.getGameObjects()) {
             if (gameObject instanceof Entity) {
                const distance = Game.cursorPosition.calculateDistanceBetween(gameObject.renderPosition);
@@ -76,9 +74,6 @@ export function getMouseTargetEntity(): Entity | null {
 const calculateEntityScreenPosition = (entity: Entity): Point => {
    const x = Camera.calculateXScreenPos(entity.renderPosition.x);
    const y = Camera.calculateYScreenPos(entity.renderPosition.y);
-   // const x = entity.renderPosition.x - Camera.position.x + halfWindowWidth;
-   // const y = -entity.renderPosition.y + Camera.position.y + halfWindowHeight;
-
    return new Point(x, y);
 }
 

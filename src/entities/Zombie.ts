@@ -1,30 +1,72 @@
-import { Point } from "webgl-test-shared";
+import { HitData, Point, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
+import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle } from "../generic-particles";
+import Board from "../Board";
 
 const ZOMBIE_TEXTURE_SOURCES: { [zombieType: number]: string } = {
-   0: "zombie1.png",
-   1: "zombie2.png",
-   2: "zombie3.png",
-   3: "zombie-golden.png"
-}
+   0: "entities/zombie/zombie1.png",
+   1: "entities/zombie/zombie2.png",
+   2: "entities/zombie/zombie3.png",
+   3: "entities/zombie/zombie-golden.png"
+};
 
 class Zombie extends Entity {
-   public readonly type = "zombie";
+   private static readonly RADIUS = 32;
    
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, secondsSinceLastHit: number | null, zombieType: number) {
-      super(position, hitboxes, id, secondsSinceLastHit);
+   private static readonly BLOOD_FOUNTAIN_INTERVAL = 0.1;
+   
+   public readonly type = "zombie";
 
-      this.attachRenderParts([
-         new RenderPart({
-            width: 64,
-            height: 64,
-            textureSource: "entities/zombie/" + ZOMBIE_TEXTURE_SOURCES[zombieType],
-            zIndex: 0
-         }, this)
-      ]);
+   private numFootstepsTaken = 0;
+   
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, zombieType: number) {
+      super(position, hitboxes, id);
+
+      this.attachRenderPart(
+         new RenderPart(
+            Zombie.RADIUS * 2,
+            Zombie.RADIUS * 2,
+            ZOMBIE_TEXTURE_SOURCES[zombieType],
+            0,
+            0
+         )
+      );
+   }
+
+   public tick(): void {
+      super.tick();
+
+      // Create footsteps
+      if (this.velocity !== null && !this.isInRiver() && Board.tickIntervalHasPassed(0.3)) {
+         createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 4);
+
+         this.numFootstepsTaken++;
+      }
+   }
+
+   protected onHit(hitData: HitData): void {
+      // Blood pool particle
+      createBloodPoolParticle(this.position.x, this.position.y, 20);
+      
+      // Blood particles
+      if (hitData.angleFromAttacker !== null) {
+         for (let i = 0; i < 10; i++) {
+            const offsetDirection = hitData.angleFromAttacker + Math.PI + 0.2 * Math.PI * (Math.random() - 0.5);
+            const spawnPositionX = this.position.x + Zombie.RADIUS * Math.sin(offsetDirection);
+            const spawnPositionY = this.position.y + Zombie.RADIUS * Math.cos(offsetDirection);
+         
+            createBloodParticle(Math.random() < 0.6 ? BloodParticleSize.small : BloodParticleSize.large, spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(150, 250), true);
+         }
+      }
+   }
+
+   public onDie(): void {
+      createBloodPoolParticle(this.position.x, this.position.y, 20);
+
+      createBloodParticleFountain(this, Zombie.BLOOD_FOUNTAIN_INTERVAL, 1);
    }
 }
 
