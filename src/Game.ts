@@ -328,13 +328,13 @@ abstract class Game {
          renderChunkBorders();
       }
 
-      renderParticles(ParticleRenderLayer.low);
+      // renderParticles(ParticleRenderLayer.low);
 
       renderGameObjects(Object.values(this.board.droppedItems));
       renderGameObjects(Object.values(this.board.entities));
       renderGameObjects(Object.values(this.board.projectiles));
 
-      renderParticles(ParticleRenderLayer.high);
+      // renderParticles(ParticleRenderLayer.high);
 
       if (nerdVisionIsVisible() && OPTIONS.showHitboxes) {
          renderEntityHitboxes();

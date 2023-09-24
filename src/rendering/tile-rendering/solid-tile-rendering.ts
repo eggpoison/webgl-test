@@ -1,4 +1,4 @@
-import { SETTINGS, ServerTileUpdateData, TILE_TYPE_INFO_RECORD } from "webgl-test-shared";
+import { SETTINGS, TILE_TYPE_INFO_RECORD } from "webgl-test-shared";
 import Camera from "../../Camera";
 import { Tile } from "../../Tile";
 import { getTexture } from "../../textures";
