@@ -346,6 +346,8 @@ abstract class TribeMember extends Entity {
       if (activeItemType === null) {
          this.activeItemRenderPart.isActive = false;
       } else {
+         // @Temporary
+         if(1+1===2)return;
          this.activeItemRenderPart.textureSource = CLIENT_ITEM_INFO_RECORD[activeItemType].textureSource;
          this.activeItemRenderPart.isActive = true;
 
