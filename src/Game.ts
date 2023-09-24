@@ -358,8 +358,8 @@ abstract class Game {
 
       renderSolidTiles();
       renderRivers(renderTime);
-      // renderAmbientOcclusion();
-      // renderWallBorders();
+      renderAmbientOcclusion();
+      renderWallBorders();
       if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Board.gameObjects.hasOwnProperty(this.gameObjectDebugData.gameObjectID)) {
          renderTriangleDebugData(this.gameObjectDebugData);
       }

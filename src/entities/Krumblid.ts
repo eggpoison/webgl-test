@@ -7,8 +7,8 @@ import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, cr
 import Board from "../Board";
 
 class Krumblid extends Entity {
-   private static readonly SPRITE_WIDTH = 14 * 4;
-   private static readonly SPRITE_HEIGHT = 12 * 4;
+   private static readonly SPRITE_WIDTH = 16 * 4;
+   private static readonly SPRITE_HEIGHT = 14 * 4;
 
    private static readonly BLOOD_FOUNTAIN_INTERVAL = 0.1;
 

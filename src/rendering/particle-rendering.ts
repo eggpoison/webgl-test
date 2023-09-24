@@ -58,7 +58,7 @@ void main() {
 
    // Scale the particle to its size
    vec2 position = a_vertPosition * a_halfParticleSize * a_scale;
-   
+
    // Calculate rotation
    float rotation = a_rotation;
    if (a_angularFriction > 0.0) {
@@ -656,7 +656,7 @@ export function renderMonocolourParticles(renderLayer: ParticleRenderLayer, rend
 }
 
 export function renderTexturedParticles(renderLayer: ParticleRenderLayer, renderTime: number): void {
-   // @Incomplete use VBOs and UBOs
+   // @Incomplete use VBOs
    
    gl.useProgram(texturedProgram);
 
