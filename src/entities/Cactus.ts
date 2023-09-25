@@ -24,15 +24,14 @@ class Cactus extends Entity {
    constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, flowers: ReadonlyArray<CactusBodyFlowerData>, limbs: ReadonlyArray<CactusLimbData>) {
       super(position, hitboxes, id);
 
-      this.attachRenderPart(
-         new RenderPart(
-            Cactus.RADIUS * 2,
-            Cactus.RADIUS * 2,
-            "entities/cactus/cactus.png",
-            2,
-            0
-         )
+      const baseRenderPart = new RenderPart(
+         Cactus.RADIUS * 2,
+         Cactus.RADIUS * 2,
+         "entities/cactus/cactus.png",
+         2,
+         0
       );
+      this.attachRenderPart(baseRenderPart);
 
       this.flowerData = flowers;
       this.limbData = limbs;
@@ -72,13 +71,13 @@ class Cactus extends Entity {
             2 * Math.PI * Math.random()
          )
          renderPart.offset = offset;
-         this.attachRenderPart(renderPart);
+         baseRenderPart.attachRenderPart(renderPart);
          
          if (typeof limbInfo.flower !== "undefined") {
             const flowerInfo = limbInfo.flower;
 
             const flowerOffset = Point.fromVectorForm(flowerInfo.height, flowerInfo.direction);
-            flowerOffset.add(offset);
+            // flowerOffset.add(offset);
 
             const flowerRenderPart = new RenderPart(
                16,
@@ -88,7 +87,7 @@ class Cactus extends Entity {
                flowerInfo.rotation
             )
             flowerRenderPart.offset = flowerOffset;
-            this.attachRenderPart(flowerRenderPart);
+            renderPart.attachRenderPart(flowerRenderPart);
          }
       }
    }

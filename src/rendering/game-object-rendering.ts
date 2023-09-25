@@ -260,6 +260,7 @@ export function renderGameObjects(gameObjects: ReadonlyArray<GameObject>): void 
             const y1 = renderInfo.renderPart.renderPosition.y - renderInfo.renderPart.height / 2;
             const y2 = renderInfo.renderPart.renderPosition.y + renderInfo.renderPart.height / 2;
 
+            // Rotate the render part to match its rotation
             const topLeftX = rotateXAroundPoint(x1, y2, renderInfo.renderPart.renderPosition.x, renderInfo.renderPart.renderPosition.y, renderInfo.totalRotation);
             const topLeftY = rotateYAroundPoint(x1, y2, renderInfo.renderPart.renderPosition.x, renderInfo.renderPart.renderPosition.y, renderInfo.totalRotation);
             const topRightX = rotateXAroundPoint(x2, y2, renderInfo.renderPart.renderPosition.x, renderInfo.renderPart.renderPosition.y, renderInfo.totalRotation);
