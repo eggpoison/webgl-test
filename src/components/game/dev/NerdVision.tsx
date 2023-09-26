@@ -1,31 +1,17 @@
-import EntityViewer from "./EntityViewer";
+import DebugInfo from "./DebugInfo";
 import Terminal, { forceTerminalFocus, setTerminalVisibility } from "./Terminal";
 import CursorTooltip from "./CursorTooltip";
 import { useEffect, useState } from "react";
 import { addKeyListener } from "../../../keyboard-input";
 import GameInfoDisplay from "./GameInfoDisplay";
 import TerminalButton, { setTerminalButtonOpened } from "./TerminalButton";
-import FrameGraph from "./FrameGraph";
-
-export let showNerdVision: () => void;
-export let hideNerdVision: () => void;
+import { hideFrameGraph, showFrameGraph } from "./FrameGraph";
 
 export let nerdVisionIsVisible: () => boolean = () => false;
 
 const NerdVision = () => {
    const [terminalStartingVisibility, setTerminalStartingVisibility] = useState(false);
    const [isEnabled, setIsEnabled] = useState(false); // Nerd vision always starts as disabled
-
-   // Initialise show and hide functions
-   useEffect(() => {
-      showNerdVision = (): void => {
-         setIsEnabled(true);
-      }
-      
-      hideNerdVision = (): void => {
-         setIsEnabled(false);
-      }
-   }, []);
 
    useEffect(() => {
       addKeyListener("~", (e: KeyboardEvent) => {
@@ -52,6 +38,12 @@ const NerdVision = () => {
    // Toggle nerd vision when the back quote key is pressed
    useEffect(() => {
       addKeyListener("`", () => {
+         if (!isEnabled) {
+            showFrameGraph();
+         } else {
+            hideFrameGraph();
+         }
+         
          setTerminalStartingVisibility(false);
          setIsEnabled(!isEnabled);
       }, "dev_view_is_enabled");
@@ -61,11 +53,10 @@ const NerdVision = () => {
 
    return <div id="nerd-vision-wrapper">
       <GameInfoDisplay />
-      <EntityViewer />
+      <DebugInfo />
       <TerminalButton startingIsOpened={terminalStartingVisibility} />
       <Terminal startingIsVisible={terminalStartingVisibility}/>
       <CursorTooltip />
-      <FrameGraph />
    </div>;
 }
 

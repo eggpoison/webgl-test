@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { canCraftRecipe, CRAFTING_RECIPES, CraftingRecipe, CraftingStation, ItemType, SETTINGS } from "webgl-test-shared";
+import { canCraftRecipe, CRAFTING_RECIPES, CraftingRecipe, CraftingStation, ItemType } from "webgl-test-shared";
 import CLIENT_ITEM_INFO_RECORD from "../../../client-item-info";
 import Client from "../../../client/Client";
 import Item, { ItemSlots } from "../../../items/Item";
@@ -208,7 +208,7 @@ const CraftingMenu = () => {
       
       const craftableRecipesArray = new Array<CraftingRecipe>();
       for (const recipe of availableRecipes) {
-         if (canCraftRecipe(availableItemSlots, recipe, SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE)) {
+         if (canCraftRecipe(availableItemSlots, recipe)) {
             craftableRecipesArray.push(recipe);
          }
       }

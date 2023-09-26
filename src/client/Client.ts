@@ -25,7 +25,6 @@ import { updateRenderChunkFromTileUpdate } from "../rendering/tile-rendering/ren
 import Entity from "../entities/Entity";
 import Board from "../Board";
 import { definiteGameState, latencyGameState } from "../game-state/game-states";
-import { hideNerdVision } from "../components/game/dev/NerdVision";
 import { BackpackInventoryMenu_update } from "../components/game/inventories/BackpackInventory";
 import { createWhiteSmokeParticle } from "../generic-particles";
 import Particle from "../Particle";
@@ -711,7 +710,6 @@ abstract class Client {
       latencyGameState.resetFlags();
       definiteGameState.resetFlags();
 
-      hideNerdVision();
       gameScreenSetIsDead(true);
       updateInventoryIsOpen(false);
    }

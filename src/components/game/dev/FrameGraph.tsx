@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { FRAME_GRAPH_RECORD_TIME, renderFrameGraph, setupFrameGraph } from "../../../rendering/frame-graph-rendering";
+import { useEffect, useState } from "react";
+import { FRAME_GRAPH_RECORD_TIME, renderFrameGraph } from "../../../rendering/frame-graph-rendering";
 
 export interface FrameInfo {
    readonly startTime: number;
@@ -27,10 +27,20 @@ export let updateFrameGraph: () => void = () => {};
 //    }
 // }
 
-const FrameGraph = (): JSX.Element => {
-   useEffect(() => {
-      setupFrameGraph();
+export let showFrameGraph: () => void;
+export let hideFrameGraph: () => void;
 
+const FrameGraph = (): JSX.Element => {
+   const [isVisible, setIsVisible] = useState(false);
+   
+   useEffect(() => {
+      showFrameGraph = (): void => {
+         setIsVisible(true);
+      }
+      hideFrameGraph = (): void => {
+         setIsVisible(false);
+      }
+      
       updateFrameGraph = (): void => {
          const renderTime = performance.now();
          const now = renderTime / 1000;
@@ -52,7 +62,7 @@ const FrameGraph = (): JSX.Element => {
    }, []);
    
    return <div id="frame-graph">
-      <canvas id="frame-graph-canvas"></canvas>
+      <canvas id="frame-graph-canvas" className={!isVisible ? "hidden" : undefined}></canvas>
    </div>;
 }
 

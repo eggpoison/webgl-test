@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import GameScreen from "./game/GameScreen";
 import LoadingScreen, { LoadingScreenStatus } from "./LoadingScreen";
 import MainMenu from "./MainMenu";
+import FrameGraph from "./game/dev/FrameGraph";
 
 type GameState = "main_menu" | "loading" | "game";
 
@@ -75,6 +76,7 @@ function App() {
       <div id="canvas-wrapper" className={!canvasIsVisible ? "hidden" : undefined}>
          <canvas id="game-canvas"></canvas>
          <canvas id="text-canvas"></canvas>
+         <FrameGraph />
       </div>
    </>;
 }

@@ -34,7 +34,7 @@ void main() {
 }
 `;
 
-let gl: WebGL2RenderingContext;
+let frameGraphGL: WebGL2RenderingContext;
 
 let program: WebGLProgram;
 
@@ -46,13 +46,13 @@ const createGLContext = (): void => {
       alert("Your browser does not support WebGL.");
       throw new Error("Your browser does not support WebGL.");
    }
-   gl = glAttempt;
+   frameGraphGL = glAttempt;
 
-   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+   frameGraphGL.pixelStorei(frameGraphGL.UNPACK_FLIP_Y_WEBGL, true);
 }
 
 const createShaders = (): void => {
-   program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
+   program = createWebGLProgram(frameGraphGL, vertexShaderText, fragmentShaderText);
 }
 
 export function setupFrameGraph(): void {
@@ -120,17 +120,17 @@ export function renderFrameGraph(renderTime: number, frames: ReadonlyArray<Frame
       vertexData[i * 6 * 5 + 29] = b;
    }
    
-   gl.useProgram(program);
+   frameGraphGL.useProgram(program);
 
-   const buffer = gl.createBuffer()!;
-   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-   gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
+   const buffer = frameGraphGL.createBuffer()!;
+   frameGraphGL.bindBuffer(frameGraphGL.ARRAY_BUFFER, buffer);
+   frameGraphGL.bufferData(frameGraphGL.ARRAY_BUFFER, vertexData, frameGraphGL.STATIC_DRAW);
 
-   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
-   gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   frameGraphGL.vertexAttribPointer(0, 2, frameGraphGL.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
+   frameGraphGL.vertexAttribPointer(1, 3, frameGraphGL.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
 
-   gl.enableVertexAttribArray(0);
-   gl.enableVertexAttribArray(1);
+   frameGraphGL.enableVertexAttribArray(0);
+   frameGraphGL.enableVertexAttribArray(1);
 
-   gl.drawArrays(gl.TRIANGLES, 0, frames.length * 6);
+   frameGraphGL.drawArrays(frameGraphGL.TRIANGLES, 0, frames.length * 6);
 }
