@@ -64,6 +64,8 @@ export function renderFrameGraph(renderTime: number, frames: ReadonlyArray<Frame
    const vertexData = new Float32Array(frames.length * 6 * 5);
    
    const currentTimeSeconds = renderTime / 1000;
+
+   let previousX = -1;
    
    // Calculate vertices
    for (let i = 0; i < frames.length; i++) {
@@ -74,10 +76,12 @@ export function renderFrameGraph(renderTime: number, frames: ReadonlyArray<Frame
       const frameRenderTime = secondsSinceFrameStartTime - secondsSinceFrameEndTime;
       const percentageHeight = frameRenderTime / MAX_FRAME_RENDER_TIME;
 
-      const x1 = lerp(-1, 1, secondsSinceFrameEndTime / FRAME_GRAPH_RECORD_TIME);
-      const x2 = lerp(-1, 1, secondsSinceFrameStartTime / FRAME_GRAPH_RECORD_TIME);
+      const x1 = previousX;
+      const x2 = lerp(1, -1, secondsSinceFrameEndTime / FRAME_GRAPH_RECORD_TIME);
       const y1 = -1;
       const y2 = lerp(-1, 1, percentageHeight);
+
+      previousX = lerp(1, -1, secondsSinceFrameStartTime / FRAME_GRAPH_RECORD_TIME);
 
       const r = 1;
       const g = 0;

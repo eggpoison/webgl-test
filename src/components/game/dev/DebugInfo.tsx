@@ -2,7 +2,6 @@ import { useEffect, useReducer, useState } from "react";
 import { SETTINGS, roundNum } from "webgl-test-shared";
 import Entity from "../../../entities/Entity";
 import { Tile } from "../../../Tile";
-import Game from "../../../Game";
 import Board from "../../../Board";
 
 export let updateDebugInfoTile: (tile: Tile | null) => void = () => {};
