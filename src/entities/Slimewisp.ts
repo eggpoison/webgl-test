@@ -22,6 +22,14 @@ class Slimewisp extends Entity {
       renderPart.opacity = 0.8;
       this.attachRenderPart(renderPart);
    }
+
+   protected overrideTileMoveSpeedMultiplier(): number | null {
+      // Slimewisps move at normal speed on slime blocks
+      if (this.tile.type === "slime") {
+         return 1;
+      }
+      return null;
+   }
 }
 
 export default Slimewisp;

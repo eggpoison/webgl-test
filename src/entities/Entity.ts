@@ -4,6 +4,46 @@ import Particle from "../Particle";
 import Board from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
 
+// Use prime numbers / 100 to ensure a decent distribution of different types of particles
+const HEALING_PARTICLE_AMOUNTS = [0.02, 0.13, 0.41];
+const HEALING_PARTICLE_TEXTURE_INDEXES = [3 * 8 + 1, 3 * 8 + 2, 3 * 8 + 3];
+
+const createHealingParticle = (originX: number, originY: number, size: number): void => {
+   const offsetMagnitude = 40 * Math.random();
+   const offsetDirection = 2 * Math.PI * Math.random();
+   const spawnPositionX = originX + offsetMagnitude * Math.sin(offsetDirection);
+   const spawnPositionY = originY + offsetMagnitude * Math.cos(offsetDirection);
+
+   const moveSpeed = randFloat(20, 30);
+   const moveDirection = 2 * Math.PI * Math.random();
+   const velocityX = moveSpeed * Math.sin(moveDirection);
+   const velocityY = moveSpeed * Math.cos(moveDirection);
+   
+   const lifetime = randFloat(0.8, 1.2);
+   
+   const particle = new Particle(lifetime);
+   particle.getOpacity = () => {
+      return 1 - particle.age / lifetime;
+   }
+
+   addTexturedParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.high,
+      64, 64,
+      spawnPositionX, spawnPositionY,
+      velocityX, velocityY,
+      0, 0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      HEALING_PARTICLE_TEXTURE_INDEXES[size],
+      0, 0, 0
+   );
+   Board.highTexturedParticles.push(particle);
+}
+
 abstract class Entity extends GameObject {
    public static readonly BURNING_PARTICLE_COLOURS: ReadonlyArray<ParticleColour> = [
       [255/255, 102/255, 0],
@@ -207,6 +247,19 @@ abstract class Entity extends GameObject {
       super.updateFromData(entityData);
 
       this.mobAIType = entityData.mobAIType;
+   }
+
+   public createHealingParticles(amountHealed: number): void {
+      // Create healing particles depending on the amount the entity was healed
+      let remainingHealing = amountHealed;
+      for (let size = 2; size >= 0;) {
+         if (remainingHealing >= HEALING_PARTICLE_AMOUNTS[size]) {
+            createHealingParticle(this.position.x, this.position.y, size);
+            remainingHealing -= HEALING_PARTICLE_AMOUNTS[size];
+         } else {
+            size--;
+         }
+      }
    }
 
    protected onHit?(hitData: HitData): void;

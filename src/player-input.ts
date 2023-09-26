@@ -12,6 +12,7 @@ import Tombstone from "./entities/Tombstone";
 import Item from "./items/Item";
 import Board from "./Board";
 import { definiteGameState, latencyGameState } from "./game-state/game-states";
+import Game from "./Game";
 
 let lightspeedIsActive = false;
 
@@ -299,6 +300,10 @@ export function updateInteractInventory(): void {
 /** Creates the key listener to toggle the inventory on and off. */
 const createInventoryToggleListeners = (): void => {
    addKeyListener("e", () => {
+      if (!Game.isRunning) {
+         return;
+      }
+      
       if (_interactInventoryIsOpen) {
          hideInteractInventory();
          return;

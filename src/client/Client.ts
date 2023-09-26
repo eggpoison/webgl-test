@@ -242,12 +242,19 @@ abstract class Client {
       for (const entityData of entityDataArray) {
          // If it already exists, update it
          if (Board.entities.hasOwnProperty(entityData.id)) {
+            // @Cleanup: This is very messy and unmaintainable. Doing the hit and healing particle logic outside
+            // of the updateFromData function is done as the player instance right now can't use the updateFromData
+            // function, and doing so would cause a circular dependency with Entity <-> Player.
+            
             // We don't want the player to be updated from the server data
             if (Board.entities[entityData.id] !== Player.instance) {
                Board.entities[entityData.id].updateFromData(entityData);
             }
             for (const hit of entityData.hitsTaken) {
                Board.entities[entityData.id].registerHit(hit);
+            }
+            if (entityData.amountHealed > 0) {
+               Board.entities[entityData.id].createHealingParticles(entityData.amountHealed);
             }
             Board.entities[entityData.id].statusEffects = entityData.statusEffects;
          } else {

@@ -157,6 +157,8 @@ export function createBloodPoolParticle(originX: number, originY: number, spawnR
    particle.getOpacity = () => {
       return 1 - particle.age / lifetime;
    };
+
+   const tint = randFloat(-0.2, 0.2);
    
    const textureIndex = randInt(0, 2);
    addTexturedParticleToBufferContainer(
@@ -172,7 +174,7 @@ export function createBloodPoolParticle(originX: number, originY: number, spawnR
       0,
       0,
       textureIndex,
-      0, 0, 0
+      tint, tint, tint
    );
    Board.lowTexturedParticles.push(particle);
 }

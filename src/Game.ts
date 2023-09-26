@@ -203,8 +203,6 @@ abstract class Game {
          const deltaTime = currentTime - Game.lastTime;
          Game.lastTime = currentTime;
       
-         // updateFrameCounter(deltaTime / 1000);
-
          this.lag += deltaTime;
          while (this.lag >= 1000 / SETTINGS.TPS) {
             if (this.queuedPackets.length > 0) {
@@ -219,7 +217,9 @@ abstract class Game {
                   }
                   this.queuedPackets.splice(0, this.queuedPackets.length);
                } else {
-                  const numSkippedPackets = Math.min(this.numSkippablePackets, this.queuedPackets.length - 1);
+                  // @Temporary
+                  // const numSkippedPackets = Math.min(this.numSkippablePackets, this.queuedPackets.length - 1);
+                  const numSkippedPackets = 0;
                   Client.unloadGameDataPacket(this.queuedPackets[numSkippedPackets]);
                   this.queuedPackets.splice(0, numSkippedPackets + 1);
                   this.numSkippablePackets--;
