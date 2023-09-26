@@ -77,5 +77,4 @@ abstract class Camera {
 // @Cleanup: This shouldn't exist.
 document.documentElement.style.setProperty("--zoom", Camera.zoom.toString());
 
-
 export default Camera;

@@ -32,6 +32,7 @@ export let hideFrameGraph: () => void;
 
 const FrameGraph = (): JSX.Element => {
    const [isVisible, setIsVisible] = useState(false);
+   const [fps, setFPS] = useState(-1);
    
    useEffect(() => {
       showFrameGraph = (): void => {
@@ -52,6 +53,9 @@ const FrameGraph = (): JSX.Element => {
                trackedFrames.splice(i, 1);
             }
          }
+
+         const fps = trackedFrames.length / FRAME_GRAPH_RECORD_TIME;
+         setFPS(fps);
          
          renderFrameGraph(renderTime, trackedFrames);
       }
@@ -61,8 +65,9 @@ const FrameGraph = (): JSX.Element => {
       }
    }, []);
    
-   return <div id="frame-graph">
-      <canvas id="frame-graph-canvas" className={!isVisible ? "hidden" : undefined}></canvas>
+   return <div id="frame-graph" className={!isVisible ? "hidden" : undefined}>
+      <p className="fps">FPS {fps}</p>
+      <canvas id="frame-graph-canvas"></canvas>
    </div>;
 }
 
