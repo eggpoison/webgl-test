@@ -20,14 +20,15 @@ class Slime extends Entity {
 
    public type: EntityType = "slime";
 
-   private eyeRotation: number = 0;
+   private readonly eyeRenderPart: RenderPart;
 
    private readonly size: number;
 
    private numOrbs: number;
    private readonly orbRotations = new Array<number>();
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, size: SlimeSize, _eyeRotation: number, orbs: ReadonlyArray<SlimeOrbData>) {
+
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, size: SlimeSize, eyeRotation: number, orbs: ReadonlyArray<SlimeOrbData>) {
       super(position, hitboxes, id);
 
       const spriteSize = Slime.SIZES[size];
@@ -46,16 +47,15 @@ class Slime extends Entity {
       );
 
       // Eye
-      const eyeRenderPart = 
-      new RenderPart(
+      this.eyeRenderPart = new RenderPart(
          spriteSize,
          spriteSize,
          `entities/slime/slime-${sizeString}-eye.png`,
          3,
-         this.eyeRotation
+         eyeRotation
       );
-      eyeRenderPart.inheritParentRotation = false;
-      this.attachRenderPart(eyeRenderPart);
+      this.eyeRenderPart.inheritParentRotation = false;
+      this.attachRenderPart(this.eyeRenderPart);
 
       // Shading
       this.attachRenderPart(
@@ -102,7 +102,8 @@ class Slime extends Entity {
    public updateFromData(entityData: EntityData<"slime">): void {
       super.updateFromData(entityData);
       
-      this.eyeRotation = entityData.clientArgs[1];
+      // Update eye's rotation
+      this.eyeRenderPart.rotation = entityData.clientArgs[1];
 
       for (let i = 0; i < entityData.clientArgs[2].length; i++) {
          const orb = entityData.clientArgs[2][i];
