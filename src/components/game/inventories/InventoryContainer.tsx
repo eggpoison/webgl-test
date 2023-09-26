@@ -1,4 +1,4 @@
-import CLIENT_ITEM_INFO_RECORD from "../../../client-item-info";
+import { getItemTypeImage } from "../../../client-item-info";
 import { leftClickItemSlot, rightClickItemSlot } from "../../../inventory-manipulation";
 import { Inventory } from "../../../items/Item";
 import ItemSlot from "./ItemSlot";
@@ -20,10 +20,8 @@ const InventoryContainer = ({ entityID, inventory, className }: InventoryProps) 
          if (inventory.itemSlots.hasOwnProperty(itemSlot)) {
             const item = inventory.itemSlots[itemSlot];
 
-            const itemImageSrc = require(`../../../images/items/${CLIENT_ITEM_INFO_RECORD[item.type].textureSource}`);
-
             rowItemSlots.push(
-               <ItemSlot key={x} onClick={e => leftClickItemSlot(e, entityID, inventory, itemSlot)} onContextMenu={e => rightClickItemSlot(e, entityID, inventory, itemSlot)} picturedItemImageSrc={itemImageSrc} itemCount={item.count} isSelected={false} />
+               <ItemSlot key={x} onClick={e => leftClickItemSlot(e, entityID, inventory, itemSlot)} onContextMenu={e => rightClickItemSlot(e, entityID, inventory, itemSlot)} picturedItemImageSrc={getItemTypeImage(item.type)} itemCount={item.count} isSelected={false} />
             );
          } else {
             rowItemSlots.push(

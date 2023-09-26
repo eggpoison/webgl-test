@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useReducer, useState } from "react";
 import { ItemType } from "webgl-test-shared";
-import CLIENT_ITEM_INFO_RECORD from "../../../client-item-info";
+import CLIENT_ITEM_INFO_RECORD, { getItemTypeImage } from "../../../client-item-info";
 import Item from "../../../items/Item";
 import { leftClickItemSlot, rightClickItemSlot } from "../../../inventory-manipulation";
 import ItemSlot from "./ItemSlot";
@@ -50,7 +50,7 @@ const Hotbar = () => {
       const item: Item | undefined = definiteGameState.hotbar.itemSlots[itemSlot];
       
       if (typeof item !== "undefined") {
-         const imageSrc = require("../../../images/" + CLIENT_ITEM_INFO_RECORD[item.type].textureSource);
+         const imageSrc = getItemTypeImage(item.type);
          hotbarItemSlots.push(
             <ItemSlot onClick={e => leftClickItemSlot(e, Player.instance!.id, definiteGameState.hotbar, itemSlot)} onContextMenu={e => rightClickItemSlot(e, Player.instance!.id, definiteGameState.hotbar, itemSlot)} isSelected={itemSlot === selectedItemSlot} picturedItemImageSrc={imageSrc} itemCount={item.count} key={itemSlot} />
          );

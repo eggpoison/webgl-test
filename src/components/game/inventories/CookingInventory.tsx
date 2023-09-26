@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import CLIENT_ITEM_INFO_RECORD from "../../../client-item-info";
+import { getItemTypeImage } from "../../../client-item-info";
 import CookingEntity from "../../../entities/CookingEntity";
 import Entity from "../../../entities/Entity"
 import ItemSlot from "./ItemSlot";
@@ -24,7 +24,7 @@ const CookingInventory = (props: CookingInventoryProps) => {
    let fuelItemCount: number | undefined;
    if (props.entity.fuelInventory.itemSlots.hasOwnProperty(1)) {
       const fuel = props.entity.fuelInventory.itemSlots[1];
-      fuelPicturedItemImageSrc = require("../../../images/" + CLIENT_ITEM_INFO_RECORD[fuel.type].textureSource);
+      fuelPicturedItemImageSrc = getItemTypeImage(fuel.type);
       fuelItemCount = fuel.count;
    }
 
@@ -32,7 +32,7 @@ const CookingInventory = (props: CookingInventoryProps) => {
    let ingredientItemCount: number | undefined;
    if (props.entity.ingredientInventory.itemSlots.hasOwnProperty(1)) {
       const ingredient = props.entity.ingredientInventory.itemSlots[1];
-      ingredientPicturedItemImageSrc = require("../../../images/" + CLIENT_ITEM_INFO_RECORD[ingredient.type].textureSource);
+      ingredientPicturedItemImageSrc = getItemTypeImage(ingredient.type);
       ingredientItemCount = ingredient.count;
    }
 
@@ -40,7 +40,7 @@ const CookingInventory = (props: CookingInventoryProps) => {
    let outputItemCount: number | undefined;
    if (props.entity.outputInventory.itemSlots.hasOwnProperty(1)) {
       const output = props.entity.outputInventory.itemSlots[1];
-      outputPicturedItemImageSrc = require("../../../images/" + CLIENT_ITEM_INFO_RECORD[output.type].textureSource);
+      outputPicturedItemImageSrc = getItemTypeImage(output.type);
       outputItemCount = output.count;
    }
 

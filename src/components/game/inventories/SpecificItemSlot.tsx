@@ -1,4 +1,4 @@
-import CLIENT_ITEM_INFO_RECORD from "../../../client-item-info";
+import CLIENT_ITEM_INFO_RECORD, { getItemTypeImage } from "../../../client-item-info";
 import Item from "../../../items/Item";
 import ItemSlot, { ItemSlotParams } from "./ItemSlot";
 
@@ -13,7 +13,7 @@ const SpecificItemSlot = ({ item, isSelected, className, onClick, onMouseOver, o
    let picturedItemImageSrc: string | undefined;
    let itemCount: number | undefined;
    if (item !== null) {
-      picturedItemImageSrc = require("../../../images/" + CLIENT_ITEM_INFO_RECORD[item.type].textureSource);
+      picturedItemImageSrc = getItemTypeImage(item.type);
       itemCount = item.count;
    }
    
