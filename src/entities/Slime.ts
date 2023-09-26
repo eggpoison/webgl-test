@@ -1,84 +1,9 @@
-import { EntityData, EntityType, Point, SlimeOrbData, SlimeSize, lerp, randFloat, randInt } from "webgl-test-shared";
+import { EntityData, EntityType, Point, SlimeOrbData, SlimeSize, lerp } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import Particle from "../Particle";
-import Board from "../Board";
-import { addTexturedParticleToBufferContainer, ParticleRenderLayer } from "../rendering/particle-rendering";
-
-const createSlimeSpeckParticle = (originX: number, originY: number, spawnOffset: number): void => {
-   const spawnOffsetMagnitude = spawnOffset;
-   const spawnOffsetDirection = 2 * Math.PI * Math.random();
-   const spawnPositionX = originX + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
-   const spawnPositionY = originY + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
-
-   const lifetime = randFloat(0.5, 0.65);
-   
-   const size = randInt(0, 1);
-
-   const moveSpeed = randFloat(30, 40);
-   const moveDirection = 2 * Math.PI * Math.random();
-   const velocityX = moveSpeed * Math.sin(moveDirection);
-   const velocityY = moveSpeed * Math.cos(moveDirection);
-
-   const particle = new Particle(lifetime);
-   particle.getOpacity = (): number => {
-      return 1 - particle.age / lifetime;
-   };
-
-   const tint = randFloat(-0.4, 0.4);
-
-   addTexturedParticleToBufferContainer(
-      particle,
-      ParticleRenderLayer.high,
-      64, 64,
-      spawnPositionX, spawnPositionY,
-      velocityX, velocityY,
-      0, 0,
-      0,
-      2 * Math.PI * Math.random(),
-      randFloat(-Math.PI, Math.PI) * 2,
-      0,
-      Math.PI,
-      8 * 4 + size,
-      tint, tint, tint
-   );
-   Board.highTexturedParticles.push(particle);
-}
-
-const createSlimePoolParticle = (originX: number, originY: number, spawnOffsetRange: number): void => {
-   const spawnOffsetMagnitude = spawnOffsetRange * Math.random();
-   const spawnOffsetDirection = 2 * Math.PI * Math.random();
-   const spawnPositionX = originX + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
-   const spawnPositionY = originY + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
-
-   const lifetime = 7.5;
-
-   const particle = new Particle(lifetime);
-   particle.getOpacity = (): number => {
-      return lerp(0.75, 0, particle.age / lifetime);
-   }
-
-   const tint = randFloat(-0.2, 0.2);
-
-   addTexturedParticleToBufferContainer(
-      particle,
-      ParticleRenderLayer.low,
-      64, 64,
-      spawnPositionX, spawnPositionY,
-      0, 0,
-      0, 0,
-      0,
-      2 * Math.PI * Math.random(),
-      0,
-      0,
-      0,
-      8 * 1 + 4,
-      tint, tint, tint
-   );
-   Board.lowTexturedParticles.push(particle);
-}
+import { createSlimePoolParticle, createSlimeSpeckParticle } from "../generic-particles";
 
 class Slime extends Entity {
    private static readonly SIZES: ReadonlyArray<number> = [

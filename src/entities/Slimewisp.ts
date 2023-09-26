@@ -3,6 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
+import { createSlimePoolParticle, createSlimeSpeckParticle } from "../generic-particles";
 
 class Slimewisp extends Entity {
    private static readonly RADIUS = 16;
@@ -29,6 +30,22 @@ class Slimewisp extends Entity {
          return 1;
       }
       return null;
+   }
+
+   protected onHit(): void {
+      createSlimePoolParticle(this.position.x, this.position.y, Slimewisp.RADIUS);
+
+      for (let i = 0; i < 2; i++) {
+         createSlimeSpeckParticle(this.position.x, this.position.y, Slimewisp.RADIUS * Math.random());
+      }
+   }
+
+   public onDie(): void {
+      createSlimePoolParticle(this.position.x, this.position.y, Slimewisp.RADIUS);
+
+      for (let i = 0; i < 3; i++) {
+         createSlimeSpeckParticle(this.position.x, this.position.y, Slimewisp.RADIUS * Math.random());
+      }
    }
 }
 

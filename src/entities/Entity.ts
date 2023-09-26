@@ -3,6 +3,7 @@ import GameObject from "../GameObject";
 import Particle from "../Particle";
 import Board from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
+import { createSlimePoolParticle } from "../generic-particles";
 
 // Use prime numbers / 100 to ensure a decent distribution of different types of particles
 const HEALING_PARTICLE_AMOUNTS = [0.02, 0.13, 0.41];
@@ -267,34 +268,9 @@ abstract class Entity extends GameObject {
    public registerHit(hitData: HitData): void {
       // If the entity is hit by a flesh sword, create slime puddles
       if (hitData.flags & HitFlags.HIT_BY_FLESH_SWORD) {
-         const spawnOffsetMagnitude = 30 * Math.random()
-         const spawnOffsetDirection = 2 * Math.PI * Math.random();
-         const spawnPositionX = this.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
-         const spawnPositionY = this.position.y + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
-   
-         const lifetime = 7.5;
-
-         const particle = new Particle(lifetime);
-         particle.getOpacity = (): number => {
-            return lerp(0.75, 0, particle.age / lifetime);
+         for (let i = 0; i < 2; i++) {
+            createSlimePoolParticle(this.position.x, this.position.y, 32);
          }
-
-         addTexturedParticleToBufferContainer(
-            particle,
-            ParticleRenderLayer.low,
-            64, 64,
-            spawnPositionX, spawnPositionY,
-            0, 0,
-            0, 0,
-            0,
-            2 * Math.PI * Math.random(),
-            0,
-            0,
-            0,
-            8 * 1 + 4,
-            0, 0, 0
-         );
-         Board.lowTexturedParticles.push(particle);
       }
       
       if (typeof this.onHit !== "undefined") {
