@@ -233,7 +233,7 @@ export function renderGameObjects(gameObjects: ReadonlyArray<GameObject>): void 
             let greenTint = 0;
             let blueTint = 0;
 
-            // TODO: This shouldn't be here, and shouldn't be hardcoded
+            // @Cleanup: This shouldn't be here, and shouldn't be hardcoded
             if (renderInfo.baseRenderObject instanceof Entity) {
                if (renderInfo.baseRenderObject.hasStatusEffect("freezing")) {
                   blueTint += 0.5;
@@ -271,7 +271,6 @@ export function renderGameObjects(gameObjects: ReadonlyArray<GameObject>): void 
 
             const data = vertexDatas[vertexDatas.length - 1];
 
-            // TODO: Find better way to do this
             data[partIndex * 6 * 9] = bottomLeftX;
             data[partIndex * 6 * 9 + 1] = bottomLeftY;
             data[partIndex * 6 * 9 + 2] = u0;

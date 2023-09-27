@@ -120,15 +120,15 @@ abstract class TribeMember extends Entity {
          0
       );
       this.activeItemRenderPart.offset = () => {
-         // TODO: This is kinda scuffed
+         // @Cleanup: This is kinda scuffed
          if (this.activeItem === null) {
             return new Point(0, 0);
          }
 
          let direction = Math.PI / 4;
 
-         // TODO: As the offset function is called in the RenderPart constructor, this.activeItemRenderPart will initially
-         // be undefined and so we have to check for this case
+         // @Cleanup: As the offset function is called in the RenderPart constructor, this.activeItemRenderPart will initially
+         // be undefined and so we have to check for this case. Ideally this will not need to be done
          let itemSize: number;
          if (typeof this.activeItemRenderPart === "undefined") {
             itemSize = this.getActiveItemSize(this.activeItem);

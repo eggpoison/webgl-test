@@ -150,7 +150,7 @@ abstract class GameObject extends RenderObject {
          tileMoveSpeedMultiplier = 1;
       }
 
-      // TODO: This is scuffed
+      // @Cleanup: This is scuffed
       if (typeof this.overrideTileMoveSpeedMultiplier !== "undefined") {
          const speed = this.overrideTileMoveSpeedMultiplier();
          if (speed !== null) {
