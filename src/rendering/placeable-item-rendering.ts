@@ -1,4 +1,4 @@
-import { ItemType, SETTINGS } from "webgl-test-shared";
+import { ItemType, PlaceableItemType, SETTINGS } from "webgl-test-shared";
 import Camera from "../Camera";
 import Player, { getPlayerSelectedItem } from "../entities/Player";
 import { getTexture } from "../textures";
@@ -83,7 +83,7 @@ export function renderGhostPlaceableItem(): void {
    // Don't render if there is no player
    if (Player.instance === null) return;
 
-   const placeableEntityInfo = PLACEABLE_ENTITY_INFO_RECORD[playerSelectedItem.type]!;
+   const placeableEntityInfo = PLACEABLE_ENTITY_INFO_RECORD[playerSelectedItem.type as PlaceableItemType]!;
 
    gl.useProgram(program);
 

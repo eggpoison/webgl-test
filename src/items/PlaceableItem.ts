@@ -1,4 +1,4 @@
-import { ItemType } from "webgl-test-shared";
+import { ItemType, PlaceableItemType } from "webgl-test-shared";
 import Item from "./Item";
 import Game from "../Game";
 import { latencyGameState } from "../game-state/game-states";
@@ -18,7 +18,7 @@ type PlaceableEntityInfo = {
    canPlace?(): boolean;
 }
 
-export const PLACEABLE_ENTITY_INFO_RECORD: Partial<Record<ItemType, PlaceableEntityInfo>> = {
+export const PLACEABLE_ENTITY_INFO_RECORD: Record<PlaceableItemType, PlaceableEntityInfo> = {
    [ItemType.workbench]: {
       textureSource: "workbench/workbench.png",
       width: Workbench.SIZE,
@@ -70,7 +70,7 @@ export const PLACEABLE_ENTITY_INFO_RECORD: Partial<Record<ItemType, PlaceableEnt
 class PlaceableItem extends Item {
    public onRightMouseButtonDown(): void {
       if (PLACEABLE_ENTITY_INFO_RECORD.hasOwnProperty(this.type)) {
-         const placeableInfo = PLACEABLE_ENTITY_INFO_RECORD[this.type]!;
+         const placeableInfo = PLACEABLE_ENTITY_INFO_RECORD[this.type as PlaceableItemType];
          if (typeof placeableInfo.canPlace !== "undefined" && !placeableInfo.canPlace()) {
             return;
          }

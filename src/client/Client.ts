@@ -30,6 +30,8 @@ import Particle from "../Particle";
 import { addMonocolourParticleToBufferContainer, ParticleRenderLayer } from "../rendering/particle-rendering";
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
 
+const BUILDING_TYPES: ReadonlyArray<EntityType> = ["barrel", "campfire", "furnace", "tribe_totem", "tribe_hut", "workbench"];
+
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
 export type GameData = {
@@ -482,7 +484,7 @@ abstract class Client {
 
       // If the entity has just spawned in, create white smoke particles.
       // Only create particles for living entities: e.g. cows, tribesmen, etc.
-      if (entityData.ageTicks === 0 && !RESOURCE_ENTITY_TYPES.includes(entityData.type) && (MOB_ENTITY_TYPES.includes(entityData.type) || entityData.type === "player" || entityData.type === "tribesman")) {
+      if (entityData.ageTicks === 0 && !RESOURCE_ENTITY_TYPES.includes(entityData.type) && (MOB_ENTITY_TYPES.includes(entityData.type) || entityData.type === "player" || entityData.type === "tribesman" || BUILDING_TYPES.includes(entityData.type))) {
          const strength = 0.8 * entity.mass;
          
          // White smoke particles
@@ -497,12 +499,12 @@ abstract class Client {
             const spawnPositionX = entity.position.x;
             const spawnPositionY = entity.position.y;
 
-            const velocityMagnitude = 80 * randFloat(0.9, 1.1);
+            const velocityMagnitude = randFloat(80, 160) * strength;
             const velocityDirection = 2 * Math.PI * Math.random();
             const velocityX = velocityMagnitude * Math.sin(velocityDirection);
             const velocityY = velocityMagnitude * Math.cos(velocityDirection);
 
-            const lifetime = strength;
+            const lifetime = Math.pow(strength, 0.75);
             
             const particle = new Particle(lifetime);
             particle.getOpacity = () => {

@@ -297,7 +297,7 @@ export function createWhiteSmokeParticle(spawnPositionX: number, spawnPositionY:
    const velocityX = velocityMagnitude * Math.sin(velocityDirection);
    const velocityY = velocityMagnitude * Math.cos(velocityDirection);
 
-   const lifetime = strength;
+   const lifetime = Math.pow(strength, 0.75);
 
    const particle = new Particle(lifetime);
    particle.getOpacity = () => {
