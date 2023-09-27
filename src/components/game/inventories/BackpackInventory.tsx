@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useState } from "react";
 import ItemSlot from "./ItemSlot";
-import CLIENT_ITEM_INFO_RECORD from "../../../client-item-info";
+import { getItemTypeImage } from "../../../client-item-info";
 import { definiteGameState } from "../../../game-state/game-states";
 import { leftClickItemSlot, rightClickItemSlot } from "../../../inventory-manipulation";
 import Player from "../../../entities/Player";
@@ -36,7 +36,7 @@ const BackpackInventoryMenu = () => {
          if (definiteGameState.backpack.itemSlots.hasOwnProperty(itemSlot)) {
             const item = definiteGameState.backpack.itemSlots[itemSlot];
 
-            const itemImageSrc = require("../../../images/" + CLIENT_ITEM_INFO_RECORD[item.type].textureSource);
+            const itemImageSrc = getItemTypeImage(item.type);
 
             rowItemSlots.push(
                <ItemSlot key={x} onClick={e => leftClickItemSlot(e, Player.instance!.id, definiteGameState.backpack!, itemSlot)} onContextMenu={e => rightClickItemSlot(e, Player.instance!.id, definiteGameState.backpack!, itemSlot)} picturedItemImageSrc={itemImageSrc} itemCount={item.count} isSelected={false} />

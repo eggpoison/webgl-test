@@ -73,9 +73,6 @@ export function createPlaceableItemProgram(): void {
 
    const programTextureUniformLocation = gl.getUniformLocation(program, "u_texture")!;
    gl.uniform1i(programTextureUniformLocation, 0);
-
-   const programPreTranslationUniformLocation = gl.getUniformLocation(program, "u_preTranslation")!;
-   gl.uniform1f(programPreTranslationUniformLocation, SETTINGS.ITEM_PLACE_DISTANCE);
 }
 
 export function renderGhostPlaceableItem(): void {
@@ -128,7 +125,9 @@ export function renderGhostPlaceableItem(): void {
 
    gl.enableVertexAttribArray(0);
    gl.enableVertexAttribArray(1);
-   
+
+   const programPreTranslationUniformLocation = gl.getUniformLocation(program, "u_preTranslation")!;
+   gl.uniform1f(programPreTranslationUniformLocation, SETTINGS.ITEM_PLACE_DISTANCE + placeableEntityInfo.placeOffset);
    gl.uniform1f(zoomUniformLocation, Camera.zoom);
    gl.uniform2f(programPlayerRotationUniformLocation, xRotation, yRotation);
    gl.uniform2f(programHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);

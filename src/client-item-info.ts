@@ -149,4 +149,8 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
    }
 };
 
+export function getItemTypeImage(itemType: ItemType): any {
+   return require("./images/" + CLIENT_ITEM_INFO_RECORD[itemType].textureSource);
+}
+
 export default CLIENT_ITEM_INFO_RECORD

@@ -5,9 +5,10 @@ import { updateCursorTooltip } from "./components/game/dev/CursorTooltip";
 import Entity from "./entities/Entity";
 import Game from "./Game";
 import Camera from "./Camera";
-import { updateDevEntityViewer } from "./components/game/dev/EntityViewer";
+import { updateDebugInfoEntity, updateDebugInfoTile } from "./components/game/dev/DebugInfo";
 import { isDev } from "./utils";
 import Board from "./Board";
+import { Tile } from "./Tile";
 
 let cursorX: number | null = null;
 let cursorY: number | null = null;
@@ -38,6 +39,21 @@ export function calculateCursorWorldPosition(): Point | null {
 export function handleMouseMovement(e: MouseEvent): void {
    cursorX = e.clientX;
    cursorY = e.clientY;
+}
+
+/**
+ * Finds the entity the user is hovering over.
+ */
+export function getMouseTargetTile(): Tile | null {
+   if (Game.cursorPosition === null) return null;
+
+   const tileX = Math.floor(Game.cursorPosition.x / SETTINGS.TILE_SIZE);
+   const tileY = Math.floor(Game.cursorPosition.y / SETTINGS.TILE_SIZE);
+
+   if (Board.tileIsInBoard(tileX, tileY)) {
+      return Board.getTile(tileX, tileY);
+   }
+   return null;
 }
 
 /**
@@ -77,16 +93,21 @@ const calculateEntityScreenPosition = (entity: Entity): Point => {
    return new Point(x, y);
 }
 
+// @Cleanup: Function name. This doesn't just render the cursor tooltip, it updates debug info.
+// Maybe seperate this into two functions?
 export function renderCursorTooltip(): void {
    if (typeof Game.cursorPosition === "undefined") return;
 
    if (Game.cursorPosition === null) {
       updateCursorTooltip(null, null);
       if (isDev()) {
-         updateDevEntityViewer(null);
+         updateDebugInfoEntity(null);
       }
       return;
    }
+
+   const targetTile = getMouseTargetTile();
+   updateDebugInfoTile(targetTile);
  
    const targetEntity = getMouseTargetEntity();
 
@@ -94,11 +115,11 @@ export function renderCursorTooltip(): void {
    if (targetEntity === null) {
       updateCursorTooltip(null, null);
       if (isDev()) {
-         updateDevEntityViewer(null);
+         updateDebugInfoEntity(null);
       }
       return;
    } else {
-      updateDevEntityViewer(targetEntity);
+      updateDebugInfoEntity(targetEntity);
    }
 
    // Update the cursor tooltip

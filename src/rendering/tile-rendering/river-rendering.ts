@@ -289,13 +289,15 @@ void main() {
 const transitionVertexShaderText = `#version 300 es
 precision mediump float;
 
+#define TILE_SIZE 64.0;
+
 layout(std140) uniform Camera {
    uniform vec2 u_playerPos;
    uniform vec2 u_halfWindowSize;
    uniform float u_zoom;
 };
 
-layout(location = 0) in vec2 a_position;
+layout(location = 0) in vec2 a_tile;
 layout(location = 1) in vec2 a_texCoord;
 layout(location = 2) in float a_topLeftMarker;
 layout(location = 3) in float a_topRightMarker;
@@ -306,6 +308,7 @@ layout(location = 7) in float a_rightMarker;
 layout(location = 8) in float a_leftMarker;
 layout(location = 9) in float a_bottomMarker;
 
+out vec2 v_tile;
 out vec2 v_texCoord;
 out float v_topLeftMarker;
 out float v_topRightMarker;
@@ -317,10 +320,12 @@ out float v_leftMarker;
 out float v_bottomMarker;
 
 void main() {
-   vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
+   vec2 position = a_tile * TILE_SIZE;
+   vec2 screenPos = (position - u_playerPos) * u_zoom + u_halfWindowSize;
    vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
    gl_Position = vec4(clipSpacePos, 0.0, 1.0);
 
+   v_tile = a_tile;
    v_texCoord = a_texCoord;
    v_topLeftMarker = a_topLeftMarker;
    v_topRightMarker = a_topRightMarker;
@@ -336,8 +341,12 @@ void main() {
 const transitionFragmentShaderText = `#version 300 es
 precision mediump float;
 
+#define NOISE_TEXTURE_SIZE 128
+
 uniform sampler2D u_transitionTexture;
+uniform sampler2D u_noiseTexture;
  
+in vec2 v_tile;
 in vec2 v_texCoord;
 in float v_topLeftMarker;
 in float v_topRightMarker;
@@ -386,10 +395,25 @@ void main() {
       dist = max(dist, bottomDist - 0.5);
    }
 
-   dist = pow(dist, 0.3);
-   
    outputColour = texture(u_transitionTexture, v_texCoord);
-   outputColour.a = dist;
+   outputColour.a = pow(dist, 0.3);
+
+   // 
+   // Account for noise in the opacity
+   // 
+
+   vec2 noiseSampleCoord = mod((v_tile + 0.0) / 8.0, 1.0);
+   float noise = texture(u_noiseTexture, noiseSampleCoord).r;
+   float noiseDist = dist;
+   noiseDist *= 2.0;
+   noiseDist = pow(noiseDist, 5.0);
+   noiseDist -= 0.1;
+
+   float opacitySubtract = noise * 1.3 - 0.3 - min(max(noiseDist, 0.0), 1.0);
+   opacitySubtract = noise * 1.3 - 0.3;
+   opacitySubtract = pow(opacitySubtract, 1.2);
+
+   outputColour.a -= opacitySubtract;
 }
 `;
 
@@ -445,6 +469,7 @@ void main() {
 
    float distFromCenter = distance(v_texCoord, vec2(0.5, 0.5));
    float multiplier = 1.0 - distFromCenter * 2.0;
+   multiplier = clamp(multiplier, 0.0, 1.0);
    multiplier = pow(multiplier, 0.35);
    outputColour.a *= multiplier;
 }
@@ -591,11 +616,13 @@ export function createRiverShaders(): void {
    const transitionCameraBlockIndex = gl.getUniformBlockIndex(transitionProgram, "Camera");
    gl.uniformBlockBinding(transitionProgram, transitionCameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);
 
-   const transitionTextureUniformLocation = gl.getUniformLocation(transitionProgram, "u_transitionTexture")!;
-
    gl.useProgram(transitionProgram);
-   gl.uniform1i(transitionTextureUniformLocation, 0);
    
+   const transitionTextureUniformLocation = gl.getUniformLocation(transitionProgram, "u_transitionTexture")!;
+   gl.uniform1i(transitionTextureUniformLocation, 0);
+
+   const gravelNoiseTextureUniformLocation = gl.getUniformLocation(transitionProgram, "u_noiseTexture")!;
+   gl.uniform1i(gravelNoiseTextureUniformLocation, 1);
    // 
    // Foam program
    // 
@@ -678,10 +705,10 @@ const calculateTransitionVertexData = (renderChunkX: number, renderChunkY: numbe
    for (let i = 0; i < edgeTiles.length; i++) {
       const tile = edgeTiles[i];
 
-      let x1 = tile.x * SETTINGS.TILE_SIZE;
-      let x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
-      let y1 = tile.y * SETTINGS.TILE_SIZE;
-      let y2 = (tile.y + 1) * SETTINGS.TILE_SIZE;
+      let x1 = tile.x;
+      let x2 = tile.x + 1;
+      let y1 = tile.y;
+      let y2 = tile.y + 1;
 
       const topLeftWaterDistance = 1 - tileIsWaterInt(tile.x - 1, tile.y + 1);
       const topRightWaterDistance = 1 - tileIsWaterInt(tile.x + 1, tile.y + 1);
@@ -1633,6 +1660,9 @@ export function renderRivers(renderTime: number): void {
    const transitionTexture = getTexture("tiles/gravel.png");
    gl.activeTexture(gl.TEXTURE0);
    gl.bindTexture(gl.TEXTURE_2D, transitionTexture);
+   const gravelNoiseTexture = getTexture("miscellaneous/gravel-noise-texture.png");
+   gl.activeTexture(gl.TEXTURE1);
+   gl.bindTexture(gl.TEXTURE_2D, gravelNoiseTexture);
 
    for (const renderChunkRiverInfo of visibleRenderChunks) {
       gl.bindVertexArray(renderChunkRiverInfo.transitionVAO);

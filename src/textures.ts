@@ -106,10 +106,11 @@ const TEXTURE_SOURCES: Array<string> = [
    "tiles/river-bed-highlights-2.png",
    "tiles/river-bed-highlights-3.png",
    "miscellaneous/particle-texture-atlas.png",
-   "entities/krumblid/krumblid.png"
+   "entities/krumblid/krumblid.png",
+   "miscellaneous/gravel-noise-texture.png"
 ];
 
-// @Incomplete: Name
+// @Incomplete: Variable name
 export const AAAA: Record<string, HTMLImageElement> = {};
 
 const textureSourceIsAlreadyIncluded = (src: string): boolean => {

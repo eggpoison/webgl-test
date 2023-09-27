@@ -1,6 +1,6 @@
-import { ItemInfo, ItemType, ITEM_INFO_RECORD, InventoryData } from "webgl-test-shared";
+import { ItemInfo, ItemType, ITEM_INFO_RECORD } from "webgl-test-shared";
 import FoodItem from "./FoodItem";
-import Item, { Inventory, ItemSlots } from "./Item";
+import Item from "./Item";
 import PlaceableItem from "./PlaceableItem";
 import ArmourItem from "./ArmourItem";
 import BowItem from "./BowItem";
@@ -46,21 +46,4 @@ export function createItem(itemType: ItemType, count: number, id: number): Item 
 
    const itemClass = ITEM_CLASS_RECORD[itemType]() as GenericItem<ItemType>;
    return new itemClass(itemType, count, id, itemInfoEntry);
-}
-
-export function createInventoryFromData(inventoryData: InventoryData): Inventory {
-   const itemSlots: ItemSlots = {};
-   for (const [itemSlot, itemData] of Object.entries(inventoryData.itemSlots)) {
-      const item = createItem(itemData.type, itemData.count, itemData.id);
-      itemSlots[Number(itemSlot)] = item;
-   }
-   
-   const inventory: Inventory = {
-      itemSlots: itemSlots,
-      width: inventoryData.width,
-      height: inventoryData.height,
-      inventoryName: inventoryData.inventoryName
-   };
-
-   return inventory;
 }

@@ -4,6 +4,7 @@ import { isDev } from "../../../utils";
 import Client from "../../../client/Client";
 import { setLightspeedIsActive } from "../../../player-input";
 import { setTerminalButtonOpened } from "./TerminalButton";
+import Camera from "../../../Camera";
 
 const toggleLightspeed = (command: string): void => {
    const param = command.split(" ")[1];
@@ -136,6 +137,12 @@ const Terminal = ({ startingIsVisible }: TerminalParams) => {
             toggleLightspeed(command);
          } else if (command.split(" ")[0] === "clear") {
             terminalLines = [];
+         } else if (command.split(" ")[0] === "zoom") {
+            const zoomAmountString = command.split(" ")[1];
+            if (!Number.isNaN(zoomAmountString)) {
+               const zoomAmount = Number(zoomAmountString);
+               Camera.zoom = zoomAmount;
+            }
          } else {
             Client.sendCommand(command);
          }

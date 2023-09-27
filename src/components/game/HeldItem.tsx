@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import CLIENT_ITEM_INFO_RECORD from "../../client-item-info";
+import { getItemTypeImage } from "../../client-item-info";
 import Item from "../../items/Item";
 
 export let setHeldItemVisual: (heldItem: Item | null) => void = () => {};
@@ -56,7 +56,7 @@ const HeldItem = () => {
    const heldItemDisplayCount = heldItem.count > 1 ? heldItem.count : "";
    
    return <div id="held-item" ref={onRefChange}>
-      <img className="held-item-icon" src={require("../../images/" + CLIENT_ITEM_INFO_RECORD[heldItem.type].textureSource)} alt="" />
+      <img className="held-item-icon" src={getItemTypeImage(heldItem.type)} alt="" />
       <div className="held-item-count">{heldItemDisplayCount}</div>
    </div>;
 }

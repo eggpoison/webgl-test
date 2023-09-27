@@ -2,7 +2,11 @@ import { lerp } from "webgl-test-shared";
 import { FrameInfo } from "../components/game/dev/FrameGraph";
 import { createWebGLProgram } from "../webgl";
 
-const MAX_FRAME_RENDER_TIME = 20 / 1000;
+const TARGET_FRAME_RENDER_TIME = 16 / 1000; // 16 milliseconds
+const MAX_FRAME_RENDER_TIME = 24 / 1000; // 24 milliseconds
+
+/** Thickness of the target render line in clip space */
+const TARGET_RENDER_LINE_THICKNESS = 0.02;
 
 /** Time that frames are recorded for */
 export const FRAME_GRAPH_RECORD_TIME = 1;
@@ -34,7 +38,7 @@ void main() {
 }
 `;
 
-let gl: WebGL2RenderingContext;
+let frameGraphGL: WebGL2RenderingContext;
 
 let program: WebGLProgram;
 
@@ -46,13 +50,13 @@ const createGLContext = (): void => {
       alert("Your browser does not support WebGL.");
       throw new Error("Your browser does not support WebGL.");
    }
-   gl = glAttempt;
+   frameGraphGL = glAttempt;
 
-   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+   frameGraphGL.pixelStorei(frameGraphGL.UNPACK_FLIP_Y_WEBGL, true);
 }
 
 const createShaders = (): void => {
-   program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
+   program = createWebGLProgram(frameGraphGL, vertexShaderText, fragmentShaderText);
 }
 
 export function setupFrameGraph(): void {
@@ -61,9 +65,61 @@ export function setupFrameGraph(): void {
 }
 
 export function renderFrameGraph(renderTime: number, frames: ReadonlyArray<FrameInfo>): void {
-   const vertexData = new Float32Array(frames.length * 6 * 5);
+   const vertexData = new Float32Array(frames.length * 6 * 5 + 6 * 5);
+
+   // Add 16ms line
+   {
+      const lineCenterY = lerp(-1, 1, TARGET_FRAME_RENDER_TIME / MAX_FRAME_RENDER_TIME);
+      
+      const x1 = -1;
+      const x2 = 1;
+      const y1 = lineCenterY - TARGET_RENDER_LINE_THICKNESS;
+      const y2 = lineCenterY + TARGET_RENDER_LINE_THICKNESS;
+
+      const r = 1;
+      const g = 0.64;
+      const b = 0;
+
+      vertexData[0] = x1;
+      vertexData[1] = y1;
+      vertexData[2] = r;
+      vertexData[3] = g;
+      vertexData[4] = b;
+
+      vertexData[5] = x2;
+      vertexData[6] = y1;
+      vertexData[7] = r;
+      vertexData[8] = g;
+      vertexData[9] = b;
+
+      vertexData[10] = x1;
+      vertexData[11] = y2;
+      vertexData[12] = r;
+      vertexData[13] = g;
+      vertexData[14] = b;
+
+      vertexData[15] = x1;
+      vertexData[16] = y2;
+      vertexData[17] = r;
+      vertexData[18] = g;
+      vertexData[19] = b;
+
+      vertexData[20] = x2;
+      vertexData[21] = y1;
+      vertexData[22] = r;
+      vertexData[23] = g;
+      vertexData[24] = b;
+
+      vertexData[25] = x2;
+      vertexData[26] = y2;
+      vertexData[27] = r;
+      vertexData[28] = g;
+      vertexData[29] = b;
+   }
    
    const currentTimeSeconds = renderTime / 1000;
+
+   let previousX = -1;
    
    // Calculate vertices
    for (let i = 0; i < frames.length; i++) {
@@ -74,63 +130,67 @@ export function renderFrameGraph(renderTime: number, frames: ReadonlyArray<Frame
       const frameRenderTime = secondsSinceFrameStartTime - secondsSinceFrameEndTime;
       const percentageHeight = frameRenderTime / MAX_FRAME_RENDER_TIME;
 
-      const x1 = lerp(-1, 1, secondsSinceFrameEndTime / FRAME_GRAPH_RECORD_TIME);
-      const x2 = lerp(-1, 1, secondsSinceFrameStartTime / FRAME_GRAPH_RECORD_TIME);
+      const x1 = previousX;
+      const x2 = lerp(1, -1, secondsSinceFrameEndTime / FRAME_GRAPH_RECORD_TIME);
       const y1 = -1;
       const y2 = lerp(-1, 1, percentageHeight);
+
+      previousX = lerp(1, -1, secondsSinceFrameStartTime / FRAME_GRAPH_RECORD_TIME);
 
       const r = 1;
       const g = 0;
       const b = 0;
 
-      vertexData[i * 6 * 5] = x1;
-      vertexData[i * 6 * 5 + 1] = y1;
-      vertexData[i * 6 * 5 + 2] = r;
-      vertexData[i * 6 * 5 + 3] = g;
-      vertexData[i * 6 * 5 + 4] = b;
+      const dataOffset = i + 1; // +1 to account for the 16ms line
 
-      vertexData[i * 6 * 5 + 5] = x2;
-      vertexData[i * 6 * 5 + 6] = y1;
-      vertexData[i * 6 * 5 + 7] = r;
-      vertexData[i * 6 * 5 + 8] = g;
-      vertexData[i * 6 * 5 + 9] = b;
+      vertexData[dataOffset * 6 * 5] = x1;
+      vertexData[dataOffset * 6 * 5 + 1] = y1;
+      vertexData[dataOffset * 6 * 5 + 2] = r;
+      vertexData[dataOffset * 6 * 5 + 3] = g;
+      vertexData[dataOffset * 6 * 5 + 4] = b;
 
-      vertexData[i * 6 * 5 + 10] = x1;
-      vertexData[i * 6 * 5 + 11] = y2;
-      vertexData[i * 6 * 5 + 12] = r;
-      vertexData[i * 6 * 5 + 13] = g;
-      vertexData[i * 6 * 5 + 14] = b;
+      vertexData[dataOffset * 6 * 5 + 5] = x2;
+      vertexData[dataOffset * 6 * 5 + 6] = y1;
+      vertexData[dataOffset * 6 * 5 + 7] = r;
+      vertexData[dataOffset * 6 * 5 + 8] = g;
+      vertexData[dataOffset * 6 * 5 + 9] = b;
 
-      vertexData[i * 6 * 5 + 15] = x1;
-      vertexData[i * 6 * 5 + 16] = y2;
-      vertexData[i * 6 * 5 + 17] = r;
-      vertexData[i * 6 * 5 + 18] = g;
-      vertexData[i * 6 * 5 + 19] = b;
+      vertexData[dataOffset * 6 * 5 + 10] = x1;
+      vertexData[dataOffset * 6 * 5 + 11] = y2;
+      vertexData[dataOffset * 6 * 5 + 12] = r;
+      vertexData[dataOffset * 6 * 5 + 13] = g;
+      vertexData[dataOffset * 6 * 5 + 14] = b;
 
-      vertexData[i * 6 * 5 + 20] = x2;
-      vertexData[i * 6 * 5 + 21] = y1;
-      vertexData[i * 6 * 5 + 22] = r;
-      vertexData[i * 6 * 5 + 23] = g;
-      vertexData[i * 6 * 5 + 24] = b;
+      vertexData[dataOffset * 6 * 5 + 15] = x1;
+      vertexData[dataOffset * 6 * 5 + 16] = y2;
+      vertexData[dataOffset * 6 * 5 + 17] = r;
+      vertexData[dataOffset * 6 * 5 + 18] = g;
+      vertexData[dataOffset * 6 * 5 + 19] = b;
 
-      vertexData[i * 6 * 5 + 25] = x2;
-      vertexData[i * 6 * 5 + 26] = y2;
-      vertexData[i * 6 * 5 + 27] = r;
-      vertexData[i * 6 * 5 + 28] = g;
-      vertexData[i * 6 * 5 + 29] = b;
+      vertexData[dataOffset * 6 * 5 + 20] = x2;
+      vertexData[dataOffset * 6 * 5 + 21] = y1;
+      vertexData[dataOffset * 6 * 5 + 22] = r;
+      vertexData[dataOffset * 6 * 5 + 23] = g;
+      vertexData[dataOffset * 6 * 5 + 24] = b;
+
+      vertexData[dataOffset * 6 * 5 + 25] = x2;
+      vertexData[dataOffset * 6 * 5 + 26] = y2;
+      vertexData[dataOffset * 6 * 5 + 27] = r;
+      vertexData[dataOffset * 6 * 5 + 28] = g;
+      vertexData[dataOffset * 6 * 5 + 29] = b;
    }
    
-   gl.useProgram(program);
+   frameGraphGL.useProgram(program);
 
-   const buffer = gl.createBuffer()!;
-   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-   gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
+   const buffer = frameGraphGL.createBuffer()!;
+   frameGraphGL.bindBuffer(frameGraphGL.ARRAY_BUFFER, buffer);
+   frameGraphGL.bufferData(frameGraphGL.ARRAY_BUFFER, vertexData, frameGraphGL.STATIC_DRAW);
 
-   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
-   gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   frameGraphGL.vertexAttribPointer(0, 2, frameGraphGL.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
+   frameGraphGL.vertexAttribPointer(1, 3, frameGraphGL.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
 
-   gl.enableVertexAttribArray(0);
-   gl.enableVertexAttribArray(1);
+   frameGraphGL.enableVertexAttribArray(0);
+   frameGraphGL.enableVertexAttribArray(1);
 
-   gl.drawArrays(gl.TRIANGLES, 0, frames.length * 6);
+   frameGraphGL.drawArrays(frameGraphGL.TRIANGLES, 0, frames.length * 6);
 }

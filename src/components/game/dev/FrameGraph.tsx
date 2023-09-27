@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { FRAME_GRAPH_RECORD_TIME, renderFrameGraph, setupFrameGraph } from "../../../rendering/frame-graph-rendering";
+import { useEffect, useState } from "react";
+import { FRAME_GRAPH_RECORD_TIME, renderFrameGraph } from "../../../rendering/frame-graph-rendering";
 
 export interface FrameInfo {
    readonly startTime: number;
@@ -27,10 +27,21 @@ export let updateFrameGraph: () => void = () => {};
 //    }
 // }
 
-const FrameGraph = (): JSX.Element => {
-   useEffect(() => {
-      setupFrameGraph();
+export let showFrameGraph: () => void;
+export let hideFrameGraph: () => void;
 
+const FrameGraph = (): JSX.Element => {
+   const [isVisible, setIsVisible] = useState(false);
+   const [fps, setFPS] = useState(-1);
+   
+   useEffect(() => {
+      showFrameGraph = (): void => {
+         setIsVisible(true);
+      }
+      hideFrameGraph = (): void => {
+         setIsVisible(false);
+      }
+      
       updateFrameGraph = (): void => {
          const renderTime = performance.now();
          const now = renderTime / 1000;
@@ -42,6 +53,9 @@ const FrameGraph = (): JSX.Element => {
                trackedFrames.splice(i, 1);
             }
          }
+
+         const fps = trackedFrames.length / FRAME_GRAPH_RECORD_TIME;
+         setFPS(fps);
          
          renderFrameGraph(renderTime, trackedFrames);
       }
@@ -51,7 +65,8 @@ const FrameGraph = (): JSX.Element => {
       }
    }, []);
    
-   return <div id="frame-graph">
+   return <div id="frame-graph" className={!isVisible ? "hidden" : undefined}>
+      <p className="fps">FPS {fps}</p>
       <canvas id="frame-graph-canvas"></canvas>
    </div>;
 }

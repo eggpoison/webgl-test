@@ -8,7 +8,7 @@ import { GameDataPacket, GameObjectDebugData, Point, SETTINGS } from "webgl-test
 import { createEntityShaders, renderGameObjects } from "./rendering/game-object-rendering";
 import Client from "./client/Client";
 import { calculateCursorWorldPosition, getCursorX, getCursorY, getMouseTargetEntity, handleMouseMovement, renderCursorTooltip } from "./mouse";
-import { updateDevEntityViewer } from "./components/game/dev/EntityViewer";
+import { refreshDebugInfo } from "./components/game/dev/DebugInfo";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createShaderStrings, createWebGLContext, gl, halfWindowHeight, halfWindowWidth, resizeCanvas } from "./webgl";
 import { loadTextures } from "./textures";
 import { hidePauseScreen, showPauseScreen, toggleSettingsMenu } from "./components/game/GameScreen";
@@ -17,7 +17,7 @@ import Item from "./items/Item";
 import { clearPressedKeys } from "./keyboard-input";
 import { createHitboxShaders, renderEntityHitboxes } from "./rendering/hitbox-rendering";
 import { updateInteractInventory, updatePlayerMovement } from "./player-input";
-import { clearServerTicks, updateDebugScreenCurrentTime, updateDebugScreenFPS, updateDebugScreenRenderTime } from "./components/game/dev/GameInfoDisplay";
+import { clearServerTicks, updateDebugScreenFPS, updateDebugScreenRenderTime } from "./components/game/dev/GameInfoDisplay";
 import { createWorldBorderShaders, renderWorldBorder } from "./rendering/world-border-rendering";
 import { createSolidTileShaders, renderSolidTiles } from "./rendering/tile-rendering/solid-tile-rendering";
 import { createRiverShaders, renderRivers } from "./rendering/tile-rendering/river-rendering";
@@ -38,6 +38,7 @@ import { definiteGameState } from "./game-state/game-states";
 import Entity from "./entities/Entity";
 import DroppedItem from "./items/DroppedItem";
 import Projectile from "./projectiles/Projectile";
+import { setupFrameGraph } from "./rendering/frame-graph-rendering";
 
 let listenersHaveBeenCreated = false;
 
@@ -182,6 +183,10 @@ abstract class Game {
             createWallBorderShaders();
             createAmbientOcclusionShaders();
 
+            if (isDev()) {
+               setupFrameGraph();
+            }
+
             createRenderChunks();
 
             this.hasInitialised = true;
@@ -198,8 +203,6 @@ abstract class Game {
          const deltaTime = currentTime - Game.lastTime;
          Game.lastTime = currentTime;
       
-         // updateFrameCounter(deltaTime / 1000);
-
          this.lag += deltaTime;
          while (this.lag >= 1000 / SETTINGS.TPS) {
             if (this.queuedPackets.length > 0) {
@@ -214,7 +217,9 @@ abstract class Game {
                   }
                   this.queuedPackets.splice(0, this.queuedPackets.length);
                } else {
-                  const numSkippedPackets = Math.min(this.numSkippablePackets, this.queuedPackets.length - 1);
+                  // @Temporary
+                  // const numSkippedPackets = Math.min(this.numSkippablePackets, this.queuedPackets.length - 1);
+                  const numSkippedPackets = 0;
                   Client.unloadGameDataPacket(this.queuedPackets[numSkippedPackets]);
                   this.queuedPackets.splice(0, numSkippedPackets + 1);
                   this.numSkippablePackets--;
@@ -268,7 +273,7 @@ abstract class Game {
 
       Item.decrementGlobalItemSwitchDelay();
 
-      if (isDev()) updateDevEntityViewer();
+      if (isDev()) refreshDebugInfo();
    }
 
    private static updatePlayer(): void {

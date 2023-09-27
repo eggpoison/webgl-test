@@ -76,8 +76,15 @@ class RenderPart extends RenderObject {
          }
 
          // Rotate the offset to match the parent object's rotation
-         const rotatedOffsetX = rotateXAroundPoint(offset.x, offset.y, 0, 0, parentRenderObject.rotation);
-         const rotatedOffsetY = rotateYAroundPoint(offset.x, offset.y, 0, 0, parentRenderObject.rotation);
+         let rotatedOffsetX: number;
+         let rotatedOffsetY: number;
+         if (this.inheritParentRotation) {
+            rotatedOffsetX = rotateXAroundPoint(offset.x, offset.y, 0, 0, parentRenderObject.rotation);
+            rotatedOffsetY = rotateYAroundPoint(offset.x, offset.y, 0, 0, parentRenderObject.rotation);
+         } else {
+            rotatedOffsetX = offset.x;
+            rotatedOffsetY = offset.y;
+         }
 
          this.renderPosition.x += rotatedOffsetX;
          this.renderPosition.y += rotatedOffsetY;

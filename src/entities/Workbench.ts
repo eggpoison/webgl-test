@@ -5,6 +5,8 @@ import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 
 class Workbench extends Entity {
+   public static readonly SIZE = 80;
+   
    public readonly type = "workbench";
    
    constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number) {
@@ -12,8 +14,8 @@ class Workbench extends Entity {
 
       this.attachRenderPart(
          new RenderPart(
-            80,
-            80,
+            Workbench.SIZE,
+            Workbench.SIZE,
             "entities/workbench/workbench.png",
             0,
             0

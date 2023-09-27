@@ -43,9 +43,9 @@ html, body {
    transform: translateX(-50%);
 }
 
-#canvas-wrapper.hidden {
-   opacity: 0;
-   pointer-events: none;
+.hidden {
+   opacity: 0 !important;
+   pointer-events: none !important;
 }
 
 /* Held item */

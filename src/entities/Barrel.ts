@@ -7,7 +7,7 @@ import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 
 class Barrel extends Entity {
-   private static readonly RADIUS = 40;
+   public static readonly SIZE = 80;
 
    public type = "barrel" as const;
 
@@ -20,8 +20,8 @@ class Barrel extends Entity {
 
       this.attachRenderPart(
          new RenderPart(
-            Barrel.RADIUS * 2,
-            Barrel.RADIUS * 2,
+            Barrel.SIZE,
+            Barrel.SIZE,
             "entities/barrel/barrel.png",
             0,
             0

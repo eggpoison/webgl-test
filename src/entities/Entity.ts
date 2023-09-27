@@ -3,6 +3,47 @@ import GameObject from "../GameObject";
 import Particle from "../Particle";
 import Board from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
+import { createSlimePoolParticle } from "../generic-particles";
+
+// Use prime numbers / 100 to ensure a decent distribution of different types of particles
+const HEALING_PARTICLE_AMOUNTS = [0.02, 0.13, 0.41];
+const HEALING_PARTICLE_TEXTURE_INDEXES = [3 * 8 + 1, 3 * 8 + 2, 3 * 8 + 3];
+
+const createHealingParticle = (originX: number, originY: number, size: number): void => {
+   const offsetMagnitude = 40 * Math.random();
+   const offsetDirection = 2 * Math.PI * Math.random();
+   const spawnPositionX = originX + offsetMagnitude * Math.sin(offsetDirection);
+   const spawnPositionY = originY + offsetMagnitude * Math.cos(offsetDirection);
+
+   const moveSpeed = randFloat(20, 30);
+   const moveDirection = 2 * Math.PI * Math.random();
+   const velocityX = moveSpeed * Math.sin(moveDirection);
+   const velocityY = moveSpeed * Math.cos(moveDirection);
+   
+   const lifetime = randFloat(0.8, 1.2);
+   
+   const particle = new Particle(lifetime);
+   particle.getOpacity = () => {
+      return 1 - particle.age / lifetime;
+   }
+
+   addTexturedParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.high,
+      64, 64,
+      spawnPositionX, spawnPositionY,
+      velocityX, velocityY,
+      0, 0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      HEALING_PARTICLE_TEXTURE_INDEXES[size],
+      0, 0, 0
+   );
+   Board.highTexturedParticles.push(particle);
+}
 
 abstract class Entity extends GameObject {
    public static readonly BURNING_PARTICLE_COLOURS: ReadonlyArray<ParticleColour> = [
@@ -209,39 +250,27 @@ abstract class Entity extends GameObject {
       this.mobAIType = entityData.mobAIType;
    }
 
+   public createHealingParticles(amountHealed: number): void {
+      // Create healing particles depending on the amount the entity was healed
+      let remainingHealing = amountHealed;
+      for (let size = 2; size >= 0;) {
+         if (remainingHealing >= HEALING_PARTICLE_AMOUNTS[size]) {
+            createHealingParticle(this.position.x, this.position.y, size);
+            remainingHealing -= HEALING_PARTICLE_AMOUNTS[size];
+         } else {
+            size--;
+         }
+      }
+   }
+
    protected onHit?(hitData: HitData): void;
 
    public registerHit(hitData: HitData): void {
       // If the entity is hit by a flesh sword, create slime puddles
       if (hitData.flags & HitFlags.HIT_BY_FLESH_SWORD) {
-         const spawnOffsetMagnitude = 30 * Math.random()
-         const spawnOffsetDirection = 2 * Math.PI * Math.random();
-         const spawnPositionX = this.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
-         const spawnPositionY = this.position.y + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
-   
-         const lifetime = 7.5;
-
-         const particle = new Particle(lifetime);
-         particle.getOpacity = (): number => {
-            return lerp(0.75, 0, particle.age / lifetime);
+         for (let i = 0; i < 2; i++) {
+            createSlimePoolParticle(this.position.x, this.position.y, 32);
          }
-
-         addTexturedParticleToBufferContainer(
-            particle,
-            ParticleRenderLayer.low,
-            64, 64,
-            spawnPositionX, spawnPositionY,
-            0, 0,
-            0, 0,
-            0,
-            2 * Math.PI * Math.random(),
-            0,
-            0,
-            0,
-            8 * 1 + 4,
-            0, 0, 0
-         );
-         Board.lowTexturedParticles.push(particle);
       }
       
       if (typeof this.onHit !== "undefined") {
