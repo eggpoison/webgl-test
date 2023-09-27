@@ -91,7 +91,7 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
                // Spawn the player
                definiteGameState.playerUsername = username;
                const playerSpawnPosition = new Point(spawnPositionRef.current!.x, spawnPositionRef.current!.y);
-               const player = new Player(playerSpawnPosition, new Set([Player.createNewPlayerHitbox()]), initialGameDataPacket.playerID, null, TribeType.plainspeople, null, null, -1, -99999, -99999, username);
+               const player = new Player(playerSpawnPosition, new Set([Player.createNewPlayerHitbox()]), initialGameDataPacket.playerID, null, TribeType.plainspeople, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, -1, -99999, -99999, username);
                Player.setInstancePlayer(player);
                Board.addEntity(player);
 

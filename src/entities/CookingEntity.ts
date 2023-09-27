@@ -2,11 +2,11 @@ import { Point, InventoryData, EntityData, randFloat, lerp, randItem } from "web
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { Inventory } from "../items/Item";
-import { createInventoryFromData } from "../items/item-creation";
 import Entity from "./Entity";
 import Board from "../Board";
 import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
+import { createInventoryFromData } from "../inventory-manipulation";
 
 abstract class CookingEntity extends Entity {
    public fuelInventory: Inventory;

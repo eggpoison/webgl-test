@@ -6,3 +6,18 @@
    transform: translateX(-50%);
    z-index: 2;
 }
+
+#tribesman-inventory .hotbar-container {
+   display: flex;
+}
+
+#tribesman-inventory .hotbar {
+   margin-right: 5rem;
+}
+
+#tribesman-inventory .backpack {
+   margin-bottom: 1rem;
+   display: inline-block;
+   margin-left: 50%;
+   transform: translateX(-50%);
+}

@@ -5,7 +5,7 @@ import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import CookingEntity from "./CookingEntity";
 
 class Campfire extends CookingEntity {
-   private static readonly SIZE = 104;
+   public static readonly SIZE = 104;
 
    public type: EntityType = "campfire";
 

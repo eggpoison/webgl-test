@@ -22,11 +22,13 @@ const TileDebugInfo = ({ tile }: TileDebugInfoProps) => {
       
       <p>x: <span className="highlight">{tile.x}</span>, y: <span className="highlight">{tile.y}</span></p>
 
-      <p>chunkX: <span className="highlight">{chunkX}</span>, chunkY: <span className="highlight">{chunkY}</span></p>
+      <p>Chunk: <span className="highlight">{chunkX}-{chunkY}</span></p>
 
       {tile.type === "water" ? <>
          <p>Flow direction: <span className="highlight">{Board.getRiverFlowDirection(tile.x, tile.y)}</span></p>
       </> : undefined}
+
+      <br />
    </>;
 }
 
@@ -67,10 +69,14 @@ const EntityDebugInfo = ({ entity }: EntityDebugInfoProps) => {
       <p>Chunks: {chunkDisplayText}</p>
 
       {typeof entity.mobAIType !== "undefined" ? <>
-         <br />
-
          <p>Current Mob AI: <span className="highlight">{entity.mobAIType}</span></p>
       </> : null}
+
+      {entity.hasOwnProperty("tribeID") ? <>
+         <p>Tribe ID: <span className="highlight">{(entity as any).tribeID}</span></p>
+      </> : undefined}
+
+      <br />
    </>;
 }
 

@@ -37,7 +37,7 @@ const InventoryContainer = ({ entityID, inventory, className }: InventoryProps) 
       );
    }
 
-   return <div className={className !== "undefined" ? `inventory-container ${className}` : undefined}>
+   return <div className={className !== "undefined" ? `inventory-container ${className}` : "inventory-container"}>
       {itemSlots}
    </div>;
 }

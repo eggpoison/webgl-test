@@ -1,4 +1,4 @@
-import { EntityData, HitData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, ItemType, Point, SETTINGS, ToolItemInfo, TribeType, lerp, randFloat, randItem } from "webgl-test-shared";
+import { EntityData, HitData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, InventoryData, ItemType, Point, SETTINGS, ToolItemInfo, TribeType, lerp, randFloat, randItem } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -10,6 +10,8 @@ import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, cr
 import Board from "../Board";
 import { latencyGameState } from "../game-state/game-states";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
+import { Inventory } from "../items/Item";
+import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
 
 type FilterFoodItemTypes<T extends ItemType> = (typeof ITEM_TYPE_RECORD)[T] extends "food" ? never : T;
 
@@ -80,7 +82,9 @@ abstract class TribeMember extends Entity {
 
    private armourRenderPart: RenderPart | null = null;
 
-   public armourType: ItemType | null;
+   public armourSlotInventory: Inventory;
+   public backpackSlotInventory: Inventory;
+   public backpackInventory: Inventory;
 
    private activeItemRenderPart: RenderPart;
 
@@ -91,18 +95,22 @@ abstract class TribeMember extends Entity {
    public lastAttackTicks: number;
    public lastEatTicks: number;
    
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, activeItem: ItemType | null, foodEatingType: ItemType | -1, lastAttackTicks: number, lastEatTicks: number) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, foodEatingType: ItemType | -1, lastAttackTicks: number, lastEatTicks: number) {
       super(position, hitboxes, id);
 
       this.tribeID = tribeID;
       this.tribeType = tribeType;
 
-      this.updateArmourRenderPart(armour);
-      this.armourType = armour;
+      // @Cleanup: Too verbose
+      this.updateArmourRenderPart(armourSlotInventory.itemSlots.hasOwnProperty(1) ? armourSlotInventory.itemSlots[1].type : null);
       this.activeItem = activeItem;
       this.lastAttackTicks = lastAttackTicks;
       this.lastEatTicks = lastEatTicks;
       this.foodEatingType = foodEatingType;
+
+      this.armourSlotInventory = createInventoryFromData(armourSlotInventory);
+      this.backpackSlotInventory = createInventoryFromData(backpackSlotInventory);
+      this.backpackInventory = createInventoryFromData(backpackInventory);
       
       this.activeItemRenderPart = new RenderPart(
          TribeMember.TOOL_ACTIVE_ITEM_SIZE,
@@ -303,7 +311,7 @@ abstract class TribeMember extends Entity {
 
    protected overrideTileMoveSpeedMultiplier(): number | null {
       // If snow armour is equipped, move at normal speed on snow tiles
-      if (this.armourType === ItemType.frost_armour && this.tile.type === "snow") {
+      if (this.armourSlotInventory.itemSlots.hasOwnProperty(1) && this.armourSlotInventory.itemSlots[1].type === ItemType.frost_armour && this.tile.type === "snow") {
          return 1;
       }
       return null;
@@ -388,15 +396,18 @@ abstract class TribeMember extends Entity {
    public updateFromData(entityData: EntityData<"player"> | EntityData<"tribesman">): void {
       super.updateFromData(entityData);
 
-      this.activeItem = entityData.clientArgs[3];
-      this.foodEatingType = entityData.clientArgs[4]
-      this.lastAttackTicks = entityData.clientArgs[5];
+      updateInventoryFromData(this.armourSlotInventory, entityData.clientArgs[2]);
+      updateInventoryFromData(this.backpackSlotInventory, entityData.clientArgs[3]);
+      updateInventoryFromData(this.backpackInventory, entityData.clientArgs[4]);
+      this.activeItem = entityData.clientArgs[5];
+      this.foodEatingType = entityData.clientArgs[6]
+      this.lastAttackTicks = entityData.clientArgs[7];
       this.updateActiveItemRenderPart(this.activeItem);
 
       this.tribeID = entityData.clientArgs[0];
-      this.armourType = entityData.clientArgs[2];
 
-      this.updateArmourRenderPart(entityData.clientArgs[2]);
+      // @Cleanup
+      this.updateArmourRenderPart(this.armourSlotInventory.itemSlots.hasOwnProperty(1) ? this.armourSlotInventory.itemSlots[1].type : null);
    }
 
    public updateActiveItem(activeItemType: ItemType | null): void {

@@ -8,9 +8,8 @@ import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import DroppedItem from "../items/DroppedItem";
 import { Tile } from "../Tile";
-import { createItem } from "../items/item-creation";
 import { gameScreenSetIsDead } from "../components/game/GameScreen";
-import Item, { Inventory, ItemSlots } from "../items/Item";
+import { Inventory } from "../items/Item";
 import { updateActiveItem, updateInventoryIsOpen } from "../player-input";
 import { Hotbar_update } from "../components/game/inventories/Hotbar";
 import { setHeldItemVisual } from "../components/game/HeldItem";
@@ -29,6 +28,7 @@ import { BackpackInventoryMenu_update } from "../components/game/inventories/Bac
 import { createWhiteSmokeParticle } from "../generic-particles";
 import Particle from "../Particle";
 import { addMonocolourParticleToBufferContainer, ParticleRenderLayer } from "../rendering/particle-rendering";
+import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -319,86 +319,46 @@ abstract class Client {
       }
    }
 
-   private static updateInventoryFromServerData(inventory: Inventory, inventoryData: InventoryData): void {
-      inventory.width = inventoryData.width;
-      inventory.height = inventoryData.height;
-      
-      // Remove any items which have been removed from the inventory
-      for (const [itemSlot, item] of Object.entries(inventory.itemSlots) as unknown as ReadonlyArray<[number, Item]>) {
-         // If it doesn't exist in the server data, remove it
-         if (!inventoryData.itemSlots.hasOwnProperty(itemSlot) || inventoryData.itemSlots[itemSlot].id !== item.id) {
-            delete inventory.itemSlots[itemSlot];
-         }
-      }
-
-      // Add all new items from the server data
-      for (const [itemSlot, itemData] of Object.entries(inventoryData.itemSlots).map(([itemSlot, itemData]) => [Number(itemSlot), itemData] as const)) {
-         // If the item doesn't exist in the inventory, add it
-         if (!inventory.itemSlots.hasOwnProperty(itemSlot) || inventory.itemSlots[itemSlot].id !== itemData.id) {
-            inventory.itemSlots[itemSlot] = createItem(itemData.type, itemData.count, itemData.id);
-         } else {
-            // Otherwise the item needs to be updated with the new server data
-            inventory.itemSlots[itemSlot].updateFromServerData(itemData);
-         }
-      }
-   }
-   
-   private static createInventoryFromServerData(inventoryData: InventoryData): Inventory {
-      const itemSlots: ItemSlots = {};
-
-      // Add all new items from the server data
-      for (const [itemSlot, itemData] of Object.entries(inventoryData.itemSlots).map(([itemSlot, itemData]) => [Number(itemSlot), itemData] as const)) {
-         // If the item doesn't exist in the inventory, add it
-         itemSlots[itemSlot] = createItem(itemData.type, itemData.count, itemData.id);
-      }
-      
-      const inventory: Inventory = {
-         itemSlots: itemSlots,
-         width: inventoryData.width,
-         height: inventoryData.height,
-         inventoryName: inventoryData.inventoryName
-      };
-      return inventory;
-   }
-
    private static updatePlayerInventory(playerInventoryData: PlayerInventoryData) {
       const hotbarHasChanged = this.inventoryHasChanged(definiteGameState.hotbar, playerInventoryData.hotbar);
-      this.updateInventoryFromServerData(definiteGameState.hotbar, playerInventoryData.hotbar);
+      updateInventoryFromData(definiteGameState.hotbar, playerInventoryData.hotbar);
 
       // @Cleanup should this be here?
       updateActiveItem();
 
       const backpackHasChanged = this.inventoryHasChanged(definiteGameState.backpack, playerInventoryData.backpackInventory);
       if (definiteGameState.backpack !== null) {
-         this.updateInventoryFromServerData(definiteGameState.backpack, playerInventoryData.backpackInventory);
+         updateInventoryFromData(definiteGameState.backpack, playerInventoryData.backpackInventory);
       } else {
-         definiteGameState.backpack = this.createInventoryFromServerData(playerInventoryData.backpackInventory);
+         definiteGameState.backpack = createInventoryFromData(playerInventoryData.backpackInventory);
       }
 
       // Crafting output item
       if (definiteGameState.craftingOutputSlot !== null) {
-         this.updateInventoryFromServerData(definiteGameState.craftingOutputSlot, playerInventoryData.craftingOutputItemSlot);
+         updateInventoryFromData(definiteGameState.craftingOutputSlot, playerInventoryData.craftingOutputItemSlot);
       } else {
-         definiteGameState.craftingOutputSlot = this.createInventoryFromServerData(playerInventoryData.craftingOutputItemSlot);
+         definiteGameState.craftingOutputSlot = createInventoryFromData(playerInventoryData.craftingOutputItemSlot);
       }
       CraftingMenu_setCraftingMenuOutputItem(definiteGameState.craftingOutputSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.craftingOutputSlot.itemSlots[1] : null);
 
       // Backpack slot
       const backpackSlotHasChanged = this.inventoryHasChanged(definiteGameState.backpackSlot, playerInventoryData.backpackSlot);
-      this.updateInventoryFromServerData(definiteGameState.backpackSlot, playerInventoryData.backpackSlot);
+      updateInventoryFromData(definiteGameState.backpackSlot, playerInventoryData.backpackSlot);
 
       // Held item
-      this.updateInventoryFromServerData(definiteGameState.heldItemSlot, playerInventoryData.heldItemSlot);
+      updateInventoryFromData(definiteGameState.heldItemSlot, playerInventoryData.heldItemSlot);
       setHeldItemVisual(definiteGameState.heldItemSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.heldItemSlot.itemSlots[1] : null);
 
       // Armour slot
       const armourSlotHasChanged = this.inventoryHasChanged(definiteGameState.armourSlot, playerInventoryData.armourSlot);
-      this.updateInventoryFromServerData(definiteGameState.armourSlot, playerInventoryData.armourSlot);
+      updateInventoryFromData(definiteGameState.armourSlot, playerInventoryData.armourSlot);
       
+      // @Temporary @Cleanup: I think this is only done as the Player instance doesn't use updateFromData
       if (Player.instance !== null && armourSlotHasChanged) {
-         const armourType = definiteGameState.armourSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.armourSlot.itemSlots[1].type : null;
-         Player.instance.updateArmourRenderPart(armourType);
-         Player.instance.armourType = armourType;
+         updateInventoryFromData(Player.instance.armourSlotInventory, playerInventoryData.armourSlot);
+         // const armourType = definiteGameState.armourSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.armourSlot.itemSlots[1].type : null;
+         // Player.instance.updateArmourRenderPart(armourType);
+         // Player.instance.armourType = armourType;
       }
 
       if (hotbarHasChanged || backpackSlotHasChanged || armourSlotHasChanged) {
@@ -597,7 +557,7 @@ abstract class Client {
       updateHealthBar(Player.MAX_HEALTH);
       
       const spawnPosition = Point.unpackage(respawnDataPacket.spawnPosition);
-      const player = new Player(spawnPosition, new Set([Player.createNewPlayerHitbox()]), respawnDataPacket.playerID, null, TribeType.plainspeople, null, null, -1, -99999, -99999, definiteGameState.playerUsername);
+      const player = new Player(spawnPosition, new Set([Player.createNewPlayerHitbox()]), respawnDataPacket.playerID, null, TribeType.plainspeople, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, -1, -99999, -99999, definiteGameState.playerUsername);
       Player.setInstancePlayer(player);
       Board.addEntity(player);
 

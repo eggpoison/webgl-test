@@ -7,6 +7,7 @@ import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { createFootprintParticle } from "../generic-particles";
 import Board from "../Board";
+import { updateInventoryFromData } from "../inventory-manipulation";
 
 class Tribesman extends TribeMember {
    public readonly type = "tribesman";
@@ -22,8 +23,8 @@ class Tribesman extends TribeMember {
 
    private numFootstepsTaken = 0;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, tribeID: number | null, tribeType: TribeType, armour: ItemType | null, activeItem: ItemType | null, foodEatingType: ItemType | -1, lastAttackTicks: number, lastEatTicks: number, inventoryData: InventoryData) {
-      super(position, hitboxes, id, tribeID, tribeType, armour, activeItem, foodEatingType, lastAttackTicks, lastEatTicks);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, foodEatingType: ItemType | -1, lastAttackTicks: number, lastEatTicks: number, inventoryData: InventoryData) {
+      super(position, hitboxes, id, tribeID, tribeType, armourSlotInventory, backpackSlotInventory, backpackInventory, activeItem, foodEatingType, lastAttackTicks, lastEatTicks);
 
       this.attachRenderPart(
          new RenderPart(
@@ -104,14 +105,7 @@ class Tribesman extends TribeMember {
    public updateFromData(entityData: EntityData<"tribesman">): void {
       super.updateFromData(entityData);
 
-      // Update inventory from data
-      const inventoryData = entityData.clientArgs[7];
-      const itemSlots: ItemSlots = {};
-      for (const [itemSlot, itemData] of Object.entries(inventoryData.itemSlots)) {
-         const item = createItem(itemData.type, itemData.count, itemData.id);
-         itemSlots[Number(itemSlot)] = item;
-      }
-      this.inventory.itemSlots = itemSlots;
+      updateInventoryFromData(this.inventory, entityData.clientArgs[9]);
    }
 }
 

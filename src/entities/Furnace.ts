@@ -5,7 +5,7 @@ import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import CookingEntity from "./CookingEntity";
 
 class Furnace extends CookingEntity {
-   private static readonly SIZE = 80;
+   public static readonly SIZE = 80;
 
    public type: EntityType = "furnace";
 

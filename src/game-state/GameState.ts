@@ -19,7 +19,7 @@ abstract class GameState {
    public backpack: Inventory | null = null;
 
    /** Stores the item in the player's backpack item slot. */
-   public backpackSlot: Inventory = { itemSlots: {}, width: 1, height: 1, inventoryName: "backpackItemSlot" };
+   public backpackSlot: Inventory = { itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot" };
 
    /** Item in the player's crafting output item slot. */
    public craftingOutputSlot: Inventory | null = null;

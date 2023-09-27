@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useReducer, useState } from "react";
 import { ItemType } from "webgl-test-shared";
-import CLIENT_ITEM_INFO_RECORD, { getItemTypeImage } from "../../../client-item-info";
+import { getItemTypeImage } from "../../../client-item-info";
 import Item from "../../../items/Item";
 import { leftClickItemSlot, rightClickItemSlot } from "../../../inventory-manipulation";
 import ItemSlot from "./ItemSlot";
@@ -11,15 +11,15 @@ export let Hotbar_update: () => void = () => {};
 
 export let Hotbar_setHotbarSelectedItemSlot: (itemSlot: number) => void = () => {};
 
-const backpackItemTypes: ReadonlyArray<ItemType> = [ItemType.leather_backpack, ItemType.raw_beef];
+export const backpackItemTypes: ReadonlyArray<ItemType> = [ItemType.leather_backpack, ItemType.raw_beef];
 // @Cleanup: Make this automatically detect armour item types
-const armourItemTypes: ReadonlyArray<ItemType> = [ItemType.frost_armour, ItemType.meat_suit];
+export const armourItemTypes: ReadonlyArray<ItemType> = [ItemType.frost_armour, ItemType.meat_suit];
 
 const Hotbar = () => {
    const [selectedItemSlot, setSelectedItemSlot] = useState(1);
    const [, update] = useReducer(x => x + 1, 0);
 
-   const clickBackpackItemSlot = useCallback((e: MouseEvent): void => {
+   const clickBackpackSlot = useCallback((e: MouseEvent): void => {
       // Stop the player placing a non-backpack item in the backpack slot
       if (definiteGameState.heldItemSlot.itemSlots.hasOwnProperty(1) && !backpackItemTypes.includes(definiteGameState.heldItemSlot.itemSlots[1].type)) {
          return;
@@ -61,25 +61,19 @@ const Hotbar = () => {
       }
    }
 
-   let backpackItemSlotElement: JSX.Element;
+   let backpackSlotElement: JSX.Element;
    if (definiteGameState.backpackSlot.itemSlots.hasOwnProperty(1)) {
-      const backpackItemInfo = CLIENT_ITEM_INFO_RECORD[definiteGameState.backpackSlot.itemSlots[1].type];
-      
-      // @Incomplete Make the player unable to put non-backpacks in the backpack slot
-      const imageSrc = require("../../../images/" + backpackItemInfo.textureSource);
-      backpackItemSlotElement = <ItemSlot onClick={clickBackpackItemSlot} isSelected={false} picturedItemImageSrc={imageSrc} />
+      const image = getItemTypeImage(definiteGameState.backpackSlot.itemSlots[1].type);
+      backpackSlotElement = <ItemSlot onClick={clickBackpackSlot} isSelected={false} picturedItemImageSrc={image} />
    } else {
       const imageSrc = require("../../../images/miscellaneous/backpack-wireframe.png");
-      backpackItemSlotElement = <ItemSlot onClick={clickBackpackItemSlot} isSelected={false} picturedItemImageSrc={imageSrc} />
+      backpackSlotElement = <ItemSlot onClick={clickBackpackSlot} isSelected={false} picturedItemImageSrc={imageSrc} />
    }
 
    let armourItemSlotElement: JSX.Element;
    if (definiteGameState.armourSlot.itemSlots.hasOwnProperty(1)) {
-      const armourItemInfo = CLIENT_ITEM_INFO_RECORD[definiteGameState.armourSlot.itemSlots[1].type];
-      
-      // @Incomplete Make the player unable to put non-armour in the armour slot
-      const imageSrc = require("../../../images/" + armourItemInfo.textureSource);
-      armourItemSlotElement = <ItemSlot onClick={clickArmourItemSlot} isSelected={false} picturedItemImageSrc={imageSrc} />
+      const image = getItemTypeImage(definiteGameState.armourSlot.itemSlots[1].type);
+      armourItemSlotElement = <ItemSlot onClick={clickArmourItemSlot} isSelected={false} picturedItemImageSrc={image} />
    } else {
       const imageSrc = require("../../../images/miscellaneous/armour-wireframe.png");
       armourItemSlotElement = <ItemSlot onClick={clickArmourItemSlot} isSelected={false} picturedItemImageSrc={imageSrc} />
@@ -96,7 +90,7 @@ const Hotbar = () => {
       </div>
 
       <div id="special-item-slots" className="inventory">
-         {backpackItemSlotElement}
+         {backpackSlotElement}
          {armourItemSlotElement}
       </div>
    </div>;

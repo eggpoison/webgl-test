@@ -5,7 +5,7 @@ import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 
 class TribeTotem extends Entity {
-   private static readonly RADIUS = 60;
+   public static readonly SIZE = 120;
 
    private static readonly BANNER_WIDTH = 40;
    private static readonly BANNER_HEIGHT = 16;
@@ -24,8 +24,8 @@ class TribeTotem extends Entity {
       super(position, hitboxes, id);
 
       const renderPart = new RenderPart(
-         TribeTotem.RADIUS * 2,
-         TribeTotem.RADIUS * 2,
+         TribeTotem.SIZE,
+         TribeTotem.SIZE,
          `entities/tribe-totem/tribe-totem.png`,
          1,
          0

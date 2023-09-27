@@ -5,7 +5,7 @@ import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 
 class TribeHut extends Entity {
-   private static readonly SIZE = 88;
+   public static readonly SIZE = 88;
 
    private static readonly DOOR_WIDTH = 12;
    private static readonly DOOR_HEIGHT = 36;
@@ -38,8 +38,7 @@ class TribeHut extends Entity {
          0
       );
       doorRenderPart.offset = new Point(-TribeHut.SIZE/4, TribeHut.SIZE/2 + TribeHut.DOOR_HEIGHT/2);
-      hutRenderPart.attachRenderPart(doorRenderPart);
-
+      this.attachRenderPart(doorRenderPart);
    }
 }
 

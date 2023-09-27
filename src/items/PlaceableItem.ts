@@ -2,11 +2,18 @@ import { ItemType } from "webgl-test-shared";
 import Item from "./Item";
 import Game from "../Game";
 import { latencyGameState } from "../game-state/game-states";
+import Workbench from "../entities/Workbench";
+import TribeTotem from "../entities/TribeTotem";
+import TribeHut from "../entities/TribeHut";
+import Barrel from "../entities/Barrel";
+import Campfire from "../entities/Campfire";
+import Furnace from "../entities/Furnace";
 
 type PlaceableEntityInfo = {
    readonly textureSource: string;
    readonly width: number;
    readonly height: number;
+   readonly placeOffset: number;
    /** Optionally defines extra criteria for being placed */
    canPlace?(): boolean;
 }
@@ -14,13 +21,15 @@ type PlaceableEntityInfo = {
 export const PLACEABLE_ENTITY_INFO_RECORD: Partial<Record<ItemType, PlaceableEntityInfo>> = {
    [ItemType.workbench]: {
       textureSource: "workbench/workbench.png",
-      width: 80,
-      height: 80
+      width: Workbench.SIZE,
+      height: Workbench.SIZE,
+      placeOffset: Workbench.SIZE / 2
    },
    [ItemType.tribe_totem]: {
       textureSource: "tribe-totem/tribe-totem.png",
-      width: 120,
-      height: 120,
+      width: TribeTotem.SIZE,
+      height: TribeTotem.SIZE,
+      placeOffset: TribeTotem.SIZE / 2,
       canPlace: (): boolean => {
          // The player can only place a tribe totem if they aren't in a tribe
          return Game.tribe === null;
@@ -28,8 +37,9 @@ export const PLACEABLE_ENTITY_INFO_RECORD: Partial<Record<ItemType, PlaceableEnt
    },
    [ItemType.tribe_hut]: {
       textureSource: "tribe-hut/tribe-hut.png",
-      width: 88,
-      height: 88,
+      width: TribeHut.SIZE,
+      height: TribeHut.SIZE,
+      placeOffset: TribeHut.SIZE / 2,
       canPlace: (): boolean => {
          // The player can't place huts if they aren't in a tribe
          if (Game.tribe === null) return false;
@@ -39,18 +49,21 @@ export const PLACEABLE_ENTITY_INFO_RECORD: Partial<Record<ItemType, PlaceableEnt
    },
    [ItemType.barrel]: {
       textureSource: "barrel/barrel.png",
-      width: 80,
-      height: 80
+      width: Barrel.SIZE,
+      height: Barrel.SIZE,
+      placeOffset: Barrel.SIZE / 2
    },
    [ItemType.campfire]: {
       textureSource: "campfire/campfire.png",
-      width: 104,
-      height: 104
+      width: Campfire.SIZE,
+      height: Campfire.SIZE,
+      placeOffset: Campfire.SIZE / 2
    },
    [ItemType.furnace]: {
       textureSource: "furnace/furnace.png",
-      width: 80,
-      height: 80
+      width: Furnace.SIZE,
+      height: Furnace.SIZE,
+      placeOffset: Furnace.SIZE / 2
    }
 };
 
