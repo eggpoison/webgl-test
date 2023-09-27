@@ -19,6 +19,15 @@ class Slime extends Entity {
       28
    ];
 
+   private static readonly EYE_OFFSETS: ReadonlyArray<number> = [16, 24, 34];
+   private static readonly EYE_WIDTHS: ReadonlyArray<number> = [28, 40, 52];
+   private static readonly EYE_HEIGHTS: ReadonlyArray<number> = [12, 20, 24];
+
+   private static readonly EYE_SHAKE_START_FREQUENCY = 0.5;
+   private static readonly EYE_SHAKE_END_FREQUENCY = 1.25;
+   private static readonly EYE_SHAKE_START_AMPLITUDE = 0.07;
+   private static readonly EYE_SHAKE_END_AMPLITUDE = 0.2;
+
    private static readonly NUM_PUDDLE_PARTICLES_ON_HIT: ReadonlyArray<number> = [1, 2, 3];
    private static readonly NUM_PUDDLE_PARTICLES_ON_DEATH: ReadonlyArray<number> = [3, 5, 7];
    private static readonly NUM_SPECK_PARTICLES_ON_HIT: ReadonlyArray<number> = [3, 5, 7];
@@ -30,35 +39,56 @@ class Slime extends Entity {
 
    private readonly size: number;
 
+   private eyeRotation: number;
    private numOrbs: number;
    private readonly orbRotations = new Array<number>();
+   private anger: number;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, size: SlimeSize, eyeRotation: number, orbs: ReadonlyArray<SlimeOrbData>) {
+   private internalTickCounter = 0;
+
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, size: SlimeSize, eyeRotation: number, orbs: ReadonlyArray<SlimeOrbData>, anger: number) {
       super(position, hitboxes, id);
 
       const spriteSize = Slime.SIZES[size];
 
       const sizeString = Slime.SIZE_STRINGS[size];
 
+      this.eyeRotation = eyeRotation;
+      this.anger = anger;
+      this.size = size;
+
       // Body
-      this.attachRenderPart(
-         new RenderPart(
-            spriteSize,
-            spriteSize,
-            `entities/slime/slime-${sizeString}-body.png`,
-            2,
-            0
-         )
-      );
+      this.attachRenderPart(new RenderPart(
+         spriteSize,
+         spriteSize,
+         `entities/slime/slime-${sizeString}-body.png`,
+         2,
+         0
+      ));
 
       // Eye
       this.eyeRenderPart = new RenderPart(
-         spriteSize,
-         spriteSize,
+         Slime.EYE_WIDTHS[size],
+         Slime.EYE_HEIGHTS[size],
          `entities/slime/slime-${sizeString}-eye.png`,
          3,
          eyeRotation
       );
+      this.eyeRenderPart.offset = (): Point => {
+         let rotation = this.eyeRotation;
+         if (this.anger >= 0) {
+            const frequency = lerp(Slime.EYE_SHAKE_START_FREQUENCY, Slime.EYE_SHAKE_END_FREQUENCY, this.anger);
+            this.internalTickCounter += frequency;
+            
+            let amplitude = lerp(Slime.EYE_SHAKE_START_AMPLITUDE, Slime.EYE_SHAKE_END_AMPLITUDE, this.anger) * 100;
+            amplitude /= Math.PI * Slime.SIZES[this.size];
+            rotation += amplitude * Math.sin(this.internalTickCounter);
+         } else {
+            this.internalTickCounter = 0;
+         }
+         
+         return Point.fromVectorForm(Slime.EYE_OFFSETS[this.size], rotation);
+      }
       this.eyeRenderPart.inheritParentRotation = false;
       this.attachRenderPart(this.eyeRenderPart);
 
@@ -72,8 +102,6 @@ class Slime extends Entity {
             0
          )
       );
-
-      this.size = size;
 
       this.numOrbs = orbs.length;
       for (let i = 0; i < orbs.length; i++) {
@@ -100,7 +128,9 @@ class Slime extends Entity {
          1,
          orbData.rotation
       );
-      renderPart.offset = Point.fromVectorForm(offsetMagnitude, this.orbRotations[i]);
+      renderPart.offset = () => {
+         return Point.fromVectorForm(offsetMagnitude, this.orbRotations[i]);
+      }
       this.attachRenderPart(renderPart);
    }
 
@@ -114,8 +144,11 @@ class Slime extends Entity {
 
    public updateFromData(entityData: EntityData<"slime">): void {
       super.updateFromData(entityData);
+
+      this.anger = entityData.clientArgs[3];
       
       // Update eye's rotation
+      this.eyeRotation = entityData.clientArgs[1];
       this.eyeRenderPart.rotation = entityData.clientArgs[1];
 
       for (let i = 0; i < entityData.clientArgs[2].length; i++) {
