@@ -15,17 +15,16 @@ const NerdVision = () => {
 
    useEffect(() => {
       addKeyListener("~", (e: KeyboardEvent) => {
-         if (isEnabled) {
-            e.preventDefault();
+         e.preventDefault();
+         
+         setTerminalStartingVisibility(true);
+         showFrameGraph();
 
-            setTerminalStartingVisibility(true);
+         if (isEnabled) {
             setTerminalVisibility(true);
             forceTerminalFocus();
             setTerminalButtonOpened(true);
          } else {
-            e.preventDefault();
-            
-            setTerminalStartingVisibility(true);
             setIsEnabled(true);
          }
       }, "terminal_quick_open");
