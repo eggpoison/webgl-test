@@ -70,11 +70,6 @@ class TribeTotem extends Entity {
       this.bannerRenderParts[banner.hutNum] = renderPart;
    }
 
-   private removeBanner(bannerNum: number): void {
-      this.removeRenderPart(this.bannerRenderParts[bannerNum]);
-      delete this.bannerRenderParts[bannerNum];
-   }
-
    private updateBanners(banners: ReadonlyArray<TribeTotemBanner>): void {
       const removedBannerNums = Object.keys(this.banners).map(num => Number(num));
       
@@ -93,7 +88,9 @@ class TribeTotem extends Entity {
       
       // Remove banners which are no longer there
       for (const hutNum of removedBannerNums) {
-         this.removeBanner(hutNum);
+         this.removeRenderPart(this.bannerRenderParts[hutNum]);
+         delete this.bannerRenderParts[hutNum];
+         delete this.banners[hutNum];
       }
    }
 

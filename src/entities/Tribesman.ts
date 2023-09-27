@@ -23,9 +23,13 @@ class Tribesman extends TribeMember {
 
    private numFootstepsTaken = 0;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, foodEatingType: ItemType | -1, lastAttackTicks: number, lastEatTicks: number, inventoryData: InventoryData) {
+   public activeItemSlot: number;
+
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, foodEatingType: ItemType | -1, lastAttackTicks: number, lastEatTicks: number, inventoryData: InventoryData, activeItemSlot: number) {
       super(position, hitboxes, id, tribeID, tribeType, armourSlotInventory, backpackSlotInventory, backpackInventory, activeItem, foodEatingType, lastAttackTicks, lastEatTicks);
 
+      this.activeItemSlot = activeItemSlot;
+      
       this.attachRenderPart(
          new RenderPart(
             Tribesman.RADIUS * 2,
@@ -106,6 +110,8 @@ class Tribesman extends TribeMember {
       super.updateFromData(entityData);
 
       updateInventoryFromData(this.inventory, entityData.clientArgs[9]);
+
+      this.activeItemSlot = entityData.clientArgs[10];
    }
 }
 

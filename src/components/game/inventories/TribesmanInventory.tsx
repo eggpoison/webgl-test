@@ -65,7 +65,7 @@ const TribesmanInventory = (props: TribesmanInventoryProps) => {
       ) : undefined}
 
       <div className="hotbar-container">
-         <InventoryContainer className="hotbar" entityID={props.entity.id} inventory={props.entity.inventory} />
+         <InventoryContainer className="hotbar" entityID={props.entity.id} inventory={props.entity.inventory} selectedItemSlot={props.entity.activeItemSlot} />
          {backpackSlotElement}
          {armourItemSlotElement}
       </div>
