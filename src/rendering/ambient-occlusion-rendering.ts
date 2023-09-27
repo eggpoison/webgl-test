@@ -69,8 +69,6 @@ in float v_bottomMarker;
 out vec4 outputColour;
 
 void main() {
-   outputColour = vec4(0.0, 0.0, 0.0, 0.0);
-
    float dist = 0.0;
    if (v_topLeftMarker > 0.5) {
       float topLeftDist = 1.0 - distance(vec2(0.0, 1.0), v_texCoord);
@@ -93,7 +91,6 @@ void main() {
       float topDist = v_texCoord.y;
       dist = max(dist, topDist - 0.5);
    }
-   // If there is a wall to the right, darken according to distance from the right wall
    if (v_rightMarker > 0.5) {
       float rightDist = v_texCoord.x;
       dist = max(dist, rightDist - 0.5);

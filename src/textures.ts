@@ -44,7 +44,6 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/human/frostling.png",
    "entities/boulder/boulder1.png",
    "entities/boulder/boulder2.png",
-   "entities/slime/slime.png",
    "entities/berry-bush1.png",
    "entities/berry-bush2.png",
    "entities/berry-bush3.png",
