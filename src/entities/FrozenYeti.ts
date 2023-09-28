@@ -5,8 +5,8 @@ import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 
 class FrozenYeti extends Entity {
-   private static readonly SIZE = 144;
-   private static readonly HEAD_SIZE = 72;
+   private static readonly SIZE = 152;
+   private static readonly HEAD_SIZE = 80;
 
    public readonly type = "frozen_yeti";
    

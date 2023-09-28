@@ -21,12 +21,10 @@ const ChargeMeter = () => {
    
    useEffect(() => {
       showChargeMeter = () => {
-         console.log("show");
          setIsVisible(true);
       }
 
       hideChargeMeter = () => {
-         console.log("hide");
          setIsVisible(false);
       }
       

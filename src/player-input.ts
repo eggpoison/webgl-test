@@ -343,19 +343,21 @@ export function createPlayerInputListeners(): void {
    createInventoryToggleListeners();
 }
 
+const isSlow = (): boolean => {
+   return latencyGameState.playerAction === TribeMemberAction.eat || latencyGameState.playerAction === TribeMemberAction.charge_bow || latencyGameState.playerIsPlacingEntity;
+}
+
 const getPlayerTerminalVelocity = (): number => {
-   if (latencyGameState.playerAction === TribeMemberAction.eat || latencyGameState.playerIsPlacingEntity) {
+   if (isSlow()) {
       return PLAYER_SLOW_TERMINAL_VELOCITY;
    }
-
    return PLAYER_TERMINAL_VELOCITY;
 }
 
 const getPlayerAcceleration = (): number => {
-   if (latencyGameState.playerAction === TribeMemberAction.eat || latencyGameState.playerIsPlacingEntity) {
+   if (isSlow()) {
       return PLAYER_SLOW_ACCELERATION;
    }
-
    return PLAYER_ACCELERATION;
 }
 

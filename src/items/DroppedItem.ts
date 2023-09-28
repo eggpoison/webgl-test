@@ -5,7 +5,49 @@ import CLIENT_ITEM_INFO_RECORD from "../client-item-info";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import Board from "../Board";
-import { BloodParticleSize, createBloodParticle } from "../generic-particles";
+import { BloodParticleSize } from "../generic-particles";
+import Particle from "../Particle";
+import { addMonocolourParticleToBufferContainer, ParticleRenderLayer } from "../rendering/particle-rendering";
+
+export function createFrozenYetiBloodParticle(size: BloodParticleSize, spawnPositionX: number, spawnPositionY: number, moveDirection: number, moveSpeed: number, hasDrag: boolean): void {
+   const lifetime = randFloat(0.3, 0.4);
+   
+   const pixelSize = size === BloodParticleSize.large ? 8 : 4;
+
+   const velocityX = moveSpeed * Math.sin(moveDirection);
+   const velocityY = moveSpeed * Math.cos(moveDirection);
+
+   const friction = hasDrag ? moveSpeed / lifetime / 1.2 : 0;
+
+   const particle = new Particle(lifetime);
+   particle.getOpacity = (): number => {
+      return 1 - particle.age / lifetime;
+   };
+
+   let r = 90/255;
+   let g = 159/255;
+   let b = 205/255;
+   const darkenFactor = randFloat(-0.3, 0.2);
+   r -= darkenFactor;
+   g -= darkenFactor;
+   b -= darkenFactor;
+
+   addMonocolourParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.high,
+      pixelSize, pixelSize,
+      spawnPositionX, spawnPositionY,
+      velocityX, velocityY,
+      0, 0,
+      friction,
+      2 * Math.PI * Math.random(),
+      0,
+      0,
+      0,
+      r, g, b
+   );
+   Board.highMonocolourParticles.push(particle);
+}
 
 class DroppedItem extends GameObject implements BaseItemInfo {
    public readonly itemType: ItemType;
@@ -37,7 +79,7 @@ class DroppedItem extends GameObject implements BaseItemInfo {
             const spawnPositionOffsetDirection = 2 * Math.PI * Math.random();
             const spawnPositionX = this.position.x + spawnPositionOffsetMagnitude * Math.sin(spawnPositionOffsetDirection);
             const spawnPositionY = this.position.y + spawnPositionOffsetMagnitude * Math.cos(spawnPositionOffsetDirection);
-            createBloodParticle(BloodParticleSize.small, spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(40, 60), true);
+            createFrozenYetiBloodParticle(BloodParticleSize.small, spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(40, 60), true);
          }
       }
    }
