@@ -151,6 +151,26 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       textureSource: "items/deep-frost-heart.png",
       name: "Deep Frost Heart",
       description: ""
+   },
+   [ItemType.deep_frost_sword]: {
+      textureSource: "items/deep-frost-sword.png",
+      name: "Deep Frost Sword",
+      description: ""
+   },
+   [ItemType.deep_frost_pickaxe]: {
+      textureSource: "items/deep-frost-pickaxe.png",
+      name: "Deep Frost Pickaxe",
+      description: ""
+   },
+   [ItemType.deep_frost_axe]: {
+      textureSource: "items/deep-frost-axe.png",
+      name: "Deep Frost Axe",
+      description: ""
+   },
+   [ItemType.deep_frost_armour]: {
+      textureSource: "items/deep-frost-armour.png",
+      name: "Deep Frost Armour",
+      description: ""
    }
 };
 

@@ -129,7 +129,7 @@ const Ingredients = ({ recipe }: IngredientsProps) => {
 }
 
 const RECIPE_BROWSER_WIDTH = 3;
-const MIN_RECIPE_BROWSER_HEIGHT = 6;
+const MIN_RECIPE_BROWSER_HEIGHT = 9;
 
 export let setCraftingMenuAvailableRecipes: (craftingRecipes: Array<CraftingRecipe>) => void = () => {};
 export let setCraftingMenuAvailableCraftingStations: (craftingStations: Set<CraftingStation>) => void = () => {};
