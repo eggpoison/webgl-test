@@ -1,4 +1,4 @@
-import { FoodItemInfo, ItemType } from "webgl-test-shared";
+import { FoodItemInfo, ItemType, TribeMemberAction } from "webgl-test-shared";
 import Player from "../entities/Player";
 import Item from "./Item";
 import Board from "../Board";
@@ -20,7 +20,7 @@ class FoodItem extends Item implements FoodItemInfo {
    public tick(): void {
       super.tick();
       
-      if (this.isActive() && latencyGameState.playerIsEating) {
+      if (this.isActive() && latencyGameState.playerAction === TribeMemberAction.eat) {
          if (!this.canEat()) {
             // If the player can no longer eat food without wasting it, stop eating
             this.stopEating();
@@ -38,8 +38,6 @@ class FoodItem extends Item implements FoodItemInfo {
    public onRightMouseButtonDown(): void {
       if (this.canEat()) {
          this.startEating();
-
-         Player.instance!.lastEatTicks = Board.ticks;
       }
    }
 
@@ -47,17 +45,21 @@ class FoodItem extends Item implements FoodItemInfo {
       this.stopEating();
    }
 
-   protected onDeselect(): void {
+   public onDeselect(): void {
       this.stopEating();
    }
 
    private startEating(): void {
-      latencyGameState.playerIsEating = true;
+      latencyGameState.playerAction = TribeMemberAction.eat;
+      Player.instance!.action = TribeMemberAction.eat;
       Player.instance!.foodEatingType = this.type;
+      // @Cleanup: Is this necessary?
+      Player.instance!.lastActionTicks = Board.ticks;
    }
 
    private stopEating(): void {
-      latencyGameState.playerIsEating = false;
+      latencyGameState.playerAction = TribeMemberAction.none;
+      Player.instance!.action = TribeMemberAction.none;
       Player.instance!.foodEatingType = -1;
    }
 }

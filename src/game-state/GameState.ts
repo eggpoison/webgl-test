@@ -1,10 +1,10 @@
-import { SETTINGS } from "webgl-test-shared";
+import { SETTINGS, TribeMemberAction } from "webgl-test-shared";
 import { Inventory } from "../items/Item";
 
 /** Information about the game and player. */
 abstract class GameState {
-   /** Whether the instance player is eating. */
-   public playerIsEating: boolean = false;
+   /** The action the instance player is currently doing. */
+   public playerAction = TribeMemberAction.none;
    
    /** Whether the instance player is placing an entity. */
    public playerIsPlacingEntity: boolean = false;
@@ -30,7 +30,7 @@ abstract class GameState {
    public armourSlot: Inventory = { itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot" };
 
    public resetFlags(): void {
-      this.playerIsEating = false;
+      this.playerAction = TribeMemberAction.none;
       this.playerIsPlacingEntity = false;
    }
 }

@@ -88,7 +88,7 @@ class PlaceableItem extends Item {
       latencyGameState.playerIsPlacingEntity = true;
    }
 
-   protected onDeselect(): void {
+   public onDeselect(): void {
       latencyGameState.playerIsPlacingEntity = false;
    }
 }

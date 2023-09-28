@@ -33,7 +33,7 @@ class Yeti extends Entity {
          new RenderPart(
             Yeti.SIZE,
             Yeti.SIZE,
-            "entities/yeti.png",
+            "entities/yeti/yeti.png",
             1,
             0
          )
@@ -50,7 +50,7 @@ class Yeti extends Entity {
       const paw = new RenderPart(
          Yeti.PAW_SIZE,
          Yeti.PAW_SIZE,
-         "entities/yeti-paw.png",
+         "entities/yeti/yeti-paw.png",
          0,
          0
       );

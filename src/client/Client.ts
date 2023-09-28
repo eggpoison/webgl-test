@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, ProjectileData, VisibleChunkBounds, TribeType, TribeData, InventoryData, CircularHitboxData, RectangularHitboxData, randFloat, RESOURCE_ENTITY_TYPES, MOB_ENTITY_TYPES } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, ProjectileData, VisibleChunkBounds, TribeType, TribeData, InventoryData, CircularHitboxData, RectangularHitboxData, randFloat, RESOURCE_ENTITY_TYPES, MOB_ENTITY_TYPES, TribeMemberAction } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -559,7 +559,7 @@ abstract class Client {
       updateHealthBar(Player.MAX_HEALTH);
       
       const spawnPosition = Point.unpackage(respawnDataPacket.spawnPosition);
-      const player = new Player(spawnPosition, new Set([Player.createNewPlayerHitbox()]), respawnDataPacket.playerID, null, TribeType.plainspeople, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, -1, -99999, -99999, definiteGameState.playerUsername);
+      const player = new Player(spawnPosition, new Set([Player.createNewPlayerHitbox()]), respawnDataPacket.playerID, null, TribeType.plainspeople, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, definiteGameState.playerUsername);
       Player.setInstancePlayer(player);
       Board.addEntity(player);
 
@@ -597,7 +597,7 @@ abstract class Client {
             rotation: Player.instance.rotation,
             visibleChunkBounds: Camera.getVisibleChunkBounds(),
             selectedItemSlot: latencyGameState.selectedHotbarItemSlot,
-            isEating: latencyGameState.playerIsEating
+            action: latencyGameState.playerAction
          };
 
          this.socket.emit("player_data_packet", packet);

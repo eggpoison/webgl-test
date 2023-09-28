@@ -55,9 +55,6 @@ const TribesmanInventory = (props: TribesmanInventoryProps) => {
       const imageSrc = require("../../../images/miscellaneous/armour-wireframe.png");
       armourItemSlotElement = <ItemSlot className="backpack-slot" onClick={clickArmourItemSlot} isSelected={false} picturedItemImageSrc={imageSrc} />
    }
-   if(props.entity.backpackSlotInventory.itemSlots.hasOwnProperty(1)) {
-      console.log(props.entity.backpackInventory.width, props.entity.backpackInventory.height);
-   }
    
    return <div id="tribesman-inventory" className="inventory">
       {props.entity.backpackSlotInventory.itemSlots.hasOwnProperty(1) ? (

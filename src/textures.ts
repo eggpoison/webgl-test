@@ -62,8 +62,8 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/cactus/cactus-flower-large-3.png",
    "entities/cactus/cactus-flower-large-4.png",
    "entities/cactus/cactus-flower-5.png",
-   "entities/yeti.png",
-   "entities/yeti-paw.png",
+   "entities/yeti/yeti.png",
+   "entities/yeti/yeti-paw.png",
    "entities/ice-spikes/ice-spikes.png",
    "projectiles/ice-shard.png",
    "projectiles/wooden-arrow.png",
@@ -108,7 +108,14 @@ const TEXTURE_SOURCES: Array<string> = [
    "tiles/river-bed-highlights-3.png",
    "miscellaneous/particle-texture-atlas.png",
    "entities/krumblid/krumblid.png",
-   "miscellaneous/gravel-noise-texture.png"
+   "miscellaneous/gravel-noise-texture.png",
+   "entities/frozen-yeti/frozen-yeti.png",
+   "entities/frozen-yeti/frozen-yeti-head.png",
+   "items/wooden-bow-charge-1.png",
+   "items/wooden-bow-charge-2.png",
+   "items/wooden-bow-charge-3.png",
+   "items/wooden-bow-charge-4.png",
+   "items/wooden-bow-charge-5.png"
 ];
 
 // @Incomplete: Variable name

@@ -49,7 +49,7 @@ export const TILE_TYPE_RENDER_INFO_RECORD: Record<TileType, TileTypeRenderInfo> 
       textureSource: "tiles/snow.png"
    },
    ice: {
-      // textureSource: "ice.png"
+      // textureSource: "tiles/ice.png"
       textureSource: "tiles/ice-old.png"
    },
    magma: {
@@ -60,5 +60,8 @@ export const TILE_TYPE_RENDER_INFO_RECORD: Record<TileType, TileTypeRenderInfo> 
    },
    permafrost: {
       textureSource: "tiles/permafrost.png"
+   },
+   frost: {
+      textureSource: "tiles/frost.png"
    }
 };

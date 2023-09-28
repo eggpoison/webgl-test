@@ -1,34 +1,27 @@
-import { BowItemInfo, ItemType, SETTINGS } from "webgl-test-shared";
+import { TribeMemberAction } from "webgl-test-shared";
 import Item from "./Item";
-import { rightMouseButtonIsPressed } from "../player-input";
+import { latencyGameState } from "../game-state/game-states";
+import Player from "../entities/Player";
+import Board from "../Board";
 
 class BowItem extends Item {
-   public readonly projectileDamage: number;
-   public readonly projectileKnockback: number;
-   public readonly shotCooldown: number;
-
-   private cooldown = 0;
-
-   constructor(itemType: ItemType, count: number, id: number, itemInfo: BowItemInfo) {
-      super(itemType, count, id);
-
-      this.projectileDamage = itemInfo.projectileDamage;
-      this.projectileKnockback = itemInfo.projectileKnockback;
-      this.shotCooldown = itemInfo.shotCooldown;
-   }
+   // @Cleanup: shouldn't set player action here
    
-   public tick(): void {
-      super.tick();
+   public onRightMouseButtonDown(): void {
+      latencyGameState.playerAction = TribeMemberAction.charge_bow;
+      Player.instance!.action = TribeMemberAction.charge_bow;
+      Player.instance!.lastActionTicks = Board.ticks;
+   }
 
-      this.cooldown -= 1 / SETTINGS.TPS;
-      if (this.cooldown < 0) {
-         this.cooldown = 0;
-      }
-      
-      if (this.cooldown === 0 && rightMouseButtonIsPressed && this.isActive()) {
-         this.sendUsePacket();
-         this.cooldown = this.shotCooldown;
-      }
+   public onRightMouseButtonUp(): void {
+      this.sendUsePacket();
+      latencyGameState.playerAction = TribeMemberAction.none;
+      Player.instance!.action = TribeMemberAction.none;
+   }
+
+   public onDeselect(): void {
+      latencyGameState.playerAction = TribeMemberAction.none
+      Player.instance!.action = TribeMemberAction.none;
    }
 }
 

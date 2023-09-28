@@ -107,7 +107,7 @@ class Item {
 
    protected onSelect?(): void;
 
-   protected onDeselect?(): void;
+   public onDeselect?(): void;
 }
 
 export default Item;

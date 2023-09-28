@@ -23,6 +23,7 @@ import Snowball from "./entities/Snowball";
 import CircularHitbox from "./hitboxes/CircularHitbox";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import Krumblid from "./entities/Krumblid";
+import FrozenYeti from "./entities/FrozenYeti";
 
 export type EntityClassType<T extends EntityType> = new (position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, ...clientParams: Parameters<EntityInfoClientArgs[T]>) => Entity;
 
@@ -47,7 +48,8 @@ const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
    campfire: () => Campfire,
    furnace: () => Furnace,
    snowball: () => Snowball,
-   krumblid: () => Krumblid
+   krumblid: () => Krumblid,
+   frozen_yeti: () => FrozenYeti
 };
 
 export default ENTITY_CLASS_RECORD;

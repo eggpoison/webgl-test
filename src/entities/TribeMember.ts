@@ -1,4 +1,4 @@
-import { EntityData, HitData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, InventoryData, ItemType, Point, SETTINGS, ToolItemInfo, TribeType, lerp, randFloat, randItem } from "webgl-test-shared";
+import { BowItemInfo, EntityData, HitData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, InventoryData, ItemType, Point, SETTINGS, ToolItemInfo, TribeMemberAction, TribeType, lerp, randFloat, randItem } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -8,7 +8,6 @@ import { getFrameProgress } from "../GameObject";
 import Particle from "../Particle";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle } from "../generic-particles";
 import Board from "../Board";
-import { latencyGameState } from "../game-state/game-states";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 import { Inventory } from "../items/Item";
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
@@ -75,6 +74,15 @@ abstract class TribeMember extends Entity {
    private static readonly ITEM_SWING_RANGE = Math.PI / 2;
 
    private static readonly BLOOD_FOUNTAIN_INTERVAL = 0.1;
+
+   private static readonly BOW_CHARGE_TEXTURE_SOURCES: ReadonlyArray<string> = [
+      "items/wooden-bow.png",
+      "items/wooden-bow-charge-1.png",
+      "items/wooden-bow-charge-2.png",
+      "items/wooden-bow-charge-3.png",
+      "items/wooden-bow-charge-4.png",
+      "items/wooden-bow-charge-5.png"
+   ];
    
    private readonly tribeType: TribeType;
 
@@ -88,24 +96,24 @@ abstract class TribeMember extends Entity {
 
    private activeItemRenderPart: RenderPart;
 
-   protected activeItem: ItemType | null;
+   protected activeItemType: ItemType | null;
 
+   public action: TribeMemberAction
    public foodEatingType: ItemType | -1;
 
-   public lastAttackTicks: number;
-   public lastEatTicks: number;
+   public lastActionTicks: number;
    
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, foodEatingType: ItemType | -1, lastAttackTicks: number, lastEatTicks: number) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, action: TribeMemberAction, foodEatingType: ItemType | -1, lastActionTicks: number) {
       super(position, hitboxes, id);
 
       this.tribeID = tribeID;
       this.tribeType = tribeType;
+      this.action = action;
 
       // @Cleanup: Too verbose
       this.updateArmourRenderPart(armourSlotInventory.itemSlots.hasOwnProperty(1) ? armourSlotInventory.itemSlots[1].type : null);
-      this.activeItem = activeItem;
-      this.lastAttackTicks = lastAttackTicks;
-      this.lastEatTicks = lastEatTicks;
+      this.activeItemType = activeItem;
+      this.lastActionTicks = lastActionTicks;
       this.foodEatingType = foodEatingType;
 
       this.armourSlotInventory = createInventoryFromData(armourSlotInventory);
@@ -119,9 +127,10 @@ abstract class TribeMember extends Entity {
          0,
          0
       );
+      // @Cleanup (?): Merge most of the getOffset and getRotation functions into some logic in the tick/updateFromData functions
       this.activeItemRenderPart.offset = () => {
          // @Cleanup: This is kinda scuffed
-         if (this.activeItem === null) {
+         if (this.activeItemType === null) {
             return new Point(0, 0);
          }
 
@@ -131,51 +140,68 @@ abstract class TribeMember extends Entity {
          // be undefined and so we have to check for this case. Ideally this will not need to be done
          let itemSize: number;
          if (typeof this.activeItemRenderPart === "undefined") {
-            itemSize = this.getActiveItemSize(this.activeItem);
+            itemSize = this.getActiveItemSize(this.activeItemType);
          } else {
             itemSize = this.activeItemRenderPart.width;
          }
 
-         if (latencyGameState.playerIsEating) {
-            // Food eating animation
-            
-            const secondsSinceLastEat = this.getSecondsSinceLastAction(this.lastEatTicks);
+         const secondsSinceLastAction = this.getSecondsSinceLastAction(this.lastActionTicks);
 
-            let eatIntervalProgress = (secondsSinceLastEat % TribeMember.FOOD_EAT_INTERVAL) / TribeMember.FOOD_EAT_INTERVAL * 2;
-            if (eatIntervalProgress > 1) {
-               eatIntervalProgress = 2 - eatIntervalProgress;
+         switch (this.action) {
+            case TribeMemberAction.charge_bow: {
+               // 
+               // Bow charge animation
+               // 
+
+               return new Point(0, 26 + itemSize / 2);
             }
+            case TribeMemberAction.eat: {
+               // 
+               // Eating animation
+               // 
             
-            direction -= lerp(0, Math.PI/5, eatIntervalProgress);
 
-            const insetAmount = lerp(0, 17, eatIntervalProgress);
+               let eatIntervalProgress = (secondsSinceLastAction % TribeMember.FOOD_EAT_INTERVAL) / TribeMember.FOOD_EAT_INTERVAL * 2;
+               if (eatIntervalProgress > 1) {
+                  eatIntervalProgress = 2 - eatIntervalProgress;
+               }
+               
+               direction -= lerp(0, Math.PI/5, eatIntervalProgress);
 
-            return Point.fromVectorForm(26 + itemSize / 2 - insetAmount, direction);
-         } else {
-            // Attack animation
-            
-            const secondsSinceLastAttack = this.getSecondsSinceLastAction(this.lastAttackTicks);
-            const attackProgress = this.getAttackProgress(secondsSinceLastAttack);
+               const insetAmount = lerp(0, 17, eatIntervalProgress);
 
-            let direction: number;
-            if (attackProgress < TribeMember.ATTACK_LUNGE_TIME) {
-               // Lunge part of the animation
-               direction = lerp(TribeMember.ITEM_RESTING_DIRECTION, TribeMember.ITEM_RESTING_DIRECTION - TribeMember.ITEM_SWING_RANGE, attackProgress / TribeMember.ATTACK_LUNGE_TIME);
-            } else {
-               // Return part of the animation
-               const returnProgress = (attackProgress - TribeMember.ATTACK_LUNGE_TIME) / (1 - TribeMember.ATTACK_LUNGE_TIME);
-               direction = lerp(TribeMember.ITEM_RESTING_DIRECTION - TribeMember.ITEM_SWING_RANGE, TribeMember.ITEM_RESTING_DIRECTION, returnProgress);
+               return Point.fromVectorForm(26 + itemSize / 2 - insetAmount, direction);
             }
+            case TribeMemberAction.none: {
+               // 
+               // Attack animation
+               // 
+            
+               const attackProgress = this.getAttackProgress(secondsSinceLastAction);
 
-            return Point.fromVectorForm(26 + itemSize / 2, direction);
+               let direction: number;
+               if (attackProgress < TribeMember.ATTACK_LUNGE_TIME) {
+                  // Lunge part of the animation
+                  direction = lerp(TribeMember.ITEM_RESTING_DIRECTION, TribeMember.ITEM_RESTING_DIRECTION - TribeMember.ITEM_SWING_RANGE, attackProgress / TribeMember.ATTACK_LUNGE_TIME);
+               } else {
+                  // Return part of the animation
+                  const returnProgress = (attackProgress - TribeMember.ATTACK_LUNGE_TIME) / (1 - TribeMember.ATTACK_LUNGE_TIME);
+                  direction = lerp(TribeMember.ITEM_RESTING_DIRECTION - TribeMember.ITEM_SWING_RANGE, TribeMember.ITEM_RESTING_DIRECTION, returnProgress);
+               }
+
+               return Point.fromVectorForm(26 + itemSize / 2, direction);
+            }
          }
       };
       this.activeItemRenderPart.getRotation = () => {
-         if (latencyGameState.playerIsEating) {
+         const secondsSinceLastEat = this.getSecondsSinceLastAction(this.lastActionTicks);
+
+         // @Cleanup: Make into case statement
+         if (this.action === TribeMemberAction.charge_bow) {
+            return -Math.PI/4;
+         } else if (this.action === TribeMemberAction.eat) {
             // Eating animation
 
-            const secondsSinceLastEat = this.getSecondsSinceLastAction(this.lastEatTicks);
-            
             let eatIntervalProgress = (secondsSinceLastEat % TribeMember.FOOD_EAT_INTERVAL) / TribeMember.FOOD_EAT_INTERVAL * 2;
             if (eatIntervalProgress > 1) {
                eatIntervalProgress = 2 - eatIntervalProgress;
@@ -186,7 +212,7 @@ abstract class TribeMember extends Entity {
          } else {
             // Attack animation
 
-            const secondsSinceLastAttack = this.getSecondsSinceLastAction(this.lastAttackTicks);
+            const secondsSinceLastAttack = this.getSecondsSinceLastAction(this.lastActionTicks);
             const attackProgress = this.getAttackProgress(secondsSinceLastAttack);
 
             let direction: number;
@@ -221,8 +247,8 @@ abstract class TribeMember extends Entity {
 
    private getAttackProgress(secondsSinceLastAttack: number): number {
       let attackDuration: number;
-      if (this.activeItem !== null && (ITEM_TYPE_RECORD[this.activeItem] === "sword" || ITEM_TYPE_RECORD[this.activeItem] === "axe" || ITEM_TYPE_RECORD[this.activeItem] === "pickaxe")) {
-         attackDuration = (ITEM_INFO_RECORD[this.activeItem] as ToolItemInfo).attackCooldown;
+      if (this.activeItemType !== null && (ITEM_TYPE_RECORD[this.activeItemType] === "sword" || ITEM_TYPE_RECORD[this.activeItemType] === "axe" || ITEM_TYPE_RECORD[this.activeItemType] === "pickaxe")) {
+         attackDuration = (ITEM_INFO_RECORD[this.activeItemType] as ToolItemInfo).attackCooldown;
       } else {
          attackDuration = SETTINGS.DEFAULT_ATTACK_COOLDOWN;
       }
@@ -399,10 +425,12 @@ abstract class TribeMember extends Entity {
       updateInventoryFromData(this.armourSlotInventory, entityData.clientArgs[2]);
       updateInventoryFromData(this.backpackSlotInventory, entityData.clientArgs[3]);
       updateInventoryFromData(this.backpackInventory, entityData.clientArgs[4]);
-      this.activeItem = entityData.clientArgs[5];
-      this.foodEatingType = entityData.clientArgs[6]
-      this.lastAttackTicks = entityData.clientArgs[7];
-      this.updateActiveItemRenderPart(this.activeItem);
+      this.activeItemType = entityData.clientArgs[5];
+      this.action = entityData.clientArgs[6];
+      this.foodEatingType = entityData.clientArgs[7]
+      this.lastActionTicks = entityData.clientArgs[8];
+      this.updateActiveItemRenderPart(this.activeItemType);
+      this.updateChargeTexture();
 
       this.tribeID = entityData.clientArgs[0];
 
@@ -410,9 +438,25 @@ abstract class TribeMember extends Entity {
       this.updateArmourRenderPart(this.armourSlotInventory.itemSlots.hasOwnProperty(1) ? this.armourSlotInventory.itemSlots[1].type : null);
    }
 
+   public updateChargeTexture(): void {
+      // Change the bow charging texture based on the charge progress
+      if (this.action === TribeMemberAction.charge_bow && this.activeItemType !== null) {
+         const bowInfo = ITEM_INFO_RECORD[this.activeItemType] as BowItemInfo;
+         
+         const secondsSinceLastAction = this.getSecondsSinceLastAction(this.lastActionTicks);
+         const chargeProgress = secondsSinceLastAction / bowInfo.shotCooldown;
+
+         let textureIdx = Math.floor(chargeProgress * TribeMember.BOW_CHARGE_TEXTURE_SOURCES.length);
+         if (textureIdx >= TribeMember.BOW_CHARGE_TEXTURE_SOURCES.length) {
+            textureIdx = TribeMember.BOW_CHARGE_TEXTURE_SOURCES.length - 1;
+         }
+         this.activeItemRenderPart.textureSource = TribeMember.BOW_CHARGE_TEXTURE_SOURCES[textureIdx];
+      }
+   }
+
    public updateActiveItem(activeItemType: ItemType | null): void {
       this.updateActiveItemRenderPart(activeItemType);
-      this.activeItem = activeItemType;
+      this.activeItemType = activeItemType;
    }
 }
 

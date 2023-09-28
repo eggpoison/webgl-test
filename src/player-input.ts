@@ -1,4 +1,4 @@
-import { AttackPacket, SETTINGS, STATUS_EFFECT_MODIFIERS, Vector } from "webgl-test-shared";
+import { AttackPacket, SETTINGS, STATUS_EFFECT_MODIFIERS, TribeMemberAction, Vector } from "webgl-test-shared";
 import { addKeyListener, clearPressedKeys, keyIsPressed } from "./keyboard-input";
 import { CraftingMenu_setIsVisible } from "./components/game/menus/CraftingMenu";
 import Player from "./entities/Player";
@@ -52,7 +52,7 @@ const attack = (): void => {
    };
    Client.sendAttackPacket(attackPacket);
 
-   Player.instance.lastAttackTicks = Board.ticks;
+   Player.instance.lastActionTicks = Board.ticks;
 }
 
 export let rightMouseButtonIsPressed = false;
@@ -344,7 +344,7 @@ export function createPlayerInputListeners(): void {
 }
 
 const getPlayerTerminalVelocity = (): number => {
-   if (latencyGameState.playerIsEating || latencyGameState.playerIsPlacingEntity) {
+   if (latencyGameState.playerAction === TribeMemberAction.eat || latencyGameState.playerIsPlacingEntity) {
       return PLAYER_SLOW_TERMINAL_VELOCITY;
    }
 
@@ -352,7 +352,7 @@ const getPlayerTerminalVelocity = (): number => {
 }
 
 const getPlayerAcceleration = (): number => {
-   if (latencyGameState.playerIsEating || latencyGameState.playerIsPlacingEntity) {
+   if (latencyGameState.playerAction === TribeMemberAction.eat || latencyGameState.playerIsPlacingEntity) {
       return PLAYER_SLOW_ACCELERATION;
    }
 
@@ -431,9 +431,11 @@ export function updateActiveItem(): void {
       }
    }
 
+   // @Cleanup: Shouldn't be here
    if (Player.instance !== null) {
       if (definiteGameState.hotbar.itemSlots.hasOwnProperty(latencyGameState.selectedHotbarItemSlot)) {
          Player.instance.updateActiveItem(definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot].type);
+         Player.instance.updateChargeTexture();
       } else {
          Player.instance.updateActiveItem(null);
       }

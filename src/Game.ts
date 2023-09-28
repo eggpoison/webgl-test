@@ -273,6 +273,11 @@ abstract class Game {
 
       Item.decrementGlobalItemSwitchDelay();
 
+      // @Cleanup: This shouldn't be here
+      if (Player.instance !== null) {
+         Player.instance!.updateChargeTexture();
+      }
+
       if (isDev()) refreshDebugInfo();
    }
 

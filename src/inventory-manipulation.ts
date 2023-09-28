@@ -3,7 +3,7 @@ import { inventoryIsOpen } from "./components/game/menus/CraftingMenu";
 import { setHeldItemVisualPosition } from "./components/game/HeldItem";
 import Item, { Inventory, ItemSlots } from "./items/Item";
 import { interactInventoryIsOpen } from "./components/game/inventories/InteractInventory";
-import { definiteGameState } from "./game-state/game-states";
+import { definiteGameState, latencyGameState } from "./game-state/game-states";
 import { InventoryData } from "webgl-test-shared";
 import { createItem } from "./items/item-creation";
 
@@ -79,6 +79,11 @@ export function updateInventoryFromData(inventory: Inventory, inventoryData: Inv
    for (const [itemSlot, item] of Object.entries(inventory.itemSlots) as unknown as ReadonlyArray<[number, Item]>) {
       // If it doesn't exist in the server data, remove it
       if (!inventoryData.itemSlots.hasOwnProperty(itemSlot) || inventoryData.itemSlots[itemSlot].id !== item.id) {
+         // @Cleanup: hacky
+         if (inventoryData.inventoryName === "hotbar" && Number(itemSlot) === latencyGameState.selectedHotbarItemSlot && typeof item.onDeselect !== "undefined") {
+            item.onDeselect();
+         }
+         
          delete inventory.itemSlots[itemSlot];
       }
    }

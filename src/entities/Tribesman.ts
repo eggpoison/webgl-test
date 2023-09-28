@@ -1,4 +1,4 @@
-import { EntityData, InventoryData, ItemType, Point, TribeType } from "webgl-test-shared";
+import { EntityData, InventoryData, ItemType, Point, TribeMemberAction, TribeType } from "webgl-test-shared";
 import TribeMember from "./TribeMember";
 import RenderPart from "../render-parts/RenderPart";
 import { Inventory, ItemSlots } from "../items/Item";
@@ -25,8 +25,8 @@ class Tribesman extends TribeMember {
 
    public activeItemSlot: number;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, foodEatingType: ItemType | -1, lastAttackTicks: number, lastEatTicks: number, inventoryData: InventoryData, activeItemSlot: number) {
-      super(position, hitboxes, id, tribeID, tribeType, armourSlotInventory, backpackSlotInventory, backpackInventory, activeItem, foodEatingType, lastAttackTicks, lastEatTicks);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, action: TribeMemberAction, foodEatingType: ItemType | -1, lastActionTicks: number, inventoryData: InventoryData, activeItemSlot: number) {
+      super(position, hitboxes, id, tribeID, tribeType, armourSlotInventory, backpackSlotInventory, backpackInventory, activeItem, action, foodEatingType, lastActionTicks);
 
       this.activeItemSlot = activeItemSlot;
       
