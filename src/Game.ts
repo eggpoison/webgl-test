@@ -7,7 +7,7 @@ import { updateSpamFilter } from "./components/game/ChatBox";
 import { GameDataPacket, GameObjectDebugData, Point, SETTINGS } from "webgl-test-shared";
 import { createEntityShaders, renderGameObjects } from "./rendering/game-object-rendering";
 import Client from "./client/Client";
-import { calculateCursorWorldPosition, getCursorX, getCursorY, getMouseTargetEntity, handleMouseMovement, renderCursorTooltip } from "./mouse";
+import { calculateCursorWorldPosition, getCursorX, getCursorY, getMouseTargetEntity, handleMouseMovement, renderCursorTooltip, updateChargeMeter } from "./mouse";
 import { refreshDebugInfo } from "./components/game/dev/DebugInfo";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createShaderStrings, createWebGLContext, gl, halfWindowHeight, halfWindowWidth, resizeCanvas } from "./webgl";
 import { loadTextures } from "./textures";
@@ -407,6 +407,8 @@ abstract class Game {
 
       this.cursorPosition = calculateCursorWorldPosition();
       renderCursorTooltip();
+      
+      updateChargeMeter();
 
       if (!OPTIONS.nightVisionIsEnabled) {
          renderNight();

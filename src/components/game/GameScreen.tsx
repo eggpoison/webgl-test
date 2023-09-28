@@ -9,6 +9,7 @@ import HeldItem from "./HeldItem";
 import DeathScreen from "./DeathScreen";
 import BackpackInventoryMenu from "./inventories/BackpackInventory";
 import InteractInventory from "./inventories/InteractInventory";
+import ChargeMeter from "./ChargeMeter";
 
 export let showPauseScreen: () => void;
 export let hidePauseScreen: () => void;
@@ -57,6 +58,7 @@ const GameScreen = () => {
       <InteractInventory />
 
       <HeldItem />
+      <ChargeMeter />
 
       {isDead ? (
          <DeathScreen />

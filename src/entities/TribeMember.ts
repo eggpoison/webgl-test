@@ -235,7 +235,7 @@ abstract class TribeMember extends Entity {
       }
    }
 
-   private getSecondsSinceLastAction(lastActionTicks: number): number {
+   public getSecondsSinceLastAction(lastActionTicks: number): number {
       const ticksSinceLastAction = Board.ticks - lastActionTicks;
       let secondsSinceLastAction = ticksSinceLastAction / SETTINGS.TPS;
 
