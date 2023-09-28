@@ -24,6 +24,9 @@
    background-size: 100% 100%;
    image-rendering: pixelated;
 }
+#health-bar.frost-shield .health-slider {
+   background-image: url(../../images/miscellaneous/health-bar-frozen.png);
+}
 #health-bar .health-mask {
    width: 0;
    height: var(--health-bar-height);

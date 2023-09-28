@@ -14,7 +14,7 @@ import { updateActiveItem, updateInventoryIsOpen } from "../player-input";
 import { Hotbar_update } from "../components/game/inventories/Hotbar";
 import { setHeldItemVisual } from "../components/game/HeldItem";
 import { CraftingMenu_setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
-import { updateHealthBar } from "../components/game/HealthBar";
+import { HealthBar_setHasFrostShield, updateHealthBar } from "../components/game/HealthBar";
 import { registerServerTick, updateDebugScreenCurrentTime, updateDebugScreenTicks } from "../components/game/dev/GameInfoDisplay";
 import createProjectile from "../projectiles/projectile-creation";
 import Camera from "../Camera";
@@ -181,7 +181,6 @@ abstract class Client {
       Board.time = gameDataPacket.serverTime;
       updateDebugScreenCurrentTime(gameDataPacket.serverTime);
 
-
       if (isDev()) {
          Game.setGameObjectDebugData(gameDataPacket.gameObjectDebugData);
       }
@@ -209,6 +208,8 @@ abstract class Client {
       if (Player.instance !== null && definiteGameState.playerIsDead()) {
          this.killPlayer();
       }
+
+      HealthBar_setHasFrostShield(gameDataPacket.hasFrostShield);
    }
 
    private static updateTribe(tribeData: TribeData | null): void {
