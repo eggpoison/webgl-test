@@ -18,15 +18,6 @@ export function registerFrame(frameStartTime: number, frameEndTime: number): voi
 
 export let updateFrameGraph: () => void = () => {};
 
-// export function updateFrameCounter(deltaTime: number): void {
-//    for (let i = fpsTimers.length - 1; i >= 0; i--) {
-//       fpsTimers[i] -= deltaTime;
-//       if (fpsTimers[i] <= 0) {
-//          fpsTimers.splice(i, 1);
-//       }
-//    }
-// }
-
 export let showFrameGraph: () => void;
 export let hideFrameGraph: () => void;
 
@@ -45,6 +36,7 @@ const FrameGraph = (): JSX.Element => {
       updateFrameGraph = (): void => {
          const renderTime = performance.now();
          const now = renderTime / 1000;
+         
          // Remove old frames
          for (let i = trackedFrames.length - 1; i >= 0; i--) {
             const frame = trackedFrames[i];

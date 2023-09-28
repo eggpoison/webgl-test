@@ -6,7 +6,6 @@ import { interactInventoryIsOpen } from "./components/game/inventories/InteractI
 import { definiteGameState, latencyGameState } from "./game-state/game-states";
 import { InventoryData } from "webgl-test-shared";
 import { removeSelectedItem, selectItem } from "./player-input";
-// import { createItem } from "./items/item-creation";
 
 const canInteractWithItemSlots = (): boolean => {
    return inventoryIsOpen() || interactInventoryIsOpen();
