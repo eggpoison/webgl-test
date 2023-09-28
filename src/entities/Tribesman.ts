@@ -2,12 +2,11 @@ import { EntityData, InventoryData, ItemType, Point, TribeMemberAction, TribeTyp
 import TribeMember from "./TribeMember";
 import RenderPart from "../render-parts/RenderPart";
 import { Inventory, ItemSlots } from "../items/Item";
-import { createItem } from "../items/item-creation";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { createFootprintParticle } from "../generic-particles";
 import Board from "../Board";
-import { updateInventoryFromData } from "../inventory-manipulation";
+import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
 
 class Tribesman extends TribeMember {
    public readonly type = "tribesman";
@@ -76,24 +75,7 @@ class Tribesman extends TribeMember {
          this.attachRenderPart(rightEarRenderPart);
       }
 
-      this.inventory = this.createInventoryFromData(inventoryData);
-   }
-
-   private createInventoryFromData(inventoryData: InventoryData): Inventory {
-      const itemSlots: ItemSlots = {};
-      for (const [itemSlot, itemData] of Object.entries(inventoryData.itemSlots)) {
-         const item = createItem(itemData.type, itemData.count, itemData.id);
-         itemSlots[Number(itemSlot)] = item;
-      }
-      
-      const inventory: Inventory = {
-         itemSlots: itemSlots,
-         width: inventoryData.width,
-         height: inventoryData.height,
-         inventoryName: "hotbar"
-      };
-
-      return inventory;
+      this.inventory = createInventoryFromData(inventoryData);
    }
 
    public tick(): void {

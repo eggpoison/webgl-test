@@ -71,12 +71,12 @@ class RectangularHitbox extends Hitbox {
    public isColliding(otherHitbox: CircularHitbox | RectangularHitbox): boolean {
       if (otherHitbox.hasOwnProperty("radius")) {
          // Circular
-         return circleAndRectangleDoIntersect(otherHitbox.gameObject.position, (otherHitbox as CircularHitbox).radius, this.gameObject.position, this.width, this.height, this.gameObject.rotation);
+         return circleAndRectangleDoIntersect(otherHitbox.position, (otherHitbox as CircularHitbox).radius, this.position, this.width, this.height, this.gameObject.rotation);
       } else {
          // Rectangular
 
-         // If the distance between the entities is greater than the sum of their half diagonals then they're not colliding
-         const distance = this.gameObject.position.calculateDistanceBetween(otherHitbox.gameObject.position);
+         // If the distance between the hitboxes is greater than the sum of their half diagonals then they're not colliding
+         const distance = this.position.calculateDistanceBetween(otherHitbox.position);
          if (distance > this.halfDiagonalLength + (otherHitbox as RectangularHitbox).halfDiagonalLength) {
             return false;
          }

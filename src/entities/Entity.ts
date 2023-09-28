@@ -6,7 +6,7 @@ import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferConta
 import { createSlimePoolParticle } from "../generic-particles";
 
 // Use prime numbers / 100 to ensure a decent distribution of different types of particles
-const HEALING_PARTICLE_AMOUNTS = [0.02, 0.13, 0.41];
+const HEALING_PARTICLE_AMOUNTS = [0.05, 0.37, 1.01];
 const HEALING_PARTICLE_TEXTURE_INDEXES = [3 * 8 + 1, 3 * 8 + 2, 3 * 8 + 3];
 
 const createHealingParticle = (originX: number, originY: number, size: number): void => {
@@ -67,7 +67,6 @@ abstract class Entity extends GameObject {
       this.secondsSinceLastHit += 1 / SETTINGS.TPS;
 
       // Water splash particles
-      // @Incomplete
       if (this.isInRiver() && Board.tickIntervalHasPassed(0.15) && this.acceleration !== null) {
          const lifetime = 1.5;
 

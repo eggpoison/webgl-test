@@ -5,7 +5,8 @@ import Item, { Inventory, ItemSlots } from "./items/Item";
 import { interactInventoryIsOpen } from "./components/game/inventories/InteractInventory";
 import { definiteGameState, latencyGameState } from "./game-state/game-states";
 import { InventoryData } from "webgl-test-shared";
-import { createItem } from "./items/item-creation";
+import { removeSelectedItem, selectItem } from "./player-input";
+// import { createItem } from "./items/item-creation";
 
 const canInteractWithItemSlots = (): boolean => {
    return inventoryIsOpen() || interactInventoryIsOpen();
@@ -74,14 +75,16 @@ export function rightClickItemSlot(e: MouseEvent, entityID: number, inventory: I
 export function updateInventoryFromData(inventory: Inventory, inventoryData: InventoryData): void {
    inventory.width = inventoryData.width;
    inventory.height = inventoryData.height;
-   
+
    // Remove any items which have been removed from the inventory
-   for (const [itemSlot, item] of Object.entries(inventory.itemSlots) as unknown as ReadonlyArray<[number, Item]>) {
+   for (const [_itemSlot, item] of Object.entries(inventory.itemSlots)) {
+      const itemSlot = Number(_itemSlot);
       // If it doesn't exist in the server data, remove it
       if (!inventoryData.itemSlots.hasOwnProperty(itemSlot) || inventoryData.itemSlots[itemSlot].id !== item.id) {
-         // @Cleanup: hacky
-         if (inventoryData.inventoryName === "hotbar" && Number(itemSlot) === latencyGameState.selectedHotbarItemSlot && typeof item.onDeselect !== "undefined") {
-            item.onDeselect();
+         // @Cleanup: hacky. Detects when items have been removed from the hotbar. This ideally shouldn't be done here,
+         // because this code will run on ALL inventories which get updated from data while we only care about the hotbar.
+         if (inventoryData.inventoryName === "hotbar" && itemSlot === latencyGameState.selectedHotbarItemSlot) {
+            removeSelectedItem(item);
          }
          
          delete inventory.itemSlots[itemSlot];
@@ -92,10 +95,15 @@ export function updateInventoryFromData(inventory: Inventory, inventoryData: Inv
    for (const [itemSlot, itemData] of Object.entries(inventoryData.itemSlots).map(([itemSlot, itemData]) => [Number(itemSlot), itemData] as const)) {
       // If the item doesn't exist in the inventory, add it
       if (!inventory.itemSlots.hasOwnProperty(itemSlot) || inventory.itemSlots[itemSlot].id !== itemData.id) {
-         inventory.itemSlots[itemSlot] = createItem(itemData.type, itemData.count, itemData.id);
+         inventory.itemSlots[itemSlot] = new Item(itemData.type, itemData.count, itemData.id);
+
+         // @Cleanup: hacky. (see other comment above)
+         if (inventoryData.inventoryName === "hotbar" && itemSlot === latencyGameState.selectedHotbarItemSlot) {
+            selectItem(inventory.itemSlots[itemSlot]);
+         }
       } else {
          // Otherwise the item needs to be updated with the new server data
-         inventory.itemSlots[itemSlot].updateFromServerData(itemData);
+         inventory.itemSlots[itemSlot].count = itemData.count;
       }
    }
 }
@@ -106,7 +114,7 @@ export function createInventoryFromData(inventoryData: InventoryData): Inventory
    // Add all new items from the server data
    for (const [itemSlot, itemData] of Object.entries(inventoryData.itemSlots).map(([itemSlot, itemData]) => [Number(itemSlot), itemData] as const)) {
       // If the item doesn't exist in the inventory, add it
-      itemSlots[Number(itemSlot)] = createItem(itemData.type, itemData.count, itemData.id);
+      itemSlots[Number(itemSlot)] = new Item(itemData.type, itemData.count, itemData.id);
    }
    
    const inventory: Inventory = {

@@ -3,7 +3,8 @@ import Camera from "../Camera";
 import Player, { getPlayerSelectedItem } from "../entities/Player";
 import { getTexture } from "../textures";
 import { gl, halfWindowWidth, halfWindowHeight, createWebGLProgram } from "../webgl";
-import { PLACEABLE_ENTITY_INFO_RECORD } from "../items/PlaceableItem";
+import { PLACEABLE_ENTITY_INFO_RECORD, canPlaceItem } from "../player-input";
+// import PlaceableItem, { PLACEABLE_ENTITY_INFO_RECORD } from "../items/PlaceableItem";
 
 const vertexShaderText = `#version 300 es
 precision mediump float;
@@ -39,6 +40,7 @@ const fragmentShaderText = `#version 300 es
 precision mediump float;
 
 uniform sampler2D u_texture;
+uniform float u_canPlace;
 
 in vec2 v_texCoord;
 
@@ -48,6 +50,12 @@ void main() {
    outputColour = texture(u_texture, v_texCoord);
 
    outputColour.a *= 0.5;
+
+   if (u_canPlace < 0.5) {
+      outputColour.r *= 1.5;
+      outputColour.g *= 0.5;
+      outputColour.b *= 0.5;
+   }
 }
 `;
 
@@ -61,6 +69,7 @@ let previousRenderedPlaceableItemType: ItemType;
 let zoomUniformLocation: WebGLUniformLocation;
 let programPlayerRotationUniformLocation: WebGLUniformLocation;
 let programHalfWindowSizeUniformLocation: WebGLUniformLocation;
+let programCanPlaceUniformLocation: WebGLUniformLocation;
 
 export function createPlaceableItemProgram(): void {
    program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText, "a_vertWorldPosition");
@@ -68,6 +77,7 @@ export function createPlaceableItemProgram(): void {
    zoomUniformLocation = gl.getUniformLocation(program, "u_zoom")!;
    programPlayerRotationUniformLocation = gl.getUniformLocation(program, "u_playerRotation")!;
    programHalfWindowSizeUniformLocation = gl.getUniformLocation(program, "u_halfWindowSize")!;
+   programCanPlaceUniformLocation = gl.getUniformLocation(program, "u_canPlace")!;
    
    gl.useProgram(program);
 
@@ -131,6 +141,7 @@ export function renderGhostPlaceableItem(): void {
    gl.uniform1f(zoomUniformLocation, Camera.zoom);
    gl.uniform2f(programPlayerRotationUniformLocation, xRotation, yRotation);
    gl.uniform2f(programHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
+   gl.uniform1f(programCanPlaceUniformLocation, canPlaceItem(playerSelectedItem) ? 1 : 0);
 
    const texture = getTexture("entities/" + placeableEntityInfo.textureSource);
    gl.activeTexture(gl.TEXTURE0);

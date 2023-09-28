@@ -1,4 +1,4 @@
-import { Point, RIVER_STEPPING_STONE_SIZES, RiverSteppingStoneSize, SETTINGS, WaterRockSize, lerp, randFloat, rotatePoint } from "webgl-test-shared";
+import { Point, RIVER_STEPPING_STONE_SIZES, RiverSteppingStoneSize, SETTINGS, WaterRockSize, lerp, randFloat, rotatePoint, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../../webgl";
 import { getTexture } from "../../textures";
 import Camera from "../../Camera";
@@ -1437,55 +1437,51 @@ const calculateSteppingStoneVertexData = (visibleSteppingStones: ReadonlySet<Riv
       let y1 = (steppingStone.position.y - size/2);
       let y2 = (steppingStone.position.y + size/2);
 
-      // @Speed: Garbage collection
-      let topLeft = new Point(x1, y2);
-      let topRight = new Point(x2, y2);
-      let bottomRight = new Point(x2, y1);
-      let bottomLeft = new Point(x1, y1);
-
-      const pos = new Point(steppingStone.position.x, steppingStone.position.y);
-
-      topLeft = rotatePoint(topLeft, pos, steppingStone.rotation);
-      topRight = rotatePoint(topRight, pos, steppingStone.rotation);
-      bottomRight = rotatePoint(bottomRight, pos, steppingStone.rotation);
-      bottomLeft = rotatePoint(bottomLeft, pos, steppingStone.rotation);
+      const topLeftX =     rotateXAroundPoint(x1, y2, steppingStone.position.x, steppingStone.position.y, steppingStone.rotation);
+      const topLeftY =     rotateYAroundPoint(x1, y2, steppingStone.position.x, steppingStone.position.y, steppingStone.rotation);
+      const topRightX =    rotateXAroundPoint(x2, y2, steppingStone.position.x, steppingStone.position.y, steppingStone.rotation);
+      const topRightY =    rotateYAroundPoint(x2, y2, steppingStone.position.x, steppingStone.position.y, steppingStone.rotation);
+      const bottomRightX = rotateXAroundPoint(x2, y1, steppingStone.position.x, steppingStone.position.y, steppingStone.rotation);
+      const bottomRightY = rotateYAroundPoint(x2, y1, steppingStone.position.x, steppingStone.position.y, steppingStone.rotation);
+      const bottomLeftX =  rotateXAroundPoint(x1, y1, steppingStone.position.x, steppingStone.position.y, steppingStone.rotation);
+      const bottomLeftY =  rotateYAroundPoint(x1, y1, steppingStone.position.x, steppingStone.position.y, steppingStone.rotation);
 
       const textureIdx = steppingStone.size as number;
 
       const dataOffset = i * 6 * 5;
 
-      vertexData[dataOffset] = bottomLeft.x;
-      vertexData[dataOffset + 1] = bottomLeft.y;
+      vertexData[dataOffset] = bottomLeftX;
+      vertexData[dataOffset + 1] = bottomLeftY;
       vertexData[dataOffset + 2] = 0;
       vertexData[dataOffset + 3] = 0;
       vertexData[dataOffset + 4] = textureIdx;
 
-      vertexData[dataOffset + 5] = bottomRight.x;
-      vertexData[dataOffset + 6] = bottomRight.y;
+      vertexData[dataOffset + 5] = bottomRightX;
+      vertexData[dataOffset + 6] = bottomRightY;
       vertexData[dataOffset + 7] = 1;
       vertexData[dataOffset + 8] = 0;
       vertexData[dataOffset + 9] = textureIdx;
 
-      vertexData[dataOffset + 10] = topLeft.x;
-      vertexData[dataOffset + 11] = topLeft.y;
+      vertexData[dataOffset + 10] = topLeftX;
+      vertexData[dataOffset + 11] = topLeftY;
       vertexData[dataOffset + 12] = 0;
       vertexData[dataOffset + 13] = 1;
       vertexData[dataOffset + 14] = textureIdx;
 
-      vertexData[dataOffset + 15] = topLeft.x;
-      vertexData[dataOffset + 16] = topLeft.y;
+      vertexData[dataOffset + 15] = topLeftX;
+      vertexData[dataOffset + 16] = topLeftY;
       vertexData[dataOffset + 17] = 0;
       vertexData[dataOffset + 18] = 1;
       vertexData[dataOffset + 19] = textureIdx;
 
-      vertexData[dataOffset + 20] = bottomRight.x;
-      vertexData[dataOffset + 21] = bottomRight.y;
+      vertexData[dataOffset + 20] = bottomRightX;
+      vertexData[dataOffset + 21] = bottomRightY;
       vertexData[dataOffset + 22] = 1;
       vertexData[dataOffset + 23] = 0;
       vertexData[dataOffset + 24] = textureIdx;
 
-      vertexData[dataOffset + 25] = topRight.x;
-      vertexData[dataOffset + 26] = topRight.y;
+      vertexData[dataOffset + 25] = topRightX;
+      vertexData[dataOffset + 26] = topRightY;
       vertexData[dataOffset + 27] = 1;
       vertexData[dataOffset + 28] = 1;
       vertexData[dataOffset + 29] = textureIdx;
@@ -1553,8 +1549,8 @@ const calculateHighlightsVertexData = (waterTiles: ReadonlyArray<Tile>): Float32
 const calculateVisibleRenderChunks = (): ReadonlyArray<RenderChunkRiverInfo> => {
    const renderChunks = new Array<RenderChunkRiverInfo>();
 
-   for (let renderChunkX = Camera.visibleRenderChunkBounds[0]; renderChunkX <= Camera.visibleRenderChunkBounds[1]; renderChunkX++) {
-      for (let renderChunkY = Camera.visibleRenderChunkBounds[2]; renderChunkY <= Camera.visibleRenderChunkBounds[3]; renderChunkY++) {
+   for (let renderChunkX = Camera.minVisibleRenderChunkX; renderChunkX <= Camera.maxVisibleRenderChunkX; renderChunkX++) {
+      for (let renderChunkY = Camera.minVisibleRenderChunkY; renderChunkY <= Camera.maxVisibleRenderChunkY; renderChunkY++) {
          const renderChunkInfo = getRenderChunkRiverInfo(renderChunkX, renderChunkY);
          if (renderChunkInfo !== null) {
             renderChunks.push(renderChunkInfo);

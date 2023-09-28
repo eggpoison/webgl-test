@@ -117,8 +117,7 @@ const TEXTURE_SOURCES: Array<string> = [
    "items/wooden-bow-charge-5.png"
 ];
 
-// @Incomplete: Variable name
-export const AAAA: Record<string, HTMLImageElement> = {};
+export const TEXTURE_IMAGE_RECORD: Record<string, HTMLImageElement> = {};
 
 const textureSourceIsAlreadyIncluded = (src: string): boolean => {
    return TEXTURE_SOURCES.includes(src);
@@ -160,7 +159,7 @@ export function loadTextures(): Promise<void> {
             TEXTURES[textureSource] = texture;
          });
 
-         AAAA[textureSource] = image;
+         TEXTURE_IMAGE_RECORD[textureSource] = image;
       }
       
       resolve();

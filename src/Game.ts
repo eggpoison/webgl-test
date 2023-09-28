@@ -13,10 +13,9 @@ import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createShaderStrings, createWebGLCo
 import { loadTextures } from "./textures";
 import { hidePauseScreen, showPauseScreen, toggleSettingsMenu } from "./components/game/GameScreen";
 import { getGameState } from "./components/App";
-import Item from "./items/Item";
 import { clearPressedKeys } from "./keyboard-input";
 import { createHitboxShaders, renderEntityHitboxes } from "./rendering/hitbox-rendering";
-import { updateInteractInventory, updatePlayerMovement } from "./player-input";
+import { updateInteractInventory, updatePlayerItems, updatePlayerMovement } from "./player-input";
 import { clearServerTicks, updateDebugScreenFPS, updateDebugScreenRenderTime } from "./components/game/dev/GameInfoDisplay";
 import { createWorldBorderShaders, renderWorldBorder } from "./rendering/world-border-rendering";
 import { createSolidTileShaders, renderSolidTiles } from "./rendering/tile-rendering/solid-tile-rendering";
@@ -268,10 +267,8 @@ abstract class Game {
 
       updatePlayerMovement();
       updateAvailableCraftingRecipes();
-
-      this.tickPlayerItems();
-
-      Item.decrementGlobalItemSwitchDelay();
+      
+      updatePlayerItems();
 
       // @Cleanup: This shouldn't be here
       if (Player.instance !== null) {
@@ -287,18 +284,6 @@ abstract class Game {
          Player.instance.updateHitboxes();
          Player.instance.recalculateContainingChunks();
          Player.resolveCollisions();
-      }
-   }
-
-   private static tickPlayerItems(): void {
-      if (definiteGameState.hotbar === null) {
-         return;
-      }
-      
-      for (const item of Object.values(definiteGameState.hotbar.itemSlots)) {
-         if (typeof item.tick !== "undefined") {
-            item.tick();
-         }
       }
    }
 
@@ -333,7 +318,6 @@ abstract class Game {
          Camera.setCameraPosition(Player.instance.renderPosition);
          Camera.updateVisibleChunkBounds();
          Camera.updateVisibleRenderChunkBounds();
-         Camera.updateVisiblePositionBounds();
       }
 
       // Update the camera buffer
@@ -375,10 +359,10 @@ abstract class Game {
       }
       renderWorldBorder();
       if (nerdVisionIsVisible() && OPTIONS.showChunkBorders) {
-         renderChunkBorders(Camera.visibleChunkBounds, SETTINGS.CHUNK_SIZE, 1);
+         renderChunkBorders(Camera.minVisibleChunkX, Camera.maxVisibleChunkX, Camera.minVisibleChunkY, Camera.maxVisibleChunkY, SETTINGS.CHUNK_SIZE, 1);
       }
       if (nerdVisionIsVisible() && OPTIONS.showRenderChunkBorders) {
-         renderChunkBorders(Camera.visibleRenderChunkBounds, RENDER_CHUNK_SIZE, 2);
+         renderChunkBorders(Camera.minVisibleRenderChunkX, Camera.maxVisibleRenderChunkX, Camera.minVisibleRenderChunkY, Camera.maxVisibleRenderChunkY, RENDER_CHUNK_SIZE, 2);
       }
 
       renderMonocolourParticles(ParticleRenderLayer.low, renderTime);

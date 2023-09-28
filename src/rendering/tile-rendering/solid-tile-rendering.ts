@@ -1,6 +1,6 @@
 import { SETTINGS, TILE_TYPE_INFO_RECORD } from "webgl-test-shared";
 import Camera from "../../Camera";
-import { AAAA } from "../../textures";
+import { TEXTURE_IMAGE_RECORD } from "../../textures";
 import { TILE_TYPE_RENDER_INFO_RECORD } from "../../tile-type-render-info";
 import { gl, createWebGLProgram, CAMERA_UNIFORM_BUFFER_BINDING_INDEX } from "../../webgl";
 import { RENDER_CHUNK_SIZE, RenderChunkSolidTileInfo, getRenderChunkSolidTileInfo } from "./render-chunks";
@@ -177,7 +177,7 @@ export function createSolidTileRenderChunkData(renderChunkX: number, renderChunk
    // Set all texture units
    for (let i = 0; i < textureSources.length; i++) {
       const textureSource = textureSources[i];
-      const image = AAAA[textureSource];
+      const image = TEXTURE_IMAGE_RECORD[textureSource];
       gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, i, 16, 16, 1, gl.RGBA, gl.UNSIGNED_BYTE, image);
    }
 
@@ -226,7 +226,7 @@ export function recalculateSolidTileRenderChunkData(renderChunkX: number, render
    // Set all texture units
    for (let i = 0; i < textureSources.length; i++) {
       const textureSource = textureSources[i];
-      const image = AAAA[textureSource];
+      const image = TEXTURE_IMAGE_RECORD[textureSource];
       gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, i, 16, 16, 1, gl.RGBA, gl.UNSIGNED_BYTE, image);
    }
 
@@ -238,8 +238,8 @@ export function renderSolidTiles(): void {
 
    gl.activeTexture(gl.TEXTURE0);
    
-   for (let renderChunkX = Camera.visibleRenderChunkBounds[0]; renderChunkX <= Camera.visibleRenderChunkBounds[1]; renderChunkX++) {
-      for (let renderChunkY = Camera.visibleRenderChunkBounds[2]; renderChunkY <= Camera.visibleRenderChunkBounds[3]; renderChunkY++) {
+   for (let renderChunkX = Camera.minVisibleRenderChunkX; renderChunkX <= Camera.maxVisibleRenderChunkX; renderChunkX++) {
+      for (let renderChunkY = Camera.minVisibleRenderChunkY; renderChunkY <= Camera.maxVisibleRenderChunkY; renderChunkY++) {
          const renderChunkInfo = getRenderChunkSolidTileInfo(renderChunkX, renderChunkY);
          gl.bindVertexArray(renderChunkInfo.vao);
 

@@ -48,10 +48,10 @@ export function renderWallBorders(): void {
    // Find visible wall tiles
    // 
 
-   const minTileX = Camera.visibleChunkBounds[0] * SETTINGS.CHUNK_SIZE;
-   const maxTileX = (Camera.visibleChunkBounds[1] + 1) * SETTINGS.CHUNK_SIZE - 1;
-   const minTileY = Camera.visibleChunkBounds[2] * SETTINGS.CHUNK_SIZE;
-   const maxTileY = (Camera.visibleChunkBounds[3] + 1) * SETTINGS.CHUNK_SIZE - 1;
+   const minTileX = Camera.minVisibleChunkX * SETTINGS.CHUNK_SIZE;
+   const maxTileX = (Camera.maxVisibleChunkX + 1) * SETTINGS.CHUNK_SIZE - 1;
+   const minTileY = Camera.minVisibleChunkY * SETTINGS.CHUNK_SIZE;
+   const maxTileY = (Camera.maxVisibleChunkY + 1) * SETTINGS.CHUNK_SIZE - 1;
 
    // @Speed: This shouldn't have to loop over all visible tiles
    const wallTiles = new Array<Tile>();

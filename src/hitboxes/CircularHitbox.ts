@@ -12,10 +12,18 @@ class CircularHitbox extends Hitbox {
    }
    
    public calculateHitboxBounds(): HitboxBounds {
-      const minX = this.gameObject.position.x - this.radius;
-      const maxX = this.gameObject.position.x + this.radius;
-      const minY = this.gameObject.position.y - this.radius;
-      const maxY = this.gameObject.position.y + this.radius;
+      let minX = this.gameObject.position.x - this.radius;
+      let maxX = this.gameObject.position.x + this.radius;
+      let minY = this.gameObject.position.y - this.radius;
+      let maxY = this.gameObject.position.y + this.radius;
+
+      if (typeof this.offset !== "undefined") {
+         minX += this.offset.x;
+         maxX += this.offset.x;
+         minY += this.offset.y;
+         maxY += this.offset.y;
+      }
+      
       return [minX, maxX, minY, maxY];
    }
 

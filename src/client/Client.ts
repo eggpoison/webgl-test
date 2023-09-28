@@ -10,7 +10,7 @@ import DroppedItem from "../items/DroppedItem";
 import { Tile } from "../Tile";
 import { gameScreenSetIsDead } from "../components/game/GameScreen";
 import { Inventory } from "../items/Item";
-import { updateActiveItem, updateInventoryIsOpen } from "../player-input";
+import { updateInventoryIsOpen } from "../player-input";
 import { Hotbar_update } from "../components/game/inventories/Hotbar";
 import { setHeldItemVisual } from "../components/game/HeldItem";
 import { CraftingMenu_setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
@@ -247,7 +247,7 @@ abstract class Client {
          if (Board.entities.hasOwnProperty(entityData.id)) {
             // @Cleanup: This is very messy and unmaintainable. Doing the hit and healing particle logic outside
             // of the updateFromData function is done as the player instance right now can't use the updateFromData
-            // function, and doing so would cause a circular dependency with Entity <-> Player.
+            // function, doing so would cause a circular dependency with TribeMember <-> Player.
             
             // We don't want the player to be updated from the server data
             if (Board.entities[entityData.id] !== Player.instance) {
@@ -326,9 +326,6 @@ abstract class Client {
       const hotbarHasChanged = this.inventoryHasChanged(definiteGameState.hotbar, playerInventoryData.hotbar);
       updateInventoryFromData(definiteGameState.hotbar, playerInventoryData.hotbar);
 
-      // @Cleanup should this be here?
-      updateActiveItem();
-
       const backpackHasChanged = this.inventoryHasChanged(definiteGameState.backpack, playerInventoryData.backpackInventory);
       if (definiteGameState.backpack !== null) {
          updateInventoryFromData(definiteGameState.backpack, playerInventoryData.backpackInventory);
@@ -359,6 +356,7 @@ abstract class Client {
       // @Temporary @Cleanup: I think this is only done as the Player instance doesn't use updateFromData
       if (Player.instance !== null && armourSlotHasChanged) {
          updateInventoryFromData(Player.instance.armourSlotInventory, playerInventoryData.armourSlot);
+         // @Incomplete: Why did we comment this out? Do we need it?
          // const armourType = definiteGameState.armourSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.armourSlot.itemSlots[1].type : null;
          // Player.instance.updateArmourRenderPart(armourType);
          // Player.instance.armourType = armourType;

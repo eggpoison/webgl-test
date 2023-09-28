@@ -1,4 +1,4 @@
-import { AttackPacket, SETTINGS, STATUS_EFFECT_MODIFIERS, TribeMemberAction, Vector } from "webgl-test-shared";
+import { AttackPacket, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, ItemType, PlaceableItemType, Point, SETTINGS, STATUS_EFFECT_MODIFIERS, ToolItemInfo, TribeMemberAction, Vector } from "webgl-test-shared";
 import { addKeyListener, clearPressedKeys, keyIsPressed } from "./keyboard-input";
 import { CraftingMenu_setIsVisible } from "./components/game/menus/CraftingMenu";
 import Player from "./entities/Player";
@@ -13,12 +13,25 @@ import Item from "./items/Item";
 import Board from "./Board";
 import { definiteGameState, latencyGameState } from "./game-state/game-states";
 import Game from "./Game";
+import { showChargeMeter } from "./components/game/ChargeMeter";
+import Barrel from "./entities/Barrel";
+import Campfire from "./entities/Campfire";
+import Furnace from "./entities/Furnace";
+import TribeHut from "./entities/TribeHut";
+import TribeTotem from "./entities/TribeTotem";
+import Workbench from "./entities/Workbench";
+import CircularHitbox from "./hitboxes/CircularHitbox";
+import Hitbox from "./hitboxes/Hitbox";
+import RectangularHitbox from "./hitboxes/RectangularHitbox";
 
-let lightspeedIsActive = false;
+export let lightspeedIsActive = false;
 
 export function setLightspeedIsActive(isActive: boolean): void {
    lightspeedIsActive = isActive;
 }
+
+/** Amount of seconds of forced delay on when an item can be used for attacking when switching between items */
+const GLOBAL_ATTACK_DELAY_ON_SWITCH = 0.1;
 
 /** Terminal velocity of the player while moving without any modifiers. */
 const PLAYER_TERMINAL_VELOCITY = 300;
@@ -37,11 +50,115 @@ const PLAYER_SLOW_ACCELERATION = 400;
 
 const PLAYER_INTERACT_RANGE = 125;
 
+enum PlaceableItemHitboxType {
+   circular,
+   rectangular
+}
+
+interface PlaceableEntityInfo {
+   readonly textureSource: string;
+   readonly width: number;
+   readonly height: number;
+   readonly placeOffset: number;
+   readonly hitboxType: PlaceableItemHitboxType;
+   /** Optionally defines extra criteria for being placed */
+   canPlace?(): boolean;
+}
+
+export const PLACEABLE_ENTITY_INFO_RECORD: Record<PlaceableItemType, PlaceableEntityInfo> = {
+   [ItemType.workbench]: {
+      textureSource: "workbench/workbench.png",
+      width: Workbench.SIZE,
+      height: Workbench.SIZE,
+      placeOffset: Workbench.SIZE / 2,
+      hitboxType: PlaceableItemHitboxType.rectangular
+   },
+   [ItemType.tribe_totem]: {
+      textureSource: "tribe-totem/tribe-totem.png",
+      width: TribeTotem.SIZE,
+      height: TribeTotem.SIZE,
+      placeOffset: TribeTotem.SIZE / 2,
+      canPlace: (): boolean => {
+         // The player can only place a tribe totem if they aren't in a tribe
+         return Game.tribe === null;
+      },
+      hitboxType: PlaceableItemHitboxType.circular
+   },
+   [ItemType.tribe_hut]: {
+      textureSource: "tribe-hut/tribe-hut.png",
+      width: TribeHut.SIZE,
+      height: TribeHut.SIZE,
+      placeOffset: TribeHut.SIZE / 2,
+      canPlace: (): boolean => {
+         // The player can't place huts if they aren't in a tribe
+         if (Game.tribe === null) return false;
+
+         return Game.tribe.numHuts < Game.tribe.tribesmanCap;
+      },
+      hitboxType: PlaceableItemHitboxType.rectangular
+   },
+   [ItemType.barrel]: {
+      textureSource: "barrel/barrel.png",
+      width: Barrel.SIZE,
+      height: Barrel.SIZE,
+      placeOffset: Barrel.SIZE / 2,
+      hitboxType: PlaceableItemHitboxType.circular
+   },
+   [ItemType.campfire]: {
+      textureSource: "campfire/campfire.png",
+      width: Campfire.SIZE,
+      height: Campfire.SIZE,
+      placeOffset: Campfire.SIZE / 2,
+      hitboxType: PlaceableItemHitboxType.circular
+   },
+   [ItemType.furnace]: {
+      textureSource: "furnace/furnace.png",
+      width: Furnace.SIZE,
+      height: Furnace.SIZE,
+      placeOffset: Furnace.SIZE / 2,
+      hitboxType: PlaceableItemHitboxType.rectangular
+   }
+};
+
+const testRectangularHitbox = new RectangularHitbox(-1, -1);
+const testCircularHitbox = new CircularHitbox(-1);
+
+let globalAttackDelayTimer = 0;
+
+const itemAttackCooldowns: Record<number, number> = {};
+
 /** Whether the inventory is open or not. */
 let _inventoryIsOpen = false;
 
 let _interactInventoryIsOpen = false;
 let interactInventoryEntity: Entity | null = null;
+
+export function updatePlayerItems(): void {
+   if (definiteGameState.hotbar === null) {
+      return;
+   }
+
+   // @Cleanup: destroy this.
+   if (Player.instance !== null) {
+      if (definiteGameState.hotbar.itemSlots.hasOwnProperty(latencyGameState.selectedHotbarItemSlot)) {
+         Player.instance.updateActiveItem(definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot].type);
+         Player.instance.updateChargeTexture();
+      } else {
+         Player.instance.updateActiveItem(null);
+      }
+   }
+
+   // Decrement global item switch delay
+   globalAttackDelayTimer -= 1 / SETTINGS.TPS;
+   if (globalAttackDelayTimer < 0) {
+      globalAttackDelayTimer = 0;
+   }
+
+   // Tick items
+   for (const [_itemSlot, item] of Object.entries(definiteGameState.hotbar.itemSlots)) {
+      tickItem(item, Number(_itemSlot));
+   }
+}
 
 const attack = (): void => {
    if (Player.instance === null) return;
@@ -68,31 +185,43 @@ const createItemUseListeners = (): void => {
       }
 
       const selectedItem = definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot];
-
       if (e.button === 0) {
+         // 
          // Left click
+         // 
          
          leftMouseButtonIsPressed = true;
 
          if (definiteGameState.hotbar.itemSlots.hasOwnProperty(latencyGameState.selectedHotbarItemSlot)) {
             // Attack with item
-            if (selectedItem.canAttack()) {
+            if (!itemAttackCooldowns.hasOwnProperty(latencyGameState.selectedHotbarItemSlot)) {
                attack();
-               selectedItem.resetAttackCooldownTimer();
+
+               // Reset the attack cooldown of the weapon
+               const itemTypeInfo = ITEM_TYPE_RECORD[selectedItem.type];
+               if (itemTypeInfo === "axe" || itemTypeInfo === "pickaxe" || itemTypeInfo === "sword") {
+                  const itemInfo = ITEM_INFO_RECORD[selectedItem.type];
+                  itemAttackCooldowns[latencyGameState.selectedHotbarItemSlot] = (itemInfo as ToolItemInfo).attackCooldown;
+               } else {
+                  itemAttackCooldowns[latencyGameState.selectedHotbarItemSlot] = SETTINGS.DEFAULT_ATTACK_COOLDOWN;
+               }
             }
          } else {
             // Attack without item
-            if (Item.canAttack()) {
+            if (!itemAttackCooldowns.hasOwnProperty(latencyGameState.selectedHotbarItemSlot)) {
                attack();
             }
          }
       } else if (e.button === 2) {
+         // 
          // Right click
-         if (typeof selectedItem !== "undefined" && typeof selectedItem.onRightMouseButtonDown !== "undefined") {
-            selectedItem.onRightMouseButtonDown();
-         }
+         // 
 
          rightMouseButtonIsPressed = true;
+
+         if (definiteGameState.hotbar.itemSlots.hasOwnProperty(latencyGameState.selectedHotbarItemSlot)) {
+            itemRightClickDown(selectedItem);
+         }
       }
    });
 
@@ -104,21 +233,17 @@ const createItemUseListeners = (): void => {
          return;
       }
 
-      const selectedItem = definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot];
-
-      if (typeof selectedItem === "undefined") {
+      if (!definiteGameState.hotbar.itemSlots.hasOwnProperty(latencyGameState.selectedHotbarItemSlot)) {
          return;
       }
+      const selectedItem = definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot];
 
       if (e.button === 0) {
          leftMouseButtonIsPressed = false;
       } else if (e.button === 2) {
-         // Right mouse button up
-         if (typeof selectedItem.onRightMouseButtonUp !== "undefined") {
-            selectedItem.onRightMouseButtonUp();
-         }
-
          rightMouseButtonIsPressed = false;
+
+         itemRightClickUp(selectedItem);
       }
    });
 
@@ -139,19 +264,6 @@ const createItemUseListeners = (): void => {
       // When the context menu is opened, stop player movement
       clearPressedKeys();
    });
-}
-
-const selectItemSlot = (itemSlot: number): void => {
-   if (definiteGameState.hotbar === null) {
-      return;
-   }
-
-   latencyGameState.selectedHotbarItemSlot = itemSlot;
-
-   Item.resetGlobalAttackSwitchDelay();
-   
-   Hotbar_setHotbarSelectedItemSlot(itemSlot);
-   updateActiveItem();
 }
 
 const createHotbarKeyListeners = (): void => {
@@ -419,19 +531,171 @@ export function updatePlayerMovement(): void {
    }
 }
 
-export function updateActiveItem(): void {
-   if (definiteGameState.hotbar === null) {
+const deselectItem = (item: Item): void => {
+   const itemCategory = ITEM_TYPE_RECORD[item.type];
+   switch (itemCategory) {
+      case "bow": {
+         latencyGameState.playerAction = TribeMemberAction.none;
+         Player.instance!.action = TribeMemberAction.none;
+
+         break;
+      }
+      case "placeable": {
+         latencyGameState.playerIsPlacingEntity = false;
+         
+         break;
+      }
+   }
+}
+
+export function selectItem(item: Item): void {
+   const itemCategory = ITEM_TYPE_RECORD[item.type];
+   switch (itemCategory) {
+      case "placeable": {
+         latencyGameState.playerIsPlacingEntity = true;
+
+         break;
+      }
+   }
+}
+
+export function canPlaceItem(item: Item): boolean {
+   if (!PLACEABLE_ENTITY_INFO_RECORD.hasOwnProperty(item.type)) {
+      throw new Error(`Item type '${item.type}' is not placeable.`);
+   }
+   
+   // Check for any special conditions
+   const placeableInfo = PLACEABLE_ENTITY_INFO_RECORD[item.type as PlaceableItemType];
+   if (typeof placeableInfo.canPlace !== "undefined" && !placeableInfo.canPlace()) {
+      return false;
+   }
+
+   // 
+   // Check for any collisions
+   // 
+
+   let placeTestHitbox: Hitbox;
+   if (placeableInfo.hitboxType === PlaceableItemHitboxType.circular) {
+      testCircularHitbox.radius = placeableInfo.width / 2; // For a circular hitbox, width and height will be the same
+      placeTestHitbox = testCircularHitbox;
+   } else {
+      testRectangularHitbox.width = placeableInfo.width;
+      testRectangularHitbox.height = placeableInfo.height;
+      placeTestHitbox = testRectangularHitbox;
+   }
+
+   placeTestHitbox.setObject(Player.instance!);
+   placeTestHitbox.offset = Point.fromVectorForm(SETTINGS.ITEM_PLACE_DISTANCE + placeableInfo.placeOffset, Player.instance!.rotation);
+
+   placeTestHitbox.updatePosition();
+   if (placeableInfo.hitboxType === PlaceableItemHitboxType.rectangular) {
+      (placeTestHitbox as RectangularHitbox).computeVertexPositions();
+      (placeTestHitbox as RectangularHitbox).computeSideAxes();
+   }
+   placeTestHitbox.updateHitboxBounds();
+
+   const minChunkX = Math.max(Math.min(Math.floor(placeTestHitbox.bounds[0] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+   const maxChunkX = Math.max(Math.min(Math.floor(placeTestHitbox.bounds[1] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+   const minChunkY = Math.max(Math.min(Math.floor(placeTestHitbox.bounds[2] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+   const maxChunkY = Math.max(Math.min(Math.floor(placeTestHitbox.bounds[3] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+   
+   const previouslyCheckedEntityIDs = new Set<number>();
+
+   for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+      for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
+         const chunk = Board.getChunk(chunkX, chunkY);
+         for (const entity of chunk.getEntities()) {
+            if (!previouslyCheckedEntityIDs.has(entity.id)) {
+               for (const hitbox of entity.hitboxes) {   
+                  if (placeTestHitbox.isColliding(hitbox)) {
+                     return false;
+                  }
+               }
+               
+               previouslyCheckedEntityIDs.add(entity.id);
+            }
+         }
+      }
+   }
+
+   return true;
+}
+
+const itemRightClickDown = (item: Item): void => {
+   const itemCategory = ITEM_TYPE_RECORD[item.type];
+   switch (itemCategory) {
+      case "food": {
+         if (definiteGameState.playerHealth < Player.MAX_HEALTH) {
+            latencyGameState.playerAction = TribeMemberAction.eat;
+            Player.instance!.action = TribeMemberAction.eat;
+            Player.instance!.foodEatingType = item.type;
+            // @Cleanup: Is this necessary?
+            Player.instance!.lastActionTicks = Board.ticks;
+         }
+
+         break;
+      }
+      case "bow": {
+         latencyGameState.playerAction = TribeMemberAction.charge_bow;
+         Player.instance!.action = TribeMemberAction.charge_bow;
+         Player.instance!.lastActionTicks = Board.ticks;
+         
+         showChargeMeter();
+
+         break;
+      }
+      case "armour": {
+         Client.sendItemUsePacket();
+
+         break;
+      }
+      case "placeable": {
+         if (canPlaceItem(item)) {
+            Client.sendItemUsePacket();
+         }
+         
+         break;
+      }
+   }
+}
+
+const itemRightClickUp = (item: Item): void => {
+   const itemCategory = ITEM_TYPE_RECORD[item.type];
+   switch (itemCategory) {
+      case "food": {
+         latencyGameState.playerAction = TribeMemberAction.none;
+         Player.instance!.action = TribeMemberAction.none;
+         Player.instance!.foodEatingType = -1;
+
+         break;
+      }
+      case "bow": {
+         Client.sendItemUsePacket();
+         latencyGameState.playerAction = TribeMemberAction.none;
+         Player.instance!.action = TribeMemberAction.none;
+
+         break;
+      }
+   }
+}
+
+const selectItemSlot = (itemSlot: number): void => {
+   if (definiteGameState.hotbar === null || itemSlot === latencyGameState.selectedHotbarItemSlot) {
       return;
    }
 
-   for (let itemSlot = 1; itemSlot <= SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE; itemSlot++) {
-      if (definiteGameState.hotbar.itemSlots.hasOwnProperty(itemSlot)) {
-         const isActive = itemSlot === latencyGameState.selectedHotbarItemSlot;
-
-         const item = definiteGameState.hotbar.itemSlots[itemSlot];
-         item.setIsActive(isActive);
-      }
+   // Deselect the previous item and select the new item
+   if (definiteGameState.hotbar.itemSlots.hasOwnProperty(latencyGameState.selectedHotbarItemSlot)) {
+      deselectItem(definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot]);
    }
+   if (definiteGameState.hotbar.itemSlots.hasOwnProperty(itemSlot)) {
+      selectItem(definiteGameState.hotbar.itemSlots[itemSlot]);
+   }
+
+   latencyGameState.selectedHotbarItemSlot = itemSlot;
+   globalAttackDelayTimer = GLOBAL_ATTACK_DELAY_ON_SWITCH;
+      
+   Hotbar_setHotbarSelectedItemSlot(itemSlot);
 
    // @Cleanup: Shouldn't be here
    if (Player.instance !== null) {
@@ -440,6 +704,45 @@ export function updateActiveItem(): void {
          Player.instance.updateChargeTexture();
       } else {
          Player.instance.updateActiveItem(null);
+      }
+   }
+}
+
+const tickItem = (item: Item, itemSlot: number): void => {
+   if (itemAttackCooldowns.hasOwnProperty(itemSlot)) {
+      itemAttackCooldowns[itemSlot] -= 1 / SETTINGS.TPS;
+      if (itemAttackCooldowns[itemSlot] < 0) {
+         delete itemAttackCooldowns[itemSlot];
+      }
+   }
+
+   const itemCategory = ITEM_TYPE_RECORD[item.type];
+   switch (itemCategory) {
+      case "food": {
+         // If the player can no longer eat food without wasting it, stop eating
+         if (itemSlot === latencyGameState.selectedHotbarItemSlot && latencyGameState.playerAction === TribeMemberAction.eat && definiteGameState.playerHealth >= Player.MAX_HEALTH) {
+            latencyGameState.playerAction = TribeMemberAction.none;
+            Player.instance!.action = TribeMemberAction.none;
+            Player.instance!.foodEatingType = -1;
+         }
+
+         break;
+      }
+   }
+}
+
+export function removeSelectedItem(item: Item): void {
+   const itemCategory = ITEM_TYPE_RECORD[item.type];
+   switch (itemCategory) {
+      case "food": {
+         latencyGameState.playerAction = TribeMemberAction.none;
+         Player.instance!.action = TribeMemberAction.none;
+         Player.instance!.foodEatingType = -1;
+
+         break;
+      }
+      case "placeable": {
+         latencyGameState.playerIsPlacingEntity = false;
       }
    }
 }
