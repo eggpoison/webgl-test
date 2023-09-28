@@ -34,16 +34,9 @@ const HealthBar = () => {
          <div className="health-counter">{health}</div>
       </div>
       <div className="health-slider"></div>
-      {/* minecraft refreerncre??/? */}
-      <div className="notches">
-         <div className="notch notch-minor"></div>
-         <div className="notch notch-major"></div>
-         <div className="notch notch-minor"></div>
-         <div className="notch notch-major"></div>
-         <div className="notch notch-minor"></div>
-         <div className="notch notch-major"></div>
-         <div className="notch notch-minor"></div>
-      </div>
+      <div className="health-flash"></div>
+      <div className="health-bar-notches"></div>
+      <div className="health-mask"></div>
    </div>;
 }
 

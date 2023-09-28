@@ -186,6 +186,7 @@ class Player extends TribeMember {
       this.resolveWallCollisions();
       this.resolveGameObjectCollisions();
 
+      // @Cleanup: We call resolveWallCollisions 2 calls before this, is this really necessary??
       // Sometimes the player can get pushed out of the border by collisions (especially when clipping inside walls), so bring them back into the world when that happens
       Player.instance!.resolveBorderCollisions();
    }
@@ -296,6 +297,7 @@ class Player extends TribeMember {
       }
    }
    
+   // @Cleanup: rename, too similar to wall tiles
    private static resolveWallCollisions(): void {
       const boardUnits = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE;
 

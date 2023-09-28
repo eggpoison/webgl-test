@@ -79,7 +79,9 @@
 
 #crafting-menu .recipe-browser {
    padding: 0.25rem;
-   overflow-y: scroll;
+   /* // @Temporary */
+   /* overflow-y: scroll; */
+   overflow-y: hidden;
 }
 #crafting-menu .item-row {
    display: flex;

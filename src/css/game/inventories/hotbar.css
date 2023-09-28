@@ -9,6 +9,8 @@
 
 #hotbar .inventory {
    margin: 0 5rem;
+   border: 5px solid black !important;
+   border-radius: 0 !important;
 }
 
 #hotbar .flex-balancer {
