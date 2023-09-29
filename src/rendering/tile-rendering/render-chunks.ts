@@ -2,6 +2,7 @@ import { SETTINGS, ServerTileUpdateData } from "webgl-test-shared";
 import { createSolidTileRenderChunkData, recalculateSolidTileRenderChunkData } from "./solid-tile-rendering";
 import { calculateRiverRenderChunkData } from "./river-rendering";
 import { calculateAmbientOcclusionInfo } from "../ambient-occlusion-rendering";
+import { calculateWallBorderInfo } from "../wall-border-rendering";
 
 /** Width and height of a render chunk in tiles */
 export const RENDER_CHUNK_SIZE = 8;
@@ -37,11 +38,17 @@ export interface RenderChunkAmbientOcclusionInfo {
    readonly vertexCount: number;
 }
 
+export interface RenderChunkWallBorderInfo {
+   readonly vao: WebGLVertexArrayObject;
+   readonly vertexCount: number;
+}
+
 /** Stores rendering information about one render chunk of the world.*/
 export interface RenderChunk {
    solidTileInfo: RenderChunkSolidTileInfo;
    riverInfo: RenderChunkRiverInfo | null;
-   ambientOcclusioninfo: RenderChunkAmbientOcclusionInfo | null;
+   ambientOcclusionInfo: RenderChunkAmbientOcclusionInfo | null;
+   readonly wallBorderInfo: RenderChunkWallBorderInfo | null;
 }
 
 let renderChunks: Array<Array<RenderChunk>>;
@@ -56,7 +63,8 @@ export function createRenderChunks(): void {
          renderChunks[renderChunkX].push({
             solidTileInfo: createSolidTileRenderChunkData(renderChunkX, renderChunkY),
             riverInfo: calculateRiverRenderChunkData(renderChunkX, renderChunkY),
-            ambientOcclusioninfo: calculateAmbientOcclusionInfo(renderChunkX, renderChunkY)
+            ambientOcclusionInfo: calculateAmbientOcclusionInfo(renderChunkX, renderChunkY),
+            wallBorderInfo: calculateWallBorderInfo(renderChunkX, renderChunkY)
          });
       }
    }
@@ -78,5 +86,9 @@ export function getRenderChunkRiverInfo(renderChunkX: number, renderChunkY: numb
 }
 
 export function getRenderChunkAmbientOcclusionInfo(renderChunkX: number, renderChunkY: number): RenderChunkAmbientOcclusionInfo | null {
-   return renderChunks[renderChunkX][renderChunkY].ambientOcclusioninfo;
+   return renderChunks[renderChunkX][renderChunkY].ambientOcclusionInfo;
+}
+
+export function getRenderChunkWallBorderInfo(renderChunkX: number, renderChunkY: number): RenderChunkWallBorderInfo | null {
+   return renderChunks[renderChunkX][renderChunkY].wallBorderInfo;
 }
