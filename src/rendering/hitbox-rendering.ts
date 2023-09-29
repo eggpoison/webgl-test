@@ -1,4 +1,4 @@
-import { Point, rotatePoint } from "webgl-test-shared";
+import { rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 import { calculateVisibleGameObjects } from "./game-object-rendering";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
@@ -68,26 +68,25 @@ export function renderEntityHitboxes(): void {
 
             // @Speed: Garbage collection
 
-            let topLeft = new Point(x1, y2);
-            let topRight = new Point(x2, y2);
-            let bottomRight = new Point(x2, y1);
-            let bottomLeft = new Point(x1, y1);
-
-            // Rotate the points to match the entity's rotation
-            topLeft = rotatePoint(topLeft, hitboxRenderPosition, gameObject.rotation);
-            topRight = rotatePoint(topRight, hitboxRenderPosition, gameObject.rotation);
-            bottomRight = rotatePoint(bottomRight, hitboxRenderPosition, gameObject.rotation);
-            bottomLeft = rotatePoint(bottomLeft, hitboxRenderPosition, gameObject.rotation);
+            // Rotate to match the entity's rotation
+            const topLeftX = rotateXAroundPoint(x1, y2, hitboxRenderPosition.x, hitboxRenderPosition.y, gameObject.rotation);
+            const topLeftY = rotateYAroundPoint(x1, y2, hitboxRenderPosition.x, hitboxRenderPosition.y, gameObject.rotation);
+            const topRightX = rotateXAroundPoint(x2, y2, hitboxRenderPosition.x, hitboxRenderPosition.y, gameObject.rotation);
+            const topRightY = rotateYAroundPoint(x2, y2, hitboxRenderPosition.x, hitboxRenderPosition.y, gameObject.rotation);
+            const bottomRightX = rotateXAroundPoint(x2, y1, hitboxRenderPosition.x, hitboxRenderPosition.y, gameObject.rotation);
+            const bottomRightY = rotateYAroundPoint(x2, y1, hitboxRenderPosition.x, hitboxRenderPosition.y, gameObject.rotation);
+            const bottomLeftX = rotateXAroundPoint(x1, y1, hitboxRenderPosition.x, hitboxRenderPosition.y, gameObject.rotation);
+            const bottomLeftY = rotateYAroundPoint(x1, y1, hitboxRenderPosition.x, hitboxRenderPosition.y, gameObject.rotation);
 
             vertices.push(
-               topLeft.x, topLeft.y,
-               topRight.x, topRight.y,
-               topRight.x, topRight.y,
-               bottomRight.x, bottomRight.y,
-               bottomRight.x, bottomRight.y,
-               bottomLeft.x, bottomLeft.y,
-               bottomLeft.x, bottomLeft.y,
-               topLeft.x, topLeft.y
+               topLeftX, topLeftY,
+               topRightX, topRightY,
+               topRightX, topRightY,
+               bottomRightX, bottomRightY,
+               bottomRightX, bottomRightY,
+               bottomLeftX, bottomLeftY,
+               bottomLeftX, bottomLeftY,
+               topLeftX, topLeftY
             );
          } else {
             // Circular

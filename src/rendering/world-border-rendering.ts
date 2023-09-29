@@ -41,15 +41,15 @@ export function createWorldBorderShaders(): void {
 export function renderWorldBorder(): void {
    const BORDER_WIDTH = 20;
 
-   const minChunkXPos = Camera.visibleChunkBounds[0] * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
-   const maxChunkXPos = (Camera.visibleChunkBounds[1] + 1) * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
-   const minChunkYPos = Camera.visibleChunkBounds[2] * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
-   const maxChunkYPos = (Camera.visibleChunkBounds[3] + 1) * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
+   const minChunkXPos = Camera.minVisibleChunkX * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
+   const maxChunkXPos = (Camera.maxVisibleChunkX + 1) * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
+   const minChunkYPos = Camera.minVisibleChunkY * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
+   const maxChunkYPos = (Camera.maxVisibleChunkY + 1) * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
 
-   const leftBorderIsVisible = Camera.visibleChunkBounds[0] === 0;
-   const rightBorderIsVisible = Camera.visibleChunkBounds[1] === SETTINGS.BOARD_SIZE - 1;
-   const bottomBorderIsVisible = Camera.visibleChunkBounds[2] === 0;
-   const topBorderIsVisible = Camera.visibleChunkBounds[3] === SETTINGS.BOARD_SIZE - 1;
+   const leftBorderIsVisible = Camera.minVisibleChunkX === 0;
+   const rightBorderIsVisible = Camera.maxVisibleChunkX === SETTINGS.BOARD_SIZE - 1;
+   const bottomBorderIsVisible = Camera.minVisibleChunkY === 0;
+   const topBorderIsVisible = Camera.maxVisibleChunkY === SETTINGS.BOARD_SIZE - 1;
 
    let numVisibleBorders = 0;
    if (leftBorderIsVisible) {

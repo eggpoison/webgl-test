@@ -1,4 +1,4 @@
-import { SETTINGS, VisibleChunkBounds } from "webgl-test-shared";
+import { SETTINGS } from "webgl-test-shared";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 
 const chunkBorderColour = "1.0, 0.0, 0.0";
@@ -44,7 +44,7 @@ export function createChunkBorderShaders(): void {
    gl.uniformBlockBinding(program, cameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);
 }
 
-export function renderChunkBorders(chunkBounds: VisibleChunkBounds, chunkSize: number, thickness: number): void {
+export function renderChunkBorders(minX: number, maxX: number, minY: number, maxY: number, chunkSize: number, thickness: number): void {
    gl.useProgram(program);
    
    const vertices = new Array<number>();
@@ -52,7 +52,7 @@ export function renderChunkBorders(chunkBounds: VisibleChunkBounds, chunkSize: n
    const halfThickness = thickness/2;
 
    // Horizontal lines
-   for (let chunkY = chunkBounds[2]; chunkY <= chunkBounds[3]; chunkY++) {
+   for (let chunkY = minY; chunkY <= maxY; chunkY++) {
       const screenY = chunkY * chunkSize * SETTINGS.TILE_SIZE;
       vertices.push(
          left, screenY - halfThickness, // Bottom left
@@ -65,7 +65,7 @@ export function renderChunkBorders(chunkBounds: VisibleChunkBounds, chunkSize: n
    }
 
    // Vertical lines
-   for (let chunkX = chunkBounds[0]; chunkX <= chunkBounds[1]; chunkX++) {
+   for (let chunkX = minX; chunkX <= maxX; chunkX++) {
       const screenX = chunkX * chunkSize * SETTINGS.TILE_SIZE;
       vertices.push(
          screenX - halfThickness, bottom, // Bottom left

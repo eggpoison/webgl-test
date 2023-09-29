@@ -1,5 +1,4 @@
-import { TribeType } from "webgl-test-shared";
-import TRIBE_INFO_RECORD from "webgl-test-shared/lib/tribes";
+import { TRIBE_INFO_RECORD, TribeType } from "webgl-test-shared";
 
 /** Stores information about the player's tribe */
 class Tribe {

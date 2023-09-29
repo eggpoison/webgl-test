@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { InitialGameDataPacket, Point, TribeType } from "webgl-test-shared";
+import { InitialGameDataPacket, Point, TribeMemberAction, TribeType } from "webgl-test-shared";
 import Board from "../Board";
 import Client from "../client/Client";
 import Player from "../entities/Player";
@@ -63,7 +63,6 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
             Camera.setCameraPosition(spawnPositionRef.current!);
             Camera.updateVisibleChunkBounds();
             Camera.updateVisibleRenderChunkBounds();
-            Camera.updateVisiblePositionBounds();
             Client.sendInitialPlayerData(username, Camera.getVisibleChunkBounds());
 
             setStatus("receiving_game_data");
@@ -91,7 +90,7 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
                // Spawn the player
                definiteGameState.playerUsername = username;
                const playerSpawnPosition = new Point(spawnPositionRef.current!.x, spawnPositionRef.current!.y);
-               const player = new Player(playerSpawnPosition, new Set([Player.createNewPlayerHitbox()]), initialGameDataPacket.playerID, null, TribeType.plainspeople, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, -1, -99999, -99999, username);
+               const player = new Player(playerSpawnPosition, new Set([Player.createNewPlayerHitbox()]), initialGameDataPacket.playerID, null, TribeType.plainspeople, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, username);
                Player.setInstancePlayer(player);
                Board.addEntity(player);
 

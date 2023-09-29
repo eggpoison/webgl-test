@@ -1,5 +1,4 @@
 import { updateHealthBar } from "../components/game/HealthBar";
-// import Player from "../entities/Player";
 import GameState from "./GameState";
 
 /** Stores the definite, 100% known correct information about the game state. */

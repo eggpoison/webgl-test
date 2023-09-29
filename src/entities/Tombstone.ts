@@ -52,28 +52,20 @@ class Tombstone extends Entity {
       }
    }
 
-   // @Cleanup: copy and paste
-   
    protected onHit(): void {
       for (let i = 0; i < 4; i++) {
-         let spawnPositionX = randFloat(-Tombstone.HITBOX_WIDTH/2, Tombstone.HITBOX_WIDTH/2);
-         let spawnPositionY = randFloat(-Tombstone.HITBOX_HEIGHT/2, Tombstone.HITBOX_HEIGHT/2);
+         const spawnPositionX = this.position.x + randFloat(-Tombstone.HITBOX_WIDTH/2, Tombstone.HITBOX_WIDTH/2);
+         const spawnPositionY = this.position.y + randFloat(-Tombstone.HITBOX_HEIGHT/2, Tombstone.HITBOX_HEIGHT/2);
 
          let moveDirection = Math.PI/2 - Math.atan2(spawnPositionY, spawnPositionX);
          moveDirection += randFloat(-1, 1);
-
-         spawnPositionX += this.position.x;
-         spawnPositionY += this.position.y;
          
          createRockParticle(spawnPositionX, spawnPositionY, moveDirection);
       }
 
       for (let i = 0; i < 8; i++) {
-         let spawnPositionX = randFloat(-Tombstone.HITBOX_WIDTH/2, Tombstone.HITBOX_WIDTH/2);
-         let spawnPositionY = randFloat(-Tombstone.HITBOX_HEIGHT/2, Tombstone.HITBOX_HEIGHT/2);
-
-         spawnPositionX += this.position.x;
-         spawnPositionY += this.position.y;
+         const spawnPositionX = this.position.x + randFloat(-Tombstone.HITBOX_WIDTH/2, Tombstone.HITBOX_WIDTH/2);
+         const spawnPositionY = this.position.y + randFloat(-Tombstone.HITBOX_HEIGHT/2, Tombstone.HITBOX_HEIGHT/2);
 
          createRockSpeckParticle(spawnPositionX, spawnPositionY, 0);
       }

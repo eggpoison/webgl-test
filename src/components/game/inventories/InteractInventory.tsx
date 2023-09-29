@@ -28,7 +28,7 @@ export let interactInventoryIsOpen: () => boolean;
 const InteractInventory = (): null | JSX.Element => {
    const [inventoryType, setInventoryType] = useState<InteractInventoryType | null>(null);
    const [entity, setEntity] = useState<Entity | null>(null);
-   const [_, forceUpdate] = useReducer(x => x + 1, 0);
+   const [, forceUpdate] = useReducer(x => x + 1, 0);
 
    useEffect(() => {
       InteractInventory_setInventory = (inventoryType: InteractInventoryType, entity: Entity): void => {

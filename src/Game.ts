@@ -7,16 +7,15 @@ import { updateSpamFilter } from "./components/game/ChatBox";
 import { GameDataPacket, GameObjectDebugData, Point, SETTINGS } from "webgl-test-shared";
 import { createEntityShaders, renderGameObjects } from "./rendering/game-object-rendering";
 import Client from "./client/Client";
-import { calculateCursorWorldPosition, getCursorX, getCursorY, getMouseTargetEntity, handleMouseMovement, renderCursorTooltip } from "./mouse";
+import { calculateCursorWorldPosition, getCursorX, getCursorY, getMouseTargetEntity, handleMouseMovement, renderCursorTooltip, updateChargeMeter } from "./mouse";
 import { refreshDebugInfo } from "./components/game/dev/DebugInfo";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createShaderStrings, createWebGLContext, gl, halfWindowHeight, halfWindowWidth, resizeCanvas } from "./webgl";
 import { loadTextures } from "./textures";
 import { hidePauseScreen, showPauseScreen, toggleSettingsMenu } from "./components/game/GameScreen";
 import { getGameState } from "./components/App";
-import Item from "./items/Item";
 import { clearPressedKeys } from "./keyboard-input";
 import { createHitboxShaders, renderEntityHitboxes } from "./rendering/hitbox-rendering";
-import { updateInteractInventory, updatePlayerMovement } from "./player-input";
+import { updateInteractInventory, updatePlayerItems, updatePlayerMovement } from "./player-input";
 import { clearServerTicks, updateDebugScreenFPS, updateDebugScreenRenderTime } from "./components/game/dev/GameInfoDisplay";
 import { createWorldBorderShaders, renderWorldBorder } from "./rendering/world-border-rendering";
 import { createSolidTileShaders, renderSolidTiles } from "./rendering/tile-rendering/solid-tile-rendering";
@@ -34,7 +33,6 @@ import { RENDER_CHUNK_SIZE, createRenderChunks } from "./rendering/tile-renderin
 import { registerFrame, updateFrameGraph } from "./components/game/dev/FrameGraph";
 import { createNightShaders, renderNight } from "./rendering/night-rendering";
 import { createPlaceableItemProgram, renderGhostPlaceableItem } from "./rendering/placeable-item-rendering";
-import { definiteGameState } from "./game-state/game-states";
 import Entity from "./entities/Entity";
 import DroppedItem from "./items/DroppedItem";
 import Projectile from "./projectiles/Projectile";
@@ -268,10 +266,13 @@ abstract class Game {
 
       updatePlayerMovement();
       updateAvailableCraftingRecipes();
+      
+      updatePlayerItems();
 
-      this.tickPlayerItems();
-
-      Item.decrementGlobalItemSwitchDelay();
+      // @Cleanup: This shouldn't be here
+      if (Player.instance !== null) {
+         Player.instance!.updateBowChargeTexture();
+      }
 
       if (isDev()) refreshDebugInfo();
    }
@@ -280,20 +281,8 @@ abstract class Game {
       if (Player.instance !== null) {
          Player.instance.applyPhysics();
          Player.instance.updateHitboxes();
-         Player.instance.recalculateContainingChunks();
+         Player.instance.updateContainingChunks();
          Player.resolveCollisions();
-      }
-   }
-
-   private static tickPlayerItems(): void {
-      if (definiteGameState.hotbar === null) {
-         return;
-      }
-      
-      for (const item of Object.values(definiteGameState.hotbar.itemSlots)) {
-         if (typeof item.tick !== "undefined") {
-            item.tick();
-         }
       }
    }
 
@@ -328,7 +317,6 @@ abstract class Game {
          Camera.setCameraPosition(Player.instance.renderPosition);
          Camera.updateVisibleChunkBounds();
          Camera.updateVisibleRenderChunkBounds();
-         Camera.updateVisiblePositionBounds();
       }
 
       // Update the camera buffer
@@ -370,10 +358,10 @@ abstract class Game {
       }
       renderWorldBorder();
       if (nerdVisionIsVisible() && OPTIONS.showChunkBorders) {
-         renderChunkBorders(Camera.visibleChunkBounds, SETTINGS.CHUNK_SIZE, 1);
+         renderChunkBorders(Camera.minVisibleChunkX, Camera.maxVisibleChunkX, Camera.minVisibleChunkY, Camera.maxVisibleChunkY, SETTINGS.CHUNK_SIZE, 1);
       }
       if (nerdVisionIsVisible() && OPTIONS.showRenderChunkBorders) {
-         renderChunkBorders(Camera.visibleRenderChunkBounds, RENDER_CHUNK_SIZE, 2);
+         renderChunkBorders(Camera.minVisibleRenderChunkX, Camera.maxVisibleRenderChunkX, Camera.minVisibleRenderChunkY, Camera.maxVisibleRenderChunkY, RENDER_CHUNK_SIZE, 2);
       }
 
       renderMonocolourParticles(ParticleRenderLayer.low, renderTime);
@@ -402,6 +390,8 @@ abstract class Game {
 
       this.cursorPosition = calculateCursorWorldPosition();
       renderCursorTooltip();
+      
+      updateChargeMeter();
 
       if (!OPTIONS.nightVisionIsEnabled) {
          renderNight();

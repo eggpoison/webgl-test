@@ -42,9 +42,6 @@ const formatTime = (time: number): string => {
 const GameInfoDisplay = () => {
    const [currentTime, setCurrentTime] = useState(0);
    const [ticks, setTicks] = useState(Board.ticks);
-   // @Cleanup @Incomplete
-   // const [fps, setFPS] = useState(0);
-   const [renderTime, setRenderTime] = useState(0);
 
    const [nightVisionIsEnabled, setNightvisionIsEnabled] = useState(OPTIONS.nightVisionIsEnabled);
    const [showHitboxes, setShowEntityHitboxes] = useState(OPTIONS.showHitboxes);
@@ -61,12 +58,6 @@ const GameInfoDisplay = () => {
       }
       updateDebugScreenTicks = (ticks: number): void => {
          setTicks(ticks);
-      }
-      // updateDebugScreenFPS = (): void => {
-      //    setFPS(fpsTimers.length);
-      // }
-      updateDebugScreenRenderTime = (renderTime: number): void => {
-         setRenderTime(renderTime);
       }
    }, []);
 
@@ -93,9 +84,6 @@ const GameInfoDisplay = () => {
    return <div id="game-info-display">
       <p>Time: {formatTime(roundNum(currentTime, 2))}</p>
       <p>Ticks: {roundNum(ticks, 2)}</p>
-      {/* @Incomplete */}
-      {/* <p>FPS: {fps}</p>
-      <p>Render time ms: {renderTime.toFixed(2)}</p> */}
       <p>TPS: {tps}</p>
 
       <ul className="options">

@@ -1,4 +1,4 @@
-import { Point, SETTINGS } from "webgl-test-shared";
+import { BowItemInfo, ITEM_INFO_RECORD, Point, SETTINGS, TribeMemberAction } from "webgl-test-shared";
 import { halfWindowHeight, halfWindowWidth } from "./webgl";
 import CLIENT_SETTINGS from "./client-settings";
 import { updateCursorTooltip } from "./components/game/dev/CursorTooltip";
@@ -9,6 +9,9 @@ import { updateDebugInfoEntity, updateDebugInfoTile } from "./components/game/de
 import { isDev } from "./utils";
 import Board from "./Board";
 import { Tile } from "./Tile";
+import { definiteGameState, latencyGameState } from "./game-state/game-states";
+import { hideChargeMeter, showChargeMeter, updateChargeMeterProgress } from "./components/game/ChargeMeter";
+import Player from "./entities/Player";
 
 let cursorX: number | null = null;
 let cursorY: number | null = null;
@@ -127,4 +130,24 @@ export function renderCursorTooltip(): void {
 
    const debugData = Game.getGameObjectDebugData();
    updateCursorTooltip(debugData, screenPosition);
+}
+
+export function updateChargeMeter(): void {
+   if (latencyGameState.playerAction !== TribeMemberAction.charge_bow || Player.instance === null) {
+      hideChargeMeter();
+      return;
+   }
+
+   showChargeMeter();
+
+   const selectedItem = definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot];
+   const bowInfo = ITEM_INFO_RECORD[selectedItem.type] as BowItemInfo;
+
+   const secondsSinceLastAction = Player.instance.getSecondsSinceLastAction(Player.instance.lastActionTicks);
+   let chargeProgress = secondsSinceLastAction / bowInfo.shotCooldown;
+   if (chargeProgress > 1) {
+      chargeProgress = 1;
+   }
+
+   updateChargeMeterProgress(chargeProgress);
 }

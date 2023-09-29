@@ -1,13 +1,12 @@
-import { EntityData, InventoryData, ItemType, Point, TribeType } from "webgl-test-shared";
+import { EntityData, InventoryData, ItemType, Point, TribeMemberAction, TribeType } from "webgl-test-shared";
 import TribeMember from "./TribeMember";
 import RenderPart from "../render-parts/RenderPart";
-import { Inventory, ItemSlots } from "../items/Item";
-import { createItem } from "../items/item-creation";
+import { Inventory } from "../items/Item";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { createFootprintParticle } from "../generic-particles";
 import Board from "../Board";
-import { updateInventoryFromData } from "../inventory-manipulation";
+import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
 
 class Tribesman extends TribeMember {
    public readonly type = "tribesman";
@@ -25,20 +24,18 @@ class Tribesman extends TribeMember {
 
    public activeItemSlot: number;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, foodEatingType: ItemType | -1, lastAttackTicks: number, lastEatTicks: number, inventoryData: InventoryData, activeItemSlot: number) {
-      super(position, hitboxes, id, tribeID, tribeType, armourSlotInventory, backpackSlotInventory, backpackInventory, activeItem, foodEatingType, lastAttackTicks, lastEatTicks);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, action: TribeMemberAction, foodEatingType: ItemType | -1, lastActionTicks: number, inventoryData: InventoryData, activeItemSlot: number) {
+      super(position, hitboxes, id, tribeID, tribeType, armourSlotInventory, backpackSlotInventory, backpackInventory, activeItem, action, foodEatingType, lastActionTicks);
 
       this.activeItemSlot = activeItemSlot;
       
-      this.attachRenderPart(
-         new RenderPart(
-            Tribesman.RADIUS * 2,
-            Tribesman.RADIUS * 2,
-            super.getTextureSource(tribeType),
-            1,
-            0
-         )
-      );
+      this.attachRenderPart(new RenderPart(
+         Tribesman.RADIUS * 2,
+         Tribesman.RADIUS * 2,
+         super.getTextureSource(tribeType),
+         1,
+         0
+      ));
 
       if (tribeType === TribeType.goblins) {
          // Goblin warpaint
@@ -76,24 +73,7 @@ class Tribesman extends TribeMember {
          this.attachRenderPart(rightEarRenderPart);
       }
 
-      this.inventory = this.createInventoryFromData(inventoryData);
-   }
-
-   private createInventoryFromData(inventoryData: InventoryData): Inventory {
-      const itemSlots: ItemSlots = {};
-      for (const [itemSlot, itemData] of Object.entries(inventoryData.itemSlots)) {
-         const item = createItem(itemData.type, itemData.count, itemData.id);
-         itemSlots[Number(itemSlot)] = item;
-      }
-      
-      const inventory: Inventory = {
-         itemSlots: itemSlots,
-         width: inventoryData.width,
-         height: inventoryData.height,
-         inventoryName: "hotbar"
-      };
-
-      return inventory;
+      this.inventory = createInventoryFromData(inventoryData);
    }
 
    public tick(): void {

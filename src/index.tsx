@@ -18,6 +18,7 @@ import "./css/game/inventories/tribesman-inventory.css";
 import "./css/game/inventories/barrel-inventory.css";
 import "./css/game/inventories/backpack-inventory.css";
 import "./css/game/inventories/tombstone-epitaph.css";
+import "./css/game/charge-meter.css";
 import "./css/game/menus/crafting-menu.css";
 import "./css/game/nerd-vision/nerd-vision.css";
 import "./css/game/nerd-vision/game-info-display.css";

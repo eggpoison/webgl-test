@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, ProjectileData, VisibleChunkBounds, TribeType, TribeData, InventoryData, CircularHitboxData, RectangularHitboxData, randFloat, RESOURCE_ENTITY_TYPES, MOB_ENTITY_TYPES } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, ProjectileData, VisibleChunkBounds, TribeType, TribeData, InventoryData, CircularHitboxData, RectangularHitboxData, randFloat, RESOURCE_ENTITY_TYPES, MOB_ENTITY_TYPES, TribeMemberAction } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -10,11 +10,11 @@ import DroppedItem from "../items/DroppedItem";
 import { Tile } from "../Tile";
 import { gameScreenSetIsDead } from "../components/game/GameScreen";
 import { Inventory } from "../items/Item";
-import { updateActiveItem, updateInventoryIsOpen } from "../player-input";
+import { updateInventoryIsOpen } from "../player-input";
 import { Hotbar_update } from "../components/game/inventories/Hotbar";
 import { setHeldItemVisual } from "../components/game/HeldItem";
 import { CraftingMenu_setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
-import { updateHealthBar } from "../components/game/HealthBar";
+import { HealthBar_setHasFrostShield, updateHealthBar } from "../components/game/HealthBar";
 import { registerServerTick, updateDebugScreenCurrentTime, updateDebugScreenTicks } from "../components/game/dev/GameInfoDisplay";
 import createProjectile from "../projectiles/projectile-creation";
 import Camera from "../Camera";
@@ -29,6 +29,8 @@ import { createWhiteSmokeParticle } from "../generic-particles";
 import Particle from "../Particle";
 import { addMonocolourParticleToBufferContainer, ParticleRenderLayer } from "../rendering/particle-rendering";
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
+
+const BUILDING_TYPES: ReadonlyArray<EntityType> = ["barrel", "campfire", "furnace", "tribe_totem", "tribe_hut", "workbench"];
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -179,7 +181,6 @@ abstract class Client {
       Board.time = gameDataPacket.serverTime;
       updateDebugScreenCurrentTime(gameDataPacket.serverTime);
 
-
       if (isDev()) {
          Game.setGameObjectDebugData(gameDataPacket.gameObjectDebugData);
       }
@@ -207,6 +208,8 @@ abstract class Client {
       if (Player.instance !== null && definiteGameState.playerIsDead()) {
          this.killPlayer();
       }
+
+      HealthBar_setHasFrostShield(gameDataPacket.hasFrostShield);
    }
 
    private static updateTribe(tribeData: TribeData | null): void {
@@ -244,7 +247,7 @@ abstract class Client {
          if (Board.entities.hasOwnProperty(entityData.id)) {
             // @Cleanup: This is very messy and unmaintainable. Doing the hit and healing particle logic outside
             // of the updateFromData function is done as the player instance right now can't use the updateFromData
-            // function, and doing so would cause a circular dependency with Entity <-> Player.
+            // function, doing so would cause a circular dependency with TribeMember <-> Player.
             
             // We don't want the player to be updated from the server data
             if (Board.entities[entityData.id] !== Player.instance) {
@@ -323,9 +326,6 @@ abstract class Client {
       const hotbarHasChanged = this.inventoryHasChanged(definiteGameState.hotbar, playerInventoryData.hotbar);
       updateInventoryFromData(definiteGameState.hotbar, playerInventoryData.hotbar);
 
-      // @Cleanup should this be here?
-      updateActiveItem();
-
       const backpackHasChanged = this.inventoryHasChanged(definiteGameState.backpack, playerInventoryData.backpackInventory);
       if (definiteGameState.backpack !== null) {
          updateInventoryFromData(definiteGameState.backpack, playerInventoryData.backpackInventory);
@@ -356,6 +356,7 @@ abstract class Client {
       // @Temporary @Cleanup: I think this is only done as the Player instance doesn't use updateFromData
       if (Player.instance !== null && armourSlotHasChanged) {
          updateInventoryFromData(Player.instance.armourSlotInventory, playerInventoryData.armourSlot);
+         // @Incomplete: Why did we comment this out? Do we need it?
          // const armourType = definiteGameState.armourSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.armourSlot.itemSlots[1].type : null;
          // Player.instance.updateArmourRenderPart(armourType);
          // Player.instance.armourType = armourType;
@@ -482,7 +483,7 @@ abstract class Client {
 
       // If the entity has just spawned in, create white smoke particles.
       // Only create particles for living entities: e.g. cows, tribesmen, etc.
-      if (entityData.ageTicks === 0 && !RESOURCE_ENTITY_TYPES.includes(entityData.type) && (MOB_ENTITY_TYPES.includes(entityData.type) || entityData.type === "player" || entityData.type === "tribesman")) {
+      if (entityData.ageTicks === 0 && !RESOURCE_ENTITY_TYPES.includes(entityData.type) && (MOB_ENTITY_TYPES.includes(entityData.type) || entityData.type === "player" || entityData.type === "tribesman" || BUILDING_TYPES.includes(entityData.type))) {
          const strength = 0.8 * entity.mass;
          
          // White smoke particles
@@ -497,12 +498,12 @@ abstract class Client {
             const spawnPositionX = entity.position.x;
             const spawnPositionY = entity.position.y;
 
-            const velocityMagnitude = 80 * randFloat(0.9, 1.1);
+            const velocityMagnitude = randFloat(80, 160) * strength;
             const velocityDirection = 2 * Math.PI * Math.random();
             const velocityX = velocityMagnitude * Math.sin(velocityDirection);
             const velocityY = velocityMagnitude * Math.cos(velocityDirection);
 
-            const lifetime = strength;
+            const lifetime = Math.pow(strength, 0.75);
             
             const particle = new Particle(lifetime);
             particle.getOpacity = () => {
@@ -557,7 +558,7 @@ abstract class Client {
       updateHealthBar(Player.MAX_HEALTH);
       
       const spawnPosition = Point.unpackage(respawnDataPacket.spawnPosition);
-      const player = new Player(spawnPosition, new Set([Player.createNewPlayerHitbox()]), respawnDataPacket.playerID, null, TribeType.plainspeople, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, -1, -99999, -99999, definiteGameState.playerUsername);
+      const player = new Player(spawnPosition, new Set([Player.createNewPlayerHitbox()]), respawnDataPacket.playerID, null, TribeType.plainspeople, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, definiteGameState.playerUsername);
       Player.setInstancePlayer(player);
       Board.addEntity(player);
 
@@ -595,7 +596,7 @@ abstract class Client {
             rotation: Player.instance.rotation,
             visibleChunkBounds: Camera.getVisibleChunkBounds(),
             selectedItemSlot: latencyGameState.selectedHotbarItemSlot,
-            isEating: latencyGameState.playerIsEating
+            action: latencyGameState.playerAction
          };
 
          this.socket.emit("player_data_packet", packet);

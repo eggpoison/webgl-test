@@ -36,25 +36,22 @@ class Slime extends Entity {
    public type: EntityType = "slime";
 
    private readonly eyeRenderPart: RenderPart;
+   private readonly orbRenderParts = new Array<RenderPart>();
 
    private readonly size: number;
 
-   private eyeRotation: number;
    private numOrbs: number;
    private readonly orbRotations = new Array<number>();
-   private anger: number;
 
    private internalTickCounter = 0;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, size: SlimeSize, eyeRotation: number, orbs: ReadonlyArray<SlimeOrbData>, anger: number) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, size: SlimeSize, eyeRotation: number, orbs: ReadonlyArray<SlimeOrbData>) {
       super(position, hitboxes, id);
 
       const spriteSize = Slime.SIZES[size];
 
       const sizeString = Slime.SIZE_STRINGS[size];
 
-      this.eyeRotation = eyeRotation;
-      this.anger = anger;
       this.size = size;
 
       // Body
@@ -74,34 +71,18 @@ class Slime extends Entity {
          3,
          eyeRotation
       );
-      this.eyeRenderPart.offset = (): Point => {
-         let rotation = this.eyeRotation;
-         if (this.anger >= 0) {
-            const frequency = lerp(Slime.EYE_SHAKE_START_FREQUENCY, Slime.EYE_SHAKE_END_FREQUENCY, this.anger);
-            this.internalTickCounter += frequency;
-            
-            let amplitude = lerp(Slime.EYE_SHAKE_START_AMPLITUDE, Slime.EYE_SHAKE_END_AMPLITUDE, this.anger) * 100;
-            amplitude /= Math.PI * Slime.SIZES[this.size];
-            rotation += amplitude * Math.sin(this.internalTickCounter);
-         } else {
-            this.internalTickCounter = 0;
-         }
-         
-         return Point.fromVectorForm(Slime.EYE_OFFSETS[this.size], rotation);
-      }
+      this.eyeRenderPart.offset = Point.fromVectorForm(Slime.EYE_OFFSETS[this.size], eyeRotation);
       this.eyeRenderPart.inheritParentRotation = false;
       this.attachRenderPart(this.eyeRenderPart);
 
       // Shading
-      this.attachRenderPart(
-         new RenderPart(
-            spriteSize,
-            spriteSize,
-            `entities/slime/slime-${sizeString}-shading.png`,
-            0,
-            0
-         )
-      );
+      this.attachRenderPart(new RenderPart(
+         spriteSize,
+         spriteSize,
+         `entities/slime/slime-${sizeString}-shading.png`,
+         0,
+         0
+      ));
 
       this.numOrbs = orbs.length;
       for (let i = 0; i < orbs.length; i++) {
@@ -121,17 +102,15 @@ class Slime extends Entity {
 
       this.orbRotations.push(orbData.rotation);
 
-      const renderPart = new RenderPart(
+      this.orbRenderParts[i] = new RenderPart(
          orbSize,
          orbSize,
          `entities/slime/slime-orb-${sizeString}.png`,
          1,
          orbData.rotation
       );
-      renderPart.offset = () => {
-         return Point.fromVectorForm(offsetMagnitude, this.orbRotations[i]);
-      }
-      this.attachRenderPart(renderPart);
+      this.orbRenderParts[i].offset = Point.fromVectorForm(offsetMagnitude, this.orbRotations[i]);
+      this.attachRenderPart(this.orbRenderParts[i]);
    }
 
    protected overrideTileMoveSpeedMultiplier(): number | null {
@@ -145,17 +124,38 @@ class Slime extends Entity {
    public updateFromData(entityData: EntityData<"slime">): void {
       super.updateFromData(entityData);
 
-      this.anger = entityData.clientArgs[3];
-      
-      // Update eye's rotation
-      this.eyeRotation = entityData.clientArgs[1];
+      // 
+      // Update the eye's rotation
+      // 
+
+      const anger = entityData.clientArgs[3];
       this.eyeRenderPart.rotation = entityData.clientArgs[1];
+      if (anger >= 0) {
+         const frequency = lerp(Slime.EYE_SHAKE_START_FREQUENCY, Slime.EYE_SHAKE_END_FREQUENCY, anger);
+         this.internalTickCounter += frequency;
+
+         let amplitude = lerp(Slime.EYE_SHAKE_START_AMPLITUDE, Slime.EYE_SHAKE_END_AMPLITUDE, anger) * 100;
+         amplitude /= Math.PI * Slime.SIZES[this.size];
+         this.eyeRenderPart.rotation += amplitude * Math.sin(this.internalTickCounter * 3);
+      } else {
+         this.internalTickCounter = 0;
+      }
+
+      (this.eyeRenderPart.offset as Point).x = Slime.EYE_OFFSETS[this.size] * Math.sin(this.eyeRenderPart.rotation);
+      (this.eyeRenderPart.offset as Point).y = Slime.EYE_OFFSETS[this.size] * Math.cos(this.eyeRenderPart.rotation);
 
       for (let i = 0; i < entityData.clientArgs[2].length; i++) {
          const orb = entityData.clientArgs[2][i];
-         if (i > this.numOrbs) {
+         if (i >= this.numOrbs) {
             this.createOrbRenderPart(orb, i);
          } else {
+            // Update the orb's rotation
+            if (this.orbRotations[i] !== orb.rotation) {
+               const spriteSize = Slime.SIZES[this.size];
+               const offsetMagnitude = spriteSize / 2 * lerp(0.3, 0.7, orb.offset);
+               (this.orbRenderParts[i].offset as Point).x = offsetMagnitude * Math.sin(orb.rotation);
+               (this.orbRenderParts[i].offset as Point).y = offsetMagnitude * Math.cos(orb.rotation);
+            }
             this.orbRotations[i] = orb.rotation;
          }
       }

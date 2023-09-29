@@ -64,10 +64,6 @@ abstract class GameObject extends RenderObject {
       
       for (const hitbox of this.hitboxes) {
          hitbox.setObject(this); 
-         if (hitbox.hasOwnProperty("width")) {
-            (hitbox as RectangularHitbox).computeVertexPositions();
-            (hitbox as RectangularHitbox).computeSideAxes();
-         }
          hitbox.updateHitboxBounds();
          hitbox.updatePosition();
       }
@@ -254,7 +250,7 @@ abstract class GameObject extends RenderObject {
    }
 
    /** Recalculates which chunks the game object is contained in */
-   public recalculateContainingChunks(): void {
+   public updateContainingChunks(): void {
       const containingChunks = new Set<Chunk>();
       
       // Find containing chunks
@@ -325,10 +321,6 @@ abstract class GameObject extends RenderObject {
 
    public updateHitboxes(): void {
       for (const hitbox of this.hitboxes) {
-         if (hitbox.hasOwnProperty("width")) {
-            (hitbox as RectangularHitbox).computeVertexPositions();
-            (hitbox as RectangularHitbox).computeSideAxes();
-         }
          hitbox.updateHitboxBounds();
          hitbox.updatePosition();
       }
@@ -350,10 +342,46 @@ abstract class GameObject extends RenderObject {
       this.rotation = data.rotation;
       this.mass = data.mass;
 
-      this.updateHitboxes();
+      const containingChunks = new Set<Chunk>();
 
-      // Recalculate the game object's containing chunks to account for the new position
-      this.recalculateContainingChunks();
+      // Update the game object's hitboxes and containing chunks
+      for (const hitbox of this.hitboxes) {
+         hitbox.updateHitboxBounds();
+         hitbox.updatePosition();
+
+         // Recalculate the game object's containing chunks based on the new hitbox bounds
+         const minChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[0] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+         const maxChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[1] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+         const minChunkY = Math.max(Math.min(Math.floor(hitbox.bounds[2] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+         const maxChunkY = Math.max(Math.min(Math.floor(hitbox.bounds[3] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+         
+         for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+            for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
+               const chunk = Board.getChunk(chunkX, chunkY);
+               if (!this.chunks.has(chunk)) {
+                  chunk.addGameObject(this as unknown as GameObject);
+                  this.chunks.add(chunk);
+               }
+               containingChunks.add(chunk);
+            }
+         }
+      }
+
+      // Find all chunks which aren't present in the new chunks and remove them
+      for (const chunk of this.chunks) {
+         if (!containingChunks.has(chunk)) {
+            chunk.removeGameObject(this as unknown as GameObject);
+            this.chunks.delete(chunk);
+         }
+      }
+
+      // Add all new chunks
+      for (const chunk of containingChunks) {
+         if (!this.chunks.has(chunk)) {
+            chunk.addGameObject(this as unknown as GameObject);
+            this.chunks.add(chunk);
+         }
+      }
    }
 }
 

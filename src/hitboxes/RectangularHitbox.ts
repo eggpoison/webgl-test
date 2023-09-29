@@ -1,5 +1,5 @@
 import { circleAndRectangleDoIntersect, computeSideAxis, HitboxVertexPositions, Point, rectanglePointsDoIntersect, rotateXAroundPoint, rotateYAroundPoint, Vector } from "webgl-test-shared";
-import Hitbox, { HitboxBounds } from "./Hitbox";
+import Hitbox from "./Hitbox";
 import CircularHitbox from "./CircularHitbox";
 
 class RectangularHitbox extends Hitbox {
@@ -60,23 +60,25 @@ class RectangularHitbox extends Hitbox {
       ];
    }
 
-   protected calculateHitboxBounds(): HitboxBounds {
-      const minX = Math.min(this.vertexPositions[0].x, this.vertexPositions[1].x, this.vertexPositions[2].x, this.vertexPositions[3].x);
-      const maxX = Math.max(this.vertexPositions[0].x, this.vertexPositions[1].x, this.vertexPositions[2].x, this.vertexPositions[3].x);
-      const minY = Math.min(this.vertexPositions[0].y, this.vertexPositions[1].y, this.vertexPositions[2].y, this.vertexPositions[3].y);
-      const maxY = Math.max(this.vertexPositions[0].y, this.vertexPositions[1].y, this.vertexPositions[2].y, this.vertexPositions[3].y);
-      return [minX, maxX, minY, maxY];
+   public updateHitboxBounds(): void {
+      this.computeVertexPositions();
+      this.computeSideAxes();
+
+      this.bounds[0] = Math.min(this.vertexPositions[0].x, this.vertexPositions[1].x, this.vertexPositions[2].x, this.vertexPositions[3].x);
+      this.bounds[1] = Math.max(this.vertexPositions[0].x, this.vertexPositions[1].x, this.vertexPositions[2].x, this.vertexPositions[3].x);
+      this.bounds[2] = Math.min(this.vertexPositions[0].y, this.vertexPositions[1].y, this.vertexPositions[2].y, this.vertexPositions[3].y);
+      this.bounds[3] = Math.max(this.vertexPositions[0].y, this.vertexPositions[1].y, this.vertexPositions[2].y, this.vertexPositions[3].y);
    }
 
    public isColliding(otherHitbox: CircularHitbox | RectangularHitbox): boolean {
       if (otherHitbox.hasOwnProperty("radius")) {
          // Circular
-         return circleAndRectangleDoIntersect(otherHitbox.gameObject.position, (otherHitbox as CircularHitbox).radius, this.gameObject.position, this.width, this.height, this.gameObject.rotation);
+         return circleAndRectangleDoIntersect(otherHitbox.position, (otherHitbox as CircularHitbox).radius, this.position, this.width, this.height, this.gameObject.rotation);
       } else {
          // Rectangular
 
-         // If the distance between the entities is greater than the sum of their half diagonals then they're not colliding
-         const distance = this.gameObject.position.calculateDistanceBetween(otherHitbox.gameObject.position);
+         // If the distance between the hitboxes is greater than the sum of their half diagonals then they're not colliding
+         const distance = this.position.calculateDistanceBetween(otherHitbox.position);
          if (distance > this.halfDiagonalLength + (otherHitbox as RectangularHitbox).halfDiagonalLength) {
             return false;
          }
