@@ -1,7 +1,7 @@
 import { EntityData, InventoryData, ItemType, Point, TribeMemberAction, TribeType } from "webgl-test-shared";
 import TribeMember from "./TribeMember";
 import RenderPart from "../render-parts/RenderPart";
-import { Inventory, ItemSlots } from "../items/Item";
+import { Inventory } from "../items/Item";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { createFootprintParticle } from "../generic-particles";
@@ -29,15 +29,13 @@ class Tribesman extends TribeMember {
 
       this.activeItemSlot = activeItemSlot;
       
-      this.attachRenderPart(
-         new RenderPart(
-            Tribesman.RADIUS * 2,
-            Tribesman.RADIUS * 2,
-            super.getTextureSource(tribeType),
-            1,
-            0
-         )
-      );
+      this.attachRenderPart(new RenderPart(
+         Tribesman.RADIUS * 2,
+         Tribesman.RADIUS * 2,
+         super.getTextureSource(tribeType),
+         1,
+         0
+      ));
 
       if (tribeType === TribeType.goblins) {
          // Goblin warpaint

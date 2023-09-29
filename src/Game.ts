@@ -271,7 +271,7 @@ abstract class Game {
 
       // @Cleanup: This shouldn't be here
       if (Player.instance !== null) {
-         Player.instance!.updateChargeTexture();
+         Player.instance!.updateBowChargeTexture();
       }
 
       if (isDev()) refreshDebugInfo();

@@ -422,6 +422,10 @@ abstract class TribeMember extends Entity {
    public updateFromData(entityData: EntityData<"player"> | EntityData<"tribesman">): void {
       super.updateFromData(entityData);
 
+      // Do all the non-player-instance specific updates
+
+      this.tribeID = entityData.clientArgs[0];
+
       updateInventoryFromData(this.armourSlotInventory, entityData.clientArgs[2]);
       updateInventoryFromData(this.backpackSlotInventory, entityData.clientArgs[3]);
       updateInventoryFromData(this.backpackInventory, entityData.clientArgs[4]);
@@ -430,15 +434,13 @@ abstract class TribeMember extends Entity {
       this.foodEatingType = entityData.clientArgs[7]
       this.lastActionTicks = entityData.clientArgs[8];
       this.updateActiveItemRenderPart(this.activeItemType);
-      this.updateChargeTexture();
-
-      this.tribeID = entityData.clientArgs[0];
+      this.updateBowChargeTexture();
 
       // @Cleanup
       this.updateArmourRenderPart(this.armourSlotInventory.itemSlots.hasOwnProperty(1) ? this.armourSlotInventory.itemSlots[1].type : null);
    }
 
-   public updateChargeTexture(): void {
+   public updateBowChargeTexture(): void {
       // Change the bow charging texture based on the charge progress
       if (this.action === TribeMemberAction.charge_bow && this.activeItemType !== null) {
          const bowInfo = ITEM_INFO_RECORD[this.activeItemType] as BowItemInfo;

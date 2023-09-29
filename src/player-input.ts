@@ -142,11 +142,14 @@ export function updatePlayerItems(): void {
    if (Player.instance !== null) {
       if (definiteGameState.hotbar.itemSlots.hasOwnProperty(latencyGameState.selectedHotbarItemSlot)) {
          Player.instance.updateActiveItem(definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot].type);
-         Player.instance.updateChargeTexture();
+         Player.instance.updateBowChargeTexture();
       } else {
          Player.instance.updateActiveItem(null);
       }
+
+      Player.instance.updateArmourRenderPart(definiteGameState.armourSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.armourSlot.itemSlots[1].type : null);
    }
+
 
    // Decrement global item switch delay
    globalAttackDelayTimer -= 1 / SETTINGS.TPS;
@@ -697,7 +700,7 @@ const selectItemSlot = (itemSlot: number): void => {
    if (Player.instance !== null) {
       if (definiteGameState.hotbar.itemSlots.hasOwnProperty(latencyGameState.selectedHotbarItemSlot)) {
          Player.instance.updateActiveItem(definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot].type);
-         Player.instance.updateChargeTexture();
+         Player.instance.updateBowChargeTexture();
       } else {
          Player.instance.updateActiveItem(null);
       }
