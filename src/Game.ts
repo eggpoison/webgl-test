@@ -33,7 +33,6 @@ import { RENDER_CHUNK_SIZE, createRenderChunks } from "./rendering/tile-renderin
 import { registerFrame, updateFrameGraph } from "./components/game/dev/FrameGraph";
 import { createNightShaders, renderNight } from "./rendering/night-rendering";
 import { createPlaceableItemProgram, renderGhostPlaceableItem } from "./rendering/placeable-item-rendering";
-import { definiteGameState } from "./game-state/game-states";
 import Entity from "./entities/Entity";
 import DroppedItem from "./items/DroppedItem";
 import Projectile from "./projectiles/Projectile";
@@ -282,7 +281,7 @@ abstract class Game {
       if (Player.instance !== null) {
          Player.instance.applyPhysics();
          Player.instance.updateHitboxes();
-         Player.instance.recalculateContainingChunks();
+         Player.instance.updateContainingChunks();
          Player.resolveCollisions();
       }
    }

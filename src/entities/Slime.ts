@@ -45,7 +45,7 @@ class Slime extends Entity {
 
    private internalTickCounter = 0;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, size: SlimeSize, eyeRotation: number, orbs: ReadonlyArray<SlimeOrbData>, anger: number) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, size: SlimeSize, eyeRotation: number, orbs: ReadonlyArray<SlimeOrbData>) {
       super(position, hitboxes, id);
 
       const spriteSize = Slime.SIZES[size];
@@ -76,15 +76,13 @@ class Slime extends Entity {
       this.attachRenderPart(this.eyeRenderPart);
 
       // Shading
-      this.attachRenderPart(
-         new RenderPart(
-            spriteSize,
-            spriteSize,
-            `entities/slime/slime-${sizeString}-shading.png`,
-            0,
-            0
-         )
-      );
+      this.attachRenderPart(new RenderPart(
+         spriteSize,
+         spriteSize,
+         `entities/slime/slime-${sizeString}-shading.png`,
+         0,
+         0
+      ));
 
       this.numOrbs = orbs.length;
       for (let i = 0; i < orbs.length; i++) {

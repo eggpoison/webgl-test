@@ -126,19 +126,19 @@ abstract class Board {
    }
 
    public static addEntity(entity: Entity): void {
-      entity.recalculateContainingChunks();
+      entity.updateContainingChunks();
       this.gameObjects[entity.id] = entity;
       this.entities[entity.id] = entity;
    }
 
    public static addDroppedItem(droppedItem: DroppedItem): void {
-      droppedItem.recalculateContainingChunks();
+      droppedItem.updateContainingChunks();
       this.gameObjects[droppedItem.id] = droppedItem;
       this.droppedItems[droppedItem.id] = droppedItem;
    }
 
    public static addProjectile(projectile: Projectile): void {
-      projectile.recalculateContainingChunks();
+      projectile.updateContainingChunks();
       this.gameObjects[projectile.id] = projectile;
       this.projectiles[projectile.id] = projectile;
    }
@@ -238,15 +238,11 @@ abstract class Board {
 
          // Calculate the entity's new info
          for (const hitbox of gameObject.hitboxes) {
-            if (hitbox.hasOwnProperty("width")) {
-               (hitbox as RectangularHitbox).computeVertexPositions();
-               (hitbox as RectangularHitbox).computeSideAxes();
-            }
             hitbox.updateHitboxBounds();
             hitbox.updatePosition();
          }
 
-         gameObject.recalculateContainingChunks();
+         gameObject.updateContainingChunks();
       }
    }
 

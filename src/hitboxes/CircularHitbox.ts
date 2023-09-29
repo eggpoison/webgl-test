@@ -1,5 +1,5 @@
 import { Point, circleAndRectangleDoIntersect, circlesDoIntersect } from "webgl-test-shared";
-import Hitbox, { HitboxBounds } from "./Hitbox";
+import Hitbox from "./Hitbox";
 import RectangularHitbox from "./RectangularHitbox";
 
 class CircularHitbox extends Hitbox {
@@ -11,20 +11,18 @@ class CircularHitbox extends Hitbox {
       this.radius = radius;
    }
    
-   public calculateHitboxBounds(): HitboxBounds {
-      let minX = this.gameObject.position.x - this.radius;
-      let maxX = this.gameObject.position.x + this.radius;
-      let minY = this.gameObject.position.y - this.radius;
-      let maxY = this.gameObject.position.y + this.radius;
+   public updateHitboxBounds(): void {
+      this.bounds[0] = this.gameObject.position.x - this.radius;
+      this.bounds[1] = this.gameObject.position.x + this.radius;
+      this.bounds[2] = this.gameObject.position.y - this.radius;
+      this.bounds[3] = this.gameObject.position.y + this.radius;
 
       if (typeof this.offset !== "undefined") {
-         minX += this.offset.x;
-         maxX += this.offset.x;
-         minY += this.offset.y;
-         maxY += this.offset.y;
+         this.bounds[0] += this.offset.x;
+         this.bounds[1] += this.offset.x;
+         this.bounds[2] += this.offset.y;
+         this.bounds[3] += this.offset.y;
       }
-      
-      return [minX, maxX, minY, maxY];
    }
 
    public isColliding(otherHitbox: Hitbox): boolean {

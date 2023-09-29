@@ -9,7 +9,7 @@ abstract class Hitbox {
    public gameObject!: GameObject;
 
    /** The bounds of the hitbox since the last physics update */
-   public bounds!: HitboxBounds;
+   public bounds: HitboxBounds = [-1, -1, -1, -1];
 
    public position!: Point;
 
@@ -23,11 +23,7 @@ abstract class Hitbox {
       this.gameObject = gameObject;
    }
 
-   protected abstract calculateHitboxBounds(): HitboxBounds;
-
-   public updateHitboxBounds(): void {
-      this.bounds = this.calculateHitboxBounds();
-   }
+   public abstract updateHitboxBounds(): void;
 
    public updatePosition(): void {
       this.position = this.gameObject.position.copy();
