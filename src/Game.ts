@@ -40,6 +40,8 @@ import DroppedItem from "./items/DroppedItem";
 import Projectile from "./projectiles/Projectile";
 import { setupFrameGraph } from "./rendering/frame-graph-rendering";
 
+const renderParticles = (a: number) => {};
+
 let listenersHaveBeenCreated = false;
 
 const createEventListeners = (): void => {
@@ -90,6 +92,8 @@ abstract class Game {
    
    private static cameraData = new Float32Array(8);
    private static cameraBuffer: WebGLBuffer;
+
+   private static particles = 1;
 
    public static setGameObjectDebugData(gameObjectDebugData: GameObjectDebugData | undefined): void {
       if (typeof gameObjectDebugData === "undefined") {
@@ -376,15 +380,11 @@ abstract class Game {
          renderChunkBorders(Camera.visibleRenderChunkBounds, RENDER_CHUNK_SIZE, 2);
       }
 
-      // renderMonocolourParticles(ParticleRenderLayer.low, renderTime);
-      // renderTexturedParticles(ParticleRenderLayer.low, renderTime);
-
       renderGameObjects(droppedItems);
       renderGameObjects(entities);
       renderGameObjects(projectiles);
-      
-      // renderMonocolourParticles(ParticleRenderLayer.high, renderTime);
-      // renderTexturedParticles(ParticleRenderLayer.high, renderTime);
+
+      renderParticles(this.particles);
 
       if (nerdVisionIsVisible() && OPTIONS.showHitboxes) {
          renderEntityHitboxes();
