@@ -384,7 +384,7 @@ abstract class Game {
       renderGameObjects(entities);
       renderGameObjects(projectiles);
 
-      renderParticles(this.particles);
+      // renderParticles(this.particles);
 
       if (nerdVisionIsVisible() && OPTIONS.showHitboxes) {
          renderEntityHitboxes();
