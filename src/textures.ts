@@ -1,5 +1,4 @@
 import { gl } from "./webgl";
-import CLIENT_ITEM_INFO_RECORD from "./client-item-info";
 import { TILE_TYPE_RENDER_INFO_RECORD } from "./tile-type-render-info";
 import { imageIsLoaded } from "./utils";
 
@@ -33,6 +32,12 @@ const TEXTURE_SOURCES: Array<string> = [
    "tiles/river-bed-highlights-3.png",
    "miscellaneous/particle-texture-atlas.png",
    "miscellaneous/gravel-noise-texture.png",
+   "entities/campfire/campfire.png",
+   "entities/furnace/furnace.png",
+   "entities/tribe-totem/tribe-totem.png",
+   "entities/workbench/workbench.png",
+   "entities/barrel/barrel.png",
+   "entities/tribe-hut/tribe-hut.png"
 ];
 
 export const TEXTURE_IMAGE_RECORD: Record<string, HTMLImageElement> = {};

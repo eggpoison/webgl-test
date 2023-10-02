@@ -26,7 +26,7 @@ export abstract class RenderObject {
             }
          }
          root.allRenderParts.splice(idx, 0, renderPart);
-         
+
          // @Incomplete: add children
       }
    }
@@ -119,7 +119,11 @@ class RenderPart extends RenderObject {
       }
 
       // Recalculate rotation
-      this.totalRotation = this.parent.rotation;
+      if (this.inheritParentRotation) {
+         this.totalRotation = this.parent.rotation;
+      } else {
+         this.totalRotation = 0;
+      }
       if (typeof this.getRotation !== "undefined") {
          this.rotation = this.getRotation();
          this.totalRotation += this.rotation;
