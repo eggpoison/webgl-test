@@ -32,6 +32,7 @@ class Cow extends Entity {
 
       // Body
       const bodyRenderPart = new RenderPart(
+         this,
          Cow.BODY_WIDTH,
          Cow.BODY_HEIGHT,
          `entities/cow/cow-body-${cowNum}.png`,
@@ -43,6 +44,7 @@ class Cow extends Entity {
 
       // Head
       const headRenderPart = new RenderPart(
+         this,
          Cow.HEAD_IMAGE_WIDTH,
          Cow.HEAD_IMAGE_HEIGHT,
          `entities/cow/cow-head-${cowNum}.png`,

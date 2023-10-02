@@ -37,6 +37,7 @@ import Entity from "./entities/Entity";
 import DroppedItem from "./items/DroppedItem";
 import Projectile from "./projectiles/Projectile";
 import { setupFrameGraph } from "./rendering/frame-graph-rendering";
+import { stitchGameObjectTextureAtlas } from "./texture-atlas-stitching";
 
 let listenersHaveBeenCreated = false;
 
@@ -166,6 +167,7 @@ abstract class Game {
             
             // We load the textures before we create the shaders because some shader initialisations stitch textures together
             await loadTextures();
+            await stitchGameObjectTextureAtlas();
             
             // Create shaders
             createSolidTileShaders();
@@ -306,7 +308,7 @@ abstract class Game {
 
       // Clear the canvas
       gl.clearColor(1, 1, 1, 1);
-      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
       setFrameProgress(frameProgress);
       const renderTime = performance.now();
@@ -367,9 +369,7 @@ abstract class Game {
       renderMonocolourParticles(ParticleRenderLayer.low, renderTime);
       renderTexturedParticles(ParticleRenderLayer.low, renderTime);
 
-      renderGameObjects(droppedItems);
-      renderGameObjects(entities);
-      renderGameObjects(projectiles);
+      renderGameObjects();
       
       renderMonocolourParticles(ParticleRenderLayer.high, renderTime);
       renderTexturedParticles(ParticleRenderLayer.high, renderTime);

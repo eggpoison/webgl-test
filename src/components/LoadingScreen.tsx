@@ -8,6 +8,8 @@ import { setGameState, setLoadingScreenInitialStatus } from "./App";
 import Camera from "../Camera";
 import { definiteGameState } from "../game-state/game-states";
 
+// @Cleanup: This file does too much logic on its own. It should really only have UI/loading state
+
 export type LoadingScreenStatus = "establishing_connection" | "receiving_spawn_position" | "sending_player_data" | "receiving_game_data" | "initialising_game" | "connection_error";
 
 interface LoadingScreenProps {
@@ -95,7 +97,7 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
                Board.addEntity(player);
 
                Client.unloadGameDataPacket(initialGameDataPacket);
-         
+
                Game.start();
 
                setGameState("game");

@@ -14,6 +14,7 @@ class Furnace extends CookingEntity {
 
       this.attachRenderPart(
          new RenderPart(
+            this,
             Furnace.SIZE,
             Furnace.SIZE,
             "entities/furnace/furnace.png",

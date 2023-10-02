@@ -12,6 +12,7 @@ class IceShardsProjectile extends Projectile {
 
       this.attachRenderPart(
          new RenderPart(
+            this,
             IceShardsProjectile.SIZE,
             IceShardsProjectile.SIZE,
             "projectiles/ice-shard.png",

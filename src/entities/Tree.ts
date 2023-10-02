@@ -21,12 +21,14 @@ class Tree extends Entity {
    
    constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, treeSize: TreeSize) {
       super(position, hitboxes, id);
+      this.renderWeight = -0.95
 
       this.treeSize = treeSize;
       this.radius = 40 + treeSize * 10;
       
       this.attachRenderPart(
          new RenderPart(
+            this,
             this.radius * 2,
             this.radius * 2,
             treeTextures[treeSize],

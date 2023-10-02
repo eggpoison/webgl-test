@@ -21,6 +21,7 @@ class Krumblid extends Entity {
 
       this.attachRenderPart(
          new RenderPart(
+            this,
             Krumblid.SPRITE_WIDTH,
             Krumblid.SPRITE_HEIGHT,
             "entities/krumblid/krumblid.png",

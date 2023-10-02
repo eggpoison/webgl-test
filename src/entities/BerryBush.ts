@@ -28,6 +28,7 @@ class BerryBush extends Entity {
       super(position, hitboxes, id);
 
       this.renderPart = new RenderPart(
+         this,
          BerryBush.RADIUS * 2,
          BerryBush.RADIUS * 2,
          BerryBush.TEXTURE_SOURCES[numBerries],

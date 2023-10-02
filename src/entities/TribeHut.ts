@@ -21,6 +21,7 @@ class TribeHut extends Entity {
       
       // Hut
       const hutRenderPart = new RenderPart(
+         this,
          TribeHut.SIZE,
          TribeHut.SIZE,
          "entities/tribe-hut/tribe-hut.png",
@@ -31,6 +32,7 @@ class TribeHut extends Entity {
 
       // Door
       const doorRenderPart = new RenderPart(
+         this,
          TribeHut.DOOR_WIDTH,
          TribeHut.DOOR_HEIGHT,
          "entities/tribe-hut/tribe-hut-door.png",

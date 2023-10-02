@@ -121,6 +121,7 @@ abstract class TribeMember extends Entity {
       this.backpackInventory = createInventoryFromData(backpackInventory);
       
       this.activeItemRenderPart = new RenderPart(
+         this,
          TribeMember.TOOL_ACTIVE_ITEM_SIZE,
          TribeMember.TOOL_ACTIVE_ITEM_SIZE,
          activeItem !== null ? CLIENT_ITEM_INFO_RECORD[activeItem].textureSource : "",
@@ -228,11 +229,10 @@ abstract class TribeMember extends Entity {
             return direction;
          }
       };
-      this.attachRenderPart(this.activeItemRenderPart);
-      
       if (activeItem === null) {
          this.activeItemRenderPart.isActive = false;
       }
+      this.attachRenderPart(this.activeItemRenderPart);
    }
 
    public getSecondsSinceLastAction(lastActionTicks: number): number {
@@ -381,13 +381,13 @@ abstract class TribeMember extends Entity {
          if (this.armourRenderPart === null) {
             const pixelSize = this.getArmourPixelSize(armourType);
             this.armourRenderPart = new RenderPart(
+               this,
                pixelSize,
                pixelSize,
                this.getArmourTextureSource(armourType),
                2,
                0
             );
-            
             this.attachRenderPart(this.armourRenderPart);
          } else {
             this.armourRenderPart.textureSource = this.getArmourTextureSource(armourType);

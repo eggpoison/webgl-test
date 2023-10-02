@@ -24,6 +24,7 @@ class TribeTotem extends Entity {
       super(position, hitboxes, id);
 
       const renderPart = new RenderPart(
+         this,
          TribeTotem.SIZE,
          TribeTotem.SIZE,
          `entities/tribe-totem/tribe-totem.png`,
@@ -59,6 +60,7 @@ class TribeTotem extends Entity {
       }
 
       const renderPart = new RenderPart(
+         this,
          TribeTotem.BANNER_WIDTH,
          TribeTotem.BANNER_HEIGHT,
          `entities/tribe-totem/${totemTextureSourceID}`,

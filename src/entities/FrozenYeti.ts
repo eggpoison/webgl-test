@@ -14,6 +14,7 @@ class FrozenYeti extends Entity {
       super(position, hitboxes, id);
 
       this.attachRenderPart(new RenderPart(
+         this,
          FrozenYeti.SIZE,
          FrozenYeti.SIZE,
          "entities/frozen-yeti/frozen-yeti.png",
@@ -22,6 +23,7 @@ class FrozenYeti extends Entity {
       ));
 
       const headRenderPart = new RenderPart(
+         this,
          FrozenYeti.HEAD_SIZE,
          FrozenYeti.HEAD_SIZE,
          "entities/frozen-yeti/frozen-yeti-head.png",

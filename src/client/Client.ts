@@ -596,7 +596,8 @@ abstract class Client {
             rotation: Player.instance.rotation,
             visibleChunkBounds: Camera.getVisibleChunkBounds(),
             selectedItemSlot: latencyGameState.selectedHotbarItemSlot,
-            action: latencyGameState.playerAction
+            action: latencyGameState.playerAction,
+            interactingEntityID: latencyGameState.interactingEntityID
          };
 
          this.socket.emit("player_data_packet", packet);

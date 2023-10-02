@@ -21,6 +21,7 @@ class Tombstone extends Entity {
 
       this.attachRenderPart(
          new RenderPart(
+            this,
             64,
             96,
             `entities/tombstone/tombstone${tombstoneType + 1}.png`,

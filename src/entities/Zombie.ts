@@ -27,6 +27,7 @@ class Zombie extends Entity {
 
       this.attachRenderPart(
          new RenderPart(
+            this,
             Zombie.RADIUS * 2,
             Zombie.RADIUS * 2,
             ZOMBIE_TEXTURE_SOURCES[zombieType],

@@ -67,6 +67,8 @@ const EntityDebugInfo = ({ entity }: EntityDebugInfoProps) => {
       <p>Acceleration: <span className="highlight">{displayAccelerationMagnitude}</span></p>
 
       <p>Chunks: {chunkDisplayText}</p>
+      <p>Render weight: {entity.renderWeight}</p>
+      <p>Array idx: {Board.sortedGameObjects.indexOf(entity)}</p>
 
       {typeof entity.mobAIType !== "undefined" ? <>
          <p>Current Mob AI: <span className="highlight">{entity.mobAIType}</span></p>

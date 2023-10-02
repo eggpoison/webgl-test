@@ -14,6 +14,7 @@ class Slimewisp extends Entity {
       super(position, hitboxes, id);
 
       const renderPart = new RenderPart(
+         this,
          Slimewisp.RADIUS * 2,
          Slimewisp.RADIUS * 2,
          `entities/slimewisp/slimewisp.png`,

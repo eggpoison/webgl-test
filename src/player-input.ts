@@ -24,12 +24,6 @@ import CircularHitbox from "./hitboxes/CircularHitbox";
 import Hitbox from "./hitboxes/Hitbox";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
 
-export let lightspeedIsActive = false;
-
-export function setLightspeedIsActive(isActive: boolean): void {
-   lightspeedIsActive = isActive;
-}
-
 /** Amount of seconds of forced delay on when an item can be used for attacking when switching between items */
 const GLOBAL_ATTACK_DELAY_ON_SWITCH = 0.1;
 
@@ -377,11 +371,6 @@ const getInteractInventoryType = (entity: Entity): InteractInventoryType => {
    }
 }
 
-const setInteractInventory = (inventoryType: InteractInventoryType, entity: Entity): void => {
-   _interactInventoryIsOpen = true;
-   InteractInventory_setInventory(inventoryType, entity);
-}
-
 export function hideInteractInventory(): void {
    _interactInventoryIsOpen = false;
    interactInventoryEntity = null;
@@ -435,12 +424,15 @@ const createInventoryToggleListeners = (): void => {
       
       if (_interactInventoryIsOpen) {
          hideInteractInventory();
+         latencyGameState.interactingEntityID = null;
       } else {
          const interactEntity = getInteractEntity();
          if (interactEntity !== null) {
             interactInventoryEntity = interactEntity;
             const interactInventoryType = getInteractInventoryType(interactInventoryEntity);
-            setInteractInventory(interactInventoryType, interactInventoryEntity);
+            _interactInventoryIsOpen = true;
+            InteractInventory_setInventory(interactInventoryType, interactInventoryEntity);
+            latencyGameState.interactingEntityID = interactEntity.id;
          }
       }
    });
@@ -456,24 +448,6 @@ export function createPlayerInputListeners(): void {
    createItemUseListeners();
    createHotbarKeyListeners();
    createInventoryToggleListeners();
-}
-
-const isSlow = (): boolean => {
-   return latencyGameState.playerAction === TribeMemberAction.eat || latencyGameState.playerAction === TribeMemberAction.charge_bow || latencyGameState.playerIsPlacingEntity;
-}
-
-const getPlayerTerminalVelocity = (): number => {
-   if (isSlow()) {
-      return PLAYER_SLOW_TERMINAL_VELOCITY;
-   }
-   return PLAYER_TERMINAL_VELOCITY;
-}
-
-const getPlayerAcceleration = (): number => {
-   if (isSlow()) {
-      return PLAYER_SLOW_ACCELERATION;
-   }
-   return PLAYER_ACCELERATION;
 }
 
 const getPlayerMoveSpeedMultiplier = (): number => {
@@ -521,14 +495,20 @@ export function updatePlayerMovement(): void {
    }
 
    if (moveDirection !== null) {
-      if (lightspeedIsActive) {
-         Player.instance.acceleration = new Vector(PLAYER_LIGHTSPEED_ACCELERATION, moveDirection);
-         Player.instance.terminalVelocity = PLAYER_LIGHTSPEED_TERMINAL_VELOCITY;
+      let acceleration: number;
+      let terminalVelocity: number;
+      if (keyIsPressed("l")) {
+         acceleration = PLAYER_LIGHTSPEED_ACCELERATION;
+         terminalVelocity = PLAYER_LIGHTSPEED_TERMINAL_VELOCITY;
+      } else if (latencyGameState.playerAction === TribeMemberAction.eat || latencyGameState.playerAction === TribeMemberAction.charge_bow || latencyGameState.playerIsPlacingEntity) {
+         acceleration = PLAYER_SLOW_ACCELERATION * getPlayerMoveSpeedMultiplier();
+         terminalVelocity = PLAYER_SLOW_TERMINAL_VELOCITY * getPlayerMoveSpeedMultiplier();
       } else {
-         const moveSpeedMultiplier = getPlayerMoveSpeedMultiplier();
-         Player.instance.acceleration = new Vector(getPlayerAcceleration() * moveSpeedMultiplier, moveDirection);
-         Player.instance.terminalVelocity = getPlayerTerminalVelocity() * moveSpeedMultiplier;
+         acceleration = PLAYER_ACCELERATION * getPlayerMoveSpeedMultiplier()
+         terminalVelocity = PLAYER_TERMINAL_VELOCITY * getPlayerMoveSpeedMultiplier()
       }
+      Player.instance.acceleration = new Vector(acceleration, moveDirection);
+      Player.instance.terminalVelocity = terminalVelocity;
    } else {
       Player.instance.acceleration = null;
    }

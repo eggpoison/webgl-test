@@ -13,6 +13,7 @@ import TribeMember from "./TribeMember";
 import Board from "../Board";
 import { definiteGameState, latencyGameState } from "../game-state/game-states";
 import { createFootprintParticle } from "../generic-particles";
+import { keyIsPressed } from "../keyboard-input";
 
 /** Maximum distance from a crafting station which will allow its recipes to be crafted. */
 const MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION = 250;
@@ -121,9 +122,11 @@ class Player extends TribeMember {
 
    constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, action: TribeMemberAction, foodEatingType: ItemType | -1, lastActionTicks: number, username: string) {
       super(position, hitboxes, id, tribeID, tribeType, armourSlotInventory, backpackSlotInventory, backpackInventory, activeItem, action, foodEatingType, lastActionTicks);
+      this.renderWeight = 0;
 
       this.attachRenderPart(
          new RenderPart(
+            this,
             64,
             64,
             super.getTextureSource(tribeType),
@@ -182,7 +185,10 @@ class Player extends TribeMember {
    }
 
    public static resolveCollisions(): void {
-      this.resolveWallTileCollisions();
+      // Don't resolve wall tile collisions in lightspeed mode
+      if (!keyIsPressed("l")) {
+         this.resolveWallTileCollisions();
+      }
       this.resolveWallCollisions();
       this.resolveGameObjectCollisions();
 

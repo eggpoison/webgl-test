@@ -56,6 +56,7 @@ class Slime extends Entity {
 
       // Body
       this.attachRenderPart(new RenderPart(
+         this,
          spriteSize,
          spriteSize,
          `entities/slime/slime-${sizeString}-body.png`,
@@ -65,6 +66,7 @@ class Slime extends Entity {
 
       // Eye
       this.eyeRenderPart = new RenderPart(
+         this,
          Slime.EYE_WIDTHS[size],
          Slime.EYE_HEIGHTS[size],
          `entities/slime/slime-${sizeString}-eye.png`,
@@ -77,6 +79,7 @@ class Slime extends Entity {
 
       // Shading
       this.attachRenderPart(new RenderPart(
+         this,
          spriteSize,
          spriteSize,
          `entities/slime/slime-${sizeString}-shading.png`,
@@ -103,6 +106,7 @@ class Slime extends Entity {
       this.orbRotations.push(orbData.rotation);
 
       this.orbRenderParts[i] = new RenderPart(
+         this,
          orbSize,
          orbSize,
          `entities/slime/slime-orb-${sizeString}.png`,
