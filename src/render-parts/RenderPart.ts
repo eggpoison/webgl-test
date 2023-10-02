@@ -8,38 +8,35 @@ export abstract class RenderObject {
 
    public rotation = 0;
    
-   /** Stores all render parts attached to the object */
-   public readonly renderParts = new Array<RenderPart>();
-
    public attachRenderPart(renderPart: RenderPart): void {
-      this.renderParts.push(renderPart);
+      const root = this.getRoot();
 
-      if (renderPart.isActive) {
-         // Add to the root array
-         const root = this.getRoot();
-         let idx = root.allRenderParts.length;
-         for (let i = 0; i < root.allRenderParts.length; i++) {
-            const currentRenderPart = root.allRenderParts[i];
-            if (renderPart.zIndex < currentRenderPart.zIndex) {
-               idx = i;
-               break;
-            }
-         }
-         root.allRenderParts.splice(idx, 0, renderPart);
-
-         // @Incomplete: add children
+      // Don't add if already attached
+      if (root.allRenderParts.indexOf(renderPart) !== -1) {
+         return;
       }
+      
+      // Add to the root array
+      let idx = root.allRenderParts.length;
+      for (let i = 0; i < root.allRenderParts.length; i++) {
+         const currentRenderPart = root.allRenderParts[i];
+         if (renderPart.zIndex < currentRenderPart.zIndex) {
+            idx = i;
+            break;
+         }
+      }
+      root.allRenderParts.splice(idx, 0, renderPart);
+
+      // @Incomplete: add children
    }
 
    public removeRenderPart(renderPart: RenderPart): void {
-      const idx = this.renderParts.indexOf(renderPart);
-      if (idx !== -1) {
-         this.renderParts.splice(idx, 1);
-      }
-
       // Remove from the root array
       const root = this.getRoot();
-      root.allRenderParts.splice(root.allRenderParts.indexOf(renderPart), 1);
+      const idx = root.allRenderParts.indexOf(renderPart);
+      if (idx !== -1) {
+         root.allRenderParts.splice(root.allRenderParts.indexOf(renderPart), 1);
+      }
 
       // @Incomplete: remove children
    }
@@ -71,8 +68,6 @@ class RenderPart extends RenderObject {
 
    /** Whether or not the render part will inherit its parents' rotation */
    public inheritParentRotation = true;
-   /** Whether the render part is being rendered or not */
-   public isActive = true;
    public flipX = false;
    
    constructor(parent: RenderObject, width: number, height: number, textureSource: string, zIndex: number, rotation: number) {

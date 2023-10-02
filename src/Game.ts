@@ -217,11 +217,8 @@ abstract class Game {
                   }
                   this.queuedPackets.splice(0, this.queuedPackets.length);
                } else {
-                  // @Temporary
-                  // const numSkippedPackets = Math.min(this.numSkippablePackets, this.queuedPackets.length - 1);
-                  const numSkippedPackets = 0;
-                  Client.unloadGameDataPacket(this.queuedPackets[numSkippedPackets]);
-                  this.queuedPackets.splice(0, numSkippedPackets + 1);
+                  Client.unloadGameDataPacket(this.queuedPackets[0]);
+                  this.queuedPackets.splice(0, 1);
                   this.numSkippablePackets--;
                   
                   if (this.queuedPackets.length === 0 || this.numSkippablePackets < 0) {

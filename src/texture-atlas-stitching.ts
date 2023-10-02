@@ -160,8 +160,8 @@ export async function stitchGameObjectTextureAtlas(): Promise<void> {
    const context = atlasElement.getContext("2d")!;
 
    // Uncomment to see the atlas visually :D
-   document.body.appendChild(atlasElement);
-   atlasElement.style.position = "absolute";
+   // document.body.appendChild(atlasElement);
+   // atlasElement.style.position = "absolute";
 
    let textureImages = new Array<HTMLImageElement>();
    

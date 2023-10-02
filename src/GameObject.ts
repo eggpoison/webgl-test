@@ -50,8 +50,7 @@ abstract class GameObject extends RenderObject {
 
    public chunks = new Set<Chunk>();
 
-   // @Temporary: make readonly
-   public renderWeight = randFloat(-0.95, 0.95);
+   public readonly renderWeight = randFloat(-0.95, 0.95);
 
    constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number) {
       super();

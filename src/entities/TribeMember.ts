@@ -229,10 +229,9 @@ abstract class TribeMember extends Entity {
             return direction;
          }
       };
-      if (activeItem === null) {
-         this.activeItemRenderPart.isActive = false;
+      if (activeItem !== null) {
+         this.attachRenderPart(this.activeItemRenderPart);
       }
-      this.attachRenderPart(this.activeItemRenderPart);
    }
 
    public getSecondsSinceLastAction(lastActionTicks: number): number {
@@ -400,10 +399,10 @@ abstract class TribeMember extends Entity {
 
    private updateActiveItemRenderPart(activeItemType: ItemType | null): void {
       if (activeItemType === null) {
-         this.activeItemRenderPart.isActive = false;
+         this.removeRenderPart(this.activeItemRenderPart);
       } else {
          this.activeItemRenderPart.textureSource = CLIENT_ITEM_INFO_RECORD[activeItemType].textureSource;
-         this.activeItemRenderPart.isActive = true;
+         this.attachRenderPart(this.activeItemRenderPart);
 
          const renderPartSize = this.getActiveItemSize(activeItemType);
          this.activeItemRenderPart.width = renderPartSize;
