@@ -1,7 +1,8 @@
+import CLIENT_ITEM_INFO_RECORD from "./client-item-info";
 import { imageIsLoaded } from "./utils";
 import { gl } from "./webgl";
 
-const INDIVIDUAL_TEXTURE_SOURCES: ReadonlyArray<string> = [
+const INDIVIDUAL_TEXTURE_SOURCES: Array<string> = [
    "entities/cow/cow-body-1.png",
    "entities/cow/cow-head-1.png",
    "entities/cow/cow-body-2.png",
@@ -84,6 +85,11 @@ const INDIVIDUAL_TEXTURE_SOURCES: ReadonlyArray<string> = [
    "items/wooden-bow-charge-4.png",
    "items/wooden-bow-charge-5.png"
 ];
+
+// Add item textures
+for (const clientItemInfo of Object.values(CLIENT_ITEM_INFO_RECORD)) {
+   INDIVIDUAL_TEXTURE_SOURCES.push(clientItemInfo.textureSource);
+}
 
 const textureMappings: Record<string, number> = {};
 for (let i = 0; i < INDIVIDUAL_TEXTURE_SOURCES.length; i++) {
