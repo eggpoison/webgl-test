@@ -34,7 +34,8 @@ abstract class Board {
 
    private static tiles: Array<Array<Tile>>;
    private static chunks: Array<Array<Chunk>>;
-
+   
+   public static numVisibleRenderParts = 0;
    /** Game objects sorted in descending render weight */
    public static readonly sortedGameObjects = new Array<GameObject>();
 
@@ -179,6 +180,8 @@ abstract class Board {
       }
 
       this.sortedGameObjects.splice(this.sortedGameObjects.indexOf(gameObject), 1);
+
+      this.numVisibleRenderParts -= gameObject.allRenderParts.length;
    }
 
    public static getRiverFlowDirection(tileX: number, tileY: number): number {

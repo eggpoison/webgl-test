@@ -123,14 +123,10 @@ export function calculateVisibleGameObjects(): Array<GameObject> {
 export function renderGameObjects(): void {
    if (Board.sortedGameObjects.length === 0) return;
 
-   const vertices = new Array<number>();
+   const vertexData = new Float32Array(Board.numVisibleRenderParts * 6 * 12);
 
-   let last = 1;
+   let i = 0;
    for (const gameObject of Board.sortedGameObjects) {
-      if (gameObject.renderWeight > last) {
-         throw new Error();
-      }
-      last = gameObject.renderWeight;
       gameObject.updateRenderPosition();
 
       for (const renderPart of gameObject.allRenderParts) {
@@ -142,7 +138,8 @@ export function renderGameObjects(): void {
          let greenTint = 0;
          let blueTint = 0;
 
-         // @Cleanup: This shouldn't be here, and shouldn't be hardcoded
+         // @Cleanup This shouldn't be here, and shouldn't be hardcoded
+         // @Speed
          if (gameObject instanceof Entity) {
             if (gameObject.hasStatusEffect("freezing")) {
                blueTint += 0.5;
@@ -182,16 +179,93 @@ export function renderGameObjects(): void {
          const textureIndex = getAtlasTextureIndex(renderPart.textureSource);
          const textureWidth = getAtlasTextureWidth(renderPart.textureSource);
          const textureHeight = getAtlasTextureHeight(renderPart.textureSource);
-         
-         vertices.push(
-            bottomLeftX, bottomLeftY, depth, u0, 0, textureIndex, textureWidth, textureHeight, redTint, greenTint, blueTint, renderPart.opacity,
-            bottomRightX, bottomRightY, depth, u1, 0, textureIndex, textureWidth, textureHeight, redTint, greenTint, blueTint, renderPart.opacity,
-            topLeftX, topLeftY, depth, u0, 1, textureIndex, textureWidth, textureHeight, redTint, greenTint, blueTint, renderPart.opacity,
-            topLeftX, topLeftY, depth, u0, 1, textureIndex, textureWidth, textureHeight, redTint, greenTint, blueTint, renderPart.opacity,
-            bottomRightX, bottomRightY, depth, u1, 0, textureIndex, textureWidth, textureHeight, redTint, greenTint, blueTint, renderPart.opacity,
-            topRightX, topRightY, depth, u1, 1, textureIndex, textureWidth, textureHeight, redTint, greenTint, blueTint, renderPart.opacity
-         );
+
+         const dataOffset = i * 6 * 12;
+
+         vertexData[dataOffset] = bottomLeftX;
+         vertexData[dataOffset + 1] = bottomLeftY;
+         vertexData[dataOffset + 2] = depth;
+         vertexData[dataOffset + 3] = u0;
+         vertexData[dataOffset + 4] = 0;
+         vertexData[dataOffset + 5] = textureIndex;
+         vertexData[dataOffset + 6] = textureWidth;
+         vertexData[dataOffset + 7] = textureHeight;
+         vertexData[dataOffset + 8] = redTint;
+         vertexData[dataOffset + 9] = greenTint;
+         vertexData[dataOffset + 10] = blueTint;
+         vertexData[dataOffset + 11] = renderPart.opacity;
+
+         vertexData[dataOffset + 12] = bottomRightX;
+         vertexData[dataOffset + 13] = bottomRightY;
+         vertexData[dataOffset + 14] = depth;
+         vertexData[dataOffset + 15] = u1;
+         vertexData[dataOffset + 16] = 0;
+         vertexData[dataOffset + 17] = textureIndex;
+         vertexData[dataOffset + 18] = textureWidth;
+         vertexData[dataOffset + 19] = textureHeight;
+         vertexData[dataOffset + 20] = redTint;
+         vertexData[dataOffset + 21] = greenTint;
+         vertexData[dataOffset + 22] = blueTint;
+         vertexData[dataOffset + 23] = renderPart.opacity;
+
+         vertexData[dataOffset + 24] = topLeftX;
+         vertexData[dataOffset + 25] = topLeftY;
+         vertexData[dataOffset + 26] = depth;
+         vertexData[dataOffset + 27] = u0;
+         vertexData[dataOffset + 28] = 1;
+         vertexData[dataOffset + 29] = textureIndex;
+         vertexData[dataOffset + 30] = textureWidth;
+         vertexData[dataOffset + 31] = textureHeight;
+         vertexData[dataOffset + 32] = redTint;
+         vertexData[dataOffset + 33] = greenTint;
+         vertexData[dataOffset + 34] = blueTint;
+         vertexData[dataOffset + 35] = renderPart.opacity;
+
+         vertexData[dataOffset + 36] = topLeftX;
+         vertexData[dataOffset + 37] = topLeftY;
+         vertexData[dataOffset + 38] = depth;
+         vertexData[dataOffset + 39] = u0;
+         vertexData[dataOffset + 40] = 1;
+         vertexData[dataOffset + 41] = textureIndex;
+         vertexData[dataOffset + 42] = textureWidth;
+         vertexData[dataOffset + 43] = textureHeight;
+         vertexData[dataOffset + 44] = redTint;
+         vertexData[dataOffset + 45] = greenTint;
+         vertexData[dataOffset + 46] = blueTint;
+         vertexData[dataOffset + 47] = renderPart.opacity;
+
+         vertexData[dataOffset + 48] = bottomRightX;
+         vertexData[dataOffset + 49] = bottomRightY;
+         vertexData[dataOffset + 50] = depth;
+         vertexData[dataOffset + 51] = u1;
+         vertexData[dataOffset + 52] = 0;
+         vertexData[dataOffset + 53] = textureIndex;
+         vertexData[dataOffset + 54] = textureWidth;
+         vertexData[dataOffset + 55] = textureHeight;
+         vertexData[dataOffset + 56] = redTint;
+         vertexData[dataOffset + 57] = greenTint;
+         vertexData[dataOffset + 58] = blueTint;
+         vertexData[dataOffset + 59] = renderPart.opacity;
+
+         vertexData[dataOffset + 60] = topRightX;
+         vertexData[dataOffset + 61] = topRightY;
+         vertexData[dataOffset + 62] = depth;
+         vertexData[dataOffset + 63] = u1;
+         vertexData[dataOffset + 64] = 1;
+         vertexData[dataOffset + 65] = textureIndex;
+         vertexData[dataOffset + 66] = textureWidth;
+         vertexData[dataOffset + 67] = textureHeight;
+         vertexData[dataOffset + 68] = redTint;
+         vertexData[dataOffset + 69] = greenTint;
+         vertexData[dataOffset + 70] = blueTint;
+         vertexData[dataOffset + 71] = renderPart.opacity;
+
+         i++;
       }
+   }
+
+   if (i !== Board.numVisibleRenderParts) {
+      throw new Error("Was missing or had extra render parts");
    }
 
    gl.useProgram(program);
@@ -207,7 +281,7 @@ export function renderGameObjects(): void {
 
    const buffer = gl.createBuffer();
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+   gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
 
    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 0);
    gl.vertexAttribPointer(1, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
@@ -232,7 +306,7 @@ export function renderGameObjects(): void {
    gl.uniform1f(atlasPixelSizeUniformLocation, getAtlasPixelSize());
    gl.uniform1f(atlasSlotSizeUniformLocation, ATLAS_SLOT_SIZE);
    
-   gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 12);
+   gl.drawArrays(gl.TRIANGLES, 0, Board.numVisibleRenderParts * 6);
 
    gl.disable(gl.DEPTH_TEST);
    gl.disable(gl.BLEND);

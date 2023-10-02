@@ -1,5 +1,6 @@
 import { Point, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import GameObject from "../GameObject";
+import Board from "../Board";
 
 /** A thing which is able to hold render parts */
 export abstract class RenderObject {
@@ -15,6 +16,8 @@ export abstract class RenderObject {
       if (root.allRenderParts.indexOf(renderPart) !== -1) {
          return;
       }
+
+      Board.numVisibleRenderParts++;
       
       // Add to the root array
       let idx = root.allRenderParts.length;
@@ -31,12 +34,17 @@ export abstract class RenderObject {
    }
 
    public removeRenderPart(renderPart: RenderPart): void {
-      // Remove from the root array
+      // Don't remove if already removed
       const root = this.getRoot();
       const idx = root.allRenderParts.indexOf(renderPart);
-      if (idx !== -1) {
-         root.allRenderParts.splice(root.allRenderParts.indexOf(renderPart), 1);
+      if (idx === -1) {
+         return;
       }
+      
+      Board.numVisibleRenderParts--;
+      
+      // Remove from the root array
+      root.allRenderParts.splice(root.allRenderParts.indexOf(renderPart), 1);
 
       // @Incomplete: remove children
    }
