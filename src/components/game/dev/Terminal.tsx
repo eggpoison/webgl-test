@@ -2,18 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { COMMANDS, CommandPermissions, CommandSpecifications, commandIsValid, parseCommand } from "webgl-test-shared";
 import { isDev } from "../../../utils";
 import Client from "../../../client/Client";
-import { setLightspeedIsActive } from "../../../player-input";
 import { setTerminalButtonOpened } from "./TerminalButton";
 import Camera from "../../../Camera";
-
-const toggleLightspeed = (command: string): void => {
-   const param = command.split(" ")[1];
-   if (param === "on") {
-      setLightspeedIsActive(true);
-   } else if (param === "off") {
-      setLightspeedIsActive(false);
-   }
-}
 
 /** All lines output by the terminal */
 let terminalLines = new Array<string>();
@@ -133,9 +123,7 @@ const Terminal = ({ startingIsVisible }: TerminalParams) => {
       // Execute the command
       const userPermissions = isDev() ? CommandPermissions.dev : CommandPermissions.player;
       if (commandIsValid(command, userPermissions)) {
-         if (command.split(" ")[0] === "lightspeed") {
-            toggleLightspeed(command);
-         } else if (command.split(" ")[0] === "clear") {
+         if (command.split(" ")[0] === "clear") {
             terminalLines = [];
          } else if (command.split(" ")[0] === "zoom") {
             const zoomAmountString = command.split(" ")[1];

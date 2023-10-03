@@ -5,12 +5,14 @@ import { Inventory } from "../items/Item";
 abstract class GameState {
    /** The action the instance player is currently doing. */
    public playerAction = TribeMemberAction.none;
+
+   public interactingEntityID: number | null = null;
    
    /** Whether the instance player is placing an entity. */
-   public playerIsPlacingEntity: boolean = false;
+   public playerIsPlacingEntity = false;
 
    /** Slot number of the player's currently selected item slot. */
-   public selectedHotbarItemSlot: number = 1;
+   public selectedHotbarItemSlot = 1;
 
    /** Items in the player's hotbar. */
    public hotbar: Inventory = { itemSlots: {}, width: SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE, height: 1, inventoryName: "hotbar" };

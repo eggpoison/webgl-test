@@ -30,6 +30,7 @@ class Tribesman extends TribeMember {
       this.activeItemSlot = activeItemSlot;
       
       this.attachRenderPart(new RenderPart(
+         this,
          Tribesman.RADIUS * 2,
          Tribesman.RADIUS * 2,
          super.getTextureSource(tribeType),
@@ -42,6 +43,7 @@ class Tribesman extends TribeMember {
          const warpaint = id % 3 + 1;
          this.attachRenderPart(
             new RenderPart(
+               this,
                Tribesman.RADIUS * 2,
                Tribesman.RADIUS * 2,
                `entities/human/goblin-warpaint-${warpaint}.png`,
@@ -52,21 +54,24 @@ class Tribesman extends TribeMember {
 
          // Left ear
          const leftEarRenderPart = new RenderPart(
+            this,
             Tribesman.GOBLIN_EAR_WIDTH,
             Tribesman.GOBLIN_EAR_HEIGHT,
             "entities/human/goblin-ear.png",
-            2,
+            0,
             Math.PI/2 - Tribesman.GOBLIN_EAR_ANGLE,
          );
          leftEarRenderPart.offset = Point.fromVectorForm(Tribesman.RADIUS + Tribesman.GOBLIN_EAR_OFFSET, -Tribesman.GOBLIN_EAR_ANGLE);
          leftEarRenderPart.flipX = true;
+         this.attachRenderPart(leftEarRenderPart);
 
          // Right ear
          const rightEarRenderPart = new RenderPart(
+            this,
             Tribesman.GOBLIN_EAR_WIDTH,
             Tribesman.GOBLIN_EAR_HEIGHT,
             "entities/human/goblin-ear.png",
-            2,
+            0,
             -Math.PI/2 + Tribesman.GOBLIN_EAR_ANGLE,
          );
          rightEarRenderPart.offset = Point.fromVectorForm(Tribesman.RADIUS + Tribesman.GOBLIN_EAR_OFFSET, Tribesman.GOBLIN_EAR_ANGLE);

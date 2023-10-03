@@ -34,6 +34,10 @@ abstract class Board {
 
    private static tiles: Array<Array<Tile>>;
    private static chunks: Array<Array<Chunk>>;
+   
+   public static numVisibleRenderParts = 0;
+   /** Game objects sorted in descending render weight */
+   public static readonly sortedGameObjects = new Array<GameObject>();
 
    public static readonly gameObjects: Record<number, GameObject> = {};
    public static readonly entities: Record<number, Entity> = {};
@@ -126,21 +130,34 @@ abstract class Board {
    }
 
    public static addEntity(entity: Entity): void {
-      entity.updateContainingChunks();
-      this.gameObjects[entity.id] = entity;
+      this.addGameObject(entity);
       this.entities[entity.id] = entity;
    }
 
    public static addDroppedItem(droppedItem: DroppedItem): void {
-      droppedItem.updateContainingChunks();
-      this.gameObjects[droppedItem.id] = droppedItem;
+      this.addGameObject(droppedItem);
       this.droppedItems[droppedItem.id] = droppedItem;
    }
 
    public static addProjectile(projectile: Projectile): void {
-      projectile.updateContainingChunks();
-      this.gameObjects[projectile.id] = projectile;
+      this.addGameObject(projectile);
       this.projectiles[projectile.id] = projectile;
+   }
+
+   private static addGameObject(gameObject: GameObject): void {
+      this.gameObjects[gameObject.id] = gameObject;
+      gameObject.updateContainingChunks();
+      
+      // Add into the sorted array
+      let idx = this.sortedGameObjects.length;
+      for (let i = 0; i < this.sortedGameObjects.length; i++) {
+         const currentGameObject = this.sortedGameObjects[i];
+         if (gameObject.renderWeight > currentGameObject.renderWeight) {
+            idx = i;
+            break;
+         }
+      }
+      this.sortedGameObjects.splice(idx, 0, gameObject);
    }
 
    public static removeGameObject(gameObject: GameObject): void {
@@ -161,6 +178,10 @@ abstract class Board {
       if (typeof gameObject.onRemove !== "undefined") {
          gameObject.onRemove();
       }
+
+      this.sortedGameObjects.splice(this.sortedGameObjects.indexOf(gameObject), 1);
+
+      this.numVisibleRenderParts -= gameObject.allRenderParts.length;
    }
 
    public static getRiverFlowDirection(tileX: number, tileY: number): number {

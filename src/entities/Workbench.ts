@@ -14,6 +14,7 @@ class Workbench extends Entity {
 
       this.attachRenderPart(
          new RenderPart(
+            this,
             Workbench.SIZE,
             Workbench.SIZE,
             "entities/workbench/workbench.png",

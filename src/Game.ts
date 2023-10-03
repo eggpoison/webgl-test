@@ -34,9 +34,8 @@ import { registerFrame, updateFrameGraph } from "./components/game/dev/FrameGrap
 import { createNightShaders, renderNight } from "./rendering/night-rendering";
 import { createPlaceableItemProgram, renderGhostPlaceableItem } from "./rendering/placeable-item-rendering";
 import Entity from "./entities/Entity";
-import DroppedItem from "./items/DroppedItem";
-import Projectile from "./projectiles/Projectile";
 import { setupFrameGraph } from "./rendering/frame-graph-rendering";
+import { stitchGameObjectTextureAtlas } from "./texture-atlas-stitching";
 
 let listenersHaveBeenCreated = false;
 
@@ -168,6 +167,7 @@ abstract class Game {
             
             // We load the textures before we create the shaders because some shader initialisations stitch textures together
             await loadTextures();
+            await stitchGameObjectTextureAtlas();
             
             // Create shaders
             createSolidTileShaders();
@@ -217,11 +217,8 @@ abstract class Game {
                   }
                   this.queuedPackets.splice(0, this.queuedPackets.length);
                } else {
-                  // @Temporary
-                  // const numSkippedPackets = Math.min(this.numSkippablePackets, this.queuedPackets.length - 1);
-                  const numSkippedPackets = 0;
-                  Client.unloadGameDataPacket(this.queuedPackets[numSkippedPackets]);
-                  this.queuedPackets.splice(0, numSkippedPackets + 1);
+                  Client.unloadGameDataPacket(this.queuedPackets[0]);
+                  this.queuedPackets.splice(0, 1);
                   this.numSkippablePackets--;
                   
                   if (this.queuedPackets.length === 0 || this.numSkippablePackets < 0) {
@@ -308,7 +305,7 @@ abstract class Game {
 
       // Clear the canvas
       gl.clearColor(1, 1, 1, 1);
-      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
       setFrameProgress(frameProgress);
       const renderTime = performance.now();
@@ -331,21 +328,11 @@ abstract class Game {
       gl.bufferSubData(gl.UNIFORM_BUFFER, 0, this.cameraData);
 
       // Categorise the game objects
+      // @Speed
       const playersToRenderNames = new Array<Player>();
-      const entities = new Array<Entity>();
-      const droppedItems = new Array<DroppedItem>();
-      const projectiles = new Array<Projectile>();
       for (const gameObject of Object.values(Board.gameObjects)) {
-         // @Cleanup this is pretty bad
-         if (gameObject.hasOwnProperty("statusEffects")) {
-            entities.push(gameObject as Entity);
-            if ((gameObject as Entity).type === "player" && gameObject !== Player.instance) {
-               playersToRenderNames.push(gameObject as Player);
-            }
-         } else if (gameObject.hasOwnProperty("itemType")) {
-            droppedItems.push(gameObject as DroppedItem);
-         } else {
-            projectiles.push(gameObject as Projectile);
+         if (gameObject.hasOwnProperty("statusEffects") && (gameObject as Entity).type === "player" && gameObject !== Player.instance) {
+            playersToRenderNames.push(gameObject as Player);
          }
       }
 
@@ -368,11 +355,9 @@ abstract class Game {
 
       renderMonocolourParticles(ParticleRenderLayer.low, renderTime);
       renderTexturedParticles(ParticleRenderLayer.low, renderTime);
-      
-      renderGameObjects(droppedItems);
-      renderGameObjects(entities);
-      renderGameObjects(projectiles);
 
+      renderGameObjects();
+      
       renderMonocolourParticles(ParticleRenderLayer.high, renderTime);
       renderTexturedParticles(ParticleRenderLayer.high, renderTime);
 

@@ -27,6 +27,7 @@ class Tree extends Entity {
       
       this.attachRenderPart(
          new RenderPart(
+            this,
             this.radius * 2,
             this.radius * 2,
             treeTextures[treeSize],

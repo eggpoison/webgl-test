@@ -66,8 +66,6 @@ export function renderEntityHitboxes(): void {
             const y1 = hitboxRenderPosition.y - (hitbox as RectangularHitbox).height / 2;
             const y2 = hitboxRenderPosition.y + (hitbox as RectangularHitbox).height / 2;
 
-            // @Speed: Garbage collection
-
             // Rotate to match the entity's rotation
             const topLeftX = rotateXAroundPoint(x1, y2, hitboxRenderPosition.x, hitboxRenderPosition.y, gameObject.rotation);
             const topLeftY = rotateYAroundPoint(x1, y2, hitboxRenderPosition.x, hitboxRenderPosition.y, gameObject.rotation);

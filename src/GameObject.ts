@@ -39,8 +39,8 @@ abstract class GameObject extends RenderObject {
 
    public tile!: Tile;
 
-   /** Stores all render parts attached to the object, in ascending order of their z-indexes. */
-   public readonly renderParts = new Array<RenderPart>();
+   /** Stores all render parts attached to the object, sorted ascending based on zIndex. (So that render part with smallest zIndex is rendered first) */
+   public readonly allRenderParts = new Array<RenderPart>();
 
    public readonly hitboxes!: ReadonlySet<CircularHitbox | RectangularHitbox>;
    public readonly hitboxHalfDiagonalLength?: number;
@@ -49,6 +49,8 @@ abstract class GameObject extends RenderObject {
    public terminalVelocity: number = 0;
 
    public chunks = new Set<Chunk>();
+
+   public readonly renderWeight = randFloat(-0.95, 0.95);
 
    constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number) {
       super();

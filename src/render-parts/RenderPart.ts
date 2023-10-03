@@ -1,37 +1,67 @@
 import { Point, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
+import GameObject from "../GameObject";
+import Board from "../Board";
 
 /** A thing which is able to hold render parts */
-export class RenderObject {
+export abstract class RenderObject {
    /** Estimated position of the object during the current frame */
    public renderPosition = new Point(-1, -1);
 
    public rotation = 0;
    
-   public readonly renderParts = new Array<RenderPart>();
-
    public attachRenderPart(renderPart: RenderPart): void {
-      // Find an index for the render part
-      let idx = 0;
-      for (idx = 0; idx < this.renderParts.length; idx++) {
-         const currentRenderPart = this.renderParts[idx];
-         if (renderPart.zIndex <= currentRenderPart.zIndex) {
+      const root = this.getRoot();
+
+      // Don't add if already attached
+      if (root.allRenderParts.indexOf(renderPart) !== -1) {
+         return;
+      }
+
+      Board.numVisibleRenderParts++;
+      
+      // Add to the root array
+      let idx = root.allRenderParts.length;
+      for (let i = 0; i < root.allRenderParts.length; i++) {
+         const currentRenderPart = root.allRenderParts[i];
+         if (renderPart.zIndex < currentRenderPart.zIndex) {
+            idx = i;
             break;
          }
       }
+      root.allRenderParts.splice(idx, 0, renderPart);
 
-      // Insert the render part at the index
-      this.renderParts.splice(idx, 0, renderPart);
+      // @Incomplete: add children
    }
 
    public removeRenderPart(renderPart: RenderPart): void {
-      const idx = this.renderParts.indexOf(renderPart);
-      if (idx !== -1) {
-         this.renderParts.splice(idx, 1);
+      // Don't remove if already removed
+      const root = this.getRoot();
+      const idx = root.allRenderParts.indexOf(renderPart);
+      if (idx === -1) {
+         return;
       }
+      
+      Board.numVisibleRenderParts--;
+      
+      // Remove from the root array
+      root.allRenderParts.splice(root.allRenderParts.indexOf(renderPart), 1);
+
+      // @Incomplete: remove children
+   }
+
+   private getRoot(): GameObject {
+      // @Cleanup: don't use hasOwnProperty, don't use as, maybe remove while loop
+      let root: RenderObject = this;
+      while (root.hasOwnProperty("parent")) {
+         root = (root as RenderPart).parent;
+      }
+      return root as GameObject;
    }
 }
 
 class RenderPart extends RenderObject {
+   public readonly parent: RenderObject;
+
    public offset?: Point | (() => Point);
    public width: number;
    public height: number;
@@ -40,21 +70,22 @@ class RenderPart extends RenderObject {
    public rotation = 0;
    public opacity = 1;
 
+   public totalRotation = 0;
+
    public getRotation?: () => number;
 
    /** Whether or not the render part will inherit its parents' rotation */
    public inheritParentRotation = true;
-   /** Whether the render part is being rendered or not */
-   public isActive = true;
    public flipX = false;
    
-   constructor(width: number, height: number, textureSource: string, zIndex: number, rotation: number) {
+   constructor(parent: RenderObject, width: number, height: number, textureSource: string, zIndex: number, rotation: number) {
       super();
       
       if (typeof textureSource === "undefined") {
          throw new Error("Tried to create a render part with an undefined texture source.");
       }
 
+      this.parent = parent;
       this.width = width;
       this.height = height;
       this.textureSource = textureSource;
@@ -62,10 +93,10 @@ class RenderPart extends RenderObject {
       this.rotation = rotation;
    }
 
-   /** Updates the render part's position based on its parent's position and rotation */
-   public updateRenderPosition(parentRenderObject: RenderObject): void {
-      this.renderPosition.x = parentRenderObject.renderPosition.x;
-      this.renderPosition.y = parentRenderObject.renderPosition.y;
+   /** Updates the render part based on its parent */
+   public update(): void {
+      this.renderPosition.x = this.parent.renderPosition.x;
+      this.renderPosition.y = this.parent.renderPosition.y;
 
       if (typeof this.offset !== "undefined") {
          let offset: Point;
@@ -79,8 +110,8 @@ class RenderPart extends RenderObject {
          let rotatedOffsetX: number;
          let rotatedOffsetY: number;
          if (this.inheritParentRotation) {
-            rotatedOffsetX = rotateXAroundPoint(offset.x, offset.y, 0, 0, parentRenderObject.rotation);
-            rotatedOffsetY = rotateYAroundPoint(offset.x, offset.y, 0, 0, parentRenderObject.rotation);
+            rotatedOffsetX = rotateXAroundPoint(offset.x, offset.y, 0, 0, this.parent.rotation);
+            rotatedOffsetY = rotateYAroundPoint(offset.x, offset.y, 0, 0, this.parent.rotation);
          } else {
             rotatedOffsetX = offset.x;
             rotatedOffsetY = offset.y;
@@ -90,10 +121,12 @@ class RenderPart extends RenderObject {
          this.renderPosition.y += rotatedOffsetY;
       }
 
-      this.recalculateRotation();
-   }
-
-   private recalculateRotation(): void {
+      // Recalculate rotation
+      if (this.inheritParentRotation) {
+         this.totalRotation = this.parent.rotation;
+      } else {
+         this.totalRotation = 0;
+      }
       if (typeof this.getRotation !== "undefined") {
          this.rotation = this.getRotation();
          if (isNaN(this.rotation)) {

@@ -60,6 +60,7 @@ class DroppedItem extends GameObject implements BaseItemInfo {
 
       this.attachRenderPart(
          new RenderPart(
+            this,
             SETTINGS.ITEM_SIZE * 2,
             SETTINGS.ITEM_SIZE * 2,
             CLIENT_ITEM_INFO_RECORD[itemType].textureSource,

@@ -20,6 +20,7 @@ class Boulder extends Entity {
 
       this.attachRenderPart(
          new RenderPart(
+            this,
             Boulder.RADIUS * 2,
             Boulder.RADIUS * 2,
             Boulder.TEXTURE_SOURCES[boulderType],

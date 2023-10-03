@@ -353,13 +353,8 @@ abstract class Client {
       const armourSlotHasChanged = this.inventoryHasChanged(definiteGameState.armourSlot, playerInventoryData.armourSlot);
       updateInventoryFromData(definiteGameState.armourSlot, playerInventoryData.armourSlot);
       
-      // @Temporary @Cleanup: I think this is only done as the Player instance doesn't use updateFromData
       if (Player.instance !== null && armourSlotHasChanged) {
          updateInventoryFromData(Player.instance.armourSlotInventory, playerInventoryData.armourSlot);
-         // @Incomplete: Why did we comment this out? Do we need it?
-         // const armourType = definiteGameState.armourSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.armourSlot.itemSlots[1].type : null;
-         // Player.instance.updateArmourRenderPart(armourType);
-         // Player.instance.armourType = armourType;
       }
 
       if (hotbarHasChanged || backpackSlotHasChanged || armourSlotHasChanged) {
@@ -595,7 +590,8 @@ abstract class Client {
             rotation: Player.instance.rotation,
             visibleChunkBounds: Camera.getVisibleChunkBounds(),
             selectedItemSlot: latencyGameState.selectedHotbarItemSlot,
-            action: latencyGameState.playerAction
+            action: latencyGameState.playerAction,
+            interactingEntityID: latencyGameState.interactingEntityID
          };
 
          this.socket.emit("player_data_packet", packet);

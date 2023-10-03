@@ -14,6 +14,7 @@ class Campfire extends CookingEntity {
 
       this.attachRenderPart(
          new RenderPart(
+            this,
             Campfire.SIZE,
             Campfire.SIZE,
             "entities/campfire/campfire.png",

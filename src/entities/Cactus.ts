@@ -25,6 +25,7 @@ class Cactus extends Entity {
       super(position, hitboxes, id);
 
       const baseRenderPart = new RenderPart(
+         this,
          Cactus.RADIUS * 2,
          Cactus.RADIUS * 2,
          "entities/cactus/cactus.png",
@@ -47,6 +48,7 @@ class Cactus extends Entity {
          const flowerSize = (flowerInfo.type === 4 || flowerInfo.size === CactusFlowerSize.large) ? 20 : 16;
 
          const renderPart = new RenderPart(
+            this,
             flowerSize,
             flowerSize,
             this.getFlowerTextureSource(flowerInfo.type, flowerInfo.size),
@@ -63,15 +65,16 @@ class Cactus extends Entity {
 
          const offset = Point.fromVectorForm(Cactus.RADIUS, limbInfo.direction);
 
-         const renderPart = new RenderPart(
+         const limbRenderPart = new RenderPart(
+            baseRenderPart,
             Cactus.LIMB_SIZE,
             Cactus.LIMB_SIZE,
             "entities/cactus/cactus-limb.png",
             0,
             2 * Math.PI * Math.random()
          )
-         renderPart.offset = offset;
-         baseRenderPart.attachRenderPart(renderPart);
+         limbRenderPart.offset = offset;
+         baseRenderPart.attachRenderPart(limbRenderPart);
          
          if (typeof limbInfo.flower !== "undefined") {
             const flowerInfo = limbInfo.flower;
@@ -80,6 +83,7 @@ class Cactus extends Entity {
             // flowerOffset.add(offset);
 
             const flowerRenderPart = new RenderPart(
+               limbRenderPart,
                16,
                16,
                this.getFlowerTextureSource(flowerInfo.type, CactusFlowerSize.small),
@@ -87,7 +91,7 @@ class Cactus extends Entity {
                flowerInfo.rotation
             )
             flowerRenderPart.offset = flowerOffset;
-            renderPart.attachRenderPart(flowerRenderPart);
+            limbRenderPart.attachRenderPart(flowerRenderPart);
          }
       }
    }

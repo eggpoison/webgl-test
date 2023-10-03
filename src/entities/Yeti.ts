@@ -31,6 +31,7 @@ class Yeti extends Entity {
 
       this.attachRenderPart(
          new RenderPart(
+            this,
             Yeti.SIZE,
             Yeti.SIZE,
             "entities/yeti/yeti.png",
@@ -48,6 +49,7 @@ class Yeti extends Entity {
    
    private createPaw(i: number): void {
       const paw = new RenderPart(
+         this,
          Yeti.PAW_SIZE,
          Yeti.PAW_SIZE,
          "entities/yeti/yeti-paw.png",

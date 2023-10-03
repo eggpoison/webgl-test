@@ -1,107 +1,103 @@
 import { lerp, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import Camera from "../Camera";
-import Entity from "../entities/Entity";
-import RenderPart, { RenderObject } from "../render-parts/RenderPart";
-import { getTexture } from "../textures";
-import { createShaderString, createWebGLProgram, gl, halfWindowHeight, halfWindowWidth, MAX_ACTIVE_TEXTURE_UNITS } from "../webgl";
+import { createWebGLProgram, gl, halfWindowHeight, halfWindowWidth } from "../webgl";
 import GameObject from "../GameObject";
 import Board from "../Board";
-
+import Entity from "../entities/Entity";
+import { ATLAS_SLOT_SIZE, GAME_OBJECT_TEXTURE_ATLAS, getAtlasPixelSize, getAtlasTextureHeight, getAtlasTextureIndex, getAtlasTextureWidth } from "../texture-atlas-stitching";
 
 /** Amount of seconds that the hit flash occurs for */
 const ATTACK_HIT_FLASH_DURATION = 0.4;
 const MAX_REDNESS = 0.85;
 
-const vertexShaderText = `
+const vertexShaderText = `#version 300 es
 precision highp float;
 
 uniform vec2 u_playerPos;
 uniform vec2 u_halfWindowSize;
 uniform float u_zoom;
 
-attribute vec2 a_position;
-attribute vec2 a_texCoord;
-attribute vec3 a_tint;
-attribute float a_textureIdx;
-attribute float a_opacity;
+layout(location = 0) in vec2 a_position;
+layout(location = 1) in float a_depth;
+layout(location = 2) in vec2 a_texCoord;
+layout(location = 3) in float a_textureIndex;
+layout(location = 4) in vec2 a_textureSize;
+layout(location = 5) in vec3 a_tint;
+layout(location = 6) in float a_opacity;
 
-varying vec2 v_texCoord;
-varying vec3 v_tint;
-varying float v_textureIdx;
-varying float v_opacity;
+out vec2 v_texCoord;
+out float v_textureIndex;
+out vec2 v_textureSize;
+out vec3 v_tint;
+out float v_opacity;
  
 void main() {
    vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
    vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
-   gl_Position = vec4(clipSpacePos, 0.0, 1.0);
+   gl_Position = vec4(clipSpacePos, a_depth, 1.0);
 
    v_texCoord = a_texCoord;
-   v_textureIdx = a_textureIdx;
+   v_textureIndex = a_textureIndex;
+   v_textureSize = a_textureSize;
    v_tint = a_tint;
    v_opacity = a_opacity;
 }
 `;
 
-let fragmentShaderText: string;
-createShaderString(`
+const fragmentShaderText = `#version 300 es
 precision highp float;
 
-uniform sampler2D u_textures[__MAX_ACTIVE_TEXTURE_UNITS__];
+uniform sampler2D u_textureAtlas;
+uniform float u_atlasPixelSize;
+uniform float u_atlasSlotSize;
 
-varying vec2 v_texCoord;
-varying vec3 v_tint;
-varying float v_textureIdx;
-varying float v_opacity;
-    
-vec4 getSampleFromArray(sampler2D textures[__MAX_ACTIVE_TEXTURE_UNITS__], int ndx, vec2 uv) {
-   vec4 color = vec4(0);
-   for (int i = 0; i < __MAX_ACTIVE_TEXTURE_UNITS__; i++) {
-      vec4 c = texture2D(u_textures[i], uv);
-      if (i == ndx) {
-         color += c;
-      }
-   }
-   return color;
-}
+in vec2 v_texCoord;
+in float v_textureIndex;
+in vec2 v_textureSize;
+in vec3 v_tint;
+in float v_opacity;
+
+out vec4 outputColour;
 
 void main() {
-   vec4 fragColour = getSampleFromArray(u_textures, int(v_textureIdx + 0.5), v_texCoord);
+   float textureX = mod(v_textureIndex * u_atlasSlotSize, u_atlasPixelSize);
+   float textureY = floor(v_textureIndex * u_atlasSlotSize / u_atlasPixelSize) * u_atlasSlotSize;
+   // float t = 15.0 * 4.0 + 4.0;
+   // float textureX = mod(t * u_atlasSlotSize, u_atlasPixelSize);
+   // float textureY = floor(t * u_atlasSlotSize / u_atlasPixelSize) * u_atlasSlotSize;
+   
+   float u = (textureX + v_texCoord.x * v_textureSize.x) / u_atlasPixelSize;
+   float v = 1.0 - ((textureY + (1.0 - v_texCoord.y) * v_textureSize.y) / u_atlasPixelSize);
+   outputColour = texture(u_textureAtlas, vec2(u, v));
    
    if (v_tint.r > 0.0) {
-      fragColour.r = mix(fragColour.r, 1.0, v_tint.r);
+      outputColour.r = mix(outputColour.r, 1.0, v_tint.r);
    } else {
-      fragColour.r = mix(fragColour.r, 0.0, -v_tint.r);
+      outputColour.r = mix(outputColour.r, 0.0, -v_tint.r);
    }
    if (v_tint.g > 0.0) {
-      fragColour.g = mix(fragColour.g, 1.0, v_tint.g);
+      outputColour.g = mix(outputColour.g, 1.0, v_tint.g);
    } else {
-      fragColour.g = mix(fragColour.g, 0.0, -v_tint.g);
+      outputColour.g = mix(outputColour.g, 0.0, -v_tint.g);
    }
    if (v_tint.b > 0.0) {
-      fragColour.b = mix(fragColour.b, 1.0, v_tint.b);
+      outputColour.b = mix(outputColour.b, 1.0, v_tint.b);
    } else {
-      fragColour.b = mix(fragColour.b, 0.0, -v_tint.b);
+      outputColour.b = mix(outputColour.b, 0.0, -v_tint.b);
    }
 
-   fragColour.a *= v_opacity;
-
-   gl_FragColor = fragColour;
+   outputColour.a *= v_opacity;
 }
-`, (shaderString: string) => {
-   fragmentShaderText = shaderString
-});
+`;
 
 let program: WebGLProgram;
 
 let playerPositionUniformLocation: WebGLUniformLocation;
 let halfWindowSizeUniformLocation: WebGLUniformLocation;
 let zoomUniformLocation: WebGLUniformLocation;
-let imageRenderingProgramTexturesUniformLocation: WebGLUniformLocation;
-
-let tintAttribLocation: GLint;
-let texCoordAttribLocation: GLint;
-let textureIdxAttribLocation: GLint;
-let opacityAttribLocation: GLint;
+let textureUniformLocation: WebGLUniformLocation;
+let atlasPixelSizeUniformLocation: WebGLUniformLocation;
+let atlasSlotSizeUniformLocation: WebGLUniformLocation;
 
 export function createEntityShaders(): void {
    program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
@@ -109,13 +105,9 @@ export function createEntityShaders(): void {
    playerPositionUniformLocation = gl.getUniformLocation(program, "u_playerPos")!;
    halfWindowSizeUniformLocation = gl.getUniformLocation(program, "u_halfWindowSize")!;
    zoomUniformLocation = gl.getUniformLocation(program, "u_zoom")!;
-   imageRenderingProgramTexturesUniformLocation = gl.getUniformLocation(program, "u_textures")!;
-
-   gl.bindAttribLocation(program, 0, "a_position");
-   tintAttribLocation = gl.getAttribLocation(program, "a_tint");
-   texCoordAttribLocation = gl.getAttribLocation(program, "a_texCoord");
-   textureIdxAttribLocation = gl.getAttribLocation(program, "a_textureIdx");
-   opacityAttribLocation = gl.getAttribLocation(program, "a_opacity");
+   textureUniformLocation = gl.getUniformLocation(program, "u_textureAtlas")!;
+   atlasPixelSizeUniformLocation = gl.getUniformLocation(program, "u_atlasPixelSize")!;
+   atlasSlotSizeUniformLocation = gl.getUniformLocation(program, "u_atlasSlotSize")!;
 }
 
 export function calculateVisibleGameObjects(): Array<GameObject> {
@@ -128,265 +120,196 @@ export function calculateVisibleGameObjects(): Array<GameObject> {
    return visibleGameObjects;
 }
 
-interface RenderInfo {
-   readonly renderPart: RenderPart;
-   readonly totalRotation: number;
-   /** The root render object associated with the render part */
-   readonly baseRenderObject: RenderObject;
-}
+export function renderGameObjects(): void {
+   if (Board.sortedGameObjects.length === 0) return;
 
-interface TexturedRenderParts {
-   [textureSource: string]: Array<RenderInfo>;
-}
+   const vertexData = new Float32Array(Board.numVisibleRenderParts * 6 * 12);
 
-interface CategorisedRenderParts {
-   [zIndex: number]: TexturedRenderParts;
-}
-
-export function renderGameObjects(gameObjects: ReadonlyArray<GameObject>): void {
-   if (gameObjects.length === 0) return;
-
-   // Classify all render parts
-   const categorisedRenderParts: CategorisedRenderParts = {};
-   let totalRotation = 0;
-   // @Cleanup This really should be defined outside the renderGameObjects function
-   const addRenderPart = (baseRenderObject: RenderObject, renderPart: RenderPart, parentRenderObject: RenderObject): void => {
-      // Don't render inactive render parts
-      if (!renderPart.isActive) {
-         return;
-      }
-      
-      // Calculate the render position for the object
-      renderPart.updateRenderPosition(parentRenderObject);
-
-      if (!categorisedRenderParts.hasOwnProperty(renderPart.zIndex)) {
-         categorisedRenderParts[renderPart.zIndex] = {};
-      }
-
-      const texturedRenderParts = categorisedRenderParts[renderPart.zIndex];
-      if (!texturedRenderParts.hasOwnProperty(renderPart.textureSource)) {
-         texturedRenderParts[renderPart.textureSource] = new Array<RenderInfo>();
-      }
-
-      totalRotation += renderPart.rotation;
-
-      const renderPartRotation = renderPart.inheritParentRotation ? totalRotation : renderPart.rotation;
-      texturedRenderParts[renderPart.textureSource].push({
-         renderPart: renderPart,
-         totalRotation: renderPartRotation,
-         baseRenderObject: baseRenderObject
-      });
-      
-      // Add any child render parts
-      for (const childRenderPart of renderPart.renderParts) {
-         addRenderPart(baseRenderObject, childRenderPart, renderPart);
-      }
-
-      totalRotation -= renderPart.rotation;
-   }
-
-   for (const gameObject of gameObjects) {
+   let i = 0;
+   for (const gameObject of Board.sortedGameObjects) {
       gameObject.updateRenderPosition();
-      
-      totalRotation = gameObject.rotation;
-      
-      for (const renderPart of gameObject.renderParts) {
-         addRenderPart(gameObject, renderPart, gameObject);
-      }
-   }
 
-   // Calculate how many render parts will be in each draw call
-   let numTextureUnitsUsed = 0;
-   let partCounter = 0;
-   const numPartsPerDrawCall = new Array<number>();
-   for (const zIndexRenderInfo of Object.values(categorisedRenderParts) as ReadonlyArray<TexturedRenderParts>) {
-      for (const texturedRenderParts of Object.values(zIndexRenderInfo)) {
-         partCounter += texturedRenderParts.length;
-         if (numTextureUnitsUsed % MAX_ACTIVE_TEXTURE_UNITS === MAX_ACTIVE_TEXTURE_UNITS - 1) {
-            numPartsPerDrawCall.push(partCounter);
-            partCounter = 0;
-         }
-         numTextureUnitsUsed++;
-      }
-   }
-   if (partCounter > 0) {
-      numPartsPerDrawCall.push(partCounter);
-   }
-   
-   // Calculate vertices
-   numTextureUnitsUsed = 0;
-   let partIndex = 0;
-   const vertexDatas = new Array<Float32Array>();
-   const textureSources = new Array<string>();
-   for (const zIndexRenderPartInfo of Object.values(categorisedRenderParts) as ReadonlyArray<TexturedRenderParts>) {
-      for (const [textureSource, texturedRenderParts] of Object.entries(zIndexRenderPartInfo)) {
-         if (numTextureUnitsUsed % MAX_ACTIVE_TEXTURE_UNITS === 0) {
-            const idx = Math.floor(numTextureUnitsUsed / MAX_ACTIVE_TEXTURE_UNITS);
-            const numPartsInDrawCall = numPartsPerDrawCall[idx];
-            vertexDatas.push(new Float32Array(numPartsInDrawCall * 6 * 9));
-            partIndex = 0;
-         }
-         
-         const textureIdx = numTextureUnitsUsed % MAX_ACTIVE_TEXTURE_UNITS;
-         for (const renderInfo of texturedRenderParts) {
-            let redTint = 0;
-            let greenTint = 0;
-            let blueTint = 0;
+      for (const renderPart of gameObject.allRenderParts) {
+         renderPart.update();
 
-            // @Cleanup: This shouldn't be here, and shouldn't be hardcoded
-            if (renderInfo.baseRenderObject instanceof Entity) {
-               if (renderInfo.baseRenderObject.hasStatusEffect("freezing")) {
-                  blueTint += 0.5;
-                  redTint -= 0.15;
-               }
+         const depth = -renderPart.zIndex * 0.0001 + gameObject.renderWeight;
 
-               let redness: number;
-               if (renderInfo.baseRenderObject.secondsSinceLastHit === null || renderInfo.baseRenderObject.secondsSinceLastHit > ATTACK_HIT_FLASH_DURATION) {
-                  redness = 0;
-               } else {
-                  redness = MAX_REDNESS * (1 - renderInfo.baseRenderObject.secondsSinceLastHit / ATTACK_HIT_FLASH_DURATION);
-               }
+         let redTint = 0;
+         let greenTint = 0;
+         let blueTint = 0;
 
-               redTint = lerp(redTint, 1, redness);
-               greenTint = lerp(greenTint, -1, redness);
-               blueTint = lerp(blueTint, -1, redness);
+         // @Cleanup This shouldn't be here, and shouldn't be hardcoded
+         // @Speed
+         if (gameObject instanceof Entity) {
+            if (gameObject.hasStatusEffect("freezing")) {
+               blueTint += 0.5;
+               redTint -= 0.15;
             }
 
-            const u0 = renderInfo.renderPart.flipX ? 1 : 0;
-            const u1 = 1 - u0;
+            let redness: number;
+            if (gameObject.secondsSinceLastHit === null || gameObject.secondsSinceLastHit > ATTACK_HIT_FLASH_DURATION) {
+               redness = 0;
+            } else {
+               redness = MAX_REDNESS * (1 - gameObject.secondsSinceLastHit / ATTACK_HIT_FLASH_DURATION);
+            }
 
-            const x1 = renderInfo.renderPart.renderPosition.x - renderInfo.renderPart.width / 2;
-            const x2 = renderInfo.renderPart.renderPosition.x + renderInfo.renderPart.width / 2;
-            const y1 = renderInfo.renderPart.renderPosition.y - renderInfo.renderPart.height / 2;
-            const y2 = renderInfo.renderPart.renderPosition.y + renderInfo.renderPart.height / 2;
-
-            // Rotate the render part to match its rotation
-            const topLeftX = rotateXAroundPoint(x1, y2, renderInfo.renderPart.renderPosition.x, renderInfo.renderPart.renderPosition.y, renderInfo.totalRotation);
-            const topLeftY = rotateYAroundPoint(x1, y2, renderInfo.renderPart.renderPosition.x, renderInfo.renderPart.renderPosition.y, renderInfo.totalRotation);
-            const topRightX = rotateXAroundPoint(x2, y2, renderInfo.renderPart.renderPosition.x, renderInfo.renderPart.renderPosition.y, renderInfo.totalRotation);
-            const topRightY = rotateYAroundPoint(x2, y2, renderInfo.renderPart.renderPosition.x, renderInfo.renderPart.renderPosition.y, renderInfo.totalRotation);
-            const bottomLeftX = rotateXAroundPoint(x1, y1, renderInfo.renderPart.renderPosition.x, renderInfo.renderPart.renderPosition.y, renderInfo.totalRotation);
-            const bottomLeftY = rotateYAroundPoint(x1, y1, renderInfo.renderPart.renderPosition.x, renderInfo.renderPart.renderPosition.y, renderInfo.totalRotation);
-            const bottomRightX = rotateXAroundPoint(x2, y1, renderInfo.renderPart.renderPosition.x, renderInfo.renderPart.renderPosition.y, renderInfo.totalRotation);
-            const bottomRightY = rotateYAroundPoint(x2, y1, renderInfo.renderPart.renderPosition.x, renderInfo.renderPart.renderPosition.y, renderInfo.totalRotation);
-
-            const data = vertexDatas[vertexDatas.length - 1];
-
-            data[partIndex * 6 * 9] = bottomLeftX;
-            data[partIndex * 6 * 9 + 1] = bottomLeftY;
-            data[partIndex * 6 * 9 + 2] = u0;
-            data[partIndex * 6 * 9 + 3] = 0;
-            data[partIndex * 6 * 9 + 4] = redTint;
-            data[partIndex * 6 * 9 + 5] = greenTint;
-            data[partIndex * 6 * 9 + 6] = blueTint;
-            data[partIndex * 6 * 9 + 7] = textureIdx;
-            data[partIndex * 6 * 9 + 8] = renderInfo.renderPart.opacity;
-
-            data[partIndex * 6 * 9 + 9] = bottomRightX;
-            data[partIndex * 6 * 9 + 10] = bottomRightY;
-            data[partIndex * 6 * 9 + 11] = u1;
-            data[partIndex * 6 * 9 + 12] = 0;
-            data[partIndex * 6 * 9 + 13] = redTint;
-            data[partIndex * 6 * 9 + 14] = greenTint;
-            data[partIndex * 6 * 9 + 15] = blueTint;
-            data[partIndex * 6 * 9 + 16] = textureIdx;
-            data[partIndex * 6 * 9 + 17] = renderInfo.renderPart.opacity;
-
-            data[partIndex * 6 * 9 + 18] = topLeftX;
-            data[partIndex * 6 * 9 + 19] = topLeftY;
-            data[partIndex * 6 * 9 + 20] = u0;
-            data[partIndex * 6 * 9 + 21] = 1;
-            data[partIndex * 6 * 9 + 22] = redTint;
-            data[partIndex * 6 * 9 + 23] = greenTint;
-            data[partIndex * 6 * 9 + 24] = blueTint;
-            data[partIndex * 6 * 9 + 25] = textureIdx;
-            data[partIndex * 6 * 9 + 26] = renderInfo.renderPart.opacity;
-
-            data[partIndex * 6 * 9 + 27] = topLeftX;
-            data[partIndex * 6 * 9 + 28] = topLeftY;
-            data[partIndex * 6 * 9 + 29] = u0;
-            data[partIndex * 6 * 9 + 30] = 1;
-            data[partIndex * 6 * 9 + 31] = redTint;
-            data[partIndex * 6 * 9 + 32] = greenTint;
-            data[partIndex * 6 * 9 + 33] = blueTint;
-            data[partIndex * 6 * 9 + 34] = textureIdx;
-            data[partIndex * 6 * 9 + 35] = renderInfo.renderPart.opacity;
-
-            data[partIndex * 6 * 9 + 36] = bottomRightX;
-            data[partIndex * 6 * 9 + 37] = bottomRightY;
-            data[partIndex * 6 * 9 + 38] = u1;
-            data[partIndex * 6 * 9 + 39] = 0;
-            data[partIndex * 6 * 9 + 40] = redTint;
-            data[partIndex * 6 * 9 + 41] = greenTint;
-            data[partIndex * 6 * 9 + 42] = blueTint;
-            data[partIndex * 6 * 9 + 43] = textureIdx;
-            data[partIndex * 6 * 9 + 44] = renderInfo.renderPart.opacity;
-
-            data[partIndex * 6 * 9 + 45] = topRightX;
-            data[partIndex * 6 * 9 + 46] = topRightY;
-            data[partIndex * 6 * 9 + 47] = u1;
-            data[partIndex * 6 * 9 + 48] = 1;
-            data[partIndex * 6 * 9 + 49] = redTint;
-            data[partIndex * 6 * 9 + 50] = greenTint;
-            data[partIndex * 6 * 9 + 51] = blueTint;
-            data[partIndex * 6 * 9 + 52] = textureIdx;
-            data[partIndex * 6 * 9 + 53] = renderInfo.renderPart.opacity;
-
-            partIndex++;
+            redTint = lerp(redTint, 1, redness);
+            greenTint = lerp(greenTint, -1, redness);
+            blueTint = lerp(blueTint, -1, redness);
          }
-         
-         textureSources.push(textureSource);
-         numTextureUnitsUsed++;
+   
+         const u0 = renderPart.flipX ? 1 : 0;
+         const u1 = 1 - u0;
+
+         const x1 = renderPart.renderPosition.x - renderPart.width / 2;
+         const x2 = renderPart.renderPosition.x + renderPart.width / 2;
+         const y1 = renderPart.renderPosition.y - renderPart.height / 2;
+         const y2 = renderPart.renderPosition.y + renderPart.height / 2;
+
+         // Rotate the render part to match its rotation
+         const topLeftX = rotateXAroundPoint(x1, y2, renderPart.renderPosition.x, renderPart.renderPosition.y, renderPart.totalRotation + renderPart.rotation);
+         const topLeftY = rotateYAroundPoint(x1, y2, renderPart.renderPosition.x, renderPart.renderPosition.y, renderPart.totalRotation + renderPart.rotation);
+         const topRightX = rotateXAroundPoint(x2, y2, renderPart.renderPosition.x, renderPart.renderPosition.y, renderPart.totalRotation + renderPart.rotation);
+         const topRightY = rotateYAroundPoint(x2, y2, renderPart.renderPosition.x, renderPart.renderPosition.y, renderPart.totalRotation + renderPart.rotation);
+         const bottomLeftX = rotateXAroundPoint(x1, y1, renderPart.renderPosition.x, renderPart.renderPosition.y, renderPart.totalRotation + renderPart.rotation);
+         const bottomLeftY = rotateYAroundPoint(x1, y1, renderPart.renderPosition.x, renderPart.renderPosition.y, renderPart.totalRotation + renderPart.rotation);
+         const bottomRightX = rotateXAroundPoint(x2, y1, renderPart.renderPosition.x, renderPart.renderPosition.y, renderPart.totalRotation + renderPart.rotation);
+         const bottomRightY = rotateYAroundPoint(x2, y1, renderPart.renderPosition.x, renderPart.renderPosition.y, renderPart.totalRotation + renderPart.rotation);
+
+         const textureIndex = getAtlasTextureIndex(renderPart.textureSource);
+         const textureWidth = getAtlasTextureWidth(renderPart.textureSource);
+         const textureHeight = getAtlasTextureHeight(renderPart.textureSource);
+
+         const dataOffset = i * 6 * 12;
+
+         vertexData[dataOffset] = bottomLeftX;
+         vertexData[dataOffset + 1] = bottomLeftY;
+         vertexData[dataOffset + 2] = depth;
+         vertexData[dataOffset + 3] = u0;
+         vertexData[dataOffset + 4] = 0;
+         vertexData[dataOffset + 5] = textureIndex;
+         vertexData[dataOffset + 6] = textureWidth;
+         vertexData[dataOffset + 7] = textureHeight;
+         vertexData[dataOffset + 8] = redTint;
+         vertexData[dataOffset + 9] = greenTint;
+         vertexData[dataOffset + 10] = blueTint;
+         vertexData[dataOffset + 11] = renderPart.opacity;
+
+         vertexData[dataOffset + 12] = bottomRightX;
+         vertexData[dataOffset + 13] = bottomRightY;
+         vertexData[dataOffset + 14] = depth;
+         vertexData[dataOffset + 15] = u1;
+         vertexData[dataOffset + 16] = 0;
+         vertexData[dataOffset + 17] = textureIndex;
+         vertexData[dataOffset + 18] = textureWidth;
+         vertexData[dataOffset + 19] = textureHeight;
+         vertexData[dataOffset + 20] = redTint;
+         vertexData[dataOffset + 21] = greenTint;
+         vertexData[dataOffset + 22] = blueTint;
+         vertexData[dataOffset + 23] = renderPart.opacity;
+
+         vertexData[dataOffset + 24] = topLeftX;
+         vertexData[dataOffset + 25] = topLeftY;
+         vertexData[dataOffset + 26] = depth;
+         vertexData[dataOffset + 27] = u0;
+         vertexData[dataOffset + 28] = 1;
+         vertexData[dataOffset + 29] = textureIndex;
+         vertexData[dataOffset + 30] = textureWidth;
+         vertexData[dataOffset + 31] = textureHeight;
+         vertexData[dataOffset + 32] = redTint;
+         vertexData[dataOffset + 33] = greenTint;
+         vertexData[dataOffset + 34] = blueTint;
+         vertexData[dataOffset + 35] = renderPart.opacity;
+
+         vertexData[dataOffset + 36] = topLeftX;
+         vertexData[dataOffset + 37] = topLeftY;
+         vertexData[dataOffset + 38] = depth;
+         vertexData[dataOffset + 39] = u0;
+         vertexData[dataOffset + 40] = 1;
+         vertexData[dataOffset + 41] = textureIndex;
+         vertexData[dataOffset + 42] = textureWidth;
+         vertexData[dataOffset + 43] = textureHeight;
+         vertexData[dataOffset + 44] = redTint;
+         vertexData[dataOffset + 45] = greenTint;
+         vertexData[dataOffset + 46] = blueTint;
+         vertexData[dataOffset + 47] = renderPart.opacity;
+
+         vertexData[dataOffset + 48] = bottomRightX;
+         vertexData[dataOffset + 49] = bottomRightY;
+         vertexData[dataOffset + 50] = depth;
+         vertexData[dataOffset + 51] = u1;
+         vertexData[dataOffset + 52] = 0;
+         vertexData[dataOffset + 53] = textureIndex;
+         vertexData[dataOffset + 54] = textureWidth;
+         vertexData[dataOffset + 55] = textureHeight;
+         vertexData[dataOffset + 56] = redTint;
+         vertexData[dataOffset + 57] = greenTint;
+         vertexData[dataOffset + 58] = blueTint;
+         vertexData[dataOffset + 59] = renderPart.opacity;
+
+         vertexData[dataOffset + 60] = topRightX;
+         vertexData[dataOffset + 61] = topRightY;
+         vertexData[dataOffset + 62] = depth;
+         vertexData[dataOffset + 63] = u1;
+         vertexData[dataOffset + 64] = 1;
+         vertexData[dataOffset + 65] = textureIndex;
+         vertexData[dataOffset + 66] = textureWidth;
+         vertexData[dataOffset + 67] = textureHeight;
+         vertexData[dataOffset + 68] = redTint;
+         vertexData[dataOffset + 69] = greenTint;
+         vertexData[dataOffset + 70] = blueTint;
+         vertexData[dataOffset + 71] = renderPart.opacity;
+
+         i++;
       }
+   }
+
+   if (i !== Board.numVisibleRenderParts) {
+      throw new Error("Was missing or had extra render parts");
    }
 
    gl.useProgram(program);
 
+   gl.enable(gl.DEPTH_TEST);
    gl.enable(gl.BLEND);
    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+   gl.depthMask(true);
 
-   for (let currentDrawCall = 0; currentDrawCall < vertexDatas.length; currentDrawCall++) {
-      const vertexData = vertexDatas[currentDrawCall];
-      const vertexCount = numPartsPerDrawCall[currentDrawCall] * 6;
+   // Bind texture atlas
+   gl.activeTexture(gl.TEXTURE0);
+   gl.bindTexture(gl.TEXTURE_2D, GAME_OBJECT_TEXTURE_ATLAS);
 
-      const usedTextureSources = new Array<string>();
-      for (let idx = currentDrawCall * MAX_ACTIVE_TEXTURE_UNITS; idx <= Math.min((currentDrawCall + 1) * MAX_ACTIVE_TEXTURE_UNITS - 1, textureSources.length - 1); idx++) {
-         usedTextureSources.push(textureSources[idx]);
-      }
-      
-      const buffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
+   const buffer = gl.createBuffer();
+   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+   gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
 
-      gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 9 * Float32Array.BYTES_PER_ELEMENT, 0);
-      gl.vertexAttribPointer(texCoordAttribLocation, 2, gl.FLOAT, false, 9 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(tintAttribLocation, 3, gl.FLOAT, false, 9 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(textureIdxAttribLocation, 1, gl.FLOAT, false, 9 * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
-      gl.vertexAttribPointer(opacityAttribLocation, 1, gl.FLOAT, false, 9 * Float32Array.BYTES_PER_ELEMENT, 8 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 0);
+   gl.vertexAttribPointer(1, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(2, 2, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 3 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(3, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(4, 2, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(5, 3, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 8 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(6, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 11 * Float32Array.BYTES_PER_ELEMENT);
+   
+   gl.enableVertexAttribArray(0);
+   gl.enableVertexAttribArray(1);
+   gl.enableVertexAttribArray(2);
+   gl.enableVertexAttribArray(3);
+   gl.enableVertexAttribArray(4);
+   gl.enableVertexAttribArray(5);
+   gl.enableVertexAttribArray(6);
 
-      gl.uniform2f(playerPositionUniformLocation, Camera.position.x, Camera.position.y);
-      gl.uniform2f(halfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
-      gl.uniform1f(zoomUniformLocation, Camera.zoom);
-      gl.uniform1iv(imageRenderingProgramTexturesUniformLocation, usedTextureSources.map((_, idx) => idx));
-      
-      gl.enableVertexAttribArray(0);
-      gl.enableVertexAttribArray(texCoordAttribLocation);
-      gl.enableVertexAttribArray(tintAttribLocation);
-      gl.enableVertexAttribArray(textureIdxAttribLocation);
-      gl.enableVertexAttribArray(opacityAttribLocation);
-      
-      // Set all texture units
-      for (let i = 0; i < usedTextureSources.length; i++) {
-         const textureSource = usedTextureSources[i];
-         const texture = getTexture(textureSource);
-         gl.activeTexture(gl.TEXTURE0 + i);
-         gl.bindTexture(gl.TEXTURE_2D, texture);
-      }
+   gl.uniform2f(playerPositionUniformLocation, Camera.position.x, Camera.position.y);
+   gl.uniform2f(halfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
+   gl.uniform1f(zoomUniformLocation, Camera.zoom);
+   gl.uniform1i(textureUniformLocation, 0);
+   gl.uniform1f(atlasPixelSizeUniformLocation, getAtlasPixelSize());
+   gl.uniform1f(atlasSlotSizeUniformLocation, ATLAS_SLOT_SIZE);
+   
+   gl.drawArrays(gl.TRIANGLES, 0, Board.numVisibleRenderParts * 6);
 
-      // Draw the vertices
-      gl.drawArrays(gl.TRIANGLES, 0, vertexCount);
-   }
-
+   gl.disable(gl.DEPTH_TEST);
    gl.disable(gl.BLEND);
    gl.blendFunc(gl.ONE, gl.ZERO);
+   gl.depthMask(false);
 }

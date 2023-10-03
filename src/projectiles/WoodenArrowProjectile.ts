@@ -21,6 +21,7 @@ class WoodenArrowProjectile extends Projectile {
 
       this.attachRenderPart(
          new RenderPart(
+            this,
             WoodenArrowProjectile.WIDTH,
             WoodenArrowProjectile.HEIGHT,
             "projectiles/wooden-arrow.png",

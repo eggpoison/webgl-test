@@ -121,6 +121,7 @@ abstract class TribeMember extends Entity {
       this.backpackInventory = createInventoryFromData(backpackInventory);
       
       this.activeItemRenderPart = new RenderPart(
+         this,
          TribeMember.TOOL_ACTIVE_ITEM_SIZE,
          TribeMember.TOOL_ACTIVE_ITEM_SIZE,
          activeItem !== null ? CLIENT_ITEM_INFO_RECORD[activeItem].textureSource : "",
@@ -129,24 +130,18 @@ abstract class TribeMember extends Entity {
       );
       // @Cleanup (?): Merge most of the getOffset and getRotation functions into some logic in the tick/updateFromData functions
       this.activeItemRenderPart.offset = () => {
-         // @Cleanup: This is kinda scuffed
-         if (this.activeItemType === null) {
-            return new Point(0, 0);
-         }
-
          let direction = Math.PI / 4;
 
          // @Cleanup: As the offset function is called in the RenderPart constructor, this.activeItemRenderPart will initially
          // be undefined and so we have to check for this case. Ideally this will not need to be done
          let itemSize: number;
          if (typeof this.activeItemRenderPart === "undefined") {
-            itemSize = this.getActiveItemSize(this.activeItemType);
+            itemSize = this.getActiveItemSize(this.activeItemType!);
          } else {
             itemSize = this.activeItemRenderPart.width;
          }
 
          const secondsSinceLastAction = this.getSecondsSinceLastAction(this.lastActionTicks);
-
          switch (this.action) {
             case TribeMemberAction.charge_bow: {
                // 
@@ -228,11 +223,8 @@ abstract class TribeMember extends Entity {
             return direction;
          }
       };
-      this.attachRenderPart(this.activeItemRenderPart);
-      
-      // @Temporary
-      if (activeItem === null || true) {
-         this.activeItemRenderPart.isActive = false;
+      if (activeItem !== null && false) {
+         this.attachRenderPart(this.activeItemRenderPart);
       }
    }
 
@@ -382,13 +374,13 @@ abstract class TribeMember extends Entity {
          if (this.armourRenderPart === null) {
             const pixelSize = this.getArmourPixelSize(armourType);
             this.armourRenderPart = new RenderPart(
+               this,
                pixelSize,
                pixelSize,
                this.getArmourTextureSource(armourType),
                2,
                0
             );
-            
             this.attachRenderPart(this.armourRenderPart);
          } else {
             this.armourRenderPart.textureSource = this.getArmourTextureSource(armourType);
@@ -401,10 +393,10 @@ abstract class TribeMember extends Entity {
 
    private updateActiveItemRenderPart(activeItemType: ItemType | null): void {
       if (activeItemType === null) {
-         this.activeItemRenderPart.isActive = false;
+         this.removeRenderPart(this.activeItemRenderPart);
       } else {
          this.activeItemRenderPart.textureSource = CLIENT_ITEM_INFO_RECORD[activeItemType].textureSource;
-         this.activeItemRenderPart.isActive = true;
+         this.attachRenderPart(this.activeItemRenderPart);
 
          const renderPartSize = this.getActiveItemSize(activeItemType);
          this.activeItemRenderPart.width = renderPartSize;
