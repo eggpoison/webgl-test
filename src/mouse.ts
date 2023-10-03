@@ -129,7 +129,9 @@ export function renderCursorTooltip(): void {
    const screenPosition = calculateEntityScreenPosition(targetEntity);
 
    const debugData = Game.getGameObjectDebugData();
-   updateCursorTooltip(debugData, screenPosition);
+   if (debugData === null || targetEntity.id === debugData.gameObjectID) {
+      updateCursorTooltip(debugData, screenPosition);
+   }
 }
 
 export function updateChargeMeter(): void {
