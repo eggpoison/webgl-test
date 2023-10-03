@@ -170,6 +170,7 @@ export async function stitchGameObjectTextureAtlas(): Promise<void> {
       textureImages[i] = new Image();
       textureImages[i].src = require("./images/" + textureSource);
 
+      // eslint-disable-next-line no-loop-func
       await imageIsLoaded(textureImages[i]).then(() => {
          const slotWidth = Math.ceil(textureImages[i].width / ATLAS_SLOT_SIZE);
          const slotHeight = Math.ceil(textureImages[i].height / ATLAS_SLOT_SIZE);

@@ -130,24 +130,18 @@ abstract class TribeMember extends Entity {
       );
       // @Cleanup (?): Merge most of the getOffset and getRotation functions into some logic in the tick/updateFromData functions
       this.activeItemRenderPart.offset = () => {
-         // @Cleanup: This is kinda scuffed
-         if (this.activeItemType === null) {
-            return new Point(0, 0);
-         }
-
          let direction = Math.PI / 4;
 
          // @Cleanup: As the offset function is called in the RenderPart constructor, this.activeItemRenderPart will initially
          // be undefined and so we have to check for this case. Ideally this will not need to be done
          let itemSize: number;
          if (typeof this.activeItemRenderPart === "undefined") {
-            itemSize = this.getActiveItemSize(this.activeItemType);
+            itemSize = this.getActiveItemSize(this.activeItemType!);
          } else {
             itemSize = this.activeItemRenderPart.width;
          }
 
          const secondsSinceLastAction = this.getSecondsSinceLastAction(this.lastActionTicks);
-
          switch (this.action) {
             case TribeMemberAction.charge_bow: {
                // 

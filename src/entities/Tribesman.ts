@@ -58,7 +58,7 @@ class Tribesman extends TribeMember {
             Tribesman.GOBLIN_EAR_WIDTH,
             Tribesman.GOBLIN_EAR_HEIGHT,
             "entities/human/goblin-ear.png",
-            2,
+            0,
             Math.PI/2 - Tribesman.GOBLIN_EAR_ANGLE,
          );
          leftEarRenderPart.offset = Point.fromVectorForm(Tribesman.RADIUS + Tribesman.GOBLIN_EAR_OFFSET, -Tribesman.GOBLIN_EAR_ANGLE);
@@ -71,7 +71,7 @@ class Tribesman extends TribeMember {
             Tribesman.GOBLIN_EAR_WIDTH,
             Tribesman.GOBLIN_EAR_HEIGHT,
             "entities/human/goblin-ear.png",
-            2,
+            0,
             -Math.PI/2 + Tribesman.GOBLIN_EAR_ANGLE,
          );
          rightEarRenderPart.offset = Point.fromVectorForm(Tribesman.RADIUS + Tribesman.GOBLIN_EAR_OFFSET, Tribesman.GOBLIN_EAR_ANGLE);

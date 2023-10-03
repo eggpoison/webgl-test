@@ -129,7 +129,6 @@ class RenderPart extends RenderObject {
       }
       if (typeof this.getRotation !== "undefined") {
          this.rotation = this.getRotation();
-         this.totalRotation += this.rotation;
          if (isNaN(this.rotation)) {
             console.warn(this);
             throw new Error("Render part's rotation was NaN.");
