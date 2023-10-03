@@ -1,4 +1,4 @@
-import { EntityData, EntityType, HitData, HitFlags, SETTINGS, StatusEffectData, StatusEffectType, lerp, randFloat, randItem } from "webgl-test-shared";
+import { EntityType, HitData, HitFlags, SETTINGS, StatusEffectData, StatusEffectType, lerp, randFloat, randItem } from "webgl-test-shared";
 import GameObject from "../GameObject";
 import Particle from "../Particle";
 import Board from "../Board";
@@ -56,8 +56,6 @@ abstract class Entity extends GameObject {
    public abstract readonly type: EntityType;
 
    public secondsSinceLastHit = 99999;
-
-   public mobAIType?: string;
 
    public statusEffects = new Array<StatusEffectData>();
 
@@ -241,12 +239,6 @@ abstract class Entity extends GameObject {
          }
       }
       return null;
-   }
-
-   public updateFromData(entityData: EntityData<EntityType>): void {
-      super.updateFromData(entityData);
-
-      this.mobAIType = entityData.mobAIType;
    }
 
    public createHealingParticles(amountHealed: number): void {

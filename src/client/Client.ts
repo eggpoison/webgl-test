@@ -476,7 +476,6 @@ abstract class Client {
       entity.velocity = entityData.velocity !== null ? Vector.unpackage(entityData.velocity) : null;
       entity.rotation = entityData.rotation;
       entity.mass = entityData.mass;
-      entity.mobAIType = entityData.mobAIType;
       entity.ageTicks = entityData.ageTicks;
 
       Board.addEntity(entity);

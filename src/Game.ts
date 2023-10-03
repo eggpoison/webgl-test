@@ -8,7 +8,7 @@ import { GameDataPacket, GameObjectDebugData, Point, SETTINGS } from "webgl-test
 import { createEntityShaders, renderGameObjects } from "./rendering/game-object-rendering";
 import Client from "./client/Client";
 import { calculateCursorWorldPosition, getCursorX, getCursorY, getMouseTargetEntity, handleMouseMovement, renderCursorTooltip, updateChargeMeter } from "./mouse";
-import { refreshDebugInfo } from "./components/game/dev/DebugInfo";
+import { refreshDebugInfo, setDebugInfoDebugData } from "./components/game/dev/DebugInfo";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createShaderStrings, createWebGLContext, gl, halfWindowHeight, halfWindowWidth, resizeCanvas } from "./webgl";
 import { loadTextures } from "./textures";
 import { hidePauseScreen, showPauseScreen, toggleSettingsMenu } from "./components/game/GameScreen";
@@ -92,8 +92,10 @@ abstract class Game {
    public static setGameObjectDebugData(gameObjectDebugData: GameObjectDebugData | undefined): void {
       if (typeof gameObjectDebugData === "undefined") {
          this.gameObjectDebugData = null;
+         setDebugInfoDebugData(null);
       } else {
          this.gameObjectDebugData = gameObjectDebugData;
+         setDebugInfoDebugData(gameObjectDebugData);
       }
    }
 

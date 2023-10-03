@@ -1,5 +1,5 @@
-import { useEffect, useReducer, useState } from "react";
-import { SETTINGS, roundNum } from "webgl-test-shared";
+import { useEffect, useReducer, useRef, useState } from "react";
+import { GameObjectDebugData, SETTINGS, roundNum } from "webgl-test-shared";
 import Entity from "../../../entities/Entity";
 import { Tile } from "../../../Tile";
 import Board from "../../../Board";
@@ -7,6 +7,8 @@ import Board from "../../../Board";
 export let updateDebugInfoTile: (tile: Tile | null) => void = () => {};
 
 export let updateDebugInfoEntity: (entity: Entity | null) => void = () => {};
+
+export let setDebugInfoDebugData: (debugData: GameObjectDebugData | null) => void = () => {};
 
 export let refreshDebugInfo: () => void = () => {};
 
@@ -34,8 +36,9 @@ const TileDebugInfo = ({ tile }: TileDebugInfoProps) => {
 
 interface EntityDebugInfoProps {
    readonly entity: Entity;
+   readonly debugData: GameObjectDebugData | null;
 }
-const EntityDebugInfo = ({ entity }: EntityDebugInfoProps) => {
+const EntityDebugInfo = ({ entity, debugData }: EntityDebugInfoProps) => {
    const displayX = roundNum(entity.position.x, 0);
    const displayY = roundNum(entity.position.y, 0);
 
@@ -68,13 +71,9 @@ const EntityDebugInfo = ({ entity }: EntityDebugInfoProps) => {
 
       <p>Chunks: {chunkDisplayText}</p>
 
-      {typeof entity.mobAIType !== "undefined" ? <>
-         <p>Current Mob AI: <span className="highlight">{entity.mobAIType}</span></p>
-      </> : null}
-
-      {entity.hasOwnProperty("tribeID") ? <>
-         <p>Tribe ID: <span className="highlight">{(entity as any).tribeID}</span></p>
-      </> : undefined}
+      {debugData !== null ? debugData.debugEntries.map((str, i) => {
+         return <p key={i}>{str}</p>;
+      }) : undefined}
 
       <br />
    </>;
@@ -83,6 +82,7 @@ const EntityDebugInfo = ({ entity }: EntityDebugInfoProps) => {
 const DebugInfo = () => {
    const [tile, setTile] = useState<Tile | null>(null);
    const [entity, setEntity] = useState<Entity | null>(null);
+   const debugData = useRef<GameObjectDebugData | null>(null);
    const [, forceUpdate] = useReducer(x => x + 1, 0);
 
    useEffect(() => {
@@ -97,11 +97,15 @@ const DebugInfo = () => {
       refreshDebugInfo = (): void => {
          forceUpdate();
       }
+
+      setDebugInfoDebugData = (newDebugData: GameObjectDebugData | null): void => {
+         debugData.current = newDebugData;
+      }
    }, []);
 
    return <div id="debug-info">
       {tile !== null ? <TileDebugInfo tile={tile} /> : undefined}
-      {entity !== null ? <EntityDebugInfo entity={entity} /> : undefined}
+      {entity !== null ? <EntityDebugInfo entity={entity} debugData={debugData.current} /> : undefined}
    </div>;
 }
 

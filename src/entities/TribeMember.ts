@@ -230,7 +230,8 @@ abstract class TribeMember extends Entity {
       };
       this.attachRenderPart(this.activeItemRenderPart);
       
-      if (activeItem === null) {
+      // @Temporary
+      if (activeItem === null || true) {
          this.activeItemRenderPart.isActive = false;
       }
    }
@@ -433,7 +434,8 @@ abstract class TribeMember extends Entity {
       this.action = entityData.clientArgs[6];
       this.foodEatingType = entityData.clientArgs[7]
       this.lastActionTicks = entityData.clientArgs[8];
-      this.updateActiveItemRenderPart(this.activeItemType);
+      // @Temporary
+      // this.updateActiveItemRenderPart(this.activeItemType);
       this.updateBowChargeTexture();
 
       // @Cleanup
@@ -457,7 +459,8 @@ abstract class TribeMember extends Entity {
    }
 
    public updateActiveItem(activeItemType: ItemType | null): void {
-      this.updateActiveItemRenderPart(activeItemType);
+      // @Temporary
+      // this.updateActiveItemRenderPart(activeItemType);
       this.activeItemType = activeItemType;
    }
 }
