@@ -233,23 +233,30 @@ class Player extends TribeMember {
       this.stopYVelocity();
    }
 
-   private static resolveDiagonalTileCollision(tile: Tile): void {
-      const xDist = Player.instance!.position.x - tile.x * SETTINGS.TILE_SIZE;
-      const yDist = Player.instance!.position.y - tile.y * SETTINGS.TILE_SIZE;
+   private static resolveDiagonalTileCollision(tile: Tile, hitbox: CircularHitbox): void {
+      const xDir = Player.instance!.position.x >= (tile.x + 0.5) * SETTINGS.TILE_SIZE ? 1 : -1;
+      const yDir = Player.instance!.position.y >= (tile.y + 0.5) * SETTINGS.TILE_SIZE ? 1 : -1;
 
-      const xDir = xDist >= 0 ? 1 : -1;
-      const yDir = yDist >= 0 ? 1 : -1;
+      const tileVertexX = xDir === 1 ? tile.x + 1 : tile.x;
+      const tileVertexY = yDir === 1 ? tile.y + 1 : tile.y;
+      
+      const xDistFromTileEdge = Player.instance!.position.x - tileVertexX * SETTINGS.TILE_SIZE;
+      const yDistFromTileEdge = Player.instance!.position.y - tileVertexY * SETTINGS.TILE_SIZE;
+      
+      const xDistFromCenter = Math.abs(Player.instance!.position.x - (tile.x + 0.5) * SETTINGS.TILE_SIZE);
+      const yDistFromCenter = Math.abs(Player.instance!.position.y - (tile.y + 0.5) * SETTINGS.TILE_SIZE);
 
-      const xDistFromEdge = Math.abs(xDist - SETTINGS.TILE_SIZE/2);
-      const yDistFromEdge = Math.abs(yDist - SETTINGS.TILE_SIZE/2);
-
-      const moveAxis: "x" | "y" = yDistFromEdge >= xDistFromEdge ? "y" : "x";
+      const moveAxis: "x" | "y" = xDistFromCenter >= yDistFromCenter ? "x" : "y";
 
       if (moveAxis === "x") {
-         Player.instance!.position.x = (tile.x + 0.5 + 0.5 * xDir) * SETTINGS.TILE_SIZE + Player.RADIUS * xDir;
+         const collisionXDist = Math.sqrt(Math.pow(hitbox.radius, 2) - Math.pow(tileVertexY * SETTINGS.TILE_SIZE - Player.instance!.position.y, 2));
+         const amountInside = collisionXDist - Math.abs(xDistFromTileEdge);
+         Player.instance!.position.x += amountInside * xDir;
          this.stopXVelocity();
       } else {
-         Player.instance!.position.y = (tile.y + 0.5 + 0.5 * yDir) * SETTINGS.TILE_SIZE + Player.RADIUS * yDir;
+         const collisionYDist = Math.sqrt(Math.pow(hitbox.radius, 2) - Math.pow(tileVertexX * SETTINGS.TILE_SIZE - Player.instance!.position.x, 2));
+         const amountInside = collisionYDist - Math.abs(yDistFromTileEdge);
+         Player.instance!.position.y += amountInside * yDir;
          this.stopYVelocity();
       }
    }
@@ -277,7 +284,7 @@ class Player extends TribeMember {
                      break;
                   }
                   case TileCollisionAxis.diagonal: {
-                     this.resolveDiagonalTileCollision(tile);
+                     this.resolveDiagonalTileCollision(tile, Array.from(Player.instance.hitboxes)[0] as CircularHitbox);
                      break;
                   }
                }

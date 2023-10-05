@@ -57,9 +57,6 @@ out vec4 outputColour;
 void main() {
    float textureX = mod(v_textureIndex * u_atlasSlotSize, u_atlasPixelSize);
    float textureY = floor(v_textureIndex * u_atlasSlotSize / u_atlasPixelSize) * u_atlasSlotSize;
-   // float t = 15.0 * 4.0 + 4.0;
-   // float textureX = mod(t * u_atlasSlotSize, u_atlasPixelSize);
-   // float textureY = floor(t * u_atlasSlotSize / u_atlasPixelSize) * u_atlasSlotSize;
    
    float u = (textureX + v_texCoord.x * v_textureSize.x) / u_atlasPixelSize;
    float v = 1.0 - ((textureY + (1.0 - v_texCoord.y) * v_textureSize.y) / u_atlasPixelSize);
