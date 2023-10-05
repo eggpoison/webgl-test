@@ -9,6 +9,10 @@ import { createSlimePoolParticle } from "../generic-particles";
 const HEALING_PARTICLE_AMOUNTS = [0.05, 0.37, 1.01];
 const HEALING_PARTICLE_TEXTURE_INDEXES = [3 * 8 + 1, 3 * 8 + 2, 3 * 8 + 3];
 
+/** Amount of seconds that the hit flash occurs for */
+const ATTACK_HIT_FLASH_DURATION = 0.4;
+const MAX_REDNESS = 0.85;
+
 const createHealingParticle = (originX: number, originY: number, size: number): void => {
    const offsetMagnitude = 40 * Math.random();
    const offsetDirection = 2 * Math.PI * Math.random();
@@ -63,6 +67,22 @@ abstract class Entity extends GameObject {
 
    public tick(): void {
       super.tick();
+
+      if (this.hasStatusEffect("freezing")) {
+         this.tintB += 0.5;
+         this.tintR -= 0.15;
+      }
+
+      let redness: number;
+      if (this.secondsSinceLastHit === null || this.secondsSinceLastHit > ATTACK_HIT_FLASH_DURATION) {
+         redness = 0;
+      } else {
+         redness = MAX_REDNESS * (1 - this.secondsSinceLastHit / ATTACK_HIT_FLASH_DURATION);
+      }
+
+      this.tintR = lerp(this.tintR, 1, redness);
+      this.tintG = lerp(this.tintG, -1, redness);
+      this.tintB = lerp(this.tintB, -1, redness);
 
       this.secondsSinceLastHit += 1 / SETTINGS.TPS;
 

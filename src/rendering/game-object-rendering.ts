@@ -1,14 +1,9 @@
-import { lerp, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
+import { rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import Camera from "../Camera";
 import { createWebGLProgram, gl, halfWindowHeight, halfWindowWidth } from "../webgl";
 import GameObject from "../GameObject";
 import Board from "../Board";
-import Entity from "../entities/Entity";
 import { ATLAS_SLOT_SIZE, GAME_OBJECT_TEXTURE_ATLAS, getAtlasPixelSize, getAtlasTextureHeight, getAtlasTextureIndex, getAtlasTextureWidth } from "../texture-atlas-stitching";
-
-/** Amount of seconds that the hit flash occurs for */
-const ATTACK_HIT_FLASH_DURATION = 0.4;
-const MAX_REDNESS = 0.85;
 
 const vertexShaderText = `#version 300 es
 precision highp float;
@@ -133,30 +128,6 @@ export function renderGameObjects(): void {
          renderPart.update();
 
          const depth = -renderPart.zIndex * 0.0001 + gameObject.renderWeight;
-
-         let redTint = 0;
-         let greenTint = 0;
-         let blueTint = 0;
-
-         // @Cleanup This shouldn't be here, and shouldn't be hardcoded
-         // @Speed
-         if (gameObject instanceof Entity) {
-            if (gameObject.hasStatusEffect("freezing")) {
-               blueTint += 0.5;
-               redTint -= 0.15;
-            }
-
-            let redness: number;
-            if (gameObject.secondsSinceLastHit === null || gameObject.secondsSinceLastHit > ATTACK_HIT_FLASH_DURATION) {
-               redness = 0;
-            } else {
-               redness = MAX_REDNESS * (1 - gameObject.secondsSinceLastHit / ATTACK_HIT_FLASH_DURATION);
-            }
-
-            redTint = lerp(redTint, 1, redness);
-            greenTint = lerp(greenTint, -1, redness);
-            blueTint = lerp(blueTint, -1, redness);
-         }
    
          const u0 = renderPart.flipX ? 1 : 0;
          const u1 = 1 - u0;
@@ -190,9 +161,9 @@ export function renderGameObjects(): void {
          vertexData[dataOffset + 5] = textureIndex;
          vertexData[dataOffset + 6] = textureWidth;
          vertexData[dataOffset + 7] = textureHeight;
-         vertexData[dataOffset + 8] = redTint;
-         vertexData[dataOffset + 9] = greenTint;
-         vertexData[dataOffset + 10] = blueTint;
+         vertexData[dataOffset + 8] = gameObject.tintR;
+         vertexData[dataOffset + 9] = gameObject.tintG;
+         vertexData[dataOffset + 10] = gameObject.tintB;
          vertexData[dataOffset + 11] = renderPart.opacity;
 
          vertexData[dataOffset + 12] = bottomRightX;
@@ -203,9 +174,9 @@ export function renderGameObjects(): void {
          vertexData[dataOffset + 17] = textureIndex;
          vertexData[dataOffset + 18] = textureWidth;
          vertexData[dataOffset + 19] = textureHeight;
-         vertexData[dataOffset + 20] = redTint;
-         vertexData[dataOffset + 21] = greenTint;
-         vertexData[dataOffset + 22] = blueTint;
+         vertexData[dataOffset + 20] = gameObject.tintR;
+         vertexData[dataOffset + 21] = gameObject.tintG;
+         vertexData[dataOffset + 22] = gameObject.tintB;
          vertexData[dataOffset + 23] = renderPart.opacity;
 
          vertexData[dataOffset + 24] = topLeftX;
@@ -216,9 +187,9 @@ export function renderGameObjects(): void {
          vertexData[dataOffset + 29] = textureIndex;
          vertexData[dataOffset + 30] = textureWidth;
          vertexData[dataOffset + 31] = textureHeight;
-         vertexData[dataOffset + 32] = redTint;
-         vertexData[dataOffset + 33] = greenTint;
-         vertexData[dataOffset + 34] = blueTint;
+         vertexData[dataOffset + 32] = gameObject.tintR;
+         vertexData[dataOffset + 33] = gameObject.tintG;
+         vertexData[dataOffset + 34] = gameObject.tintB;
          vertexData[dataOffset + 35] = renderPart.opacity;
 
          vertexData[dataOffset + 36] = topLeftX;
@@ -229,9 +200,9 @@ export function renderGameObjects(): void {
          vertexData[dataOffset + 41] = textureIndex;
          vertexData[dataOffset + 42] = textureWidth;
          vertexData[dataOffset + 43] = textureHeight;
-         vertexData[dataOffset + 44] = redTint;
-         vertexData[dataOffset + 45] = greenTint;
-         vertexData[dataOffset + 46] = blueTint;
+         vertexData[dataOffset + 44] = gameObject.tintR;
+         vertexData[dataOffset + 45] = gameObject.tintG;
+         vertexData[dataOffset + 46] = gameObject.tintB;
          vertexData[dataOffset + 47] = renderPart.opacity;
 
          vertexData[dataOffset + 48] = bottomRightX;
@@ -242,9 +213,9 @@ export function renderGameObjects(): void {
          vertexData[dataOffset + 53] = textureIndex;
          vertexData[dataOffset + 54] = textureWidth;
          vertexData[dataOffset + 55] = textureHeight;
-         vertexData[dataOffset + 56] = redTint;
-         vertexData[dataOffset + 57] = greenTint;
-         vertexData[dataOffset + 58] = blueTint;
+         vertexData[dataOffset + 56] = gameObject.tintR;
+         vertexData[dataOffset + 57] = gameObject.tintG;
+         vertexData[dataOffset + 58] = gameObject.tintB;
          vertexData[dataOffset + 59] = renderPart.opacity;
 
          vertexData[dataOffset + 60] = topRightX;
@@ -255,9 +226,9 @@ export function renderGameObjects(): void {
          vertexData[dataOffset + 65] = textureIndex;
          vertexData[dataOffset + 66] = textureWidth;
          vertexData[dataOffset + 67] = textureHeight;
-         vertexData[dataOffset + 68] = redTint;
-         vertexData[dataOffset + 69] = greenTint;
-         vertexData[dataOffset + 70] = blueTint;
+         vertexData[dataOffset + 68] = gameObject.tintR;
+         vertexData[dataOffset + 69] = gameObject.tintG;
+         vertexData[dataOffset + 70] = gameObject.tintB;
          vertexData[dataOffset + 71] = renderPart.opacity;
 
          i++;

@@ -52,6 +52,10 @@ abstract class GameObject extends RenderObject {
 
    public readonly renderWeight = randFloat(-0.95, 0.95);
 
+   public tintR = 0;
+   public tintG = 0;
+   public tintB = 0;
+
    constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number) {
       super();
       
@@ -81,6 +85,10 @@ abstract class GameObject extends RenderObject {
    protected overrideTileMoveSpeedMultiplier?(): number | null;
 
    public tick(): void {
+      this.tintR = 0;
+      this.tintG = 0;
+      this.tintB = 0;
+      
       this.updateCurrentTile();
       
       // Water droplet particles
