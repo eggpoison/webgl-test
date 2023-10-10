@@ -122,6 +122,8 @@ export function createWebGLProgram(glRenderingContext: WebGL2RenderingContext, v
 }
 
 export function generateLine(startPosition: Point, endPosition: Point, thickness: number, r: number, g: number, b: number): Array<number> {
+   // @Speed: Garbage collection
+   
    let offset = endPosition.copy();
    offset.subtract(startPosition);
    const offsetVector = offset.convertToVector();
@@ -131,6 +133,7 @@ export function generateLine(startPosition: Point, endPosition: Point, thickness
    const leftOffset = new Point(-offset.y, offset.x);
    const rightOffset = new Point(offset.y, -offset.x);
 
+   // const bottomLeftX = startPosition.x - offset.x;
    const bl = startPosition.copy();
    bl.add(leftOffset);
    const br = startPosition.copy();
@@ -158,6 +161,8 @@ export function generateThickCircleWireframeVertices(position: Point, radius: nu
    
    // Add the outer vertices
    for (let radians = 0, n = 0; n < CIRCLE_VERTEX_COUNT; radians += step, n++) {
+      // @Speed: Garbage collection
+      
       // Trig shenanigans to get x and y coords
       const bl = Point.fromVectorForm(radius, radians);
       const br = Point.fromVectorForm(radius, radians + step);

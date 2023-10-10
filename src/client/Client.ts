@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, Vector, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, ProjectileData, VisibleChunkBounds, TribeType, TribeData, InventoryData, CircularHitboxData, RectangularHitboxData, randFloat, RESOURCE_ENTITY_TYPES, MOB_ENTITY_TYPES, TribeMemberAction } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, ProjectileData, VisibleChunkBounds, TribeType, TribeData, InventoryData, CircularHitboxData, RectangularHitboxData, randFloat, RESOURCE_ENTITY_TYPES, MOB_ENTITY_TYPES, TribeMemberAction } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -272,7 +272,14 @@ abstract class Client {
 
       // All known entity ids which haven't been removed are ones which are dead
       for (const id of knownEntityIDs) {
+         if (Board.entities[id].type === "player") {
+            const idx = Board.players.indexOf(Board.entities[id] as Player);
+            if (idx !== -1) {
+               Board.players.splice(idx, 1);
+            }
+         }
          Board.removeGameObject(Board.entities[id]);
+         delete Board.entities[id];
       }
    }
 
@@ -297,6 +304,7 @@ abstract class Client {
       // All known entity ids which haven't been removed are ones which are dead
       for (const id of ids) {
          Board.removeGameObject(Board.droppedItems[id]);
+         delete Board.droppedItems[id];
       }
    }
 
@@ -319,6 +327,7 @@ abstract class Client {
       // All known entity ids which haven't been removed are ones which are dead
       for (const id of ids) {
          Board.removeGameObject(Board.projectiles[id]);
+         delete Board.projectiles[id];
       }
    }
 
@@ -408,7 +417,7 @@ abstract class Client {
 
    private static createDroppedItemFromServerItemData(droppedItemData: DroppedItemData): void {
       const position = Point.unpackage(droppedItemData.position); 
-      const velocity = droppedItemData.velocity !== null ? Vector.unpackage(droppedItemData.velocity) : null;
+      const velocity = Point.unpackage(droppedItemData.velocity);
 
       const hitboxes = this.createHitboxesFromData(droppedItemData.hitboxes);
 
@@ -421,13 +430,15 @@ abstract class Client {
    }
 
    private static createProjectileFromServerData(projectileData: ProjectileData): void {
+      // @Speed: Garbage collection
+      
       const position = Point.unpackage(projectileData.position); 
 
       const hitboxes = this.createHitboxesFromData(projectileData.hitboxes);
 
       const projectile = createProjectile(position, hitboxes, projectileData.id, projectileData.type);
       projectile.rotation = projectileData.rotation;
-      projectile.velocity = projectileData.velocity !== null ? Vector.unpackage(projectileData.velocity) : null;
+      projectile.velocity = Point.unpackage(projectileData.velocity);
       projectile.mass = projectileData.mass;
       projectile.ageTicks = projectileData.ageTicks;
 
@@ -436,7 +447,9 @@ abstract class Client {
    
    private static registerTileUpdates(tileUpdates: ReadonlyArray<ServerTileUpdateData>): void {
       for (const tileUpdate of tileUpdates) {
-         const tile = Board.getTile(tileUpdate.x, tileUpdate.y);
+         const tileX = tileUpdate.tileIndex % SETTINGS.BOARD_DIMENSIONS;
+         const tileY = Math.floor(tileUpdate.tileIndex / SETTINGS.BOARD_DIMENSIONS);
+         const tile = Board.getTile(tileX, tileY);
          tile.type = tileUpdate.type;
          tile.isWall = tileUpdate.isWall;
          
@@ -460,6 +473,8 @@ abstract class Client {
    }
 
    public static createEntityFromData(entityData: EntityData<EntityType>): Entity {
+      // @Speed: Garbage collection
+      
       const position = Point.unpackage(entityData.position);
 
       const hitboxes = this.createHitboxesFromData(entityData.hitboxes);
@@ -468,12 +483,15 @@ abstract class Client {
       const entityConstructor = ENTITY_CLASS_RECORD[entityData.type]() as EntityClassType<EntityType>;
       const entity = new entityConstructor(position, hitboxes, entityData.id, ...entityData.clientArgs);
       
-      entity.velocity = entityData.velocity !== null ? Vector.unpackage(entityData.velocity) : null;
+      entity.velocity = Point.unpackage(entityData.velocity);
       entity.rotation = entityData.rotation;
       entity.mass = entityData.mass;
       entity.ageTicks = entityData.ageTicks;
 
       Board.addEntity(entity);
+      if (entity.type === "player") {
+         Board.players.push(entity as Player);
+      }
 
       // If the entity has just spawned in, create white smoke particles.
       // Only create particles for living entities: e.g. cows, tribesmen, etc.
@@ -532,8 +550,8 @@ abstract class Client {
 
       if (Player.instance !== null) {
          Player.instance.position = Point.unpackage(gameDataSyncPacket.position);
-         Player.instance.velocity = gameDataSyncPacket.velocity !== null ? Vector.unpackage(gameDataSyncPacket.velocity) : null;
-         Player.instance.acceleration = gameDataSyncPacket.acceleration !== null ? Vector.unpackage(gameDataSyncPacket.acceleration) : null;
+         Player.instance.velocity = Point.unpackage(gameDataSyncPacket.velocity);
+         Player.instance.acceleration = Point.unpackage(gameDataSyncPacket.acceleration)
          Player.instance.rotation = gameDataSyncPacket.rotation;
          Player.instance.terminalVelocity = gameDataSyncPacket.terminalVelocity;
          this.updatePlayerInventory(gameDataSyncPacket.inventory);
@@ -584,8 +602,8 @@ abstract class Client {
       if (Game.isRunning && this.socket !== null && Player.instance !== null) {
          const packet: PlayerDataPacket = {
             position: Player.instance.position.package(),
-            velocity: Player.instance.velocity?.package() || null,
-            acceleration: Player.instance.acceleration?.package() || null,
+            velocity: Player.instance.velocity.package() || null,
+            acceleration: Player.instance.acceleration.package() || null,
             terminalVelocity: Player.instance.terminalVelocity,
             rotation: Player.instance.rotation,
             visibleChunkBounds: Camera.getVisibleChunkBounds(),
@@ -668,6 +686,7 @@ abstract class Client {
    private static killPlayer(): void {
       // Remove the player from the game
       Board.removeGameObject(Player.instance!);
+      delete Board.entities[Player.instance!.id];
       Player.instance = null;
 
       latencyGameState.resetFlags();

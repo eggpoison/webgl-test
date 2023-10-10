@@ -4,6 +4,7 @@ import RenderPart from "../render-parts/RenderPart";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { LeafParticleSize, createLeafParticle, createLeafSpeckParticle } from "../generic-particles";
+import { GAME_OBJECT_TEXTURE_SLOT_INDEXES, getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class BerryBush extends Entity {
    private static readonly RADIUS = 40;
@@ -31,7 +32,7 @@ class BerryBush extends Entity {
          this,
          BerryBush.RADIUS * 2,
          BerryBush.RADIUS * 2,
-         BerryBush.TEXTURE_SOURCES[numBerries],
+         getGameObjectTextureIndex(BerryBush.TEXTURE_SOURCES[numBerries]),
          0,
          0
       );
@@ -42,7 +43,7 @@ class BerryBush extends Entity {
       super.updateFromData(entityData);
 
       const numBerries = entityData.clientArgs[0];
-      this.renderPart.textureSource = BerryBush.TEXTURE_SOURCES[numBerries];
+      this.renderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureIndex(BerryBush.TEXTURE_SOURCES[numBerries])];
    }
 
    protected onHit(): void {

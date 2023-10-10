@@ -7,6 +7,7 @@ import Board from "../Board";
 import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 import { createWhiteSmokeParticle } from "../generic-particles";
+import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class WoodenArrowProjectile extends Projectile {
    private static readonly HEIGHT = 64;
@@ -24,7 +25,7 @@ class WoodenArrowProjectile extends Projectile {
             this,
             WoodenArrowProjectile.WIDTH,
             WoodenArrowProjectile.HEIGHT,
-            "projectiles/wooden-arrow.png",
+            getGameObjectTextureIndex("projectiles/wooden-arrow.png"),
             0,
             0
          )
@@ -45,12 +46,11 @@ class WoodenArrowProjectile extends Projectile {
          let velocityX = velocityMagnitude * Math.sin(velocityDirection);
          let velocityY = velocityMagnitude * Math.cos(velocityDirection);
 
-         if (this.velocity !== null) {
-            const velocityAddMagnitude = WoodenArrowProjectile.DESTROY_PARTICLE_ADD_VELOCITY * Math.random();
-            velocityX += velocityAddMagnitude * Math.sin(this.velocity.direction);
-            velocityY += velocityAddMagnitude * Math.cos(this.velocity.direction);
-            velocityMagnitude += velocityAddMagnitude;
-         }
+         // Add the destroy velocity
+         const arrowVelocityLength = this.velocity.length();
+         const velocityAddMagnitude = WoodenArrowProjectile.DESTROY_PARTICLE_ADD_VELOCITY * Math.random();
+         velocityX += velocityAddMagnitude * this.velocity.x / arrowVelocityLength;
+         velocityY += velocityAddMagnitude * this.velocity.y / arrowVelocityLength;
          
          const lifetime = randFloat(0.3, 0.5);
       

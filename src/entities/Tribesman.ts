@@ -7,6 +7,7 @@ import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { createFootprintParticle } from "../generic-particles";
 import Board from "../Board";
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
+import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class Tribesman extends TribeMember {
    public readonly type = "tribesman";
@@ -33,7 +34,7 @@ class Tribesman extends TribeMember {
          this,
          Tribesman.RADIUS * 2,
          Tribesman.RADIUS * 2,
-         super.getTextureSource(tribeType),
+         getGameObjectTextureIndex(super.getTextureSource(tribeType)),
          1,
          0
       ));
@@ -46,7 +47,7 @@ class Tribesman extends TribeMember {
                this,
                Tribesman.RADIUS * 2,
                Tribesman.RADIUS * 2,
-               `entities/human/goblin-warpaint-${warpaint}.png`,
+               getGameObjectTextureIndex(`entities/human/goblin-warpaint-${warpaint}.png`),
                2,
                0
             )
@@ -57,7 +58,7 @@ class Tribesman extends TribeMember {
             this,
             Tribesman.GOBLIN_EAR_WIDTH,
             Tribesman.GOBLIN_EAR_HEIGHT,
-            "entities/human/goblin-ear.png",
+            getGameObjectTextureIndex("entities/human/goblin-ear.png"),
             0,
             Math.PI/2 - Tribesman.GOBLIN_EAR_ANGLE,
          );
@@ -70,7 +71,7 @@ class Tribesman extends TribeMember {
             this,
             Tribesman.GOBLIN_EAR_WIDTH,
             Tribesman.GOBLIN_EAR_HEIGHT,
-            "entities/human/goblin-ear.png",
+            getGameObjectTextureIndex("entities/human/goblin-ear.png"),
             0,
             -Math.PI/2 + Tribesman.GOBLIN_EAR_ANGLE,
          );
@@ -85,7 +86,7 @@ class Tribesman extends TribeMember {
       super.tick();
 
       // Footsteps
-      if (this.velocity !== null && !this.isInRiver() && Board.tickIntervalHasPassed(0.15)) {
+      if ((this.velocity.x !== 0 || this.velocity.y !== 0) && !this.isInRiver() && Board.tickIntervalHasPassed(0.15)) {
          createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 4);
          this.numFootstepsTaken++;
       }

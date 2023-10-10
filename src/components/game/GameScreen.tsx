@@ -11,8 +11,8 @@ import BackpackInventoryMenu from "./inventories/BackpackInventory";
 import InteractInventory from "./inventories/InteractInventory";
 import ChargeMeter from "./ChargeMeter";
 
-export let showPauseScreen: () => void;
-export let hidePauseScreen: () => void;
+export let showPauseScreen: () => void = () => {};
+export let hidePauseScreen: () => void = () => {};
 
 export let openSettingsMenu: () => void;
 export let closeSettingsMenu: () => void;

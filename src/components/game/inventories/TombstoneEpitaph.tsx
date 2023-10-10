@@ -23,6 +23,8 @@ const TOMBSTONE_DEATH_MESSAGES: Record<PlayerCauseOfDeath, string> = {
    [PlayerCauseOfDeath.cactus]: "Impaled by an arrow",
    [PlayerCauseOfDeath.snowball]: "Crushed by a snowball",
    [PlayerCauseOfDeath.slime]: "Absorbed by a slime",
+   [PlayerCauseOfDeath.frozen_yeti]: "Thought the 'F' in Frozen Yeti meant friend",
+   [PlayerCauseOfDeath.bloodloss]: "Ran out of blood"
 };
 
 interface TombstoneInventoryProps {

@@ -11,6 +11,7 @@ import CircularHitbox from "./hitboxes/CircularHitbox";
 import { highMonocolourBufferContainer, highTexturedBufferContainer, lowMonocolourBufferContainer, lowTexturedBufferContainer } from "./rendering/particle-rendering";
 import ObjectBufferContainer from "./rendering/ObjectBufferContainer";
 import { tempFloat32ArrayLength1 } from "./webgl";
+import Player from "./entities/Player";
 
 export interface EntityHitboxInfo {
    readonly vertexPositions: readonly [Point, Point, Point, Point];
@@ -39,12 +40,16 @@ abstract class Board {
    /** Game objects sorted in descending render weight */
    public static readonly sortedGameObjects = new Array<GameObject>();
 
-   public static readonly gameObjects: Record<number, GameObject> = {};
+   public static readonly gameObjects = new Set<GameObject>();
    public static readonly entities: Record<number, Entity> = {};
    public static readonly droppedItems: Record<number, DroppedItem> = {};
    public static readonly projectiles: Record<number, Projectile> = {};
 
-   // @Cleanup This is too messy
+   /** Stores all player entities in the game. Necessary for rendering their names. */
+   public static readonly players = new Array<Player>();
+
+   // @Cleanup This is too messy. Perhaps combine all into one
+   // public static readonly particles = new Array<Particle>();
    public static readonly lowMonocolourParticles = new Array<Particle>();
    public static readonly lowTexturedParticles = new Array<Particle>();
    public static readonly highMonocolourParticles = new Array<Particle>();
@@ -145,7 +150,7 @@ abstract class Board {
    }
 
    private static addGameObject(gameObject: GameObject): void {
-      this.gameObjects[gameObject.id] = gameObject;
+      this.gameObjects.add(gameObject);
       gameObject.updateContainingChunks();
       
       // Add into the sorted array
@@ -169,11 +174,7 @@ abstract class Board {
          chunk.removeGameObject(gameObject);
       }
 
-      // @Speed
-      delete this.gameObjects[gameObject.id];
-      delete this.projectiles[gameObject.id];
-      delete this.entities[gameObject.id];
-      delete this.droppedItems[gameObject.id];
+      this.gameObjects.delete(gameObject);
 
       if (typeof gameObject.onRemove !== "undefined") {
          gameObject.onRemove();
@@ -245,22 +246,21 @@ abstract class Board {
 
    /** Ticks all game objects without updating them */
    public static tickGameObjects(): void {
-      for (const gameObject of Object.values(this.gameObjects)) {
-         if (typeof gameObject.tick !== "undefined") {
-            gameObject.tick();
-         }
+      for (const gameObject of this.gameObjects) {
+         gameObject.tick();
       }
    }
 
    public static updateGameObjects(): void {
-      for (const gameObject of Object.values(this.gameObjects)) {
+      for (const gameObject of this.gameObjects) {
          gameObject.applyPhysics();
+         gameObject.updateCurrentTile();
          if (typeof gameObject.tick !== "undefined") gameObject.tick();
 
          // Calculate the entity's new info
          for (const hitbox of gameObject.hitboxes) {
+            hitbox.updatePositionFromGameObject(gameObject);
             hitbox.updateHitboxBounds();
-            hitbox.updatePosition();
          }
 
          gameObject.updateContainingChunks();
@@ -270,7 +270,10 @@ abstract class Board {
    /** Updates the client's copy of the tiles array to match any tile updates that have occurred */
    public static loadTileUpdates(tileUpdates: ReadonlyArray<ServerTileUpdateData>): void {
       for (const update of tileUpdates) {
-         let tile = this.getTile(update.x, update.y);
+         const tileX = update.tileIndex % SETTINGS.BOARD_DIMENSIONS;
+         const tileY = Math.floor(update.tileIndex / SETTINGS.BOARD_DIMENSIONS);
+         
+         let tile = this.getTile(tileX, tileY);
          tile.type = update.type;
          tile.isWall = update.isWall;
       }

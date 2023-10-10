@@ -1,6 +1,7 @@
 import { Point, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import GameObject from "../GameObject";
 import Board from "../Board";
+import { GAME_OBJECT_TEXTURE_HEIGHTS, GAME_OBJECT_TEXTURE_SLOT_INDEXES, GAME_OBJECT_TEXTURE_WIDTHS } from "../texture-atlases/game-object-texture-atlas";
 
 /** A thing which is able to hold render parts */
 export abstract class RenderObject {
@@ -65,10 +66,14 @@ class RenderPart extends RenderObject {
    public offset?: Point | (() => Point);
    public width: number;
    public height: number;
-   public textureSource: string;
    public readonly zIndex: number;
    public rotation = 0;
    public opacity = 1;
+   
+   /** Slot index of the render part's texture in the game object texture atlas */
+   public textureSlotIndex: number;
+   public textureWidth: number;
+   public textureHeight: number;
 
    public totalRotation = 0;
 
@@ -78,19 +83,18 @@ class RenderPart extends RenderObject {
    public inheritParentRotation = true;
    public flipX = false;
    
-   constructor(parent: RenderObject, width: number, height: number, textureSource: string, zIndex: number, rotation: number) {
+   constructor(parent: RenderObject, width: number, height: number, textureIndex: number, zIndex: number, rotation: number) {
       super();
-      
-      if (typeof textureSource === "undefined") {
-         throw new Error("Tried to create a render part with an undefined texture source.");
-      }
 
       this.parent = parent;
       this.width = width;
       this.height = height;
-      this.textureSource = textureSource;
       this.zIndex = zIndex;
       this.rotation = rotation;
+
+      this.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[textureIndex];
+      this.textureWidth = GAME_OBJECT_TEXTURE_WIDTHS[textureIndex];
+      this.textureHeight = GAME_OBJECT_TEXTURE_HEIGHTS[textureIndex];
    }
 
    /** Updates the render part based on its parent */

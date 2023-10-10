@@ -6,6 +6,7 @@ import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import Particle from "../Particle";
 import Board from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
+import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class Cactus extends Entity {
    private static readonly CACTUS_SPINE_PARTICLE_COLOUR: ParticleColour = [0, 0, 0];
@@ -28,7 +29,7 @@ class Cactus extends Entity {
          this,
          Cactus.RADIUS * 2,
          Cactus.RADIUS * 2,
-         "entities/cactus/cactus.png",
+         getGameObjectTextureIndex("entities/cactus/cactus.png"),
          2,
          0
       );
@@ -40,10 +41,6 @@ class Cactus extends Entity {
       // Attach flower render parts
       for (let i = 0; i < flowers.length; i++) {
          const flowerInfo = flowers[i];
-         
-         // Calculate position offset
-         const offsetDirection = flowerInfo.column * Math.PI / 4;
-         const offsetVector = Point.fromVectorForm(flowerInfo.height, offsetDirection);
 
          const flowerSize = (flowerInfo.type === 4 || flowerInfo.size === CactusFlowerSize.large) ? 20 : 16;
 
@@ -51,11 +48,12 @@ class Cactus extends Entity {
             this,
             flowerSize,
             flowerSize,
-            this.getFlowerTextureSource(flowerInfo.type, flowerInfo.size),
-            3,
+            getGameObjectTextureIndex(this.getFlowerTextureSource(flowerInfo.type, flowerInfo.size)),
+            3 + Math.random(),
             flowerInfo.rotation
          );
-         renderPart.offset = offsetVector;
+         const offsetDirection = flowerInfo.column * Math.PI / 4;
+         renderPart.offset = Point.fromVectorForm(flowerInfo.height, offsetDirection);
          this.attachRenderPart(renderPart);
       }
 
@@ -69,8 +67,8 @@ class Cactus extends Entity {
             baseRenderPart,
             Cactus.LIMB_SIZE,
             Cactus.LIMB_SIZE,
-            "entities/cactus/cactus-limb.png",
-            0,
+            getGameObjectTextureIndex("entities/cactus/cactus-limb.png"),
+            Math.random(),
             2 * Math.PI * Math.random()
          )
          limbRenderPart.offset = offset;
@@ -86,8 +84,8 @@ class Cactus extends Entity {
                limbRenderPart,
                16,
                16,
-               this.getFlowerTextureSource(flowerInfo.type, CactusFlowerSize.small),
-               1,
+               getGameObjectTextureIndex(this.getFlowerTextureSource(flowerInfo.type, CactusFlowerSize.small)),
+               1 + Math.random(),
                flowerInfo.rotation
             )
             flowerRenderPart.offset = flowerOffset;

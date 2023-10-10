@@ -5,6 +5,7 @@ import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createDirtParticle, createFootprintParticle } from "../generic-particles";
 import Board from "../Board";
+import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class Cow extends Entity {
    private static readonly HEAD_SIZE = 64;
@@ -35,7 +36,7 @@ class Cow extends Entity {
          this,
          Cow.BODY_WIDTH,
          Cow.BODY_HEIGHT,
-         `entities/cow/cow-body-${cowNum}.png`,
+         getGameObjectTextureIndex(`entities/cow/cow-body-${cowNum}.png`),
          0,
          0
       );
@@ -47,7 +48,7 @@ class Cow extends Entity {
          this,
          Cow.HEAD_IMAGE_WIDTH,
          Cow.HEAD_IMAGE_HEIGHT,
-         `entities/cow/cow-head-${cowNum}.png`,
+         getGameObjectTextureIndex(`entities/cow/cow-head-${cowNum}.png`),
          1,
          0
       );
@@ -59,7 +60,7 @@ class Cow extends Entity {
       super.tick();
 
       // Create footsteps
-      if (this.velocity !== null && !this.isInRiver() && Board.tickIntervalHasPassed(0.3)) {
+      if ((this.velocity.x !== 0 || this.velocity.y !== 0) && !this.isInRiver() && Board.tickIntervalHasPassed(0.3)) {
          createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 5);
 
          this.numFootstepsTaken++;

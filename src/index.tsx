@@ -40,3 +40,16 @@ root.render(
 window.addEventListener("load", () => {
    createPlayerInputListeners();
 });
+// window.addEventListener("scroll", e => {
+//    console.log(e);
+// }, true);
+
+setTimeout(() => {
+   console.log("ASJDIHSIDUHF");
+   document.body.addEventListener("scroll", e => {
+      console.log(e);
+   });
+   document.body.addEventListener("wheel", e => {
+      console.log(e);
+   });
+}, 3000);

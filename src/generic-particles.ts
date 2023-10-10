@@ -1,4 +1,4 @@
-import { lerp, randFloat, randInt, randSign } from "webgl-test-shared";
+import { angle, lerp, randFloat, randInt, randSign } from "webgl-test-shared";
 import Particle from "./Particle";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "./rendering/particle-rendering";
 import Board from "./Board";
@@ -111,8 +111,10 @@ export function createLeafParticle(spawnPositionX: number, spawnPositionY: numbe
 export function createFootprintParticle(entity: Entity, numFootstepsTaken: number, footstepOffset: number, size: number, lifetime: number): void {
    const footstepAngleOffset = numFootstepsTaken % 2 === 0 ? Math.PI : 0;
 
+   const velocityDirection = angle(entity.velocity.x, entity.velocity.y);
+
    const offsetMagnitude = footstepOffset / 2;
-   const offsetDirection = entity.velocity!.direction + footstepAngleOffset + Math.PI/2;
+   const offsetDirection = velocityDirection + footstepAngleOffset + Math.PI/2;
    const spawnPositionX = entity.position.x + offsetMagnitude * Math.sin(offsetDirection);
    const spawnPositionY = entity.position.y + offsetMagnitude * Math.cos(offsetDirection);
 
@@ -129,7 +131,7 @@ export function createFootprintParticle(entity: Entity, numFootstepsTaken: numbe
       0, 0,
       0, 0,
       0,
-      entity.velocity!.direction,
+      velocityDirection,
       0,
       0,
       0,

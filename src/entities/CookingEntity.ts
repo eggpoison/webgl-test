@@ -29,14 +29,11 @@ abstract class CookingEntity extends Entity {
       if (this.heatingProgress !== -1) {
          // Smoke particles
          if (Board.tickIntervalHasPassed(0.1)) {
-            const spawnPosition = this.position.copy();
-            const offset = Point.fromVectorForm(20 * Math.random(), 2 * Math.PI * Math.random());
-            spawnPosition.add(offset);
+            const spawnOffsetMagnitude = 20 * Math.random();
+            const spawnOffsetDirection = 2 * Math.PI * Math.random();
+            const spawnPositionX = this.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
+            const spawnPositionY = this.position.y + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
 
-            const velocity = Point.fromVectorForm(30, 0);
-
-            const acceleration = Point.fromVectorForm(80, 0);
-            
             const lifetime = 1.5;
             
             const particle = new Particle(lifetime);
@@ -52,9 +49,9 @@ abstract class CookingEntity extends Entity {
                particle,
                ParticleRenderLayer.high,
                64, 64,
-               spawnPosition.x, spawnPosition.y,
-               velocity.x, velocity.y,
-               acceleration.x, acceleration.y,
+               spawnPositionX, spawnPositionY,
+               0, 30,
+               0, 80,
                0,
                2 * Math.PI * Math.random(),
                0,

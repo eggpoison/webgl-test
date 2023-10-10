@@ -1,34 +1,31 @@
-import { Point } from "webgl-test-shared";
-import GameObject from "../GameObject";
+import { Point, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import CircularHitbox from "./CircularHitbox";
 import RectangularHitbox from "./RectangularHitbox";
+import GameObject from "../GameObject";
 
 export type HitboxBounds = [minX: number, maxX: number, minY: number, maxY: number];
 
 abstract class Hitbox {
-   public gameObject!: GameObject;
+   public position = new Point(0, 0);
+
+   public offset?: Point;
 
    /** The bounds of the hitbox since the last physics update */
    public bounds: HitboxBounds = [-1, -1, -1, -1];
-
-   public position!: Point;
-
-   public offset?: Point;
 
    constructor(offset?: Point) {
       this.offset = offset;
    }
 
-   public setObject(gameObject: GameObject): void {
-      this.gameObject = gameObject;
-   }
-
    public abstract updateHitboxBounds(): void;
 
-   public updatePosition(): void {
-      this.position = this.gameObject.position.copy();
+   public updatePositionFromGameObject(gameObject: GameObject): void {
+      this.position.x = gameObject.position.x;
+      this.position.y = gameObject.position.y;
+
       if (typeof this.offset !== "undefined") {
-         this.position.add(this.offset);
+         this.position.x += rotateXAroundPoint(this.offset.x, this.offset.y, 0, 0, gameObject.rotation);
+         this.position.y += rotateYAroundPoint(this.offset.x, this.offset.y, 0, 0, gameObject.rotation);
       }
    }
 

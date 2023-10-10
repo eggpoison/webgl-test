@@ -1,9 +1,10 @@
-import { EntityData, EntityType, Point, SlimeOrbData, SlimeSize, lerp } from "webgl-test-shared";
+import { EntityData, EntityType, Point, SlimeOrbData, SlimeSize, TileType, lerp } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { createSlimePoolParticle, createSlimeSpeckParticle } from "../generic-particles";
+import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class Slime extends Entity {
    private static readonly SIZES: ReadonlyArray<number> = [
@@ -59,7 +60,7 @@ class Slime extends Entity {
          this,
          spriteSize,
          spriteSize,
-         `entities/slime/slime-${sizeString}-body.png`,
+         getGameObjectTextureIndex(`entities/slime/slime-${sizeString}-body.png`),
          2,
          0
       ));
@@ -69,7 +70,7 @@ class Slime extends Entity {
          this,
          Slime.EYE_WIDTHS[size],
          Slime.EYE_HEIGHTS[size],
-         `entities/slime/slime-${sizeString}-eye.png`,
+         getGameObjectTextureIndex(`entities/slime/slime-${sizeString}-eye.png`),
          3,
          eyeRotation
       );
@@ -82,7 +83,7 @@ class Slime extends Entity {
          this,
          spriteSize,
          spriteSize,
-         `entities/slime/slime-${sizeString}-shading.png`,
+         getGameObjectTextureIndex(`entities/slime/slime-${sizeString}-shading.png`),
          0,
          0
       ));
@@ -109,7 +110,7 @@ class Slime extends Entity {
          this,
          orbSize,
          orbSize,
-         `entities/slime/slime-orb-${sizeString}.png`,
+         getGameObjectTextureIndex(`entities/slime/slime-orb-${sizeString}.png`),
          1,
          orbData.rotation
       );
@@ -119,7 +120,7 @@ class Slime extends Entity {
 
    protected overrideTileMoveSpeedMultiplier(): number | null {
       // Slimes move at normal speed on slime blocks
-      if (this.tile.type === "slime") {
+      if (this.tile.type === TileType.slime) {
          return 1;
       }
       return null;

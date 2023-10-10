@@ -12,12 +12,13 @@ class CircularHitbox extends Hitbox {
    }
    
    public updateHitboxBounds(): void {
-      this.bounds[0] = this.gameObject.position.x - this.radius;
-      this.bounds[1] = this.gameObject.position.x + this.radius;
-      this.bounds[2] = this.gameObject.position.y - this.radius;
-      this.bounds[3] = this.gameObject.position.y + this.radius;
+      this.bounds[0] = this.position.x - this.radius;
+      this.bounds[1] = this.position.x + this.radius;
+      this.bounds[2] = this.position.y - this.radius;
+      this.bounds[3] = this.position.y + this.radius;
 
       if (typeof this.offset !== "undefined") {
+         // @Incomplete: account for parent rotation
          this.bounds[0] += this.offset.x;
          this.bounds[1] += this.offset.x;
          this.bounds[2] += this.offset.y;
@@ -31,7 +32,7 @@ class CircularHitbox extends Hitbox {
          return circlesDoIntersect(this.position, this.radius, otherHitbox.position, (otherHitbox as CircularHitbox).radius);
       } else {
          // Rectangular hitbox
-         return circleAndRectangleDoIntersect(this.position, this.radius, otherHitbox.position, (otherHitbox as RectangularHitbox).width, (otherHitbox as RectangularHitbox).height, otherHitbox.gameObject.rotation);
+         return circleAndRectangleDoIntersect(this.position, this.radius, otherHitbox.position, (otherHitbox as RectangularHitbox).width, (otherHitbox as RectangularHitbox).height, (otherHitbox as RectangularHitbox).rotation);
       }
    }
 }

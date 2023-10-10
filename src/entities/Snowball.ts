@@ -7,6 +7,7 @@ import Board from "../Board";
 import { createSnowParticle } from "../generic-particles";
 import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
+import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
 
 const getTextureSource = (size: SnowballSize): string => {
    switch (size) {
@@ -36,7 +37,7 @@ class Snowball extends Entity {
             this,
             this.pixelSize,
             this.pixelSize,
-            getTextureSource(size),
+            getGameObjectTextureIndex(getTextureSource(size)),
             0,
             0
          )
@@ -46,7 +47,7 @@ class Snowball extends Entity {
    public tick(): void {
       super.tick();
 
-      if (this.velocity !== null && this.velocity.magnitude > 50) {
+      if ((this.velocity.x !== 0 || this.velocity.y !== 0) && this.velocity.lengthSquared() > 2500) {
          if (Board.tickIntervalHasPassed(0.05)) {
             createSnowParticle(this.position.x, this.position.y, randFloat(40, 60));
          }

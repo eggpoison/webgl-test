@@ -5,6 +5,7 @@ import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle } from "../generic-particles";
 import Board from "../Board";
+import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class Krumblid extends Entity {
    private static readonly SPRITE_WIDTH = 16 * 4;
@@ -24,7 +25,7 @@ class Krumblid extends Entity {
             this,
             Krumblid.SPRITE_WIDTH,
             Krumblid.SPRITE_HEIGHT,
-            "entities/krumblid/krumblid.png",
+            getGameObjectTextureIndex("entities/krumblid/krumblid.png"),
             0,
             0
          )
@@ -35,7 +36,7 @@ class Krumblid extends Entity {
       super.tick();
 
       // Create footsteps
-      if (this.velocity !== null && !this.isInRiver() && Board.tickIntervalHasPassed(0.3)) {
+      if ((this.velocity.x !== 0 || this.velocity.y !== 0) && !this.isInRiver() && Board.tickIntervalHasPassed(0.3)) {
          createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 5);
 
          this.numFootstepsTaken++;

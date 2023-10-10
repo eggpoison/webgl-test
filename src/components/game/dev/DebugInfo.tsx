@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useRef, useState } from "react";
-import { GameObjectDebugData, SETTINGS, roundNum } from "webgl-test-shared";
+import { GameObjectDebugData, SETTINGS, TileType, roundNum } from "webgl-test-shared";
 import Entity from "../../../entities/Entity";
 import { Tile } from "../../../Tile";
 import Board from "../../../Board";
@@ -26,7 +26,7 @@ const TileDebugInfo = ({ tile }: TileDebugInfoProps) => {
 
       <p>Chunk: <span className="highlight">{chunkX}-{chunkY}</span></p>
 
-      {tile.type === "water" ? <>
+      {tile.type === TileType.water ? <>
          <p>Flow direction: <span className="highlight">{Board.getRiverFlowDirection(tile.x, tile.y)}</span></p>
       </> : undefined}
 
@@ -42,8 +42,8 @@ const EntityDebugInfo = ({ entity, debugData }: EntityDebugInfoProps) => {
    const displayX = roundNum(entity.position.x, 0);
    const displayY = roundNum(entity.position.y, 0);
 
-   const displayVelocityMagnitude = entity.velocity !== null ? roundNum(entity.velocity.magnitude, 0) : 0;
-   const displayAccelerationMagnitude = entity.acceleration !== null ? roundNum(entity.acceleration.magnitude, 0) : 0;
+   const displayVelocityMagnitude = roundNum(entity.velocity.length(), 0);
+   const displayAccelerationMagnitude = roundNum(entity.acceleration.length(), 0);
 
    const chunks = Array.from(entity.chunks).map(chunk => `${chunk.x}-${chunk.y}`);
    const chunkDisplayText = chunks.reduce((previousValue, chunk, idx) => {

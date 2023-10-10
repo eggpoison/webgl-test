@@ -1,10 +1,10 @@
-import { SETTINGS, TILE_TYPE_INFO_RECORD } from "webgl-test-shared";
+import { SETTINGS, TileType } from "webgl-test-shared";
 import Camera from "../../Camera";
 import { TEXTURE_IMAGE_RECORD } from "../../textures";
-import { TILE_TYPE_RENDER_INFO_RECORD } from "../../tile-type-render-info";
 import { gl, createWebGLProgram, CAMERA_UNIFORM_BUFFER_BINDING_INDEX } from "../../webgl";
 import { RENDER_CHUNK_SIZE, RenderChunkSolidTileInfo, getRenderChunkSolidTileInfo } from "./render-chunks";
 import Board from "../../Board";
+import { TILE_TYPE_TEXTURE_SOURCES } from "../../tile-type-texture-sources";
 
 const vertexShaderText = `#version 300 es
 precision mediump float;
@@ -71,11 +71,11 @@ const updateVertexData = (textureSources: Array<string>, data: Float32Array, ren
    for (let tileX = tileMinX; tileX <= tileMaxX; tileX++) {
       for (let tileY = tileMinY; tileY <= tileMaxY; tileY++) {
          const tile = Board.getTile(tileX, tileY);
-         if (TILE_TYPE_INFO_RECORD[tile.type].isLiquid) {
+         if (tile.type === TileType.water) {
             continue;
          }
 
-         const textureSource = TILE_TYPE_RENDER_INFO_RECORD[tile.type].textureSource;
+         const textureSource = TILE_TYPE_TEXTURE_SOURCES[tile.type];
          let textureIndex = textureSources.indexOf(textureSource);
          if (textureIndex === -1) {
             textureSources.push(textureSource);
@@ -140,7 +140,7 @@ export function createSolidTileRenderChunkData(renderChunkX: number, renderChunk
    for (let tileX = tileMinX; tileX <= tileMaxX; tileX++) {
       for (let tileY = tileMinY; tileY <= tileMaxY; tileY++) {
          const tile = Board.getTile(tileX, tileY);
-         if (!TILE_TYPE_INFO_RECORD[tile.type].isLiquid) {
+         if (tile.type !== TileType.water) {
             numTiles++;
          }
       }
@@ -234,6 +234,8 @@ export function recalculateSolidTileRenderChunkData(renderChunkX: number, render
 }
 
 export function renderSolidTiles(): void {
+   // @Speed: We can avoid the bindTexture call for each chunk by making a texture atlas for tiles
+   
    gl.useProgram(program);
 
    gl.activeTexture(gl.TEXTURE0);

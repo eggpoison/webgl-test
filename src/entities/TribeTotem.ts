@@ -3,6 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
+import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class TribeTotem extends Entity {
    public static readonly SIZE = 120;
@@ -27,7 +28,7 @@ class TribeTotem extends Entity {
          this,
          TribeTotem.SIZE,
          TribeTotem.SIZE,
-         `entities/tribe-totem/tribe-totem.png`,
+         getGameObjectTextureIndex(`entities/tribe-totem/tribe-totem.png`),
          1,
          0
       );
@@ -63,7 +64,7 @@ class TribeTotem extends Entity {
          this,
          TribeTotem.BANNER_WIDTH,
          TribeTotem.BANNER_HEIGHT,
-         `entities/tribe-totem/${totemTextureSourceID}`,
+         getGameObjectTextureIndex(`entities/tribe-totem/${totemTextureSourceID}`),
          2,
          banner.direction
       );

@@ -1,4 +1,4 @@
-import { BaseItemInfo, ItemType, Point, Vector, SETTINGS, randFloat } from "webgl-test-shared";
+import { BaseItemInfo, ItemType, Point, SETTINGS, randFloat } from "webgl-test-shared";
 import GameObject from "../GameObject";
 import RenderPart from "../render-parts/RenderPart";
 import CLIENT_ITEM_INFO_RECORD from "../client-item-info";
@@ -8,6 +8,7 @@ import Board from "../Board";
 import { BloodParticleSize } from "../generic-particles";
 import Particle from "../Particle";
 import { addMonocolourParticleToBufferContainer, ParticleRenderLayer } from "../rendering/particle-rendering";
+import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
 
 export function createFrozenYetiBloodParticle(size: BloodParticleSize, spawnPositionX: number, spawnPositionY: number, moveDirection: number, moveSpeed: number, hasDrag: boolean): void {
    const lifetime = randFloat(0.3, 0.4);
@@ -52,7 +53,7 @@ export function createFrozenYetiBloodParticle(size: BloodParticleSize, spawnPosi
 class DroppedItem extends GameObject implements BaseItemInfo {
    public readonly itemType: ItemType;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, velocity: Vector | null, itemType: ItemType) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, velocity: Point, itemType: ItemType) {
       super(position, hitboxes, id);
       
       this.velocity = velocity;
@@ -63,7 +64,7 @@ class DroppedItem extends GameObject implements BaseItemInfo {
             this,
             SETTINGS.ITEM_SIZE * 2,
             SETTINGS.ITEM_SIZE * 2,
-            CLIENT_ITEM_INFO_RECORD[itemType].textureSource,
+            getGameObjectTextureIndex(CLIENT_ITEM_INFO_RECORD[itemType].textureSource),
             0,
             0
          )
