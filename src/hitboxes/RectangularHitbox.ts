@@ -16,10 +16,11 @@ class RectangularHitbox extends Hitbox {
    public sideAxes = [new Point(0, 0), new Point(0, 0)] as const;
 
    constructor(width: number, height: number, offset?: Point) {
-      super(offset);
-
+      super();
+      
       this.width = width;
       this.height = height;
+      this.offset = offset;
       this.halfDiagonalLength = Math.sqrt(Math.pow(width / 2, 2) + Math.pow(height / 2, 2));
    }
 

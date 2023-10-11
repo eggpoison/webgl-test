@@ -9,6 +9,7 @@ export abstract class RenderObject {
    public renderPosition = new Point(-1, -1);
 
    public rotation = 0;
+   public totalRotation = 0;
    
    public attachRenderPart(renderPart: RenderPart): void {
       const root = this.getRoot();
@@ -75,8 +76,6 @@ class RenderPart extends RenderObject {
    public textureWidth: number;
    public textureHeight: number;
 
-   public totalRotation = 0;
-
    public getRotation?: () => number;
 
    /** Whether or not the render part will inherit its parents' rotation */
@@ -114,8 +113,8 @@ class RenderPart extends RenderObject {
          let rotatedOffsetX: number;
          let rotatedOffsetY: number;
          if (this.inheritParentRotation) {
-            rotatedOffsetX = rotateXAroundPoint(offset.x, offset.y, 0, 0, this.parent.rotation);
-            rotatedOffsetY = rotateYAroundPoint(offset.x, offset.y, 0, 0, this.parent.rotation);
+            rotatedOffsetX = rotateXAroundPoint(offset.x, offset.y, 0, 0, this.parent.rotation + this.parent.totalRotation);
+            rotatedOffsetY = rotateYAroundPoint(offset.x, offset.y, 0, 0, this.parent.rotation + this.parent.totalRotation);
          } else {
             rotatedOffsetX = offset.x;
             rotatedOffsetY = offset.y;
@@ -126,6 +125,7 @@ class RenderPart extends RenderObject {
       }
 
       // Recalculate rotation
+      // @Incomplete: Will this work for deeply nested render parts?
       if (this.inheritParentRotation) {
          this.totalRotation = this.parent.rotation;
       } else {

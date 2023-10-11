@@ -463,7 +463,10 @@ abstract class Client {
          const offset = (typeof hitboxData.offsetX !== "undefined" || typeof hitboxData.offsetY !== "undefined") ? new Point(hitboxData.offsetX || 0, hitboxData.offsetY || 0) : undefined;
          if (hitboxData.hasOwnProperty("radius")) {
             // Circular
-            hitboxes.add(new CircularHitbox((hitboxData as CircularHitboxData).radius, offset));
+            const hitbox = new CircularHitbox();
+            hitbox.radius = (hitboxData as CircularHitboxData).radius;
+            hitbox.offset = offset;
+            hitboxes.add(hitbox);
          } else {
             // Rectangular
             hitboxes.add(new RectangularHitbox((hitboxData as RectangularHitboxData).width, (hitboxData as RectangularHitboxData).height, offset));

@@ -67,7 +67,7 @@ abstract class GameObject extends RenderObject {
       
       for (const hitbox of this.hitboxes) {
          hitbox.updatePositionFromGameObject(this);
-         hitbox.updateHitboxBounds();
+         hitbox.updateHitboxBounds(this.rotation);
       }
 
       this.updateCurrentTile();
@@ -303,7 +303,7 @@ abstract class GameObject extends RenderObject {
    public updateHitboxes(): void {
       for (const hitbox of this.hitboxes) {
          hitbox.updatePositionFromGameObject(this);
-         hitbox.updateHitboxBounds();
+         hitbox.updateHitboxBounds(this.rotation);
       }
    }
 
@@ -321,7 +321,7 @@ abstract class GameObject extends RenderObject {
       // Update the game object's hitboxes and containing chunks
       for (const hitbox of this.hitboxes) {
          hitbox.updatePositionFromGameObject(this);
-         hitbox.updateHitboxBounds();
+         hitbox.updateHitboxBounds(this.rotation);
 
          // Recalculate the game object's containing chunks based on the new hitbox bounds
          const minChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[0] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);

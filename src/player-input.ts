@@ -115,7 +115,7 @@ export const PLACEABLE_ENTITY_INFO_RECORD: Record<PlaceableItemType, PlaceableEn
 };
 
 const testRectangularHitbox = new RectangularHitbox(-1, -1);
-const testCircularHitbox = new CircularHitbox(-1);
+const testCircularHitbox = new CircularHitbox();
 
 let globalAttackDelayTimer = 0;
 
@@ -449,17 +449,16 @@ export function createPlayerInputListeners(): void {
    createHotbarKeyListeners();
    createInventoryToggleListeners();
 
-   console.log("create");
-   document.body.addEventListener("scroll", e => {
-      console.log(e);
+   document.body.addEventListener("wheel", e => {
+      const scrollDirection = Math.sign(e.deltaY);
+      let newSlot = latencyGameState.selectedHotbarItemSlot + scrollDirection;
+      if (newSlot <= 0) {
+         newSlot += SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE;
+      } else if (newSlot > SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE) {
+         newSlot -= SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE;
+      }
+      selectItemSlot(newSlot);
    });
-
-   setTimeout(() => {
-      console.log("SDFIUGH SDFIHUSDFHIUDFSHUIO");
-   document.body.addEventListener("scroll", e => {
-      console.log(e);
-   });
-   }, 1500);
 }
 
 const getPlayerMoveSpeedMultiplier = (): number => {
@@ -583,7 +582,7 @@ export function canPlaceItem(item: Item): boolean {
 
    placeTestHitbox.offset = Point.fromVectorForm(SETTINGS.ITEM_PLACE_DISTANCE + placeableInfo.placeOffset, Player.instance!.rotation);
    placeTestHitbox.updatePositionFromGameObject(Player.instance!);
-   placeTestHitbox.updateHitboxBounds();
+   placeTestHitbox.updateHitboxBounds(0);
 
    const minChunkX = Math.max(Math.min(Math.floor(placeTestHitbox.bounds[0] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
    const maxChunkX = Math.max(Math.min(Math.floor(placeTestHitbox.bounds[1] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);

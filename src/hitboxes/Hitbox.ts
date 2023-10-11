@@ -6,6 +6,7 @@ import GameObject from "../GameObject";
 export type HitboxBounds = [minX: number, maxX: number, minY: number, maxY: number];
 
 abstract class Hitbox {
+   /** The position of the hitbox, accounting for its offset and offset rotation */
    public position = new Point(0, 0);
 
    public offset?: Point;
@@ -13,11 +14,7 @@ abstract class Hitbox {
    /** The bounds of the hitbox since the last physics update */
    public bounds: HitboxBounds = [-1, -1, -1, -1];
 
-   constructor(offset?: Point) {
-      this.offset = offset;
-   }
-
-   public abstract updateHitboxBounds(): void;
+   public abstract updateHitboxBounds(offsetRotation: number): void;
 
    public updatePositionFromGameObject(gameObject: GameObject): void {
       this.position.x = gameObject.position.x;

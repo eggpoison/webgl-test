@@ -255,12 +255,12 @@ abstract class Board {
       for (const gameObject of this.gameObjects) {
          gameObject.applyPhysics();
          gameObject.updateCurrentTile();
-         if (typeof gameObject.tick !== "undefined") gameObject.tick();
+         gameObject.tick();
 
          // Calculate the entity's new info
          for (const hitbox of gameObject.hitboxes) {
             hitbox.updatePositionFromGameObject(gameObject);
-            hitbox.updateHitboxBounds();
+            hitbox.updateHitboxBounds(gameObject.rotation);
          }
 
          gameObject.updateContainingChunks();

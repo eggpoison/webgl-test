@@ -395,7 +395,8 @@ class Player extends TribeMember {
    }
 
    public static createNewPlayerHitbox(): CircularHitbox {
-      const hitbox = new CircularHitbox(Player.RADIUS);
+      const hitbox = new CircularHitbox();
+      hitbox.radius = Player.RADIUS;
       return hitbox;
    }
 }

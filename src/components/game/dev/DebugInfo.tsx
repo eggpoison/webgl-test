@@ -20,11 +20,13 @@ const TileDebugInfo = ({ tile }: TileDebugInfoProps) => {
    const chunkY = Math.floor(tile.y / SETTINGS.CHUNK_SIZE);
 
    return <>
-      <div className="title">{tile.type} tile</div>
+      <div className="title">{TileType[tile.type]} tile</div>
       
       <p>x: <span className="highlight">{tile.x}</span>, y: <span className="highlight">{tile.y}</span></p>
 
       <p>Chunk: <span className="highlight">{chunkX}-{chunkY}</span></p>
+
+      <p>Biome: <span className="highlight">{tile.biomeName}</span></p>
 
       {tile.type === TileType.water ? <>
          <p>Flow direction: <span className="highlight">{Board.getRiverFlowDirection(tile.x, tile.y)}</span></p>
@@ -68,6 +70,8 @@ const EntityDebugInfo = ({ entity, debugData }: EntityDebugInfoProps) => {
 
       <p>Velocity: <span className="highlight">{displayVelocityMagnitude}</span></p>
       <p>Acceleration: <span className="highlight">{displayAccelerationMagnitude}</span></p>
+
+      <p>Rotation: <span className="highlight">{entity.rotation}</span></p>
 
       <p>Chunks: {chunkDisplayText}</p>
 

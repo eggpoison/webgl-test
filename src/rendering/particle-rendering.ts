@@ -4,7 +4,8 @@ import ObjectBufferContainer from "./ObjectBufferContainer";
 import { getTexture } from "../textures";
 import Particle from "../Particle";
 
-const OBJECT_BUFFER_CONTAINER_SIZE = 4096;
+// const OBJECT_BUFFER_CONTAINER_SIZE = 4096;
+const OBJECT_BUFFER_CONTAINER_SIZE = 65536;
 
 export type ParticleColour = [r: number, g: number, b: number];
 export type ParticleTint = [r: number, g: number, b: number];

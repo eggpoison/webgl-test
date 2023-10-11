@@ -56,12 +56,14 @@ in float v_opacity;
 
 out vec4 outputColour;
 
-void main() {
+void main() { 
+   // Calculate the coordinates of the top left corner of the texture
    float textureX = mod(v_textureIndex * u_atlasSlotSize, u_atlasPixelSize);
    float textureY = floor(v_textureIndex * u_atlasSlotSize / u_atlasPixelSize) * u_atlasSlotSize;
    
-   float u = (textureX + v_texCoord.x * v_textureSize.x) / u_atlasPixelSize;
-   float v = 1.0 - ((textureY + (1.0 - v_texCoord.y) * v_textureSize.y) / u_atlasPixelSize);
+   // @Incomplete: This is very hacky, the - 0.2 and + 0.1 shenanigans are to prevent texture bleeding but it causes tiny bits of the edge of the textures to get cut off.
+   float u = (textureX + v_texCoord.x * (v_textureSize.x - 0.2) + 0.1) / u_atlasPixelSize;
+   float v = 1.0 - ((textureY + (1.0 - v_texCoord.y) * (v_textureSize.y - 0.2) + 0.1) / u_atlasPixelSize);
    outputColour = texture(u_textureAtlas, vec2(u, v));
    
    if (v_tint.r > 0.0) {
