@@ -1,4 +1,4 @@
-import { Point, RIVER_STEPPING_STONE_SIZES, RiverSteppingStoneSize, SETTINGS, WaterRockSize, lerp, randFloat, rotatePoint, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
+import { Point, RIVER_STEPPING_STONE_SIZES, RiverSteppingStoneSize, SETTINGS, TileType, WaterRockSize, lerp, randFloat, rotatePoint, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../../webgl";
 import { getTexture } from "../../textures";
 import Camera from "../../Camera";
@@ -663,7 +663,7 @@ const tileIsWaterInt = (tileX: number, tileY: number): number => {
    }
    
    const tile = Board.getTile(tileX, tileY);
-   return tile.type === "water" ? 1 : 0;
+   return tile.type === TileType.water ? 1 : 0;
 }
 
 const calculateTransitionVertexData = (renderChunkX: number, renderChunkY: number): Float32Array => {
@@ -677,7 +677,7 @@ const calculateTransitionVertexData = (renderChunkX: number, renderChunkY: numbe
    for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
       for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
          const tile = Board.getTile(tileX, tileY);
-         if (tile.type === "water") {
+         if (tile.type === TileType.water) {
             continue;
          }
 
@@ -693,7 +693,7 @@ const calculateTransitionVertexData = (renderChunkX: number, renderChunkY: numbe
 
             // If the tile is neighbouring water, add it and move on to the next tile
             const neighbourTile = Board.getTile(neighbourTileX, neighbourTileY);
-            if (neighbourTile.type === "water") {
+            if (neighbourTile.type === TileType.water) {
                edgeTiles.push(tile);
                break;
             }
@@ -821,6 +821,8 @@ const calculateRockVertices = (renderChunkX: number, renderChunkY: number): Arra
             let x2 = (waterRock.position[0] + size/2);
             let y1 = (waterRock.position[1] - size/2);
             let y2 = (waterRock.position[1] + size/2);
+
+            // @Speed: Garbage collection
    
             let topLeft = new Point(x1, y2);
             let topRight = new Point(x2, y2);
@@ -943,6 +945,8 @@ const calculateFoamVertexData = (steppingStones: ReadonlySet<RiverSteppingStone>
 
    let i = 0;
    for (const steppingStone of steppingStones) {
+      // @Speed: Garbage collection
+      
       const renderSize = RIVER_STEPPING_STONE_SIZES[steppingStone.size];
       
       let x1 = (steppingStone.position.x - renderSize/2 - FOAM_PADDING);
@@ -1209,7 +1213,7 @@ const getRenderChunkWaterTiles = (renderChunkX: number, renderChunkY: number): R
    for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
       for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
          const tile = Board.getTile(tileX, tileY);
-         if (tile.type === "water") {
+         if (tile.type === TileType.water) {
             tiles.push(tile);
          }
       }
@@ -1228,7 +1232,7 @@ const renderChunkHasBorderingWaterTiles = (renderChunkX: number, renderChunkY: n
    for (let tileY = bottomTileY; tileY <= topTileY; tileY++) {
       if (Board.tileIsInBoard(leftTileX, tileY)) {
          const tile = Board.getTile(leftTileX, tileY);
-         if (tile.type === "water") {
+         if (tile.type === TileType.water) {
             return true;
          }
       }
@@ -1238,7 +1242,7 @@ const renderChunkHasBorderingWaterTiles = (renderChunkX: number, renderChunkY: n
    for (let tileY = bottomTileY; tileY <= topTileY; tileY++) {
       if (Board.tileIsInBoard(rightTileX, tileY)) {
          const tile = Board.getTile(rightTileX, tileY);
-         if (tile.type === "water") {
+         if (tile.type === TileType.water) {
             return true;
          }
       }
@@ -1248,7 +1252,7 @@ const renderChunkHasBorderingWaterTiles = (renderChunkX: number, renderChunkY: n
    for (let tileX = leftTileX; tileX <= rightTileX; tileX++) {
       if (Board.tileIsInBoard(tileX, topTileY)) {
          const tile = Board.getTile(tileX, topTileY);
-         if (tile.type === "water") {
+         if (tile.type === TileType.water) {
             return true;
          }
       }
@@ -1258,7 +1262,7 @@ const renderChunkHasBorderingWaterTiles = (renderChunkX: number, renderChunkY: n
    for (let tileX = leftTileX; tileX <= rightTileX; tileX++) {
       if (Board.tileIsInBoard(tileX, bottomTileY)) {
          const tile = Board.getTile(tileX, bottomTileY);
-         if (tile.type === "water") {
+         if (tile.type === TileType.water) {
             return true;
          }
       }

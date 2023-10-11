@@ -114,7 +114,7 @@ const GameInfoDisplay = () => {
       </ul>
 
       <ul>
-         <li>{Object.keys(Board.gameObjects).length} Game Objects</li>
+         <li>{Board.gameObjects.size} Game Objects</li>
          <ul>
             <li>{Object.keys(Board.entities).length} Entities</li>
             <li>{Object.keys(Board.projectiles).length} Projectiles</li>

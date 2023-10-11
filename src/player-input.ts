@@ -1,4 +1,4 @@
-import { AttackPacket, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, ItemType, PlaceableItemType, Point, SETTINGS, STATUS_EFFECT_MODIFIERS, ToolItemInfo, TribeMemberAction, Vector } from "webgl-test-shared";
+import { AttackPacket, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, ItemType, PlaceableItemType, Point, SETTINGS, STATUS_EFFECT_MODIFIERS, ToolItemInfo, TribeMemberAction } from "webgl-test-shared";
 import { addKeyListener, clearPressedKeys, keyIsPressed } from "./keyboard-input";
 import { CraftingMenu_setIsVisible } from "./components/game/menus/CraftingMenu";
 import Player from "./entities/Player";
@@ -115,7 +115,7 @@ export const PLACEABLE_ENTITY_INFO_RECORD: Record<PlaceableItemType, PlaceableEn
 };
 
 const testRectangularHitbox = new RectangularHitbox(-1, -1);
-const testCircularHitbox = new CircularHitbox(-1);
+const testCircularHitbox = new CircularHitbox();
 
 let globalAttackDelayTimer = 0;
 
@@ -387,7 +387,7 @@ export function updateInteractInventory(): void {
       }
 
       // If the interactable entity was removed, hide the interact inventory
-      if (!Board.gameObjects.hasOwnProperty(interactInventoryEntity.id)) {
+      if (!Board.gameObjects.has(interactInventoryEntity)) {
          hideInteractInventory();
          return;
       }
@@ -448,6 +448,17 @@ export function createPlayerInputListeners(): void {
    createItemUseListeners();
    createHotbarKeyListeners();
    createInventoryToggleListeners();
+
+   document.body.addEventListener("wheel", e => {
+      const scrollDirection = Math.sign(e.deltaY);
+      let newSlot = latencyGameState.selectedHotbarItemSlot + scrollDirection;
+      if (newSlot <= 0) {
+         newSlot += SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE;
+      } else if (newSlot > SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE) {
+         newSlot -= SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE;
+      }
+      selectItemSlot(newSlot);
+   });
 }
 
 const getPlayerMoveSpeedMultiplier = (): number => {
@@ -507,10 +518,12 @@ export function updatePlayerMovement(): void {
          acceleration = PLAYER_ACCELERATION * getPlayerMoveSpeedMultiplier()
          terminalVelocity = PLAYER_TERMINAL_VELOCITY * getPlayerMoveSpeedMultiplier()
       }
-      Player.instance.acceleration = new Vector(acceleration, moveDirection);
+      Player.instance.acceleration.x = acceleration * Math.sin(moveDirection);
+      Player.instance.acceleration.y = acceleration * Math.cos(moveDirection);
       Player.instance.terminalVelocity = terminalVelocity;
    } else {
-      Player.instance.acceleration = null;
+      Player.instance.acceleration.x = 0;
+      Player.instance.acceleration.y = 0;
    }
 }
 
@@ -567,11 +580,9 @@ export function canPlaceItem(item: Item): boolean {
       placeTestHitbox = testRectangularHitbox;
    }
 
-   placeTestHitbox.setObject(Player.instance!);
    placeTestHitbox.offset = Point.fromVectorForm(SETTINGS.ITEM_PLACE_DISTANCE + placeableInfo.placeOffset, Player.instance!.rotation);
-
-   placeTestHitbox.updatePosition();
-   placeTestHitbox.updateHitboxBounds();
+   placeTestHitbox.updatePositionFromGameObject(Player.instance!);
+   placeTestHitbox.updateHitboxBounds(0);
 
    const minChunkX = Math.max(Math.min(Math.floor(placeTestHitbox.bounds[0] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
    const maxChunkX = Math.max(Math.min(Math.floor(placeTestHitbox.bounds[1] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
@@ -711,12 +722,16 @@ const tickItem = (item: Item, itemSlot: number): void => {
 }
 
 export function removeSelectedItem(item: Item): void {
+   if (Player.instance === null) {
+      return;
+   }
+
    const itemCategory = ITEM_TYPE_RECORD[item.type];
    switch (itemCategory) {
       case "food": {
          latencyGameState.playerAction = TribeMemberAction.none;
-         Player.instance!.action = TribeMemberAction.none;
-         Player.instance!.foodEatingType = -1;
+         Player.instance.action = TribeMemberAction.none;
+         Player.instance.foodEatingType = -1;
 
          break;
       }

@@ -1,4 +1,4 @@
-import { BowItemInfo, EntityData, HitData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, InventoryData, ItemType, Point, SETTINGS, ToolItemInfo, TribeMemberAction, TribeType, lerp, randFloat, randItem } from "webgl-test-shared";
+import { BowItemInfo, EntityData, HitData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, InventoryData, ItemType, Point, SETTINGS, TileType, ToolItemInfo, TribeMemberAction, TribeType, lerp, randFloat, randItem } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -11,6 +11,7 @@ import Board from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 import { Inventory } from "../items/Item";
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
+import { GAME_OBJECT_TEXTURE_SLOT_INDEXES, getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
 
 type FilterFoodItemTypes<T extends ItemType> = (typeof ITEM_TYPE_RECORD)[T] extends "food" ? never : T;
 
@@ -124,7 +125,7 @@ abstract class TribeMember extends Entity {
          this,
          TribeMember.TOOL_ACTIVE_ITEM_SIZE,
          TribeMember.TOOL_ACTIVE_ITEM_SIZE,
-         activeItem !== null ? CLIENT_ITEM_INFO_RECORD[activeItem].textureSource : "",
+         activeItem !== null ? getGameObjectTextureIndex(CLIENT_ITEM_INFO_RECORD[activeItem].textureSource) : -1,
          0,
          0
       );
@@ -223,7 +224,7 @@ abstract class TribeMember extends Entity {
             return direction;
          }
       };
-      if (activeItem !== null) {
+      if (activeItem !== null && false) {
          this.attachRenderPart(this.activeItemRenderPart);
       }
    }
@@ -291,14 +292,9 @@ abstract class TribeMember extends Entity {
 
             let velocityMagnitude = randFloat(130, 170);
             const velocityDirection = 2 * Math.PI * Math.random();
-            let velocityX = velocityMagnitude * Math.sin(velocityDirection);
-            let velocityY = velocityMagnitude * Math.cos(velocityDirection);
-
-            if (this.velocity !== null) {
-               velocityX += this.velocity.magnitude * Math.sin(this.velocity.direction);
-               velocityY += this.velocity.magnitude * Math.cos(this.velocity.direction);
-               velocityMagnitude += this.velocity.magnitude;
-            }
+            const velocityX = velocityMagnitude * Math.sin(velocityDirection) + this.velocity.x;
+            const velocityY = velocityMagnitude * Math.cos(velocityDirection) + this.velocity.y;
+            velocityMagnitude += this.velocity.length();
             
             const lifetime = randFloat(0.3, 0.4);
 
@@ -330,7 +326,7 @@ abstract class TribeMember extends Entity {
 
    protected overrideTileMoveSpeedMultiplier(): number | null {
       // If snow armour is equipped, move at normal speed on snow tiles
-      if (this.armourSlotInventory.itemSlots.hasOwnProperty(1) && this.armourSlotInventory.itemSlots[1].type === ItemType.frost_armour && this.tile.type === "snow") {
+      if (this.armourSlotInventory.itemSlots.hasOwnProperty(1) && this.armourSlotInventory.itemSlots[1].type === ItemType.frost_armour && this.tile.type === TileType.snow) {
          return 1;
       }
       return null;
@@ -353,12 +349,12 @@ abstract class TribeMember extends Entity {
       }
    }
 
-   private getArmourTextureSource(armourType: ItemType): string {
+   private getArmourTextureIndex(armourType: ItemType): number {
       if (!ARMOUR_WORN_INFO.hasOwnProperty(armourType)) {
          throw new Error("Can't find armour texture source");
       }
 
-      return ARMOUR_WORN_INFO[armourType]!.textureSource;
+      return getGameObjectTextureIndex(ARMOUR_WORN_INFO[armourType]!.textureSource);
    }
 
    private getArmourPixelSize(armourType: ItemType): number {
@@ -377,13 +373,13 @@ abstract class TribeMember extends Entity {
                this,
                pixelSize,
                pixelSize,
-               this.getArmourTextureSource(armourType),
+               this.getArmourTextureIndex(armourType),
                2,
                0
             );
             this.attachRenderPart(this.armourRenderPart);
          } else {
-            this.armourRenderPart.textureSource = this.getArmourTextureSource(armourType);
+            this.armourRenderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[this.getArmourTextureIndex(armourType)];
          }
       } else if (this.armourRenderPart !== null) {
          this.removeRenderPart(this.armourRenderPart);
@@ -395,7 +391,7 @@ abstract class TribeMember extends Entity {
       if (activeItemType === null) {
          this.removeRenderPart(this.activeItemRenderPart);
       } else {
-         this.activeItemRenderPart.textureSource = CLIENT_ITEM_INFO_RECORD[activeItemType].textureSource;
+         this.activeItemRenderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureIndex(CLIENT_ITEM_INFO_RECORD[activeItemType].textureSource)];
          this.attachRenderPart(this.activeItemRenderPart);
 
          const renderPartSize = this.getActiveItemSize(activeItemType);
@@ -426,7 +422,8 @@ abstract class TribeMember extends Entity {
       this.action = entityData.clientArgs[6];
       this.foodEatingType = entityData.clientArgs[7]
       this.lastActionTicks = entityData.clientArgs[8];
-      this.updateActiveItemRenderPart(this.activeItemType);
+      // @Temporary
+      // this.updateActiveItemRenderPart(this.activeItemType);
       this.updateBowChargeTexture();
 
       // @Cleanup
@@ -445,12 +442,13 @@ abstract class TribeMember extends Entity {
          if (textureIdx >= TribeMember.BOW_CHARGE_TEXTURE_SOURCES.length) {
             textureIdx = TribeMember.BOW_CHARGE_TEXTURE_SOURCES.length - 1;
          }
-         this.activeItemRenderPart.textureSource = TribeMember.BOW_CHARGE_TEXTURE_SOURCES[textureIdx];
+         this.activeItemRenderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureIndex(TribeMember.BOW_CHARGE_TEXTURE_SOURCES[textureIdx])];
       }
    }
 
    public updateActiveItem(activeItemType: ItemType | null): void {
-      this.updateActiveItemRenderPart(activeItemType);
+      // @Temporary
+      // this.updateActiveItemRenderPart(activeItemType);
       this.activeItemType = activeItemType;
    }
 }

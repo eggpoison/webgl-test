@@ -2,9 +2,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;700;900&display=swap');
 
 html, body {
-   overflow: hidden;
    margin: 0;
    padding: 0;
+}
+
+body {
+   overflow: hidden;
 }
 
 :root {

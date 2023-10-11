@@ -1,4 +1,4 @@
-import { BowItemInfo, ITEM_INFO_RECORD, Point, SETTINGS, TribeMemberAction } from "webgl-test-shared";
+import { BowItemInfo, ITEM_INFO_RECORD, SETTINGS, TribeMemberAction } from "webgl-test-shared";
 import { halfWindowHeight, halfWindowWidth } from "./webgl";
 import CLIENT_SETTINGS from "./client-settings";
 import { updateCursorTooltip } from "./components/game/dev/CursorTooltip";
@@ -13,30 +13,27 @@ import { definiteGameState, latencyGameState } from "./game-state/game-states";
 import { hideChargeMeter, showChargeMeter, updateChargeMeterProgress } from "./components/game/ChargeMeter";
 import Player from "./entities/Player";
 
-let cursorX: number | null = null;
-let cursorY: number | null = null;
+export let cursorX: number | null = null;
+export let cursorY: number | null = null;
 
-export function getCursorX(): number | null {
-   return cursorX;
-}
-
-export function getCursorY(): number | null {
-   return cursorY;
-}
-
-export function calculateCursorWorldPosition(): Point | null {
-   if (Game.getIsPaused()) return null;
-   if (cursorX === null || cursorY === null) return null;
+export function calculateCursorWorldPositionX(): number | null {
+   if (Game.getIsPaused() || cursorX === null) return null;
    
    const worldX = (cursorX - halfWindowWidth) / Camera.zoom + Camera.position.x;
-   const worldY = (-cursorY + halfWindowHeight) / Camera.zoom + Camera.position.y;
-
-   // If out of bounds return null;
-   if (worldX < 0 || worldX >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE || worldY < 0 || worldY >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
+   if (worldX < 0 || worldX >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
       return null;
    }
+   return worldX;
+}
 
-   return new Point(worldX, worldY);
+export function calculateCursorWorldPositionY(): number | null {
+   if (Game.getIsPaused() || cursorY === null) return null;
+   
+   const worldY = (-cursorY + halfWindowHeight) / Camera.zoom + Camera.position.y;
+   if (worldY < 0 || worldY >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
+      return null;
+   }
+   return worldY;
 }
 
 export function handleMouseMovement(e: MouseEvent): void {
@@ -48,10 +45,10 @@ export function handleMouseMovement(e: MouseEvent): void {
  * Finds the entity the user is hovering over.
  */
 export function getMouseTargetTile(): Tile | null {
-   if (Game.cursorPosition === null) return null;
+   if (Game.cursorPositionX === null || Game.cursorPositionY === null) return null;
 
-   const tileX = Math.floor(Game.cursorPosition.x / SETTINGS.TILE_SIZE);
-   const tileY = Math.floor(Game.cursorPosition.y / SETTINGS.TILE_SIZE);
+   const tileX = Math.floor(Game.cursorPositionX / SETTINGS.TILE_SIZE);
+   const tileY = Math.floor(Game.cursorPositionY / SETTINGS.TILE_SIZE);
 
    if (Board.tileIsInBoard(tileX, tileY)) {
       return Board.getTile(tileX, tileY);
@@ -63,12 +60,12 @@ export function getMouseTargetTile(): Tile | null {
  * Finds the entity the user is hovering over.
  */
 export function getMouseTargetEntity(): Entity | null {
-   if (Game.cursorPosition === null) return null;
+   if (Game.cursorPositionX === null || Game.cursorPositionY === null) return null;
    
-   const minChunkX = Math.max(Math.min(Math.floor((Game.cursorPosition.x - CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-   const maxChunkX = Math.max(Math.min(Math.floor((Game.cursorPosition.x + CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-   const minChunkY = Math.max(Math.min(Math.floor((Game.cursorPosition.y - CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-   const maxChunkY = Math.max(Math.min(Math.floor((Game.cursorPosition.y + CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+   const minChunkX = Math.max(Math.min(Math.floor((Game.cursorPositionX - CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+   const maxChunkX = Math.max(Math.min(Math.floor((Game.cursorPositionX + CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+   const minChunkY = Math.max(Math.min(Math.floor((Game.cursorPositionY - CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+   const maxChunkY = Math.max(Math.min(Math.floor((Game.cursorPositionY + CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
 
    let closestEntity: Entity | null = null;
    let minDistance = Number.MAX_SAFE_INTEGER;
@@ -77,7 +74,7 @@ export function getMouseTargetEntity(): Entity | null {
          const chunk = Board.getChunk(chunkX, chunkY);
          for (const gameObject of chunk.getGameObjects()) {
             if (gameObject instanceof Entity) {
-               const distance = Game.cursorPosition.calculateDistanceBetween(gameObject.renderPosition);
+               const distance = Math.sqrt(Math.pow(Game.cursorPositionX - gameObject.renderPosition.x, 2) + Math.pow(Game.cursorPositionY - gameObject.renderPosition.y, 2))
                if (distance <= CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE && distance < minDistance) {
                   closestEntity = gameObject;
                   minDistance = distance;
@@ -90,19 +87,11 @@ export function getMouseTargetEntity(): Entity | null {
    return closestEntity;
 }
 
-const calculateEntityScreenPosition = (entity: Entity): Point => {
-   const x = Camera.calculateXScreenPos(entity.renderPosition.x);
-   const y = Camera.calculateYScreenPos(entity.renderPosition.y);
-   return new Point(x, y);
-}
-
 // @Cleanup: Function name. This doesn't just render the cursor tooltip, it updates debug info.
 // Maybe seperate this into two functions?
 export function renderCursorTooltip(): void {
-   if (typeof Game.cursorPosition === "undefined") return;
-
-   if (Game.cursorPosition === null) {
-      updateCursorTooltip(null, null);
+   if (Game.cursorPositionX === null || Game.cursorPositionY === null) {
+      updateCursorTooltip(null, -1, -1);
       if (isDev()) {
          updateDebugInfoEntity(null);
       }
@@ -116,7 +105,7 @@ export function renderCursorTooltip(): void {
 
    // If there is no target, hide the tooltip
    if (targetEntity === null) {
-      updateCursorTooltip(null, null);
+      updateCursorTooltip(null, -1, -1);
       if (isDev()) {
          updateDebugInfoEntity(null);
       }
@@ -126,10 +115,13 @@ export function renderCursorTooltip(): void {
    }
 
    // Update the cursor tooltip
-   const screenPosition = calculateEntityScreenPosition(targetEntity);
+   const entityScreenPositionX = Camera.calculateXScreenPos(targetEntity.renderPosition.x);
+   const entityScreenPositionY = Camera.calculateYScreenPos(targetEntity.renderPosition.y);
 
    const debugData = Game.getGameObjectDebugData();
-   updateCursorTooltip(debugData, screenPosition);
+   if (debugData === null || targetEntity.id === debugData.gameObjectID) {
+      updateCursorTooltip(debugData, entityScreenPositionX, entityScreenPositionY);
+   }
 }
 
 export function updateChargeMeter(): void {

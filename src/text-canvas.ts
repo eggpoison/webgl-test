@@ -1,5 +1,5 @@
+import Board from "./Board";
 import Camera from "./Camera";
-import Player from "./entities/Player";
 import { halfWindowHeight, halfWindowWidth, windowHeight, windowWidth } from "./webgl";
 
 let ctx: CanvasRenderingContext2D;
@@ -13,25 +13,21 @@ export function createTextCanvasContext(): void {
 }
 
 const getXPosInCamera = (x: number): number => {
-   return x - Camera.position.x + halfWindowWidth;
+   return (x - Camera.position.x) * Camera.zoom + halfWindowWidth;
 }
 const getYPosInCamera = (y: number): number => {
-   return -y + Camera.position.y + halfWindowHeight;
+   return (-y + Camera.position.y) * Camera.zoom + halfWindowHeight;
 }
 
-export function renderPlayerNames(players: ReadonlyArray<Player>): void {
+export function renderPlayerNames(): void {
    // Clear the canvas
    ctx.fillStyle = "transparent";
    ctx.clearRect(0, 0, windowWidth, windowHeight);
 
-   for (const player of players) {
-      // Calculate the position of the text
-      let drawPosition = player.renderPosition.copy();
-      drawPosition.y += NAMETAG_Y_OFFSET;
-
+   for (const player of Board.players) {
       // Calculate position in camera
-      const cameraX = getXPosInCamera(drawPosition.x);
-      const cameraY = getYPosInCamera(drawPosition.y);
+      const cameraX = getXPosInCamera(player.renderPosition.x);
+      const cameraY = getYPosInCamera(player.renderPosition.y + NAMETAG_Y_OFFSET);
 
       ctx.fillStyle = "#000";
       ctx.font = "400 20px Helvetica";

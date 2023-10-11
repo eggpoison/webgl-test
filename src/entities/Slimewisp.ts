@@ -1,9 +1,10 @@
-import { EntityType, Point } from "webgl-test-shared";
+import { EntityType, Point, TileType } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { createSlimePoolParticle, createSlimeSpeckParticle } from "../generic-particles";
+import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class Slimewisp extends Entity {
    private static readonly RADIUS = 16;
@@ -17,7 +18,7 @@ class Slimewisp extends Entity {
          this,
          Slimewisp.RADIUS * 2,
          Slimewisp.RADIUS * 2,
-         `entities/slimewisp/slimewisp.png`,
+         getGameObjectTextureIndex(`entities/slimewisp/slimewisp.png`),
          0,
          0
       );
@@ -27,7 +28,7 @@ class Slimewisp extends Entity {
 
    protected overrideTileMoveSpeedMultiplier(): number | null {
       // Slimewisps move at normal speed on slime blocks
-      if (this.tile.type === "slime") {
+      if (this.tile.type === TileType.slime) {
          return 1;
       }
       return null;

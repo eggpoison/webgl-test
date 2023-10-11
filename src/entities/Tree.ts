@@ -4,6 +4,7 @@ import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { LeafParticleSize, createLeafParticle, createLeafSpeckParticle } from "../generic-particles";
+import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
 
 const treeTextures: { [T in TreeSize]: string } = {
    [TreeSize.small]: "entities/tree/tree-small.png",
@@ -30,7 +31,7 @@ class Tree extends Entity {
             this,
             this.radius * 2,
             this.radius * 2,
-            treeTextures[treeSize],
+            getGameObjectTextureIndex(treeTextures[treeSize]),
             0,
             0
          )

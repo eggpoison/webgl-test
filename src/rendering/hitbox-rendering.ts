@@ -53,28 +53,30 @@ export function renderEntityHitboxes(): void {
    const vertices = new Array<number>();
    for (const gameObject of gameObjects) {
       for (const hitbox of gameObject.hitboxes) {
-         const hitboxRenderPosition = hitbox.gameObject.renderPosition.copy();
-         if (typeof hitbox.offset !== "undefined") {
-            hitboxRenderPosition.add(hitbox.offset);
-         }
+         let hitboxRenderPositionX = hitbox.position.x;
+         let hitboxRenderPositionY = hitbox.position.y;
+
+         // Interpolate the hitbox render position
+         hitboxRenderPositionX += gameObject.renderPosition.x - gameObject.position.x;
+         hitboxRenderPositionY += gameObject.renderPosition.y - gameObject.position.y;
          
          if (hitbox.hasOwnProperty("width")) {
             // Rectangular
             
-            const x1 = hitboxRenderPosition.x - (hitbox as RectangularHitbox).width / 2;
-            const x2 = hitboxRenderPosition.x + (hitbox as RectangularHitbox).width / 2;
-            const y1 = hitboxRenderPosition.y - (hitbox as RectangularHitbox).height / 2;
-            const y2 = hitboxRenderPosition.y + (hitbox as RectangularHitbox).height / 2;
+            const x1 = hitboxRenderPositionX - (hitbox as RectangularHitbox).width / 2;
+            const x2 = hitboxRenderPositionX + (hitbox as RectangularHitbox).width / 2;
+            const y1 = hitboxRenderPositionY - (hitbox as RectangularHitbox).height / 2;
+            const y2 = hitboxRenderPositionY + (hitbox as RectangularHitbox).height / 2;
 
             // Rotate to match the entity's rotation
-            const topLeftX = rotateXAroundPoint(x1, y2, hitboxRenderPosition.x, hitboxRenderPosition.y, gameObject.rotation);
-            const topLeftY = rotateYAroundPoint(x1, y2, hitboxRenderPosition.x, hitboxRenderPosition.y, gameObject.rotation);
-            const topRightX = rotateXAroundPoint(x2, y2, hitboxRenderPosition.x, hitboxRenderPosition.y, gameObject.rotation);
-            const topRightY = rotateYAroundPoint(x2, y2, hitboxRenderPosition.x, hitboxRenderPosition.y, gameObject.rotation);
-            const bottomRightX = rotateXAroundPoint(x2, y1, hitboxRenderPosition.x, hitboxRenderPosition.y, gameObject.rotation);
-            const bottomRightY = rotateYAroundPoint(x2, y1, hitboxRenderPosition.x, hitboxRenderPosition.y, gameObject.rotation);
-            const bottomLeftX = rotateXAroundPoint(x1, y1, hitboxRenderPosition.x, hitboxRenderPosition.y, gameObject.rotation);
-            const bottomLeftY = rotateYAroundPoint(x1, y1, hitboxRenderPosition.x, hitboxRenderPosition.y, gameObject.rotation);
+            const topLeftX = rotateXAroundPoint(x1, y2, hitboxRenderPositionX, hitboxRenderPositionY, gameObject.rotation);
+            const topLeftY = rotateYAroundPoint(x1, y2, hitboxRenderPositionX, hitboxRenderPositionY, gameObject.rotation);
+            const topRightX = rotateXAroundPoint(x2, y2, hitboxRenderPositionX, hitboxRenderPositionY, gameObject.rotation);
+            const topRightY = rotateYAroundPoint(x2, y2, hitboxRenderPositionX, hitboxRenderPositionY, gameObject.rotation);
+            const bottomRightX = rotateXAroundPoint(x2, y1, hitboxRenderPositionX, hitboxRenderPositionY, gameObject.rotation);
+            const bottomRightY = rotateYAroundPoint(x2, y1, hitboxRenderPositionX, hitboxRenderPositionY, gameObject.rotation);
+            const bottomLeftX = rotateXAroundPoint(x1, y1, hitboxRenderPositionX, hitboxRenderPositionY, gameObject.rotation);
+            const bottomLeftY = rotateYAroundPoint(x1, y1, hitboxRenderPositionX, hitboxRenderPositionY, gameObject.rotation);
 
             vertices.push(
                topLeftX, topLeftY,
@@ -101,8 +103,8 @@ export function renderEntityHitboxes(): void {
                }
 
                // Trig shenanigans to get x and y coords
-               const worldX = Math.cos(radians) * (hitbox as CircularHitbox).radius + hitboxRenderPosition.x;
-               const worldY = Math.sin(radians) * (hitbox as CircularHitbox).radius + hitboxRenderPosition.y;
+               const worldX = Math.cos(radians) * (hitbox as CircularHitbox).radius + hitboxRenderPositionX;
+               const worldY = Math.sin(radians) * (hitbox as CircularHitbox).radius + hitboxRenderPositionY;
                
                vertices.push(worldX, worldY);
 

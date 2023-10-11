@@ -108,7 +108,20 @@ const addLineVertices = (vertices: Array<number>, debugData: GameObjectDebugData
 export function renderLineDebugData(debugData: GameObjectDebugData): void {
    gl.useProgram(lineProgram);
 
-   const gameObject = Board.gameObjects[debugData.gameObjectID];
+   // const gameObject = Board.gameObjects[debugData.gameObjectID];
+   // @Cleanup: There is probably a better way to do this
+   let gameObject: GameObject | undefined;
+   if (Board.entities.hasOwnProperty(debugData.gameObjectID)) {
+      gameObject = Board.entities[debugData.gameObjectID];
+   } else if (Board.droppedItems.hasOwnProperty(debugData.gameObjectID)) {
+      gameObject = Board.droppedItems[debugData.gameObjectID];
+   } else if (Board.projectiles.hasOwnProperty(debugData.gameObjectID)) {
+      gameObject = Board.projectiles[debugData.gameObjectID];
+   }
+   if (typeof gameObject === "undefined") {
+      throw new Error("Couldn't find game object");
+   }
+
 
    const vertices = new Array<number>();
    addCircleVertices(vertices, debugData, gameObject);

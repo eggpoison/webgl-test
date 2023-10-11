@@ -5,6 +5,7 @@ import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle, createSnowParticle, createWhiteSmokeParticle } from "../generic-particles";
 import Board from "../Board";
+import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class Yeti extends Entity {
    private static readonly SIZE = 128;
@@ -34,7 +35,7 @@ class Yeti extends Entity {
             this,
             Yeti.SIZE,
             Yeti.SIZE,
-            "entities/yeti/yeti.png",
+            getGameObjectTextureIndex("entities/yeti/yeti.png"),
             1,
             0
          )
@@ -52,7 +53,7 @@ class Yeti extends Entity {
          this,
          Yeti.PAW_SIZE,
          Yeti.PAW_SIZE,
-         "entities/yeti/yeti-paw.png",
+         getGameObjectTextureIndex("entities/yeti/yeti-paw.png"),
          0,
          0
       );
@@ -70,7 +71,7 @@ class Yeti extends Entity {
       super.tick();
 
       // Create footsteps
-      if (this.velocity !== null && !this.isInRiver() && Board.tickIntervalHasPassed(0.55)) {
+      if ((this.velocity.x !== 0 || this.velocity.y !== 0) && !this.isInRiver() && Board.tickIntervalHasPassed(0.55)) {
          createFootprintParticle(this, this.numFootstepsTaken, 40, 96, 8);
 
          this.numFootstepsTaken++;

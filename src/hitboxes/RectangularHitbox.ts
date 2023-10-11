@@ -1,51 +1,50 @@
-import { circleAndRectangleDoIntersect, computeSideAxis, HitboxVertexPositions, Point, rectanglePointsDoIntersect, rotateXAroundPoint, rotateYAroundPoint, Vector } from "webgl-test-shared";
+import { circleAndRectangleDoIntersect, HitboxVertexPositions, Point, rectanglePointsDoIntersect, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import Hitbox from "./Hitbox";
 import CircularHitbox from "./CircularHitbox";
 
 class RectangularHitbox extends Hitbox {
    public width: number;
    public height: number;
+
+   public rotation = 0;
    
    /** Length of half of the diagonal of the rectangle */
    public readonly halfDiagonalLength: number;
 
-   public vertexPositions: HitboxVertexPositions = [
-      new Point(-1, -1),
-      new Point(-1, -1),
-      new Point(-1, -1),
-      new Point(-1, -1)
-   ];
+   public vertexPositions: HitboxVertexPositions = [new Point(-1, -1), new Point(-1, -1), new Point(-1, -1), new Point(-1, -1)];
 
-   public sideAxes!: [axis1: Vector, axis2: Vector];
+   public sideAxes = [new Point(0, 0), new Point(0, 0)] as const;
 
    constructor(width: number, height: number, offset?: Point) {
-      super(offset);
-
+      super();
+      
       this.width = width;
       this.height = height;
+      this.offset = offset;
       this.halfDiagonalLength = Math.sqrt(Math.pow(width / 2, 2) + Math.pow(height / 2, 2));
    }
 
-   public computeVertexPositions(): void {
-      const x1 = this.gameObject.position.x - this.width / 2;
-      const x2 = this.gameObject.position.x + this.width / 2;
-      const y1 = this.gameObject.position.y - this.height / 2;
-      const y2 = this.gameObject.position.y + this.height / 2;
+   private computeVertexPositions(): void {
+      const x1 = this.position.x - this.width / 2;
+      const x2 = this.position.x + this.width / 2;
+      const y1 = this.position.y - this.height / 2;
+      const y2 = this.position.y + this.height / 2;
 
       // Top left
-      this.vertexPositions[0].x = rotateXAroundPoint(x1, y2, this.gameObject.position.x, this.gameObject.position.y, this.gameObject.rotation);
-      this.vertexPositions[0].y = rotateYAroundPoint(x1, y2, this.gameObject.position.x, this.gameObject.position.y, this.gameObject.rotation);
+      this.vertexPositions[0].x = rotateXAroundPoint(x1, y2, this.position.x, this.position.y, this.rotation);
+      this.vertexPositions[0].y = rotateYAroundPoint(x1, y2, this.position.x, this.position.y, this.rotation);
       // Top right
-      this.vertexPositions[1].x = rotateXAroundPoint(x2, y2, this.gameObject.position.x, this.gameObject.position.y, this.gameObject.rotation);
-      this.vertexPositions[1].y = rotateYAroundPoint(x2, y2, this.gameObject.position.x, this.gameObject.position.y, this.gameObject.rotation);
+      this.vertexPositions[1].x = rotateXAroundPoint(x2, y2, this.position.x, this.position.y, this.rotation);
+      this.vertexPositions[1].y = rotateYAroundPoint(x2, y2, this.position.x, this.position.y, this.rotation);
       // Bottom left
-      this.vertexPositions[2].x = rotateXAroundPoint(x1, y1, this.gameObject.position.x, this.gameObject.position.y, this.gameObject.rotation);
-      this.vertexPositions[2].y = rotateYAroundPoint(x1, y1, this.gameObject.position.x, this.gameObject.position.y, this.gameObject.rotation);
+      this.vertexPositions[2].x = rotateXAroundPoint(x1, y1, this.position.x, this.position.y, this.rotation);
+      this.vertexPositions[2].y = rotateYAroundPoint(x1, y1, this.position.x, this.position.y, this.rotation);
       // Bottom right
-      this.vertexPositions[3].x = rotateXAroundPoint(x2, y1, this.gameObject.position.x, this.gameObject.position.y, this.gameObject.rotation);
-      this.vertexPositions[3].y = rotateYAroundPoint(x2, y1, this.gameObject.position.x, this.gameObject.position.y, this.gameObject.rotation);
+      this.vertexPositions[3].x = rotateXAroundPoint(x2, y1, this.position.x, this.position.y, this.rotation);
+      this.vertexPositions[3].y = rotateYAroundPoint(x2, y1, this.position.x, this.position.y, this.rotation);
 
       if (typeof this.offset !== "undefined") {
+         // @Incomplete: account for parent rotation
          this.vertexPositions[0].add(this.offset);
          this.vertexPositions[1].add(this.offset);
          this.vertexPositions[2].add(this.offset);
@@ -54,10 +53,13 @@ class RectangularHitbox extends Hitbox {
    }
 
    public computeSideAxes(): void {
-      this.sideAxes = [
-         computeSideAxis(this.vertexPositions[0], this.vertexPositions[1]),
-         computeSideAxis(this.vertexPositions[0], this.vertexPositions[2])
-      ];
+      const angle1 = this.vertexPositions[0].calculateAngleBetween(this.vertexPositions[1]);
+      this.sideAxes[0].x = Math.sin(angle1);
+      this.sideAxes[0].y = Math.cos(angle1);
+      
+      const angle2 = this.vertexPositions[2].calculateAngleBetween(this.vertexPositions[3]);
+      this.sideAxes[1].x = Math.sin(angle2);
+      this.sideAxes[1].y = Math.cos(angle2);
    }
 
    public updateHitboxBounds(): void {
@@ -73,7 +75,7 @@ class RectangularHitbox extends Hitbox {
    public isColliding(otherHitbox: CircularHitbox | RectangularHitbox): boolean {
       if (otherHitbox.hasOwnProperty("radius")) {
          // Circular
-         return circleAndRectangleDoIntersect(otherHitbox.position, (otherHitbox as CircularHitbox).radius, this.position, this.width, this.height, this.gameObject.rotation);
+         return circleAndRectangleDoIntersect(otherHitbox.position, (otherHitbox as CircularHitbox).radius, this.position, this.width, this.height, this.rotation);
       } else {
          // Rectangular
 

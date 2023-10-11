@@ -5,6 +5,7 @@ import { Inventory } from "../items/Item";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
+import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class Barrel extends Entity {
    public static readonly SIZE = 80;
@@ -23,7 +24,7 @@ class Barrel extends Entity {
             this,
             Barrel.SIZE,
             Barrel.SIZE,
-            "entities/barrel/barrel.png",
+            getGameObjectTextureIndex("entities/barrel/barrel.png"),
             0,
             0
          )

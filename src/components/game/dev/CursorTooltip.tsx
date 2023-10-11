@@ -1,19 +1,19 @@
 import { useEffect, useRef, useState } from "react";
-import { GameObjectDebugData, Point } from "webgl-test-shared";
+import { GameObjectDebugData } from "webgl-test-shared";
 
-export let updateCursorTooltip: (debugData: GameObjectDebugData | null, screenPosition: Point | null) => void = () => {};
+export let updateCursorTooltip: (debugData: GameObjectDebugData | null, screenPositionX: number, screenPositionY: number) => void = () => {};
 
 const CursorTooltip = () => {
    const [debugData, setDebugData] = useState<GameObjectDebugData | null>(null);
    const cursorTooltipRef = useRef<HTMLDivElement | null>(null);
 
    useEffect(() => {
-      updateCursorTooltip = (debugData: GameObjectDebugData | null, screenPosition: Point | null): void => {
+      updateCursorTooltip = (debugData: GameObjectDebugData | null, screenPositionX: number, screenPositionY: number): void => {
          setDebugData(debugData);
 
-         if (cursorTooltipRef.current !== null && screenPosition !== null) {
-            cursorTooltipRef.current.style.bottom = screenPosition.y + "px";
-            cursorTooltipRef.current.style.left = screenPosition.x + "px";
+         if (cursorTooltipRef.current !== null) {
+            cursorTooltipRef.current.style.bottom = screenPositionY + "px";
+            cursorTooltipRef.current.style.left = screenPositionX + "px";
          }
       }
    }, []);

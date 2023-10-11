@@ -4,6 +4,7 @@ import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { createDirtParticle, createRockParticle, createRockSpeckParticle } from "../generic-particles";
+import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class Tombstone extends Entity {
    private static readonly HITBOX_WIDTH = 48;
@@ -24,7 +25,7 @@ class Tombstone extends Entity {
             this,
             64,
             96,
-            `entities/tombstone/tombstone${tombstoneType + 1}.png`,
+            getGameObjectTextureIndex(`entities/tombstone/tombstone${tombstoneType + 1}.png`),
             0,
             0
          )

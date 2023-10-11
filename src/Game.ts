@@ -4,11 +4,11 @@ import { isDev } from "./utils";
 import { renderPlayerNames, createTextCanvasContext } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/game/ChatBox";
-import { GameDataPacket, GameObjectDebugData, Point, SETTINGS } from "webgl-test-shared";
+import { GameDataPacket, GameObjectDebugData, SETTINGS } from "webgl-test-shared";
 import { createEntityShaders, renderGameObjects } from "./rendering/game-object-rendering";
 import Client from "./client/Client";
-import { calculateCursorWorldPosition, getCursorX, getCursorY, getMouseTargetEntity, handleMouseMovement, renderCursorTooltip, updateChargeMeter } from "./mouse";
-import { refreshDebugInfo } from "./components/game/dev/DebugInfo";
+import { calculateCursorWorldPositionX, calculateCursorWorldPositionY, cursorX, cursorY, getMouseTargetEntity, handleMouseMovement, renderCursorTooltip, updateChargeMeter } from "./mouse";
+import { refreshDebugInfo, setDebugInfoDebugData } from "./components/game/dev/DebugInfo";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createShaderStrings, createWebGLContext, gl, halfWindowHeight, halfWindowWidth, resizeCanvas } from "./webgl";
 import { loadTextures } from "./textures";
 import { hidePauseScreen, showPauseScreen, toggleSettingsMenu } from "./components/game/GameScreen";
@@ -33,9 +33,8 @@ import { RENDER_CHUNK_SIZE, createRenderChunks } from "./rendering/tile-renderin
 import { registerFrame, updateFrameGraph } from "./components/game/dev/FrameGraph";
 import { createNightShaders, renderNight } from "./rendering/night-rendering";
 import { createPlaceableItemProgram, renderGhostPlaceableItem } from "./rendering/placeable-item-rendering";
-import Entity from "./entities/Entity";
 import { setupFrameGraph } from "./rendering/frame-graph-rendering";
-import { stitchGameObjectTextureAtlas } from "./texture-atlas-stitching";
+import { createGameObjectTextureAtlas } from "./texture-atlases/game-object-texture-atlas";
 
 let listenersHaveBeenCreated = false;
 
@@ -79,7 +78,8 @@ abstract class Game {
    /** Amount of time the game is through the current frame */
    private static lag = 0;
 
-   public static cursorPosition: Point | null;
+   public static cursorPositionX: number | null = null;
+   public static cursorPositionY: number | null = null;
 
    private static gameObjectDebugData: GameObjectDebugData | null = null;
 
@@ -91,8 +91,10 @@ abstract class Game {
    public static setGameObjectDebugData(gameObjectDebugData: GameObjectDebugData | undefined): void {
       if (typeof gameObjectDebugData === "undefined") {
          this.gameObjectDebugData = null;
+         setDebugInfoDebugData(null);
       } else {
          this.gameObjectDebugData = gameObjectDebugData;
+         setDebugInfoDebugData(gameObjectDebugData);
       }
    }
 
@@ -106,8 +108,6 @@ abstract class Game {
       resizeCanvas();
 
       // Set the player's initial rotation
-      const cursorX = getCursorX();
-      const cursorY = getCursorY();
       if (cursorX !== null && cursorY !== null) {
          updatePlayerRotation(cursorX, cursorY);
       }
@@ -165,7 +165,7 @@ abstract class Game {
             
             // We load the textures before we create the shaders because some shader initialisations stitch textures together
             await loadTextures();
-            await stitchGameObjectTextureAtlas();
+            await createGameObjectTextureAtlas();
             
             // Create shaders
             createSolidTileShaders();
@@ -277,6 +277,7 @@ abstract class Game {
    private static updatePlayer(): void {
       if (Player.instance !== null) {
          Player.instance.applyPhysics();
+         Player.instance.updateCurrentTile();
          Player.instance.updateHitboxes();
          Player.instance.updateContainingChunks();
          Player.resolveCollisions();
@@ -289,8 +290,6 @@ abstract class Game {
     */
    private static render(frameProgress: number): void {
       // Player rotation is updated each render, but only sent each update
-      const cursorX = getCursorX();
-      const cursorY = getCursorY();
       if (cursorX !== null && cursorY !== null) {
          updatePlayerRotation(cursorX, cursorY);
       }
@@ -325,16 +324,7 @@ abstract class Game {
       this.cameraData[4] = Camera.zoom;
       gl.bufferSubData(gl.UNIFORM_BUFFER, 0, this.cameraData);
 
-      // Categorise the game objects
-      // @Speed
-      const playersToRenderNames = new Array<Player>();
-      for (const gameObject of Object.values(Board.gameObjects)) {
-         if (gameObject.hasOwnProperty("statusEffects") && (gameObject as Entity).type === "player" && gameObject !== Player.instance) {
-            playersToRenderNames.push(gameObject as Player);
-         }
-      }
-
-      renderPlayerNames(playersToRenderNames);
+      renderPlayerNames();
 
       renderSolidTiles();
       renderRivers(renderTime);
@@ -373,7 +363,8 @@ abstract class Game {
 
       renderGhostPlaceableItem();
 
-      this.cursorPosition = calculateCursorWorldPosition();
+      this.cursorPositionX = calculateCursorWorldPositionX();
+      this.cursorPositionY = calculateCursorWorldPositionY();
       renderCursorTooltip();
       
       updateChargeMeter();

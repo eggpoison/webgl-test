@@ -5,6 +5,7 @@ import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle } from "../generic-particles";
 import Board from "../Board";
+import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
 
 const ZOMBIE_TEXTURE_SOURCES: { [zombieType: number]: string } = {
    0: "entities/zombie/zombie1.png",
@@ -30,7 +31,7 @@ class Zombie extends Entity {
             this,
             Zombie.RADIUS * 2,
             Zombie.RADIUS * 2,
-            ZOMBIE_TEXTURE_SOURCES[zombieType],
+            getGameObjectTextureIndex(ZOMBIE_TEXTURE_SOURCES[zombieType]),
             0,
             0
          )
@@ -41,7 +42,7 @@ class Zombie extends Entity {
       super.tick();
 
       // Create footsteps
-      if (this.velocity !== null && !this.isInRiver() && Board.tickIntervalHasPassed(0.3)) {
+      if ((this.velocity.x !== 0 || this.velocity.y !== 0) && !this.isInRiver() && Board.tickIntervalHasPassed(0.3)) {
          createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 4);
 
          this.numFootstepsTaken++;

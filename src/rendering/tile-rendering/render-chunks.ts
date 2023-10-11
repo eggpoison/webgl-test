@@ -71,8 +71,11 @@ export function createRenderChunks(): void {
 }
 
 export function updateRenderChunkFromTileUpdate(tileUpdate: ServerTileUpdateData): void {
-   const renderChunkX = Math.floor(tileUpdate.x / RENDER_CHUNK_SIZE);
-   const renderChunkY = Math.floor(tileUpdate.y / RENDER_CHUNK_SIZE);
+   const tileX = tileUpdate.tileIndex % SETTINGS.BOARD_DIMENSIONS;
+   const tileY = Math.floor(tileUpdate.tileIndex / SETTINGS.BOARD_DIMENSIONS);
+   
+   const renderChunkX = Math.floor(tileX / RENDER_CHUNK_SIZE);
+   const renderChunkY = Math.floor(tileY / RENDER_CHUNK_SIZE);
 
    recalculateSolidTileRenderChunkData(renderChunkX, renderChunkY);
 }

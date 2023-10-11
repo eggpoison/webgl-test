@@ -1,6 +1,6 @@
 import { gl } from "./webgl";
-import { TILE_TYPE_RENDER_INFO_RECORD } from "./tile-type-render-info";
 import { imageIsLoaded } from "./utils";
+import { TILE_TYPE_TEXTURE_SOURCES } from "./tile-type-texture-sources";
 
 let TEXTURES: { [key: string]: WebGLTexture } = {};
 
@@ -42,16 +42,12 @@ const TEXTURE_SOURCES: Array<string> = [
 
 export const TEXTURE_IMAGE_RECORD: Record<string, HTMLImageElement> = {};
 
-const textureSourceIsAlreadyIncluded = (src: string): boolean => {
-   return TEXTURE_SOURCES.includes(src);
-}
-
 export function loadTextures(): Promise<void> {
    return new Promise(async resolve => {
       // Add solid tile textures
-      for (const tileTypeInfo of Object.values(TILE_TYPE_RENDER_INFO_RECORD)) {
-         if (!textureSourceIsAlreadyIncluded(tileTypeInfo.textureSource)) {
-            TEXTURE_SOURCES.push(tileTypeInfo.textureSource);
+      for (const textureSource of TILE_TYPE_TEXTURE_SOURCES) {
+         if (!TEXTURE_SOURCES.includes(textureSource)) {
+            TEXTURE_SOURCES.push(textureSource);
          }
       }
 

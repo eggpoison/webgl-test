@@ -1,4 +1,4 @@
-import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitData, Point, SETTINGS, Vector, clampToBoardDimensions, TribeType, ItemType, InventoryData, TribeMemberAction } from "webgl-test-shared";
+import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitData, Point, SETTINGS, clampToBoardDimensions, TribeType, ItemType, InventoryData, TribeMemberAction } from "webgl-test-shared";
 import Camera from "../Camera";
 import { setCraftingMenuAvailableRecipes, setCraftingMenuAvailableCraftingStations } from "../components/game/menus/CraftingMenu";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -14,6 +14,7 @@ import Board from "../Board";
 import { definiteGameState, latencyGameState } from "../game-state/game-states";
 import { createFootprintParticle } from "../generic-particles";
 import { keyIsPressed } from "../keyboard-input";
+import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
 
 /** Maximum distance from a crafting station which will allow its recipes to be crafted. */
 const MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION = 250;
@@ -128,7 +129,7 @@ class Player extends TribeMember {
             this,
             64,
             64,
-            super.getTextureSource(tribeType),
+            getGameObjectTextureIndex(super.getTextureSource(tribeType)),
             1,
             0
          )
@@ -159,7 +160,7 @@ class Player extends TribeMember {
       super.tick();
 
       // Footsteps
-      if (this.velocity !== null && !this.isInRiver() && Board.tickIntervalHasPassed(0.15)) {
+      if ((this.velocity.x !== 0 || this.velocity.y !== 0) && !this.isInRiver() && Board.tickIntervalHasPassed(0.15)) {
          createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 4);
          this.numFootstepsTaken++;
       }
@@ -170,16 +171,11 @@ class Player extends TribeMember {
       
       // Knockback
       if (this === Player.instance && hitData.angleFromAttacker !== null) {
-         if (this.velocity !== null) {
-            this.velocity.magnitude *= 0.5;
-         }
+         this.velocity.x *= 0.5;
+         this.velocity.y *= 0.5;
 
-         const pushForce = new Vector(hitData.knockback, hitData.angleFromAttacker);
-         if (this.velocity !== null) {
-            this.velocity.add(pushForce);
-         } else {
-            this.velocity = pushForce;
-         }
+         this.velocity.x += hitData.knockback * Math.sin(hitData.angleFromAttacker);
+         this.velocity.y += hitData.knockback * Math.cos(hitData.angleFromAttacker);
       }
    }
 
@@ -221,36 +217,40 @@ class Player extends TribeMember {
       const xDist = Player.instance!.position.x - tile.x * SETTINGS.TILE_SIZE;
       const xDir = xDist >= 0 ? 1 : -1;
       Player.instance!.position.x = tile.x * SETTINGS.TILE_SIZE + (0.5 + 0.5 * xDir) * SETTINGS.TILE_SIZE + Player.RADIUS * xDir;
-
-      this.stopXVelocity();
+      Player.instance!.velocity.x = 0;
    }
 
    private static resolveYAxisTileCollision(tile: Tile): void {
       const yDist = Player.instance!.position.y - tile.y * SETTINGS.TILE_SIZE;
       const yDir = yDist >= 0 ? 1 : -1;
       Player.instance!.position.y = tile.y * SETTINGS.TILE_SIZE + (0.5 + 0.5 * yDir) * SETTINGS.TILE_SIZE + Player.RADIUS * yDir;
-
-      this.stopYVelocity();
+      Player.instance!.velocity.y = 0;
    }
 
-   private static resolveDiagonalTileCollision(tile: Tile): void {
-      const xDist = Player.instance!.position.x - tile.x * SETTINGS.TILE_SIZE;
-      const yDist = Player.instance!.position.y - tile.y * SETTINGS.TILE_SIZE;
+   private static resolveDiagonalTileCollision(tile: Tile, hitbox: CircularHitbox): void {
+      const xDir = Player.instance!.position.x >= (tile.x + 0.5) * SETTINGS.TILE_SIZE ? 1 : -1;
+      const yDir = Player.instance!.position.y >= (tile.y + 0.5) * SETTINGS.TILE_SIZE ? 1 : -1;
 
-      const xDir = xDist >= 0 ? 1 : -1;
-      const yDir = yDist >= 0 ? 1 : -1;
+      const tileVertexX = xDir === 1 ? tile.x + 1 : tile.x;
+      const tileVertexY = yDir === 1 ? tile.y + 1 : tile.y;
+      
+      const xDistFromTileEdge = Player.instance!.position.x - tileVertexX * SETTINGS.TILE_SIZE;
+      const yDistFromTileEdge = Player.instance!.position.y - tileVertexY * SETTINGS.TILE_SIZE;
+      
+      const xDistFromCenter = Math.abs(Player.instance!.position.x - (tile.x + 0.5) * SETTINGS.TILE_SIZE);
+      const yDistFromCenter = Math.abs(Player.instance!.position.y - (tile.y + 0.5) * SETTINGS.TILE_SIZE);
 
-      const xDistFromEdge = Math.abs(xDist - SETTINGS.TILE_SIZE/2);
-      const yDistFromEdge = Math.abs(yDist - SETTINGS.TILE_SIZE/2);
-
-      const moveAxis: "x" | "y" = yDistFromEdge >= xDistFromEdge ? "y" : "x";
-
+      const moveAxis: "x" | "y" = xDistFromCenter >= yDistFromCenter ? "x" : "y";
       if (moveAxis === "x") {
-         Player.instance!.position.x = (tile.x + 0.5 + 0.5 * xDir) * SETTINGS.TILE_SIZE + Player.RADIUS * xDir;
-         this.stopXVelocity();
+         const collisionXDist = Math.sqrt(Math.pow(hitbox.radius, 2) - Math.pow(tileVertexY * SETTINGS.TILE_SIZE - Player.instance!.position.y, 2));
+         const amountInside = collisionXDist - Math.abs(xDistFromTileEdge);
+         Player.instance!.position.x += amountInside * xDir;
+         Player.instance!.velocity.x = 0;
       } else {
-         Player.instance!.position.y = (tile.y + 0.5 + 0.5 * yDir) * SETTINGS.TILE_SIZE + Player.RADIUS * yDir;
-         this.stopYVelocity();
+         const collisionYDist = Math.sqrt(Math.pow(hitbox.radius, 2) - Math.pow(tileVertexX * SETTINGS.TILE_SIZE - Player.instance!.position.x, 2));
+         const amountInside = collisionYDist - Math.abs(yDistFromTileEdge);
+         Player.instance!.position.y += amountInside * yDir;
+         Player.instance!.velocity.y = 0;
       }
    }
 
@@ -277,28 +277,12 @@ class Player extends TribeMember {
                      break;
                   }
                   case TileCollisionAxis.diagonal: {
-                     this.resolveDiagonalTileCollision(tile);
+                     this.resolveDiagonalTileCollision(tile, Array.from(Player.instance.hitboxes)[0] as CircularHitbox);
                      break;
                   }
                }
             }
          }
-      }
-   }
-
-   private static stopXVelocity(): void {
-      if (Player.instance!.velocity !== null) {
-         const pointVelocity = Player.instance!.velocity.convertToPoint();
-         pointVelocity.x = 0;
-         Player.instance!.velocity = pointVelocity.convertToVector();
-      }
-   }
-
-   private static stopYVelocity(): void {
-      if (Player.instance!.velocity !== null) {
-         const pointVelocity = Player.instance!.velocity.convertToPoint();
-         pointVelocity.y = 0;
-         Player.instance!.velocity = pointVelocity.convertToVector();
       }
    }
    
@@ -309,22 +293,22 @@ class Player extends TribeMember {
       for (const hitbox of Player.instance!.hitboxes) {
          // Left wall
          if (hitbox.bounds[0] < 0) {
-            this.stopXVelocity();
+            Player.instance!.velocity.x = 0;
             Player.instance!.position.x -= hitbox.bounds[0];
             // Right wall
          } else if (hitbox.bounds[1] > boardUnits) {
             Player.instance!.position.x -= hitbox.bounds[1] - boardUnits;
-            this.stopXVelocity();
+            Player.instance!.velocity.x = 0;
          }
          
          // Bottom wall
          if (hitbox.bounds[2] < 0) {
             Player.instance!.position.y -= hitbox.bounds[2];
-            this.stopYVelocity();
+            Player.instance!.velocity.y = 0;
             // Top wall
          } else if (hitbox.bounds[3] > boardUnits) {
             Player.instance!.position.y -= hitbox.bounds[3] - boardUnits;
-            this.stopYVelocity();
+            Player.instance!.velocity.y = 0;
          }
       }
    }
@@ -356,12 +340,8 @@ class Player extends TribeMember {
          const angle = Player.instance.position.calculateAngleBetween(gameObject.position) + Math.PI;
 
          // No need to apply force to other object as they will do it themselves
-         const pushForce = new Vector(force, angle);
-         if (Player.instance.velocity !== null) {
-            Player.instance.velocity.add(pushForce);
-         } else {
-            Player.instance.velocity = pushForce;
-         }
+         Player.instance.velocity.x += force * Math.sin(angle);
+         Player.instance.velocity.y += force * Math.cos(angle);
       }
    }
 
@@ -415,7 +395,8 @@ class Player extends TribeMember {
    }
 
    public static createNewPlayerHitbox(): CircularHitbox {
-      const hitbox = new CircularHitbox(Player.RADIUS);
+      const hitbox = new CircularHitbox();
+      hitbox.radius = Player.RADIUS;
       return hitbox;
    }
 }

@@ -1,9 +1,9 @@
-import { EntityData, EntityType, HitData, HitFlags, SETTINGS, StatusEffectData, StatusEffectType, lerp, randFloat, randItem } from "webgl-test-shared";
+import { EntityType, HitData, HitFlags, SETTINGS, StatusEffectData, StatusEffect, lerp, randFloat, randItem } from "webgl-test-shared";
 import GameObject from "../GameObject";
 import Particle from "../Particle";
 import Board from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
-import { createSlimePoolParticle } from "../generic-particles";
+import { BloodParticleSize, createBloodParticle, createSlimePoolParticle } from "../generic-particles";
 
 // Use prime numbers / 100 to ensure a decent distribution of different types of particles
 const HEALING_PARTICLE_AMOUNTS = [0.05, 0.37, 1.01];
@@ -61,14 +61,12 @@ abstract class Entity extends GameObject {
 
    public secondsSinceLastHit = 99999;
 
-   public mobAIType?: string;
-
    public statusEffects = new Array<StatusEffectData>();
 
    public tick(): void {
       super.tick();
 
-      if (this.hasStatusEffect("freezing")) {
+      if (this.hasStatusEffect(StatusEffect.freezing)) {
          this.tintB += 0.5;
          this.tintR -= 0.15;
       }
@@ -116,7 +114,7 @@ abstract class Entity extends GameObject {
          Board.lowTexturedParticles.push(particle);
       }
       
-      const poisonStatusEffect = this.getStatusEffect("poisoned");
+      const poisonStatusEffect = this.getStatusEffect(StatusEffect.poisoned);
       if (poisonStatusEffect !== null) {
          // Poison particles
          if (poisonStatusEffect.ticksElapsed % 2 === 0) {
@@ -151,7 +149,7 @@ abstract class Entity extends GameObject {
          }
       }
 
-      const fireStatusEffect = this.getStatusEffect("burning");
+      const fireStatusEffect = this.getStatusEffect(StatusEffect.burning);
       if (fireStatusEffect !== null) {
          // Ember particles
          if (fireStatusEffect.ticksElapsed % 2 === 0) {
@@ -243,9 +241,19 @@ abstract class Entity extends GameObject {
             Board.highTexturedParticles.push(particle);
          }
       }
+
+      const bleedingStatusEffect = this.getStatusEffect(StatusEffect.bleeding);
+      if (bleedingStatusEffect !== null) {
+         if (Board.tickIntervalHasPassed(0.15)) {
+            const spawnOffsetDirection = 2 * Math.PI * Math.random();
+            const spawnPositionX = this.position.x + 32 * Math.sin(spawnOffsetDirection);
+            const spawnPositionY = this.position.y + 32 * Math.cos(spawnOffsetDirection);
+            createBloodParticle(Math.random() < 0.5 ? BloodParticleSize.small : BloodParticleSize.large, spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(40, 60), true);
+         }
+      }
    }
 
-   public hasStatusEffect(type: StatusEffectType): boolean {
+   public hasStatusEffect(type: StatusEffect): boolean {
       for (const statusEffect of this.statusEffects) {
          if (statusEffect.type === type) {
             return true;
@@ -254,19 +262,13 @@ abstract class Entity extends GameObject {
       return false;
    }
 
-   private getStatusEffect(type: StatusEffectType): StatusEffectData | null {
+   private getStatusEffect(type: StatusEffect): StatusEffectData | null {
       for (const statusEffect of this.statusEffects) {
          if (statusEffect.type === type) {
             return statusEffect;
          }
       }
       return null;
-   }
-
-   public updateFromData(entityData: EntityData<EntityType>): void {
-      super.updateFromData(entityData);
-
-      this.mobAIType = entityData.mobAIType;
    }
 
    public createHealingParticles(amountHealed: number): void {
