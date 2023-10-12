@@ -308,6 +308,19 @@ abstract class Board {
    public static tileIsInBoard(tileX: number, tileY: number): boolean {
       return tileX >= 0 && tileX < SETTINGS.BOARD_DIMENSIONS && tileY >= 0 && tileY < SETTINGS.BOARD_DIMENSIONS;
    }
+
+   public static hasGameObjectID(gameObjectID: number): boolean {
+      if (this.entities.hasOwnProperty(gameObjectID)) {
+         return true;
+      }
+      if (this.droppedItems.hasOwnProperty(gameObjectID)) {
+         return true;
+      }
+      if (this.projectiles.hasOwnProperty(gameObjectID)) {
+         return true;
+      }
+      return false;
+   }
 }
 
 export default Board;

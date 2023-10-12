@@ -133,12 +133,14 @@ abstract class Game {
 
       Client.sendDeactivatePacket();
    }
+   
    public static unpause(): void {
       this.isPaused = false;
       hidePauseScreen();
 
       Client.sendActivatePacket();
    }
+
    public static getIsPaused(): boolean {
       return this.isPaused;
    }
@@ -330,7 +332,7 @@ abstract class Game {
       renderRivers(renderTime);
       renderAmbientOcclusion();
       renderWallBorders();
-      if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Board.gameObjects.hasOwnProperty(this.gameObjectDebugData.gameObjectID)) {
+      if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Board.hasGameObjectID(this.gameObjectDebugData.gameObjectID)) {
          renderTriangleDebugData(this.gameObjectDebugData);
       }
       renderWorldBorder();
@@ -352,13 +354,18 @@ abstract class Game {
       if (nerdVisionIsVisible() && OPTIONS.showHitboxes) {
          renderEntityHitboxes();
       }
-      if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Board.gameObjects.hasOwnProperty(this.gameObjectDebugData.gameObjectID)) {
+      console.log(this.gameObjectDebugData !== null);
+      if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Board.hasGameObjectID(this.gameObjectDebugData.gameObjectID)) {
          renderLineDebugData(this.gameObjectDebugData);
       }
 
-      if (isDev() && nerdVisionIsVisible()) {
-         const targettedEntity = getMouseTargetEntity();
-         Client.sendTrackGameObject(targettedEntity !== null ? targettedEntity.id : null);
+      if (isDev()) {
+         if (nerdVisionIsVisible()) {
+            const targettedEntity = getMouseTargetEntity();
+            Client.sendTrackGameObject(targettedEntity !== null ? targettedEntity.id : null);
+         } else {
+            Client.sendTrackGameObject(null);
+         }
       }
 
       renderGhostPlaceableItem();

@@ -20,7 +20,7 @@ const TileDebugInfo = ({ tile }: TileDebugInfoProps) => {
    const chunkY = Math.floor(tile.y / SETTINGS.CHUNK_SIZE);
 
    return <>
-      <div className="title">{TileType[tile.type]} tile</div>
+      <div className="title"><span className="highlight">{TileType[tile.type]}</span> tile</div>
       
       <p>x: <span className="highlight">{tile.x}</span>, y: <span className="highlight">{tile.y}</span></p>
 
