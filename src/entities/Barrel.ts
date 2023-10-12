@@ -16,8 +16,8 @@ class Barrel extends Entity {
 
    public tribeID: number | null;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, tribeID: number | null, inventoryData: InventoryData) {
-      super(position, hitboxes, id);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, tribeID: number | null, inventoryData: InventoryData) {
+      super(position, hitboxes, id, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(

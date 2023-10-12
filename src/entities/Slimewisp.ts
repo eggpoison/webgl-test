@@ -11,8 +11,8 @@ class Slimewisp extends Entity {
 
    public type: EntityType = "slimewisp";
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number) {
-      super(position, hitboxes, id);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number) {
+      super(position, hitboxes, id, renderDepth);
 
       const renderPart = new RenderPart(
          this,

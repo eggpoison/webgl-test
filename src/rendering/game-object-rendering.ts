@@ -161,8 +161,8 @@ export function renderGameObjects(): void {
 
       for (const renderPart of gameObject.allRenderParts) {
          renderPart.update();
-
-         const depth = -renderPart.zIndex * 0.0001 + gameObject.renderWeight;
+         
+         const depth = -renderPart.zIndex * 0.0001 + gameObject.renderDepth;
    
          const u0 = renderPart.flipX ? 1 : 0;
          const u1 = 1 - u0;

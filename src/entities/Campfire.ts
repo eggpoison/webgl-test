@@ -10,8 +10,8 @@ class Campfire extends CookingEntity {
 
    public type: EntityType = "campfire";
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData, heatingProgress: number) {
-      super(position, hitboxes, id, fuelInventory, ingredientInventory, outputInventory, heatingProgress);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData, heatingProgress: number) {
+      super(position, hitboxes, id, renderDepth, fuelInventory, ingredientInventory, outputInventory, heatingProgress);
 
       this.attachRenderPart(
          new RenderPart(

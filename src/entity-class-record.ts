@@ -25,7 +25,7 @@ import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import Krumblid from "./entities/Krumblid";
 import FrozenYeti from "./entities/FrozenYeti";
 
-export type EntityClassType<T extends EntityType> = new (position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, ...clientParams: Parameters<EntityInfoClientArgs[T]>) => Entity;
+export type EntityClassType<T extends EntityType> = new (position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, ...clientParams: Parameters<EntityInfoClientArgs[T]>) => Entity;
 
 const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
    cow: () => Cow,

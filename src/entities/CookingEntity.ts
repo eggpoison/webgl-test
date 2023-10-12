@@ -14,8 +14,8 @@ abstract class CookingEntity extends Entity {
    public outputInventory: Inventory;
    private heatingProgress: number;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData, heatingProgress: number) {
-      super(position, hitboxes, id);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData, heatingProgress: number) {
+      super(position, hitboxes, id, renderDepth);
 
       this.fuelInventory = createInventoryFromData(fuelInventory);
       this.ingredientInventory = createInventoryFromData(ingredientInventory);

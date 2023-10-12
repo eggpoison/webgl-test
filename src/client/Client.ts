@@ -29,6 +29,7 @@ import { createWhiteSmokeParticle } from "../generic-particles";
 import Particle from "../Particle";
 import { addMonocolourParticleToBufferContainer, ParticleRenderLayer } from "../rendering/particle-rendering";
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
+import { calculateDroppedItemRenderDepth, calculateEntityRenderDepth, calculateProjectileRenderDepth } from "../render-layers";
 
 const BUILDING_TYPES: ReadonlyArray<EntityType> = ["barrel", "campfire", "furnace", "tribe_totem", "tribe_hut", "workbench"];
 
@@ -421,7 +422,8 @@ abstract class Client {
 
       const hitboxes = this.createHitboxesFromData(droppedItemData.hitboxes);
 
-      const droppedItem = new DroppedItem(position, hitboxes, droppedItemData.id, velocity, droppedItemData.type);
+      const renderDepth = calculateDroppedItemRenderDepth();
+      const droppedItem = new DroppedItem(position, hitboxes, droppedItemData.id, renderDepth, velocity, droppedItemData.type);
       droppedItem.rotation = droppedItemData.rotation;
       droppedItem.mass = droppedItemData.mass;
       droppedItem.ageTicks = droppedItemData.ageTicks;
@@ -436,7 +438,8 @@ abstract class Client {
 
       const hitboxes = this.createHitboxesFromData(projectileData.hitboxes);
 
-      const projectile = createProjectile(position, hitboxes, projectileData.id, projectileData.type);
+      const renderDepth = calculateProjectileRenderDepth();
+      const projectile = createProjectile(position, hitboxes, projectileData.id, renderDepth, projectileData.type);
       projectile.rotation = projectileData.rotation;
       projectile.velocity = Point.unpackage(projectileData.velocity);
       projectile.mass = projectileData.mass;
@@ -482,9 +485,11 @@ abstract class Client {
 
       const hitboxes = this.createHitboxesFromData(entityData.hitboxes);
 
+      const renderDepth = calculateEntityRenderDepth(entityData.type);
+
       // Create the entity
       const entityConstructor = ENTITY_CLASS_RECORD[entityData.type]() as EntityClassType<EntityType>;
-      const entity = new entityConstructor(position, hitboxes, entityData.id, ...entityData.clientArgs);
+      const entity = new entityConstructor(position, hitboxes, entityData.id, renderDepth, ...entityData.clientArgs);
       
       entity.velocity = Point.unpackage(entityData.velocity);
       entity.rotation = entityData.rotation;
@@ -573,7 +578,8 @@ abstract class Client {
       updateHealthBar(Player.MAX_HEALTH);
       
       const spawnPosition = Point.unpackage(respawnDataPacket.spawnPosition);
-      const player = new Player(spawnPosition, new Set([Player.createNewPlayerHitbox()]), respawnDataPacket.playerID, null, TribeType.plainspeople, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, definiteGameState.playerUsername);
+      const renderDepth = calculateEntityRenderDepth("player");
+      const player = new Player(spawnPosition, new Set([Player.createNewPlayerHitbox()]), respawnDataPacket.playerID, renderDepth, null, TribeType.plainspeople, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, definiteGameState.playerUsername);
       Player.setInstancePlayer(player);
       Board.addEntity(player);
 

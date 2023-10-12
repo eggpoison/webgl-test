@@ -10,8 +10,8 @@ class Workbench extends Entity {
    
    public readonly type = "workbench";
    
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number) {
-      super(position, hitboxes, id);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number) {
+      super(position, hitboxes, id, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(

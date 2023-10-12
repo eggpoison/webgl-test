@@ -27,8 +27,8 @@ class Yeti extends Entity {
    private lastAttackProgress = 1;
    private attackProgress = 1;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, attackProgress: number) {
-      super(position, hitboxes, id);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, attackProgress: number, renderDepth: number) {
+      super(position, hitboxes, id, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(

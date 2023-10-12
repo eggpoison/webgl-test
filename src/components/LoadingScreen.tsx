@@ -7,6 +7,7 @@ import Game from "../Game";
 import { setGameState, setLoadingScreenInitialStatus } from "./App";
 import Camera from "../Camera";
 import { definiteGameState } from "../game-state/game-states";
+import { calculateEntityRenderDepth } from "../render-layers";
 
 // @Cleanup: This file does too much logic on its own. It should really only have UI/loading state
 
@@ -92,7 +93,8 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
                // Spawn the player
                definiteGameState.playerUsername = username;
                const playerSpawnPosition = new Point(spawnPositionRef.current!.x, spawnPositionRef.current!.y);
-               const player = new Player(playerSpawnPosition, new Set([Player.createNewPlayerHitbox()]), initialGameDataPacket.playerID, null, TribeType.plainspeople, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, username);
+               const renderDepth = calculateEntityRenderDepth("player");
+               const player = new Player(playerSpawnPosition, new Set([Player.createNewPlayerHitbox()]), initialGameDataPacket.playerID, renderDepth, null, TribeType.plainspeople, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, username);
                Player.setInstancePlayer(player);
                Board.addEntity(player);
 

@@ -47,20 +47,21 @@ abstract class GameObject extends RenderObject {
 
    public chunks = new Set<Chunk>();
 
-   public readonly renderWeight = randFloat(-0.95, 0.95);
+   /** Visual depth of the game object while being rendered */
+   public readonly renderDepth: number;
 
    public tintR = 0;
    public tintG = 0;
    public tintB = 0;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number) {
       super();
       
       this.position = position;
       this.renderPosition.x = position.x;
       this.renderPosition.y = position.y;
-
       this.id = id;
+      this.renderDepth = renderDepth;
 
       // Create hitbox using hitbox info
       this.hitboxes = hitboxes;

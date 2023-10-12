@@ -23,8 +23,8 @@ class Zombie extends Entity {
 
    private numFootstepsTaken = 0;
    
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, zombieType: number) {
-      super(position, hitboxes, id);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, zombieType: number) {
+      super(position, hitboxes, id, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(

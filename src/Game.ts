@@ -354,7 +354,6 @@ abstract class Game {
       if (nerdVisionIsVisible() && OPTIONS.showHitboxes) {
          renderEntityHitboxes();
       }
-      console.log(this.gameObjectDebugData !== null);
       if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Board.hasGameObjectID(this.gameObjectDebugData.gameObjectID)) {
          renderLineDebugData(this.gameObjectDebugData);
       }

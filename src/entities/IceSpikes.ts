@@ -14,8 +14,8 @@ class IceSpikes extends Entity {
 
    private static readonly SIZE = 80;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number) {
-      super(position, hitboxes, id);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number) {
+      super(position, hitboxes, id, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(

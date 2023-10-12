@@ -157,7 +157,7 @@ abstract class Board {
       let idx = this.sortedGameObjects.length;
       for (let i = 0; i < this.sortedGameObjects.length; i++) {
          const currentGameObject = this.sortedGameObjects[i];
-         if (gameObject.renderWeight > currentGameObject.renderWeight) {
+         if (gameObject.renderDepth > currentGameObject.renderDepth) {
             idx = i;
             break;
          }

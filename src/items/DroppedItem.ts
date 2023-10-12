@@ -53,8 +53,8 @@ export function createFrozenYetiBloodParticle(size: BloodParticleSize, spawnPosi
 class DroppedItem extends GameObject implements BaseItemInfo {
    public readonly itemType: ItemType;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, velocity: Point, itemType: ItemType) {
-      super(position, hitboxes, id);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, velocity: Point, itemType: ItemType) {
+      super(position, hitboxes, id, renderDepth);
       
       this.velocity = velocity;
       this.itemType = itemType;

@@ -15,8 +15,8 @@ class TribeHut extends Entity {
 
    public tribeID: number | null;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, tribeID: number | null) {
-      super(position, hitboxes, id);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, tribeID: number | null) {
+      super(position, hitboxes, id, renderDepth);
 
       this.tribeID = tribeID;
       

@@ -22,8 +22,8 @@ class Cactus extends Entity {
    private readonly flowerData: ReadonlyArray<CactusBodyFlowerData>;
    private readonly limbData: ReadonlyArray<CactusLimbData>;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, flowers: ReadonlyArray<CactusBodyFlowerData>, limbs: ReadonlyArray<CactusLimbData>) {
-      super(position, hitboxes, id);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, flowers: ReadonlyArray<CactusBodyFlowerData>, limbs: ReadonlyArray<CactusLimbData>) {
+      super(position, hitboxes, id, renderDepth);
 
       const baseRenderPart = new RenderPart(
          this,

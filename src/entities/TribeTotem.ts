@@ -21,8 +21,8 @@ class TribeTotem extends Entity {
    private readonly banners: Record<number, TribeTotemBanner> = {};
    private readonly bannerRenderParts: Record<number, RenderPart> = {};
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, tribeID: number, tribeType: TribeType, banners: Array<TribeTotemBanner>) {
-      super(position, hitboxes, id);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, tribeID: number, tribeType: TribeType, banners: Array<TribeTotemBanner>) {
+      super(position, hitboxes, id, renderDepth);
 
       const renderPart = new RenderPart(
          this,

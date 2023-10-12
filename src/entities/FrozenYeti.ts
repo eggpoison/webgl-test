@@ -61,8 +61,8 @@ class FrozenYeti extends Entity {
    private attackStage: number;
    private stageProgress: number;
    
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, attackType: FrozenYetiAttackType, attackStage: number, stageProgress: number) {
-      super(position, hitboxes, id);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, attackType: FrozenYetiAttackType, attackStage: number, stageProgress: number) {
+      super(position, hitboxes, id, renderDepth);
 
       this.attackType = attackType;
       this.attackStage = attackStage;

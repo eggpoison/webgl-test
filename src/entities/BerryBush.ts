@@ -25,8 +25,8 @@ class BerryBush extends Entity {
 
    private readonly renderPart: RenderPart;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, numBerries: number) {
-      super(position, hitboxes, id);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, numBerries: number) {
+      super(position, hitboxes, id, renderDepth);
 
       this.renderPart = new RenderPart(
          this,

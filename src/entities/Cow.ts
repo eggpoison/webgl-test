@@ -24,8 +24,8 @@ class Cow extends Entity {
 
    private numFootstepsTaken = 0;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, species: CowSpecies, grazeProgress: number) {
-      super(position, hitboxes, id);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, species: CowSpecies, grazeProgress: number) {
+      super(position, hitboxes, id, renderDepth);
 
       this.grazeProgress = grazeProgress;
 

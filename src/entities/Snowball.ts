@@ -26,8 +26,8 @@ class Snowball extends Entity {
    private readonly size: SnowballSize;
    private readonly pixelSize: number;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, size: SnowballSize) {
-      super(position, hitboxes, id);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, size: SnowballSize) {
+      super(position, hitboxes, id, renderDepth);
 
       this.size = size;
       this.pixelSize = SNOWBALL_SIZES[size];

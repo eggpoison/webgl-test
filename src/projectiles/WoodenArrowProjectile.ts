@@ -17,8 +17,8 @@ class WoodenArrowProjectile extends Projectile {
    private static readonly DESTROY_PARTICLE_BROWN_COLOUR = [135/255, 75/255, 28/255];
    private static readonly DESTROY_PARTICLE_ADD_VELOCITY = 80;
    
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number) {
-      super(position, hitboxes, id);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number) {
+      super(position, hitboxes, id, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(
