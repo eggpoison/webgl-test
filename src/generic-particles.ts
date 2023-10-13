@@ -181,7 +181,7 @@ export function createBloodPoolParticle(originX: number, originY: number, spawnR
    Board.lowTexturedParticles.push(particle);
 }
    
-export function createRockParticle(spawnPositionX: number, spawnPositionY: number, moveDirection: number): void {
+export function createRockParticle(spawnPositionX: number, spawnPositionY: number, moveDirection: number, moveSpeed: number): void {
    const lifetime = randFloat(0.3, 0.6);
 
    let textureIndex: number;
@@ -193,11 +193,10 @@ export function createRockParticle(spawnPositionX: number, spawnPositionY: numbe
       textureIndex = 8 * 1 + 2;
    }
 
-   const velocityMagnitude = randFloat(80, 125);
-   const velocityX = velocityMagnitude * Math.sin(moveDirection);
-   const velocityY = velocityMagnitude * Math.cos(moveDirection);
+   const velocityX = moveSpeed * Math.sin(moveDirection);
+   const velocityY = moveSpeed * Math.cos(moveDirection);
 
-   const accelerationMagnitude = velocityMagnitude / lifetime / 1.25;
+   const accelerationMagnitude = moveSpeed / lifetime / 1.25;
    const accelerationDirection = moveDirection + Math.PI;
    const accelerationX = accelerationMagnitude * Math.sin(accelerationDirection);
    const accelerationY = accelerationMagnitude * Math.cos(accelerationDirection);

@@ -76,6 +76,7 @@ export function updateInventoryFromData(inventory: Inventory, inventoryData: Inv
    inventory.height = inventoryData.height;
 
    // Remove any items which have been removed from the inventory
+   // @Speed: Remove Object.entries, map, and Number()
    for (const [_itemSlot, item] of Object.entries(inventory.itemSlots)) {
       const itemSlot = Number(_itemSlot);
       // If it doesn't exist in the server data, remove it
@@ -91,6 +92,7 @@ export function updateInventoryFromData(inventory: Inventory, inventoryData: Inv
    }
 
    // Add all new items from the server data
+   // @Speed: Remove Object.entries, map, and Number()
    for (const [itemSlot, itemData] of Object.entries(inventoryData.itemSlots).map(([itemSlot, itemData]) => [Number(itemSlot), itemData] as const)) {
       // If the item doesn't exist in the inventory, add it
       if (!inventory.itemSlots.hasOwnProperty(itemSlot) || inventory.itemSlots[itemSlot].id !== itemData.id) {
@@ -111,6 +113,7 @@ export function createInventoryFromData(inventoryData: InventoryData): Inventory
    const itemSlots: ItemSlots = {};
 
    // Add all new items from the server data
+   // @Speed: Remove Object.entries, map, and Number()
    for (const [itemSlot, itemData] of Object.entries(inventoryData.itemSlots).map(([itemSlot, itemData]) => [Number(itemSlot), itemData] as const)) {
       // If the item doesn't exist in the inventory, add it
       itemSlots[Number(itemSlot)] = new Item(itemData.type, itemData.count, itemData.id);

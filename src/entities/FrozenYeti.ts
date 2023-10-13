@@ -1,4 +1,4 @@
-import { EntityData, FrozenYetiAttackType, Point, lerp, randFloat, randInt } from "webgl-test-shared";
+import { EntityData, FrozenYetiAttackType, Point, SETTINGS, lerp, randFloat, randInt } from "webgl-test-shared";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import Entity from "./Entity";
@@ -7,7 +7,7 @@ import Player from "./Player";
 import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
 import Board from "../Board";
-import { createSnowParticle, createWhiteSmokeParticle } from "../generic-particles";
+import { createRockParticle, createSnowParticle, createWhiteSmokeParticle } from "../generic-particles";
 import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
 
 const createBiteParticle = (spawnPositionX: number, spawnPositionY: number): void => {
@@ -112,7 +112,25 @@ class FrozenYeti extends Entity {
          return;
       }
 
+      this.headRenderPart.shakeAmount = 0;
+      for (let i = 0; i < 2; i++) {
+         this.pawRenderParts[i].shakeAmount = 0;
+      }
+
       switch (this.attackType) {
+         case FrozenYetiAttackType.stomp: {
+            switch (this.attackStage) {
+               // Windup
+               case 0: {
+                  this.headRenderPart.shakeAmount = lerp(1, 2, this.stageProgress);
+                  for (let i = 0; i < 2; i++) {
+                     this.pawRenderParts[i].shakeAmount = lerp(1, 2, this.stageProgress);
+                  }
+               }
+            }
+            
+            break;
+         }
          case FrozenYetiAttackType.snowThrow: {
             switch (this.attackStage) {
                // Windup
@@ -156,12 +174,15 @@ class FrozenYeti extends Entity {
                case 0: {
                   // Pull head back
                   (this.headRenderPart.offset as Point).y = FrozenYeti.HEAD_DISTANCE - lerp(0, 20, this.stageProgress);
-                  
+
+                  this.headRenderPart.shakeAmount = lerp(0, 1, this.stageProgress);
                   break;
                }
                case 1: {
                   // Push head forwards
                   (this.headRenderPart.offset as Point).y = FrozenYeti.HEAD_DISTANCE - lerp(20, 0, this.stageProgress);
+                  
+                  this.headRenderPart.shakeAmount = 2;
                   
                   this.createRoarParticles();
 
@@ -356,6 +377,56 @@ class FrozenYeti extends Entity {
       this.attackType = data.clientArgs[0];
       this.attackStage = data.clientArgs[1];
       this.stageProgress = data.clientArgs[2];
+
+      for (const positionData of data.clientArgs[3]) {
+         if (Math.random() < 5 / SETTINGS.TPS) {
+            if (Math.random() < 0.5) {
+               const spawnOffsetMagnitude = randFloat(0, 5);
+               const spawnOffsetDirection = 2 * Math.PI * Math.random();
+               const spawnPositionX = positionData[0] + spawnOffsetMagnitude / 2 * Math.sin(spawnOffsetDirection);
+               const spawnPositionY = positionData[1] + spawnOffsetMagnitude / 2 * Math.cos(spawnOffsetDirection);
+               
+               const lifetime = randFloat(1, 1.2);
+            
+               const velocityMagnitude = randFloat(30, 50);
+               const velocityDirection = spawnOffsetDirection + randFloat(-0.5, 0.5);
+               const velocityX = velocityMagnitude * Math.sin(velocityDirection);
+               const velocityY = velocityMagnitude * Math.cos(velocityDirection);
+               
+               const particle = new Particle(lifetime);
+               particle.getOpacity = (): number => {
+                  return 1 - particle.age / lifetime;
+               };
+            
+               const pixelSize = 4 * randInt(1, 2);
+            
+               const colour = randFloat(0.3, 0.5);
+               
+               addMonocolourParticleToBufferContainer(
+                  particle,
+                  ParticleRenderLayer.low,
+                  pixelSize, pixelSize,
+                  spawnPositionX, spawnPositionY,
+                  velocityX, velocityY,
+                  0, 0,
+                  0,
+                  2 * Math.PI * Math.random(),
+                  0,
+                  0,
+                  0,
+                  colour, colour, colour
+               );
+               Board.lowMonocolourParticles.push(particle);
+            } else {
+               const spawnOffsetMagnitude = randFloat(0, 5);
+               const spawnOffsetDirection = 2 * Math.PI * Math.random();
+               const spawnPositionX = positionData[0] + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
+               const spawnPositionY = positionData[1] + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
+   
+               createRockParticle(spawnPositionX, spawnPositionY, spawnOffsetDirection + randFloat(-0.5, 0.5), randFloat(80, 125));
+            }
+         }
+      }
    }
 }
 

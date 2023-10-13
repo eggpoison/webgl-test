@@ -40,7 +40,7 @@ class Boulder extends Entity {
 
          moveDirection += randFloat(-1, 1);
 
-         createRockParticle(spawnPositionX, spawnPositionY, moveDirection);
+         createRockParticle(spawnPositionX, spawnPositionY, moveDirection, randFloat(80, 125));
       }
 
       for (let i = 0; i < 5; i++) {
@@ -55,7 +55,7 @@ class Boulder extends Entity {
          const spawnPositionX = this.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
          const spawnPositionY = this.position.y + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
 
-         createRockParticle(spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random());
+         createRockParticle(spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(80, 125));
       }
 
       for (let i = 0; i < 5; i++) {

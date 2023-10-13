@@ -7,7 +7,6 @@ import Tombstone from "../../../entities/Tombstone";
 const LIFE_MESSAGES: ReadonlyArray<string> = [
    "He lived as he died, kicking buckets."
 ];
-// 
 
 const TOMBSTONE_DEATH_MESSAGES: Record<PlayerCauseOfDeath, string> = {
    [PlayerCauseOfDeath.zombie]: "Ripped to pieces",
@@ -24,7 +23,8 @@ const TOMBSTONE_DEATH_MESSAGES: Record<PlayerCauseOfDeath, string> = {
    [PlayerCauseOfDeath.snowball]: "Crushed by a snowball",
    [PlayerCauseOfDeath.slime]: "Absorbed by a slime",
    [PlayerCauseOfDeath.frozen_yeti]: "Thought the 'F' in Frozen Yeti meant friend",
-   [PlayerCauseOfDeath.bloodloss]: "Ran out of blood"
+   [PlayerCauseOfDeath.bloodloss]: "Ran out of blood",
+   [PlayerCauseOfDeath.rock_spike]: "Impaled from hole to hole"
 };
 
 interface TombstoneInventoryProps {

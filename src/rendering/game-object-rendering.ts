@@ -167,10 +167,10 @@ export function renderGameObjects(): void {
          const u0 = renderPart.flipX ? 1 : 0;
          const u1 = 1 - u0;
 
-         const x1 = renderPart.renderPosition.x - renderPart.width / 2;
-         const x2 = renderPart.renderPosition.x + renderPart.width / 2;
-         const y1 = renderPart.renderPosition.y - renderPart.height / 2;
-         const y2 = renderPart.renderPosition.y + renderPart.height / 2;
+         const x1 = renderPart.renderPosition.x - renderPart.width / 2 * renderPart.scale;
+         const x2 = renderPart.renderPosition.x + renderPart.width / 2 * renderPart.scale;
+         const y1 = renderPart.renderPosition.y - renderPart.height / 2 * renderPart.scale;
+         const y2 = renderPart.renderPosition.y + renderPart.height / 2 * renderPart.scale;
 
          // Rotate the render part to match its rotation
          // @Speed: hopefully remove the need for this with instanced rendering

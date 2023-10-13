@@ -54,6 +54,9 @@ abstract class GameObject extends RenderObject {
    public tintG = 0;
    public tintB = 0;
 
+   /** Amount the game object's render parts will shake */
+   public shakeAmount = 0;
+
    constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number) {
       super();
       
@@ -266,10 +269,10 @@ abstract class GameObject extends RenderObject {
       
       // Find containing chunks
       for (const hitbox of this.hitboxes) {
-         const minChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[0] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-         const maxChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[1] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-         const minChunkY = Math.max(Math.min(Math.floor(hitbox.bounds[2] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-         const maxChunkY = Math.max(Math.min(Math.floor(hitbox.bounds[3] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+         const minChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[0] / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
+         const maxChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[1] / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
+         const minChunkY = Math.max(Math.min(Math.floor(hitbox.bounds[2] / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
+         const maxChunkY = Math.max(Math.min(Math.floor(hitbox.bounds[3] / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
          
          for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
             for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
@@ -299,6 +302,13 @@ abstract class GameObject extends RenderObject {
    public updateRenderPosition(): void {
       this.renderPosition.x = this.position.x + this.velocity.x * frameProgress / SETTINGS.TPS;
       this.renderPosition.y = this.position.y + this.velocity.y * frameProgress / SETTINGS.TPS;
+
+      // Shake
+      if (this.shakeAmount > 0) {
+         const direction = 2 * Math.PI * Math.random();
+         this.renderPosition.x += this.shakeAmount * Math.sin(direction);
+         this.renderPosition.y += this.shakeAmount * Math.cos(direction);
+      }
    }
 
    public updateHitboxes(): void {
@@ -316,6 +326,7 @@ abstract class GameObject extends RenderObject {
 
       this.rotation = data.rotation;
       this.mass = data.mass;
+      this.ageTicks = data.ageTicks;
 
       const containingChunks = new Set<Chunk>();
 

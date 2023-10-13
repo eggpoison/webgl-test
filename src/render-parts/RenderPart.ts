@@ -69,7 +69,10 @@ class RenderPart extends RenderObject {
    public height: number;
    public readonly zIndex: number;
    public rotation = 0;
+
    public opacity = 1;
+   public scale = 1;
+   public shakeAmount = 0;
    
    /** Slot index of the render part's texture in the game object texture atlas */
    public textureSlotIndex: number;
@@ -122,6 +125,13 @@ class RenderPart extends RenderObject {
 
          this.renderPosition.x += rotatedOffsetX;
          this.renderPosition.y += rotatedOffsetY;
+      }
+
+      // Shake
+      if (this.shakeAmount > 0) {
+         const direction = 2 * Math.PI * Math.random();
+         this.renderPosition.x += this.shakeAmount * Math.sin(direction);
+         this.renderPosition.y += this.shakeAmount * Math.cos(direction);
       }
 
       // Recalculate rotation

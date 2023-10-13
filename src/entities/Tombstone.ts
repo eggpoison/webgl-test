@@ -62,7 +62,7 @@ class Tombstone extends Entity {
          let moveDirection = Math.PI/2 - Math.atan2(spawnPositionY, spawnPositionX);
          moveDirection += randFloat(-1, 1);
          
-         createRockParticle(spawnPositionX, spawnPositionY, moveDirection);
+         createRockParticle(spawnPositionX, spawnPositionY, moveDirection, randFloat(80, 125));
       }
 
       for (let i = 0; i < 8; i++) {
@@ -78,7 +78,7 @@ class Tombstone extends Entity {
          const spawnPositionX = this.position.x + randFloat(-Tombstone.HITBOX_WIDTH/2, Tombstone.HITBOX_WIDTH/2);
          const spawnPositionY = this.position.y + randFloat(-Tombstone.HITBOX_HEIGHT/2, Tombstone.HITBOX_HEIGHT/2);
 
-         createRockParticle(spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random());
+         createRockParticle(spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(80, 125));
       }
 
       for (let i = 0; i < 5; i++) {
