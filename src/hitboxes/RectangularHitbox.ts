@@ -24,24 +24,24 @@ class RectangularHitbox extends Hitbox {
       this.halfDiagonalLength = Math.sqrt(Math.pow(width / 2, 2) + Math.pow(height / 2, 2));
    }
 
-   private computeVertexPositions(): void {
+   private computeVertexPositions(offsetRotation: number): void {
       const x1 = this.position.x - this.width / 2;
       const x2 = this.position.x + this.width / 2;
       const y1 = this.position.y - this.height / 2;
       const y2 = this.position.y + this.height / 2;
 
       // Top left
-      this.vertexPositions[0].x = rotateXAroundPoint(x1, y2, this.position.x, this.position.y, this.rotation);
-      this.vertexPositions[0].y = rotateYAroundPoint(x1, y2, this.position.x, this.position.y, this.rotation);
+      this.vertexPositions[0].x = rotateXAroundPoint(x1, y2, this.position.x, this.position.y, this.rotation + offsetRotation);
+      this.vertexPositions[0].y = rotateYAroundPoint(x1, y2, this.position.x, this.position.y, this.rotation + offsetRotation);
       // Top right
-      this.vertexPositions[1].x = rotateXAroundPoint(x2, y2, this.position.x, this.position.y, this.rotation);
-      this.vertexPositions[1].y = rotateYAroundPoint(x2, y2, this.position.x, this.position.y, this.rotation);
+      this.vertexPositions[1].x = rotateXAroundPoint(x2, y2, this.position.x, this.position.y, this.rotation + offsetRotation);
+      this.vertexPositions[1].y = rotateYAroundPoint(x2, y2, this.position.x, this.position.y, this.rotation + offsetRotation);
       // Bottom left
-      this.vertexPositions[2].x = rotateXAroundPoint(x1, y1, this.position.x, this.position.y, this.rotation);
-      this.vertexPositions[2].y = rotateYAroundPoint(x1, y1, this.position.x, this.position.y, this.rotation);
+      this.vertexPositions[2].x = rotateXAroundPoint(x1, y1, this.position.x, this.position.y, this.rotation + offsetRotation);
+      this.vertexPositions[2].y = rotateYAroundPoint(x1, y1, this.position.x, this.position.y, this.rotation + offsetRotation);
       // Bottom right
-      this.vertexPositions[3].x = rotateXAroundPoint(x2, y1, this.position.x, this.position.y, this.rotation);
-      this.vertexPositions[3].y = rotateYAroundPoint(x2, y1, this.position.x, this.position.y, this.rotation);
+      this.vertexPositions[3].x = rotateXAroundPoint(x2, y1, this.position.x, this.position.y, this.rotation + offsetRotation);
+      this.vertexPositions[3].y = rotateYAroundPoint(x2, y1, this.position.x, this.position.y, this.rotation + offsetRotation);
 
       if (typeof this.offset !== "undefined") {
          // @Incomplete: account for parent rotation
@@ -62,8 +62,8 @@ class RectangularHitbox extends Hitbox {
       this.sideAxes[1].y = Math.cos(angle2);
    }
 
-   public updateHitboxBounds(): void {
-      this.computeVertexPositions();
+   public updateHitboxBounds(offsetRotation: number): void {
+      this.computeVertexPositions(offsetRotation);
       this.computeSideAxes();
 
       this.bounds[0] = Math.min(this.vertexPositions[0].x, this.vertexPositions[1].x, this.vertexPositions[2].x, this.vertexPositions[3].x);

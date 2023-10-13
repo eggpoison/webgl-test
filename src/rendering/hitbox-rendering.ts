@@ -34,12 +34,15 @@ void main() {
 `;
 
 let program: WebGLProgram;
+let buffer: WebGLBuffer;
 
 export function createHitboxShaders(): void {
    program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
 
    const cameraBlockIndex = gl.getUniformBlockIndex(program, "Camera");
    gl.uniformBlockBinding(program, cameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);
+
+   buffer = gl.createBuffer()!;
 }
 
 /** Renders all hitboxes of a specified set of entities */
@@ -115,7 +118,6 @@ export function renderEntityHitboxes(): void {
       }
    }
 
-   const buffer = gl.createBuffer();
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 

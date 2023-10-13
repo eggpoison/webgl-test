@@ -8,8 +8,8 @@ import { getGameObjectTextureIndex } from "../texture-atlases/game-object-textur
 class IceShardsProjectile extends Projectile {
    private static readonly SIZE = 44;
    
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number) {
-      super(position, hitboxes, id, renderDepth);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, data: number) {
+      super(position, hitboxes, id, data, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(

@@ -41,6 +41,7 @@ void main() {
 let frameGraphGL: WebGL2RenderingContext;
 
 let program: WebGLProgram;
+let buffer: WebGLBuffer;
 
 const createGLContext = (): void => {
    const canvas = document.getElementById("frame-graph-canvas") as HTMLCanvasElement;
@@ -57,6 +58,8 @@ const createGLContext = (): void => {
 
 const createShaders = (): void => {
    program = createWebGLProgram(frameGraphGL, vertexShaderText, fragmentShaderText);
+
+   buffer = frameGraphGL.createBuffer()!;
 }
 
 export function setupFrameGraph(): void {
@@ -182,7 +185,6 @@ export function renderFrameGraph(renderTime: number, frames: ReadonlyArray<Frame
    
    frameGraphGL.useProgram(program);
 
-   const buffer = frameGraphGL.createBuffer()!;
    frameGraphGL.bindBuffer(frameGraphGL.ARRAY_BUFFER, buffer);
    frameGraphGL.bufferData(frameGraphGL.ARRAY_BUFFER, vertexData, frameGraphGL.STATIC_DRAW);
 

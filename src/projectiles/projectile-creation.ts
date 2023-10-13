@@ -4,17 +4,19 @@ import IceShardsProjectile from "./IceShardsProjectile";
 import WoodenArrowProjectile from "./WoodenArrowProjectile";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
+import RockSpikeProjectile from "./RockSpikeProjectile";
 
-type ProjectileClassType = new (position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number) => Projectile;
+type ProjectileClassType = new (position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, data: number) => Projectile;
 
 const PROJECTILE_CLASS_RECORD: Record<ProjectileType, () => ProjectileClassType> = {
    [ProjectileType.iceShards]: () => IceShardsProjectile,
-   [ProjectileType.woodenArrow]: () => WoodenArrowProjectile
+   [ProjectileType.woodenArrow]: () => WoodenArrowProjectile,
+   [ProjectileType.rockSpike]: () => RockSpikeProjectile
 };
 
-function createProjectile(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, projectileType: ProjectileType): Projectile {
+function createProjectile(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, data: number, projectileType: ProjectileType): Projectile {
    const projectileClass = PROJECTILE_CLASS_RECORD[projectileType]();
-   return new projectileClass(position, hitboxes, id, renderDepth);
+   return new projectileClass(position, hitboxes, id, renderDepth, data);
 }
  
 export default createProjectile;

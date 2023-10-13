@@ -439,7 +439,7 @@ abstract class Client {
       const hitboxes = this.createHitboxesFromData(projectileData.hitboxes);
 
       const renderDepth = calculateProjectileRenderDepth();
-      const projectile = createProjectile(position, hitboxes, projectileData.id, renderDepth, projectileData.type);
+      const projectile = createProjectile(position, hitboxes, projectileData.id, renderDepth, projectileData.data, projectileData.type);
       projectile.rotation = projectileData.rotation;
       projectile.velocity = Point.unpackage(projectileData.velocity);
       projectile.mass = projectileData.mass;

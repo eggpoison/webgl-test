@@ -30,12 +30,15 @@ void main() {
 `;
 
 let program: WebGLProgram;
+let buffer: WebGLBuffer;
 
 export function createWorldBorderShaders(): void {
    program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
 
    const cameraBlockIndex = gl.getUniformBlockIndex(program, "Camera");
    gl.uniformBlockBinding(program, cameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);
+
+   buffer = gl.createBuffer()!;
 }
 
 export function renderWorldBorder(): void {
@@ -178,7 +181,6 @@ export function renderWorldBorder(): void {
 
    gl.useProgram(program);
 
-   const buffer = gl.createBuffer()!;
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
    gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
 

@@ -15,6 +15,8 @@ const NUM_RENDER_LAYERS = Object.keys(RenderLayer).length / 2;
  * Each render layer is split into a distinct chunk of the -1 -> 1 period of render depths.
 */
 
+// @Incomplete: there needs to be some padding between render layers so render parts don't leak into higher render layers
+
 const calculateRenderDepthFromLayer = (renderLayer: RenderLayer): number => {
    let min = lerp(-1, 1, renderLayer / NUM_RENDER_LAYERS);
    let max = min + 1 / NUM_RENDER_LAYERS;
