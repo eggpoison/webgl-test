@@ -112,11 +112,6 @@ class FrozenYeti extends Entity {
          return;
       }
 
-      this.headRenderPart.shakeAmount = 0;
-      for (let i = 0; i < 2; i++) {
-         this.pawRenderParts[i].shakeAmount = 0;
-      }
-
       switch (this.attackType) {
          case FrozenYetiAttackType.stomp: {
             switch (this.attackStage) {
@@ -176,6 +171,11 @@ class FrozenYeti extends Entity {
                   (this.headRenderPart.offset as Point).y = FrozenYeti.HEAD_DISTANCE - lerp(0, 20, this.stageProgress);
 
                   this.headRenderPart.shakeAmount = lerp(0, 1, this.stageProgress);
+
+                  // Pull paws back
+                  const pawOffsetMagnitude = FrozenYeti.PAW_OFFSET;
+                  const pawOffsetDirection = lerp(FrozenYeti.PAW_RESTING_ANGLE, FrozenYeti.PAW_RESTING_ANGLE + Math.PI / 10, this.stageProgress);
+                  this.setPawRotationAndOffset(pawOffsetDirection, pawOffsetMagnitude);
                   break;
                }
                case 1: {
@@ -183,6 +183,11 @@ class FrozenYeti extends Entity {
                   (this.headRenderPart.offset as Point).y = FrozenYeti.HEAD_DISTANCE - lerp(20, 0, this.stageProgress);
                   
                   this.headRenderPart.shakeAmount = 2;
+                  
+                  // Return paws to original position
+                  const pawOffsetMagnitude = FrozenYeti.PAW_OFFSET;
+                  const pawOffsetDirection = lerp(FrozenYeti.PAW_RESTING_ANGLE + Math.PI / 10, FrozenYeti.PAW_RESTING_ANGLE, this.stageProgress);
+                  this.setPawRotationAndOffset(pawOffsetDirection, pawOffsetMagnitude);
                   
                   this.createRoarParticles();
 
@@ -254,7 +259,26 @@ class FrozenYeti extends Entity {
                   break;
                }
             }
+
+            break;
          }
+         case FrozenYetiAttackType.none: {
+            this.headRenderPart.shakeAmount = 0;
+            for (let i = 0; i < 2; i++) {
+               this.pawRenderParts[i].shakeAmount = 0;
+            }
+            
+            break;
+         }
+      }
+   }
+
+   private setPawRotationAndOffset(rotation: number, offsetMagnitude: number): void {
+      for (let i = 0; i < 2; i++) {
+         const paw = this.pawRenderParts[i];
+         const direction = rotation * (i === 0 ? -1 : 1);
+         (paw.offset as Point).x = offsetMagnitude * Math.sin(direction);
+         (paw.offset as Point).y = offsetMagnitude * Math.cos(direction);
       }
    }
 
