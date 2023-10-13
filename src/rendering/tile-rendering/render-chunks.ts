@@ -13,7 +13,6 @@ export interface RenderChunkSolidTileInfo {
    readonly buffer: WebGLBuffer;
    vao: WebGLVertexArrayObject;
    vertexCount: number;
-   texture: WebGLTexture;
 }
 
 export interface RenderChunkRiverInfo {

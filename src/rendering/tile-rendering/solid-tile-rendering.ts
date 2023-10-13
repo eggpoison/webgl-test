@@ -48,6 +48,7 @@ void main() {
 `;
 
 let program: WebGLProgram;
+let tileTextureArray: WebGLTexture;
 
 export function createSolidTileShaders(): void {
    program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText, "a_tilePos");
@@ -59,9 +60,29 @@ export function createSolidTileShaders(): void {
    
    const samplerUniformLocation = gl.getUniformLocation(program, "u_sampler")!;
    gl.uniform1i(samplerUniformLocation, 0);
+
+   // 
+   // Create texture array
+   // 
+
+   tileTextureArray = gl.createTexture()!;
+   gl.bindTexture(gl.TEXTURE_2D_ARRAY, tileTextureArray);
+   gl.texStorage3D(gl.TEXTURE_2D_ARRAY, 5, gl.RGBA8, 16, 16, TILE_TYPE_TEXTURE_SOURCES.length);
+
+   gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+   gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+   
+   // Set all texture units
+   for (let i = 0; i < TILE_TYPE_TEXTURE_SOURCES.length; i++) {
+      const textureSource = TILE_TYPE_TEXTURE_SOURCES[i];
+      const image = TEXTURE_IMAGE_RECORD[textureSource];
+      gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, i, 16, 16, 1, gl.RGBA, gl.UNSIGNED_BYTE, image);
+   }
+
+   gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
 }
 
-const updateVertexData = (textureSources: Array<string>, data: Float32Array, renderChunkX: number, renderChunkY: number): void => {
+const updateVertexData = (data: Float32Array, renderChunkX: number, renderChunkY: number): void => {
    const tileMinX = renderChunkX * RENDER_CHUNK_SIZE;
    const tileMaxX = (renderChunkX + 1) * RENDER_CHUNK_SIZE - 1;
    const tileMinY = renderChunkY * RENDER_CHUNK_SIZE;
@@ -75,12 +96,7 @@ const updateVertexData = (textureSources: Array<string>, data: Float32Array, ren
             continue;
          }
 
-         const textureSource = TILE_TYPE_TEXTURE_SOURCES[tile.type];
-         let textureIndex = textureSources.indexOf(textureSource);
-         if (textureIndex === -1) {
-            textureSources.push(textureSource);
-            textureIndex = textureSources.length - 1;
-         }
+         const textureIndex = tile.type as number;
 
          const x1 = tile.x * SETTINGS.TILE_SIZE;
          const x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
@@ -146,9 +162,8 @@ export function createSolidTileRenderChunkData(renderChunkX: number, renderChunk
       }
    }
 
-   const textureSources = new Array<string>();
    const vertexData = new Float32Array(numTiles * 6 * 5);
-   updateVertexData(textureSources, vertexData, renderChunkX, renderChunkY);
+   updateVertexData(vertexData, renderChunkX, renderChunkY);
 
    const vao = gl.createVertexArray()!;
    gl.bindVertexArray(vao);
@@ -167,27 +182,10 @@ export function createSolidTileRenderChunkData(renderChunkX: number, renderChunk
 
    gl.bindVertexArray(null);
 
-   const texture = gl.createTexture()!;
-   gl.bindTexture(gl.TEXTURE_2D_ARRAY, texture);
-   gl.texStorage3D(gl.TEXTURE_2D_ARRAY, 5, gl.RGBA8, 16, 16, textureSources.length);
-
-   gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-   gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-   
-   // Set all texture units
-   for (let i = 0; i < textureSources.length; i++) {
-      const textureSource = textureSources[i];
-      const image = TEXTURE_IMAGE_RECORD[textureSource];
-      gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, i, 16, 16, 1, gl.RGBA, gl.UNSIGNED_BYTE, image);
-   }
-
-   gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
-
    return {
       buffer: buffer,
       vao: vao,
-      vertexCount: numTiles * 6 * 5,
-      texture: texture
+      vertexCount: numTiles * 6 * 5
    };
 }
 
@@ -195,8 +193,7 @@ export function recalculateSolidTileRenderChunkData(renderChunkX: number, render
    const info = getRenderChunkSolidTileInfo(renderChunkX, renderChunkY);
    
    const vertexData = new Float32Array(info.vertexCount);
-   const textureSources = new Array<string>();
-   updateVertexData(textureSources, vertexData, renderChunkX, renderChunkY);
+   updateVertexData(vertexData, renderChunkX, renderChunkY);
 
    gl.bindVertexArray(info.vao);
 
@@ -211,43 +208,19 @@ export function recalculateSolidTileRenderChunkData(renderChunkX: number, render
    gl.enableVertexAttribArray(1);
    gl.enableVertexAttribArray(2);
 
-   // The number of tiles in the buffer remains the same whenever it is regenerated, so we don't need
-   // to change the vertex count
-
    gl.bindVertexArray(null);
-
-   const texture = gl.createTexture()!;
-   gl.bindTexture(gl.TEXTURE_2D_ARRAY, texture);
-   gl.texStorage3D(gl.TEXTURE_2D_ARRAY, 5, gl.RGBA8, 16, 16, textureSources.length);
-
-   gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-   gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-   
-   // Set all texture units
-   for (let i = 0; i < textureSources.length; i++) {
-      const textureSource = textureSources[i];
-      const image = TEXTURE_IMAGE_RECORD[textureSource];
-      gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, i, 16, 16, 1, gl.RGBA, gl.UNSIGNED_BYTE, image);
-   }
-
-   info.texture = texture;
 }
 
 export function renderSolidTiles(): void {
-   // @Speed: We can avoid the bindTexture call for each chunk by making a texture atlas for tiles
-   
    gl.useProgram(program);
 
    gl.activeTexture(gl.TEXTURE0);
+   gl.bindTexture(gl.TEXTURE_2D_ARRAY, tileTextureArray);
    
    for (let renderChunkX = Camera.minVisibleRenderChunkX; renderChunkX <= Camera.maxVisibleRenderChunkX; renderChunkX++) {
       for (let renderChunkY = Camera.minVisibleRenderChunkY; renderChunkY <= Camera.maxVisibleRenderChunkY; renderChunkY++) {
          const renderChunkInfo = getRenderChunkSolidTileInfo(renderChunkX, renderChunkY);
          gl.bindVertexArray(renderChunkInfo.vao);
-
-         gl.bindTexture(gl.TEXTURE_2D_ARRAY, renderChunkInfo.texture);
-         
-         // Draw the tiles
          gl.drawArrays(gl.TRIANGLES, 0, renderChunkInfo.vertexCount / 5);
       }
    }
