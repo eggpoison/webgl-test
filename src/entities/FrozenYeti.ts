@@ -8,7 +8,7 @@ import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
 import Board from "../Board";
 import { createRockParticle, createSnowParticle, createWhiteSmokeParticle } from "../generic-particles";
-import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
+import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 
 const createBiteParticle = (spawnPositionX: number, spawnPositionY: number): void => {
    const lifetime = 0.4;
@@ -72,7 +72,7 @@ class FrozenYeti extends Entity {
          this,
          FrozenYeti.SIZE,
          FrozenYeti.SIZE,
-         getGameObjectTextureIndex("entities/frozen-yeti/frozen-yeti.png"),
+         getGameObjectTextureArrayIndex("entities/frozen-yeti/frozen-yeti.png"),
          1,
          0
       ));
@@ -81,7 +81,7 @@ class FrozenYeti extends Entity {
          this,
          FrozenYeti.HEAD_SIZE,
          FrozenYeti.HEAD_SIZE,
-         getGameObjectTextureIndex("entities/frozen-yeti/frozen-yeti-head.png"),
+         getGameObjectTextureArrayIndex("entities/frozen-yeti/frozen-yeti-head.png"),
          2,
          0
       );
@@ -94,7 +94,7 @@ class FrozenYeti extends Entity {
             this,
             FrozenYeti.PAW_SIZE,
             FrozenYeti.PAW_SIZE,
-            getGameObjectTextureIndex("entities/frozen-yeti/frozen-yeti-paw.png"),
+            getGameObjectTextureArrayIndex("entities/frozen-yeti/frozen-yeti-paw.png"),
             0,
             0
          );

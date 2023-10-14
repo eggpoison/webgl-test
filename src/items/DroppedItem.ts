@@ -8,7 +8,7 @@ import Board from "../Board";
 import { BloodParticleSize } from "../generic-particles";
 import Particle from "../Particle";
 import { addMonocolourParticleToBufferContainer, ParticleRenderLayer } from "../rendering/particle-rendering";
-import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
+import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 
 export function createFrozenYetiBloodParticle(size: BloodParticleSize, spawnPositionX: number, spawnPositionY: number, moveDirection: number, moveSpeed: number, hasDrag: boolean): void {
    const lifetime = randFloat(0.3, 0.4);
@@ -64,7 +64,7 @@ class DroppedItem extends GameObject implements BaseItemInfo {
             this,
             SETTINGS.ITEM_SIZE * 2,
             SETTINGS.ITEM_SIZE * 2,
-            getGameObjectTextureIndex(CLIENT_ITEM_INFO_RECORD[itemType].textureSource),
+            getGameObjectTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[itemType].textureSource),
             0,
             0
          )

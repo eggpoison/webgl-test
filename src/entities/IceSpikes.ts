@@ -6,7 +6,7 @@ import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import Particle from "../Particle";
 import Board from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
-import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
+import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class IceSpikes extends Entity {
    private static readonly ICE_SPECK_COLOUR: ParticleColour = [140/255, 143/255, 207/255];
@@ -22,7 +22,7 @@ class IceSpikes extends Entity {
             this,
             IceSpikes.SIZE,
             IceSpikes.SIZE,
-            getGameObjectTextureIndex(`entities/ice-spikes/ice-spikes.png`),
+            getGameObjectTextureArrayIndex(`entities/ice-spikes/ice-spikes.png`),
             0,
             0
          )

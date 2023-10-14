@@ -4,7 +4,7 @@ import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { createSlimePoolParticle, createSlimeSpeckParticle } from "../generic-particles";
-import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
+import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class Slime extends Entity {
    private static readonly SIZES: ReadonlyArray<number> = [
@@ -60,7 +60,7 @@ class Slime extends Entity {
          this,
          spriteSize,
          spriteSize,
-         getGameObjectTextureIndex(`entities/slime/slime-${sizeString}-body.png`),
+         getGameObjectTextureArrayIndex(`entities/slime/slime-${sizeString}-body.png`),
          2,
          0
       ));
@@ -70,7 +70,7 @@ class Slime extends Entity {
          this,
          Slime.EYE_WIDTHS[size],
          Slime.EYE_HEIGHTS[size],
-         getGameObjectTextureIndex(`entities/slime/slime-${sizeString}-eye.png`),
+         getGameObjectTextureArrayIndex(`entities/slime/slime-${sizeString}-eye.png`),
          3,
          eyeRotation
       );
@@ -83,7 +83,7 @@ class Slime extends Entity {
          this,
          spriteSize,
          spriteSize,
-         getGameObjectTextureIndex(`entities/slime/slime-${sizeString}-shading.png`),
+         getGameObjectTextureArrayIndex(`entities/slime/slime-${sizeString}-shading.png`),
          0,
          0
       ));
@@ -110,7 +110,7 @@ class Slime extends Entity {
          this,
          orbSize,
          orbSize,
-         getGameObjectTextureIndex(`entities/slime/slime-orb-${sizeString}.png`),
+         getGameObjectTextureArrayIndex(`entities/slime/slime-orb-${sizeString}.png`),
          1,
          orbData.rotation
       );

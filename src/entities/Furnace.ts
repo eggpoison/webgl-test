@@ -3,7 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import CookingEntity from "./CookingEntity";
-import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
+import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class Furnace extends CookingEntity {
    public static readonly SIZE = 80;
@@ -18,7 +18,7 @@ class Furnace extends CookingEntity {
             this,
             Furnace.SIZE,
             Furnace.SIZE,
-            getGameObjectTextureIndex("entities/furnace/furnace.png"),
+            getGameObjectTextureArrayIndex("entities/furnace/furnace.png"),
             0,
             0
          )

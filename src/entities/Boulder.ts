@@ -4,7 +4,7 @@ import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { createRockParticle, createRockSpeckParticle } from "../generic-particles";
-import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
+import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class Boulder extends Entity {
    private static readonly RADIUS = 40;
@@ -24,7 +24,7 @@ class Boulder extends Entity {
             this,
             Boulder.RADIUS * 2,
             Boulder.RADIUS * 2,
-            getGameObjectTextureIndex(Boulder.TEXTURE_SOURCES[boulderType]),
+            getGameObjectTextureArrayIndex(Boulder.TEXTURE_SOURCES[boulderType]),
             0,
             0
          )

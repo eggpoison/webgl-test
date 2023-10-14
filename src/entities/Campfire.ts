@@ -3,7 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import CookingEntity from "./CookingEntity";
-import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
+import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class Campfire extends CookingEntity {
    public static readonly SIZE = 104;
@@ -18,7 +18,7 @@ class Campfire extends CookingEntity {
             this,
             Campfire.SIZE,
             Campfire.SIZE,
-            getGameObjectTextureIndex("entities/campfire/campfire.png"),
+            getGameObjectTextureArrayIndex("entities/campfire/campfire.png"),
             0,
             0
          )

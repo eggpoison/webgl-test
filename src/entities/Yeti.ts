@@ -5,7 +5,7 @@ import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle, createSnowParticle, createWhiteSmokeParticle } from "../generic-particles";
 import Board from "../Board";
-import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
+import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class Yeti extends Entity {
    private static readonly SIZE = 128;
@@ -35,7 +35,7 @@ class Yeti extends Entity {
             this,
             Yeti.SIZE,
             Yeti.SIZE,
-            getGameObjectTextureIndex("entities/yeti/yeti.png"),
+            getGameObjectTextureArrayIndex("entities/yeti/yeti.png"),
             1,
             0
          )
@@ -53,7 +53,7 @@ class Yeti extends Entity {
          this,
          Yeti.PAW_SIZE,
          Yeti.PAW_SIZE,
-         getGameObjectTextureIndex("entities/yeti/yeti-paw.png"),
+         getGameObjectTextureArrayIndex("entities/yeti/yeti-paw.png"),
          0,
          0
       );

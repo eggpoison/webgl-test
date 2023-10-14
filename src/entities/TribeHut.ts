@@ -3,7 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
+import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class TribeHut extends Entity {
    public static readonly SIZE = 88;
@@ -25,7 +25,7 @@ class TribeHut extends Entity {
          this,
          TribeHut.SIZE,
          TribeHut.SIZE,
-         getGameObjectTextureIndex("entities/tribe-hut/tribe-hut.png"),
+         getGameObjectTextureArrayIndex("entities/tribe-hut/tribe-hut.png"),
          2,
          0
       );
@@ -36,7 +36,7 @@ class TribeHut extends Entity {
          this,
          TribeHut.DOOR_WIDTH,
          TribeHut.DOOR_HEIGHT,
-         getGameObjectTextureIndex("entities/tribe-hut/tribe-hut-door.png"),
+         getGameObjectTextureArrayIndex("entities/tribe-hut/tribe-hut-door.png"),
          1,
          0
       );

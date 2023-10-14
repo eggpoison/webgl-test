@@ -14,7 +14,7 @@ import Board from "../Board";
 import { definiteGameState, latencyGameState } from "../game-state/game-states";
 import { createFootprintParticle } from "../generic-particles";
 import { keyIsPressed } from "../keyboard-input";
-import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
+import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 
 /** Maximum distance from a crafting station which will allow its recipes to be crafted. */
 const MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION = 250;
@@ -129,7 +129,7 @@ class Player extends TribeMember {
             this,
             64,
             64,
-            getGameObjectTextureIndex(super.getTextureSource(tribeType)),
+            getGameObjectTextureArrayIndex(super.getTextureSource(tribeType)),
             1,
             0
          )

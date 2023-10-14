@@ -4,7 +4,7 @@ import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { createSlimePoolParticle, createSlimeSpeckParticle } from "../generic-particles";
-import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
+import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class Slimewisp extends Entity {
    private static readonly RADIUS = 16;
@@ -18,7 +18,7 @@ class Slimewisp extends Entity {
          this,
          Slimewisp.RADIUS * 2,
          Slimewisp.RADIUS * 2,
-         getGameObjectTextureIndex(`entities/slimewisp/slimewisp.png`),
+         getGameObjectTextureArrayIndex(`entities/slimewisp/slimewisp.png`),
          0,
          0
       );

@@ -7,7 +7,7 @@ import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { createFootprintParticle } from "../generic-particles";
 import Board from "../Board";
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
-import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
+import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class Tribesman extends TribeMember {
    public readonly type = "tribesman";
@@ -34,7 +34,7 @@ class Tribesman extends TribeMember {
          this,
          Tribesman.RADIUS * 2,
          Tribesman.RADIUS * 2,
-         getGameObjectTextureIndex(super.getTextureSource(tribeType)),
+         getGameObjectTextureArrayIndex(super.getTextureSource(tribeType)),
          1,
          0
       ));
@@ -47,7 +47,7 @@ class Tribesman extends TribeMember {
                this,
                Tribesman.RADIUS * 2,
                Tribesman.RADIUS * 2,
-               getGameObjectTextureIndex(`entities/human/goblin-warpaint-${warpaint}.png`),
+               getGameObjectTextureArrayIndex(`entities/human/goblin-warpaint-${warpaint}.png`),
                2,
                0
             )
@@ -58,7 +58,7 @@ class Tribesman extends TribeMember {
             this,
             Tribesman.GOBLIN_EAR_WIDTH,
             Tribesman.GOBLIN_EAR_HEIGHT,
-            getGameObjectTextureIndex("entities/human/goblin-ear.png"),
+            getGameObjectTextureArrayIndex("entities/human/goblin-ear.png"),
             0,
             Math.PI/2 - Tribesman.GOBLIN_EAR_ANGLE,
          );
@@ -71,7 +71,7 @@ class Tribesman extends TribeMember {
             this,
             Tribesman.GOBLIN_EAR_WIDTH,
             Tribesman.GOBLIN_EAR_HEIGHT,
-            getGameObjectTextureIndex("entities/human/goblin-ear.png"),
+            getGameObjectTextureArrayIndex("entities/human/goblin-ear.png"),
             0,
             -Math.PI/2 + Tribesman.GOBLIN_EAR_ANGLE,
          );

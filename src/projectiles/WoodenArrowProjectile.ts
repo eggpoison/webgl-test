@@ -7,7 +7,7 @@ import Board from "../Board";
 import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 import { createWhiteSmokeParticle } from "../generic-particles";
-import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
+import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class WoodenArrowProjectile extends Projectile {
    private static readonly HEIGHT = 64;
@@ -25,7 +25,7 @@ class WoodenArrowProjectile extends Projectile {
             this,
             WoodenArrowProjectile.WIDTH,
             WoodenArrowProjectile.HEIGHT,
-            getGameObjectTextureIndex("projectiles/wooden-arrow.png"),
+            getGameObjectTextureArrayIndex("projectiles/wooden-arrow.png"),
             0,
             0
          )

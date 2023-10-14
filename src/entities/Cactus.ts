@@ -6,7 +6,7 @@ import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import Particle from "../Particle";
 import Board from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
-import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
+import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class Cactus extends Entity {
    private static readonly CACTUS_SPINE_PARTICLE_COLOUR: ParticleColour = [0, 0, 0];
@@ -29,7 +29,7 @@ class Cactus extends Entity {
          this,
          Cactus.RADIUS * 2,
          Cactus.RADIUS * 2,
-         getGameObjectTextureIndex("entities/cactus/cactus.png"),
+         getGameObjectTextureArrayIndex("entities/cactus/cactus.png"),
          2,
          0
       );
@@ -48,7 +48,7 @@ class Cactus extends Entity {
             this,
             flowerSize,
             flowerSize,
-            getGameObjectTextureIndex(this.getFlowerTextureSource(flowerInfo.type, flowerInfo.size)),
+            getGameObjectTextureArrayIndex(this.getFlowerTextureSource(flowerInfo.type, flowerInfo.size)),
             3 + Math.random(),
             flowerInfo.rotation
          );
@@ -65,7 +65,7 @@ class Cactus extends Entity {
             baseRenderPart,
             Cactus.LIMB_SIZE,
             Cactus.LIMB_SIZE,
-            getGameObjectTextureIndex("entities/cactus/cactus-limb.png"),
+            getGameObjectTextureArrayIndex("entities/cactus/cactus-limb.png"),
             Math.random(),
             2 * Math.PI * Math.random()
          )
@@ -79,7 +79,7 @@ class Cactus extends Entity {
                limbRenderPart,
                16,
                16,
-               getGameObjectTextureIndex(this.getFlowerTextureSource(flowerInfo.type, CactusFlowerSize.small)),
+               getGameObjectTextureArrayIndex(this.getFlowerTextureSource(flowerInfo.type, CactusFlowerSize.small)),
                1 + Math.random(),
                flowerInfo.rotation
             )

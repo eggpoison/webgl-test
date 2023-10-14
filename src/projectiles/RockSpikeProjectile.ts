@@ -2,7 +2,7 @@ import { Point, SETTINGS, lerp, randFloat, randInt } from "webgl-test-shared";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import RenderPart from "../render-parts/RenderPart";
-import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
+import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 import Projectile from "./Projectile"
 import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
@@ -42,7 +42,7 @@ class RockSpikeProjectile extends Projectile {
          this,
          spriteSize,
          spriteSize,
-         getGameObjectTextureIndex(RockSpikeProjectile.SPRITE_TEXTURE_SOURCES[this.size]),
+         getGameObjectTextureArrayIndex(RockSpikeProjectile.SPRITE_TEXTURE_SOURCES[this.size]),
          0,
          0
       );

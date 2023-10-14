@@ -110,7 +110,7 @@ export async function createGameObjectTextureAtlas(): Promise<void> {
    GAME_OBJECT_TEXTURE_SLOT_INDEXES = atlasInfo.textureSlotIndexes;
 }
 
-export function getGameObjectTextureIndex(textureSource: string): number {
+export function getGameObjectTextureArrayIndex(textureSource: string): number {
    const textureIndex = TEXTURE_SOURCES.indexOf(textureSource);
    if (textureIndex === -1) {
       throw new Error(`Unknown texture source '${textureSource}'.`);

@@ -85,7 +85,7 @@ class RenderPart extends RenderObject {
    public inheritParentRotation = true;
    public flipX = false;
    
-   constructor(parent: RenderObject, width: number, height: number, textureIndex: number, zIndex: number, rotation: number) {
+   constructor(parent: RenderObject, width: number, height: number, textureArrayIndex: number, zIndex: number, rotation: number) {
       super();
 
       this.parent = parent;
@@ -94,9 +94,9 @@ class RenderPart extends RenderObject {
       this.zIndex = zIndex;
       this.rotation = rotation;
 
-      this.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[textureIndex];
-      this.textureWidth = GAME_OBJECT_TEXTURE_WIDTHS[textureIndex];
-      this.textureHeight = GAME_OBJECT_TEXTURE_HEIGHTS[textureIndex];
+      this.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[textureArrayIndex];
+      this.textureWidth = GAME_OBJECT_TEXTURE_WIDTHS[textureArrayIndex];
+      this.textureHeight = GAME_OBJECT_TEXTURE_HEIGHTS[textureArrayIndex];
    }
 
    /** Updates the render part based on its parent */

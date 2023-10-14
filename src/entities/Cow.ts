@@ -5,7 +5,7 @@ import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createDirtParticle, createFootprintParticle } from "../generic-particles";
 import Board from "../Board";
-import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
+import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class Cow extends Entity {
    private static readonly HEAD_SIZE = 64;
@@ -36,7 +36,7 @@ class Cow extends Entity {
          this,
          Cow.BODY_WIDTH,
          Cow.BODY_HEIGHT,
-         getGameObjectTextureIndex(`entities/cow/cow-body-${cowNum}.png`),
+         getGameObjectTextureArrayIndex(`entities/cow/cow-body-${cowNum}.png`),
          0,
          0
       );
@@ -48,7 +48,7 @@ class Cow extends Entity {
          this,
          Cow.HEAD_IMAGE_WIDTH,
          Cow.HEAD_IMAGE_HEIGHT,
-         getGameObjectTextureIndex(`entities/cow/cow-head-${cowNum}.png`),
+         getGameObjectTextureArrayIndex(`entities/cow/cow-head-${cowNum}.png`),
          1,
          0
       );

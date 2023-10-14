@@ -11,7 +11,7 @@ import Board from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 import { Inventory } from "../items/Item";
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
-import { GAME_OBJECT_TEXTURE_SLOT_INDEXES, getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
+import { GAME_OBJECT_TEXTURE_SLOT_INDEXES, getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 
 type FilterFoodItemTypes<T extends ItemType> = (typeof ITEM_TYPE_RECORD)[T] extends "food" ? never : T;
 
@@ -70,7 +70,7 @@ abstract class TribeMember extends Entity {
    private static readonly DEFAULT_ACTIVE_ITEM_SIZE = 32;
 
    /** Decimal percentage of total attack animation time spent doing the lunge part of the animation */
-   private static readonly ATTACK_LUNGE_TIME = 1/3;
+   private static readonly ATTACK_LUNGE_TIME = 0.3;
 
    private static readonly ITEM_RESTING_ROTATION = 0;
    private static readonly ITEM_END_ROTATION = -Math.PI * 2/3;
@@ -129,7 +129,7 @@ abstract class TribeMember extends Entity {
          this,
          TribeMember.TOOL_ACTIVE_ITEM_SIZE,
          TribeMember.TOOL_ACTIVE_ITEM_SIZE,
-         activeItem !== null ? getGameObjectTextureIndex(CLIENT_ITEM_INFO_RECORD[activeItem].textureSource) : -1,
+         activeItem !== null ? getGameObjectTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItem].textureSource) : -1,
          0,
          0
       );
@@ -228,6 +228,7 @@ abstract class TribeMember extends Entity {
             return direction;
          }
       };
+      // @Temporary
       if (activeItem !== null && false) {
          this.attachRenderPart(this.activeItemRenderPart);
       }
@@ -358,7 +359,7 @@ abstract class TribeMember extends Entity {
          throw new Error("Can't find armour info for item type '" + ItemType[armourType] + ".");
       }
 
-      return getGameObjectTextureIndex(ARMOUR_WORN_INFO[armourType]!.textureSource);
+      return getGameObjectTextureArrayIndex(ARMOUR_WORN_INFO[armourType]!.textureSource);
    }
 
    private getArmourPixelSize(armourType: ItemType): number {
@@ -395,12 +396,14 @@ abstract class TribeMember extends Entity {
       if (activeItemType === null) {
          this.removeRenderPart(this.activeItemRenderPart);
       } else {
-         this.activeItemRenderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureIndex(CLIENT_ITEM_INFO_RECORD[activeItemType].textureSource)];
+         this.activeItemRenderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItemType].textureSource)];
          this.attachRenderPart(this.activeItemRenderPart);
 
          const renderPartSize = this.getActiveItemSize(activeItemType);
          this.activeItemRenderPart.width = renderPartSize;
          this.activeItemRenderPart.height = renderPartSize;
+         this.activeItemRenderPart.textureWidth = 16;
+         this.activeItemRenderPart.textureHeight = 16;
       }
    }
 
@@ -427,7 +430,7 @@ abstract class TribeMember extends Entity {
       this.foodEatingType = entityData.clientArgs[7]
       this.lastActionTicks = entityData.clientArgs[8];
       // @Temporary
-      // this.updateActiveItemRenderPart(this.activeItemType);
+      this.updateActiveItemRenderPart(this.activeItemType);
       this.updateBowChargeTexture();
 
       // @Cleanup
@@ -446,13 +449,13 @@ abstract class TribeMember extends Entity {
          if (textureIdx >= TribeMember.BOW_CHARGE_TEXTURE_SOURCES.length) {
             textureIdx = TribeMember.BOW_CHARGE_TEXTURE_SOURCES.length - 1;
          }
-         this.activeItemRenderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureIndex(TribeMember.BOW_CHARGE_TEXTURE_SOURCES[textureIdx])];
+         this.activeItemRenderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureArrayIndex(TribeMember.BOW_CHARGE_TEXTURE_SOURCES[textureIdx])];
       }
    }
 
    public updateActiveItem(activeItemType: ItemType | null): void {
       // @Temporary
-      // this.updateActiveItemRenderPart(activeItemType);
+      this.updateActiveItemRenderPart(activeItemType);
       this.activeItemType = activeItemType;
    }
 }

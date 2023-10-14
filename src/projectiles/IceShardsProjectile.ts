@@ -3,7 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import Projectile from "./Projectile";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
+import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class IceShardsProjectile extends Projectile {
    private static readonly SIZE = 44;
@@ -16,7 +16,7 @@ class IceShardsProjectile extends Projectile {
             this,
             IceShardsProjectile.SIZE,
             IceShardsProjectile.SIZE,
-            getGameObjectTextureIndex("projectiles/ice-shard.png"),
+            getGameObjectTextureArrayIndex("projectiles/ice-shard.png"),
             0,
             0
          )

@@ -3,7 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import { getGameObjectTextureIndex } from "../texture-atlases/game-object-texture-atlas";
+import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class Workbench extends Entity {
    public static readonly SIZE = 80;
@@ -18,7 +18,7 @@ class Workbench extends Entity {
             this,
             Workbench.SIZE,
             Workbench.SIZE,
-            getGameObjectTextureIndex("entities/workbench/workbench.png"),
+            getGameObjectTextureArrayIndex("entities/workbench/workbench.png"),
             0,
             0
          )
