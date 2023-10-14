@@ -25,7 +25,7 @@ class Tribesman extends TribeMember {
 
    public activeItemSlot: number;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, action: TribeMemberAction, foodEatingType: ItemType | -1, lastActionTicks: number, inventoryData: InventoryData, activeItemSlot: number) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, action: TribeMemberAction, foodEatingType: ItemType | -1, lastActionTicks: number, inventoryData: InventoryData, activeItemSlot: number, warPaintType: number) {
       super(position, hitboxes, id, renderDepth, tribeID, tribeType, armourSlotInventory, backpackSlotInventory, backpackInventory, activeItem, action, foodEatingType, lastActionTicks);
 
       this.activeItemSlot = activeItemSlot;
@@ -41,13 +41,12 @@ class Tribesman extends TribeMember {
 
       if (tribeType === TribeType.goblins) {
          // Goblin warpaint
-         const warpaint = id % 3 + 1;
          this.attachRenderPart(
             new RenderPart(
                this,
                Tribesman.RADIUS * 2,
                Tribesman.RADIUS * 2,
-               getGameObjectTextureArrayIndex(`entities/human/goblin-warpaint-${warpaint}.png`),
+               getGameObjectTextureArrayIndex(`entities/human/goblin-warpaint-${warPaintType}.png`),
                2,
                0
             )

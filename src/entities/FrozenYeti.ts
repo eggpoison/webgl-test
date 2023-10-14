@@ -121,6 +121,14 @@ class FrozenYeti extends Entity {
                   for (let i = 0; i < 2; i++) {
                      this.pawRenderParts[i].shakeAmount = lerp(1, 2, this.stageProgress);
                   }
+                  break;
+               }
+               case 1: {
+                  this.headRenderPart.shakeAmount = 0;
+                  for (let i = 0; i < 2; i++) {
+                     this.pawRenderParts[i].shakeAmount = 0;
+                  }
+                  break;
                }
             }
             

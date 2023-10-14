@@ -379,7 +379,7 @@ abstract class TribeMember extends Entity {
                pixelSize,
                pixelSize,
                this.getArmourTextureIndex(armourType),
-               2,
+               3,
                0
             );
             this.attachRenderPart(this.armourRenderPart);

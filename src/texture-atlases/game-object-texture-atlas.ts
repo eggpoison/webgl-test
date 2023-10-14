@@ -22,6 +22,8 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/human/goblin-warpaint-1.png",
    "entities/human/goblin-warpaint-2.png",
    "entities/human/goblin-warpaint-3.png",
+   "entities/human/goblin-warpaint-4.png",
+   "entities/human/goblin-warpaint-5.png",
    "entities/human/barbarian.png",
    "entities/human/frostling.png",
    "entities/boulder/boulder1.png",

@@ -36,10 +36,12 @@ const HealthBar = () => {
       }
    }, [health]);
 
+   const displayHealth = Math.round((health + Number.EPSILON) * 100) / 100;
+
    return <div id="health-bar" className={hasFrostShield ? "frost-shield animated" : "animated"} ref={healthBarRef}>
       <div className="health-icon">
          <img src={hasFrostShield ? FrozenHealthIcon : HealthIcon} alt="" />
-         <div className="health-counter">{health}</div>
+         <div className="health-counter">{displayHealth}</div>
       </div>
       <div className="health-slider"></div>
       <div className="health-flash"></div>
