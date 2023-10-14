@@ -74,8 +74,8 @@ class DroppedItem extends GameObject implements BaseItemInfo {
    public tick(): void {
       super.tick();
 
-      // Make the deep frost heart item spew blood particles
-      if (this.itemType === ItemType.deep_frost_heart && Board.tickIntervalHasPassed(0.4)) {
+      // Make the deep frost heart item spew blue blood particles
+      if (this.itemType === ItemType.deepfrost_heart && Board.tickIntervalHasPassed(0.4)) {
          for (let i = 0; i < 6; i++) {
             const spawnPositionOffsetMagnitude = 13;
             const spawnPositionOffsetDirection = 2 * Math.PI * Math.random();

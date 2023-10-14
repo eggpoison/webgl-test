@@ -71,6 +71,7 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/tribe-hut/tribe-hut.png",
    "entities/tribe-hut/tribe-hut-door.png",
    "entities/barrel/barrel.png",
+   "armour/deepfrost-armour.png",
    "armour/frost-armour.png",
    "armour/meat-suit.png",
    "entities/campfire/campfire.png",

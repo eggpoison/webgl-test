@@ -13,7 +13,7 @@ export let Hotbar_setHotbarSelectedItemSlot: (itemSlot: number) => void = () => 
 
 export const backpackItemTypes: ReadonlyArray<ItemType> = [ItemType.leather_backpack, ItemType.raw_beef];
 // @Cleanup: Make this automatically detect armour item types
-export const armourItemTypes: ReadonlyArray<ItemType> = [ItemType.frost_armour, ItemType.meat_suit, ItemType.deep_frost_armour];
+export const armourItemTypes: ReadonlyArray<ItemType> = [ItemType.frost_armour, ItemType.meat_suit, ItemType.deepfrost_armour];
 
 const Hotbar = () => {
    const [selectedItemSlot, setSelectedItemSlot] = useState(1);

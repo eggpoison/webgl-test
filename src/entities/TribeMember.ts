@@ -53,6 +53,10 @@ const ARMOUR_WORN_INFO: Partial<Record<ItemType, ArmourInfo>> = {
       textureSource: "armour/frost-armour.png",
       pixelSize: 72
    },
+   [ItemType.deepfrost_armour]: {
+      textureSource: "armour/deepfrost-armour.png",
+      pixelSize: 72
+   },
    [ItemType.meat_suit]: {
       textureSource: "armour/meat-suit.png",
       pixelSize: 64
@@ -351,7 +355,7 @@ abstract class TribeMember extends Entity {
 
    private getArmourTextureIndex(armourType: ItemType): number {
       if (!ARMOUR_WORN_INFO.hasOwnProperty(armourType)) {
-         throw new Error("Can't find armour texture source");
+         throw new Error("Can't find armour info for item type '" + ItemType[armourType] + ".");
       }
 
       return getGameObjectTextureIndex(ARMOUR_WORN_INFO[armourType]!.textureSource);
@@ -359,7 +363,7 @@ abstract class TribeMember extends Entity {
 
    private getArmourPixelSize(armourType: ItemType): number {
       if (!ARMOUR_WORN_INFO.hasOwnProperty(armourType)) {
-         throw new Error("Can't find armour texture source");
+         throw new Error("Can't find armour info for item type '" + ItemType[armourType] + ".");
       }
 
       return ARMOUR_WORN_INFO[armourType]!.pixelSize;

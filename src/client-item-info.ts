@@ -147,29 +147,29 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       name: "Meat Suit",
       description: "Your skin feels oily after wearing it, and you now have at least 5 NTDs. Looks cool though"
    },
-   [ItemType.deep_frost_heart]: {
-      textureSource: "items/deep-frost-heart.png",
-      name: "Deep Frost Heart",
+   [ItemType.deepfrost_heart]: {
+      textureSource: "items/deepfrost-heart.png",
+      name: "Deepfrost Heart",
       description: ""
    },
-   [ItemType.deep_frost_sword]: {
-      textureSource: "items/deep-frost-sword.png",
-      name: "Deep Frost Sword",
+   [ItemType.deepfrost_sword]: {
+      textureSource: "items/deepfrost-sword.png",
+      name: "Deepfrost Sword",
       description: ""
    },
-   [ItemType.deep_frost_pickaxe]: {
-      textureSource: "items/deep-frost-pickaxe.png",
-      name: "Deep Frost Pickaxe",
+   [ItemType.deepfrost_pickaxe]: {
+      textureSource: "items/deepfrost-pickaxe.png",
+      name: "Deepfrost Pickaxe",
       description: ""
    },
-   [ItemType.deep_frost_axe]: {
-      textureSource: "items/deep-frost-axe.png",
-      name: "Deep Frost Axe",
+   [ItemType.deepfrost_axe]: {
+      textureSource: "items/deepfrost-axe.png",
+      name: "Deepfrost Axe",
       description: ""
    },
-   [ItemType.deep_frost_armour]: {
-      textureSource: "items/deep-frost-armour.png",
-      name: "Deep Frost Armour",
+   [ItemType.deepfrost_armour]: {
+      textureSource: "items/deepfrost-armour.png",
+      name: "Deepfrost Armour",
       description: ""
    }
 };
