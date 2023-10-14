@@ -4,8 +4,7 @@ import ObjectBufferContainer from "./ObjectBufferContainer";
 import { getTexture } from "../textures";
 import Particle from "../Particle";
 
-// const OBJECT_BUFFER_CONTAINER_SIZE = 4096;
-const OBJECT_BUFFER_CONTAINER_SIZE = 65536;
+const OBJECT_BUFFER_CONTAINER_SIZE = 4096;
 
 export type ParticleColour = [r: number, g: number, b: number];
 export type ParticleTint = [r: number, g: number, b: number];
@@ -94,9 +93,7 @@ void main() {
 
    if (a_friction > 0.0) {
       // Calculate the age at which friction meets velocity
-      float velocityDirection = atan(a_velocity.y, a_velocity.x);
-      float friction_x = a_friction * abs(cos(velocityDirection));
-      float stopAge = abs(a_velocity.x) / friction_x;
+      float stopAge = a_velocity.x / a_friction * sign(a_velocity.x);
 
       // Apply friction and velocity
       vec2 unitVelocity = normalize(a_velocity);
@@ -208,9 +205,7 @@ void main() {
 
    if (a_friction > 0.0) {
       // Calculate the age at which friction meets velocity
-      float velocityDirection = atan(a_velocity.y, a_velocity.x);
-      float friction_x = a_friction * abs(cos(velocityDirection));
-      float stopAge = abs(a_velocity.x) / friction_x;
+      float stopAge = a_velocity.x / a_friction * sign(a_velocity.x);
 
       // Apply friction and velocity
       vec2 unitVelocity = normalize(a_velocity);
@@ -529,6 +524,8 @@ export function addTexturedParticleToBufferContainer(particle: Particle, renderL
 }
 
 export function renderMonocolourParticles(renderLayer: ParticleRenderLayer, renderTime: number): void {
+   // @Incomplete use VBOs and UBOs
+
    const bufferContainer = renderLayer === ParticleRenderLayer.low ? lowMonocolourBufferContainer : highMonocolourBufferContainer;
    
    gl.useProgram(monocolourProgram);

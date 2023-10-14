@@ -1,4 +1,4 @@
-import { BowItemInfo, EntityData, HitData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, InventoryData, ItemType, Point, SETTINGS, TileType, ToolItemInfo, TribeMemberAction, TribeType, lerp, randFloat, randItem } from "webgl-test-shared";
+import { BowItemInfo, EntityData, HitData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, InventoryData, ItemType, Point, SETTINGS, TileType, ToolItemInfo, TribeMemberAction, TribeType, lerp, randFloat, randInt, randItem } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -63,6 +63,49 @@ const ARMOUR_WORN_INFO: Partial<Record<ItemType, ArmourInfo>> = {
    }
 };
 
+const FROST_PARTICLE_LOW: ParticleColour = [102/255, 165/255, 205/255];
+const FROST_PARTICLE_HIGH: ParticleColour = [202/255, 239/255, 255/255];
+const createFrostShieldBreakParticle = (positionX: number, positionY: number): void => {
+   const offsetDirection = 2 * Math.PI * Math.random();
+   positionX += 32 * Math.sin(offsetDirection);
+   positionY += 32 * Math.cos(offsetDirection);
+
+   const lifetime = randFloat(0.2, 0.3);
+   
+   const moveSpeed = randFloat(200, 280);
+   const moveDirection = offsetDirection + randFloat(-0.5, 0.5);
+   const velocityX = moveSpeed * Math.sin(moveDirection);
+   const velocityY = moveSpeed * Math.cos(moveDirection);
+
+   const particle = new Particle(lifetime);
+   particle.getOpacity = (): number => {
+      return 1 - Math.pow(particle.age / lifetime, 2);
+   };
+
+   const colourLerp = Math.random();
+   const r = lerp(FROST_PARTICLE_LOW[0], FROST_PARTICLE_HIGH[0], colourLerp);
+   const g = lerp(FROST_PARTICLE_LOW[1], FROST_PARTICLE_HIGH[1], colourLerp);
+   const b = lerp(FROST_PARTICLE_LOW[2], FROST_PARTICLE_HIGH[2], colourLerp);
+
+   const size = randInt(7, 10);
+
+   addMonocolourParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.high,
+      size / 2, size,
+      positionX, positionY,
+      velocityX, velocityY,
+      0, 0,
+      0,
+      moveDirection,
+      0,
+      0,
+      0,
+      r, g, b
+   );
+   Board.highMonocolourParticles.push(particle);
+}
+
 abstract class TribeMember extends Entity {
    private static readonly FOOD_EAT_INTERVAL = 0.3;
    
@@ -107,8 +150,10 @@ abstract class TribeMember extends Entity {
    public foodEatingType: ItemType | -1;
 
    public lastActionTicks: number;
+
+   public hasFrostShield: boolean;
    
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, action: TribeMemberAction, foodEatingType: ItemType | -1, lastActionTicks: number) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, action: TribeMemberAction, foodEatingType: ItemType | -1, lastActionTicks: number, hasFrostShield: boolean) {
       super(position, hitboxes, id, renderDepth);
 
       this.tribeID = tribeID;
@@ -120,6 +165,7 @@ abstract class TribeMember extends Entity {
       this.activeItemType = activeItem;
       this.lastActionTicks = lastActionTicks;
       this.foodEatingType = foodEatingType;
+      this.hasFrostShield = hasFrostShield;
 
       this.armourSlotInventory = createInventoryFromData(armourSlotInventory);
       this.backpackSlotInventory = createInventoryFromData(backpackSlotInventory);
@@ -418,7 +464,7 @@ abstract class TribeMember extends Entity {
    public updateFromData(entityData: EntityData<"player"> | EntityData<"tribesman">): void {
       super.updateFromData(entityData);
 
-      // Do all the non-player-instance specific updates
+      // Do all the non-player-instance updates
 
       this.tribeID = entityData.clientArgs[0];
 
@@ -435,6 +481,17 @@ abstract class TribeMember extends Entity {
 
       // @Cleanup
       this.updateArmourRenderPart(this.armourSlotInventory.itemSlots.hasOwnProperty(1) ? this.armourSlotInventory.itemSlots[1].type : null);
+
+      if (this.hasFrostShield && !entityData.clientArgs[9]) {
+         this.createFrostShieldBreakParticles();
+      }
+      this.hasFrostShield = entityData.clientArgs[9];
+   }
+
+   public createFrostShieldBreakParticles(): void {
+      for (let i = 0; i < 17; i++) {
+         createFrostShieldBreakParticle(this.position.x, this.position.y);
+      }
    }
 
    public updateBowChargeTexture(): void {

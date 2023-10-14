@@ -253,6 +253,11 @@ abstract class Client {
             // We don't want the player to be updated from the server data
             if (Board.entities[entityData.id] !== Player.instance) {
                Board.entities[entityData.id].updateFromData(entityData);
+            } else {
+               if ((Board.entities[entityData.id] as Player).hasFrostShield && !entityData.clientArgs[9]) {
+                  (Board.entities[entityData.id] as Player).createFrostShieldBreakParticles();
+               }
+               (Board.entities[entityData.id] as Player).hasFrostShield = entityData.clientArgs[9] as boolean;
             }
             for (const hit of entityData.hitsTaken) {
                Board.entities[entityData.id].registerHit(hit);
@@ -579,7 +584,7 @@ abstract class Client {
       
       const spawnPosition = Point.unpackage(respawnDataPacket.spawnPosition);
       const renderDepth = calculateEntityRenderDepth("player");
-      const player = new Player(spawnPosition, new Set([Player.createNewPlayerHitbox()]), respawnDataPacket.playerID, renderDepth, null, TribeType.plainspeople, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, definiteGameState.playerUsername);
+      const player = new Player(spawnPosition, new Set([Player.createNewPlayerHitbox()]), respawnDataPacket.playerID, renderDepth, null, TribeType.plainspeople, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, false, definiteGameState.playerUsername);
       Player.setInstancePlayer(player);
       Board.addEntity(player);
 

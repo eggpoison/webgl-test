@@ -580,8 +580,9 @@ export function canPlaceItem(item: Item): boolean {
       placeTestHitbox = testRectangularHitbox;
    }
 
-   placeTestHitbox.offset = Point.fromVectorForm(SETTINGS.ITEM_PLACE_DISTANCE + placeableInfo.placeOffset, Player.instance!.rotation);
+   placeTestHitbox.offset = Point.fromVectorForm(SETTINGS.ITEM_PLACE_DISTANCE + placeableInfo.placeOffset, 0);
    placeTestHitbox.updatePositionFromGameObject(Player.instance!);
+   console.log(placeTestHitbox.position);
    placeTestHitbox.updateHitboxBounds(0);
 
    const minChunkX = Math.max(Math.min(Math.floor(placeTestHitbox.bounds[0] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);

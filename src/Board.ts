@@ -235,6 +235,9 @@ abstract class Board {
          bufferContainer.removeObject(particle.id);
          particles.splice(idx, 1);
       }
+
+      // bufferContainer.pushBufferData(10);
+      // bufferContainer.pushBufferData(11);
    }
 
    public static updateParticles(): void {

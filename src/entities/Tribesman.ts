@@ -25,8 +25,8 @@ class Tribesman extends TribeMember {
 
    public activeItemSlot: number;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, action: TribeMemberAction, foodEatingType: ItemType | -1, lastActionTicks: number, inventoryData: InventoryData, activeItemSlot: number, warPaintType: number) {
-      super(position, hitboxes, id, renderDepth, tribeID, tribeType, armourSlotInventory, backpackSlotInventory, backpackInventory, activeItem, action, foodEatingType, lastActionTicks);
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, action: TribeMemberAction, foodEatingType: ItemType | -1, lastActionTicks: number, hasFrostShield: boolean, inventoryData: InventoryData, activeItemSlot: number, warPaintType: number) {
+      super(position, hitboxes, id, renderDepth, tribeID, tribeType, armourSlotInventory, backpackSlotInventory, backpackInventory, activeItem, action, foodEatingType, lastActionTicks, hasFrostShield);
 
       this.activeItemSlot = activeItemSlot;
       
@@ -94,9 +94,9 @@ class Tribesman extends TribeMember {
    public updateFromData(entityData: EntityData<"tribesman">): void {
       super.updateFromData(entityData);
 
-      updateInventoryFromData(this.inventory, entityData.clientArgs[9]);
+      updateInventoryFromData(this.inventory, entityData.clientArgs[10]);
 
-      this.activeItemSlot = entityData.clientArgs[10];
+      this.activeItemSlot = entityData.clientArgs[11];
    }
 }
 
