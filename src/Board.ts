@@ -262,7 +262,7 @@ abstract class Board {
 
          // Calculate the entity's new info
          for (const hitbox of gameObject.hitboxes) {
-            hitbox.updatePositionFromGameObject(gameObject);
+            hitbox.updateFromGameObject(gameObject);
             hitbox.updateHitboxBounds(gameObject.rotation);
          }
 

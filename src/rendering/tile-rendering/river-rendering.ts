@@ -23,14 +23,14 @@ const WATER_ROCK_SIZES: Record<WaterRockSize, number> = {
 };
 
 const WATER_ROCK_TEXTURES: Record<WaterRockSize, string> = {
-   [WaterRockSize.small]: "tiles/water-rock-small.png",
-   [WaterRockSize.large]: "tiles/water-rock-large.png"
+   [WaterRockSize.small]: "miscellaneous/river/water-rock-small.png",
+   [WaterRockSize.large]: "miscellaneous/river/water-rock-large.png"
 };
 
 const RIVER_STEPPING_STONE_TEXTURES: Record<RiverSteppingStoneSize, string> = {
-   [RiverSteppingStoneSize.small]: "tiles/river-stepping-stone-small.png",
-   [RiverSteppingStoneSize.medium]: "tiles/river-stepping-stone-medium.png",
-   [RiverSteppingStoneSize.large]: "tiles/river-stepping-stone-large.png"
+   [RiverSteppingStoneSize.small]: "miscellaneous/river/river-stepping-stone-small.png",
+   [RiverSteppingStoneSize.medium]: "miscellaneous/river/river-stepping-stone-medium.png",
+   [RiverSteppingStoneSize.large]: "miscellaneous/river/river-stepping-stone-large.png"
 };
 
 // Base shaders
@@ -1575,7 +1575,7 @@ export function renderRivers(renderTime: number): void {
    gl.useProgram(baseProgram);
 
    // Bind water base texture
-   const baseTexture = getTexture("tiles/water-base.png");
+   const baseTexture = getTexture("miscellaneous/river/water-base.png");
    gl.activeTexture(gl.TEXTURE0);
    gl.bindTexture(gl.TEXTURE_2D, baseTexture);
 
@@ -1615,15 +1615,15 @@ export function renderRivers(renderTime: number): void {
    const highlightsFadeProgress = (renderTime / 3000) % 3;
    gl.uniform1f(highlightsProgramFadeProgressUniformLocation, highlightsFadeProgress);
 
-   const texture1 = getTexture("tiles/river-bed-highlights-1.png");
+   const texture1 = getTexture("miscellaneous/river/river-bed-highlights-1.png");
    gl.activeTexture(gl.TEXTURE0);
    gl.bindTexture(gl.TEXTURE_2D, texture1);
 
-   const texture2 = getTexture("tiles/river-bed-highlights-2.png");
+   const texture2 = getTexture("miscellaneous/river/river-bed-highlights-2.png");
    gl.activeTexture(gl.TEXTURE1);
    gl.bindTexture(gl.TEXTURE_2D, texture2);
 
-   const texture3 = getTexture("tiles/river-bed-highlights-3.png");
+   const texture3 = getTexture("miscellaneous/river/river-bed-highlights-3.png");
    gl.activeTexture(gl.TEXTURE2);
    gl.bindTexture(gl.TEXTURE_2D, texture3);
    
@@ -1641,7 +1641,7 @@ export function renderRivers(renderTime: number): void {
    const noiseAnimationOffset = renderTime * WATER_VISUAL_FLOW_SPEED / 1000;
    gl.uniform1f(noiseAnimationOffsetUniformLocation, noiseAnimationOffset);
                
-   const noiseTexture = getTexture("tiles/water-noise.png");
+   const noiseTexture = getTexture("miscellaneous/river/water-noise.png");
    gl.activeTexture(gl.TEXTURE0);
    gl.bindTexture(gl.TEXTURE_2D, noiseTexture);
 
@@ -1657,7 +1657,7 @@ export function renderRivers(renderTime: number): void {
    gl.useProgram(transitionProgram);
       
    // Bind transition texture
-   const transitionTexture = getTexture("tiles/gravel.png");
+   const transitionTexture = getTexture("miscellaneous/river/gravel.png");
    gl.activeTexture(gl.TEXTURE0);
    gl.bindTexture(gl.TEXTURE_2D, transitionTexture);
    const gravelNoiseTexture = getTexture("miscellaneous/gravel-noise-texture.png");
@@ -1676,7 +1676,7 @@ export function renderRivers(renderTime: number): void {
    gl.useProgram(foamProgram);
 
    // Bind foam texture
-   const foamTexture = getTexture("tiles/water-foam.png");
+   const foamTexture = getTexture("miscellaneous/river/water-foam.png");
    gl.activeTexture(gl.TEXTURE0);
    gl.bindTexture(gl.TEXTURE_2D, foamTexture);
    

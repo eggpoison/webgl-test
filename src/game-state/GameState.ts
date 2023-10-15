@@ -6,8 +6,6 @@ abstract class GameState {
    /** The action the instance player is currently doing. */
    public playerAction = TribeMemberAction.none;
 
-   public interactingEntityID: number | null = null;
-   
    /** Whether the instance player is placing an entity. */
    public playerIsPlacingEntity = false;
 

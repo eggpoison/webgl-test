@@ -70,7 +70,7 @@ abstract class GameObject extends RenderObject {
       this.hitboxes = hitboxes;
       
       for (const hitbox of this.hitboxes) {
-         hitbox.updatePositionFromGameObject(this);
+         hitbox.updateFromGameObject(this);
          hitbox.updateHitboxBounds(this.rotation);
       }
 
@@ -313,7 +313,7 @@ abstract class GameObject extends RenderObject {
 
    public updateHitboxes(): void {
       for (const hitbox of this.hitboxes) {
-         hitbox.updatePositionFromGameObject(this);
+         hitbox.updateFromGameObject(this);
          hitbox.updateHitboxBounds(this.rotation);
       }
    }
@@ -332,7 +332,7 @@ abstract class GameObject extends RenderObject {
 
       // Update the game object's hitboxes and containing chunks
       for (const hitbox of this.hitboxes) {
-         hitbox.updatePositionFromGameObject(this);
+         hitbox.updateFromGameObject(this);
          hitbox.updateHitboxBounds(this.rotation);
 
          // Recalculate the game object's containing chunks based on the new hitbox bounds

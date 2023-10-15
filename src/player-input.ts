@@ -127,6 +127,10 @@ let _inventoryIsOpen = false;
 let _interactInventoryIsOpen = false;
 let interactInventoryEntity: Entity | null = null;
 
+export function getInteractEntityID(): number | null {
+   return interactInventoryEntity !== null ? interactInventoryEntity.id : null;
+}
+
 export function updatePlayerItems(): void {
    if (definiteGameState.hotbar === null) {
       return;
@@ -424,7 +428,6 @@ const createInventoryToggleListeners = (): void => {
       
       if (_interactInventoryIsOpen) {
          hideInteractInventory();
-         latencyGameState.interactingEntityID = null;
       } else {
          const interactEntity = getInteractEntity();
          if (interactEntity !== null) {
@@ -432,7 +435,6 @@ const createInventoryToggleListeners = (): void => {
             const interactInventoryType = getInteractInventoryType(interactInventoryEntity);
             _interactInventoryIsOpen = true;
             InteractInventory_setInventory(interactInventoryType, interactInventoryEntity);
-            latencyGameState.interactingEntityID = interactEntity.id;
          }
       }
    });
@@ -566,10 +568,6 @@ export function canPlaceItem(item: Item): boolean {
       return false;
    }
 
-   // 
-   // Check for any collisions
-   // 
-
    let placeTestHitbox: Hitbox;
    if (placeableInfo.hitboxType === PlaceableItemHitboxType.circular) {
       testCircularHitbox.radius = placeableInfo.width / 2; // For a circular hitbox, width and height will be the same
@@ -577,18 +575,27 @@ export function canPlaceItem(item: Item): boolean {
    } else {
       testRectangularHitbox.width = placeableInfo.width;
       testRectangularHitbox.height = placeableInfo.height;
+      testRectangularHitbox.recalculateHalfDiagonalLength();
       placeTestHitbox = testRectangularHitbox;
    }
 
    placeTestHitbox.offset = Point.fromVectorForm(SETTINGS.ITEM_PLACE_DISTANCE + placeableInfo.placeOffset, 0);
-   placeTestHitbox.updatePositionFromGameObject(Player.instance!);
-   console.log(placeTestHitbox.position);
-   placeTestHitbox.updateHitboxBounds(0);
+   placeTestHitbox.updateFromGameObject(Player.instance!);
+   placeTestHitbox.updateHitboxBounds(Player.instance!.rotation);
 
-   const minChunkX = Math.max(Math.min(Math.floor(placeTestHitbox.bounds[0] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-   const maxChunkX = Math.max(Math.min(Math.floor(placeTestHitbox.bounds[1] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-   const minChunkY = Math.max(Math.min(Math.floor(placeTestHitbox.bounds[2] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-   const maxChunkY = Math.max(Math.min(Math.floor(placeTestHitbox.bounds[3] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+   // Don't allow placing buildings in borders
+   if (placeTestHitbox.bounds[0] < 0 || placeTestHitbox.bounds[1] >= SETTINGS.BOARD_UNITS || placeTestHitbox.bounds[2] < 0 || placeTestHitbox.bounds[3] >= SETTINGS.BOARD_UNITS) {
+      return false;
+   }
+
+   // 
+   // Check for entity collisions
+   // 
+
+   const minChunkX = Math.floor(placeTestHitbox.bounds[0] / SETTINGS.CHUNK_UNITS);
+   const maxChunkX = Math.floor(placeTestHitbox.bounds[1] / SETTINGS.CHUNK_UNITS);
+   const minChunkY = Math.floor(placeTestHitbox.bounds[2] / SETTINGS.CHUNK_UNITS);
+   const maxChunkY = Math.floor(placeTestHitbox.bounds[3] / SETTINGS.CHUNK_UNITS);
    
    const previouslyCheckedEntityIDs = new Set<number>();
 
@@ -605,6 +612,35 @@ export function canPlaceItem(item: Item): boolean {
                
                previouslyCheckedEntityIDs.add(entity.id);
             }
+         }
+      }
+   }
+
+   // 
+   // Check for wall tile collisions
+   // 
+
+   // @Speed: Garbage collection
+   const tileHitbox = new RectangularHitbox(SETTINGS.TILE_SIZE, SETTINGS.TILE_SIZE);
+
+   const minTileX = Math.floor(placeTestHitbox.bounds[0] / SETTINGS.TILE_SIZE);
+   const maxTileX = Math.floor(placeTestHitbox.bounds[1] / SETTINGS.TILE_SIZE);
+   const minTileY = Math.floor(placeTestHitbox.bounds[2] / SETTINGS.TILE_SIZE);
+   const maxTileY = Math.floor(placeTestHitbox.bounds[3] / SETTINGS.TILE_SIZE);
+
+   for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
+      for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
+         const tile = Board.getTile(tileX, tileY);
+         if (!tile.isWall) {
+            continue;
+         }
+
+         tileHitbox.position.x = (tileX + 0.5) * SETTINGS.TILE_SIZE;
+         tileHitbox.position.y = (tileY + 0.5) * SETTINGS.TILE_SIZE;
+         tileHitbox.updateHitboxBounds(0);
+
+         if (placeTestHitbox.isColliding(tileHitbox)) {
+            return false;
          }
       }
    }

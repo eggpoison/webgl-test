@@ -10,7 +10,7 @@ import DroppedItem from "../items/DroppedItem";
 import { Tile } from "../Tile";
 import { gameScreenSetIsDead } from "../components/game/GameScreen";
 import { Inventory } from "../items/Item";
-import { updateInventoryIsOpen } from "../player-input";
+import { getInteractEntityID, updateInventoryIsOpen } from "../player-input";
 import { Hotbar_update } from "../components/game/inventories/Hotbar";
 import { setHeldItemVisual } from "../components/game/HeldItem";
 import { CraftingMenu_setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
@@ -623,7 +623,7 @@ abstract class Client {
             visibleChunkBounds: Camera.getVisibleChunkBounds(),
             selectedItemSlot: latencyGameState.selectedHotbarItemSlot,
             action: latencyGameState.playerAction,
-            interactingEntityID: latencyGameState.interactingEntityID
+            interactingEntityID: getInteractEntityID()
          };
 
          this.socket.emit("player_data_packet", packet);

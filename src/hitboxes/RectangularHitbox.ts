@@ -1,15 +1,17 @@
 import { circleAndRectangleDoIntersect, HitboxVertexPositions, Point, rectanglePointsDoIntersect, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import Hitbox from "./Hitbox";
 import CircularHitbox from "./CircularHitbox";
+import GameObject from "../GameObject";
 
 class RectangularHitbox extends Hitbox {
    public width: number;
    public height: number;
 
    public rotation = 0;
+   public externalRotation = 0;
    
    /** Length of half of the diagonal of the rectangle */
-   public readonly halfDiagonalLength: number;
+   public halfDiagonalLength: number;
 
    public vertexPositions: HitboxVertexPositions = [new Point(-1, -1), new Point(-1, -1), new Point(-1, -1), new Point(-1, -1)];
 
@@ -22,6 +24,15 @@ class RectangularHitbox extends Hitbox {
       this.height = height;
       this.offset = offset;
       this.halfDiagonalLength = Math.sqrt(Math.pow(width / 2, 2) + Math.pow(height / 2, 2));
+   }
+
+   public recalculateHalfDiagonalLength(): void {
+      this.halfDiagonalLength = Math.sqrt(Math.pow(this.width / 2, 2) + Math.pow(this.height / 2, 2));
+   }
+
+   public updateFromGameObject(gameObject: GameObject): void {
+      super.updateFromGameObject(gameObject);
+      this.externalRotation = gameObject.rotation;
    }
 
    private computeVertexPositions(offsetRotation: number): void {
@@ -42,14 +53,6 @@ class RectangularHitbox extends Hitbox {
       // Bottom right
       this.vertexPositions[3].x = rotateXAroundPoint(x2, y1, this.position.x, this.position.y, this.rotation + offsetRotation);
       this.vertexPositions[3].y = rotateYAroundPoint(x2, y1, this.position.x, this.position.y, this.rotation + offsetRotation);
-
-      if (typeof this.offset !== "undefined") {
-         // @Incomplete: account for parent rotation
-         this.vertexPositions[0].add(this.offset);
-         this.vertexPositions[1].add(this.offset);
-         this.vertexPositions[2].add(this.offset);
-         this.vertexPositions[3].add(this.offset);
-      }
    }
 
    public computeSideAxes(): void {
@@ -75,7 +78,7 @@ class RectangularHitbox extends Hitbox {
    public isColliding(otherHitbox: CircularHitbox | RectangularHitbox): boolean {
       if (otherHitbox.hasOwnProperty("radius")) {
          // Circular
-         return circleAndRectangleDoIntersect(otherHitbox.position, (otherHitbox as CircularHitbox).radius, this.position, this.width, this.height, this.rotation);
+         return circleAndRectangleDoIntersect(otherHitbox.position, (otherHitbox as CircularHitbox).radius, this.position, this.width, this.height, this.rotation + this.externalRotation);
       } else {
          // Rectangular
 
