@@ -94,7 +94,7 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
                definiteGameState.playerUsername = username;
                const playerSpawnPosition = new Point(spawnPositionRef.current!.x, spawnPositionRef.current!.y);
                const renderDepth = calculateEntityRenderDepth("player");
-               const player = new Player(playerSpawnPosition, new Set([Player.createNewPlayerHitbox()]), initialGameDataPacket.playerID, renderDepth, null, TribeType.plainspeople, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, false, username);
+               const player = new Player(playerSpawnPosition, new Set([Player.createNewPlayerHitbox()]), initialGameDataPacket.playerID, renderDepth, null, TribeType.plainspeople, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, false, -1, username);
                Player.setInstancePlayer(player);
                Board.addEntity(player);
 

@@ -12,6 +12,7 @@ import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferConta
 import { Inventory } from "../items/Item";
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
 import { GAME_OBJECT_TEXTURE_SLOT_INDEXES, getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
+import OPTIONS from "../options";
 
 type FilterFoodItemTypes<T extends ItemType> = (typeof ITEM_TYPE_RECORD)[T] extends "food" ? never : T;
 
@@ -107,19 +108,31 @@ const createFrostShieldBreakParticle = (positionX: number, positionY: number): v
 }
 
 abstract class TribeMember extends Entity {
+   protected static readonly RADIUS = 32;
+
+   private static readonly GOBLIN_EAR_WIDTH = 20;
+   private static readonly GOBLIN_EAR_HEIGHT = 16;
+   private static readonly GOBLIN_EAR_OFFSET = 4;
+   private static readonly GOBLIN_EAR_ANGLE = Math.PI / 2.5;
+   
    private static readonly FOOD_EAT_INTERVAL = 0.3;
    
    private static readonly TOOL_ACTIVE_ITEM_SIZE = 48;
    private static readonly DEFAULT_ACTIVE_ITEM_SIZE = 32;
+   
+   private static readonly HAND_RESTING_DIRECTION = Math.PI / 2.5;
+   private static readonly HAND_RESTING_OFFSET = 34;
+   private static readonly HAND_RESTING_ROTATION = 0;
+   private static readonly HAND_CHARGING_BOW_DIRECTION = Math.PI / 4.2;
+   private static readonly HAND_CHARGING_BOW_OFFSET = 37;
 
    /** Decimal percentage of total attack animation time spent doing the lunge part of the animation */
    private static readonly ATTACK_LUNGE_TIME = 0.3;
-
+   private static readonly ITEM_SWING_RANGE = Math.PI / 2.5;
+   
+   private static readonly ITEM_RESTING_OFFSET = 38;
    private static readonly ITEM_RESTING_ROTATION = 0;
    private static readonly ITEM_END_ROTATION = -Math.PI * 2/3;
-   
-   private static readonly ITEM_RESTING_DIRECTION = Math.PI / 4;
-   private static readonly ITEM_SWING_RANGE = Math.PI / 2;
 
    private static readonly BLOOD_FOUNTAIN_INTERVAL = 0.1;
 
@@ -152,8 +165,20 @@ abstract class TribeMember extends Entity {
    public lastActionTicks: number;
 
    public hasFrostShield: boolean;
+
+   private rightHandDirection = TribeMember.HAND_RESTING_DIRECTION;
+   private rightHandOffset = TribeMember.HAND_RESTING_OFFSET;
+   private rightHandRotation = TribeMember.HAND_RESTING_ROTATION;
+
+   private leftHandDirection = -TribeMember.HAND_RESTING_DIRECTION;
+   private leftHandOffset = TribeMember.HAND_RESTING_OFFSET;
+   private leftHandRotation = -TribeMember.HAND_RESTING_ROTATION;
+
+   private activeItemDirection = TribeMember.HAND_RESTING_DIRECTION;
+   private activeItemOffset = TribeMember.ITEM_RESTING_OFFSET;
+   private activeItemRotation = TribeMember.ITEM_RESTING_ROTATION;
    
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, action: TribeMemberAction, foodEatingType: ItemType | -1, lastActionTicks: number, hasFrostShield: boolean) {
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, action: TribeMemberAction, foodEatingType: ItemType | -1, lastActionTicks: number, hasFrostShield: boolean, warPaintType: number) {
       super(position, hitboxes, id, renderDepth);
 
       this.tribeID = tribeID;
@@ -170,7 +195,110 @@ abstract class TribeMember extends Entity {
       this.armourSlotInventory = createInventoryFromData(armourSlotInventory);
       this.backpackSlotInventory = createInventoryFromData(backpackSlotInventory);
       this.backpackInventory = createInventoryFromData(backpackInventory);
+
+      let bodyTextureSource: string;
+      let fistTextureSource: string;
+      switch (tribeType) {
+         case TribeType.plainspeople: {
+            bodyTextureSource = "entities/tribe-members/plainspeople/plainsperson.png";
+            fistTextureSource = "entities/tribe-members/plainspeople/plainsperson-fist.png";
+            break;
+         }
+         case TribeType.goblins: {
+            bodyTextureSource = "entities/tribe-members/goblins/goblin.png";
+            fistTextureSource = "entities/tribe-members/goblins/goblin-fist.png";
+            break;
+         }
+         case TribeType.frostlings: {
+            bodyTextureSource = "entities/tribe-members/frostlings/frostling.png";
+            fistTextureSource = "entities/tribe-members/frostlings/frostling-fist.png";
+            break;
+         }
+         case TribeType.barbarians: {
+            bodyTextureSource = "entities/tribe-members/barbarians/barbarian.png";
+            fistTextureSource = "entities/tribe-members/barbarians/barbarian-fist.png";
+            break;
+         }
+      }
+
+      // 
+      // Body render part
+      // 
       
+      this.attachRenderPart(new RenderPart(
+         this,
+         TribeMember.RADIUS * 2,
+         TribeMember.RADIUS * 2,
+         getGameObjectTextureArrayIndex(bodyTextureSource),
+         2,
+         0
+      ));
+
+      if (tribeType === TribeType.goblins) {
+         // Goblin warpaint
+         this.attachRenderPart(
+            new RenderPart(
+               this,
+               TribeMember.RADIUS * 2,
+               TribeMember.RADIUS * 2,
+               getGameObjectTextureArrayIndex(`entities/tribe-members/goblins/goblin-warpaint-${warPaintType}.png`),
+               4,
+               0
+            )
+         );
+
+         // Left ear
+         const leftEarRenderPart = new RenderPart(
+            this,
+            TribeMember.GOBLIN_EAR_WIDTH,
+            TribeMember.GOBLIN_EAR_HEIGHT,
+            getGameObjectTextureArrayIndex("entities/tribe-members/goblins/goblin-ear.png"),
+            3,
+            Math.PI/2 - TribeMember.GOBLIN_EAR_ANGLE,
+         );
+         leftEarRenderPart.offset = Point.fromVectorForm(TribeMember.RADIUS + TribeMember.GOBLIN_EAR_OFFSET, -TribeMember.GOBLIN_EAR_ANGLE);
+         leftEarRenderPart.flipX = true;
+         this.attachRenderPart(leftEarRenderPart);
+
+         // Right ear
+         const rightEarRenderPart = new RenderPart(
+            this,
+            TribeMember.GOBLIN_EAR_WIDTH,
+            TribeMember.GOBLIN_EAR_HEIGHT,
+            getGameObjectTextureArrayIndex("entities/tribe-members/goblins/goblin-ear.png"),
+            3,
+            -Math.PI/2 + TribeMember.GOBLIN_EAR_ANGLE,
+         );
+         rightEarRenderPart.offset = Point.fromVectorForm(TribeMember.RADIUS + TribeMember.GOBLIN_EAR_OFFSET, TribeMember.GOBLIN_EAR_ANGLE);
+         this.attachRenderPart(rightEarRenderPart);
+      }
+
+      // Fist render parts
+      if (OPTIONS.showTribeMemberHands) {
+         // Barbarians have larger fists
+         const fistSize = tribeType === TribeType.barbarians ? 24 : 20;
+
+         for (let i = 0; i < 2; i++) {
+            const renderPart = new RenderPart(
+               this,
+               fistSize,
+               fistSize,
+               getGameObjectTextureArrayIndex(fistTextureSource),
+               1,
+               0
+            );
+            renderPart.offset = () => {
+               const direction = i === 0 ? this.leftHandDirection : this.rightHandDirection;
+               const offset = i === 0 ? this.leftHandOffset : this.rightHandOffset;
+               return Point.fromVectorForm(offset, direction);
+            }
+            renderPart.getRotation = () => {
+               return i === 0 ? this.leftHandRotation : this.rightHandRotation;
+            }
+            this.attachRenderPart(renderPart);
+         }
+      }
+
       this.activeItemRenderPart = new RenderPart(
          this,
          TribeMember.TOOL_ACTIVE_ITEM_SIZE,
@@ -179,104 +307,116 @@ abstract class TribeMember extends Entity {
          0,
          0
       );
-      // @Cleanup (?): Merge most of the getOffset and getRotation functions into some logic in the tick/updateFromData functions
       this.activeItemRenderPart.offset = () => {
-         let direction = Math.PI / 4;
-
-         // @Cleanup: As the offset function is called in the RenderPart constructor, this.activeItemRenderPart will initially
-         // be undefined and so we have to check for this case. Ideally this will not need to be done
-         let itemSize: number;
-         if (typeof this.activeItemRenderPart === "undefined") {
-            itemSize = this.getActiveItemSize(this.activeItemType!);
-         } else {
-            itemSize = this.activeItemRenderPart.width;
-         }
-
-         const secondsSinceLastAction = this.getSecondsSinceLastAction(this.lastActionTicks);
-         switch (this.action) {
-            case TribeMemberAction.charge_bow: {
-               // 
-               // Bow charge animation
-               // 
-
-               return new Point(0, 26 + itemSize / 2);
-            }
-            case TribeMemberAction.eat: {
-               // 
-               // Eating animation
-               // 
-            
-
-               let eatIntervalProgress = (secondsSinceLastAction % TribeMember.FOOD_EAT_INTERVAL) / TribeMember.FOOD_EAT_INTERVAL * 2;
-               if (eatIntervalProgress > 1) {
-                  eatIntervalProgress = 2 - eatIntervalProgress;
-               }
-               
-               direction -= lerp(0, Math.PI/5, eatIntervalProgress);
-
-               const insetAmount = lerp(0, 17, eatIntervalProgress);
-
-               return Point.fromVectorForm(26 + itemSize / 2 - insetAmount, direction);
-            }
-            case TribeMemberAction.none: {
-               // 
-               // Attack animation
-               // 
-            
-               const attackProgress = this.getAttackProgress(secondsSinceLastAction);
-
-               let direction: number;
-               if (attackProgress < TribeMember.ATTACK_LUNGE_TIME) {
-                  // Lunge part of the animation
-                  direction = lerp(TribeMember.ITEM_RESTING_DIRECTION, TribeMember.ITEM_RESTING_DIRECTION - TribeMember.ITEM_SWING_RANGE, attackProgress / TribeMember.ATTACK_LUNGE_TIME);
-               } else {
-                  // Return part of the animation
-                  const returnProgress = (attackProgress - TribeMember.ATTACK_LUNGE_TIME) / (1 - TribeMember.ATTACK_LUNGE_TIME);
-                  direction = lerp(TribeMember.ITEM_RESTING_DIRECTION - TribeMember.ITEM_SWING_RANGE, TribeMember.ITEM_RESTING_DIRECTION, returnProgress);
-               }
-
-               return Point.fromVectorForm(26 + itemSize / 2, direction);
-            }
-         }
-      };
+         return Point.fromVectorForm(this.activeItemOffset, this.activeItemDirection);
+      }
       this.activeItemRenderPart.getRotation = () => {
-         const secondsSinceLastEat = this.getSecondsSinceLastAction(this.lastActionTicks);
+         return this.activeItemRotation;
+      }
+      
+      if (activeItem !== null && OPTIONS.showTribeMemberHands) {
+         this.attachRenderPart(this.activeItemRenderPart);
+      }
+   }
 
-         // @Cleanup: Make into case statement
-         if (this.action === TribeMemberAction.charge_bow) {
-            return -Math.PI/4;
-         } else if (this.action === TribeMemberAction.eat) {
+   public updateHandDirections(): void {
+      let direction = Math.PI / 4;
+
+      // @Cleanup: As the offset function is called in the RenderPart constructor, this.activeItemRenderPart will initially
+      // be undefined and so we have to check for this case. Ideally this will not need to be done
+      let itemSize: number;
+      if (typeof this.activeItemRenderPart === "undefined") {
+         itemSize = this.getActiveItemSize(this.activeItemType!);
+      } else {
+         itemSize = this.activeItemRenderPart.width;
+      }
+
+      const secondsSinceLastAction = this.getSecondsSinceLastAction(this.lastActionTicks);
+      switch (this.action) {
+         case TribeMemberAction.charge_bow: {
+            // 
+            // Bow charge animation
+            // 
+
+            this.leftHandDirection = -TribeMember.HAND_CHARGING_BOW_DIRECTION;
+            this.leftHandOffset = TribeMember.HAND_CHARGING_BOW_OFFSET;
+            this.leftHandRotation = -TribeMember.HAND_CHARGING_BOW_DIRECTION;
+            this.rightHandDirection = TribeMember.HAND_CHARGING_BOW_DIRECTION;
+            this.rightHandOffset = TribeMember.HAND_CHARGING_BOW_OFFSET;
+            this.rightHandRotation = TribeMember.HAND_CHARGING_BOW_DIRECTION;
+
+            this.activeItemOffset = 22 + itemSize / 2;
+            this.activeItemDirection = 0;
+            this.activeItemRotation = -Math.PI / 4;
+            return;
+         }
+         case TribeMemberAction.eat: {
+            // 
             // Eating animation
+            // 
+         
 
-            let eatIntervalProgress = (secondsSinceLastEat % TribeMember.FOOD_EAT_INTERVAL) / TribeMember.FOOD_EAT_INTERVAL * 2;
+            let eatIntervalProgress = (secondsSinceLastAction % TribeMember.FOOD_EAT_INTERVAL) / TribeMember.FOOD_EAT_INTERVAL * 2;
             if (eatIntervalProgress > 1) {
                eatIntervalProgress = 2 - eatIntervalProgress;
             }
             
-            const direction = lerp(0, -Math.PI/5, eatIntervalProgress);
-            return direction;
-         } else {
-            // Attack animation
+            direction -= lerp(0, Math.PI/5, eatIntervalProgress);
 
-            const secondsSinceLastAttack = this.getSecondsSinceLastAction(this.lastActionTicks);
-            const attackProgress = this.getAttackProgress(secondsSinceLastAttack);
+            const insetAmount = lerp(0, 17, eatIntervalProgress);
+
+            const eatingHandRotation = lerp(TribeMember.HAND_RESTING_ROTATION, TribeMember.HAND_RESTING_ROTATION - Math.PI/5, eatIntervalProgress);
+
+            this.leftHandDirection = -TribeMember.HAND_RESTING_DIRECTION;
+            this.leftHandOffset = TribeMember.HAND_RESTING_OFFSET;
+            this.leftHandRotation = -TribeMember.HAND_RESTING_ROTATION;
+            this.rightHandDirection = direction;
+            this.rightHandOffset = TribeMember.HAND_RESTING_OFFSET - insetAmount;
+            this.rightHandRotation = eatingHandRotation;
+
+            this.activeItemOffset = TribeMember.ITEM_RESTING_OFFSET + itemSize/2 - insetAmount;
+            this.activeItemDirection = direction - Math.PI/14;
+            this.activeItemRotation = lerp(0, -Math.PI/3, eatIntervalProgress);
+            return;
+         }
+         case TribeMemberAction.none: {
+            // 
+            // Attack animation
+            // 
+         
+            const attackProgress = this.getAttackProgress(secondsSinceLastAction);
 
             let direction: number;
+            let attackHandRotation: number;
             if (attackProgress < TribeMember.ATTACK_LUNGE_TIME) {
                // Lunge part of the animation
-               direction = lerp(TribeMember.ITEM_RESTING_ROTATION, TribeMember.ITEM_END_ROTATION, attackProgress / TribeMember.ATTACK_LUNGE_TIME);
+               direction = lerp(TribeMember.HAND_RESTING_DIRECTION, TribeMember.HAND_RESTING_DIRECTION - TribeMember.ITEM_SWING_RANGE, attackProgress / TribeMember.ATTACK_LUNGE_TIME);
+               attackHandRotation = lerp(TribeMember.ITEM_RESTING_ROTATION, TribeMember.ITEM_END_ROTATION, attackProgress / TribeMember.ATTACK_LUNGE_TIME);
             } else {
                // Return part of the animation
                const returnProgress = (attackProgress - TribeMember.ATTACK_LUNGE_TIME) / (1 - TribeMember.ATTACK_LUNGE_TIME);
-               direction = lerp(TribeMember.ITEM_END_ROTATION, TribeMember.ITEM_RESTING_ROTATION, returnProgress);
+               direction = lerp(TribeMember.HAND_RESTING_DIRECTION - TribeMember.ITEM_SWING_RANGE, TribeMember.HAND_RESTING_DIRECTION, returnProgress);
+               attackHandRotation = lerp(TribeMember.ITEM_END_ROTATION, TribeMember.ITEM_RESTING_ROTATION, returnProgress);
             }
+            
+            this.leftHandDirection = -TribeMember.HAND_RESTING_DIRECTION;
+            this.leftHandOffset = TribeMember.HAND_RESTING_OFFSET;
+            this.leftHandRotation = -TribeMember.HAND_RESTING_ROTATION;
+            this.rightHandDirection = direction;
+            this.rightHandOffset = TribeMember.HAND_RESTING_OFFSET;
+            this.rightHandRotation = attackHandRotation;
 
-            return direction;
+            if (this.activeItemType !== null && ITEM_TYPE_RECORD[this.activeItemType] === "bow") {
+               this.activeItemOffset = TribeMember.HAND_RESTING_OFFSET + 7;
+               this.activeItemDirection = direction;
+               this.activeItemRotation = attackHandRotation + Math.PI/10;
+            } else {
+               this.activeItemOffset = TribeMember.HAND_RESTING_OFFSET + itemSize/2;
+               this.activeItemDirection = direction - Math.PI/14;
+               this.activeItemRotation = attackHandRotation;
+            }
+            return;
          }
-      };
-      // @Temporary
-      if (activeItem !== null && false) {
-         this.attachRenderPart(this.activeItemRenderPart);
       }
    }
 
@@ -383,23 +523,6 @@ abstract class TribeMember extends Entity {
       return null;
    }
 
-   protected getTextureSource(tribeType: TribeType): string {
-      switch (tribeType) {
-         case TribeType.plainspeople: {
-            return "entities/human/human1.png";
-         }
-         case TribeType.goblins: {
-            return "entities/human/goblin.png";
-         }
-         case TribeType.frostlings: {
-            return "entities/human/frostling.png"
-         }
-         case TribeType.barbarians: {
-            return "entities/human/barbarian.png"
-         }
-      }
-   }
-
    private getArmourTextureIndex(armourType: ItemType): number {
       if (!ARMOUR_WORN_INFO.hasOwnProperty(armourType)) {
          throw new Error("Can't find armour info for item type '" + ItemType[armourType] + ".");
@@ -475,8 +598,10 @@ abstract class TribeMember extends Entity {
       this.action = entityData.clientArgs[6];
       this.foodEatingType = entityData.clientArgs[7]
       this.lastActionTicks = entityData.clientArgs[8];
-      // @Temporary
-      this.updateActiveItemRenderPart(this.activeItemType);
+      if (OPTIONS.showTribeMemberHands) {
+         this.updateActiveItemRenderPart(this.activeItemType);
+      }
+      this.updateHandDirections();
       this.updateBowChargeTexture();
 
       // @Cleanup
@@ -511,8 +636,9 @@ abstract class TribeMember extends Entity {
    }
 
    public updateActiveItem(activeItemType: ItemType | null): void {
-      // @Temporary
-      this.updateActiveItemRenderPart(activeItemType);
+      if (OPTIONS.showTribeMemberHands) {
+         this.updateActiveItemRenderPart(activeItemType);
+      }
       this.activeItemType = activeItemType;
    }
 }

@@ -3,7 +3,6 @@ import Camera from "../Camera";
 import { setCraftingMenuAvailableRecipes, setCraftingMenuAvailableCraftingStations } from "../components/game/menus/CraftingMenu";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import Item, { ItemSlot } from "../items/Item";
-import RenderPart from "../render-parts/RenderPart";
 import { halfWindowHeight, halfWindowWidth } from "../webgl";
 import GameObject from "../GameObject";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
@@ -14,7 +13,6 @@ import Board from "../Board";
 import { definiteGameState, latencyGameState } from "../game-state/game-states";
 import { createFootprintParticle } from "../generic-particles";
 import { keyIsPressed } from "../keyboard-input";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 
 /** Maximum distance from a crafting station which will allow its recipes to be crafted. */
 const MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION = 250;
@@ -110,8 +108,6 @@ enum TileCollisionAxis {
 class Player extends TribeMember {
    public static readonly MAX_HEALTH = 20;
 
-   private static readonly RADIUS = 32;
-   
    /** The player entity associated with the current player. */
    public static instance: Player | null = null;
 
@@ -121,19 +117,8 @@ class Player extends TribeMember {
    
    public readonly username: string;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, action: TribeMemberAction, foodEatingType: ItemType | -1, lastActionTicks: number, hasFrostShield: boolean, username: string) {
-      super(position, hitboxes, id, renderDepth, tribeID, tribeType, armourSlotInventory, backpackSlotInventory, backpackInventory, activeItem, action, foodEatingType, lastActionTicks, hasFrostShield);
-
-      this.attachRenderPart(
-         new RenderPart(
-            this,
-            64,
-            64,
-            getGameObjectTextureArrayIndex(super.getTextureSource(tribeType)),
-            1,
-            0
-         )
-      );
+   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, action: TribeMemberAction, foodEatingType: ItemType | -1, lastActionTicks: number, hasFrostShield: boolean, warPaintType: number, username: string) {
+      super(position, hitboxes, id, renderDepth, tribeID, tribeType, armourSlotInventory, backpackSlotInventory, backpackInventory, activeItem, action, foodEatingType, lastActionTicks, hasFrostShield, warPaintType);
 
       this.username = username;
    }

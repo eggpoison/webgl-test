@@ -151,6 +151,7 @@ export function calculateVisibleGameObjects(): Array<GameObject> {
 export function renderGameObjects(): void {
    if (Board.sortedGameObjects.length === 0) return;
 
+   
    const vertexData = new Float32Array(Board.numVisibleRenderParts * 4 * 12);
 
    const indicesData = new Uint16Array(Board.numVisibleRenderParts * 6);

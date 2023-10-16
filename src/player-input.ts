@@ -144,6 +144,7 @@ export function updatePlayerItems(): void {
       } else {
          Player.instance.updateActiveItem(null);
       }
+      Player.instance.updateHandDirections();
 
       Player.instance.updateArmourRenderPart(definiteGameState.armourSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.armourSlot.itemSlots[1].type : null);
    }
