@@ -156,6 +156,16 @@ export function updatePlayerItems(): void {
       globalAttackDelayTimer = 0;
    }
 
+   // Decrement attack cooldown timers
+   for (let itemSlot = 1; itemSlot <= definiteGameState.hotbar.width; itemSlot++) {
+      if (itemAttackCooldowns.hasOwnProperty(itemSlot)) {
+         itemAttackCooldowns[itemSlot] -= 1 / SETTINGS.TPS;
+         if (itemAttackCooldowns[itemSlot] < 0) {
+            delete itemAttackCooldowns[itemSlot];
+         }
+      }
+   }
+
    // Tick items
    for (const [_itemSlot, item] of Object.entries(definiteGameState.hotbar.itemSlots)) {
       tickItem(item, Number(_itemSlot));
@@ -212,6 +222,8 @@ const createItemUseListeners = (): void => {
             // Attack without item
             if (!itemAttackCooldowns.hasOwnProperty(latencyGameState.selectedHotbarItemSlot)) {
                attack();
+
+               itemAttackCooldowns[latencyGameState.selectedHotbarItemSlot] = SETTINGS.DEFAULT_ATTACK_COOLDOWN;
             }
          }
       } else if (e.button === 2) {
@@ -737,13 +749,6 @@ const selectItemSlot = (itemSlot: number): void => {
 }
 
 const tickItem = (item: Item, itemSlot: number): void => {
-   if (itemAttackCooldowns.hasOwnProperty(itemSlot)) {
-      itemAttackCooldowns[itemSlot] -= 1 / SETTINGS.TPS;
-      if (itemAttackCooldowns[itemSlot] < 0) {
-         delete itemAttackCooldowns[itemSlot];
-      }
-   }
-
    const itemCategory = ITEM_TYPE_RECORD[item.type];
    switch (itemCategory) {
       case "food": {

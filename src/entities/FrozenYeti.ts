@@ -1,4 +1,4 @@
-import { EntityData, FrozenYetiAttackType, Point, SETTINGS, lerp, randFloat, randInt } from "webgl-test-shared";
+import { EntityData, FrozenYetiAttackType, HitData, Point, SETTINGS, lerp, randFloat, randInt } from "webgl-test-shared";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import Entity from "./Entity";
@@ -7,7 +7,7 @@ import Player from "./Player";
 import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
 import Board from "../Board";
-import { createRockParticle, createSnowParticle, createWhiteSmokeParticle } from "../generic-particles";
+import { BloodParticleSize, createRockParticle, createSnowParticle, createWhiteSmokeParticle } from "../generic-particles";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 
 const createBiteParticle = (spawnPositionX: number, spawnPositionY: number): void => {
@@ -35,6 +35,91 @@ const createBiteParticle = (spawnPositionX: number, spawnPositionY: number): voi
    );
 
    Board.highTexturedParticles.push(particle);
+}
+
+const createBlueBloodPoolParticle = (originX: number, originY: number, spawnRange: number): void => {
+   const lifetime = 11;
+
+   const offsetMagnitude = spawnRange * Math.random();
+   const offsetDirection = 2 * Math.PI * Math.random();
+   const spawnPositionX = originX + offsetMagnitude * Math.sin(offsetDirection);
+   const spawnPositionY = originY + offsetMagnitude * Math.cos(offsetDirection);
+
+   const particle = new Particle(lifetime);
+   particle.getOpacity = () => {
+      return 1 - particle.age / lifetime;
+   };
+
+   const textureIndex = randInt(0, 2);
+   addTexturedParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.low,
+      64, 64,
+      spawnPositionX, spawnPositionY,
+      0, 0,
+      0, 0,
+      0,
+      2 * Math.PI * Math.random(),
+      0,
+      0,
+      0,
+      textureIndex,
+      randFloat(-1, -0.7), randFloat(0.3, 0.5), 1
+   );
+   Board.lowTexturedParticles.push(particle);
+}
+
+const createBlueBloodParticle = (size: BloodParticleSize, spawnPositionX: number, spawnPositionY: number, moveDirection: number, moveSpeed: number, hasDrag: boolean): void => {
+   const lifetime = randFloat(0.3, 0.4);
+   
+   const pixelSize = size === BloodParticleSize.large ? 8 : 4;
+
+   const velocityX = moveSpeed * Math.sin(moveDirection);
+   const velocityY = moveSpeed * Math.cos(moveDirection);
+
+   const friction = hasDrag ? moveSpeed / lifetime / 1.2 : 0;
+
+   const particle = new Particle(lifetime);
+   particle.getOpacity = (): number => {
+      return 1 - particle.age / lifetime;
+   };
+
+   const r = randFloat(0, 0.35);
+   const g = randFloat(0.5, 0.65);
+   const b = randFloat(0.75, 0.9);
+
+   addMonocolourParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.high,
+      pixelSize, pixelSize,
+      spawnPositionX, spawnPositionY,
+      velocityX, velocityY,
+      0, 0,
+      friction,
+      2 * Math.PI * Math.random(),
+      0,
+      0,
+      0,
+      r, g, b
+   );
+   Board.highMonocolourParticles.push(particle);
+}
+
+const BLOOD_FOUNTAIN_RAY_COUNT = 7;
+
+const createBloodParticleFountain = (entity: Entity, interval: number, speedMultiplier: number): void => {
+   const offset = 2 * Math.PI * Math.random();
+
+   for (let i = 0; i < 6; i++) {
+      Board.addTickCallback(interval * (i + 1), () => {
+         for (let j = 0; j < BLOOD_FOUNTAIN_RAY_COUNT; j++) {
+            let moveDirection = 2 * Math.PI / BLOOD_FOUNTAIN_RAY_COUNT * j + offset;
+            moveDirection += randFloat(-0.3, 0.3);
+
+            createBlueBloodParticle(BloodParticleSize.large, entity.position.x, entity.position.y, moveDirection, randFloat(100, 200) * speedMultiplier, false);
+         }
+      });
+   }
 }
 
 class FrozenYeti extends Entity {
@@ -459,6 +544,28 @@ class FrozenYeti extends Entity {
             }
          }
       }
+   }
+
+   protected onHit(hitData: HitData): void {
+      // Blood pool particle
+      createBlueBloodPoolParticle(this.position.x, this.position.y, FrozenYeti.SIZE / 2);
+      
+      if (hitData.angleFromAttacker !== null) {
+         for (let i = 0; i < 10; i++) {
+            const offsetDirection = hitData.angleFromAttacker + Math.PI + 0.2 * Math.PI * (Math.random() - 0.5);
+            const spawnPositionX = this.position.x + FrozenYeti.SIZE / 2 * Math.sin(offsetDirection);
+            const spawnPositionY = this.position.y + FrozenYeti.SIZE / 2 * Math.cos(offsetDirection);
+            createBlueBloodParticle(Math.random() < 0.6 ? BloodParticleSize.small : BloodParticleSize.large, spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(150, 250), true);
+         }
+      }
+   }
+
+   public onDie(): void {
+      for (let i = 0; i < 4; i++) {
+         createBlueBloodPoolParticle(this.position.x, this.position.y, FrozenYeti.SIZE / 2);
+      }
+
+      createBloodParticleFountain(this, 0.15, 1.4);
    }
 }
 

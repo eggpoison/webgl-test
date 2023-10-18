@@ -130,7 +130,7 @@ abstract class TribeMember extends Entity {
    private static readonly ATTACK_LUNGE_TIME = 0.3;
    private static readonly ITEM_SWING_RANGE = Math.PI / 2.5;
    
-   private static readonly ITEM_RESTING_OFFSET = 38;
+   private static readonly ITEM_RESTING_OFFSET = 30;
    private static readonly ITEM_RESTING_ROTATION = 0;
    private static readonly ITEM_END_ROTATION = -Math.PI * 2/3;
 
@@ -407,11 +407,11 @@ abstract class TribeMember extends Entity {
             this.rightHandRotation = attackHandRotation;
 
             if (this.activeItemType !== null && ITEM_TYPE_RECORD[this.activeItemType] === "bow") {
-               this.activeItemOffset = TribeMember.HAND_RESTING_OFFSET + 7;
+               this.activeItemOffset = TribeMember.ITEM_RESTING_OFFSET + 7;
                this.activeItemDirection = direction;
                this.activeItemRotation = attackHandRotation + Math.PI/10;
             } else {
-               this.activeItemOffset = TribeMember.HAND_RESTING_OFFSET + itemSize/2;
+               this.activeItemOffset = TribeMember.ITEM_RESTING_OFFSET + itemSize/2;
                this.activeItemDirection = direction - Math.PI/14;
                this.activeItemRotation = attackHandRotation;
             }
