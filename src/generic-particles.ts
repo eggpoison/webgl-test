@@ -479,3 +479,41 @@ export function createSlimePoolParticle(originX: number, originY: number, spawnO
    );
    Board.lowTexturedParticles.push(particle);
 }
+
+const WATER_DROPLET_COLOUR_LOW = [8/255, 197/255, 255/255] as const;
+const WATER_DROPLET_COLOUR_HIGH = [94/255, 231/255, 255/255] as const;
+
+export function createWaterSplashParticle(spawnPositionX: number, spawnPositionY: number): void {
+   const lifetime = 1;
+
+   const velocityMagnitude = randFloat(40, 60);
+   const velocityDirection = 2 * Math.PI * Math.random()
+   const velocityX = velocityMagnitude * Math.sin(velocityDirection);
+   const velocityY = velocityMagnitude * Math.cos(velocityDirection);
+      
+   const particle = new Particle(lifetime);
+   particle.getOpacity = (): number => {
+      return lerp(0.75, 0, particle.age / lifetime);
+   };
+
+   const colourLerp = Math.random();
+   const r = lerp(WATER_DROPLET_COLOUR_LOW[0], WATER_DROPLET_COLOUR_HIGH[0], colourLerp);
+   const g = lerp(WATER_DROPLET_COLOUR_LOW[1], WATER_DROPLET_COLOUR_HIGH[1], colourLerp);
+   const b = lerp(WATER_DROPLET_COLOUR_LOW[2], WATER_DROPLET_COLOUR_HIGH[2], colourLerp);
+
+   addMonocolourParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.low,
+      6, 6,
+      spawnPositionX, spawnPositionY,
+      velocityX, velocityY,
+      0, 0,
+      0,
+      2 * Math.PI * Math.random(),
+      randFloat(2, 3) * randSign(),
+      0,
+      0,
+      r, g, b
+   );
+   Board.lowMonocolourParticles.push(particle);
+}

@@ -1,15 +1,12 @@
-import { GameObjectData, Point, RIVER_STEPPING_STONE_SIZES, SETTINGS, TILE_FRICTIONS, TILE_MOVE_SPEED_MULTIPLIERS, TileType, lerp, randFloat, randSign } from "webgl-test-shared";
+import { GameObjectData, Point, RIVER_STEPPING_STONE_SIZES, SETTINGS, TILE_FRICTIONS, TILE_MOVE_SPEED_MULTIPLIERS, TileType } from "webgl-test-shared";
 import RenderPart, { RenderObject } from "./render-parts/RenderPart";
 import Chunk from "./Chunk";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import { Tile } from "./Tile";
 import CircularHitbox from "./hitboxes/CircularHitbox";
-import Particle from "./Particle";
 import Board from "./Board";
-import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "./rendering/particle-rendering";
-
-const WATER_DROPLET_COLOUR_LOW = [8/255, 197/255, 255/255] as const;
-const WATER_DROPLET_COLOUR_HIGH = [94/255, 231/255, 255/255] as const;
+import Entity from "./entities/Entity";
+import { createWaterSplashParticle } from "./generic-particles";
 
 let frameProgress: number;
 export function setFrameProgress(newFrameProgress: number): void {
@@ -90,39 +87,9 @@ abstract class GameObject extends RenderObject {
       this.tintB = 0;
       
       // Water droplet particles
-      if (this.isInRiver() && Board.tickIntervalHasPassed(0.05)) {
-         const lifetime = 1;
-
-         const velocityMagnitude = randFloat(40, 60);
-         const velocityDirection = 2 * Math.PI * Math.random()
-         const velocityX = velocityMagnitude * Math.sin(velocityDirection);
-         const velocityY = velocityMagnitude * Math.cos(velocityDirection);
-            
-         const particle = new Particle(lifetime);
-         particle.getOpacity = (): number => {
-            return lerp(0.75, 0, particle.age / lifetime);
-         };
-
-         const colourLerp = Math.random();
-         const r = lerp(WATER_DROPLET_COLOUR_LOW[0], WATER_DROPLET_COLOUR_HIGH[0], colourLerp);
-         const g = lerp(WATER_DROPLET_COLOUR_LOW[1], WATER_DROPLET_COLOUR_HIGH[1], colourLerp);
-         const b = lerp(WATER_DROPLET_COLOUR_LOW[2], WATER_DROPLET_COLOUR_HIGH[2], colourLerp);
-
-         addMonocolourParticleToBufferContainer(
-            particle,
-            ParticleRenderLayer.low,
-            6, 6,
-            this.position.x, this.position.y,
-            velocityX, velocityY,
-            0, 0,
-            0,
-            2 * Math.PI * Math.random(),
-            randFloat(2, 3) * randSign(),
-            0,
-            0,
-            r, g, b
-         );
-         Board.lowMonocolourParticles.push(particle);
+      // @Cleanup: Don't hardcode fish condition
+      if (this.isInRiver() && Board.tickIntervalHasPassed(0.05) && (!(this instanceof Entity) || this.type !== "fish")) {
+         createWaterSplashParticle(this.position.x, this.position.y);
       }
    };
 

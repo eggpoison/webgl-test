@@ -93,7 +93,11 @@ const TEXTURE_SOURCES: Array<string> = [
    "items/wooden-bow-charge-5.png",
    "projectiles/rock-spike-small.png",
    "projectiles/rock-spike-medium.png",
-   "projectiles/rock-spike-large.png"
+   "projectiles/rock-spike-large.png",
+   "entities/fish/fish-blue.png",
+   "entities/fish/fish-gold.png",
+   "entities/fish/fish-red.png",
+   "entities/fish/fish-lime.png"
 ];
 
 // Add item textures
