@@ -15,13 +15,15 @@ interface Options {
     * @default false
     */
    showRenderChunkBorders: boolean;
+   showTribeMemberHands: boolean;
 }
 
 const OPTIONS: Options = {
    nightVisionIsEnabled: false,
    showHitboxes: false,
    showChunkBorders: false,
-   showRenderChunkBorders: false
+   showRenderChunkBorders: false,
+   showTribeMemberHands: true
 };
 
 export default OPTIONS;

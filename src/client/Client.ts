@@ -584,7 +584,7 @@ abstract class Client {
       
       const spawnPosition = Point.unpackage(respawnDataPacket.spawnPosition);
       const renderDepth = calculateEntityRenderDepth("player");
-      const player = new Player(spawnPosition, new Set([Player.createNewPlayerHitbox()]), respawnDataPacket.playerID, renderDepth, null, TribeType.plainspeople, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, false, definiteGameState.playerUsername);
+      const player = new Player(spawnPosition, new Set([Player.createNewPlayerHitbox()]), respawnDataPacket.playerID, renderDepth, null, TribeType.plainspeople, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, false, -1, definiteGameState.playerUsername);
       Player.setInstancePlayer(player);
       Board.addEntity(player);
 
