@@ -1,8 +1,9 @@
 import { rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
-import { calculateVisibleGameObjects } from "./game-object-rendering";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import CircularHitbox from "../hitboxes/CircularHitbox";
+import GameObject from "../GameObject";
+import Board from "../Board";
 
 const CIRCLE_VERTEX_COUNT = 20;
 
@@ -43,6 +44,16 @@ export function createHitboxShaders(): void {
    gl.uniformBlockBinding(program, cameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);
 
    buffer = gl.createBuffer()!;
+}
+
+const calculateVisibleGameObjects = (): Array<GameObject> => {
+   const visibleGameObjects = new Array<GameObject>();
+
+   for (const gameObject of Board.gameObjects) {
+      visibleGameObjects.push(gameObject);
+   }
+
+   return visibleGameObjects;
 }
 
 /** Renders all hitboxes of a specified set of entities */

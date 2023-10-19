@@ -1,7 +1,7 @@
 /* Generic inventory interfaces */
 
 .inventory {
-   background-color: #333;
+   background-color: #444;
    border: calc(5px * var(--zoom)) solid #000;
    border-radius: 5px;
 }

@@ -68,10 +68,18 @@ const CookingInventory = (props: CookingInventoryProps) => {
       leftClickItemSlot(e, (props.entity as CookingEntity).id, (props.entity as CookingEntity).outputInventory, 1);
    }, [props.entity]);
 
-   return <div id="cooking-inventory" className="heating-inventory inventory">
+   const heatingBarProgress = props.entity.heatingProgress !== -1 ? props.entity.heatingProgress : 0;
+
+   return <div id="cooking-inventory" className={`heating-inventory inventory${props.entity.type !== "campfire" ? " with-fuel" : ""}`}>
       <ItemSlot onClick={clickIngredientItemSlot} className="ingredient-inventory" isSelected={false} picturedItemImageSrc={ingredientPicturedItemImageSrc} itemCount={ingredientItemCount} />
-      <ItemSlot onClick={clickFuelItemSlot} className="fuel-inventory" isSelected={false} picturedItemImageSrc={fuelPicturedItemImageSrc} itemCount={fuelItemCount} />
+      {props.entity.type !== "campfire" ? (
+         <ItemSlot onClick={clickFuelItemSlot} className="fuel-inventory" isSelected={false} picturedItemImageSrc={fuelPicturedItemImageSrc} itemCount={fuelItemCount} />
+      ) : undefined}
       <ItemSlot onClick={clickOutputItemSlot} className="output-inventory" isSelected={false} picturedItemImageSrc={outputPicturedItemImageSrc} itemCount={outputItemCount} />
+
+      <div className="heating-progress-bar">
+         <div className="heating-progress-bar-heat" style={{width: heatingBarProgress * 100 + "%"}}></div>
+      </div>
    </div>;
 }
 

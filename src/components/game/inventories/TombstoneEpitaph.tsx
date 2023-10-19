@@ -13,7 +13,7 @@ const TOMBSTONE_DEATH_MESSAGES: Record<PlayerCauseOfDeath, string> = {
    [PlayerCauseOfDeath.yeti]: "Tried to hug a yeti",
    [PlayerCauseOfDeath.god]: "Struck down by divine judgement",
    [PlayerCauseOfDeath.berry_bush]: "Pricked to death",
-   [PlayerCauseOfDeath.fire]: "Unhealthily flammable",
+   [PlayerCauseOfDeath.fire]: "Was unhealthily flammable",
    [PlayerCauseOfDeath.poison]: "Poisoned",
    [PlayerCauseOfDeath.tribe_member]: "Died to a tribe member",
    [PlayerCauseOfDeath.arrow]: "Impaled by an arrow",
@@ -24,7 +24,9 @@ const TOMBSTONE_DEATH_MESSAGES: Record<PlayerCauseOfDeath, string> = {
    [PlayerCauseOfDeath.slime]: "Absorbed by a slime",
    [PlayerCauseOfDeath.frozen_yeti]: "Thought the 'F' in Frozen Yeti meant friend",
    [PlayerCauseOfDeath.bloodloss]: "Ran out of blood",
-   [PlayerCauseOfDeath.rock_spike]: "Impaled from hole to hole"
+   [PlayerCauseOfDeath.rock_spike]: "Impaled from hole to hole",
+   [PlayerCauseOfDeath.lack_of_oxygen]: "Ran out of oxygen",
+   [PlayerCauseOfDeath.fish]: "Got beat up by a fish"
 };
 
 interface TombstoneInventoryProps {

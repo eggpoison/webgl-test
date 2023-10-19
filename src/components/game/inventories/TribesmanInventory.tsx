@@ -6,7 +6,8 @@ import { definiteGameState } from "../../../game-state/game-states";
 import { leftClickItemSlot } from "../../../inventory-manipulation";
 import InventoryContainer from "./InventoryContainer";
 import ItemSlot from "./ItemSlot";
-import { armourItemTypes, backpackItemTypes } from "./Hotbar";
+import { backpackItemTypes } from "./Hotbar";
+import { ITEM_TYPE_RECORD } from "webgl-test-shared";
 
 interface TribesmanInventoryProps {
    readonly entity: Entity;
@@ -32,7 +33,7 @@ const TribesmanInventory = (props: TribesmanInventoryProps) => {
    }, [props.entity]);
 
    const clickArmourItemSlot = useCallback((e: MouseEvent): void => {
-      if (definiteGameState.heldItemSlot.itemSlots.hasOwnProperty(1) && !armourItemTypes.includes(definiteGameState.heldItemSlot.itemSlots[1].type)) {
+      if (definiteGameState.heldItemSlot.itemSlots.hasOwnProperty(1) && ITEM_TYPE_RECORD[definiteGameState.heldItemSlot.itemSlots[1].type] !== "armour") {
          return;
       }
       leftClickItemSlot(e, props.entity.id, (props.entity as Tribesman).armourSlotInventory, 1);

@@ -178,8 +178,13 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       description: ""
    },
    [ItemType.cooked_fish]: {
-      textureSource: "items/deepfrost-armour.png",
+      textureSource: "items/cooked-fish.png",
       name: "Deepfrost Armour",
+      description: ""
+   },
+   [ItemType.fishlord_suit]: {
+      textureSource: "items/fishlord-suit.png",
+      name: "Fish Suit",
       description: ""
    }
 };

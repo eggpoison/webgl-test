@@ -2,6 +2,7 @@ import { Point, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared
 import GameObject from "../GameObject";
 import Board from "../Board";
 import { GAME_OBJECT_TEXTURE_HEIGHTS, GAME_OBJECT_TEXTURE_SLOT_INDEXES, GAME_OBJECT_TEXTURE_WIDTHS } from "../texture-atlases/game-object-texture-atlas";
+import Entity from "../entities/Entity";
 
 /** A thing which is able to hold render parts */
 export abstract class RenderObject {
@@ -19,7 +20,10 @@ export abstract class RenderObject {
          return;
       }
 
-      Board.numVisibleRenderParts++;
+      // @Speed @Cleanup
+      if (!(root instanceof Entity) || root.type !== "fish") {
+         Board.numVisibleRenderParts++;
+      }
       
       // Add to the root array
       let idx = root.allRenderParts.length;
@@ -43,7 +47,10 @@ export abstract class RenderObject {
          return;
       }
       
-      Board.numVisibleRenderParts--;
+      // @Speed @Cleanup
+      if (!(root instanceof Entity) || root.type !== "fish") {
+         Board.numVisibleRenderParts--;
+      }
       
       // Remove from the root array
       root.allRenderParts.splice(root.allRenderParts.indexOf(renderPart), 1);

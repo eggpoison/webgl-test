@@ -1,7 +1,7 @@
 export const TILE_TYPE_TEXTURE_SOURCES: ReadonlyArray<string> = [
    "tiles/grass.png",
    "tiles/dirt.png",
-   "tiles/water.png",
+   "tiles/water-new.png",
    "tiles/sludge.png", // sludge-old
    "tiles/slime.png",
    "tiles/rock.png",

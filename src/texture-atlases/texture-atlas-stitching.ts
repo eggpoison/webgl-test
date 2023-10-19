@@ -152,18 +152,3 @@ export async function stitchTextureAtlas(textureSources: ReadonlyArray<string>):
       });
    });
 }
-
-// @Speed: Remove the need for the textureMappings access by knowing the slot index ahead of time
-// @Speed: After that is done, also don't have these as functions - just make the variables global
-// export function getAtlasTextureIndex(textureSource: string): number {
-//    return textureSlotIndexes[textureMappings[textureSource]];
-// }
-// export function getAtlasTextureWidth(textureSource: string): number {
-//    return textureWidths[textureMappings[textureSource]];
-// }
-// export function getAtlasTextureHeight(textureSource: string): number {
-//    return textureHeights[textureMappings[textureSource]];
-// }
-// export function getAtlasPixelSize(): number {
-//    return atlasSize * ATLAS_SLOT_SIZE;
-// }

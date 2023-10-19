@@ -6,6 +6,7 @@ import Board, { RiverSteppingStone } from "../../Board";
 import { RENDER_CHUNK_SIZE, RenderChunkRiverInfo, getRenderChunkRiverInfo } from "./render-chunks";
 import { Tile } from "../../Tile";
 import { NEIGHBOUR_OFFSETS } from "../../utils";
+import { renderFish } from "../fish-rendering";
 
 const SHALLOW_WATER_COLOUR = [118/255, 185/255, 242/255] as const;
 const DEEP_WATER_COLOUR = [86/255, 141/255, 184/255] as const;
@@ -1607,6 +1608,27 @@ export function renderRivers(renderTime: number): void {
    }
 
    // 
+   // Transition program
+   // 
+
+   gl.useProgram(transitionProgram);
+      
+   // Bind transition texture
+   const transitionTexture = getTexture("miscellaneous/river/gravel.png");
+   gl.activeTexture(gl.TEXTURE0);
+   gl.bindTexture(gl.TEXTURE_2D, transitionTexture);
+   const gravelNoiseTexture = getTexture("miscellaneous/gravel-noise-texture.png");
+   gl.activeTexture(gl.TEXTURE1);
+   gl.bindTexture(gl.TEXTURE_2D, gravelNoiseTexture);
+
+   for (const renderChunkRiverInfo of visibleRenderChunks) {
+      gl.bindVertexArray(renderChunkRiverInfo.transitionVAO);
+      gl.drawArrays(gl.TRIANGLES, 0, renderChunkRiverInfo.transitionVertexCount);
+   }
+
+   renderFish();
+
+   // 
    // Highlights program
    // 
 
@@ -1648,25 +1670,6 @@ export function renderRivers(renderTime: number): void {
    for (const renderChunkInfo of visibleRenderChunks) {
       gl.bindVertexArray(renderChunkInfo.noiseVAO);
       gl.drawArrays(gl.TRIANGLES, 0, renderChunkInfo.noiseVertexCount);
-   }
-
-   // 
-   // Transition program
-   // 
-
-   gl.useProgram(transitionProgram);
-      
-   // Bind transition texture
-   const transitionTexture = getTexture("miscellaneous/river/gravel.png");
-   gl.activeTexture(gl.TEXTURE0);
-   gl.bindTexture(gl.TEXTURE_2D, transitionTexture);
-   const gravelNoiseTexture = getTexture("miscellaneous/gravel-noise-texture.png");
-   gl.activeTexture(gl.TEXTURE1);
-   gl.bindTexture(gl.TEXTURE_2D, gravelNoiseTexture);
-
-   for (const renderChunkRiverInfo of visibleRenderChunks) {
-      gl.bindVertexArray(renderChunkRiverInfo.transitionVAO);
-      gl.drawArrays(gl.TRIANGLES, 0, renderChunkRiverInfo.transitionVertexCount);
    }
    
    // 

@@ -1,6 +1,6 @@
 #cooking-inventory {
-   width: 20rem;
-   height: 15.5rem;
+   width: 23.5rem;
+   height: 15rem;
    position: absolute;
    bottom: 20rem;
    top: 50%;
@@ -12,6 +12,10 @@
 .heating-inventory .ingredient-inventory {
    position: absolute;
    left: 4.5rem;
+   top: 50%;
+   transform: translate(-50%, -50%);
+}
+#cooking-inventory.with-fuel .ingredient-inventory {
    top: 1.5rem;
    transform: translateX(-50%);
 }
@@ -26,4 +30,28 @@
    right: 4.5rem;
    top: 50%;
    transform: translate(50%, -50%);
+}
+
+#cooking-inventory .heating-progress-bar {
+   --width: calc(22px * 4.5);
+   --height: calc(7px * 4.5);
+   width: var(--width);
+   height: var(--height);
+   background-image: url(../../../images/miscellaneous/heating-progress-bar.png);
+   position: absolute;
+   background-size: 100% 100%;
+   top: 50%;
+   left: 50%;
+   transform: translate(-50%, -50%);
+   image-rendering: pixelated;
+}
+
+#cooking-inventory .heating-progress-bar-heat {
+   background-image: url(../../../images/miscellaneous/heating-progress-bar-heat.png);
+   background-size: var(--width) var(--height);
+   position: absolute;
+   top: 0;
+   right: 0;
+   bottom: 0;
+   left: 0;
 }

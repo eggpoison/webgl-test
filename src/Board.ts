@@ -12,6 +12,7 @@ import { highMonocolourBufferContainer, highTexturedBufferContainer, lowMonocolo
 import ObjectBufferContainer from "./rendering/ObjectBufferContainer";
 import { tempFloat32ArrayLength1 } from "./webgl";
 import Player from "./entities/Player";
+import Fish from "./entities/Fish";
 
 export interface EntityHitboxInfo {
    readonly vertexPositions: readonly [Point, Point, Point, Point];
@@ -39,6 +40,8 @@ abstract class Board {
    public static numVisibleRenderParts = 0;
    /** Game objects sorted in descending render weight */
    public static readonly sortedGameObjects = new Array<GameObject>();
+   /** All fish in the board */
+   public static readonly fish = new Array<Fish>();
 
    public static readonly gameObjects = new Set<GameObject>();
    public static readonly entities: Record<number, Entity> = {};
@@ -135,8 +138,14 @@ abstract class Board {
    }
 
    public static addEntity(entity: Entity): void {
-      this.addGameObject(entity);
-      this.entities[entity.id] = entity;
+      if (entity.type === "fish") {
+         this.gameObjects.add(entity);
+         this.fish.push(entity as Fish);
+         this.entities[entity.id] = entity;
+      } else {
+         this.addGameObject(entity);
+         this.entities[entity.id] = entity;
+      }
    }
 
    public static addDroppedItem(droppedItem: DroppedItem): void {
@@ -151,7 +160,6 @@ abstract class Board {
 
    private static addGameObject(gameObject: GameObject): void {
       this.gameObjects.add(gameObject);
-      gameObject.updateContainingChunks();
       
       // Add into the sorted array
       let idx = this.sortedGameObjects.length;
@@ -173,16 +181,22 @@ abstract class Board {
       for (const chunk of gameObject.chunks) {
          chunk.removeGameObject(gameObject);
       }
-
-      this.gameObjects.delete(gameObject);
-
+   
       if (typeof gameObject.onRemove !== "undefined") {
          gameObject.onRemove();
       }
 
-      this.sortedGameObjects.splice(this.sortedGameObjects.indexOf(gameObject), 1);
-
-      this.numVisibleRenderParts -= gameObject.allRenderParts.length;
+      this.gameObjects.delete(gameObject);
+      if (gameObject instanceof Entity && gameObject.type === "fish") {
+         const idx = this.fish.indexOf(gameObject as Fish);
+         if (idx !== -1) {
+            this.fish.splice(idx, 1);
+         }
+      } else {
+         this.sortedGameObjects.splice(this.sortedGameObjects.indexOf(gameObject), 1);
+   
+         this.numVisibleRenderParts -= gameObject.allRenderParts.length;
+      }
    }
 
    public static getRiverFlowDirection(tileX: number, tileY: number): number {

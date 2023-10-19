@@ -193,7 +193,8 @@ abstract class GameObject extends RenderObject {
       }
 
       // If the game object is in a river, push them in the flow direction of the river
-      if (this.isInRiver()) {
+      const moveSpeedIsOverridden = typeof this.overrideTileMoveSpeedMultiplier !== "undefined" && this.overrideTileMoveSpeedMultiplier() !== null;
+      if (this.isInRiver() && !moveSpeedIsOverridden) {
          const flowDirection = Board.getRiverFlowDirection(this.tile.x, this.tile.y);
          this.velocity.x += 240 / SETTINGS.TPS * Math.sin(flowDirection);
          this.velocity.y += 240 / SETTINGS.TPS * Math.cos(flowDirection);
@@ -290,6 +291,8 @@ abstract class GameObject extends RenderObject {
       this.position.y = data.position[1];
       this.velocity.x = data.velocity[0];
       this.velocity.y = data.velocity[1];
+
+      this.updateCurrentTile();
 
       this.rotation = data.rotation;
       this.mass = data.mass;

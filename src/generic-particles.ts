@@ -1,4 +1,4 @@
-import { angle, lerp, randFloat, randInt, randSign } from "webgl-test-shared";
+import { angle, lerp, randFloat, randInt, randItem, randSign } from "webgl-test-shared";
 import Particle from "./Particle";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "./rendering/particle-rendering";
 import Board from "./Board";
@@ -516,4 +516,70 @@ export function createWaterSplashParticle(spawnPositionX: number, spawnPositionY
       r, g, b
    );
    Board.lowMonocolourParticles.push(particle);
+}
+
+export function createSmokeParticle(spawnPositionX: number, spawnPositionY: number): void {
+   const lifetime = 1.5;
+   
+   const particle = new Particle(lifetime);
+   particle.getOpacity = (): number => {
+      return lerp(0.5, 0, particle.age / lifetime);
+   }
+   particle.getScale = (): number => {
+      const deathProgress = particle.age / lifetime
+      return 1 + deathProgress * 2;
+   }
+
+   addTexturedParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.high,
+      64, 64,
+      spawnPositionX, spawnPositionY,
+      0, 30,
+      0, 80,
+      0,
+      2 * Math.PI * Math.random(),
+      0,
+      0.75 * Math.PI * randFloat(-1, 1),
+      0,
+      5,
+      0, 0, 0
+   );
+   Board.highTexturedParticles.push(particle);
+}
+
+export function createEmberParticle(spawnPositionX: number, spawnPositionY: number, initialMoveDirection: number, moveSpeed: number): void {
+   const lifetime = randFloat(0.6, 1.2);
+
+   const velocityX = moveSpeed * Math.sin(initialMoveDirection);
+   const velocityY = moveSpeed * Math.cos(initialMoveDirection);
+
+   const accelerationMagnitude = randFloat(0, 80);
+   const accelerationDirection = 2 * Math.PI * Math.random();
+   const accelerationX = accelerationMagnitude * Math.sin(accelerationDirection);
+   const accelerationY = accelerationDirection * Math.cos(accelerationDirection);
+   
+   const particle = new Particle(lifetime);
+   particle.getOpacity = (): number => {
+      const opacity = 1 - particle.age / lifetime;
+      return Math.pow(opacity, 0.3);
+   }
+
+   const colour = randItem(Entity.BURNING_PARTICLE_COLOURS);
+
+   addMonocolourParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.high,
+      4, 4,
+      spawnPositionX, spawnPositionY,
+      velocityX, velocityY,
+      accelerationX, accelerationY,
+      0,
+      2 * Math.PI * Math.random(),
+      0, 
+      0,
+      0,
+      colour[0], colour[1], colour[2]
+   );
+   Board.highMonocolourParticles.push(particle);
 }

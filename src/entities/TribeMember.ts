@@ -77,6 +77,10 @@ const ARMOUR_WORN_INFO: Partial<Record<ItemType, ArmourInfo>> = {
    [ItemType.meat_suit]: {
       textureSource: "armour/meat-suit.png",
       pixelSize: 64
+   },
+   [ItemType.fishlord_suit]: {
+      textureSource: "armour/fishlord-suit.png",
+      pixelSize: 80
    }
 };
 
@@ -129,7 +133,7 @@ abstract class TribeMember extends Entity {
    private static readonly GOBLIN_EAR_WIDTH = 20;
    private static readonly GOBLIN_EAR_HEIGHT = 16;
    private static readonly GOBLIN_EAR_OFFSET = 4;
-   private static readonly GOBLIN_EAR_ANGLE = Math.PI / 2.5;
+   private static readonly GOBLIN_EAR_ANGLE = Math.PI / 3;
    
    private static readonly FOOD_EAT_INTERVAL = 0.3;
    
@@ -532,9 +536,15 @@ abstract class TribeMember extends Entity {
    }
 
    protected overrideTileMoveSpeedMultiplier(): number | null {
-      // If snow armour is equipped, move at normal speed on snow tiles
-      if (this.armourSlotInventory.itemSlots.hasOwnProperty(1) && this.armourSlotInventory.itemSlots[1].type === ItemType.frost_armour && this.tile.type === TileType.snow) {
-         return 1;
+      if (this.armourSlotInventory.itemSlots.hasOwnProperty(1)) {
+         // If snow armour is equipped, move at normal speed on snow tiles
+         if ((this.armourSlotInventory.itemSlots[1].type === ItemType.frost_armour || this.armourSlotInventory.itemSlots[1].type === ItemType.deepfrost_armour) && this.tile.type === TileType.snow) {
+            return 1;
+         }
+         // If fishlord suit is equipped, move at normal speed on snow tiles
+         if (this.armourSlotInventory.itemSlots[1].type === ItemType.fishlord_suit && this.tile.type === TileType.water) {
+            return 1;
+         }
       }
       return null;
    }

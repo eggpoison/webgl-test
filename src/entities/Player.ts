@@ -1,4 +1,4 @@
-import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitData, Point, SETTINGS, clampToBoardDimensions, TribeType, ItemType, InventoryData, TribeMemberAction } from "webgl-test-shared";
+import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitData, Point, SETTINGS, clampToBoardDimensions, TribeType, ItemType, InventoryData, TribeMemberAction, TileType } from "webgl-test-shared";
 import Camera from "../Camera";
 import { setCraftingMenuAvailableRecipes, setCraftingMenuAvailableCraftingStations } from "../components/game/menus/CraftingMenu";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -19,8 +19,9 @@ const MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION = 250;
 
 const CRAFTING_RECIPE_RECORD: Record<CraftingStation | "hand", Array<CraftingRecipe>> = {
    hand: [],
-   workbench: [],
-   slime: []
+   [CraftingStation.workbench]: [],
+   [CraftingStation.slime]: [],
+   [CraftingStation.water]: []
 };
 
 // Categorise the crafting recipes
@@ -53,6 +54,11 @@ export function updateAvailableCraftingRecipes(): void {
 
    let availableCraftingRecipes: Array<CraftingRecipe> = CRAFTING_RECIPE_RECORD.hand.slice();
    let availableCraftingStations = new Set<CraftingStation>();
+
+   if (Player.instance.tile.type === TileType.water) {
+      availableCraftingRecipes = availableCraftingRecipes.concat(CRAFTING_RECIPE_RECORD[CraftingStation.water].slice());
+      availableCraftingStations.add(CraftingStation.water);
+   }
    
    const minChunkX = Math.max(Math.min(Math.floor((Player.instance!.position.x - MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
    const maxChunkX = Math.max(Math.min(Math.floor((Player.instance!.position.x + MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
@@ -67,16 +73,16 @@ export function updateAvailableCraftingRecipes(): void {
             if (distance <= MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION) {
                switch (entity.type) {
                   case "workbench": {
-                     if (!availableCraftingStations.has("workbench")) {
-                        availableCraftingRecipes = availableCraftingRecipes.concat(CRAFTING_RECIPE_RECORD.workbench.slice());
-                        availableCraftingStations.add("workbench");
+                     if (!availableCraftingStations.has(CraftingStation.workbench)) {
+                        availableCraftingRecipes = availableCraftingRecipes.concat(CRAFTING_RECIPE_RECORD[CraftingStation.workbench].slice());
+                        availableCraftingStations.add(CraftingStation.workbench);
                      }
                      break;
                   }
                   case "slime": {
-                     if (!availableCraftingStations.has("slime")) {
-                        availableCraftingRecipes = availableCraftingRecipes.concat(CRAFTING_RECIPE_RECORD.slime.slice());
-                        availableCraftingStations.add("slime");
+                     if (!availableCraftingStations.has(CraftingStation.slime)) {
+                        availableCraftingRecipes = availableCraftingRecipes.concat(CRAFTING_RECIPE_RECORD[CraftingStation.slime].slice());
+                        availableCraftingStations.add(CraftingStation.slime);
                      }
                      break;
                   }

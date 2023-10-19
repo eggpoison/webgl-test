@@ -35,6 +35,7 @@ import { createNightShaders, renderNight } from "./rendering/night-rendering";
 import { createPlaceableItemProgram, renderGhostPlaceableItem } from "./rendering/placeable-item-rendering";
 import { setupFrameGraph } from "./rendering/frame-graph-rendering";
 import { createGameObjectTextureAtlas } from "./texture-atlases/game-object-texture-atlas";
+import { createFishShaders } from "./rendering/fish-rendering";
 
 let listenersHaveBeenCreated = false;
 
@@ -172,6 +173,7 @@ abstract class Game {
             // Create shaders
             createSolidTileShaders();
             createRiverShaders();
+            createFishShaders();
             createEntityShaders();
             createWorldBorderShaders();
             createPlaceableItemProgram();

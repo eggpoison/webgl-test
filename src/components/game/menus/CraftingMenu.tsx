@@ -9,9 +9,10 @@ import { leftClickItemSlot } from "../../../inventory-manipulation";
 import Player from "../../../entities/Player";
 import { definiteGameState } from "../../../game-state/game-states";
 
-const CRAFTING_STATION_ITEM_TYPES: Record<CraftingStation, ItemType> = {
-   workbench: ItemType.workbench,
-   slime: ItemType.slimeball
+const CRAFTING_STATION_ICON_TEXTURE_SOURCES: Record<CraftingStation, string> = {
+   [CraftingStation.workbench]: CLIENT_ITEM_INFO_RECORD[ItemType.workbench].textureSource,
+   [CraftingStation.slime]: CLIENT_ITEM_INFO_RECORD[ItemType.slimeball].textureSource,
+   [CraftingStation.water]: "miscellaneous/water-droplet.png"
 };
 
 interface RecipeViewerProps {
@@ -288,7 +289,8 @@ const CraftingMenu = () => {
    return <div id="crafting-menu" className="inventory" ref={onCraftingMenuRefChange}>
       <div className="available-crafting-stations">
          {Array.from(availableCraftingStations).map((craftingStationType: CraftingStation, i: number) => {
-            return <img className="crafting-station-image" src={getItemTypeImage(CRAFTING_STATION_ITEM_TYPES[craftingStationType])} key={i} alt="" />
+            const image = require("../../../images/" + CRAFTING_STATION_ICON_TEXTURE_SOURCES[craftingStationType]);
+            return <img className="crafting-station-image" src={image} key={i} alt="" />
          })}
       </div>
       

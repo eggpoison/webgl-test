@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useReducer, useState } from "react";
-import { ItemType } from "webgl-test-shared";
+import { ITEM_TYPE_RECORD, ItemType } from "webgl-test-shared";
 import { getItemTypeImage } from "../../../client-item-info";
 import Item from "../../../items/Item";
 import { leftClickItemSlot, rightClickItemSlot } from "../../../inventory-manipulation";
@@ -12,8 +12,6 @@ export let Hotbar_update: () => void = () => {};
 export let Hotbar_setHotbarSelectedItemSlot: (itemSlot: number) => void = () => {};
 
 export const backpackItemTypes: ReadonlyArray<ItemType> = [ItemType.leather_backpack, ItemType.raw_beef];
-// @Cleanup: Make this automatically detect armour item types
-export const armourItemTypes: ReadonlyArray<ItemType> = [ItemType.frost_armour, ItemType.meat_suit, ItemType.deepfrost_armour];
 
 const Hotbar = () => {
    const [selectedItemSlot, setSelectedItemSlot] = useState(1);
@@ -28,9 +26,11 @@ const Hotbar = () => {
    }, []);
 
    const clickArmourItemSlot = useCallback((e: MouseEvent): void => {
-      if (definiteGameState.heldItemSlot.itemSlots.hasOwnProperty(1) && !armourItemTypes.includes(definiteGameState.heldItemSlot.itemSlots[1].type)) {
+      // Don't click it the player is holding a non-armour item
+      if (definiteGameState.heldItemSlot.itemSlots.hasOwnProperty(1) && ITEM_TYPE_RECORD[definiteGameState.heldItemSlot.itemSlots[1].type] !== "armour") {
          return;
       }
+
       leftClickItemSlot(e, Player.instance!.id, definiteGameState.armourSlot, 1);
    }, []);
 
