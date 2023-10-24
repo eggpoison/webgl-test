@@ -2,7 +2,11 @@
 
 .inventory {
    background-color: #444;
-   border: calc(5px * var(--zoom)) solid #000;
+   border: 5px solid black;
+}
+/* @Temporary */
+.inventory.old {
+   background-color: #333;
    border-radius: 5px;
 }
 
@@ -20,9 +24,18 @@
    position: relative;
    user-select: none;
 }
+/* @Temporary */
+.inventory.old .item-slot {
+   background-image: url("../../../images/miscellaneous/item-slot-old.png");
+}
 
 .item-slot.selected {
+   /* @Temporary */
    background-image: url("../../../images/miscellaneous/item-slot-selected.png");
+}
+/* @Temporary */
+.inventory.old .item-slot.selected {
+   background-image: url("../../../images/miscellaneous/item-slot-selected-old.png");
 }
 .item-slot:not(.empty)::after {
    content: "";

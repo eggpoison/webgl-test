@@ -345,13 +345,17 @@ abstract class Game {
          renderChunkBorders(Camera.minVisibleRenderChunkX, Camera.maxVisibleRenderChunkX, Camera.minVisibleRenderChunkY, Camera.maxVisibleRenderChunkY, RENDER_CHUNK_SIZE, 2);
       }
 
-      renderMonocolourParticles(ParticleRenderLayer.low, renderTime);
-      renderTexturedParticles(ParticleRenderLayer.low, renderTime);
+      if (OPTIONS.showParticles) {
+         renderMonocolourParticles(ParticleRenderLayer.low, renderTime);
+         renderTexturedParticles(ParticleRenderLayer.low, renderTime);
+      }
 
       renderGameObjects();
       
-      renderMonocolourParticles(ParticleRenderLayer.high, renderTime);
-      renderTexturedParticles(ParticleRenderLayer.high, renderTime);
+      if (OPTIONS.showParticles) {
+         renderMonocolourParticles(ParticleRenderLayer.high, renderTime);
+         renderTexturedParticles(ParticleRenderLayer.high, renderTime);
+      }
 
       if (nerdVisionIsVisible() && OPTIONS.showHitboxes) {
          renderEntityHitboxes();

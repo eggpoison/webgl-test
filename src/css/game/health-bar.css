@@ -16,6 +16,10 @@
    z-index: 2;
    box-shadow: 0 0 7px 0 rgba(0, 0, 0, 0.7) inset;
 }
+/* @Temporary */
+#health-bar.old {
+   border-radius: 4px;
+}
 
 #health-bar .health-slider {
    width: var(--health-bar-width);
@@ -24,13 +28,18 @@
    background-size: 100% 100%;
    image-rendering: pixelated;
 }
+/* @Temporary */
+#health-bar.old .health-slider {
+   background-color: #f00;
+   box-shadow: 2px 2px 5px 1px rgba(255, 255, 255, 0.5) inset, -2px -2px 5px 0 rgba(0, 0, 0, 0.5) inset;
+   background-image: none;
+}
 #health-bar.frost-shield .health-slider {
    background-image: url(../../images/miscellaneous/health-bar-frozen.png);
 }
 #health-bar .health-mask {
    width: 0;
    height: var(--health-bar-height);
-   /* background-color: #333; */
    background-image: url(../../images/miscellaneous/health-bar-background.png);
    background-size: var(--health-bar-width) 100%;
    background-position: 100% 0;
@@ -61,6 +70,33 @@
    background-size: 100% 100%;
    image-rendering: pixelated;
    opacity: 0.5;
+}
+#health-bar.old .health-bar-notches {
+   opacity: 0;
+}
+/* @Temporary */
+#health-bar .notches {
+   position: absolute;
+   top: 0;
+   right: 0;
+   bottom: 0;
+   left: 0;
+   display: flex;
+   justify-content: space-evenly;
+   align-items: center;
+}
+#health-bar .notches .notch {
+   --padding: 0.15rem;
+   width: 3px;
+   height: calc(var(--height) - var(--padding) * 2);
+}
+#health-bar .notches .notch-major {
+   height: calc(var(--height) - var(--padding) * 2);
+   background-color: rgba(0, 0, 0, 0.5);
+}
+#health-bar .notches .notch-minor {
+   height: calc(var(--height) - var(--padding) * 4);
+   background-color: rgba(0, 0, 0, 0.3);
 }
 
 #health-bar.animated .health-mask {
@@ -105,7 +141,6 @@
    font-family: "Inconsolata";
    font-size: 1.6rem;
    font-weight: 700;
-   /* text-shadow: 0 0 1px #000, 0 0 2px #000, 0 0 3px #000; */
    text-shadow: 3px 3px 1px #000;
    position: absolute;
    top: calc(50% - var(--offset-y));

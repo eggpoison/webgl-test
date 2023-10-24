@@ -1,9 +1,10 @@
-import { EntityType, HitData, HitFlags, SETTINGS, StatusEffectData, StatusEffect, lerp, randFloat, randItem } from "webgl-test-shared";
+import { EntityType, HitData, HitFlags, SETTINGS, StatusEffectData, StatusEffect, lerp, randFloat, randItem, customTickIntervalHasPassed } from "webgl-test-shared";
 import GameObject from "../GameObject";
 import Particle from "../Particle";
 import Board from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
 import { BloodParticleSize, createBloodParticle, createSlimePoolParticle } from "../generic-particles";
+import Camera from "../Camera";
 
 // Use prime numbers / 100 to ensure a decent distribution of different types of particles
 const HEALING_PARTICLE_AMOUNTS = [0.05, 0.37, 1.01];
@@ -117,7 +118,7 @@ abstract class Entity extends GameObject {
       const poisonStatusEffect = this.getStatusEffect(StatusEffect.poisoned);
       if (poisonStatusEffect !== null) {
          // Poison particles
-         if (poisonStatusEffect.ticksElapsed % 2 === 0) {
+         if (customTickIntervalHasPassed(poisonStatusEffect.ticksElapsed, 0.1)) {
             const spawnOffsetMagnitude = 30 * Math.random();
             const spawnOffsetDirection = 2 * Math.PI * Math.random()
             const spawnPositionX = this.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
@@ -152,7 +153,7 @@ abstract class Entity extends GameObject {
       const fireStatusEffect = this.getStatusEffect(StatusEffect.burning);
       if (fireStatusEffect !== null) {
          // Ember particles
-         if (fireStatusEffect.ticksElapsed % 2 === 0) {
+         if (customTickIntervalHasPassed(fireStatusEffect.ticksElapsed, 0.1)) {
             const spawnOffsetMagnitude = 30 * Math.random();
             const spawnOffsetDirection = 2 * Math.PI * Math.random();
             const spawnPositionX = this.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
@@ -196,7 +197,7 @@ abstract class Entity extends GameObject {
          }
 
          // Smoke particles
-         if (fireStatusEffect.ticksElapsed % 3 === 0) {
+         if (customTickIntervalHasPassed(fireStatusEffect.ticksElapsed, 3/20)) {
             const spawnOffsetMagnitude = 20 * Math.random();
             const spawnOffsetDirection = 2 * Math.PI * Math.random();
             const spawnPositionX = this.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
@@ -251,6 +252,15 @@ abstract class Entity extends GameObject {
             createBloodParticle(Math.random() < 0.5 ? BloodParticleSize.small : BloodParticleSize.large, spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(40, 60), true);
          }
       }
+   }
+
+   public isVisible(): boolean {
+      for (const chunk of this.chunks) {
+         if (chunk.x >= Camera.minVisibleChunkX && chunk.x <= Camera.maxVisibleChunkX && chunk.y >= Camera.minVisibleChunkY && chunk.y <= Camera.maxVisibleChunkY) {
+            return true;
+         }
+      }
+      return false;
    }
 
    public hasStatusEffect(type: StatusEffect): boolean {

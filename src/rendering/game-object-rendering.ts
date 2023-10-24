@@ -142,7 +142,7 @@ export function renderGameObjects(): void {
    
    const vertexData = new Float32Array(Board.numVisibleRenderParts * 4 * 12);
    const indicesData = new Uint16Array(Board.numVisibleRenderParts * 6);
-
+   
    let i = 0;
    for (const gameObject of Board.sortedGameObjects) {
       gameObject.updateRenderPosition();

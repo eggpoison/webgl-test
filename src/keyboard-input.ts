@@ -1,4 +1,5 @@
 import { chatboxIsFocused, focusChatbox } from "./components/game/ChatBox";
+import { toggleCinematicMode } from "./components/game/GameScreen";
 import { playerIsUsingTerminal } from "./components/game/dev/Terminal";
 
 const keyListeners: { [key: string]: Array<(e: KeyboardEvent) => void> } = {};
@@ -72,6 +73,8 @@ const onKeyDown = (e: KeyboardEvent): void => {
       e.preventDefault();
       clearPressedKeys();
       return;
+   } else if (key === "o") {
+      toggleCinematicMode();
    }
 
    pressedKeys[key] = true;

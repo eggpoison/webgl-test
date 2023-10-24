@@ -18,6 +18,8 @@ export let openSettingsMenu: () => void;
 export let closeSettingsMenu: () => void;
 export let toggleSettingsMenu: () => void;
 
+export let toggleCinematicMode: () => void;
+
 export let gameScreenSetIsDead: (isDead: boolean) => void;
 
 const GameScreen = () => {
@@ -25,6 +27,7 @@ const GameScreen = () => {
    const [isPaused, setIsPaused] = useState(false);
    const [settingsIsOpen, setSettingsIsOpen] = useState(false);
    const [isDead, setIsDead] = useState(false);
+   const [cinematicModeIsEnabled, setCinematicModeIsEnabled] = useState(false);
 
    useEffect(() => {
       if (!hasLoaded.current) {
@@ -42,6 +45,18 @@ const GameScreen = () => {
       }
    }, []);
 
+   useEffect(() => {
+      if (cinematicModeIsEnabled) {
+         toggleCinematicMode = () => {
+            setCinematicModeIsEnabled(false);
+         }
+      } else {
+         toggleCinematicMode = () => {
+            setCinematicModeIsEnabled(true);
+         }
+      }
+   }, [cinematicModeIsEnabled]);
+
    toggleSettingsMenu = useCallback(() => {
       settingsIsOpen ? closeSettingsMenu() : openSettingsMenu();
    }, [settingsIsOpen]);
@@ -49,8 +64,10 @@ const GameScreen = () => {
    return <>
       <ChatBox />
 
-      <HealthBar />
-      <Hotbar />
+      {!cinematicModeIsEnabled ? <>
+         <HealthBar />
+         <Hotbar />
+      </> : undefined}
 
       {/* Note: BackpackInventoryMenu must be exactly before CraftingMenu because of CSS hijinks */}
       <BackpackInventoryMenu />

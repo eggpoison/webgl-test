@@ -33,10 +33,11 @@
 }
 
 #cooking-inventory .heating-progress-bar {
-   --width: calc(22px * 4.5);
-   --height: calc(7px * 4.5);
+   --width: calc(20px * 4.5);
+   --height: calc(5px * 4.5);
    width: var(--width);
    height: var(--height);
+   padding: calc(1px * 4.5);
    background-image: url(../../../images/miscellaneous/heating-progress-bar.png);
    position: absolute;
    background-size: 100% 100%;
@@ -50,8 +51,8 @@
    background-image: url(../../../images/miscellaneous/heating-progress-bar-heat.png);
    background-size: var(--width) var(--height);
    position: absolute;
-   top: 0;
-   right: 0;
-   bottom: 0;
-   left: 0;
+   top: calc(1px * 4.5);
+   right: calc(1px * 4.5);
+   bottom: calc(1px * 4.5);
+   left: calc(1px * 4.5);
 }

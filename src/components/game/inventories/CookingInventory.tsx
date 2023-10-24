@@ -78,7 +78,8 @@ const CookingInventory = (props: CookingInventoryProps) => {
       <ItemSlot onClick={clickOutputItemSlot} className="output-inventory" isSelected={false} picturedItemImageSrc={outputPicturedItemImageSrc} itemCount={outputItemCount} />
 
       <div className="heating-progress-bar">
-         <div className="heating-progress-bar-heat" style={{width: heatingBarProgress * 100 + "%"}}></div>
+         {/* @Cleanup: Hardcoded */}
+         <div className="heating-progress-bar-heat" style={{width: heatingBarProgress * 4.5 * 20 + "px"}}></div>
       </div>
    </div>;
 }

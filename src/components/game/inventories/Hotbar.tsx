@@ -6,6 +6,7 @@ import { leftClickItemSlot, rightClickItemSlot } from "../../../inventory-manipu
 import ItemSlot from "./ItemSlot";
 import Player from "../../../entities/Player";
 import { definiteGameState } from "../../../game-state/game-states";
+import OPTIONS from "../../../options";
 
 export let Hotbar_update: () => void = () => {};
 
@@ -74,6 +75,8 @@ const Hotbar = () => {
    if (definiteGameState.armourSlot.itemSlots.hasOwnProperty(1)) {
       const image = getItemTypeImage(definiteGameState.armourSlot.itemSlots[1].type);
       armourItemSlotElement = <ItemSlot onClick={clickArmourItemSlot} isSelected={false} picturedItemImageSrc={image} />
+      // @Temporary
+      armourItemSlotElement = <ItemSlot onClick={clickArmourItemSlot} isSelected={false} picturedItemImageSrc={image} itemCount={definiteGameState.armourSlot.itemSlots[1].count} />
    } else {
       const imageSrc = require("../../../images/miscellaneous/armour-wireframe.png");
       armourItemSlotElement = <ItemSlot onClick={clickArmourItemSlot} isSelected={false} picturedItemImageSrc={imageSrc} />
@@ -85,11 +88,13 @@ const Hotbar = () => {
          <ItemSlot isSelected={false} />
       </div>
 
-      <div className="inventory">
+{/* @Temporary */}
+      <div className={`inventory${OPTIONS.uiStyle === "old" ? " old" : ""}`}>
          {hotbarItemSlots}
       </div>
 
-      <div id="special-item-slots" className="inventory">
+{/* @Temporary */}
+      <div id="special-item-slots" className={`inventory${OPTIONS.uiStyle === "old" ? " old" : ""}`}>
          {backpackSlotElement}
          {armourItemSlotElement}
       </div>

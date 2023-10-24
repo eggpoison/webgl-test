@@ -186,16 +186,6 @@ abstract class Client {
          Game.setGameObjectDebugData(gameDataPacket.gameObjectDebugData);
       }
 
-      // Register deaths
-      for (const killedEntityID of gameDataPacket.killedEntityIDs) {
-         if (Board.entities.hasOwnProperty(killedEntityID)) {
-            const entity = Board.entities[killedEntityID];
-            if (typeof entity.onDie !== "undefined") {
-               entity.onDie();
-            }
-         }
-      }
-
       this.updateEntities(gameDataPacket.entityDataArray);
       this.updateDroppedItems(gameDataPacket.droppedItemDataArray);
       this.updateProjectiles(gameDataPacket.projectileDataArray);
@@ -278,13 +268,21 @@ abstract class Client {
 
       // All known entity ids which haven't been removed are ones which are dead
       for (const id of knownEntityIDs) {
-         if (Board.entities[id].type === "player") {
-            const idx = Board.players.indexOf(Board.entities[id] as Player);
+         const entity = Board.entities[id];
+
+         if (entity.isVisible()) {
+            if (typeof entity.onDie !== "undefined") {
+               entity.onDie();
+            }
+         }
+
+         if (entity.type === "player") {
+            const idx = Board.players.indexOf(entity as Player);
             if (idx !== -1) {
                Board.players.splice(idx, 1);
             }
          }
-         Board.removeGameObject(Board.entities[id]);
+         Board.removeGameObject(entity);
          delete Board.entities[id];
       }
    }

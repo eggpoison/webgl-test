@@ -551,7 +551,8 @@ abstract class TribeMember extends Entity {
 
    private getArmourTextureIndex(armourType: ItemType): number {
       if (!ARMOUR_WORN_INFO.hasOwnProperty(armourType)) {
-         throw new Error("Can't find armour info for item type '" + ItemType[armourType] + ".");
+         console.warn("Can't find armour info for item type '" + ItemType[armourType] + ".");
+         return -1;
       }
 
       return getGameObjectTextureArrayIndex(ARMOUR_WORN_INFO[armourType]!.textureSource);
@@ -559,7 +560,8 @@ abstract class TribeMember extends Entity {
 
    private getArmourPixelSize(armourType: ItemType): number {
       if (!ARMOUR_WORN_INFO.hasOwnProperty(armourType)) {
-         throw new Error("Can't find armour info for item type '" + ItemType[armourType] + ".");
+         console.warn("Can't find armour info for item type '" + ItemType[armourType] + ".");
+         return -1;
       }
 
       return ARMOUR_WORN_INFO[armourType]!.pixelSize;

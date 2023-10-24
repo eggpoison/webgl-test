@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import HealthIcon from "../../images/miscellaneous/health.png";
 import FrozenHealthIcon from "../../images/miscellaneous/health-frozen.png";
+import OPTIONS from "../../options";
 
 export let updateHealthBar: (newHealth: number) => void;
 
@@ -38,7 +39,8 @@ const HealthBar = () => {
 
    const displayHealth = Math.round((health + Number.EPSILON) * 100) / 100;
 
-   return <div id="health-bar" className={hasFrostShield ? "frost-shield animated" : "animated"} ref={healthBarRef}>
+   // @Temporary
+   return <div id="health-bar" className={(hasFrostShield ? "frost-shield animated" : "animated") + (OPTIONS.uiStyle === "old" ? " old" : "")} ref={healthBarRef}>
       <div className="health-icon">
          <img src={hasFrostShield ? FrozenHealthIcon : HealthIcon} alt="" />
          <div className="health-counter">{displayHealth}</div>
@@ -47,6 +49,18 @@ const HealthBar = () => {
       <div className="health-flash"></div>
       <div className="health-bar-notches"></div>
       <div className="health-mask"></div>
+      {/* @Temporary */}
+      {OPTIONS.uiStyle === "old" ? <>
+         <div className="notches">
+            <div className="notch notch-minor"></div>
+            <div className="notch notch-major"></div>
+            <div className="notch notch-minor"></div>
+            <div className="notch notch-major"></div>
+            <div className="notch notch-minor"></div>
+            <div className="notch notch-major"></div>
+            <div className="notch notch-minor"></div>
+         </div>
+      </> : undefined}
    </div>;
 }
 
