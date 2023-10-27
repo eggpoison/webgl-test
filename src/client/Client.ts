@@ -659,9 +659,15 @@ abstract class Client {
       }
    }
 
-   public static sendThrowHeldItemPacket(throwDirection: number): void {
+   public static sendHeldItemDropPacket(dropAmount: number, dropDirection: number): void {
       if (Game.isRunning && this.socket !== null) {
-         this.socket.emit("throw_held_item_packet", throwDirection);
+         this.socket.emit("held_item_drop", dropAmount, dropDirection);
+      }
+   }
+
+   public static sendItemDropPacket(itemSlot: number, dropAmount: number, dropDirection: number): void {
+      if (Game.isRunning && this.socket !== null) {
+         this.socket.emit("item_drop", itemSlot, dropAmount, dropDirection);
       }
    }
 

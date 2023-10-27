@@ -8,6 +8,7 @@ import ItemSlot from "../inventories/ItemSlot";
 import { leftClickItemSlot } from "../../../inventory-manipulation";
 import Player from "../../../entities/Player";
 import { definiteGameState } from "../../../game-state/game-states";
+import OPTIONS from "../../../options";
 
 const CRAFTING_STATION_ICON_TEXTURE_SOURCES: Record<CraftingStation, string> = {
    [CraftingStation.workbench]: CLIENT_ITEM_INFO_RECORD[ItemType.workbench].textureSource,
@@ -286,7 +287,7 @@ const CraftingMenu = () => {
       );
    }
    
-   return <div id="crafting-menu" className="inventory" ref={onCraftingMenuRefChange}>
+   return <div id="crafting-menu" className={`inventory${OPTIONS.uiStyle === "old" ? " old" : ""}`} ref={onCraftingMenuRefChange}>
       <div className="available-crafting-stations">
          {Array.from(availableCraftingStations).map((craftingStationType: CraftingStation, i: number) => {
             const image = require("../../../images/" + CRAFTING_STATION_ICON_TEXTURE_SOURCES[craftingStationType]);

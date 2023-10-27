@@ -288,7 +288,7 @@ const createHotbarKeyListeners = (): void => {
 
 const throwHeldItem = (): void => {
    if (Player.instance !== null) {
-      Client.sendThrowHeldItemPacket(Player.instance.rotation);
+      Client.sendHeldItemDropPacket(99999, Player.instance.rotation);
    }
 }
 
@@ -473,6 +473,13 @@ export function createPlayerInputListeners(): void {
          newSlot -= SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE;
       }
       selectItemSlot(newSlot);
+   });
+
+   addKeyListener("q", () => {
+      if (Player.instance !== null) {
+         const dropAmount = keyIsPressed("shift") ? 99999 : 1;
+         Client.sendItemDropPacket(latencyGameState.selectedHotbarItemSlot, dropAmount, Player.instance.rotation);
+      }
    });
 }
 

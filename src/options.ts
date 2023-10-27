@@ -27,7 +27,7 @@ const OPTIONS: Options = {
    showRenderChunkBorders: false,
    showTribeMemberHands: false,
    showParticles: false,
-   uiStyle: "new"
+   uiStyle: "old"
 };
 
 export default OPTIONS;
