@@ -135,8 +135,8 @@ export function updateChargeMeter(): void {
    const selectedItem = definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot];
    const bowInfo = ITEM_INFO_RECORD[selectedItem.type] as BowItemInfo;
 
-   const secondsSinceLastAction = Player.instance.getSecondsSinceLastAction(Player.instance.lastActionTicks);
-   let chargeProgress = secondsSinceLastAction / bowInfo.shotCooldown;
+   const secondsSinceLastAction = Player.instance.getSecondsSinceLastAction();
+   let chargeProgress = secondsSinceLastAction / (bowInfo.shotCooldownTicks / SETTINGS.TPS);
    if (chargeProgress > 1) {
       chargeProgress = 1;
    }

@@ -15,7 +15,7 @@ const CHARGE_METER_TEXTURES: ReadonlyArray<string> = [
 
 const ChargeMeter = () => {
    const [isVisible, setIsVisible] = useState(false);
-   const [chargeProgress, setCharge] = useState(0);
+   const [charge, setCharge] = useState(0);
    const [xPos, setXPos] = useState(0);
    const [yPos, setYPos] = useState(0);
    
@@ -29,7 +29,8 @@ const ChargeMeter = () => {
       }
       
       updateChargeMeterProgress = (chargeProgress: number) => {
-         setCharge(chargeProgress);
+         const charge = Math.floor(chargeProgress * 5);
+         setCharge(charge);
       }
 
       document.addEventListener("mousemove", (e: MouseEvent) => {
@@ -42,13 +43,9 @@ const ChargeMeter = () => {
       return null;
    }
 
-   const charge = Math.floor(chargeProgress * 5);
-
    const textureSource = CHARGE_METER_TEXTURES[charge];
-   
    return <div id="charge-meter-container" style={{left: xPos + "px", top: yPos + "px"}}>
       <img src={require("../../images/" + textureSource)} className="charge-meter" alt="" />
-      {/* <img src={require("../../images/miscellaneous/charge-meter-0.png")} className="charge-meter" alt="" /> */}
    </div>
 }
 

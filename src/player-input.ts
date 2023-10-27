@@ -181,7 +181,9 @@ const attack = (): void => {
    };
    Client.sendAttackPacket(attackPacket);
 
-   Player.instance.lastActionTicks = Board.ticks;
+   if (latencyGameState.playerAction !== TribeMemberAction.charge_bow) {
+      Player.instance.lastActionTicks = Board.ticks;
+   }
 }
 
 export let rightMouseButtonIsPressed = false;
@@ -560,7 +562,6 @@ const deselectItem = (item: Item): void => {
       }
       case "placeable": {
          latencyGameState.playerIsPlacingEntity = false;
-         
          break;
       }
    }
@@ -571,7 +572,6 @@ export function selectItem(item: Item): void {
    switch (itemCategory) {
       case "placeable": {
          latencyGameState.playerIsPlacingEntity = true;
-
          break;
       }
    }
@@ -737,6 +737,9 @@ const selectItemSlot = (itemSlot: number): void => {
    }
    if (definiteGameState.hotbar.itemSlots.hasOwnProperty(itemSlot)) {
       selectItem(definiteGameState.hotbar.itemSlots[itemSlot]);
+      if (rightMouseButtonIsPressed) {
+         itemRightClickDown(definiteGameState.hotbar.itemSlots[itemSlot]);
+      }
    }
 
    latencyGameState.selectedHotbarItemSlot = itemSlot;

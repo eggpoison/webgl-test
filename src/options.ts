@@ -25,8 +25,8 @@ const OPTIONS: Options = {
    showHitboxes: false,
    showChunkBorders: false,
    showRenderChunkBorders: false,
-   showTribeMemberHands: false,
-   showParticles: false,
+   showTribeMemberHands: true,
+   showParticles: true,
    uiStyle: "old"
 };
 

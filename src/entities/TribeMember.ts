@@ -13,6 +13,7 @@ import { Inventory } from "../items/Item";
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
 import { GAME_OBJECT_TEXTURE_SLOT_INDEXES, getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 import OPTIONS from "../options";
+import { createDeepFrostHeartBloodParticles } from "../items/DroppedItem";
 
 type FilterFoodItemTypes<T extends ItemType> = (typeof ITEM_TYPE_RECORD)[T] extends "food" ? never : T;
 
@@ -351,7 +352,7 @@ abstract class TribeMember extends Entity {
          itemSize = this.activeItemRenderPart.width;
       }
 
-      const secondsSinceLastAction = this.getSecondsSinceLastAction(this.lastActionTicks);
+      const secondsSinceLastAction = this.getSecondsSinceLastAction();
       switch (this.action) {
          case TribeMemberAction.charge_bow: {
             // 
@@ -440,8 +441,8 @@ abstract class TribeMember extends Entity {
       }
    }
 
-   public getSecondsSinceLastAction(lastActionTicks: number): number {
-      const ticksSinceLastAction = Board.ticks - lastActionTicks;
+   public getSecondsSinceLastAction(): number {
+      const ticksSinceLastAction = Board.ticks - this.lastActionTicks;
       let secondsSinceLastAction = ticksSinceLastAction / SETTINGS.TPS;
 
       // Account for frame progress
@@ -532,6 +533,11 @@ abstract class TribeMember extends Entity {
             );
             Board.lowMonocolourParticles.push(particle);
          }
+      }
+
+      // Make the deep frost heart item spew blue blood particles
+      if (this.activeItemType !== null && this.activeItemType === ItemType.deepfrost_heart) {
+         createDeepFrostHeartBloodParticles(this.activeItemRenderPart.renderPosition.x, this.activeItemRenderPart.renderPosition.y, this.velocity.x, this.velocity.y);
       }
    }
 
@@ -652,8 +658,8 @@ abstract class TribeMember extends Entity {
       if (this.action === TribeMemberAction.charge_bow && this.activeItemType !== null) {
          const bowInfo = ITEM_INFO_RECORD[this.activeItemType] as BowItemInfo;
          
-         const secondsSinceLastAction = this.getSecondsSinceLastAction(this.lastActionTicks);
-         const chargeProgress = secondsSinceLastAction / bowInfo.shotCooldown;
+         const secondsSinceLastAction = this.getSecondsSinceLastAction();
+         const chargeProgress = secondsSinceLastAction / (bowInfo.shotCooldownTicks / SETTINGS.TPS);
 
          let textureIdx = Math.floor(chargeProgress * TribeMember.BOW_CHARGE_TEXTURE_SOURCES.length);
          if (textureIdx >= TribeMember.BOW_CHARGE_TEXTURE_SOURCES.length) {

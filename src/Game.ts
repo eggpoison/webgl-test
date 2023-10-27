@@ -9,7 +9,7 @@ import { createEntityShaders, renderGameObjects } from "./rendering/game-object-
 import Client from "./client/Client";
 import { calculateCursorWorldPositionX, calculateCursorWorldPositionY, cursorX, cursorY, getMouseTargetEntity, handleMouseMovement, renderCursorTooltip, updateChargeMeter } from "./mouse";
 import { refreshDebugInfo, setDebugInfoDebugData } from "./components/game/dev/DebugInfo";
-import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createShaderStrings, createWebGLContext, gl, halfWindowHeight, halfWindowWidth, resizeCanvas } from "./webgl";
+import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, TIME_UNIFORM_BUFFER_BINDING_INDEX, createShaderStrings, createWebGLContext, gl, halfWindowHeight, halfWindowWidth, resizeCanvas } from "./webgl";
 import { loadTextures } from "./textures";
 import { hidePauseScreen, showPauseScreen, toggleSettingsMenu } from "./components/game/GameScreen";
 import { getGameState } from "./components/App";
@@ -89,6 +89,9 @@ abstract class Game {
    private static cameraData = new Float32Array(8);
    private static cameraBuffer: WebGLBuffer;
 
+   private static timeData = new Float32Array(4);
+   private static timeBuffer: WebGLBuffer;
+
    public static setGameObjectDebugData(gameObjectDebugData: GameObjectDebugData | undefined): void {
       if (typeof gameObjectDebugData === "undefined") {
          this.gameObjectDebugData = null;
@@ -165,6 +168,11 @@ abstract class Game {
             this.cameraBuffer = gl.createBuffer()!;
             gl.bindBufferBase(gl.UNIFORM_BUFFER, CAMERA_UNIFORM_BUFFER_BINDING_INDEX, this.cameraBuffer);
             gl.bufferData(gl.UNIFORM_BUFFER, this.cameraData.byteLength, gl.DYNAMIC_DRAW);
+
+            // Create the time uniform buffer
+            this.timeBuffer = gl.createBuffer()!;
+            gl.bindBufferBase(gl.UNIFORM_BUFFER, TIME_UNIFORM_BUFFER_BINDING_INDEX, this.timeBuffer);
+            gl.bufferData(gl.UNIFORM_BUFFER, this.timeData.byteLength, gl.DYNAMIC_DRAW);
             
             // We load the textures before we create the shaders because some shader initialisations stitch textures together
             await loadTextures();
@@ -309,7 +317,6 @@ abstract class Game {
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
       setFrameProgress(frameProgress);
-      const renderTime = performance.now();
 
       // Update the camera
       if (Player.instance !== null) {
@@ -328,10 +335,15 @@ abstract class Game {
       this.cameraData[4] = Camera.zoom;
       gl.bufferSubData(gl.UNIFORM_BUFFER, 0, this.cameraData);
 
+      // Update the time buffer
+      gl.bindBuffer(gl.UNIFORM_BUFFER, this.timeBuffer);
+      this.timeData[0] = performance.now();
+      gl.bufferSubData(gl.UNIFORM_BUFFER, 0, this.timeData);
+
       renderPlayerNames();
 
       renderSolidTiles();
-      renderRivers(renderTime);
+      renderRivers();
       renderAmbientOcclusion();
       renderWallBorders();
       if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Board.hasGameObjectID(this.gameObjectDebugData.gameObjectID)) {
@@ -346,15 +358,15 @@ abstract class Game {
       }
 
       if (OPTIONS.showParticles) {
-         renderMonocolourParticles(ParticleRenderLayer.low, renderTime);
-         renderTexturedParticles(ParticleRenderLayer.low, renderTime);
+         renderMonocolourParticles(ParticleRenderLayer.low);
+         renderTexturedParticles(ParticleRenderLayer.low);
       }
 
       renderGameObjects();
       
       if (OPTIONS.showParticles) {
-         renderMonocolourParticles(ParticleRenderLayer.high, renderTime);
-         renderTexturedParticles(ParticleRenderLayer.high, renderTime);
+         renderMonocolourParticles(ParticleRenderLayer.high);
+         renderTexturedParticles(ParticleRenderLayer.high);
       }
 
       if (nerdVisionIsVisible() && OPTIONS.showHitboxes) {

@@ -10,13 +10,13 @@ import Particle from "../Particle";
 import { addMonocolourParticleToBufferContainer, ParticleRenderLayer } from "../rendering/particle-rendering";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 
-export function createFrozenYetiBloodParticle(size: BloodParticleSize, spawnPositionX: number, spawnPositionY: number, moveDirection: number, moveSpeed: number, hasDrag: boolean): void {
+const createFrozenYetiBloodParticle = (size: BloodParticleSize, spawnPositionX: number, spawnPositionY: number, moveDirection: number, moveSpeed: number, hasDrag: boolean, extraVelocityX: number, extraVelocityY: number): void => {
    const lifetime = randFloat(0.3, 0.4);
    
    const pixelSize = size === BloodParticleSize.large ? 8 : 4;
 
-   const velocityX = moveSpeed * Math.sin(moveDirection);
-   const velocityY = moveSpeed * Math.cos(moveDirection);
+   const velocityX = moveSpeed * Math.sin(moveDirection) + extraVelocityX;
+   const velocityY = moveSpeed * Math.cos(moveDirection) + extraVelocityY;
 
    const friction = hasDrag ? moveSpeed / lifetime / 1.2 : 0;
 
@@ -50,6 +50,18 @@ export function createFrozenYetiBloodParticle(size: BloodParticleSize, spawnPosi
    Board.highMonocolourParticles.push(particle);
 }
 
+export function createDeepFrostHeartBloodParticles(originX: number, originY: number, extraVelocityX: number, extraVelocityY: number): void {
+   if (Board.tickIntervalHasPassed(0.4)) {
+      for (let i = 0; i < 6; i++) {
+         const spawnPositionOffsetMagnitude = 13;
+         const spawnPositionOffsetDirection = 2 * Math.PI * Math.random();
+         const spawnPositionX = originX + spawnPositionOffsetMagnitude * Math.sin(spawnPositionOffsetDirection);
+         const spawnPositionY = originY + spawnPositionOffsetMagnitude * Math.cos(spawnPositionOffsetDirection);
+         createFrozenYetiBloodParticle(BloodParticleSize.small, spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(40, 60), true, extraVelocityX, extraVelocityY);
+      }
+   }
+}
+
 class DroppedItem extends GameObject implements BaseItemInfo {
    public readonly itemType: ItemType;
 
@@ -75,14 +87,8 @@ class DroppedItem extends GameObject implements BaseItemInfo {
       super.tick();
 
       // Make the deep frost heart item spew blue blood particles
-      if (this.itemType === ItemType.deepfrost_heart && Board.tickIntervalHasPassed(0.4)) {
-         for (let i = 0; i < 6; i++) {
-            const spawnPositionOffsetMagnitude = 13;
-            const spawnPositionOffsetDirection = 2 * Math.PI * Math.random();
-            const spawnPositionX = this.position.x + spawnPositionOffsetMagnitude * Math.sin(spawnPositionOffsetDirection);
-            const spawnPositionY = this.position.y + spawnPositionOffsetMagnitude * Math.cos(spawnPositionOffsetDirection);
-            createFrozenYetiBloodParticle(BloodParticleSize.small, spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(40, 60), true);
-         }
+      if (this.itemType === ItemType.deepfrost_heart) {
+         createDeepFrostHeartBloodParticles(this.position.x, this.position.y, 0, 0);
       }
    }
 }

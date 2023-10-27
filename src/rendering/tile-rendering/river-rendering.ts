@@ -1,5 +1,5 @@
 import { Point, RIVER_STEPPING_STONE_SIZES, RiverSteppingStoneSize, SETTINGS, TileType, WaterRockSize, lerp, randFloat, rotatePoint, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
-import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../../webgl";
+import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, TIME_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../../webgl";
 import { getTexture } from "../../textures";
 import Camera from "../../Camera";
 import Board, { RiverSteppingStone } from "../../Board";
@@ -185,8 +185,11 @@ void main() {
 
 const highlightsFragmentShaderText = `#version 300 es
 precision mediump float;
+
+layout(std140) uniform Time {
+   uniform float u_time;
+};
  
-uniform float u_fadeProgress;
 uniform sampler2D u_texture1;
 uniform sampler2D u_texture2;
 uniform sampler2D u_texture3;
@@ -197,7 +200,9 @@ in float v_fadeOffset;
 out vec4 outputColour;
  
 void main() {
-   float fadeProgress = u_fadeProgress + v_fadeOffset;
+   float timeFadeProgress = mod(u_time / 3000.0, 3.0);
+
+   float fadeProgress = timeFadeProgress + v_fadeOffset;
    fadeProgress = mod(fadeProgress, 3.0);
    
    if (fadeProgress < 1.0) {
@@ -256,6 +261,10 @@ void main() {
 
 const noiseFragmentShaderText = `#version 300 es
 precision mediump float;
+
+layout(std140) uniform Time {
+   uniform float u_time;
+};
  
 uniform sampler2D u_noiseTexture;
 uniform float u_animationOffset;
@@ -268,7 +277,9 @@ in float v_animationSpeed;
 out vec4 outputColour;
  
 void main() {
-   float animationOffset = u_animationOffset * v_animationSpeed + v_animationOffset;
+   float timeAnimationOffset = u_time * ${WATER_VISUAL_FLOW_SPEED} / 1000.0;
+
+   float animationOffset = timeAnimationOffset * v_animationSpeed + v_animationOffset;
    vec2 offsetCoord = v_flowDirection * animationOffset;
    outputColour = texture(u_noiseTexture, fract(v_texCoord - offsetCoord));
 
@@ -453,6 +464,10 @@ void main() {
 
 const foamFragmentShaderText = `#version 300 es
 precision mediump float;
+
+layout(std140) uniform Time {
+   uniform float u_time;
+};
  
 uniform sampler2D u_foamTexture;
 uniform float u_textureOffset;
@@ -464,7 +479,9 @@ in float v_textureOffset;
 out vec4 outputColour;
  
 void main() {
-   float offsetAmount = u_textureOffset + v_textureOffset;
+   float timeTextureOffset = u_time * ${WATER_VISUAL_FLOW_SPEED} / 1000.0;
+
+   float offsetAmount = timeTextureOffset + v_textureOffset;
    vec2 offset = v_flowDirection * offsetAmount;
    outputColour = texture(u_foamTexture, fract(v_texCoord - offset));
 
@@ -537,12 +554,6 @@ let transitionProgram: WebGLProgram;
 let foamProgram: WebGLProgram;
 let steppingStoneProgram: WebGLProgram;
 
-let highlightsProgramFadeProgressUniformLocation: WebGLUniformLocation;
-
-let noiseAnimationOffsetUniformLocation: WebGLUniformLocation;
-
-let foamProgramTextureOffsetUniformLocation: WebGLUniformLocation;
-
 export function createRiverShaders(): void {
    // 
    // Base program
@@ -583,7 +594,9 @@ export function createRiverShaders(): void {
    const highlightsCameraBlockIndex = gl.getUniformBlockIndex(highlightsProgram, "Camera");
    gl.uniformBlockBinding(highlightsProgram, highlightsCameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);
 
-   highlightsProgramFadeProgressUniformLocation = gl.getUniformLocation(highlightsProgram, "u_fadeProgress")!;
+   const highlightsTimeBlockIndex = gl.getUniformBlockIndex(highlightsProgram, "Time");
+   gl.uniformBlockBinding(highlightsProgram, highlightsTimeBlockIndex, TIME_UNIFORM_BUFFER_BINDING_INDEX);
+
    const highlightsProgramTexture1UniformLocation = gl.getUniformLocation(highlightsProgram, "u_texture1")!;
    const highlightsProgramTexture2UniformLocation = gl.getUniformLocation(highlightsProgram, "u_texture2")!;
    const highlightsProgramTexture3UniformLocation = gl.getUniformLocation(highlightsProgram, "u_texture3")!;
@@ -602,8 +615,10 @@ export function createRiverShaders(): void {
    const noiseCameraBlockIndex = gl.getUniformBlockIndex(noiseProgram, "Camera");
    gl.uniformBlockBinding(noiseProgram, noiseCameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);
 
+   const noiseTimeBlockIndex = gl.getUniformBlockIndex(noiseProgram, "Time");
+   gl.uniformBlockBinding(noiseProgram, noiseTimeBlockIndex, TIME_UNIFORM_BUFFER_BINDING_INDEX);
+
    const noiseTextureUniformLocation = gl.getUniformLocation(noiseProgram, "u_noiseTexture")!;
-   noiseAnimationOffsetUniformLocation = gl.getUniformLocation(noiseProgram, "u_animationOffset")!;
 
    gl.useProgram(noiseProgram);
    gl.uniform1i(noiseTextureUniformLocation, 0);
@@ -624,6 +639,7 @@ export function createRiverShaders(): void {
 
    const gravelNoiseTextureUniformLocation = gl.getUniformLocation(transitionProgram, "u_noiseTexture")!;
    gl.uniform1i(gravelNoiseTextureUniformLocation, 1);
+
    // 
    // Foam program
    // 
@@ -633,8 +649,10 @@ export function createRiverShaders(): void {
    const foamCameraBlockIndex = gl.getUniformBlockIndex(foamProgram, "Camera");
    gl.uniformBlockBinding(foamProgram, foamCameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);
 
+   const foamTimeBlockIndex = gl.getUniformBlockIndex(foamProgram, "Time");
+   gl.uniformBlockBinding(foamProgram, foamTimeBlockIndex, TIME_UNIFORM_BUFFER_BINDING_INDEX);
+
    const foamProgramFoamTextureUniformLocation = gl.getUniformLocation(foamProgram, "u_foamTexture")!;
-   foamProgramTextureOffsetUniformLocation = gl.getUniformLocation(foamProgram, "u_textureOffset")!;
 
    gl.useProgram(foamProgram);
    gl.uniform1i(foamProgramFoamTextureUniformLocation, 0);
@@ -1566,7 +1584,7 @@ const calculateVisibleRenderChunks = (): ReadonlyArray<RenderChunkRiverInfo> => 
    return renderChunks;
 }
 
-export function renderRivers(renderTime: number): void {
+export function renderRivers(): void {
    const visibleRenderChunks = calculateVisibleRenderChunks();
 
    // 
@@ -1633,9 +1651,6 @@ export function renderRivers(renderTime: number): void {
    // 
 
    gl.useProgram(highlightsProgram);
-      
-   const highlightsFadeProgress = (renderTime / 3000) % 3;
-   gl.uniform1f(highlightsProgramFadeProgressUniformLocation, highlightsFadeProgress);
 
    const texture1 = getTexture("miscellaneous/river/river-bed-highlights-1.png");
    gl.activeTexture(gl.TEXTURE0);
@@ -1659,9 +1674,6 @@ export function renderRivers(renderTime: number): void {
    // 
    
    gl.useProgram(noiseProgram);
-      
-   const noiseAnimationOffset = renderTime * WATER_VISUAL_FLOW_SPEED / 1000;
-   gl.uniform1f(noiseAnimationOffsetUniformLocation, noiseAnimationOffset);
                
    const noiseTexture = getTexture("miscellaneous/river/water-noise.png");
    gl.activeTexture(gl.TEXTURE0);
@@ -1683,9 +1695,6 @@ export function renderRivers(renderTime: number): void {
    gl.activeTexture(gl.TEXTURE0);
    gl.bindTexture(gl.TEXTURE_2D, foamTexture);
    
-   const foamTextureOffset = renderTime * WATER_VISUAL_FLOW_SPEED / 1000;
-   gl.uniform1f(foamProgramTextureOffsetUniformLocation, foamTextureOffset);
-
    // Bind stepping stone textures
    for (let size: RiverSteppingStoneSize = 0; size < 3; size++) {
       const textureSource = RIVER_STEPPING_STONE_TEXTURES[size];
