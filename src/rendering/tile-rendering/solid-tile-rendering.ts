@@ -51,7 +51,7 @@ let program: WebGLProgram;
 let tileTextureArray: WebGLTexture;
 
 export function createSolidTileShaders(): void {
-   program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText, "a_tilePos");
+   program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
 
    const cameraBlockIndex = gl.getUniformBlockIndex(program, "Camera");
    gl.uniformBlockBinding(program, cameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);

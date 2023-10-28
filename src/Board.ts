@@ -1,5 +1,5 @@
 import Entity from "./entities/Entity";
-import { SETTINGS, Point, Vector, ServerTileUpdateData, rotatePoint, WaterRockData, RiverSteppingStoneData, RiverSteppingStoneSize, RIVER_STEPPING_STONE_SIZES } from "webgl-test-shared";
+import { SETTINGS, Point, Vector, ServerTileUpdateData, rotatePoint, WaterRockData, RiverSteppingStoneData, RIVER_STEPPING_STONE_SIZES } from "webgl-test-shared";
 import Chunk from "./Chunk";
 import DroppedItem from "./items/DroppedItem";
 import { Tile } from "./Tile";
@@ -17,12 +17,6 @@ import Fish from "./entities/Fish";
 export interface EntityHitboxInfo {
    readonly vertexPositions: readonly [Point, Point, Point, Point];
    readonly sideAxes: ReadonlyArray<Vector>;
-}
-
-export interface RiverSteppingStone {
-   readonly position: Point;
-   readonly rotation: number;
-   readonly size: RiverSteppingStoneSize;
 }
 
 interface TickCallback {
@@ -80,27 +74,20 @@ abstract class Board {
 
       // Add water rocks to chunks
       for (const waterRock of waterRocks) {
-         const chunkX = Math.floor(waterRock.position[0] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE);
-         const chunkY = Math.floor(waterRock.position[1] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE);
+         const chunkX = Math.floor(waterRock.position[0] / SETTINGS.CHUNK_UNITS);
+         const chunkY = Math.floor(waterRock.position[1] / SETTINGS.CHUNK_UNITS);
          const chunk = this.chunks[chunkX][chunkY];
          chunk.waterRocks.push(waterRock);
       }
 
       // Add river stepping stones to chunks
-      for (const steppingStoneData of riverSteppingStones) {
-         // Create the client-side information for the stepping stone
-         const steppingStone: RiverSteppingStone = {
-            position: Point.unpackage(steppingStoneData.position),
-            rotation: steppingStoneData.rotation,
-            size: steppingStoneData.size
-         };
-
+      for (const steppingStone of riverSteppingStones) {
          const size = RIVER_STEPPING_STONE_SIZES[steppingStone.size];
 
-         const minChunkX = Math.max(Math.min(Math.floor((steppingStone.position.x - size/2) / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-         const maxChunkX = Math.max(Math.min(Math.floor((steppingStone.position.x + size/2) / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-         const minChunkY = Math.max(Math.min(Math.floor((steppingStone.position.y - size/2) / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-         const maxChunkY = Math.max(Math.min(Math.floor((steppingStone.position.y + size/2) / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+         const minChunkX = Math.max(Math.min(Math.floor((steppingStone.positionX - size/2) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
+         const maxChunkX = Math.max(Math.min(Math.floor((steppingStone.positionX + size/2) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
+         const minChunkY = Math.max(Math.min(Math.floor((steppingStone.positionY - size/2) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
+         const maxChunkY = Math.max(Math.min(Math.floor((steppingStone.positionY + size/2) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
          
          for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
             for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {

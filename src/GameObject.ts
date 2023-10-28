@@ -1,4 +1,4 @@
-import { GameObjectData, Point, RIVER_STEPPING_STONE_SIZES, SETTINGS, TILE_FRICTIONS, TILE_MOVE_SPEED_MULTIPLIERS, TileType } from "webgl-test-shared";
+import { GameObjectData, Point, RIVER_STEPPING_STONE_SIZES, SETTINGS, TILE_FRICTIONS, TILE_MOVE_SPEED_MULTIPLIERS, TileType, distance } from "webgl-test-shared";
 import RenderPart, { RenderObject } from "./render-parts/RenderPart";
 import Chunk from "./Chunk";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
@@ -103,7 +103,7 @@ abstract class GameObject extends RenderObject {
          for (const steppingStone of chunk.riverSteppingStones) {
             const size = RIVER_STEPPING_STONE_SIZES[steppingStone.size];
             
-            const dist = this.position.calculateDistanceBetween(steppingStone.position);
+            const dist = distance(this.position.x, this.position.y, steppingStone.positionX, steppingStone.positionY);
             if (dist <= size/2) {
                return false;
             }

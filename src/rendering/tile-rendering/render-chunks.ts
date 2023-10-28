@@ -26,10 +26,12 @@ export interface RenderChunkRiverInfo {
    readonly noiseVertexCount: number;
    readonly transitionVAO: WebGLVertexArrayObject;
    readonly transitionVertexCount: number;
-   readonly foamVAO: WebGLVertexArrayObject;
-   readonly foamVertexCount: number;
-   readonly steppingStoneVAO: WebGLVertexArrayObject;
-   readonly steppingStoneVertexCount: number;
+   /** IDs of all stepping stone groups resent in the render chunk */
+   readonly riverSteppingStoneGroupIDs: ReadonlyArray<number>;
+   // readonly foamVAO: WebGLVertexArrayObject;
+   // readonly foamVertexCount: number;
+   // readonly steppingStoneVAO: WebGLVertexArrayObject;
+   // readonly steppingStoneVertexCount: number;
 }
 
 export interface RenderChunkAmbientOcclusionInfo {

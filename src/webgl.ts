@@ -75,8 +75,7 @@ export function createShaderStrings(): void {
    }
 }
 
-// @Cleanup once the game object rendering thing is reworked, remove the attrib0Name parameter
-export function createWebGLProgram(glRenderingContext: WebGL2RenderingContext, vertexShaderText: string, fragmentShaderText: string, attrib0Name?: string): WebGLProgram {
+export function createWebGLProgram(glRenderingContext: WebGL2RenderingContext, vertexShaderText: string, fragmentShaderText: string): WebGLProgram {
    // Create shaders
    const vertexShader = glRenderingContext.createShader(glRenderingContext.VERTEX_SHADER)!;
    const fragmentShader = glRenderingContext.createShader(glRenderingContext.FRAGMENT_SHADER)!;
@@ -102,10 +101,6 @@ export function createWebGLProgram(glRenderingContext: WebGL2RenderingContext, v
 
    glRenderingContext.attachShader(program, vertexShader);
    glRenderingContext.attachShader(program, fragmentShader);
-
-   if (typeof attrib0Name !== "undefined") {
-      glRenderingContext.bindAttribLocation(program, 0, attrib0Name);
-   }
 
    glRenderingContext.linkProgram(program);
    if (!glRenderingContext.getProgramParameter(program, glRenderingContext.LINK_STATUS)) {

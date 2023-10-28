@@ -1,14 +1,13 @@
-import { WaterRockData } from "webgl-test-shared";
+import { RiverSteppingStoneData, WaterRockData } from "webgl-test-shared";
 import GameObject from "./GameObject";
 import Entity from "./entities/Entity";
-import { RiverSteppingStone } from "./Board";
 
 class Chunk {
    private readonly gameObjects = new Array<GameObject>();
    private readonly entities = new Array<Entity>();
 
    public readonly waterRocks = new Array<WaterRockData>();
-   public readonly riverSteppingStones = new Array<RiverSteppingStone>();
+   public readonly riverSteppingStones = new Array<RiverSteppingStoneData>();
 
    public readonly x: number;
    public readonly y: number;

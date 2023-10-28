@@ -72,7 +72,7 @@ let programHalfWindowSizeUniformLocation: WebGLUniformLocation;
 let programCanPlaceUniformLocation: WebGLUniformLocation;
 
 export function createPlaceableItemProgram(): void {
-   program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText, "a_vertWorldPosition");
+   program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
    
    zoomUniformLocation = gl.getUniformLocation(program, "u_zoom")!;
    programPlayerRotationUniformLocation = gl.getUniformLocation(program, "u_playerRotation")!;

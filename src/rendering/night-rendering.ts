@@ -31,7 +31,7 @@ let vao: WebGLVertexArrayObject;
 let darkenFactorUniformLocation: WebGLUniformLocation;
 
 export function createNightShaders(): void {
-   program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText, "a_vertPosition");
+   program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
 
    darkenFactorUniformLocation = gl.getUniformLocation(program, "u_darkenFactor")!;
 

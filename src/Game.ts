@@ -4,7 +4,7 @@ import { isDev } from "./utils";
 import { renderPlayerNames, createTextCanvasContext } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/game/ChatBox";
-import { GameDataPacket, GameObjectDebugData, SETTINGS } from "webgl-test-shared";
+import { GameDataPacket, GameObjectDebugData, RiverSteppingStoneData, SETTINGS, WaterRockData } from "webgl-test-shared";
 import { createEntityShaders, renderGameObjects } from "./rendering/game-object-rendering";
 import Client from "./client/Client";
 import { calculateCursorWorldPositionX, calculateCursorWorldPositionY, cursorX, cursorY, getMouseTargetEntity, handleMouseMovement, renderCursorTooltip, updateChargeMeter } from "./mouse";
@@ -19,7 +19,7 @@ import { updateInteractInventory, updatePlayerItems, updatePlayerMovement } from
 import { clearServerTicks, updateDebugScreenFPS, updateDebugScreenRenderTime } from "./components/game/dev/GameInfoDisplay";
 import { createWorldBorderShaders, renderWorldBorder } from "./rendering/world-border-rendering";
 import { createSolidTileShaders, renderSolidTiles } from "./rendering/tile-rendering/solid-tile-rendering";
-import { createRiverShaders, renderRivers } from "./rendering/tile-rendering/river-rendering";
+import { createRiverShaders, createRiverSteppingStoneData, renderRivers } from "./rendering/tile-rendering/river-rendering";
 import { createChunkBorderShaders, renderChunkBorders } from "./rendering/chunk-border-rendering";
 import { nerdVisionIsVisible } from "./components/game/dev/NerdVision";
 import { setFrameProgress } from "./GameObject";
@@ -36,6 +36,7 @@ import { createPlaceableItemProgram, renderGhostPlaceableItem } from "./renderin
 import { setupFrameGraph } from "./rendering/frame-graph-rendering";
 import { createGameObjectTextureAtlas } from "./texture-atlases/game-object-texture-atlas";
 import { createFishShaders } from "./rendering/fish-rendering";
+import { Tile } from "./Tile";
 
 let listenersHaveBeenCreated = false;
 
@@ -157,12 +158,16 @@ abstract class Game {
    /**
     * Prepares the game to be played. Called once just before the game starts.
     */
-   public static async initialise(): Promise<void> {
+   public static async initialise(tiles: Array<Array<Tile>>, waterRocks: ReadonlyArray<WaterRockData>, riverSteppingStones: ReadonlyArray<RiverSteppingStoneData>, riverFlowDirections: Record<number, Record<number, number>>): Promise<void> {
       if (!Game.hasInitialised) {
          return new Promise(async resolve => {
             createWebGLContext();
             createShaderStrings();
             createTextCanvasContext();
+
+            Board.initialise(tiles, waterRocks, riverSteppingStones, riverFlowDirections);
+         
+            createRiverSteppingStoneData(riverSteppingStones);
 
             // Create the camera uniform buffer
             this.cameraBuffer = gl.createBuffer()!;
