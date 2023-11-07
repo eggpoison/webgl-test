@@ -126,35 +126,30 @@ abstract class GameObject extends RenderObject {
             tileMoveSpeedMultiplier = speed;
          }
       }
-
-      const terminalVelocity = this.terminalVelocity * tileMoveSpeedMultiplier;
-
-      let tileFrictionReduceAmount: number;
-      
-      // Friction
-      if (this.velocity.x !== 0 || this.velocity.y !== 0) {
-         const amountBefore = this.velocity.length();
-         const divideAmount = 1 + 3 / SETTINGS.TPS * TILE_FRICTIONS[this.tile.type];
-         this.velocity.x /= divideAmount;
-         this.velocity.y /= divideAmount;
-         tileFrictionReduceAmount = amountBefore - this.velocity.length();
-      } else {
-         tileFrictionReduceAmount = 0;
-      }
       
       // Accelerate
       if (this.acceleration.x !== 0 || this.acceleration.y !== 0) {
+         const terminalVelocity = this.terminalVelocity * tileMoveSpeedMultiplier;
+
          const friction = TILE_FRICTIONS[this.tile.type];
          let accelerateAmountX = this.acceleration.x * friction * tileMoveSpeedMultiplier / SETTINGS.TPS;
          let accelerateAmountY = this.acceleration.y * friction * tileMoveSpeedMultiplier / SETTINGS.TPS;
 
          // Make acceleration slow as the game object reaches its terminal velocity
+         // Fix accelerating infinitely past terminal velocity
          const progressToTerminalVelocity = this.velocity.length() / terminalVelocity;
          if (progressToTerminalVelocity < 1) {
             accelerateAmountX *= 1 - Math.pow(progressToTerminalVelocity, 2);
             accelerateAmountY *= 1 - Math.pow(progressToTerminalVelocity, 2);
          }
 
+         const amountBefore = this.velocity.length();
+         const divideAmount = 1 + 3 / SETTINGS.TPS * TILE_FRICTIONS[this.tile.type];
+         this.velocity.x /= divideAmount;
+         this.velocity.y /= divideAmount;
+         const tileFrictionReduceAmount = amountBefore - this.velocity.length();
+
+         // Undo tile friction, but in the direction of acceleration instead of velocity
          const accelerateAmountLength = Math.sqrt(Math.pow(accelerateAmountX, 2) + Math.pow(accelerateAmountY, 2));
          accelerateAmountX += tileFrictionReduceAmount * accelerateAmountX / accelerateAmountLength;
          accelerateAmountY += tileFrictionReduceAmount * accelerateAmountY / accelerateAmountLength;
@@ -166,17 +161,23 @@ abstract class GameObject extends RenderObject {
          this.velocity.y += accelerateAmountY;
          
          // Don't accelerate past terminal velocity
+         // Allow the game object to 
          const velocityLength = this.velocity.length();
          if (velocityLength > terminalVelocity && velocityLength > magnitudeBeforeAdd) {
             if (magnitudeBeforeAdd < terminalVelocity) {
                this.velocity.x *= terminalVelocity / velocityLength;
                this.velocity.y *= terminalVelocity / velocityLength;
             } else {
+               // If already exceeded terminal velocity, don't apply any velocity
                this.velocity.x *= magnitudeBeforeAdd / velocityLength;
                this.velocity.y *= magnitudeBeforeAdd / velocityLength;
             }
          }
       } else if (this.velocity.x !== 0 || this.velocity.y !== 0) {
+         const divideAmount = 1 + 3 / SETTINGS.TPS * TILE_FRICTIONS[this.tile.type];
+         this.velocity.x /= divideAmount;
+         this.velocity.y /= divideAmount;
+
          // 
          // Apply friction
          // 

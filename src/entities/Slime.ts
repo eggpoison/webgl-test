@@ -1,4 +1,4 @@
-import { EntityData, EntityType, Point, SlimeOrbData, SlimeSize, TileType, lerp } from "webgl-test-shared";
+import { EntityData, Point, SlimeOrbData, SlimeSize, TileType, lerp } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -34,7 +34,7 @@ class Slime extends Entity {
    private static readonly NUM_SPECK_PARTICLES_ON_HIT: ReadonlyArray<number> = [3, 5, 7];
    private static readonly NUM_SPECK_PARTICLES_ON_DEATH: ReadonlyArray<number> = [6, 10, 15];
 
-   public type: EntityType = "slime";
+   public type = "slime" as const;
 
    private readonly eyeRenderPart: RenderPart;
    private readonly orbRenderParts = new Array<RenderPart>();

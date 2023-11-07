@@ -1,4 +1,4 @@
-import { EntityType, Point, randFloat } from "webgl-test-shared";
+import { Point, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -9,7 +9,7 @@ import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-t
 class Boulder extends Entity {
    private static readonly RADIUS = 40;
 
-   public type: EntityType = "boulder";
+   public type = "boulder" as const;
 
    private static readonly TEXTURE_SOURCES = [
       "entities/boulder/boulder1.png",

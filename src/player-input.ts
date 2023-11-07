@@ -737,7 +737,7 @@ const selectItemSlot = (itemSlot: number): void => {
    }
    if (definiteGameState.hotbar.itemSlots.hasOwnProperty(itemSlot)) {
       selectItem(definiteGameState.hotbar.itemSlots[itemSlot]);
-      if (rightMouseButtonIsPressed) {
+      if (rightMouseButtonIsPressed && ITEM_TYPE_RECORD[definiteGameState.hotbar.itemSlots[itemSlot].type] === "bow") {
          itemRightClickDown(definiteGameState.hotbar.itemSlots[itemSlot]);
       }
    }

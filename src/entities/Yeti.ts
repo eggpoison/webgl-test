@@ -1,4 +1,4 @@
-import { EntityType, Point, EntityData, lerp, HitData, randFloat } from "webgl-test-shared";
+import { Point, EntityData, lerp, HitData, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -20,7 +20,7 @@ class Yeti extends Entity {
    private static readonly BLOOD_POOL_SIZE = 30;
    private static readonly BLOOD_FOUNTAIN_INTERVAL = 0.15;
 
-   public type: EntityType = "yeti";
+   public type = "yeti" as const;
 
    private numFootstepsTaken = 0;
 

@@ -1,4 +1,4 @@
-import { EntityData, EntityType, Point, randFloat } from "webgl-test-shared";
+import { EntityData, Point, randFloat } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -12,7 +12,7 @@ class BerryBush extends Entity {
    private static readonly LEAF_SPECK_COLOUR_LOW = [63/255, 204/255, 91/255] as const;
    private static readonly LEAF_SPECK_COLOUR_HIGH = [35/255, 158/255, 88/255] as const;
 
-   public readonly type: EntityType = "berry_bush";
+   public readonly type = "berry_bush";
 
    private static readonly TEXTURE_SOURCES = [
       "entities/berry-bush1.png",

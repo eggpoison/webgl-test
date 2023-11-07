@@ -1,4 +1,4 @@
-import { EntityType, HitData, Point, SNOWBALL_SIZES, SnowballSize, randFloat, randInt } from "webgl-test-shared";
+import { HitData, Point, SNOWBALL_SIZES, SnowballSize, randFloat, randInt } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -21,7 +21,7 @@ const getTextureSource = (size: SnowballSize): string => {
 }
 
 class Snowball extends Entity {
-   public type: EntityType = "snowball";
+   public type = "snowball" as const;
 
    private readonly size: SnowballSize;
    private readonly pixelSize: number;

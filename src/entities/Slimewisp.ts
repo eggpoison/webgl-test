@@ -1,4 +1,4 @@
-import { EntityType, Point, TileType } from "webgl-test-shared";
+import { Point, TileType } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -9,7 +9,7 @@ import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-t
 class Slimewisp extends Entity {
    private static readonly RADIUS = 16;
 
-   public type: EntityType = "slimewisp";
+   public type = "slimewisp" as const;
 
    constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number) {
       super(position, hitboxes, id, renderDepth);

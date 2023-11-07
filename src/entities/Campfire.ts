@@ -1,4 +1,4 @@
-import { EntityType, InventoryData, Point, randFloat } from "webgl-test-shared";
+import { InventoryData, Point, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
@@ -10,7 +10,7 @@ import { createEmberParticle, createSmokeParticle } from "../generic-particles";
 class Campfire extends CookingEntity {
    public static readonly SIZE = 104;
 
-   public type: EntityType = "campfire";
+   public type = "campfire" as const;
 
    constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData, heatingProgress: number, isCooking: boolean) {
       super(position, hitboxes, id, renderDepth, fuelInventory, ingredientInventory, outputInventory, heatingProgress, isCooking);
