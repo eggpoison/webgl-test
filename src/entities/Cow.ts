@@ -1,8 +1,6 @@
 import { CowSpecies, EntityData, HitData, Point, SETTINGS, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import CircularHitbox from "../hitboxes/CircularHitbox";
-import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createDirtParticle, createFootprintParticle } from "../generic-particles";
 import Board from "../Board";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
@@ -24,8 +22,8 @@ class Cow extends Entity {
 
    private numFootstepsTaken = 0;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, species: CowSpecies, grazeProgress: number) {
-      super(position, hitboxes, id, renderDepth);
+   constructor(position: Point, id: number, renderDepth: number, species: CowSpecies, grazeProgress: number) {
+      super(position, id, renderDepth);
 
       this.grazeProgress = grazeProgress;
 

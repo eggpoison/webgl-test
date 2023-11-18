@@ -1,7 +1,5 @@
 import { InventoryData, Point, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import CircularHitbox from "../hitboxes/CircularHitbox";
-import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import CookingEntity from "./CookingEntity";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 import Board from "../Board";
@@ -12,8 +10,8 @@ class Campfire extends CookingEntity {
 
    public type = "campfire" as const;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData, heatingProgress: number, isCooking: boolean) {
-      super(position, hitboxes, id, renderDepth, fuelInventory, ingredientInventory, outputInventory, heatingProgress, isCooking);
+   constructor(position: Point, id: number, renderDepth: number, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData, heatingProgress: number, isCooking: boolean) {
+      super(position, id, renderDepth, fuelInventory, ingredientInventory, outputInventory, heatingProgress, isCooking);
 
       this.attachRenderPart(
          new RenderPart(

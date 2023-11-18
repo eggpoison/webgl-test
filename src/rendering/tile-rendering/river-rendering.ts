@@ -866,13 +866,24 @@ const calculateTransitionVertexData = (renderChunkX: number, renderChunkY: numbe
    return vertexData;
 }
 
-const calculateRockVertices = (renderChunkX: number, renderChunkY: number): Array<number> => {
-   const vertices = new Array<number>();
-
+const calculateRockVertexData = (renderChunkX: number, renderChunkY: number): Float32Array => {
    const minChunkX = Math.floor(renderChunkX * RENDER_CHUNK_SIZE / SETTINGS.CHUNK_SIZE);
    const maxChunkX = Math.floor((renderChunkX + 1) * RENDER_CHUNK_SIZE / SETTINGS.CHUNK_SIZE) - 1;
    const minChunkY = Math.floor(renderChunkY * RENDER_CHUNK_SIZE / SETTINGS.CHUNK_SIZE);
    const maxChunkY = Math.floor((renderChunkY + 1) * RENDER_CHUNK_SIZE / SETTINGS.CHUNK_SIZE) - 1;
+
+   // Count number of rocks
+   let numRocks = 0;
+   for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+      for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
+         const chunk = Board.getChunk(chunkX, chunkY);
+         numRocks += chunk.waterRocks.length;
+      }
+   }
+   
+   const vertexData = new Float32Array(numRocks * 6 * 6);
+
+   let dataOffset = 0;
    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
          const chunk = Board.getChunk(chunkX, chunkY);
@@ -884,38 +895,67 @@ const calculateRockVertices = (renderChunkX: number, renderChunkY: number): Arra
             let y1 = (waterRock.position[1] - size/2);
             let y2 = (waterRock.position[1] + size/2);
 
-            // @Speed: Garbage collection
-   
-            let topLeft = new Point(x1, y2);
-            let topRight = new Point(x2, y2);
-            let bottomRight = new Point(x2, y1);
-            let bottomLeft = new Point(x1, y1);
-
-            const pos = new Point(waterRock.position[0], waterRock.position[1]);
-
-            // Rotate the points to match the entity's rotation
-            topLeft = rotatePoint(topLeft, pos, waterRock.rotation);
-            topRight = rotatePoint(topRight, pos, waterRock.rotation);
-            bottomRight = rotatePoint(bottomRight, pos, waterRock.rotation);
-            bottomLeft = rotatePoint(bottomLeft, pos, waterRock.rotation);
+            const topLeftX = rotateXAroundPoint(x1, y2, waterRock.position[0], waterRock.position[1], waterRock.rotation);
+            const topLeftY = rotateYAroundPoint(x1, y2, waterRock.position[0], waterRock.position[1], waterRock.rotation);
+            const topRightX = rotateXAroundPoint(x2, y2, waterRock.position[0], waterRock.position[1], waterRock.rotation);
+            const topRightY = rotateYAroundPoint(x2, y2, waterRock.position[0], waterRock.position[1], waterRock.rotation);
+            const bottomRightX = rotateXAroundPoint(x2, y1, waterRock.position[0], waterRock.position[1], waterRock.rotation);
+            const bottomRightY = rotateYAroundPoint(x2, y1, waterRock.position[0], waterRock.position[1], waterRock.rotation);
+            const bottomLeftX = rotateXAroundPoint(x1, y1, waterRock.position[0], waterRock.position[1], waterRock.rotation);
+            const bottomLeftY = rotateYAroundPoint(x1, y1, waterRock.position[0], waterRock.position[1], waterRock.rotation);
 
             const opacity = lerp(0.15, 0.4, waterRock.opacity);
 
             const textureIdx = waterRock.size as number;
+            
+            vertexData[dataOffset] = bottomLeftX;
+            vertexData[dataOffset + 1] = bottomLeftY;
+            vertexData[dataOffset + 2] = 0;
+            vertexData[dataOffset + 3] = 0;
+            vertexData[dataOffset + 4] = opacity;
+            vertexData[dataOffset + 5] = textureIdx;
+            
+            vertexData[dataOffset + 6] = bottomRightX;
+            vertexData[dataOffset + 7] = bottomRightY;
+            vertexData[dataOffset + 8] = 1;
+            vertexData[dataOffset + 9] = 0;
+            vertexData[dataOffset + 10] = opacity;
+            vertexData[dataOffset + 11] = textureIdx;
+            
+            vertexData[dataOffset + 12] = topLeftX;
+            vertexData[dataOffset + 13] = topLeftY;
+            vertexData[dataOffset + 14] = 0;
+            vertexData[dataOffset + 15] = 1;
+            vertexData[dataOffset + 16] = opacity;
+            vertexData[dataOffset + 17] = textureIdx;
+            
+            vertexData[dataOffset + 18] = topLeftX;
+            vertexData[dataOffset + 19] = topLeftY;
+            vertexData[dataOffset + 20] = 0;
+            vertexData[dataOffset + 21] = 1;
+            vertexData[dataOffset + 22] = opacity;
+            vertexData[dataOffset + 23] = textureIdx;
+            
+            vertexData[dataOffset + 24] = bottomRightX;
+            vertexData[dataOffset + 25] = bottomRightY;
+            vertexData[dataOffset + 26] = 1;
+            vertexData[dataOffset + 27] = 0;
+            vertexData[dataOffset + 28] = opacity;
+            vertexData[dataOffset + 29] = textureIdx;
+            
+            vertexData[dataOffset + 30] = topRightX;
+            vertexData[dataOffset + 31] = topRightY;
+            vertexData[dataOffset + 32] = 1;
+            vertexData[dataOffset + 33] = 1;
+            vertexData[dataOffset + 34] = opacity;
+            vertexData[dataOffset + 35] = textureIdx;
 
-            vertices.push(
-               bottomLeft.x, bottomLeft.y, 0, 0, opacity, textureIdx,
-               bottomRight.x, bottomRight.y, 1, 0, opacity, textureIdx,
-               topLeft.x, topLeft.y, 0, 1, opacity, textureIdx,
-               topLeft.x, topLeft.y, 0, 1, opacity, textureIdx,
-               bottomRight.x, bottomRight.y, 1, 0, opacity, textureIdx,
-               topRight.x, topRight.y, 1, 1, opacity, textureIdx
-            );
+            dataOffset += 36;
          }
       }
    }
 
-   return vertices;
+   return vertexData;
 }
 
 const calculateBaseVertexData = (waterTiles: ReadonlyArray<Tile>): Float32Array => {
@@ -1349,10 +1389,10 @@ export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY
    gl.bindBuffer(gl.ARRAY_BUFFER, baseBuffer);
    gl.bufferData(gl.ARRAY_BUFFER, baseVertexData, gl.STATIC_DRAW);
 
-   const rockVertices = calculateRockVertices(renderChunkX, renderChunkY);
+   const rockVertexData = calculateRockVertexData(renderChunkX, renderChunkY);
    const rockBuffer = gl.createBuffer()!;
    gl.bindBuffer(gl.ARRAY_BUFFER, rockBuffer);
-   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(rockVertices), gl.STATIC_DRAW);
+   gl.bufferData(gl.ARRAY_BUFFER, rockVertexData, gl.STATIC_DRAW);
 
    const highlightsVertexData = calculateHighlightsVertexData(waterTiles);
    const highlightsBuffer = gl.createBuffer()!;
@@ -1386,7 +1426,7 @@ export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY
       baseVAO: createBaseVAO(baseBuffer),
       baseVertexCount: baseVertexData.length / 8,
       rockVAO: createRockVAO(rockBuffer),
-      rockVertexCount: rockVertices.length / 6,
+      rockVertexCount: rockVertexData.length / 6,
       highlightsVAO: createHighlightsVAO(highlightsBuffer),
       highlightsVertexCount: highlightsVertexData.length / 5,
       transitionVAO: createTransitionVAO(transitionBuffer),

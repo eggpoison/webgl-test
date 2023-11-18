@@ -17,7 +17,10 @@ interface Options {
    showRenderChunkBorders: boolean;
    readonly showTribeMemberHands: boolean;
    readonly showParticles: boolean;
+   // @Temporary
    readonly uiStyle: "old" | "new";
+   // @Temporary
+   readonly showArmourSlot: boolean;
 }
 
 const OPTIONS: Options = {
@@ -25,9 +28,10 @@ const OPTIONS: Options = {
    showHitboxes: false,
    showChunkBorders: false,
    showRenderChunkBorders: false,
-   showTribeMemberHands: true,
+   showTribeMemberHands: false,
    showParticles: true,
-   uiStyle: "old"
+   uiStyle: "old",
+   showArmourSlot: false
 };
 
 export default OPTIONS;

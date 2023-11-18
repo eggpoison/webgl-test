@@ -1,6 +1,4 @@
 import { Point, InventoryData, EntityData } from "webgl-test-shared";
-import CircularHitbox from "../hitboxes/CircularHitbox";
-import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { Inventory } from "../items/Item";
 import Entity from "./Entity";
 import { createInventoryFromData } from "../inventory-manipulation";
@@ -12,8 +10,8 @@ abstract class CookingEntity extends Entity {
    public heatingProgress: number;
    public isCooking: boolean
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData, heatingProgress: number, isCooking: boolean) {
-      super(position, hitboxes, id, renderDepth);
+   constructor(position: Point, id: number, renderDepth: number, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData, heatingProgress: number, isCooking: boolean) {
+      super(position, id, renderDepth);
 
       this.fuelInventory = createInventoryFromData(fuelInventory);
       this.ingredientInventory = createInventoryFromData(ingredientInventory);

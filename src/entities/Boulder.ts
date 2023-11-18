@@ -1,8 +1,6 @@
 import { Point, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import CircularHitbox from "../hitboxes/CircularHitbox";
-import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { createRockParticle, createRockSpeckParticle } from "../generic-particles";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 
@@ -16,8 +14,8 @@ class Boulder extends Entity {
       "entities/boulder/boulder2.png"
    ];
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, boulderType: number) {
-      super(position, hitboxes, id, renderDepth);
+   constructor(position: Point, id: number, renderDepth: number, boulderType: number) {
+      super(position, id, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(

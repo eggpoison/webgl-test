@@ -1,8 +1,6 @@
 import { Point, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import CircularHitbox from "../hitboxes/CircularHitbox";
-import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import Particle from "../Particle";
 import Board from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
@@ -14,8 +12,8 @@ class IceSpikes extends Entity {
 
    private static readonly SIZE = 80;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number) {
-      super(position, hitboxes, id, renderDepth);
+   constructor(position: Point, id: number, renderDepth: number) {
+      super(position, id, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(

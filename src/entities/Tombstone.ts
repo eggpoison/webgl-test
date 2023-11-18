@@ -1,8 +1,6 @@
 import { DeathInfo, EntityData, Point, SETTINGS, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import CircularHitbox from "../hitboxes/CircularHitbox";
-import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { createDirtParticle, createRockParticle, createRockSpeckParticle } from "../generic-particles";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 
@@ -17,8 +15,8 @@ class Tombstone extends Entity {
    private zombieSpawnY: number;
    public readonly deathInfo: DeathInfo | null;
    
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, tombstoneType: number, zombieSpawnProgress: number, zombieSpawnX: number, zombieSpawnY: number, deathInfo: DeathInfo | null) {
-      super(position, hitboxes, id, renderDepth);
+   constructor(position: Point, id: number, renderDepth: number, tombstoneType: number, zombieSpawnProgress: number, zombieSpawnX: number, zombieSpawnY: number, deathInfo: DeathInfo | null) {
+      super(position, id, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(

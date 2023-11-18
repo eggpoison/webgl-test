@@ -9,7 +9,7 @@ abstract class Hitbox {
    /** The position of the hitbox, accounting for its offset and offset rotation */
    public position = new Point(0, 0);
 
-   public offset?: Point;
+   public offset = new Point(0, 0);
 
    /** The bounds of the hitbox since the last physics update */
    public bounds: HitboxBounds = [-1, -1, -1, -1];
@@ -20,10 +20,8 @@ abstract class Hitbox {
       this.position.x = gameObject.position.x;
       this.position.y = gameObject.position.y;
 
-      if (typeof this.offset !== "undefined") {
-         this.position.x += rotateXAroundPoint(this.offset.x, this.offset.y, 0, 0, gameObject.rotation);
-         this.position.y += rotateYAroundPoint(this.offset.x, this.offset.y, 0, 0, gameObject.rotation);
-      }
+      this.position.x += rotateXAroundPoint(this.offset.x, this.offset.y, 0, 0, gameObject.rotation);
+      this.position.y += rotateYAroundPoint(this.offset.x, this.offset.y, 0, 0, gameObject.rotation);
    }
 
    public abstract isColliding(otherHitbox: CircularHitbox | RectangularHitbox): boolean;

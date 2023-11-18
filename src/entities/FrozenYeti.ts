@@ -1,6 +1,4 @@
 import { EntityData, FrozenYetiAttackType, HitData, Point, SETTINGS, lerp, randFloat, randInt } from "webgl-test-shared";
-import CircularHitbox from "../hitboxes/CircularHitbox";
-import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 import Player from "./Player";
@@ -146,8 +144,8 @@ class FrozenYeti extends Entity {
    private attackStage: number;
    private stageProgress: number;
    
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, attackType: FrozenYetiAttackType, attackStage: number, stageProgress: number) {
-      super(position, hitboxes, id, renderDepth);
+   constructor(position: Point, id: number, renderDepth: number, attackType: FrozenYetiAttackType, attackStage: number, stageProgress: number) {
+      super(position, id, renderDepth);
 
       this.attackType = attackType;
       this.attackStage = attackStage;

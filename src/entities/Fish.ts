@@ -1,7 +1,5 @@
 import { FishColour, HitData, Point, TileType, randFloat, randItem } from "webgl-test-shared";
 import Entity from "./Entity";
-import CircularHitbox from "../hitboxes/CircularHitbox";
-import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import RenderPart from "../render-parts/RenderPart";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 import Board from "../Board";
@@ -22,8 +20,8 @@ class Fish extends Entity {
       "entities/fish/fish-lime.png"
    ];
    
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, colour: FishColour) {
-      super(position, hitboxes, id, renderDepth);
+   constructor(position: Point, id: number, renderDepth: number, colour: FishColour) {
+      super(position, id, renderDepth);
 
       const textureSource = randItem(Fish.TEXTURE_SOURCES);
       this.attachRenderPart(

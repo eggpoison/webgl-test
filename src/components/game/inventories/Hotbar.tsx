@@ -83,20 +83,19 @@ const Hotbar = () => {
    }
 
    return <div id="hotbar">
+      {/* @Cleanup: This shouldn't be necessary, too overcomplicated */}
       <div className="flex-balancer inventory">
          <ItemSlot isSelected={false} />
-         <ItemSlot isSelected={false} />
+         {OPTIONS.showArmourSlot ? <ItemSlot isSelected={false} /> : undefined}
       </div>
 
-{/* @Temporary */}
       <div className={`inventory${OPTIONS.uiStyle === "old" ? " old" : ""}`}>
          {hotbarItemSlots}
       </div>
 
-{/* @Temporary */}
       <div id="special-item-slots" className={`inventory${OPTIONS.uiStyle === "old" ? " old" : ""}`}>
          {backpackSlotElement}
-         {armourItemSlotElement}
+         {OPTIONS.showArmourSlot ? armourItemSlotElement : undefined}
       </div>
    </div>;
 }

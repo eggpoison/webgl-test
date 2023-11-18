@@ -108,7 +108,6 @@ const addLineVertices = (vertices: Array<number>, debugData: GameObjectDebugData
 export function renderLineDebugData(debugData: GameObjectDebugData): void {
    gl.useProgram(lineProgram);
 
-   // const gameObject = Board.gameObjects[debugData.gameObjectID];
    // @Cleanup: There is probably a better way to do this
    let gameObject: GameObject | undefined;
    if (Board.entities.hasOwnProperty(debugData.gameObjectID)) {

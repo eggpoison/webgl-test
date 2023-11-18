@@ -1,8 +1,6 @@
 import { HitData, Point, SNOWBALL_SIZES, SnowballSize, randFloat, randInt } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import CircularHitbox from "../hitboxes/CircularHitbox";
-import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import Board from "../Board";
 import { createSnowParticle } from "../generic-particles";
 import Particle from "../Particle";
@@ -26,8 +24,8 @@ class Snowball extends Entity {
    private readonly size: SnowballSize;
    private readonly pixelSize: number;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, size: SnowballSize) {
-      super(position, hitboxes, id, renderDepth);
+   constructor(position: Point, id: number, renderDepth: number, size: SnowballSize) {
+      super(position, id, renderDepth);
 
       this.size = size;
       this.pixelSize = SNOWBALL_SIZES[size];

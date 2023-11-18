@@ -115,7 +115,7 @@ export const PLACEABLE_ENTITY_INFO_RECORD: Record<PlaceableItemType, PlaceableEn
 };
 
 const testRectangularHitbox = new RectangularHitbox(-1, -1);
-const testCircularHitbox = new CircularHitbox();
+const testCircularHitbox = new CircularHitbox(-1);
 
 let globalAttackDelayTimer = 0;
 
@@ -147,6 +147,8 @@ export function updatePlayerItems(): void {
       Player.instance.updateHandDirections();
 
       Player.instance.updateArmourRenderPart(definiteGameState.armourSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.armourSlot.itemSlots[1].type : null);
+
+      Player.instance!.updateBowChargeTexture();
    }
 
 
@@ -676,7 +678,6 @@ const itemRightClickDown = (item: Item): void => {
             latencyGameState.playerAction = TribeMemberAction.eat;
             Player.instance!.action = TribeMemberAction.eat;
             Player.instance!.foodEatingType = item.type;
-            // @Cleanup: Is this necessary?
             Player.instance!.lastActionTicks = Board.ticks;
          }
 

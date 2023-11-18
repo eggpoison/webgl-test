@@ -283,11 +283,6 @@ abstract class Game {
       
       updatePlayerItems();
 
-      // @Cleanup: This shouldn't be here
-      if (Player.instance !== null) {
-         Player.instance!.updateBowChargeTexture();
-      }
-
       if (isDev()) refreshDebugInfo();
    }
 

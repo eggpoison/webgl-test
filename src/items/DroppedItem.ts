@@ -2,8 +2,6 @@ import { BaseItemInfo, ItemType, Point, SETTINGS, randFloat } from "webgl-test-s
 import GameObject from "../GameObject";
 import RenderPart from "../render-parts/RenderPart";
 import CLIENT_ITEM_INFO_RECORD from "../client-item-info";
-import CircularHitbox from "../hitboxes/CircularHitbox";
-import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import Board from "../Board";
 import { BloodParticleSize } from "../generic-particles";
 import Particle from "../Particle";
@@ -65,8 +63,8 @@ export function createDeepFrostHeartBloodParticles(originX: number, originY: num
 class DroppedItem extends GameObject implements BaseItemInfo {
    public readonly itemType: ItemType;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, velocity: Point, itemType: ItemType) {
-      super(position, hitboxes, id, renderDepth);
+   constructor(position: Point, id: number, renderDepth: number, velocity: Point, itemType: ItemType) {
+      super(position, id, renderDepth);
       
       this.velocity = velocity;
       this.itemType = itemType;

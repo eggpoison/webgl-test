@@ -1,8 +1,6 @@
 import { HitData, Point, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import CircularHitbox from "../hitboxes/CircularHitbox";
-import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle } from "../generic-particles";
 import Board from "../Board";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
@@ -17,8 +15,8 @@ class Krumblid extends Entity {
 
    private numFootstepsTaken = 0;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number) {
-      super(position, hitboxes, id, renderDepth);
+   constructor(position: Point, id: number, renderDepth: number) {
+      super(position, id, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(

@@ -67,7 +67,7 @@ abstract class Entity extends GameObject {
    public tick(): void {
       super.tick();
 
-      if (this.hasStatusEffect("freezing")) {
+      if (this.hasStatusEffect(StatusEffect.freezing)) {
          this.tintB += 0.5;
          this.tintR -= 0.15;
       }
@@ -115,7 +115,7 @@ abstract class Entity extends GameObject {
          Board.lowTexturedParticles.push(particle);
       }
       
-      const poisonStatusEffect = this.getStatusEffect("poisoned");
+      const poisonStatusEffect = this.getStatusEffect(StatusEffect.poisoned);
       if (poisonStatusEffect !== null) {
          // Poison particles
          if (customTickIntervalHasPassed(poisonStatusEffect.ticksElapsed, 0.1)) {
@@ -150,7 +150,7 @@ abstract class Entity extends GameObject {
          }
       }
 
-      const fireStatusEffect = this.getStatusEffect("burning");
+      const fireStatusEffect = this.getStatusEffect(StatusEffect.burning);
       if (fireStatusEffect !== null) {
          // Ember particles
          if (customTickIntervalHasPassed(fireStatusEffect.ticksElapsed, 0.1)) {
@@ -243,7 +243,7 @@ abstract class Entity extends GameObject {
          }
       }
 
-      const bleedingStatusEffect = this.getStatusEffect("bleeding");
+      const bleedingStatusEffect = this.getStatusEffect(StatusEffect.bleeding);
       if (bleedingStatusEffect !== null) {
          if (Board.tickIntervalHasPassed(0.15)) {
             const spawnOffsetDirection = 2 * Math.PI * Math.random();

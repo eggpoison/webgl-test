@@ -1,8 +1,6 @@
 import { Point, CactusFlowerSize, CactusBodyFlowerData, CactusLimbData, randFloat, randInt } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import CircularHitbox from "../hitboxes/CircularHitbox";
-import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import Particle from "../Particle";
 import Board from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
@@ -22,8 +20,8 @@ class Cactus extends Entity {
    private readonly flowerData: ReadonlyArray<CactusBodyFlowerData>;
    private readonly limbData: ReadonlyArray<CactusLimbData>;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, flowers: ReadonlyArray<CactusBodyFlowerData>, limbs: ReadonlyArray<CactusLimbData>) {
-      super(position, hitboxes, id, renderDepth);
+   constructor(position: Point, id: number, renderDepth: number, flowers: ReadonlyArray<CactusBodyFlowerData>, limbs: ReadonlyArray<CactusLimbData>) {
+      super(position, id, renderDepth);
 
       const baseRenderPart = new RenderPart(
          this,
@@ -163,6 +161,9 @@ class Cactus extends Entity {
       const lifetime = randFloat(3, 5);
       
       const particle = new Particle(lifetime);
+      particle.getOpacity = () => {
+         return 1 - Math.pow(particle.age / lifetime, 3);
+      }
       
       const textureIndex = this.getFlowerTextureIndex(flowerType, size);
       addTexturedParticleToBufferContainer(

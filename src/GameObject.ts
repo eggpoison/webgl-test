@@ -36,7 +36,7 @@ abstract class GameObject extends RenderObject {
    /** Stores all render parts attached to the object, sorted ascending based on zIndex. (So that render part with smallest zIndex is rendered first) */
    public readonly allRenderParts = new Array<RenderPart>();
 
-   public readonly hitboxes!: ReadonlySet<CircularHitbox | RectangularHitbox>;
+   public readonly hitboxes = new Set<CircularHitbox | RectangularHitbox>();
    public readonly hitboxHalfDiagonalLength?: number;
    
    /** Limit to how many units the object can move in a second */
@@ -54,7 +54,7 @@ abstract class GameObject extends RenderObject {
    /** Amount the game object's render parts will shake */
    public shakeAmount = 0;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number) {
+   constructor(position: Point, id: number, renderDepth: number) {
       super();
       
       this.position = position;
@@ -63,18 +63,22 @@ abstract class GameObject extends RenderObject {
       this.id = id;
       this.renderDepth = renderDepth;
 
-      // Create hitbox using hitbox info
-      this.hitboxes = hitboxes;
-      
-      for (const hitbox of this.hitboxes) {
-         hitbox.updateFromGameObject(this);
-         hitbox.updateHitboxBounds(this.rotation);
-      }
-
       this.updateCurrentTile();
 
       // Note: The chunks are calculated outside of the constructor immediately after the game object is created
       // so that all constructors have time to run
+   }
+
+   public addCircularHitbox(hitbox: CircularHitbox): void {
+      this.hitboxes.add(hitbox);
+      hitbox.updateFromGameObject(this);
+      hitbox.updateHitboxBounds();
+   }
+
+   public addRectangularHitbox(hitbox: RectangularHitbox): void {
+      this.hitboxes.add(hitbox);
+      hitbox.updateFromGameObject(this);
+      hitbox.updateHitboxBounds(this.rotation);
    }
 
    public onRemove?(): void;

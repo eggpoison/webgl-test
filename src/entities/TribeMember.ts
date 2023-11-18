@@ -1,8 +1,6 @@
 import { BowItemInfo, EntityData, HitData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, InventoryData, ItemType, Point, SETTINGS, TileType, ToolItemInfo, TribeMemberAction, TribeType, lerp, randFloat, randInt, randItem } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
-import CircularHitbox from "../hitboxes/CircularHitbox";
-import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import CLIENT_ITEM_INFO_RECORD from "../client-item-info";
 import { getFrameProgress } from "../GameObject";
 import Particle from "../Particle";
@@ -199,8 +197,8 @@ abstract class TribeMember extends Entity {
    private activeItemOffset = TribeMember.ITEM_RESTING_OFFSET;
    private activeItemRotation = TribeMember.ITEM_RESTING_ROTATION;
    
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, action: TribeMemberAction, foodEatingType: ItemType | -1, lastActionTicks: number, hasFrostShield: boolean, warPaintType: number) {
-      super(position, hitboxes, id, renderDepth);
+   constructor(position: Point, id: number, renderDepth: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, action: TribeMemberAction, foodEatingType: ItemType | -1, lastActionTicks: number, hasFrostShield: boolean, warPaintType: number) {
+      super(position, id, renderDepth);
 
       this.tribeID = tribeID;
       this.tribeType = tribeType;
@@ -376,7 +374,6 @@ abstract class TribeMember extends Entity {
             // Eating animation
             // 
          
-
             let eatIntervalProgress = (secondsSinceLastAction % TribeMember.FOOD_EAT_INTERVAL) / TribeMember.FOOD_EAT_INTERVAL * 2;
             if (eatIntervalProgress > 1) {
                eatIntervalProgress = 2 - eatIntervalProgress;
@@ -621,6 +618,8 @@ abstract class TribeMember extends Entity {
    public updateFromData(entityData: EntityData<"player"> | EntityData<"tribesman">): void {
       super.updateFromData(entityData);
 
+      this.genericUpdateFromData(entityData);
+
       // Do all the non-player-instance updates
 
       this.tribeID = entityData.clientArgs[0];
@@ -635,16 +634,20 @@ abstract class TribeMember extends Entity {
       if (OPTIONS.showTribeMemberHands) {
          this.updateActiveItemRenderPart(this.activeItemType);
       }
-      this.updateHandDirections();
+
       this.updateBowChargeTexture();
 
       // @Cleanup
       this.updateArmourRenderPart(this.armourSlotInventory.itemSlots.hasOwnProperty(1) ? this.armourSlotInventory.itemSlots[1].type : null);
+   }
 
+   public genericUpdateFromData(entityData: EntityData<"player"> | EntityData<"tribesman">): void {
       if (this.hasFrostShield && !entityData.clientArgs[9]) {
          this.createFrostShieldBreakParticles();
       }
       this.hasFrostShield = entityData.clientArgs[9];
+      
+      this.updateHandDirections();
    }
 
    public createFrostShieldBreakParticles(): void {

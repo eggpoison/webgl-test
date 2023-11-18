@@ -3,7 +3,13 @@ import Hitbox from "./Hitbox";
 import RectangularHitbox from "./RectangularHitbox";
 
 class CircularHitbox extends Hitbox {
-   public radius!: number;
+   public radius: number;
+
+   constructor(radius: number) {
+      super();
+      
+      this.radius = radius;
+   }
    
    public updateHitboxBounds(): void {
       this.bounds[0] = this.position.x - this.radius;

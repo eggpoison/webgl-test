@@ -1,15 +1,13 @@
 import { Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Projectile from "./Projectile";
-import CircularHitbox from "../hitboxes/CircularHitbox";
-import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class IceShardsProjectile extends Projectile {
    private static readonly SIZE = 44;
    
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, data: any) {
-      super(position, hitboxes, id, data, renderDepth);
+   constructor(position: Point, id: number, renderDepth: number, data: any) {
+      super(position, id, data, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(

@@ -1,8 +1,6 @@
 import { Point, randFloat, randInt } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Projectile from "./Projectile";
-import CircularHitbox from "../hitboxes/CircularHitbox";
-import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import Board from "../Board";
 import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
@@ -17,8 +15,8 @@ class WoodenArrowProjectile extends Projectile {
    private static readonly DESTROY_PARTICLE_BROWN_COLOUR = [135/255, 75/255, 28/255];
    private static readonly DESTROY_PARTICLE_ADD_VELOCITY = 80;
    
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, data: any) {
-      super(position, hitboxes, id, renderDepth, data);
+   constructor(position: Point, id: number, renderDepth: number, data: any) {
+      super(position, id, renderDepth, data);
 
       this.attachRenderPart(
          new RenderPart(

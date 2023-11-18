@@ -1,8 +1,6 @@
 import { EntityData, Point, randFloat } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
-import CircularHitbox from "../hitboxes/CircularHitbox";
-import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { LeafParticleSize, createLeafParticle, createLeafSpeckParticle } from "../generic-particles";
 import { GAME_OBJECT_TEXTURE_SLOT_INDEXES, getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 
@@ -25,8 +23,8 @@ class BerryBush extends Entity {
 
    private readonly renderPart: RenderPart;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, numBerries: number) {
-      super(position, hitboxes, id, renderDepth);
+   constructor(position: Point, id: number, renderDepth: number, numBerries: number) {
+      super(position, id, renderDepth);
 
       this.renderPart = new RenderPart(
          this,

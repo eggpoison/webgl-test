@@ -1,6 +1,4 @@
 import { Point, SETTINGS, lerp, randFloat, randInt } from "webgl-test-shared";
-import CircularHitbox from "../hitboxes/CircularHitbox";
-import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import RenderPart from "../render-parts/RenderPart";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 import Projectile from "./Projectile"
@@ -29,8 +27,8 @@ class RockSpikeProjectile extends Projectile {
 
    private readonly renderPart: RenderPart;
    
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, data: any) {
-      super(position, hitboxes, id, renderDepth, data);
+   constructor(position: Point, id: number, renderDepth: number, data: any) {
+      super(position, id, renderDepth, data);
 
       this.size = data[0];
       this.lifetime = data[1];

@@ -3,9 +3,8 @@ import { inventoryIsOpen } from "./components/game/menus/CraftingMenu";
 import { setHeldItemVisualPosition } from "./components/game/HeldItem";
 import Item, { Inventory, ItemSlots } from "./items/Item";
 import { interactInventoryIsOpen } from "./components/game/inventories/InteractInventory";
-import { definiteGameState, latencyGameState } from "./game-state/game-states";
+import { definiteGameState } from "./game-state/game-states";
 import { InventoryData } from "webgl-test-shared";
-import { removeSelectedItem, selectItem } from "./player-input";
 
 const canInteractWithItemSlots = (): boolean => {
    return inventoryIsOpen() || interactInventoryIsOpen();
@@ -76,32 +75,28 @@ export function updateInventoryFromData(inventory: Inventory, inventoryData: Inv
    inventory.height = inventoryData.height;
 
    // Remove any items which have been removed from the inventory
-   // @Speed: Remove Object.entries, map, and Number()
-   for (const [_itemSlot, item] of Object.entries(inventory.itemSlots)) {
-      const itemSlot = Number(_itemSlot);
+   for (let itemSlot = 1; itemSlot <= inventory.width * inventory.height; itemSlot++) {
+      if (!inventory.itemSlots.hasOwnProperty(itemSlot)) {
+         continue;
+      }
+      
       // If it doesn't exist in the server data, remove it
+      const item = inventory.itemSlots[itemSlot];
       if (!inventoryData.itemSlots.hasOwnProperty(itemSlot) || inventoryData.itemSlots[itemSlot].id !== item.id) {
-         // @Cleanup: hacky. Detects when items have been removed from the hotbar. This ideally shouldn't be done here,
-         // because this code will run on ALL inventories which get updated from data while we only care about the hotbar.
-         if (inventoryData.inventoryName === "hotbar" && itemSlot === latencyGameState.selectedHotbarItemSlot) {
-            removeSelectedItem(item);
-         }
-         
          delete inventory.itemSlots[itemSlot];
       }
    }
 
    // Add all new items from the server data
-   // @Speed: Remove Object.entries, map, and Number()
-   for (const [itemSlot, itemData] of Object.entries(inventoryData.itemSlots).map(([itemSlot, itemData]) => [Number(itemSlot), itemData] as const)) {
+   for (let itemSlot = 1; itemSlot <= inventoryData.width * inventoryData.height; itemSlot++) {
+      if (!inventoryData.itemSlots.hasOwnProperty(itemSlot)) {
+         continue;
+      }
+
       // If the item doesn't exist in the inventory, add it
+      const itemData = inventoryData.itemSlots[itemSlot];
       if (!inventory.itemSlots.hasOwnProperty(itemSlot) || inventory.itemSlots[itemSlot].id !== itemData.id) {
          inventory.itemSlots[itemSlot] = new Item(itemData.type, itemData.count, itemData.id);
-
-         // @Cleanup: hacky. (see other comment above)
-         if (inventoryData.inventoryName === "hotbar" && itemSlot === latencyGameState.selectedHotbarItemSlot) {
-            selectItem(inventory.itemSlots[itemSlot]);
-         }
       } else {
          // Otherwise the item needs to be updated with the new server data
          inventory.itemSlots[itemSlot].count = itemData.count;
@@ -113,17 +108,20 @@ export function createInventoryFromData(inventoryData: InventoryData): Inventory
    const itemSlots: ItemSlots = {};
 
    // Add all new items from the server data
-   // @Speed: Remove Object.entries, map, and Number()
-   for (const [itemSlot, itemData] of Object.entries(inventoryData.itemSlots).map(([itemSlot, itemData]) => [Number(itemSlot), itemData] as const)) {
+   for (let itemSlot = 1; itemSlot <= inventoryData.width * inventoryData.height; itemSlot++) {
+      if (!inventoryData.itemSlots.hasOwnProperty(itemSlot)) {
+         continue;
+      }
+
       // If the item doesn't exist in the inventory, add it
-      itemSlots[Number(itemSlot)] = new Item(itemData.type, itemData.count, itemData.id);
+      const itemData = inventoryData.itemSlots[itemSlot];
+      itemSlots[itemSlot] = new Item(itemData.type, itemData.count, itemData.id);
    }
    
-   const inventory: Inventory = {
+   return {
       itemSlots: itemSlots,
       width: inventoryData.width,
       height: inventoryData.height,
       inventoryName: inventoryData.inventoryName
    };
-   return inventory;
 }

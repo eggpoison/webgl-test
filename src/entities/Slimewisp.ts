@@ -1,8 +1,6 @@
 import { Point, TileType } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import CircularHitbox from "../hitboxes/CircularHitbox";
-import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { createSlimePoolParticle, createSlimeSpeckParticle } from "../generic-particles";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 
@@ -11,8 +9,8 @@ class Slimewisp extends Entity {
 
    public type = "slimewisp" as const;
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number) {
-      super(position, hitboxes, id, renderDepth);
+   constructor(position: Point, id: number, renderDepth: number) {
+      super(position, id, renderDepth);
 
       const renderPart = new RenderPart(
          this,

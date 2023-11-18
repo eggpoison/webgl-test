@@ -1,8 +1,6 @@
 import { Point, TribeTotemBanner, EntityData, TribeType } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import CircularHitbox from "../hitboxes/CircularHitbox";
-import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class TribeTotem extends Entity {
@@ -21,8 +19,8 @@ class TribeTotem extends Entity {
    private readonly banners: Record<number, TribeTotemBanner> = {};
    private readonly bannerRenderParts: Record<number, RenderPart> = {};
 
-   constructor(position: Point, hitboxes: ReadonlySet<CircularHitbox | RectangularHitbox>, id: number, renderDepth: number, tribeID: number, tribeType: TribeType, banners: Array<TribeTotemBanner>) {
-      super(position, hitboxes, id, renderDepth);
+   constructor(position: Point, id: number, renderDepth: number, tribeID: number, tribeType: TribeType, banners: Array<TribeTotemBanner>) {
+      super(position, id, renderDepth);
 
       const renderPart = new RenderPart(
          this,

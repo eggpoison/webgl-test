@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, ProjectileData, VisibleChunkBounds, TribeType, TribeData, InventoryData, CircularHitboxData, RectangularHitboxData, randFloat, RESOURCE_ENTITY_TYPES, MOB_ENTITY_TYPES, TribeMemberAction } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, DroppedItemData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, ProjectileData, VisibleChunkBounds, TribeType, TribeData, InventoryData, randFloat, RESOURCE_ENTITY_TYPES, MOB_ENTITY_TYPES, TribeMemberAction, GameObjectData } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -10,7 +10,7 @@ import DroppedItem from "../items/DroppedItem";
 import { Tile } from "../Tile";
 import { gameScreenSetIsDead } from "../components/game/GameScreen";
 import { Inventory } from "../items/Item";
-import { getInteractEntityID, updateInventoryIsOpen } from "../player-input";
+import { getInteractEntityID, removeSelectedItem, selectItem, updateInventoryIsOpen } from "../player-input";
 import { Hotbar_update } from "../components/game/inventories/Hotbar";
 import { setHeldItemVisual } from "../components/game/HeldItem";
 import { CraftingMenu_setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
@@ -30,6 +30,7 @@ import Particle from "../Particle";
 import { addMonocolourParticleToBufferContainer, ParticleRenderLayer } from "../rendering/particle-rendering";
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
 import { calculateDroppedItemRenderDepth, calculateEntityRenderDepth, calculateProjectileRenderDepth } from "../render-layers";
+import GameObject from "../GameObject";
 
 const BUILDING_TYPES: ReadonlyArray<EntityType> = ["barrel", "campfire", "furnace", "tribe_totem", "tribe_hut", "workbench"];
 
@@ -236,18 +237,10 @@ abstract class Client {
       for (const entityData of entityDataArray) {
          // If it already exists, update it
          if (Board.entities.hasOwnProperty(entityData.id)) {
-            // @Cleanup: This is very messy and unmaintainable. Doing the hit and healing particle logic outside
-            // of the updateFromData function is done as the player instance right now can't use the updateFromData
-            // function, doing so would cause a circular dependency with TribeMember <-> Player.
-            
-            // We don't want the player to be updated from the server data
             if (Board.entities[entityData.id] !== Player.instance) {
                Board.entities[entityData.id].updateFromData(entityData);
             } else {
-               if ((Board.entities[entityData.id] as Player).hasFrostShield && !entityData.clientArgs[9]) {
-                  (Board.entities[entityData.id] as Player).createFrostShieldBreakParticles();
-               }
-               (Board.entities[entityData.id] as Player).hasFrostShield = entityData.clientArgs[9] as boolean;
+               (Board.entities[entityData.id] as Player).genericUpdateFromData(entityData as unknown as EntityData<"player"> | EntityData<"tribesman">);
             }
             for (const hit of entityData.hitsTaken) {
                Board.entities[entityData.id].registerHit(hit);
@@ -336,6 +329,15 @@ abstract class Client {
    }
 
    private static updatePlayerInventory(playerInventoryData: PlayerInventoryData) {
+      // Call the remove function if the selected item has been removed, and the select function for new selected item slots
+      if (definiteGameState.hotbar.itemSlots.hasOwnProperty(latencyGameState.selectedHotbarItemSlot) && !playerInventoryData.hotbar.itemSlots.hasOwnProperty(latencyGameState.selectedHotbarItemSlot)) {
+         const item = definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot];
+         removeSelectedItem(item);
+      } else if (!definiteGameState.hotbar.itemSlots.hasOwnProperty(latencyGameState.selectedHotbarItemSlot) && playerInventoryData.hotbar.itemSlots.hasOwnProperty(latencyGameState.selectedHotbarItemSlot)) {
+         const item = playerInventoryData.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot];
+         selectItem(item);
+      }
+
       const hotbarHasChanged = this.inventoryHasChanged(definiteGameState.hotbar, playerInventoryData.hotbar);
       updateInventoryFromData(definiteGameState.hotbar, playerInventoryData.hotbar);
 
@@ -373,7 +375,6 @@ abstract class Client {
       if (hotbarHasChanged || backpackSlotHasChanged || armourSlotHasChanged) {
          Hotbar_update();
       }
-      // @Cleanup is the backpackSlotHasChanged check really necessary?
       if (backpackHasChanged || backpackSlotHasChanged) {
          BackpackInventoryMenu_update();
       }
@@ -423,30 +424,28 @@ abstract class Client {
       const position = Point.unpackage(droppedItemData.position); 
       const velocity = Point.unpackage(droppedItemData.velocity);
 
-      const hitboxes = this.createHitboxesFromData(droppedItemData.hitboxes);
-
       const renderDepth = calculateDroppedItemRenderDepth();
-      const droppedItem = new DroppedItem(position, hitboxes, droppedItemData.id, renderDepth, velocity, droppedItemData.type);
+      const droppedItem = new DroppedItem(position, droppedItemData.id, renderDepth, velocity, droppedItemData.type);
       droppedItem.rotation = droppedItemData.rotation;
       droppedItem.mass = droppedItemData.mass;
       droppedItem.ageTicks = droppedItemData.ageTicks;
+
+      this.addHitboxesToGameObject(droppedItem, droppedItemData);
 
       Board.addDroppedItem(droppedItem);
    }
 
    private static createProjectileFromServerData(projectileData: ProjectileData): void {
-      // @Speed: Garbage collection
-      
       const position = Point.unpackage(projectileData.position); 
 
-      const hitboxes = this.createHitboxesFromData(projectileData.hitboxes);
-
       const renderDepth = calculateProjectileRenderDepth();
-      const projectile = createProjectile(position, hitboxes, projectileData.id, renderDepth, projectileData.data, projectileData.type);
+      const projectile = createProjectile(position, projectileData.id, renderDepth, projectileData.data, projectileData.type);
       projectile.rotation = projectileData.rotation;
       projectile.velocity = Point.unpackage(projectileData.velocity);
       projectile.mass = projectileData.mass;
       projectile.ageTicks = projectileData.ageTicks;
+
+      this.addHitboxesToGameObject(projectile, projectileData);
 
       Board.addProjectile(projectile);
    }
@@ -463,41 +462,43 @@ abstract class Client {
       }
    }
 
-   private static createHitboxesFromData(hitboxDataArray: ReadonlyArray<CircularHitboxData | RectangularHitboxData>): Set<CircularHitbox | RectangularHitbox> {
-      const hitboxes = new Set<CircularHitbox | RectangularHitbox>();
-      for (const hitboxData of hitboxDataArray) {
-         const offset = (typeof hitboxData.offsetX !== "undefined" || typeof hitboxData.offsetY !== "undefined") ? new Point(hitboxData.offsetX || 0, hitboxData.offsetY || 0) : undefined;
-         if (hitboxData.hasOwnProperty("radius")) {
-            // Circular
-            const hitbox = new CircularHitbox();
-            hitbox.radius = (hitboxData as CircularHitboxData).radius;
-            hitbox.offset = offset;
-            hitboxes.add(hitbox);
-         } else {
-            // Rectangular
-            hitboxes.add(new RectangularHitbox((hitboxData as RectangularHitboxData).width, (hitboxData as RectangularHitboxData).height, offset));
-         }
+   private static addHitboxesToGameObject(gameObject: GameObject, data: GameObjectData): void {
+      for (let i = 0; i < data.circularHitboxes.length; i++) {
+         const hitboxData = data.circularHitboxes[i];
+
+         const hitbox = new CircularHitbox(hitboxData.radius);
+         hitbox.offset.x = hitboxData.offsetX;
+         hitbox.offset.y = hitboxData.offsetY;
+
+         gameObject.addCircularHitbox(hitbox);
       }
-      return hitboxes;
+
+      for (let i = 0; i < data.rectangularHitboxes.length; i++) {
+         const hitboxData = data.rectangularHitboxes[i];
+
+         const hitbox = new RectangularHitbox(hitboxData.width, hitboxData.height);
+         hitbox.offset.x = hitboxData.offsetX;
+         hitbox.offset.y = hitboxData.offsetY;
+
+         gameObject.addRectangularHitbox(hitbox);
+      }
    }
 
    public static createEntityFromData(entityData: EntityData<EntityType>): Entity {
-      // @Speed: Garbage collection
-      
       const position = Point.unpackage(entityData.position);
-
-      const hitboxes = this.createHitboxesFromData(entityData.hitboxes);
 
       const renderDepth = calculateEntityRenderDepth(entityData.type);
 
       // Create the entity
       const entityConstructor = ENTITY_CLASS_RECORD[entityData.type]() as EntityClassType<EntityType>;
-      const entity = new entityConstructor(position, hitboxes, entityData.id, renderDepth, ...entityData.clientArgs);
+      const entity = new entityConstructor(position, entityData.id, renderDepth, ...entityData.clientArgs);
       
       entity.velocity = Point.unpackage(entityData.velocity);
       entity.rotation = entityData.rotation;
       entity.mass = entityData.mass;
       entity.ageTicks = entityData.ageTicks;
+
+      this.addHitboxesToGameObject(entity, entityData);
 
       Board.addEntity(entity);
       if (entity.type === "player") {
@@ -582,7 +583,8 @@ abstract class Client {
       
       const spawnPosition = Point.unpackage(respawnDataPacket.spawnPosition);
       const renderDepth = calculateEntityRenderDepth("player");
-      const player = new Player(spawnPosition, new Set([Player.createNewPlayerHitbox()]), respawnDataPacket.playerID, renderDepth, null, TribeType.plainspeople, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, false, -1, definiteGameState.playerUsername);
+      const player = new Player(spawnPosition, respawnDataPacket.playerID, renderDepth, null, TribeType.plainspeople, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, false, -1, definiteGameState.playerUsername);
+      player.addCircularHitbox(Player.createNewPlayerHitbox());
       Player.setInstancePlayer(player);
       Board.addEntity(player);
 
