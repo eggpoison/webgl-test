@@ -1,4 +1,4 @@
-import { EntityData, FrozenYetiAttackType, HitData, Point, SETTINGS, lerp, randFloat, randInt } from "webgl-test-shared";
+import { EntityData, EntityType, FrozenYetiAttackType, HitData, Point, SETTINGS, lerp, randFloat, randInt } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 import Player from "./Player";
@@ -134,7 +134,7 @@ class FrozenYeti extends Entity {
    private static readonly ROAR_REACH = 450;
    private static readonly SNOWBALL_THROW_OFFSET = 150;
 
-   public readonly type = "frozen_yeti";
+   public readonly type = EntityType.frozen_yeti;
 
    private readonly headRenderPart: RenderPart;
    /** Index 0: left paw, index 1: right paw */
@@ -456,7 +456,7 @@ class FrozenYeti extends Entity {
       }
    }
 
-   public updateFromData(data: EntityData<"frozen_yeti">): void {
+   public updateFromData(data: EntityData<EntityType.frozen_yeti>): void {
       super.updateFromData(data);
 
       // If the yeti did a bite attack, create a bite particle

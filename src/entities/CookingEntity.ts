@@ -1,4 +1,4 @@
-import { Point, InventoryData, EntityData } from "webgl-test-shared";
+import { Point, InventoryData, EntityData, EntityType } from "webgl-test-shared";
 import { Inventory } from "../items/Item";
 import Entity from "./Entity";
 import { createInventoryFromData } from "../inventory-manipulation";
@@ -20,7 +20,7 @@ abstract class CookingEntity extends Entity {
       this.isCooking = isCooking;
    }
 
-   public updateFromData(entityData: EntityData<"campfire" | "furnace">): void {
+   public updateFromData(entityData: EntityData<EntityType.campfire | EntityType.furnace>): void {
       super.updateFromData(entityData);
 
       this.fuelInventory = createInventoryFromData(entityData.clientArgs[0]);

@@ -1,4 +1,4 @@
-import { Point, CactusFlowerSize, CactusBodyFlowerData, CactusLimbData, randFloat, randInt } from "webgl-test-shared";
+import { Point, CactusFlowerSize, CactusBodyFlowerData, CactusLimbData, randFloat, randInt, EntityType } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import Particle from "../Particle";
@@ -15,7 +15,7 @@ class Cactus extends Entity {
 
    private static readonly LIMB_SIZE = 36;
 
-   public type = "cactus" as const;
+   public type = EntityType.cactus;
 
    private readonly flowerData: ReadonlyArray<CactusBodyFlowerData>;
    private readonly limbData: ReadonlyArray<CactusLimbData>;

@@ -84,7 +84,7 @@ const GameInfoDisplay = () => {
    return <div id="game-info-display">
       <p>Time: {formatTime(roundNum(currentTime, 2))}</p>
       <p>Ticks: {roundNum(ticks, 2)}</p>
-      <p>TPS: {tps}</p>
+      <p>Server TPS: {tps}</p>
 
       <ul className="options">
          <li>

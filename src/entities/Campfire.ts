@@ -1,4 +1,4 @@
-import { InventoryData, Point, randFloat } from "webgl-test-shared";
+import { EntityType, InventoryData, Point, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import CookingEntity from "./CookingEntity";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
@@ -8,7 +8,7 @@ import { createEmberParticle, createSmokeParticle } from "../generic-particles";
 class Campfire extends CookingEntity {
    public static readonly SIZE = 104;
 
-   public type = "campfire" as const;
+   public type = EntityType.campfire;
 
    constructor(position: Point, id: number, renderDepth: number, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData, heatingProgress: number, isCooking: boolean) {
       super(position, id, renderDepth, fuelInventory, ingredientInventory, outputInventory, heatingProgress, isCooking);

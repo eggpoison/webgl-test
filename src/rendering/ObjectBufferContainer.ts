@@ -95,10 +95,6 @@ class ObjectBufferContainer {
 
          gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
          const indexInBuffer = index % this.objectsPerBuffer;
-         // @Temporary
-         if (indexInBuffer >= this.objectsPerBuffer) {
-            console.warn("BBB");
-         }
          gl.bufferSubData(gl.ARRAY_BUFFER, indexInBuffer * this.dataLengths[bufferType] * Float32Array.BYTES_PER_ELEMENT, this.emptyBufferDatas[bufferType]);
       }
 

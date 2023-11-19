@@ -1,4 +1,4 @@
-import { Point, EntityData, lerp, HitData, randFloat } from "webgl-test-shared";
+import { Point, EntityData, lerp, HitData, randFloat, EntityType } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle, createSnowParticle, createWhiteSmokeParticle } from "../generic-particles";
@@ -18,7 +18,7 @@ class Yeti extends Entity {
    private static readonly BLOOD_POOL_SIZE = 30;
    private static readonly BLOOD_FOUNTAIN_INTERVAL = 0.15;
 
-   public type = "yeti" as const;
+   public type = EntityType.yeti;
 
    private numFootstepsTaken = 0;
 
@@ -100,7 +100,7 @@ class Yeti extends Entity {
       this.lastAttackProgress = this.attackProgress;
    }
 
-   public updateFromData(entityData: EntityData<"yeti">): void {
+   public updateFromData(entityData: EntityData<EntityType.yeti>): void {
       super.updateFromData(entityData);
 
       this.attackProgress = entityData.clientArgs[0];

@@ -1,4 +1,4 @@
-import { Point, TreeSize, randFloat, randInt } from "webgl-test-shared";
+import { EntityType, Point, TreeSize, randFloat, randInt } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { LeafParticleSize, createLeafParticle, createLeafSpeckParticle } from "../generic-particles";
@@ -10,7 +10,7 @@ const treeTextures: { [T in TreeSize]: string } = {
 }
 
 class Tree extends Entity {
-   public readonly type = "tree";
+   public readonly type = EntityType.tree;
 
    private readonly treeSize: TreeSize;
    private readonly radius: number;

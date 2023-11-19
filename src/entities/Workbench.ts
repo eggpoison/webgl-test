@@ -1,4 +1,4 @@
-import { Point } from "webgl-test-shared";
+import { EntityType, Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
@@ -6,7 +6,7 @@ import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-t
 class Workbench extends Entity {
    public static readonly SIZE = 80;
    
-   public readonly type = "workbench";
+   public readonly type = EntityType.workbench;
    
    constructor(position: Point, id: number, renderDepth: number) {
       super(position, id, renderDepth);

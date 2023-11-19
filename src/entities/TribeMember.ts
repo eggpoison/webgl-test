@@ -1,4 +1,4 @@
-import { BowItemInfo, EntityData, HitData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, InventoryData, ItemType, Point, SETTINGS, TileType, ToolItemInfo, TribeMemberAction, TribeType, lerp, randFloat, randInt, randItem } from "webgl-test-shared";
+import { ArmourItemType, BowItemInfo, EntityData, EntityType, HitData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, InventoryData, ItemType, Point, SETTINGS, TileType, ToolItemInfo, TribeMemberAction, TribeType, lerp, randFloat, randInt, randItem } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 import CLIENT_ITEM_INFO_RECORD from "../client-item-info";
@@ -57,14 +57,12 @@ const FOOD_EATING_COLOURS: { [T in ItemType as Exclude<T, FilterFoodItemTypes<T>
    ]
 };
 
-// @Cleanup: Maybe make this automatically require all armour types
-
 interface ArmourInfo {
    readonly textureSource: string;
    readonly pixelSize: number;
 }
 
-const ARMOUR_WORN_INFO: Partial<Record<ItemType, ArmourInfo>> = {
+const ARMOUR_WORN_INFO: Record<ArmourItemType, ArmourInfo> = {
    [ItemType.frost_armour]: {
       textureSource: "armour/frost-armour.png",
       pixelSize: 72
@@ -204,8 +202,6 @@ abstract class TribeMember extends Entity {
       this.tribeType = tribeType;
       this.action = action;
 
-      // @Cleanup: Too verbose
-      this.updateArmourRenderPart(armourSlotInventory.itemSlots.hasOwnProperty(1) ? armourSlotInventory.itemSlots[1].type : null);
       this.activeItemType = activeItem;
       this.lastActionTicks = lastActionTicks;
       this.foodEatingType = foodEatingType;
@@ -214,6 +210,8 @@ abstract class TribeMember extends Entity {
       this.armourSlotInventory = createInventoryFromData(armourSlotInventory);
       this.backpackSlotInventory = createInventoryFromData(backpackSlotInventory);
       this.backpackInventory = createInventoryFromData(backpackInventory);
+
+      this.updateArmourRenderPart(armourSlotInventory.itemSlots.hasOwnProperty(1) ? armourSlotInventory.itemSlots[1].type : null);
 
       let bodyTextureSource: string;
       let fistTextureSource: string;
@@ -558,7 +556,7 @@ abstract class TribeMember extends Entity {
          return -1;
       }
 
-      return getGameObjectTextureArrayIndex(ARMOUR_WORN_INFO[armourType]!.textureSource);
+      return getGameObjectTextureArrayIndex(ARMOUR_WORN_INFO[armourType as ArmourItemType].textureSource);
    }
 
    private getArmourPixelSize(armourType: ItemType): number {
@@ -567,7 +565,7 @@ abstract class TribeMember extends Entity {
          return -1;
       }
 
-      return ARMOUR_WORN_INFO[armourType]!.pixelSize;
+      return ARMOUR_WORN_INFO[armourType as ArmourItemType].pixelSize;
    }
 
    public updateArmourRenderPart(armourType: ItemType | null): void {
@@ -615,7 +613,7 @@ abstract class TribeMember extends Entity {
       return TribeMember.DEFAULT_ACTIVE_ITEM_SIZE;
    }
 
-   public updateFromData(entityData: EntityData<"player"> | EntityData<"tribesman">): void {
+   public updateFromData(entityData: EntityData<EntityType.player> | EntityData<EntityType.tribesman>): void {
       super.updateFromData(entityData);
 
       this.genericUpdateFromData(entityData);
@@ -637,11 +635,10 @@ abstract class TribeMember extends Entity {
 
       this.updateBowChargeTexture();
 
-      // @Cleanup
       this.updateArmourRenderPart(this.armourSlotInventory.itemSlots.hasOwnProperty(1) ? this.armourSlotInventory.itemSlots[1].type : null);
    }
 
-   public genericUpdateFromData(entityData: EntityData<"player"> | EntityData<"tribesman">): void {
+   public genericUpdateFromData(entityData: EntityData<EntityType.player> | EntityData<EntityType.tribesman>): void {
       if (this.hasFrostShield && !entityData.clientArgs[9]) {
          this.createFrostShieldBreakParticles();
       }

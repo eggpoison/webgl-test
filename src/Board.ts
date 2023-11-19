@@ -1,5 +1,5 @@
 import Entity from "./entities/Entity";
-import { SETTINGS, Point, Vector, ServerTileUpdateData, rotatePoint, WaterRockData, RiverSteppingStoneData, RIVER_STEPPING_STONE_SIZES } from "webgl-test-shared";
+import { SETTINGS, Point, Vector, ServerTileUpdateData, rotatePoint, WaterRockData, RiverSteppingStoneData, RIVER_STEPPING_STONE_SIZES, EntityType } from "webgl-test-shared";
 import Chunk from "./Chunk";
 import DroppedItem from "./items/DroppedItem";
 import { Tile } from "./Tile";
@@ -125,7 +125,7 @@ abstract class Board {
    }
 
    public static addEntity(entity: Entity): void {
-      if (entity.type === "fish") {
+      if (entity.type === EntityType.fish) {
          this.gameObjects.add(entity);
          this.fish.push(entity as Fish);
          this.entities[entity.id] = entity;
@@ -174,16 +174,16 @@ abstract class Board {
       }
 
       this.gameObjects.delete(gameObject);
-      if (gameObject instanceof Entity && gameObject.type === "fish") {
+      if (gameObject instanceof Entity && gameObject.type === EntityType.fish) {
          const idx = this.fish.indexOf(gameObject as Fish);
          if (idx !== -1) {
             this.fish.splice(idx, 1);
          }
       } else {
          this.sortedGameObjects.splice(this.sortedGameObjects.indexOf(gameObject), 1);
-   
-         this.numVisibleRenderParts -= gameObject.allRenderParts.length;
       }
+   
+      this.numVisibleRenderParts -= gameObject.allRenderParts.length;
    }
 
    public static getRiverFlowDirection(tileX: number, tileY: number): number {

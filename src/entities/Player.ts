@@ -1,4 +1,4 @@
-import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitData, Point, SETTINGS, clampToBoardDimensions, TribeType, ItemType, InventoryData, TribeMemberAction, TileType } from "webgl-test-shared";
+import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitData, Point, SETTINGS, clampToBoardDimensions, TribeType, ItemType, InventoryData, TribeMemberAction, TileType, EntityType } from "webgl-test-shared";
 import Camera from "../Camera";
 import { setCraftingMenuAvailableRecipes, setCraftingMenuAvailableCraftingStations } from "../components/game/menus/CraftingMenu";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -72,14 +72,14 @@ export function updateAvailableCraftingRecipes(): void {
             const distance = Player.instance!.position.calculateDistanceBetween(entity.position);
             if (distance <= MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION) {
                switch (entity.type) {
-                  case "workbench": {
+                  case EntityType.workbench: {
                      if (!availableCraftingStations.has(CraftingStation.workbench)) {
                         availableCraftingRecipes = availableCraftingRecipes.concat(CRAFTING_RECIPE_RECORD[CraftingStation.workbench].slice());
                         availableCraftingStations.add(CraftingStation.workbench);
                      }
                      break;
                   }
-                  case "slime": {
+                  case EntityType.slime: {
                      if (!availableCraftingStations.has(CraftingStation.slime)) {
                         availableCraftingRecipes = availableCraftingRecipes.concat(CRAFTING_RECIPE_RECORD[CraftingStation.slime].slice());
                         availableCraftingStations.add(CraftingStation.slime);
@@ -117,7 +117,7 @@ class Player extends TribeMember {
    /** The player entity associated with the current player. */
    public static instance: Player | null = null;
 
-   public readonly type = "player";
+   public readonly type = EntityType.player;
    
    private numFootstepsTaken = 0;
    

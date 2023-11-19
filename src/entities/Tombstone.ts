@@ -1,4 +1,4 @@
-import { DeathInfo, EntityData, Point, SETTINGS, randFloat } from "webgl-test-shared";
+import { DeathInfo, EntityData, EntityType, Point, SETTINGS, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { createDirtParticle, createRockParticle, createRockSpeckParticle } from "../generic-particles";
@@ -8,7 +8,7 @@ class Tombstone extends Entity {
    private static readonly HITBOX_WIDTH = 48;
    private static readonly HITBOX_HEIGHT = 88;
 
-   public readonly type = "tombstone";
+   public readonly type = EntityType.tombstone;
    
    private zombieSpawnProgress: number;
    private zombieSpawnX: number;
@@ -87,7 +87,7 @@ class Tombstone extends Entity {
       }
    }
 
-   public updateFromData(entityData: EntityData<"tombstone">): void {
+   public updateFromData(entityData: EntityData<EntityType.tombstone>): void {
       super.updateFromData(entityData);
 
       this.zombieSpawnProgress = entityData.clientArgs[1];

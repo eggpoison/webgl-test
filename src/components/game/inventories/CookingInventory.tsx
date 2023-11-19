@@ -5,14 +5,14 @@ import Entity from "../../../entities/Entity"
 import ItemSlot from "./ItemSlot";
 import { leftClickItemSlot } from "../../../inventory-manipulation";
 import { definiteGameState } from "../../../game-state/game-states";
-import { COOKING_INGREDIENT_ITEM_TYPES, CookingIngredientItemType, FUEL_SOURCE_ITEM_TYPES, FuelSourceItemType } from "webgl-test-shared";
+import { COOKING_INGREDIENT_ITEM_TYPES, CookingIngredientItemType, EntityType, FUEL_SOURCE_ITEM_TYPES, FuelSourceItemType } from "webgl-test-shared";
 
 interface CookingInventoryProps {
    readonly entity: Entity;
 }
 
 function assertEntityIsCookingEntity(entity: Entity): asserts entity is CookingEntity {
-   if (entity.type !== "campfire" && entity.type !== "furnace") {
+   if (entity.type !== EntityType.campfire && entity.type !== EntityType.furnace) {
       throw new Error("Entity passed into CampfireInventory wasn't a campfire.");
    }
 }
@@ -70,9 +70,9 @@ const CookingInventory = (props: CookingInventoryProps) => {
 
    const heatingBarProgress = props.entity.heatingProgress !== -1 ? props.entity.heatingProgress : 0;
 
-   return <div id="cooking-inventory" className={`heating-inventory inventory${props.entity.type !== "campfire" ? " with-fuel" : ""}`}>
+   return <div id="cooking-inventory" className={`heating-inventory inventory${props.entity.type !== EntityType.campfire ? " with-fuel" : ""}`}>
       <ItemSlot onClick={clickIngredientItemSlot} className="ingredient-inventory" isSelected={false} picturedItemImageSrc={ingredientPicturedItemImageSrc} itemCount={ingredientItemCount} />
-      {props.entity.type !== "campfire" ? (
+      {props.entity.type !== EntityType.campfire ? (
          <ItemSlot onClick={clickFuelItemSlot} className="fuel-inventory" isSelected={false} picturedItemImageSrc={fuelPicturedItemImageSrc} itemCount={fuelItemCount} />
       ) : undefined}
       <ItemSlot onClick={clickOutputItemSlot} className="output-inventory" isSelected={false} picturedItemImageSrc={outputPicturedItemImageSrc} itemCount={outputItemCount} />

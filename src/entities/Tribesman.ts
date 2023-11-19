@@ -1,4 +1,4 @@
-import { EntityData, InventoryData, ItemType, Point, TribeMemberAction, TribeType } from "webgl-test-shared";
+import { EntityData, EntityType, InventoryData, ItemType, Point, TribeMemberAction, TribeType } from "webgl-test-shared";
 import TribeMember from "./TribeMember";
 import { Inventory } from "../items/Item";
 import { createFootprintParticle } from "../generic-particles";
@@ -6,7 +6,7 @@ import Board from "../Board";
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
 
 class Tribesman extends TribeMember {
-   public readonly type = "tribesman";
+   public readonly type = EntityType.tribesman;
 
    public readonly inventory: Inventory;
 
@@ -31,7 +31,7 @@ class Tribesman extends TribeMember {
       }
    }
 
-   public updateFromData(entityData: EntityData<"tribesman">): void {
+   public updateFromData(entityData: EntityData<EntityType.tribesman>): void {
       super.updateFromData(entityData);
 
       updateInventoryFromData(this.inventory, entityData.clientArgs[11]);

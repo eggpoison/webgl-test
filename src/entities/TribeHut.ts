@@ -1,4 +1,4 @@
-import { Point } from "webgl-test-shared";
+import { EntityType, Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
@@ -9,7 +9,7 @@ class TribeHut extends Entity {
    private static readonly DOOR_WIDTH = 12;
    private static readonly DOOR_HEIGHT = 36;
 
-   public type = "tribe_hut" as const;
+   public type = EntityType.tribe_hut;
 
    public tribeID: number | null;
 

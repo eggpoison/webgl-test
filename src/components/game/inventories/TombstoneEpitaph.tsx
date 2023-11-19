@@ -1,4 +1,4 @@
-import { PlayerCauseOfDeath, veryBadHash } from "webgl-test-shared";
+import { EntityType, PlayerCauseOfDeath, veryBadHash } from "webgl-test-shared";
 import Entity from "../../../entities/Entity"
 import Tombstone from "../../../entities/Tombstone";
 
@@ -34,7 +34,7 @@ interface TombstoneInventoryProps {
 }
 
 function assertEntityIsTombstone(entity: Entity): asserts entity is Tombstone {
-   if (entity.type !== "tombstone") {
+   if (entity.type !== EntityType.tombstone) {
       throw new Error("Entity passed into TombstoneEpitaph wasn't a tombstone.");
    }
 }

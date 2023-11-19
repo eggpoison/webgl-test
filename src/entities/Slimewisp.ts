@@ -1,4 +1,4 @@
-import { Point, TileType } from "webgl-test-shared";
+import { EntityType, Point, TileType } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { createSlimePoolParticle, createSlimeSpeckParticle } from "../generic-particles";
@@ -7,7 +7,7 @@ import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-t
 class Slimewisp extends Entity {
    private static readonly RADIUS = 16;
 
-   public type = "slimewisp" as const;
+   public type = EntityType.slimewisp;
 
    constructor(position: Point, id: number, renderDepth: number) {
       super(position, id, renderDepth);

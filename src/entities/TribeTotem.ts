@@ -1,4 +1,4 @@
-import { Point, TribeTotemBanner, EntityData, TribeType } from "webgl-test-shared";
+import { Point, TribeTotemBanner, EntityData, TribeType, EntityType } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
@@ -11,7 +11,7 @@ class TribeTotem extends Entity {
 
    private static readonly BANNER_LAYER_DISTANCES = [34, 52, 65];
    
-   public type = "tribe_totem" as const;
+   public type = EntityType.tribe_totem;
 
    public tribeID: number;
    private tribeType: TribeType;
@@ -95,7 +95,7 @@ class TribeTotem extends Entity {
       }
    }
 
-   public updateFromData(entityData: EntityData<"tribe_totem">): void {
+   public updateFromData(entityData: EntityData<EntityType.tribe_totem>): void {
       super.updateFromData(entityData);
 
       this.tribeType = entityData.clientArgs[1];

@@ -1,4 +1,4 @@
-import { GameObjectData, Point, RIVER_STEPPING_STONE_SIZES, SETTINGS, TILE_FRICTIONS, TILE_MOVE_SPEED_MULTIPLIERS, TileType, distance } from "webgl-test-shared";
+import { EntityType, GameObjectData, Point, RIVER_STEPPING_STONE_SIZES, SETTINGS, TILE_FRICTIONS, TILE_MOVE_SPEED_MULTIPLIERS, TileType, distance } from "webgl-test-shared";
 import RenderPart, { RenderObject } from "./render-parts/RenderPart";
 import Chunk from "./Chunk";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
@@ -92,7 +92,7 @@ abstract class GameObject extends RenderObject {
       
       // Water droplet particles
       // @Cleanup: Don't hardcode fish condition
-      if (this.isInRiver() && Board.tickIntervalHasPassed(0.05) && (!(this instanceof Entity) || this.type !== "fish")) {
+      if (this.isInRiver() && Board.tickIntervalHasPassed(0.05) && (!(this instanceof Entity) || this.type !== EntityType.fish)) {
          createWaterSplashParticle(this.position.x, this.position.y);
       }
    };
@@ -118,21 +118,21 @@ abstract class GameObject extends RenderObject {
    }
 
    public applyPhysics(): void {
-      let tileMoveSpeedMultiplier = TILE_MOVE_SPEED_MULTIPLIERS[this.tile.type];
-      if (this.tile.type === TileType.water && !this.isInRiver()) {
-         tileMoveSpeedMultiplier = 1;
-      }
-
-      // @Cleanup: This is scuffed
-      if (typeof this.overrideTileMoveSpeedMultiplier !== "undefined") {
-         const speed = this.overrideTileMoveSpeedMultiplier();
-         if (speed !== null) {
-            tileMoveSpeedMultiplier = speed;
-         }
-      }
-      
       // Accelerate
       if (this.acceleration.x !== 0 || this.acceleration.y !== 0) {
+         let tileMoveSpeedMultiplier = TILE_MOVE_SPEED_MULTIPLIERS[this.tile.type];
+         if (this.tile.type === TileType.water && !this.isInRiver()) {
+            tileMoveSpeedMultiplier = 1;
+         }
+   
+         // @Cleanup: This is scuffed
+         if (typeof this.overrideTileMoveSpeedMultiplier !== "undefined") {
+            const speed = this.overrideTileMoveSpeedMultiplier();
+            if (speed !== null) {
+               tileMoveSpeedMultiplier = speed;
+            }
+         }
+
          const terminalVelocity = this.terminalVelocity * tileMoveSpeedMultiplier;
 
          const friction = TILE_FRICTIONS[this.tile.type];

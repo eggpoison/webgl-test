@@ -1,4 +1,4 @@
-import { AttackPacket, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, ItemType, PlaceableItemType, Point, SETTINGS, STATUS_EFFECT_MODIFIERS, ToolItemInfo, TribeMemberAction } from "webgl-test-shared";
+import { AttackPacket, EntityType, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, ItemType, PlaceableItemType, Point, SETTINGS, STATUS_EFFECT_MODIFIERS, ToolItemInfo, TribeMemberAction } from "webgl-test-shared";
 import { addKeyListener, clearPressedKeys, keyIsPressed } from "./keyboard-input";
 import { CraftingMenu_setIsVisible } from "./components/game/menus/CraftingMenu";
 import Player from "./entities/Player";
@@ -322,13 +322,13 @@ const getInteractEntity = (): Entity | null => {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
          const chunk = Board.getChunk(chunkX, chunkY);
          for (const entity of chunk.getEntities()) {
-            if (entity.type === "barrel") {
+            if (entity.type === EntityType.barrel) {
                const distance = Player.instance.position.calculateDistanceBetween(entity.position);
                if (distance < minInteractionDistance) {
                   closestInteractableEntity = entity;
                   minInteractionDistance = distance;
                }
-            } else if (entity.type === "tribesman") {
+            } else if (entity.type === EntityType.tribesman) {
                // Only interact with tribesman inventories if the player is of the same tribe
                if ((entity as Tribesman).tribeID === null || ((entity as Tribesman).tribeID) !== Player.instance.tribeID) {
                   continue;
@@ -339,19 +339,19 @@ const getInteractEntity = (): Entity | null => {
                   closestInteractableEntity = entity;
                   minInteractionDistance = distance;
                }
-            } else if (entity.type === "campfire") {
+            } else if (entity.type === EntityType.campfire) {
                const distance = Player.instance.position.calculateDistanceBetween(entity.position);
                if (distance < minInteractionDistance) {
                   closestInteractableEntity = entity;
                   minInteractionDistance = distance;
                }
-            } else if (entity.type === "furnace") {
+            } else if (entity.type === EntityType.furnace) {
                const distance = Player.instance.position.calculateDistanceBetween(entity.position);
                if (distance < minInteractionDistance) {
                   closestInteractableEntity = entity;
                   minInteractionDistance = distance;
                }
-            } else if (entity.type === "tombstone") {
+            } else if (entity.type === EntityType.tombstone) {
                if ((entity as Tombstone).deathInfo === null) {
                   continue;
                }
@@ -371,19 +371,19 @@ const getInteractEntity = (): Entity | null => {
 
 const getInteractInventoryType = (entity: Entity): InteractInventoryType => {
    switch (entity.type) {
-      case "barrel": {
+      case EntityType.barrel: {
          return InteractInventoryType.barrel;
       }
-      case "tribesman": {
+      case EntityType.tribesman: {
          return InteractInventoryType.tribesman;
       }
-      case "campfire": {
+      case EntityType.campfire: {
          return InteractInventoryType.campfire;
       }
-      case "furnace": {
+      case EntityType.furnace: {
          return InteractInventoryType.furnace;
       }
-      case "tombstone": {
+      case EntityType.tombstone: {
          return InteractInventoryType.tombstoneEpitaph;
       }
       default: {

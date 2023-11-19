@@ -86,7 +86,7 @@ abstract class Entity extends GameObject {
       this.secondsSinceLastHit += 1 / SETTINGS.TPS;
 
       // Water splash particles
-      if (this.isInRiver() && Board.tickIntervalHasPassed(0.15) && this.acceleration !== null && this.type !== "fish") {
+      if (this.isInRiver() && Board.tickIntervalHasPassed(0.15) && this.acceleration !== null && this.type !== EntityType.fish) {
          const lifetime = 1.5;
 
          const particle = new Particle(lifetime);

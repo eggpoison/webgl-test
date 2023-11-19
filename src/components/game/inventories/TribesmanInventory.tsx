@@ -7,14 +7,14 @@ import { leftClickItemSlot } from "../../../inventory-manipulation";
 import InventoryContainer from "./InventoryContainer";
 import ItemSlot from "./ItemSlot";
 import { backpackItemTypes } from "./Hotbar";
-import { ITEM_TYPE_RECORD } from "webgl-test-shared";
+import { EntityType, ITEM_TYPE_RECORD } from "webgl-test-shared";
 
 interface TribesmanInventoryProps {
    readonly entity: Entity;
 }
 
 function assertEntityIsTribesman(entity: Entity): asserts entity is Tribesman {
-   if (entity.type !== "tribesman") {
+   if (entity.type !== EntityType.tribesman) {
       throw new Error("Entity passed into TribesmanInventory wasn't a tribesman.");
    }
 }

@@ -1,4 +1,4 @@
-import { EntityData, InventoryData, Point } from "webgl-test-shared";
+import { EntityData, EntityType, InventoryData, Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { Inventory } from "../items/Item";
@@ -8,7 +8,7 @@ import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-t
 class Barrel extends Entity {
    public static readonly SIZE = 80;
 
-   public type = "barrel" as const;
+   public type = EntityType.barrel;
 
    public readonly inventory: Inventory;
 
@@ -33,7 +33,7 @@ class Barrel extends Entity {
       this.tribeID = tribeID;
    }
 
-   public updateFromData(entityData: EntityData<"barrel">): void {
+   public updateFromData(entityData: EntityData<EntityType.barrel>): void {
       super.updateFromData(entityData);
 
       this.tribeID = entityData.clientArgs[0];

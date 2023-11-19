@@ -1,4 +1,4 @@
-import { Point, randFloat } from "webgl-test-shared";
+import { EntityType, Point, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { createRockParticle, createRockSpeckParticle } from "../generic-particles";
@@ -7,7 +7,7 @@ import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-t
 class Boulder extends Entity {
    private static readonly RADIUS = 40;
 
-   public type = "boulder" as const;
+   public type = EntityType.boulder;
 
    private static readonly TEXTURE_SOURCES = [
       "entities/boulder/boulder1.png",

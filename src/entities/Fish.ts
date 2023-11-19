@@ -1,4 +1,4 @@
-import { FishColour, HitData, Point, TileType, randFloat, randItem } from "webgl-test-shared";
+import { EntityType, FishColour, HitData, Point, TileType, randFloat, randItem } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
@@ -9,7 +9,7 @@ class Fish extends Entity {
    private static readonly SPRITE_WIDTH = 9 * 4;
    private static readonly SPRITE_HEIGHT = 16 * 4;
    
-   public readonly type = "fish";
+   public readonly type = EntityType.fish;
 
    public readonly waterOpacityMultiplier = randFloat(0.6, 1);
 

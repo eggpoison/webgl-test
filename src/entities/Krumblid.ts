@@ -1,4 +1,4 @@
-import { HitData, Point, randFloat } from "webgl-test-shared";
+import { EntityType, HitData, Point, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle } from "../generic-particles";
@@ -11,7 +11,7 @@ class Krumblid extends Entity {
 
    private static readonly BLOOD_FOUNTAIN_INTERVAL = 0.1;
 
-   public readonly type = "krumblid";
+   public readonly type = EntityType.krumblid;
 
    private numFootstepsTaken = 0;
 

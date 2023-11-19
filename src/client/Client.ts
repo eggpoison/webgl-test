@@ -32,7 +32,7 @@ import { createInventoryFromData, updateInventoryFromData } from "../inventory-m
 import { calculateDroppedItemRenderDepth, calculateEntityRenderDepth, calculateProjectileRenderDepth } from "../render-layers";
 import GameObject from "../GameObject";
 
-const BUILDING_TYPES: ReadonlyArray<EntityType> = ["barrel", "campfire", "furnace", "tribe_totem", "tribe_hut", "workbench"];
+const BUILDING_TYPES: ReadonlyArray<EntityType> = [EntityType.barrel, EntityType.campfire, EntityType.furnace, EntityType.tribe_totem, EntityType.tribe_hut, EntityType.workbench];
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -240,7 +240,7 @@ abstract class Client {
             if (Board.entities[entityData.id] !== Player.instance) {
                Board.entities[entityData.id].updateFromData(entityData);
             } else {
-               (Board.entities[entityData.id] as Player).genericUpdateFromData(entityData as unknown as EntityData<"player"> | EntityData<"tribesman">);
+               (Board.entities[entityData.id] as Player).genericUpdateFromData(entityData as unknown as EntityData<EntityType.player> | EntityData<EntityType.tribesman>);
             }
             for (const hit of entityData.hitsTaken) {
                Board.entities[entityData.id].registerHit(hit);
@@ -269,12 +269,13 @@ abstract class Client {
             }
          }
 
-         if (entity.type === "player") {
+         if (entity.type === EntityType.player) {
             const idx = Board.players.indexOf(entity as Player);
             if (idx !== -1) {
                Board.players.splice(idx, 1);
             }
          }
+
          Board.removeGameObject(entity);
          delete Board.entities[id];
       }
@@ -501,13 +502,13 @@ abstract class Client {
       this.addHitboxesToGameObject(entity, entityData);
 
       Board.addEntity(entity);
-      if (entity.type === "player") {
+      if (entity.type === EntityType.player) {
          Board.players.push(entity as Player);
       }
 
       // If the entity has just spawned in, create white smoke particles.
       // Only create particles for living entities: e.g. cows, tribesmen, etc.
-      if (entityData.ageTicks === 0 && !RESOURCE_ENTITY_TYPES.includes(entityData.type) && (MOB_ENTITY_TYPES.includes(entityData.type) || entityData.type === "player" || entityData.type === "tribesman" || BUILDING_TYPES.includes(entityData.type))) {
+      if (entityData.ageTicks === 0 && !RESOURCE_ENTITY_TYPES.includes(entityData.type) && (MOB_ENTITY_TYPES.includes(entityData.type) || entityData.type === EntityType.player || entityData.type === EntityType.tribesman || BUILDING_TYPES.includes(entityData.type))) {
          const strength = 0.8 * entity.mass;
          
          // White smoke particles
@@ -582,7 +583,7 @@ abstract class Client {
       updateHealthBar(Player.MAX_HEALTH);
       
       const spawnPosition = Point.unpackage(respawnDataPacket.spawnPosition);
-      const renderDepth = calculateEntityRenderDepth("player");
+      const renderDepth = calculateEntityRenderDepth(EntityType.player);
       const player = new Player(spawnPosition, respawnDataPacket.playerID, renderDepth, null, TribeType.plainspeople, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, false, -1, definiteGameState.playerUsername);
       player.addCircularHitbox(Player.createNewPlayerHitbox());
       Player.setInstancePlayer(player);

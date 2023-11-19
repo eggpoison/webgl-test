@@ -1,4 +1,4 @@
-import { CowSpecies, EntityData, HitData, Point, SETTINGS, randFloat } from "webgl-test-shared";
+import { CowSpecies, EntityData, EntityType, HitData, Point, SETTINGS, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createDirtParticle, createFootprintParticle } from "../generic-particles";
@@ -16,7 +16,7 @@ class Cow extends Entity {
 
    private static readonly BLOOD_FOUNTAIN_INTERVAL = 0.1;
 
-   public readonly type = "cow";
+   public readonly type = EntityType.cow;
 
    private grazeProgress: number;
 
@@ -98,7 +98,7 @@ class Cow extends Entity {
       createBloodParticleFountain(this, Cow.BLOOD_FOUNTAIN_INTERVAL, 1.1);
    }
 
-   public updateFromData(entityData: EntityData<"cow">): void {
+   public updateFromData(entityData: EntityData<EntityType.cow>): void {
       super.updateFromData(entityData);
 
       // When the cow has finished grazing, create a bunch of dirt particles

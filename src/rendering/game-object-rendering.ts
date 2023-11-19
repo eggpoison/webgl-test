@@ -139,9 +139,11 @@ export function createEntityShaders(): void {
 
 export function renderGameObjects(): void {
    if (Board.sortedGameObjects.length === 0) return;
+
+   const numRenderParts = Board.numVisibleRenderParts - Board.fish.length;
    
-   const vertexData = new Float32Array(Board.numVisibleRenderParts * 4 * 12);
-   const indicesData = new Uint16Array(Board.numVisibleRenderParts * 6);
+   const vertexData = new Float32Array(numRenderParts * 4 * 12);
+   const indicesData = new Uint16Array(numRenderParts * 6);
    
    let i = 0;
    for (const gameObject of Board.sortedGameObjects) {
@@ -238,7 +240,7 @@ export function renderGameObjects(): void {
       }
    }
 
-   if (i !== Board.numVisibleRenderParts) {
+   if (i !== numRenderParts) {
       throw new Error("Detected missing or extra render parts!");
    }
 
@@ -261,7 +263,7 @@ export function renderGameObjects(): void {
    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indicesData, gl.STATIC_DRAW);
    
-   gl.drawElements(gl.TRIANGLES, 6 * Board.numVisibleRenderParts, gl.UNSIGNED_SHORT, 0);
+   gl.drawElements(gl.TRIANGLES, numRenderParts * 6, gl.UNSIGNED_SHORT, 0);
 
    gl.disable(gl.DEPTH_TEST);
    gl.disable(gl.BLEND);

@@ -1,4 +1,4 @@
-import { Point, randFloat } from "webgl-test-shared";
+import { EntityType, Point, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import Particle from "../Particle";
@@ -8,7 +8,7 @@ import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-t
 
 class IceSpikes extends Entity {
    private static readonly ICE_SPECK_COLOUR: ParticleColour = [140/255, 143/255, 207/255];
-   public type = "ice_spikes" as const;
+   public type = EntityType.ice_spikes;
 
    private static readonly SIZE = 80;
 
