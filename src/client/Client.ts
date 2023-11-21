@@ -163,16 +163,22 @@ abstract class Client {
    }
 
    /** Parses the server tile data array into an array of client tiles */
-   public static parseServerTileDataArray(serverTileDataArray: ReadonlyArray<ReadonlyArray<ServerTileData>>): Array<Array<Tile>> {
+   public static parseServerTileDataArray(serverTileDataArray: ReadonlyArray<ServerTileData>): Array<Array<Tile>> {
       const tiles = new Array<Array<Tile>>();
    
-      for (let y = 0; y < SETTINGS.BOARD_DIMENSIONS; y++) {
-         tiles[y] = new Array<Tile>();
-         for (let x = 0; x < SETTINGS.BOARD_DIMENSIONS; x++) {
-            const serverTileData = serverTileDataArray[y][x];
-            tiles[y][x] = new Tile(serverTileData.x, serverTileData.y, serverTileData.type, serverTileData.biomeName, serverTileData.isWall);
+      for (let tileIndex = 0; tileIndex < SETTINGS.BOARD_DIMENSIONS * SETTINGS.BOARD_DIMENSIONS; tileIndex++) {
+         const serverTileData = serverTileDataArray[tileIndex];
+         
+         const x = tileIndex % SETTINGS.BOARD_DIMENSIONS;
+         const y = Math.floor(tileIndex / SETTINGS.BOARD_DIMENSIONS);
+         if (y === tiles.length) {
+            tiles.push([]);
          }
+
+         const tile = new Tile(x, y, serverTileData.type, serverTileData.biomeName, serverTileData.isWall);
+         tiles[y].push(tile);
       }
+      console.log(tiles);
    
       return tiles;
    }
