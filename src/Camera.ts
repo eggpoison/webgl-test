@@ -6,7 +6,7 @@ export type VisiblePositionBounds = [minX: number, maxX: number, minY: number, m
 
 abstract class Camera {
    /** Larger = zoomed in, smaller = zoomed out */
-   public static zoom: number = 1.4;
+   public static zoom: number = 1.75;
 
    public static position: Point;
    
@@ -64,8 +64,5 @@ abstract class Camera {
       return playerRelativePosition * this.zoom + halfWindowHeight;
    }
 }
-
-// @Cleanup: This shouldn't exist.
-document.documentElement.style.setProperty("--zoom", Camera.zoom.toString());
 
 export default Camera;

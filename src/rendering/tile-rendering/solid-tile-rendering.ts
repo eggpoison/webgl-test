@@ -88,7 +88,7 @@ const updateVertexData = (data: Float32Array, renderChunkX: number, renderChunkY
    const tileMinY = renderChunkY * RENDER_CHUNK_SIZE;
    const tileMaxY = (renderChunkY + 1) * RENDER_CHUNK_SIZE - 1;
    
-   let tileIndex = 0;
+   let i = 0;
    for (let tileX = tileMinX; tileX <= tileMaxX; tileX++) {
       for (let tileY = tileMinY; tileY <= tileMaxY; tileY++) {
          const tile = Board.getTile(tileX, tileY);
@@ -103,43 +103,43 @@ const updateVertexData = (data: Float32Array, renderChunkX: number, renderChunkY
          const y1 = tile.y * SETTINGS.TILE_SIZE;
          const y2 = (tile.y + 1) * SETTINGS.TILE_SIZE;
 
-         data[tileIndex * 30] = x1;
-         data[tileIndex * 30 + 1] = y1;
-         data[tileIndex * 30 + 2] = 0;
-         data[tileIndex * 30 + 3] = 0;
-         data[tileIndex * 30 + 4] = textureIndex;
+         data[i * 30] = x1;
+         data[i * 30 + 1] = y1;
+         data[i * 30 + 2] = 0;
+         data[i * 30 + 3] = 0;
+         data[i * 30 + 4] = textureIndex;
 
-         data[tileIndex * 30 + 5] = x2;
-         data[tileIndex * 30 + 6] = y1;
-         data[tileIndex * 30 + 7] = 1;
-         data[tileIndex * 30 + 8] = 0;
-         data[tileIndex * 30 + 9] = textureIndex;
+         data[i * 30 + 5] = x2;
+         data[i * 30 + 6] = y1;
+         data[i * 30 + 7] = 1;
+         data[i * 30 + 8] = 0;
+         data[i * 30 + 9] = textureIndex;
 
-         data[tileIndex * 30 + 10] = x1;
-         data[tileIndex * 30 + 11] = y2;
-         data[tileIndex * 30 + 12] = 0;
-         data[tileIndex * 30 + 13] = 1;
-         data[tileIndex * 30 + 14] = textureIndex;
+         data[i * 30 + 10] = x1;
+         data[i * 30 + 11] = y2;
+         data[i * 30 + 12] = 0;
+         data[i * 30 + 13] = 1;
+         data[i * 30 + 14] = textureIndex;
 
-         data[tileIndex * 30 + 15] = x1;
-         data[tileIndex * 30 + 16] = y2;
-         data[tileIndex * 30 + 17] = 0;
-         data[tileIndex * 30 + 18] = 1;
-         data[tileIndex * 30 + 19] = textureIndex;
+         data[i * 30 + 15] = x1;
+         data[i * 30 + 16] = y2;
+         data[i * 30 + 17] = 0;
+         data[i * 30 + 18] = 1;
+         data[i * 30 + 19] = textureIndex;
 
-         data[tileIndex * 30 + 20] = x2;
-         data[tileIndex * 30 + 21] = y1;
-         data[tileIndex * 30 + 22] = 1;
-         data[tileIndex * 30 + 23] = 0;
-         data[tileIndex * 30 + 24] = textureIndex;
+         data[i * 30 + 20] = x2;
+         data[i * 30 + 21] = y1;
+         data[i * 30 + 22] = 1;
+         data[i * 30 + 23] = 0;
+         data[i * 30 + 24] = textureIndex;
 
-         data[tileIndex * 30 + 25] = x2;
-         data[tileIndex * 30 + 26] = y2;
-         data[tileIndex * 30 + 27] = 1;
-         data[tileIndex * 30 + 28] = 1;
-         data[tileIndex * 30 + 29] = textureIndex;
+         data[i * 30 + 25] = x2;
+         data[i * 30 + 26] = y2;
+         data[i * 30 + 27] = 1;
+         data[i * 30 + 28] = 1;
+         data[i * 30 + 29] = textureIndex;
 
-         tileIndex++;
+         i++;
       }
    }
 }

@@ -40,7 +40,7 @@ abstract class GameObject extends RenderObject {
    public readonly hitboxHalfDiagonalLength?: number;
    
    /** Limit to how many units the object can move in a second */
-   public terminalVelocity: number = 0;
+   public terminalVelocity = 0;
 
    public chunks = new Set<Chunk>();
 
@@ -165,7 +165,6 @@ abstract class GameObject extends RenderObject {
          this.velocity.y += accelerateAmountY;
          
          // Don't accelerate past terminal velocity
-         // Allow the game object to 
          const velocityLength = this.velocity.length();
          if (velocityLength > terminalVelocity && velocityLength > magnitudeBeforeAdd) {
             if (magnitudeBeforeAdd < terminalVelocity) {

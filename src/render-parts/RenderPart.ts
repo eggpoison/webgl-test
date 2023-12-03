@@ -64,6 +64,7 @@ export abstract class RenderObject {
 class RenderPart extends RenderObject {
    public readonly parent: RenderObject;
 
+   // @Speed: Reduce polymorphism
    public offset?: Point | (() => Point);
    public width: number;
    public height: number;

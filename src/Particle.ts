@@ -14,6 +14,7 @@ class Particle {
       this.lifetime = lifetime;
    }
 
+   // @Speed: Polymorphism
    public getOpacity?(): number;
    public getScale?(): number;
 }

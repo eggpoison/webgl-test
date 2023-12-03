@@ -171,14 +171,13 @@ abstract class Client {
          
          const x = tileIndex % SETTINGS.BOARD_DIMENSIONS;
          const y = Math.floor(tileIndex / SETTINGS.BOARD_DIMENSIONS);
-         if (y === tiles.length) {
+         if (typeof tiles[x] === "undefined") {
             tiles.push([]);
          }
 
          const tile = new Tile(x, y, serverTileData.type, serverTileData.biomeName, serverTileData.isWall);
-         tiles[y].push(tile);
+         tiles[x].push(tile);
       }
-      console.log(tiles);
    
       return tiles;
    }

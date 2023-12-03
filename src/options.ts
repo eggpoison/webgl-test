@@ -1,4 +1,5 @@
 interface Options {
+   uiZoom: number;
    nightVisionIsEnabled: boolean;
    /**
     * If true, then all entity hitboxes will be shown
@@ -17,21 +18,19 @@ interface Options {
    showRenderChunkBorders: boolean;
    readonly showTribeMemberHands: boolean;
    readonly showParticles: boolean;
-   // @Temporary
-   readonly uiStyle: "old" | "new";
-   // @Temporary
-   readonly showArmourSlot: boolean;
 }
 
 const OPTIONS: Options = {
+   uiZoom: 1.75,
    nightVisionIsEnabled: false,
    showHitboxes: false,
    showChunkBorders: false,
    showRenderChunkBorders: false,
-   showTribeMemberHands: false,
-   showParticles: true,
-   uiStyle: "old",
-   showArmourSlot: false
+   showTribeMemberHands: true,
+   showParticles: true
 };
+
+// @Cleanup: Should this exist?
+document.documentElement.style.setProperty("--zoom", OPTIONS.uiZoom.toString());
 
 export default OPTIONS;

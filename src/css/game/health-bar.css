@@ -4,21 +4,17 @@
    --max-health: 20;
    --current-health: 20;
    --previous-health: 20;
-   --width: 25rem;
-   --height: 1.5rem;
-   --health-bar-width: calc(109px * 5);
-   --health-bar-height: calc(8px * 5);
-   border: 5px solid #000;
+   --width: calc(14rem * var(--zoom));
+   --height: calc(1.5rem * var(--zoom));
+   --health-bar-width: calc(109px * 3.5 * var(--zoom));
+   --health-bar-height: calc(8px * 3.5 * var(--zoom));
+   border: calc(3.5px * var(--zoom)) solid #000;
    position: absolute;
    left: 50%;
-   bottom: calc(5.75rem * var(--zoom));
+   bottom: calc(5.25rem * var(--zoom));
    transform: translateX(-50%);
    z-index: 2;
    box-shadow: 0 0 7px 0 rgba(0, 0, 0, 0.7) inset;
-}
-/* @Temporary */
-#health-bar.old {
-   border-radius: 4px;
 }
 
 #health-bar .health-slider {
@@ -27,12 +23,6 @@
    background-image: url(../../images/miscellaneous/health-bar.png);
    background-size: 100% 100%;
    image-rendering: pixelated;
-}
-/* @Temporary */
-#health-bar.old .health-slider {
-   background-color: #f00;
-   box-shadow: 2px 2px 5px 1px rgba(255, 255, 255, 0.5) inset, -2px -2px 5px 0 rgba(0, 0, 0, 0.5) inset;
-   background-image: none;
 }
 #health-bar.frost-shield .health-slider {
    background-image: url(../../images/miscellaneous/health-bar-frozen.png);
@@ -71,33 +61,6 @@
    image-rendering: pixelated;
    opacity: 0.5;
 }
-#health-bar.old .health-bar-notches {
-   opacity: 0;
-}
-/* @Temporary */
-#health-bar .notches {
-   position: absolute;
-   top: 0;
-   right: 0;
-   bottom: 0;
-   left: 0;
-   display: flex;
-   justify-content: space-evenly;
-   align-items: center;
-}
-#health-bar .notches .notch {
-   --padding: 0.15rem;
-   width: 3px;
-   height: calc(var(--height) - var(--padding) * 2);
-}
-#health-bar .notches .notch-major {
-   height: calc(var(--height) - var(--padding) * 2);
-   background-color: rgba(0, 0, 0, 0.5);
-}
-#health-bar .notches .notch-minor {
-   height: calc(var(--height) - var(--padding) * 4);
-   background-color: rgba(0, 0, 0, 0.3);
-}
 
 #health-bar.animated .health-mask {
    animation: HealthSliderSlide 1s cubic-bezier(0, 0.5, 0.5, 1) forwards;
@@ -108,8 +71,8 @@
 }
 
 #health-bar .health-icon {
-   --health-icon-width: calc(10px * 2.25);
-   --health-icon-height: calc(9px * 2.25);
+   --health-icon-width: calc(10px * 1.5 * var(--zoom));
+   --health-icon-height: calc(9px * 1.5 * var(--zoom));
    width: var(--health-icon-width);
    height: var(--health-icon-height);
    position: absolute;
@@ -139,7 +102,7 @@
    --offset-y: 0.25rem;
    color: #fff;
    font-family: "Inconsolata";
-   font-size: 1.6rem;
+   font-size: 1.85rem;
    font-weight: 700;
    text-shadow: 3px 3px 1px #000;
    position: absolute;

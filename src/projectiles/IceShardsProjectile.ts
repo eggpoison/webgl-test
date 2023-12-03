@@ -7,7 +7,7 @@ class IceShardsProjectile extends Projectile {
    private static readonly SIZE = 44;
    
    constructor(position: Point, id: number, renderDepth: number, data: any) {
-      super(position, id, data, renderDepth);
+      super(position, id, renderDepth, data);
 
       this.attachRenderPart(
          new RenderPart(
