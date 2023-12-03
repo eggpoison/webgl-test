@@ -37,6 +37,7 @@ import { setupFrameGraph } from "./rendering/frame-graph-rendering";
 import { createGameObjectTextureAtlas } from "./texture-atlases/game-object-texture-atlas";
 import { createFishShaders } from "./rendering/fish-rendering";
 import { Tile } from "./Tile";
+import { createForcefieldShaders, renderForcefield } from "./rendering/world-border-forcefield-rendering";
 
 let listenersHaveBeenCreated = false;
 
@@ -197,6 +198,7 @@ abstract class Game {
             createParticleShaders();
             createWallBorderShaders();
             createAmbientOcclusionShaders();
+            createForcefieldShaders();
 
             if (isDev()) {
                setupFrameGraph();
@@ -349,6 +351,7 @@ abstract class Game {
       if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Board.hasGameObjectID(this.gameObjectDebugData.gameObjectID)) {
          renderTriangleDebugData(this.gameObjectDebugData);
       }
+      renderForcefield();
       renderWorldBorder();
       if (nerdVisionIsVisible() && OPTIONS.showChunkBorders) {
          renderChunkBorders(Camera.minVisibleChunkX, Camera.maxVisibleChunkX, Camera.minVisibleChunkY, Camera.maxVisibleChunkY, SETTINGS.CHUNK_SIZE, 1);

@@ -13,19 +13,44 @@ layout(std140) uniform Camera {
 
 layout(location = 0) in vec2 a_position;
 
+out vec2 v_position;
+
 void main() {
    vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
    vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
    gl_Position = vec4(clipSpacePos, 0.0, 1.0);
+
+   v_position = a_position;
 }`;
 
 const fragmentShaderText = `#version 300 es
 precision mediump float;
 
+layout(std140) uniform Camera {
+   uniform vec2 u_playerPos;
+   uniform vec2 u_halfWindowSize;
+   uniform float u_zoom;
+};
+
+in vec2 v_position;
+
 out vec4 outputColour;
 
+float roundPixel(float num) {
+   return ceil(num / 4.0) * 4.0;
+}
+
 void main() {
-   outputColour = vec4(0.0, 0.0, 0.0, 1.0);
+   float x = roundPixel(v_position.x);
+   float y = roundPixel(v_position.y);
+   float dist = distance(vec2(x, y), u_playerPos);
+   if (dist < 250.0) {
+      float distMultiplier = 1.0 - dist / 250.0;
+      distMultiplier = pow(distMultiplier, 0.35);
+      outputColour = vec4(3.0/255.0, 200.0/255.0, 252.0/255.0, distMultiplier);
+   } else {
+      outputColour = vec4(0.0, 0.0, 0.0, 0.0);
+   }
 }
 `;
 
@@ -42,12 +67,12 @@ export function createWorldBorderShaders(): void {
 }
 
 export function renderWorldBorder(): void {
-   const BORDER_WIDTH = 20;
+   const BORDER_WIDTH = 16;
 
-   const minChunkXPos = Camera.minVisibleChunkX * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
-   const maxChunkXPos = (Camera.maxVisibleChunkX + 1) * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
-   const minChunkYPos = Camera.minVisibleChunkY * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
-   const maxChunkYPos = (Camera.maxVisibleChunkY + 1) * SETTINGS.CHUNK_SIZE * SETTINGS.TILE_SIZE;
+   const minChunkXPos = Camera.minVisibleChunkX * SETTINGS.CHUNK_UNITS;
+   const maxChunkXPos = (Camera.maxVisibleChunkX + 1) * SETTINGS.CHUNK_UNITS;
+   const minChunkYPos = Camera.minVisibleChunkY * SETTINGS.CHUNK_UNITS;
+   const maxChunkYPos = (Camera.maxVisibleChunkY + 1) * SETTINGS.CHUNK_UNITS;
 
    const leftBorderIsVisible = Camera.minVisibleChunkX === 0;
    const rightBorderIsVisible = Camera.maxVisibleChunkX === SETTINGS.BOARD_SIZE - 1;
@@ -181,6 +206,9 @@ export function renderWorldBorder(): void {
 
    gl.useProgram(program);
 
+   gl.enable(gl.BLEND);
+   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
    gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
 
@@ -190,4 +218,7 @@ export function renderWorldBorder(): void {
    gl.enableVertexAttribArray(0);
 
    gl.drawArrays(gl.TRIANGLES, 0, numVisibleBorders * 6);
+
+   gl.disable(gl.BLEND);
+   gl.blendFunc(gl.ONE, gl.ZERO);
 }
