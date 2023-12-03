@@ -1,6 +1,7 @@
 import { ItemType } from "webgl-test-shared";
 
 export type ClientItemInfo = {
+   readonly entityTextureSource: string;
    readonly textureSource: string;
    readonly name: string;
    readonly description: string;
@@ -8,182 +9,218 @@ export type ClientItemInfo = {
 
 const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
    [ItemType.wood]: {
-      textureSource: "items/wood.png",
+      entityTextureSource: "items/small/wood.png",
+      textureSource: "items/large/wood.png",
       name: "Wood",
       description: "A common material used in crafting many things."
    },
    [ItemType.wooden_sword]: {
-      textureSource: "items/wooden-sword.png",
+      entityTextureSource: "items/small/wooden-sword.png",
+      textureSource: "items/large/wooden-sword.png",
       name: "Wooden Sword",
       description: "The splinters hurt you as much as the blade hurts the enemy."
    },
    [ItemType.wooden_axe]: {
-      textureSource: "items/wooden-axe.png",
+      entityTextureSource: "items/small/wooden-axe.png",
+      textureSource: "items/large/wooden-axe.png",
       name: "Wooden Axe",
       description: ""
    },
    [ItemType.wooden_pickaxe]: {
-      textureSource: "items/wooden-pickaxe.png",
+      entityTextureSource: "items/small/wooden-pickaxe.png",
+      textureSource: "items/large/wooden-pickaxe.png",
       name: "Wooden Pickaxe",
       description: ""
    },
    [ItemType.berry]: {
-      textureSource: "items/berry.png",
+      entityTextureSource: "items/small/berry.png",
+      textureSource: "items/large/berry.png",
       name: "Berry",
       description: "Provides little sustenance, but can be used in a pinch."
    },
    [ItemType.raw_beef]: {
-      textureSource: "items/raw-beef.png",
+      entityTextureSource: "items/small/raw-beef.png",
+      textureSource: "items/large/raw-beef.png",
       name: "Raw Beef",
       description: "The raw mutilated flesh of a deceased cow - would not recommend eating."
    },
    [ItemType.cooked_beef]: {
-      textureSource: "items/cooked-beef.png",
+      entityTextureSource: "items/small/cooked-beef.png",
+      textureSource: "items/large/cooked-beef.png",
       name: "Cooked Beef",
       description: "A hearty meal. Could use some seasoning."
    },
    [ItemType.workbench]: {
-      textureSource: "items/workbench.png",
+      entityTextureSource: "items/small/workbench.png",
+      textureSource: "items/large/workbench.png",
       name: "Workbench",
       description: "The first crafting station available, able to craft many more complex recipes."
    },
    [ItemType.rock]: {
-      textureSource: "items/rock.png",
+      entityTextureSource: "items/small/rock.png",
+      textureSource: "items/large/rock.png",
       name: "Rock",
       description: "This Grug rock. No hurt or face wrath of Grug."
    },
    [ItemType.stone_sword]: {
-      textureSource: "items/stone-sword.png",
+      entityTextureSource: "items/small/stone-sword.png",
+      textureSource: "items/large/stone-sword.png",
       name: "Stone Sword",
       description: ""
    },
    [ItemType.stone_axe]: {
-      textureSource: "items/stone-axe.png",
+      entityTextureSource: "items/small/stone-sword.png",
+      textureSource: "items/large/stone-axe.png",
       name: "Stone Axe",
       description: ""
    },
    [ItemType.stone_pickaxe]: {
-      textureSource: "items/stone-pickaxe.png",
+      entityTextureSource: "items/small/stone-pickaxe.png",
+      textureSource: "items/large/stone-pickaxe.png",
       name: "Stone Pickaxe",
       description: ""
    },
    [ItemType.leather]: {
-      textureSource: "items/leather.png",
+      entityTextureSource: "items/small/leather.png",
+      textureSource: "items/large/leather.png",
       name: "Leather",
       description: ""
    },
    [ItemType.leather_backpack]: {
-      textureSource: "items/leather-backpack.png",
+      entityTextureSource: "items/small/leather-backpack.png",
+      textureSource: "items/large/leather-backpack.png",
       name: "Leather Backpack",
       description: "Allows you to hold more items."
    },
    [ItemType.cactus_spine]: {
-      textureSource: "items/cactus-spine.png",
+      entityTextureSource: "items/small/cactus-spine.png",
+      textureSource: "items/large/cactus-spine.png",
       name: "Cactus Spine",
       description: "It's tough and spiky and gets everywhere."
    },
    [ItemType.yeti_hide]: {
-      textureSource: "items/yeti-hide.png",
+      entityTextureSource: "items/small/yeti-hide.png",
+      textureSource: "items/large/yeti-hide.png",
       name: "Yeti Hide",
       description: "An extremely tough half-frost half-flesh hide."
    },
    [ItemType.frostcicle]: {
-      textureSource: "items/frostcicle.png",
+      entityTextureSource: "items/small/frostcicle.png",
+      textureSource: "items/large/frostcicle.png",
       name: "Frostcicle",
       description: "A perfectly preserved ice shard."
    },
    [ItemType.slimeball]: {
-      textureSource: "items/slimeball.png",
+      entityTextureSource: "items/small/slimeball.png",
+      textureSource: "items/large/slimeball.png",
       name: "Slimeball",
       description: ""
    },
    [ItemType.eyeball]: {
-      textureSource: "items/eyeball.png",
+      entityTextureSource: "items/small/eyeball.png",
+      textureSource: "items/large/eyeball.png",
       name: "Eyeball",
       description: ""
    },
    [ItemType.flesh_sword]: {
-      textureSource: "items/flesh-sword.png",
+      entityTextureSource: "items/small/flesh-sword.png",
+      textureSource: "items/large/flesh-sword.png",
       name: "Flesh Sword",
       description: ""
    },
    [ItemType.tribe_totem]: {
-      textureSource: "items/tribe-totem.png",
+      entityTextureSource: "items/small/tribe-totem.png",
+      textureSource: "items/large/tribe-totem.png",
       name: "Tribe Totem",
       description: ""
    },
    [ItemType.tribe_hut]: {
-      textureSource: "items/tribe-hut.png",
+      entityTextureSource: "items/small/tribe-hut.png",
+      textureSource: "items/large/tribe-hut.png",
       name: "Tribe Hut",
       description: ""
    },
    [ItemType.barrel]: {
-      textureSource: "items/barrel.png",
+      entityTextureSource: "items/small/barrel.png",
+      textureSource: "items/large/barrel.png",
       name: "Barrel",
       description: ""
    },
    [ItemType.frost_armour]: {
-      textureSource: "items/frost-armour.png",
+      entityTextureSource: "items/small/frost-armour.png",
+      textureSource: "items/large/frost-armour.png",
       name: "Frost Armour",
       description: ""
    },
    [ItemType.campfire]: {
-      textureSource: "items/campfire.png",
+      entityTextureSource: "items/small/campfire.png",
+      textureSource: "items/large/campfire.png",
       name: "Campfire",
       description: ""
    },
    [ItemType.furnace]: {
-      textureSource: "items/furnace.png",
+      entityTextureSource: "items/small/furnace.png",
+      textureSource: "items/large/furnace.png",
       name: "Furnace",
       description: ""
    },
    [ItemType.wooden_bow]: {
-      textureSource: "items/wooden-bow.png",
+      entityTextureSource: "items/small/wooden-bow.png",
+      textureSource: "items/large/wooden-bow.png",
       name: "Wooden Bow",
       description: ""
    },
    [ItemType.meat_suit]: {
-      textureSource: "items/meat-suit.png",
+      entityTextureSource: "items/small/meat-suit.png",
+      textureSource: "items/large/meat-suit.png",
       name: "Meat Suit",
       description: "Your skin feels oily after wearing it, and you now have at least 5 NTDs. Looks cool though"
    },
    [ItemType.deepfrost_heart]: {
-      textureSource: "items/deepfrost-heart.png",
+      entityTextureSource: "items/small/deepfrost-heart.png",
+      textureSource: "items/large/deepfrost-heart.png",
       name: "Deepfrost Heart",
       description: ""
    },
    [ItemType.deepfrost_sword]: {
-      textureSource: "items/deepfrost-sword.png",
+      entityTextureSource: "items/small/deepfrost-sword.png",
+      textureSource: "items/large/deepfrost-sword.png",
       name: "Deepfrost Sword",
       description: ""
    },
    [ItemType.deepfrost_pickaxe]: {
-      textureSource: "items/deepfrost-pickaxe.png",
+      entityTextureSource: "items/small/deepfrost-pickaxe.png",
+      textureSource: "items/large/deepfrost-pickaxe.png",
       name: "Deepfrost Pickaxe",
       description: ""
    },
    [ItemType.deepfrost_axe]: {
-      textureSource: "items/deepfrost-axe.png",
+      entityTextureSource: "items/small/deepfrost-axe.png",
+      textureSource: "items/large/deepfrost-axe.png",
       name: "Deepfrost Axe",
       description: ""
    },
    [ItemType.deepfrost_armour]: {
-      textureSource: "items/deepfrost-armour.png",
+      entityTextureSource: "items/small/deepfrost-armour.png",
+      textureSource: "items/large/deepfrost-armour.png",
       name: "Deepfrost Armour",
       description: ""
    },
    [ItemType.raw_fish]: {
-      textureSource: "items/raw-fish.png",
+      entityTextureSource: "items/small/raw-fish.png",
+      textureSource: "items/large/raw-fish.png",
       name: "Deepfrost Armour",
       description: ""
    },
    [ItemType.cooked_fish]: {
-      textureSource: "items/cooked-fish.png",
+      entityTextureSource: "items/small/cooked-fish.png",
+      textureSource: "items/large/cooked-fish.png",
       name: "Deepfrost Armour",
       description: ""
    },
    [ItemType.fishlord_suit]: {
-      textureSource: "items/fishlord-suit.png",
+      entityTextureSource: "items/small/fishlord-suit.png",
+      textureSource: "items/large/fishlord-suit.png",
       name: "Fish Suit",
       description: ""
    }

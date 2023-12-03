@@ -4,7 +4,6 @@ import Projectile from "./Projectile";
 import Board from "../Board";
 import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
-import { createWhiteSmokeParticle } from "../generic-particles";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 
 class WoodenArrowProjectile extends Projectile {
@@ -91,13 +90,6 @@ class WoodenArrowProjectile extends Projectile {
             r, g, b
          )
          Board.lowMonocolourParticles.push(particle);
-      }
-   
-      // White smoke particles
-      for (let i = 0; i < 2; i++) {
-         const spawnPositionX = this.position.x;
-         const spawnPositionY = this.position.y;
-         createWhiteSmokeParticle(spawnPositionX, spawnPositionY, 0.7);
       }
    }
 }

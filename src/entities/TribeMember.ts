@@ -135,7 +135,7 @@ abstract class TribeMember extends Entity {
    private static readonly FOOD_EAT_INTERVAL = 0.3;
    
    private static readonly TOOL_ACTIVE_ITEM_SIZE = 48;
-   private static readonly DEFAULT_ACTIVE_ITEM_SIZE = 32;
+   private static readonly DEFAULT_ACTIVE_ITEM_SIZE = SETTINGS.ITEM_SIZE * 1.75;
    
    private static readonly HAND_RESTING_DIRECTION = Math.PI / 2.5;
    private static readonly HAND_RESTING_OFFSET = 34;
@@ -154,12 +154,12 @@ abstract class TribeMember extends Entity {
    private static readonly BLOOD_FOUNTAIN_INTERVAL = 0.1;
 
    private static readonly BOW_CHARGE_TEXTURE_SOURCES: ReadonlyArray<string> = [
-      "items/wooden-bow.png",
-      "items/wooden-bow-charge-1.png",
-      "items/wooden-bow-charge-2.png",
-      "items/wooden-bow-charge-3.png",
-      "items/wooden-bow-charge-4.png",
-      "items/wooden-bow-charge-5.png"
+      "items/large/wooden-bow.png",
+      "miscellaneous/wooden-bow-charge-1.png",
+      "miscellaneous/wooden-bow-charge-2.png",
+      "miscellaneous/wooden-bow-charge-3.png",
+      "miscellaneous/wooden-bow-charge-4.png",
+      "miscellaneous/wooden-bow-charge-5.png"
    ];
    
    private readonly tribeType: TribeType;
@@ -176,7 +176,7 @@ abstract class TribeMember extends Entity {
 
    protected activeItemType: ItemType | null;
 
-   public action: TribeMemberAction
+   public action: TribeMemberAction;
    public foodEatingType: ItemType | -1;
 
    public lastActionTicks: number;
@@ -320,7 +320,7 @@ abstract class TribeMember extends Entity {
          this,
          TribeMember.TOOL_ACTIVE_ITEM_SIZE,
          TribeMember.TOOL_ACTIVE_ITEM_SIZE,
-         activeItem !== null ? getGameObjectTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItem].textureSource) : -1,
+         activeItem !== null ? getGameObjectTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItem].entityTextureSource) : -1,
          0,
          0
       );
@@ -594,14 +594,20 @@ abstract class TribeMember extends Entity {
       if (activeItemType === null) {
          this.removeRenderPart(this.activeItemRenderPart);
       } else {
-         this.activeItemRenderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItemType].textureSource)];
          this.attachRenderPart(this.activeItemRenderPart);
-
+         
+         if (this.showLargeItemTexture(activeItemType)) {
+            this.activeItemRenderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItemType].textureSource)];
+            this.activeItemRenderPart.textureWidth = 16;
+            this.activeItemRenderPart.textureHeight = 16;
+         } else {
+            this.activeItemRenderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItemType].entityTextureSource)];
+            this.activeItemRenderPart.textureWidth = 8;
+            this.activeItemRenderPart.textureHeight = 8;
+         }
          const renderPartSize = this.getActiveItemSize(activeItemType);
          this.activeItemRenderPart.width = renderPartSize;
          this.activeItemRenderPart.height = renderPartSize;
-         this.activeItemRenderPart.textureWidth = 16;
-         this.activeItemRenderPart.textureHeight = 16;
       }
    }
 
@@ -611,6 +617,11 @@ abstract class TribeMember extends Entity {
          return TribeMember.TOOL_ACTIVE_ITEM_SIZE;
       }
       return TribeMember.DEFAULT_ACTIVE_ITEM_SIZE;
+   }
+
+   private showLargeItemTexture(itemType: ItemType): boolean {
+      const itemTypeInfo = ITEM_TYPE_RECORD[itemType];
+      return itemTypeInfo === "axe" || itemTypeInfo === "sword" || itemTypeInfo === "bow" || itemTypeInfo === "pickaxe";
    }
 
    public updateFromData(entityData: EntityData<EntityType.player> | EntityData<EntityType.tribesman>): void {

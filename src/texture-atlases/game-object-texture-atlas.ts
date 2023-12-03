@@ -87,23 +87,34 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/frozen-yeti/frozen-yeti.png",
    "entities/frozen-yeti/frozen-yeti-head.png",
    "entities/frozen-yeti/frozen-yeti-paw.png",
-   "items/wooden-bow-charge-1.png",
-   "items/wooden-bow-charge-2.png",
-   "items/wooden-bow-charge-3.png",
-   "items/wooden-bow-charge-4.png",
-   "items/wooden-bow-charge-5.png",
+   "miscellaneous/wooden-bow-charge-1.png",
+   "miscellaneous/wooden-bow-charge-2.png",
+   "miscellaneous/wooden-bow-charge-3.png",
+   "miscellaneous/wooden-bow-charge-4.png",
+   "miscellaneous/wooden-bow-charge-5.png",
    "projectiles/rock-spike-small.png",
    "projectiles/rock-spike-medium.png",
    "projectiles/rock-spike-large.png",
    "entities/fish/fish-blue.png",
    "entities/fish/fish-gold.png",
    "entities/fish/fish-red.png",
-   "entities/fish/fish-lime.png"
+   "entities/fish/fish-lime.png",
+   // @Robustness Right now we need to manually enter these, should instead be automatically added
+   "items/large/wooden-sword.png",
+   "items/large/wooden-pickaxe.png",
+   "items/large/wooden-axe.png",
+   "items/large/stone-sword.png",
+   "items/large/stone-pickaxe.png",
+   "items/large/stone-axe.png",
+   "items/large/wooden-bow.png",
+   "items/large/deepfrost-sword.png",
+   "items/large/deepfrost-axe.png",
+   "items/large/deepfrost-pickaxe.png"
 ];
 
 // Add item textures
 for (const clientItemInfo of Object.values(CLIENT_ITEM_INFO_RECORD)) {
-   TEXTURE_SOURCES.push(clientItemInfo.textureSource);
+   TEXTURE_SOURCES.push(clientItemInfo.entityTextureSource);
 }
 
 export let GAME_OBJECT_TEXTURE_ATLAS: WebGLTexture;
