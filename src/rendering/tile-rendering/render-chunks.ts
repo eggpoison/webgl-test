@@ -28,10 +28,6 @@ export interface RenderChunkRiverInfo {
    readonly transitionVertexCount: number;
    /** IDs of all stepping stone groups resent in the render chunk */
    readonly riverSteppingStoneGroupIDs: ReadonlyArray<number>;
-   // readonly foamVAO: WebGLVertexArrayObject;
-   // readonly foamVertexCount: number;
-   // readonly steppingStoneVAO: WebGLVertexArrayObject;
-   // readonly steppingStoneVertexCount: number;
 }
 
 export interface RenderChunkAmbientOcclusionInfo {
@@ -54,6 +50,8 @@ export interface RenderChunk {
 
 let renderChunks: Array<Array<RenderChunk>>;
 
+let edgeRenderChunks: Record<number, Record<number, RenderChunkSolidTileInfo>> = {};
+
 export function createRenderChunks(): void {
    renderChunks = new Array<Array<RenderChunk>>();
    
@@ -69,6 +67,22 @@ export function createRenderChunks(): void {
          });
       }
    }
+
+   const renderChunkEdgeDistance = Math.ceil(SETTINGS.EDGE_GENERATION_DISTANCE / RENDER_CHUNK_SIZE);
+   for (let renderChunkX = -renderChunkEdgeDistance; renderChunkX < WORLD_RENDER_CHUNK_SIZE + renderChunkEdgeDistance; renderChunkX++) {
+      for (let renderChunkY = -renderChunkEdgeDistance; renderChunkY < WORLD_RENDER_CHUNK_SIZE + renderChunkEdgeDistance; renderChunkY++) {
+         // Skip render chunks in the board
+         // @Speed: Whole lot of unnecessary continues
+         if (renderChunkX >= 0 && renderChunkX < WORLD_RENDER_CHUNK_SIZE && renderChunkY >= 0 && renderChunkY < WORLD_RENDER_CHUNK_SIZE) {
+            continue;
+         }
+         
+         if (!edgeRenderChunks.hasOwnProperty(renderChunkX)) {
+            edgeRenderChunks[renderChunkX] = {};
+         }
+         edgeRenderChunks[renderChunkX][renderChunkY] = createSolidTileRenderChunkData(renderChunkX, renderChunkY);
+      }
+   }
 }
 
 export function updateRenderChunkFromTileUpdate(tileUpdate: ServerTileUpdateData): void {
@@ -81,8 +95,13 @@ export function updateRenderChunkFromTileUpdate(tileUpdate: ServerTileUpdateData
    recalculateSolidTileRenderChunkData(renderChunkX, renderChunkY);
 }
 
-export function getRenderChunkSolidTileInfo(renderChunkX: number, renderChunkY: number): RenderChunkSolidTileInfo {
-   return renderChunks[renderChunkX][renderChunkY].solidTileInfo;
+export function getRenderChunkSolidTileInfo(renderChunkX: number, renderChunkY: number): RenderChunkSolidTileInfo | null {
+   if (renderChunkX >= 0 && renderChunkX < WORLD_RENDER_CHUNK_SIZE && renderChunkY >= 0 && renderChunkY < WORLD_RENDER_CHUNK_SIZE) {
+      return renderChunks[renderChunkX][renderChunkY].solidTileInfo;
+   } else if (edgeRenderChunks.hasOwnProperty(renderChunkX) && edgeRenderChunks[renderChunkX].hasOwnProperty(renderChunkY)) {
+      return edgeRenderChunks[renderChunkX][renderChunkY];
+   }
+   return null;
 }
 
 export function getRenderChunkRiverInfo(renderChunkX: number, renderChunkY: number): RenderChunkRiverInfo | null {

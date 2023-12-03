@@ -1,5 +1,5 @@
 import Entity from "./entities/Entity";
-import { SETTINGS, Point, Vector, ServerTileUpdateData, rotatePoint, WaterRockData, RiverSteppingStoneData, RIVER_STEPPING_STONE_SIZES, EntityType } from "webgl-test-shared";
+import { SETTINGS, Point, Vector, ServerTileUpdateData, rotatePoint, WaterRockData, RiverSteppingStoneData, RIVER_STEPPING_STONE_SIZES, EntityType, ServerTileData } from "webgl-test-shared";
 import Chunk from "./Chunk";
 import DroppedItem from "./items/DroppedItem";
 import { Tile } from "./Tile";
@@ -30,6 +30,8 @@ abstract class Board {
 
    private static tiles: Array<Array<Tile>>;
    private static chunks: Array<Array<Chunk>>;
+
+   public static edgeTiles: Record<number, Record<number, Tile>> = {};
    
    public static numVisibleRenderParts = 0;
    /** Game objects sorted in descending render weight */
@@ -58,7 +60,7 @@ abstract class Board {
 
    private static tickCallbacks = new Array<TickCallback>();
 
-   public static initialise(tiles: Array<Array<Tile>>, waterRocks: ReadonlyArray<WaterRockData>, riverSteppingStones: ReadonlyArray<RiverSteppingStoneData>, riverFlowDirections: Record<number, Record<number, number>>): void {
+   public static initialise(tiles: Array<Array<Tile>>, waterRocks: ReadonlyArray<WaterRockData>, riverSteppingStones: ReadonlyArray<RiverSteppingStoneData>, riverFlowDirections: Record<number, Record<number, number>>, edgeTiles: Array<ServerTileData>): void {
       this.tiles = tiles;
       
       // Create the chunk array
@@ -95,6 +97,13 @@ abstract class Board {
                chunk.riverSteppingStones.push(steppingStone);
             }
          }
+      }
+
+      for (const tileData of edgeTiles) {
+         if (!this.edgeTiles.hasOwnProperty(tileData.x)) {
+            this.edgeTiles[tileData.x] = {};
+         }
+         this.edgeTiles[tileData.x][tileData.y] = new Tile(tileData.x, tileData.y, tileData.type, tileData.biomeName, tileData.isWall);
       }
    }
 

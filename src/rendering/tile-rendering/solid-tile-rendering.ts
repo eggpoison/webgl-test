@@ -2,9 +2,10 @@ import { SETTINGS, TileType } from "webgl-test-shared";
 import Camera from "../../Camera";
 import { TEXTURE_IMAGE_RECORD } from "../../textures";
 import { gl, createWebGLProgram, CAMERA_UNIFORM_BUFFER_BINDING_INDEX } from "../../webgl";
-import { RENDER_CHUNK_SIZE, RenderChunkSolidTileInfo, getRenderChunkSolidTileInfo } from "./render-chunks";
+import { RENDER_CHUNK_SIZE, RenderChunkSolidTileInfo, WORLD_RENDER_CHUNK_SIZE, getRenderChunkSolidTileInfo } from "./render-chunks";
 import Board from "../../Board";
 import { TILE_TYPE_TEXTURE_SOURCES } from "../../tile-type-texture-sources";
+import { Tile } from "../../Tile";
 
 const vertexShaderText = `#version 300 es
 precision mediump float;
@@ -88,10 +89,20 @@ const updateVertexData = (data: Float32Array, renderChunkX: number, renderChunkY
    const tileMinY = renderChunkY * RENDER_CHUNK_SIZE;
    const tileMaxY = (renderChunkY + 1) * RENDER_CHUNK_SIZE - 1;
    
+   const renderChunkIsInBoard = renderChunkX >= 0 && renderChunkX < WORLD_RENDER_CHUNK_SIZE && renderChunkY >= 0 && renderChunkY < WORLD_RENDER_CHUNK_SIZE;
+
    let i = 0;
    for (let tileX = tileMinX; tileX <= tileMaxX; tileX++) {
       for (let tileY = tileMinY; tileY <= tileMaxY; tileY++) {
-         const tile = Board.getTile(tileX, tileY);
+         let tile: Tile;
+         if (renderChunkIsInBoard) {
+            tile = Board.getTile(tileX, tileY);
+         } else {
+            if (!Board.edgeTiles.hasOwnProperty(tileX) || !Board.edgeTiles[tileX].hasOwnProperty(tileY)) {
+               continue;
+            }
+            tile = Board.edgeTiles[tileX][tileY];
+         }
          if (tile.type === TileType.water) {
             continue;
          }
@@ -151,11 +162,21 @@ export function createSolidTileRenderChunkData(renderChunkX: number, renderChunk
    const tileMaxX = (renderChunkX + 1) * RENDER_CHUNK_SIZE - 1;
    const tileMinY = renderChunkY * RENDER_CHUNK_SIZE;
    const tileMaxY = (renderChunkY + 1) * RENDER_CHUNK_SIZE - 1;
+
+   const renderChunkIsInBoard = renderChunkX >= 0 && renderChunkX < WORLD_RENDER_CHUNK_SIZE && renderChunkY >= 0 && renderChunkY < WORLD_RENDER_CHUNK_SIZE;
    
    let numTiles = 0;
    for (let tileX = tileMinX; tileX <= tileMaxX; tileX++) {
       for (let tileY = tileMinY; tileY <= tileMaxY; tileY++) {
-         const tile = Board.getTile(tileX, tileY);
+         let tile: Tile;
+         if (renderChunkIsInBoard) {
+            tile = Board.getTile(tileX, tileY);
+         } else {
+            if (!Board.edgeTiles.hasOwnProperty(tileX) || !Board.edgeTiles[tileX].hasOwnProperty(tileY)) {
+               continue;
+            }
+            tile = Board.edgeTiles[tileX][tileY];
+         }
          if (tile.type !== TileType.water) {
             numTiles++;
          }
@@ -190,7 +211,7 @@ export function createSolidTileRenderChunkData(renderChunkX: number, renderChunk
 }
 
 export function recalculateSolidTileRenderChunkData(renderChunkX: number, renderChunkY: number): void {
-   const info = getRenderChunkSolidTileInfo(renderChunkX, renderChunkY);
+   const info = getRenderChunkSolidTileInfo(renderChunkX, renderChunkY)!;
    
    const vertexData = new Float32Array(info.vertexCount);
    updateVertexData(vertexData, renderChunkX, renderChunkY);
@@ -217,11 +238,13 @@ export function renderSolidTiles(): void {
    gl.activeTexture(gl.TEXTURE0);
    gl.bindTexture(gl.TEXTURE_2D_ARRAY, tileTextureArray);
    
-   for (let renderChunkX = Camera.minVisibleRenderChunkX; renderChunkX <= Camera.maxVisibleRenderChunkX; renderChunkX++) {
-      for (let renderChunkY = Camera.minVisibleRenderChunkY; renderChunkY <= Camera.maxVisibleRenderChunkY; renderChunkY++) {
+   for (let renderChunkX = Camera.absoluteMinVisibleRenderChunkX; renderChunkX <= Camera.absoluteMaxVisibleRenderChunkX; renderChunkX++) {
+      for (let renderChunkY = Camera.absoluteMinVisibleRenderChunkY; renderChunkY <= Camera.absoluteMaxVisibleRenderChunkY; renderChunkY++) {
          const renderChunkInfo = getRenderChunkSolidTileInfo(renderChunkX, renderChunkY);
-         gl.bindVertexArray(renderChunkInfo.vao);
-         gl.drawArrays(gl.TRIANGLES, 0, renderChunkInfo.vertexCount / 5);
+         if (renderChunkInfo !== null) {
+            gl.bindVertexArray(renderChunkInfo.vao);
+            gl.drawArrays(gl.TRIANGLES, 0, renderChunkInfo.vertexCount / 5);
+         }
       }
    }
 

@@ -4,7 +4,7 @@ import { isDev } from "./utils";
 import { renderPlayerNames, createTextCanvasContext } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/game/ChatBox";
-import { GameDataPacket, GameObjectDebugData, RiverSteppingStoneData, SETTINGS, WaterRockData } from "webgl-test-shared";
+import { GameDataPacket, GameObjectDebugData, RiverSteppingStoneData, SETTINGS, ServerTileData, WaterRockData } from "webgl-test-shared";
 import { createEntityShaders, renderGameObjects } from "./rendering/game-object-rendering";
 import Client from "./client/Client";
 import { calculateCursorWorldPositionX, calculateCursorWorldPositionY, cursorX, cursorY, getMouseTargetEntity, handleMouseMovement, renderCursorTooltip, updateChargeMeter } from "./mouse";
@@ -158,14 +158,14 @@ abstract class Game {
    /**
     * Prepares the game to be played. Called once just before the game starts.
     */
-   public static async initialise(tiles: Array<Array<Tile>>, waterRocks: ReadonlyArray<WaterRockData>, riverSteppingStones: ReadonlyArray<RiverSteppingStoneData>, riverFlowDirections: Record<number, Record<number, number>>): Promise<void> {
+   public static async initialise(tiles: Array<Array<Tile>>, waterRocks: ReadonlyArray<WaterRockData>, riverSteppingStones: ReadonlyArray<RiverSteppingStoneData>, riverFlowDirections: Record<number, Record<number, number>>, edgeTiles: Array<ServerTileData>): Promise<void> {
       if (!Game.hasInitialised) {
          return new Promise(async resolve => {
             createWebGLContext();
             createShaderStrings();
             createTextCanvasContext();
 
-            Board.initialise(tiles, waterRocks, riverSteppingStones, riverFlowDirections);
+            Board.initialise(tiles, waterRocks, riverSteppingStones, riverFlowDirections, edgeTiles);
          
             createRiverSteppingStoneData(riverSteppingStones);
 
