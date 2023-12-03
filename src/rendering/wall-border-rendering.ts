@@ -57,8 +57,8 @@ export function calculateWallBorderInfo(renderChunkX: number, renderChunkY: numb
    const leftBorderTiles = new Array<Tile>();
    for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
       for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
-         const tile = Board.getTile(tileX, tileY);
-         if (!tile.isWall) {
+         const tile = Board.getEdgeTile(tileX, tileY);
+         if (tile === null || !tile.isWall) {
             continue;
          }
 
@@ -216,8 +216,8 @@ export function calculateWallBorderInfo(renderChunkX: number, renderChunkY: numb
 export function renderWallBorders(): void {
    gl.useProgram(program);
    
-   for (let renderChunkX = Camera.minVisibleRenderChunkX; renderChunkX <= Camera.maxVisibleRenderChunkX; renderChunkX++) {
-      for (let renderChunkY = Camera.minVisibleRenderChunkY; renderChunkY <= Camera.maxVisibleRenderChunkY; renderChunkY++) {
+   for (let renderChunkX = Camera.absoluteMinVisibleRenderChunkX; renderChunkX <= Camera.absoluteMaxVisibleRenderChunkX; renderChunkX++) {
+      for (let renderChunkY = Camera.absoluteMinVisibleRenderChunkY; renderChunkY <= Camera.absoluteMaxVisibleRenderChunkY; renderChunkY++) {
          const renderInfo = getRenderChunkWallBorderInfo(renderChunkX, renderChunkY);
          if (renderInfo === null) {
             continue;

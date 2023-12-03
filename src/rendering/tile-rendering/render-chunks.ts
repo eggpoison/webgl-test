@@ -42,15 +42,21 @@ export interface RenderChunkWallBorderInfo {
 
 /** Stores rendering information about one render chunk of the world.*/
 export interface RenderChunk {
-   solidTileInfo: RenderChunkSolidTileInfo;
-   riverInfo: RenderChunkRiverInfo | null;
-   ambientOcclusionInfo: RenderChunkAmbientOcclusionInfo | null;
+   readonly solidTileInfo: RenderChunkSolidTileInfo;
+   readonly riverInfo: RenderChunkRiverInfo | null;
+   readonly ambientOcclusionInfo: RenderChunkAmbientOcclusionInfo | null;
    readonly wallBorderInfo: RenderChunkWallBorderInfo | null;
 }
 
+export interface EdgeRenderChunk {
+   readonly solidTileInfo: RenderChunkSolidTileInfo;
+   readonly wallBorderInfo: RenderChunkWallBorderInfo | null;
+}
+
+// @Speed: Convert to 1d
 let renderChunks: Array<Array<RenderChunk>>;
 
-let edgeRenderChunks: Record<number, Record<number, RenderChunkSolidTileInfo>> = {};
+let edgeRenderChunks: Record<number, Record<number, EdgeRenderChunk>> = {};
 
 export function createRenderChunks(): void {
    renderChunks = new Array<Array<RenderChunk>>();
@@ -59,6 +65,7 @@ export function createRenderChunks(): void {
       renderChunks.push(new Array<RenderChunk>());
 
       for (let renderChunkY = 0; renderChunkY < WORLD_RENDER_CHUNK_SIZE; renderChunkY++) {
+         // @Cleanup: Mismatching 'create' and 'calculate' in the function names
          renderChunks[renderChunkX].push({
             solidTileInfo: createSolidTileRenderChunkData(renderChunkX, renderChunkY),
             riverInfo: calculateRiverRenderChunkData(renderChunkX, renderChunkY),
@@ -80,7 +87,10 @@ export function createRenderChunks(): void {
          if (!edgeRenderChunks.hasOwnProperty(renderChunkX)) {
             edgeRenderChunks[renderChunkX] = {};
          }
-         edgeRenderChunks[renderChunkX][renderChunkY] = createSolidTileRenderChunkData(renderChunkX, renderChunkY);
+         edgeRenderChunks[renderChunkX][renderChunkY] = {
+            solidTileInfo: createSolidTileRenderChunkData(renderChunkX, renderChunkY),
+            wallBorderInfo: calculateWallBorderInfo(renderChunkX, renderChunkY)
+         };
       }
    }
 }
@@ -99,7 +109,7 @@ export function getRenderChunkSolidTileInfo(renderChunkX: number, renderChunkY: 
    if (renderChunkX >= 0 && renderChunkX < WORLD_RENDER_CHUNK_SIZE && renderChunkY >= 0 && renderChunkY < WORLD_RENDER_CHUNK_SIZE) {
       return renderChunks[renderChunkX][renderChunkY].solidTileInfo;
    } else if (edgeRenderChunks.hasOwnProperty(renderChunkX) && edgeRenderChunks[renderChunkX].hasOwnProperty(renderChunkY)) {
-      return edgeRenderChunks[renderChunkX][renderChunkY];
+      return edgeRenderChunks[renderChunkX][renderChunkY].solidTileInfo;
    }
    return null;
 }
@@ -113,5 +123,10 @@ export function getRenderChunkAmbientOcclusionInfo(renderChunkX: number, renderC
 }
 
 export function getRenderChunkWallBorderInfo(renderChunkX: number, renderChunkY: number): RenderChunkWallBorderInfo | null {
-   return renderChunks[renderChunkX][renderChunkY].wallBorderInfo;
+   if (renderChunkX >= 0 && renderChunkX < WORLD_RENDER_CHUNK_SIZE && renderChunkY >= 0 && renderChunkY < WORLD_RENDER_CHUNK_SIZE) {
+      return renderChunks[renderChunkX][renderChunkY].wallBorderInfo;
+   } else if (edgeRenderChunks.hasOwnProperty(renderChunkX) && edgeRenderChunks[renderChunkX].hasOwnProperty(renderChunkY)) {
+      return edgeRenderChunks[renderChunkX][renderChunkY].wallBorderInfo;
+   }
+   return null;
 }

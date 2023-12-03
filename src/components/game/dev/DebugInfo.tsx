@@ -32,6 +32,11 @@ const TileDebugInfo = ({ tile }: TileDebugInfoProps) => {
          <p>Flow direction: <span className="highlight">{Board.getRiverFlowDirection(tile.x, tile.y)}</span></p>
       </> : undefined}
 
+      {tile.type === TileType.grass ? <>
+         <p>Temperature: <span className="highlight">{Board.grassInfo[tile.x][tile.y].temperature}</span></p>
+         <p>Humidity: <span className="highlight">{Board.grassInfo[tile.x][tile.y].humidity}</span></p>
+      </> : undefined}
+
       <br />
    </>;
 }

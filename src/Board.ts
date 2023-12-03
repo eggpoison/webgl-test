@@ -1,5 +1,5 @@
 import Entity from "./entities/Entity";
-import { SETTINGS, Point, Vector, ServerTileUpdateData, rotatePoint, WaterRockData, RiverSteppingStoneData, RIVER_STEPPING_STONE_SIZES, EntityType, ServerTileData } from "webgl-test-shared";
+import { SETTINGS, Point, Vector, ServerTileUpdateData, rotatePoint, WaterRockData, RiverSteppingStoneData, RIVER_STEPPING_STONE_SIZES, EntityType, ServerTileData, GrassTileInfo } from "webgl-test-shared";
 import Chunk from "./Chunk";
 import DroppedItem from "./items/DroppedItem";
 import { Tile } from "./Tile";
@@ -32,6 +32,8 @@ abstract class Board {
    private static chunks: Array<Array<Chunk>>;
 
    public static edgeTiles: Record<number, Record<number, Tile>> = {};
+
+   public static grassInfo: Record<number, Record<number, GrassTileInfo>>;
    
    public static numVisibleRenderParts = 0;
    /** Game objects sorted in descending render weight */
@@ -60,7 +62,8 @@ abstract class Board {
 
    private static tickCallbacks = new Array<TickCallback>();
 
-   public static initialise(tiles: Array<Array<Tile>>, waterRocks: ReadonlyArray<WaterRockData>, riverSteppingStones: ReadonlyArray<RiverSteppingStoneData>, riverFlowDirections: Record<number, Record<number, number>>, edgeTiles: Array<ServerTileData>): void {
+   // @Cleanup: This function gets called by Game.ts, which gets called by LoadingScreen.tsx, with these same parameters. This feels unnecessary.
+   public static initialise(tiles: Array<Array<Tile>>, waterRocks: ReadonlyArray<WaterRockData>, riverSteppingStones: ReadonlyArray<RiverSteppingStoneData>, riverFlowDirections: Record<number, Record<number, number>>, edgeTiles: Array<ServerTileData>, grassInfo: Record<number, Record<number, GrassTileInfo>>): void {
       this.tiles = tiles;
       
       // Create the chunk array
@@ -105,6 +108,8 @@ abstract class Board {
          }
          this.edgeTiles[tileData.x][tileData.y] = new Tile(tileData.x, tileData.y, tileData.type, tileData.biomeName, tileData.isWall);
       }
+
+      this.grassInfo = grassInfo;
    }
 
    public static addTickCallback(time: number, callback: () => void): void {
@@ -207,6 +212,17 @@ abstract class Board {
       if (tileX < 0 || tileX >= SETTINGS.BOARD_DIMENSIONS) throw new Error(`Tile x coordinate '${tileX}' is not a valid tile coordinate.`);
       if (tileY < 0 || tileY >= SETTINGS.BOARD_DIMENSIONS) throw new Error(`Tile x coordinate '${tileY}' is not a valid tile coordinate.`);
       return this.tiles[tileX][tileY];
+   }
+
+   public static getEdgeTile(tileX: number, tileY: number): Tile | null {
+      if (tileX >= 0 && tileX < SETTINGS.BOARD_DIMENSIONS && tileY >= 0 && tileY < SETTINGS.BOARD_DIMENSIONS) {
+         return this.getTile(tileX, tileY);
+      } else {
+         if (!this.edgeTiles.hasOwnProperty(tileX) || !this.edgeTiles[tileX].hasOwnProperty(tileY)) {
+            return null;
+         }
+         return this.edgeTiles[tileX][tileY];
+      }
    }
 
    public static getChunk(x: number, y: number): Chunk {

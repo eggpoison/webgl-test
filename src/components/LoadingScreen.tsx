@@ -86,7 +86,7 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
                const initialGameDataPacket = initialGameDataPacketRef.current!;
 
                const tiles = Client.parseServerTileDataArray(initialGameDataPacket.tiles);
-               await Game.initialise(tiles, initialGameDataPacket.waterRocks, initialGameDataPacket.riverSteppingStones, initialGameDataPacket.riverFlowDirections, initialGameDataPacket.edgeTiles);
+               await Game.initialise(tiles, initialGameDataPacket.waterRocks, initialGameDataPacket.riverSteppingStones, initialGameDataPacket.riverFlowDirections, initialGameDataPacket.edgeTiles, initialGameDataPacket.grassInfo);
 
                // Spawn the player
                definiteGameState.playerUsername = username;
