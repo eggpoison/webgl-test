@@ -160,14 +160,14 @@ abstract class Game {
    /**
     * Prepares the game to be played. Called once just before the game starts.
     */
-   public static async initialise(tiles: Array<Array<Tile>>, waterRocks: ReadonlyArray<WaterRockData>, riverSteppingStones: ReadonlyArray<RiverSteppingStoneData>, riverFlowDirections: Record<number, Record<number, number>>, edgeTiles: Array<ServerTileData>, grassInfo: Record<number, Record<number, GrassTileInfo>>, decorations: ReadonlyArray<DecorationInfo>): Promise<void> {
+   public static async initialise(tiles: Array<Array<Tile>>, waterRocks: ReadonlyArray<WaterRockData>, riverSteppingStones: ReadonlyArray<RiverSteppingStoneData>, riverFlowDirections: Record<number, Record<number, number>>, edgeTiles: Array<ServerTileData>, edgeRiverFlowDirections: Record<number, Record<number, number>>, edgeRiverSteppingStones: ReadonlyArray<RiverSteppingStoneData>, grassInfo: Record<number, Record<number, GrassTileInfo>>, decorations: ReadonlyArray<DecorationInfo>): Promise<void> {
       if (!Game.hasInitialised) {
          return new Promise(async resolve => {
             createWebGLContext();
             createShaderStrings();
             createTextCanvasContext();
 
-            Board.initialise(tiles, waterRocks, riverSteppingStones, riverFlowDirections, edgeTiles, grassInfo, decorations);
+            Board.initialise(tiles, waterRocks, riverSteppingStones, riverFlowDirections, edgeTiles, edgeRiverFlowDirections, edgeRiverSteppingStones, grassInfo, decorations);
          
             createRiverSteppingStoneData(riverSteppingStones);
 

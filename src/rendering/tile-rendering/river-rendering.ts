@@ -1,9 +1,9 @@
-import { Point, RIVER_STEPPING_STONE_SIZES, RiverSteppingStoneData, RiverSteppingStoneSize, SETTINGS, TileType, WaterRockSize, lerp, randFloat, rotatePoint, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
+import { Point, RIVER_STEPPING_STONE_SIZES, RiverSteppingStoneData, RiverSteppingStoneSize, SETTINGS, TileType, WaterRockData, WaterRockSize, lerp, randFloat, rotatePoint, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, TIME_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../../webgl";
 import { getTexture } from "../../textures";
 import Camera from "../../Camera";
 import Board from "../../Board";
-import { RENDER_CHUNK_SIZE, RenderChunkRiverInfo, getRenderChunkRiverInfo } from "./render-chunks";
+import { RENDER_CHUNK_SIZE, RenderChunkRiverInfo, WORLD_RENDER_CHUNK_SIZE, getRenderChunkRiverInfo } from "./render-chunks";
 import { Tile } from "../../Tile";
 import { NEIGHBOUR_OFFSETS } from "../../utils";
 import { renderFish } from "../fish-rendering";
@@ -720,12 +720,12 @@ export function createRiverShaders(): void {
 }
 
 const tileIsWaterInt = (tileX: number, tileY: number): number => {
-   if (!Board.tileIsInBoard(tileX, tileY)) {
+   if (!Board.tileIsWithinEdge(tileX, tileY)) {
       return 0;
    }
    
-   const tile = Board.getTile(tileX, tileY);
-   return tile.type === TileType.water ? 1 : 0;
+   const tile = Board.getEdgeTile(tileX, tileY);
+   return (tile !== null && tile.type === TileType.water) ? 1 : 0;
 }
 
 const calculateTransitionVertexData = (renderChunkX: number, renderChunkY: number): Float32Array => {
@@ -738,8 +738,8 @@ const calculateTransitionVertexData = (renderChunkX: number, renderChunkY: numbe
    const edgeTiles = new Array<Tile>();
    for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
       for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
-         const tile = Board.getTile(tileX, tileY);
-         if (tile.type === TileType.water) {
+         const tile = Board.getEdgeTile(tileX, tileY);
+         if (tile === null || tile.type === TileType.water) {
             continue;
          }
 
@@ -749,13 +749,13 @@ const calculateTransitionVertexData = (renderChunkX: number, renderChunkY: numbe
             const neighbourTileY = tile.y + offset[1];
 
             // Don't add tiles which aren't in the board
-            if (!Board.tileIsInBoard(neighbourTileX, neighbourTileY)) {
+            if (!Board.tileIsWithinEdge(neighbourTileX, neighbourTileY)) {
                continue;
             }
 
             // If the tile is neighbouring water, add it and move on to the next tile
-            const neighbourTile = Board.getTile(neighbourTileX, neighbourTileY);
-            if (neighbourTile.type === TileType.water) {
+            const neighbourTile = Board.getEdgeTile(neighbourTileX, neighbourTileY);
+            if (neighbourTile !== null && neighbourTile.type === TileType.water) {
                edgeTiles.push(tile);
                break;
             }
@@ -866,93 +866,76 @@ const calculateTransitionVertexData = (renderChunkX: number, renderChunkY: numbe
    return vertexData;
 }
 
-const calculateRockVertexData = (renderChunkX: number, renderChunkY: number): Float32Array => {
-   const minChunkX = Math.floor(renderChunkX * RENDER_CHUNK_SIZE / SETTINGS.CHUNK_SIZE);
-   const maxChunkX = Math.floor((renderChunkX + 1) * RENDER_CHUNK_SIZE / SETTINGS.CHUNK_SIZE) - 1;
-   const minChunkY = Math.floor(renderChunkY * RENDER_CHUNK_SIZE / SETTINGS.CHUNK_SIZE);
-   const maxChunkY = Math.floor((renderChunkY + 1) * RENDER_CHUNK_SIZE / SETTINGS.CHUNK_SIZE) - 1;
-
-   // Count number of rocks
-   let numRocks = 0;
-   for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
-      for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
-         const chunk = Board.getChunk(chunkX, chunkY);
-         numRocks += chunk.waterRocks.length;
-      }
-   }
+const calculateRockVertexData = (waterRocks: ReadonlyArray<WaterRockData>): Float32Array => {
+   const numRocks = waterRocks.length;
    
    const vertexData = new Float32Array(numRocks * 6 * 6);
 
    let dataOffset = 0;
-   for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
-      for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
-         const chunk = Board.getChunk(chunkX, chunkY);
-         for (const waterRock of chunk.waterRocks) {
-            const size = WATER_ROCK_SIZES[waterRock.size];
-            
-            let x1 = (waterRock.position[0] - size/2);
-            let x2 = (waterRock.position[0] + size/2);
-            let y1 = (waterRock.position[1] - size/2);
-            let y2 = (waterRock.position[1] + size/2);
+   for (const waterRock of waterRocks) {
+      const size = WATER_ROCK_SIZES[waterRock.size];
+      
+      let x1 = (waterRock.position[0] - size/2);
+      let x2 = (waterRock.position[0] + size/2);
+      let y1 = (waterRock.position[1] - size/2);
+      let y2 = (waterRock.position[1] + size/2);
 
-            const topLeftX = rotateXAroundPoint(x1, y2, waterRock.position[0], waterRock.position[1], waterRock.rotation);
-            const topLeftY = rotateYAroundPoint(x1, y2, waterRock.position[0], waterRock.position[1], waterRock.rotation);
-            const topRightX = rotateXAroundPoint(x2, y2, waterRock.position[0], waterRock.position[1], waterRock.rotation);
-            const topRightY = rotateYAroundPoint(x2, y2, waterRock.position[0], waterRock.position[1], waterRock.rotation);
-            const bottomRightX = rotateXAroundPoint(x2, y1, waterRock.position[0], waterRock.position[1], waterRock.rotation);
-            const bottomRightY = rotateYAroundPoint(x2, y1, waterRock.position[0], waterRock.position[1], waterRock.rotation);
-            const bottomLeftX = rotateXAroundPoint(x1, y1, waterRock.position[0], waterRock.position[1], waterRock.rotation);
-            const bottomLeftY = rotateYAroundPoint(x1, y1, waterRock.position[0], waterRock.position[1], waterRock.rotation);
+      const topLeftX = rotateXAroundPoint(x1, y2, waterRock.position[0], waterRock.position[1], waterRock.rotation);
+      const topLeftY = rotateYAroundPoint(x1, y2, waterRock.position[0], waterRock.position[1], waterRock.rotation);
+      const topRightX = rotateXAroundPoint(x2, y2, waterRock.position[0], waterRock.position[1], waterRock.rotation);
+      const topRightY = rotateYAroundPoint(x2, y2, waterRock.position[0], waterRock.position[1], waterRock.rotation);
+      const bottomRightX = rotateXAroundPoint(x2, y1, waterRock.position[0], waterRock.position[1], waterRock.rotation);
+      const bottomRightY = rotateYAroundPoint(x2, y1, waterRock.position[0], waterRock.position[1], waterRock.rotation);
+      const bottomLeftX = rotateXAroundPoint(x1, y1, waterRock.position[0], waterRock.position[1], waterRock.rotation);
+      const bottomLeftY = rotateYAroundPoint(x1, y1, waterRock.position[0], waterRock.position[1], waterRock.rotation);
 
-            const opacity = lerp(0.15, 0.4, waterRock.opacity);
+      const opacity = lerp(0.15, 0.4, waterRock.opacity);
 
-            const textureIdx = waterRock.size as number;
-            
-            vertexData[dataOffset] = bottomLeftX;
-            vertexData[dataOffset + 1] = bottomLeftY;
-            vertexData[dataOffset + 2] = 0;
-            vertexData[dataOffset + 3] = 0;
-            vertexData[dataOffset + 4] = opacity;
-            vertexData[dataOffset + 5] = textureIdx;
-            
-            vertexData[dataOffset + 6] = bottomRightX;
-            vertexData[dataOffset + 7] = bottomRightY;
-            vertexData[dataOffset + 8] = 1;
-            vertexData[dataOffset + 9] = 0;
-            vertexData[dataOffset + 10] = opacity;
-            vertexData[dataOffset + 11] = textureIdx;
-            
-            vertexData[dataOffset + 12] = topLeftX;
-            vertexData[dataOffset + 13] = topLeftY;
-            vertexData[dataOffset + 14] = 0;
-            vertexData[dataOffset + 15] = 1;
-            vertexData[dataOffset + 16] = opacity;
-            vertexData[dataOffset + 17] = textureIdx;
-            
-            vertexData[dataOffset + 18] = topLeftX;
-            vertexData[dataOffset + 19] = topLeftY;
-            vertexData[dataOffset + 20] = 0;
-            vertexData[dataOffset + 21] = 1;
-            vertexData[dataOffset + 22] = opacity;
-            vertexData[dataOffset + 23] = textureIdx;
-            
-            vertexData[dataOffset + 24] = bottomRightX;
-            vertexData[dataOffset + 25] = bottomRightY;
-            vertexData[dataOffset + 26] = 1;
-            vertexData[dataOffset + 27] = 0;
-            vertexData[dataOffset + 28] = opacity;
-            vertexData[dataOffset + 29] = textureIdx;
-            
-            vertexData[dataOffset + 30] = topRightX;
-            vertexData[dataOffset + 31] = topRightY;
-            vertexData[dataOffset + 32] = 1;
-            vertexData[dataOffset + 33] = 1;
-            vertexData[dataOffset + 34] = opacity;
-            vertexData[dataOffset + 35] = textureIdx;
+      const textureIdx = waterRock.size as number;
+      
+      vertexData[dataOffset] = bottomLeftX;
+      vertexData[dataOffset + 1] = bottomLeftY;
+      vertexData[dataOffset + 2] = 0;
+      vertexData[dataOffset + 3] = 0;
+      vertexData[dataOffset + 4] = opacity;
+      vertexData[dataOffset + 5] = textureIdx;
+      
+      vertexData[dataOffset + 6] = bottomRightX;
+      vertexData[dataOffset + 7] = bottomRightY;
+      vertexData[dataOffset + 8] = 1;
+      vertexData[dataOffset + 9] = 0;
+      vertexData[dataOffset + 10] = opacity;
+      vertexData[dataOffset + 11] = textureIdx;
+      
+      vertexData[dataOffset + 12] = topLeftX;
+      vertexData[dataOffset + 13] = topLeftY;
+      vertexData[dataOffset + 14] = 0;
+      vertexData[dataOffset + 15] = 1;
+      vertexData[dataOffset + 16] = opacity;
+      vertexData[dataOffset + 17] = textureIdx;
+      
+      vertexData[dataOffset + 18] = topLeftX;
+      vertexData[dataOffset + 19] = topLeftY;
+      vertexData[dataOffset + 20] = 0;
+      vertexData[dataOffset + 21] = 1;
+      vertexData[dataOffset + 22] = opacity;
+      vertexData[dataOffset + 23] = textureIdx;
+      
+      vertexData[dataOffset + 24] = bottomRightX;
+      vertexData[dataOffset + 25] = bottomRightY;
+      vertexData[dataOffset + 26] = 1;
+      vertexData[dataOffset + 27] = 0;
+      vertexData[dataOffset + 28] = opacity;
+      vertexData[dataOffset + 29] = textureIdx;
+      
+      vertexData[dataOffset + 30] = topRightX;
+      vertexData[dataOffset + 31] = topRightY;
+      vertexData[dataOffset + 32] = 1;
+      vertexData[dataOffset + 33] = 1;
+      vertexData[dataOffset + 34] = opacity;
+      vertexData[dataOffset + 35] = textureIdx;
 
-            dataOffset += 36;
-         }
-      }
+      dataOffset += 36;
    }
 
    return vertexData;
@@ -1315,8 +1298,8 @@ const getRenderChunkWaterTiles = (renderChunkX: number, renderChunkY: number): R
    const tiles = new Array<Tile>();
    for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
       for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
-         const tile = Board.getTile(tileX, tileY);
-         if (tile.type === TileType.water) {
+         const tile = Board.getEdgeTile(tileX, tileY);
+         if (tile !== null && tile.type === TileType.water) {
             tiles.push(tile);
          }
       }
@@ -1333,9 +1316,9 @@ const renderChunkHasBorderingWaterTiles = (renderChunkX: number, renderChunkY: n
 
    // Left border tiles
    for (let tileY = bottomTileY; tileY <= topTileY; tileY++) {
-      if (Board.tileIsInBoard(leftTileX, tileY)) {
-         const tile = Board.getTile(leftTileX, tileY);
-         if (tile.type === TileType.water) {
+      if (Board.tileIsWithinEdge(leftTileX, tileY)) {
+         const tile = Board.getEdgeTile(leftTileX, tileY);
+         if (tile !== null && tile.type === TileType.water) {
             return true;
          }
       }
@@ -1343,9 +1326,9 @@ const renderChunkHasBorderingWaterTiles = (renderChunkX: number, renderChunkY: n
    
    // Right border tiles
    for (let tileY = bottomTileY; tileY <= topTileY; tileY++) {
-      if (Board.tileIsInBoard(rightTileX, tileY)) {
-         const tile = Board.getTile(rightTileX, tileY);
-         if (tile.type === TileType.water) {
+      if (Board.tileIsWithinEdge(rightTileX, tileY)) {
+         const tile = Board.getEdgeTile(rightTileX, tileY);
+         if (tile !== null && tile.type === TileType.water) {
             return true;
          }
       }
@@ -1353,9 +1336,9 @@ const renderChunkHasBorderingWaterTiles = (renderChunkX: number, renderChunkY: n
 
    // Top border tiles
    for (let tileX = leftTileX; tileX <= rightTileX; tileX++) {
-      if (Board.tileIsInBoard(tileX, topTileY)) {
-         const tile = Board.getTile(tileX, topTileY);
-         if (tile.type === TileType.water) {
+      if (Board.tileIsWithinEdge(tileX, topTileY)) {
+         const tile = Board.getEdgeTile(tileX, topTileY);
+         if (tile !== null && tile.type === TileType.water) {
             return true;
          }
       }
@@ -1363,9 +1346,9 @@ const renderChunkHasBorderingWaterTiles = (renderChunkX: number, renderChunkY: n
 
    // Bottom border tiles
    for (let tileX = leftTileX; tileX <= rightTileX; tileX++) {
-      if (Board.tileIsInBoard(tileX, bottomTileY)) {
-         const tile = Board.getTile(tileX, bottomTileY);
-         if (tile.type === TileType.water) {
+      if (Board.tileIsWithinEdge(tileX, bottomTileY)) {
+         const tile = Board.getEdgeTile(tileX, bottomTileY);
+         if (tile !== null && tile.type === TileType.water) {
             return true;
          }
       }
@@ -1374,7 +1357,7 @@ const renderChunkHasBorderingWaterTiles = (renderChunkX: number, renderChunkY: n
    return false;
 }
 
-export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY: number): RenderChunkRiverInfo | null {
+export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY: number, waterRocks: ReadonlyArray<WaterRockData>, edgeSteppingStones: ReadonlyArray<RiverSteppingStoneData>): RenderChunkRiverInfo | null {
    const waterTiles = getRenderChunkWaterTiles(renderChunkX, renderChunkY);
 
    // If there are no water tiles don't calculate any data
@@ -1389,7 +1372,7 @@ export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY
    gl.bindBuffer(gl.ARRAY_BUFFER, baseBuffer);
    gl.bufferData(gl.ARRAY_BUFFER, baseVertexData, gl.STATIC_DRAW);
 
-   const rockVertexData = calculateRockVertexData(renderChunkX, renderChunkY);
+   const rockVertexData = calculateRockVertexData(waterRocks);
    const rockBuffer = gl.createBuffer()!;
    gl.bindBuffer(gl.ARRAY_BUFFER, rockBuffer);
    gl.bufferData(gl.ARRAY_BUFFER, rockVertexData, gl.STATIC_DRAW);
@@ -1411,13 +1394,21 @@ export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY
 
    // Calculate group IDs present in stepping stones in the chunk
    const groupIDs = new Array<number>();
-   for (let chunkX = renderChunkX * 2; chunkX <= renderChunkX * 2 + 1; chunkX++) {
-      for (let chunkY = renderChunkY * 2; chunkY <= renderChunkY * 2 + 1; chunkY++) {
-         const chunk = Board.getChunk(chunkX, chunkY);
-         for (const steppingStone of chunk.riverSteppingStones) {
-            if (!groupIDs.includes(steppingStone.groupID)) {
-               groupIDs.push(steppingStone.groupID);
+   if (renderChunkX >= 0 && renderChunkX < WORLD_RENDER_CHUNK_SIZE && renderChunkY >= 0 && renderChunkY < WORLD_RENDER_CHUNK_SIZE) {
+      for (let chunkX = renderChunkX * 2; chunkX <= renderChunkX * 2 + 1; chunkX++) {
+         for (let chunkY = renderChunkY * 2; chunkY <= renderChunkY * 2 + 1; chunkY++) {
+            const chunk = Board.getChunk(chunkX, chunkY);
+            for (const steppingStone of chunk.riverSteppingStones) {
+               if (!groupIDs.includes(steppingStone.groupID)) {
+                  groupIDs.push(steppingStone.groupID);
+               }
             }
+         }
+      }
+   } else {
+      for (const steppingStone of edgeSteppingStones) {
+         if (!groupIDs.includes(steppingStone.groupID)) {
+            groupIDs.push(steppingStone.groupID);
          }
       }
    }
@@ -1433,7 +1424,8 @@ export function calculateRiverRenderChunkData(renderChunkX: number, renderChunkY
       transitionVertexCount: transitionVertexData.length / 12,
       noiseVAO: createNoiseVAO(noiseBuffer),
       noiseVertexCount: noiseVertexData.length / 8,
-      riverSteppingStoneGroupIDs: groupIDs
+      riverSteppingStoneGroupIDs: groupIDs,
+      waterRocks: []
    };
 }
 
@@ -1442,7 +1434,7 @@ const calculateNoiseVertexData = (waterTiles: ReadonlyArray<Tile>): Float32Array
    
    for (let i = 0; i < waterTiles.length; i++) {
       const tile = waterTiles[i];
-      const flowDirection = Board.getRiverFlowDirection(tile.x, tile.y);
+      const flowDirection = Board.getEdgeRiverFlowDirection(tile.x, tile.y);
       
       const x1 = (tile.x - 0.5) * SETTINGS.TILE_SIZE;
       const x2 = (tile.x + 1.5) * SETTINGS.TILE_SIZE;
@@ -1639,8 +1631,8 @@ const calculateHighlightsVertexData = (waterTiles: ReadonlyArray<Tile>): Float32
 const calculateVisibleRenderChunks = (): ReadonlyArray<RenderChunkRiverInfo> => {
    const renderChunks = new Array<RenderChunkRiverInfo>();
 
-   for (let renderChunkX = Camera.minVisibleRenderChunkX; renderChunkX <= Camera.maxVisibleRenderChunkX; renderChunkX++) {
-      for (let renderChunkY = Camera.minVisibleRenderChunkY; renderChunkY <= Camera.maxVisibleRenderChunkY; renderChunkY++) {
+   for (let renderChunkX = Camera.absoluteMinVisibleRenderChunkX; renderChunkX <= Camera.absoluteMaxVisibleRenderChunkX; renderChunkX++) {
+      for (let renderChunkY = Camera.absoluteMinVisibleRenderChunkY; renderChunkY <= Camera.absoluteMaxVisibleRenderChunkY; renderChunkY++) {
          const renderChunkInfo = getRenderChunkRiverInfo(renderChunkX, renderChunkY);
          if (renderChunkInfo !== null) {
             renderChunks.push(renderChunkInfo);

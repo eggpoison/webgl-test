@@ -1,4 +1,4 @@
-import { RiverSteppingStoneData, WaterRockData } from "webgl-test-shared";
+import { RiverSteppingStoneData } from "webgl-test-shared";
 import GameObject from "./GameObject";
 import Entity from "./entities/Entity";
 
@@ -9,7 +9,8 @@ class Chunk {
    private readonly gameObjects = new Array<GameObject>();
    private readonly entities = new Array<Entity>();
 
-   public readonly waterRocks = new Array<WaterRockData>();
+   // @Cleanup: This is only used in creating the river info in render chunks, shouldn't
+   // be stored here for the entire lifetime of the program if only used at start.
    public readonly riverSteppingStones = new Array<RiverSteppingStoneData>();
 
    constructor(x: number, y: number) {

@@ -37,15 +37,21 @@ abstract class Board {
 
    private static tiles: Array<Array<Tile>>;
    private static chunks: Array<Array<Chunk>>;
-   private static edgeChunks: Record<number, Record<number, Chunk>>;
 
    public static edgeTiles: Record<number, Record<number, Tile>> = {};
+   public static edgeRiverFlowDirections: Record<number, Record<number, number>>; 
 
    public static grassInfo: Record<number, Record<number, GrassTileInfo>>;
 
    // @Cleanup: This is only used to fill the render chunks with decorations, doesn't
    // need to stick around for the entirety of the game's duration
    public static decorations: ReadonlyArray<DecorationInfo>;
+   // @Cleanup: This is only used to fill the render chunks with water rocks, doesn't
+   // need to stick around for the entirety of the game's duration
+   public static waterRocks: ReadonlyArray<WaterRockData>;
+   // @Cleanup: This is only used to fill the render chunks with edge stepping stones, doesn't
+   // need to stick around for the entirety of the game's duration
+   public static edgeRiverSteppingStones: ReadonlyArray<RiverSteppingStoneData>;
    
    public static numVisibleRenderParts = 0;
    /** Game objects sorted in descending render weight */
@@ -77,7 +83,7 @@ abstract class Board {
    public static lights = new Array<Light>();
 
    // @Cleanup: This function gets called by Game.ts, which gets called by LoadingScreen.tsx, with these same parameters. This feels unnecessary.
-   public static initialise(tiles: Array<Array<Tile>>, waterRocks: ReadonlyArray<WaterRockData>, riverSteppingStones: ReadonlyArray<RiverSteppingStoneData>, riverFlowDirections: Record<number, Record<number, number>>, edgeTiles: Array<ServerTileData>, grassInfo: Record<number, Record<number, GrassTileInfo>>, decorations: ReadonlyArray<DecorationInfo>): void {
+   public static initialise(tiles: Array<Array<Tile>>, waterRocks: ReadonlyArray<WaterRockData>, riverSteppingStones: ReadonlyArray<RiverSteppingStoneData>, riverFlowDirections: Record<number, Record<number, number>>, edgeTiles: Array<ServerTileData>, edgeRiverFlowDirections: Record<number, Record<number, number>>, edgeRiverSteppingStones: ReadonlyArray<RiverSteppingStoneData>, grassInfo: Record<number, Record<number, GrassTileInfo>>, decorations: ReadonlyArray<DecorationInfo>): void {
       this.tiles = tiles;
       
       // Create the chunk array
@@ -90,14 +96,10 @@ abstract class Board {
       }
 
       this.riverFlowDirections = riverFlowDirections;
+      this.edgeRiverFlowDirections = edgeRiverFlowDirections;
+      this.edgeRiverSteppingStones = edgeRiverSteppingStones;
 
-      // Add water rocks to chunks
-      for (const waterRock of waterRocks) {
-         const chunkX = Math.floor(waterRock.position[0] / SETTINGS.CHUNK_UNITS);
-         const chunkY = Math.floor(waterRock.position[1] / SETTINGS.CHUNK_UNITS);
-         const chunk = this.chunks[chunkX][chunkY];
-         chunk.waterRocks.push(waterRock);
-      }
+      this.waterRocks = waterRocks;
 
       // Add river stepping stones to chunks
       for (const steppingStone of riverSteppingStones) {
@@ -221,6 +223,15 @@ abstract class Board {
       }
       
       return this.riverFlowDirections[tileX][tileY];
+   }
+
+   public static getEdgeRiverFlowDirection(tileX: number, tileY: number): number {
+      if (this.riverFlowDirections.hasOwnProperty(tileX) && this.riverFlowDirections[tileX].hasOwnProperty(tileY)) {
+         return this.riverFlowDirections[tileX][tileY];
+      } else if (this.edgeRiverFlowDirections.hasOwnProperty(tileX) && this.edgeRiverFlowDirections[tileX].hasOwnProperty(tileY)) {
+         return this.edgeRiverFlowDirections[tileX][tileY];
+      }
+      throw new Error("Tried to get the river flow direction of a non-water tile.");
    }
 
    public static getTile(tileX: number, tileY: number): Tile {
