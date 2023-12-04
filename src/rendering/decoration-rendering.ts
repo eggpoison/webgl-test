@@ -23,9 +23,14 @@ const DECORATION_RENDER_INFO: Record<DecorationType, DecorationRenderInfo> = {
       textureHeight: 4
    },
    [DecorationType.sandstoneRock]: {
-      textureSource: "decorations/rock1.png",
+      textureSource: "decorations/sandstone-rock.png",
       textureWidth: 4,
       textureHeight: 4
+   },
+   [DecorationType.sandstoneRockBig]: {
+      textureSource: "decorations/sandstone-rock-big.png",
+      textureWidth: 5,
+      textureHeight: 5
    },
    [DecorationType.blackRock]: {
       textureSource: "decorations/rock1.png",

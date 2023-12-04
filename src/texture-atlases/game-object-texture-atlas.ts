@@ -113,6 +113,8 @@ const TEXTURE_SOURCES: Array<string> = [
    // @Memory These shouldn't be in the game object texture atlas, shoulld instead be in its own separate atlas
    "decorations/pebble.png",
    "decorations/rock1.png",
+   "decorations/sandstone-rock.png",
+   "decorations/sandstone-rock-big.png",
    "decorations/flower1.png",
    "decorations/flower2.png",
    "decorations/flower3.png",
