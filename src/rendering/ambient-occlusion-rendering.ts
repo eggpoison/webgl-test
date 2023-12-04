@@ -3,116 +3,116 @@ import { Tile } from "../Tile";
 import Camera from "../Camera";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 import Board from "../Board";
-import { RenderChunkAmbientOcclusionInfo, RENDER_CHUNK_SIZE, getRenderChunkAmbientOcclusionInfo } from "./tile-rendering/render-chunks";
+import { RenderChunkAmbientOcclusionInfo, RENDER_CHUNK_SIZE, getRenderChunkAmbientOcclusionInfo } from "./render-chunks";
 import { NEIGHBOUR_OFFSETS } from "../utils";
-
-const vertexShaderText = `#version 300 es
-precision mediump float;
-
-layout(std140) uniform Camera {
-   uniform vec2 u_playerPos;
-   uniform vec2 u_halfWindowSize;
-   uniform float u_zoom;
-};
-
-layout(location = 0) in vec2 a_position;
-layout(location = 1) in vec2 a_texCoord;
-layout(location = 2) in float a_topLeftMarker;
-layout(location = 3) in float a_topRightMarker;
-layout(location = 4) in float a_bottomLeftMarker;
-layout(location = 5) in float a_bottomRightMarker;
-layout(location = 6) in float a_topMarker;
-layout(location = 7) in float a_rightMarker;
-layout(location = 8) in float a_leftMarker;
-layout(location = 9) in float a_bottomMarker;
-
-out vec2 v_texCoord;
-out float v_topLeftMarker;
-out float v_topRightMarker;
-out float v_bottomLeftMarker;
-out float v_bottomRightMarker;
-out float v_topMarker;
-out float v_rightMarker;
-out float v_leftMarker;
-out float v_bottomMarker;
-
-void main() {
-   vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
-   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
-   gl_Position = vec4(clipSpacePos, 0.0, 1.0);
-
-   v_texCoord = a_texCoord;
-   v_topLeftMarker = a_topLeftMarker;
-   v_topRightMarker = a_topRightMarker;
-   v_bottomLeftMarker = a_bottomLeftMarker;
-   v_bottomRightMarker = a_bottomRightMarker;
-   v_topMarker = a_topMarker;
-   v_rightMarker = a_rightMarker;
-   v_leftMarker = a_leftMarker;
-   v_bottomMarker = a_bottomMarker;
-}
-`;
-
-const fragmentShaderText = `#version 300 es
-precision mediump float;
- 
-in vec2 v_texCoord;
-in float v_topLeftMarker;
-in float v_topRightMarker;
-in float v_bottomLeftMarker;
-in float v_bottomRightMarker;
-in float v_topMarker;
-in float v_rightMarker;
-in float v_leftMarker;
-in float v_bottomMarker;
-
-out vec4 outputColour;
-
-void main() {
-   float dist = 0.0;
-   if (v_topLeftMarker > 0.5) {
-      float topLeftDist = 1.0 - distance(vec2(0.0, 1.0), v_texCoord);
-      dist = max(dist, topLeftDist - 0.5);
-   }
-   if (v_topRightMarker > 0.5) {
-      float topRightDist = 1.0 - distance(vec2(1.0, 1.0), v_texCoord);
-      dist = max(dist, topRightDist - 0.5);
-   }
-   if (v_bottomLeftMarker > 0.5) {
-      float bottomLeftDist = 1.0 - distance(vec2(0.0, 0.0), v_texCoord);
-      dist = max(dist, bottomLeftDist - 0.5);
-   }
-   if (v_bottomRightMarker > 0.5) {
-      float bottomRightDist = 1.0 - distance(vec2(1.0, 0.0), v_texCoord);
-      dist = max(dist, bottomRightDist - 0.5);
-   }
-
-   if (v_topMarker > 0.5) {
-      float topDist = v_texCoord.y;
-      dist = max(dist, topDist - 0.5);
-   }
-   if (v_rightMarker > 0.5) {
-      float rightDist = v_texCoord.x;
-      dist = max(dist, rightDist - 0.5);
-   }
-   if (v_leftMarker > 0.5) {
-      float leftDist = 1.0 - v_texCoord.x;
-      dist = max(dist, leftDist - 0.5);
-   }
-   if (v_bottomMarker > 0.5) {
-      float bottomDist = (1.0 - v_texCoord.y);
-      dist = max(dist, bottomDist - 0.5);
-   }
-
-   dist -= 0.2;
-
-   outputColour = vec4(0.0, 0.0, 0.0, dist);
-}
-`;
 
 let program: WebGLProgram;
 
 export function createAmbientOcclusionShaders(): void {
+   const vertexShaderText = `#version 300 es
+   precision mediump float;
+   
+   layout(std140) uniform Camera {
+      uniform vec2 u_playerPos;
+      uniform vec2 u_halfWindowSize;
+      uniform float u_zoom;
+   };
+   
+   layout(location = 0) in vec2 a_position;
+   layout(location = 1) in vec2 a_texCoord;
+   layout(location = 2) in float a_topLeftMarker;
+   layout(location = 3) in float a_topRightMarker;
+   layout(location = 4) in float a_bottomLeftMarker;
+   layout(location = 5) in float a_bottomRightMarker;
+   layout(location = 6) in float a_topMarker;
+   layout(location = 7) in float a_rightMarker;
+   layout(location = 8) in float a_leftMarker;
+   layout(location = 9) in float a_bottomMarker;
+   
+   out vec2 v_texCoord;
+   out float v_topLeftMarker;
+   out float v_topRightMarker;
+   out float v_bottomLeftMarker;
+   out float v_bottomRightMarker;
+   out float v_topMarker;
+   out float v_rightMarker;
+   out float v_leftMarker;
+   out float v_bottomMarker;
+   
+   void main() {
+      vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
+      vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+      gl_Position = vec4(clipSpacePos, 0.0, 1.0);
+   
+      v_texCoord = a_texCoord;
+      v_topLeftMarker = a_topLeftMarker;
+      v_topRightMarker = a_topRightMarker;
+      v_bottomLeftMarker = a_bottomLeftMarker;
+      v_bottomRightMarker = a_bottomRightMarker;
+      v_topMarker = a_topMarker;
+      v_rightMarker = a_rightMarker;
+      v_leftMarker = a_leftMarker;
+      v_bottomMarker = a_bottomMarker;
+   }
+   `;
+   
+   const fragmentShaderText = `#version 300 es
+   precision mediump float;
+    
+   in vec2 v_texCoord;
+   in float v_topLeftMarker;
+   in float v_topRightMarker;
+   in float v_bottomLeftMarker;
+   in float v_bottomRightMarker;
+   in float v_topMarker;
+   in float v_rightMarker;
+   in float v_leftMarker;
+   in float v_bottomMarker;
+   
+   out vec4 outputColour;
+   
+   void main() {
+      float dist = 0.0;
+      if (v_topLeftMarker > 0.5) {
+         float topLeftDist = 1.0 - distance(vec2(0.0, 1.0), v_texCoord);
+         dist = max(dist, topLeftDist - 0.5);
+      }
+      if (v_topRightMarker > 0.5) {
+         float topRightDist = 1.0 - distance(vec2(1.0, 1.0), v_texCoord);
+         dist = max(dist, topRightDist - 0.5);
+      }
+      if (v_bottomLeftMarker > 0.5) {
+         float bottomLeftDist = 1.0 - distance(vec2(0.0, 0.0), v_texCoord);
+         dist = max(dist, bottomLeftDist - 0.5);
+      }
+      if (v_bottomRightMarker > 0.5) {
+         float bottomRightDist = 1.0 - distance(vec2(1.0, 0.0), v_texCoord);
+         dist = max(dist, bottomRightDist - 0.5);
+      }
+   
+      if (v_topMarker > 0.5) {
+         float topDist = v_texCoord.y;
+         dist = max(dist, topDist - 0.5);
+      }
+      if (v_rightMarker > 0.5) {
+         float rightDist = v_texCoord.x;
+         dist = max(dist, rightDist - 0.5);
+      }
+      if (v_leftMarker > 0.5) {
+         float leftDist = 1.0 - v_texCoord.x;
+         dist = max(dist, leftDist - 0.5);
+      }
+      if (v_bottomMarker > 0.5) {
+         float bottomDist = (1.0 - v_texCoord.y);
+         dist = max(dist, bottomDist - 0.5);
+      }
+   
+      dist -= 0.2;
+   
+      outputColour = vec4(0.0, 0.0, 0.0, dist);
+   }
+   `;
+
    program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
 
    const cameraBlockIndex = gl.getUniformBlockIndex(program, "Camera");

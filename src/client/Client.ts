@@ -20,7 +20,7 @@ import createProjectile from "../projectiles/projectile-creation";
 import Camera from "../Camera";
 import { isDev } from "../utils";
 import Tribe from "../Tribe";
-import { updateRenderChunkFromTileUpdate } from "../rendering/tile-rendering/render-chunks";
+import { updateRenderChunkFromTileUpdate } from "../rendering/render-chunks";
 import Entity from "../entities/Entity";
 import Board from "../Board";
 import { definiteGameState, latencyGameState } from "../game-state/game-states";

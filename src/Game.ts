@@ -18,8 +18,8 @@ import { createHitboxShaders, renderEntityHitboxes } from "./rendering/hitbox-re
 import { updateInteractInventory, updatePlayerItems, updatePlayerMovement } from "./player-input";
 import { clearServerTicks, updateDebugScreenFPS, updateDebugScreenRenderTime } from "./components/game/dev/GameInfoDisplay";
 import { createWorldBorderShaders, renderWorldBorder } from "./rendering/world-border-rendering";
-import { createSolidTileShaders, renderSolidTiles } from "./rendering/tile-rendering/solid-tile-rendering";
-import { createRiverShaders, createRiverSteppingStoneData, renderRivers } from "./rendering/tile-rendering/river-rendering";
+import { createSolidTileShaders, renderSolidTiles } from "./rendering/solid-tile-rendering";
+import { createRiverShaders, createRiverSteppingStoneData, renderRivers } from "./rendering/river-rendering";
 import { createChunkBorderShaders, renderChunkBorders } from "./rendering/chunk-border-rendering";
 import { nerdVisionIsVisible } from "./components/game/dev/NerdVision";
 import { setFrameProgress } from "./GameObject";
@@ -29,7 +29,7 @@ import { createWallBorderShaders, renderWallBorders } from "./rendering/wall-bor
 import { ParticleRenderLayer, createParticleShaders, renderMonocolourParticles, renderTexturedParticles } from "./rendering/particle-rendering";
 import Tribe from "./Tribe";
 import OPTIONS from "./options";
-import { RENDER_CHUNK_SIZE, createRenderChunks } from "./rendering/tile-rendering/render-chunks";
+import { RENDER_CHUNK_SIZE, createRenderChunks } from "./rendering/render-chunks";
 import { registerFrame, updateFrameGraph } from "./components/game/dev/FrameGraph";
 import { createNightShaders, renderNight } from "./rendering/night-rendering";
 import { createPlaceableItemProgram, renderGhostPlaceableItem } from "./rendering/placeable-item-rendering";

@@ -22,267 +22,6 @@ export function interpolateColours(startColour: Readonly<ParticleColour>, endCol
    ];
 }
 
-const monocolourVertexShaderText = `#version 300 es
-precision mediump float;
-
-#define TPS 20.0
-
-layout(std140) uniform Camera {
-   vec2 u_playerPos;
-   vec2 u_halfWindowSize;
-   float u_zoom;
-};
-
-layout(std140) uniform Time {
-   uniform float u_time;
-};
-
-layout(location = 0) in vec2 a_vertPosition;
-layout(location = 1) in vec2 a_halfParticleSize;
-layout(location = 2) in vec2 a_position;
-layout(location = 3) in vec2 a_velocity;
-layout(location = 4) in vec2 a_acceleration;
-layout(location = 5) in float a_friction;
-layout(location = 6) in float a_rotation;
-layout(location = 7) in float a_angularVelocity;
-layout(location = 8) in float a_angularAcceleration;
-layout(location = 9) in float a_angularFriction;
-layout(location = 10) in vec3 a_colour;
-layout(location = 11) in float a_opacity;
-layout(location = 12) in float a_scale;
-layout(location = 13) in float a_spawnTime;
-
-out vec2 v_texCoord;
-out vec3 v_colour;
-out float v_opacity;
-
-void main() {
-   float age = (u_time - a_spawnTime) / 1000.0;
-
-   // Scale the particle to its size
-   vec2 position = a_vertPosition * a_halfParticleSize * a_scale;
-
-   // Calculate rotation
-   float rotation = a_rotation;
-   if (a_angularFriction > 0.0) {
-      // Calculate the age at which friction meets velocity
-      float stopAge = a_angularVelocity / a_angularFriction * sign(a_angularVelocity);
-
-      // Apply angular friction and angular velocity
-      float unitAngularVelocity = sign(a_angularVelocity);
-      if (age < stopAge) {
-         rotation += a_angularVelocity * age;
-
-         float friction = age * age * a_angularFriction * unitAngularVelocity * 0.5;
-         rotation -= friction;
-      } else {
-         rotation += a_angularVelocity * stopAge - stopAge * stopAge * a_angularFriction * unitAngularVelocity * 0.5;
-      }
-   } else {
-      // Account for velocity and acceleration
-      rotation += a_angularVelocity * age + a_angularAcceleration * age * age * 0.5;
-   }
-   
-   // Rotate
-   float cosRotation = cos(rotation);
-   float sinRotation = sin(rotation);
-   float x = cosRotation * position.x + sinRotation * position.y;
-   float y = -sinRotation * position.x + cosRotation * position.y;
-   position.x = x;
-   position.y = y;
-   
-   // Translate to the particle's position
-   position += a_position;
-
-   if (a_friction > 0.0) {
-      // Calculate the age at which friction meets velocity
-      float stopAge = a_velocity.x / a_friction * sign(a_velocity.x);
-
-      // Apply friction and velocity
-      vec2 unitVelocity = normalize(a_velocity);
-      if (age < stopAge) {
-         position += a_velocity * age;
-
-         vec2 friction = age * age * a_friction * unitVelocity * 0.5;
-         position -= friction;
-      } else {
-         position += a_velocity * stopAge - stopAge * stopAge * a_friction * unitVelocity * 0.5;
-      }
-   } else {
-      position += a_velocity * age + a_acceleration * age * age * 0.5;
-   }
-   
-   // Calculate position in canvas
-   vec2 screenPos = (position - u_playerPos) * u_zoom + u_halfWindowSize;
-   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
-   gl_Position = vec4(clipSpacePos, 0.0, 1.0);
-
-   v_colour = a_colour;
-   v_opacity = a_opacity;
-}
-`;
-
-const monocolourFragmentShaderText = `#version 300 es
-precision mediump float;
-
-in vec3 v_colour;
-in float v_opacity;
-
-out vec4 outputColour;
-
-void main() {
-   outputColour = vec4(v_colour, v_opacity);
-}
-`;
-
-const texturedVertexShaderText = `#version 300 es
-precision mediump float;
-
-#define TPS 20.0
-
-layout(std140) uniform Camera {
-   uniform vec2 u_playerPos;
-   uniform vec2 u_halfWindowSize;
-   uniform float u_zoom;
-};
-
-layout(std140) uniform Time {
-   uniform float u_time;
-};
-
-layout(location = 0) in vec2 a_vertPosition;
-layout(location = 1) in vec2 a_halfParticleSize;
-layout(location = 2) in vec2 a_position;
-layout(location = 3) in vec2 a_velocity;
-layout(location = 4) in vec2 a_acceleration;
-layout(location = 5) in float a_friction;
-layout(location = 6) in float a_rotation;
-layout(location = 7) in float a_angularVelocity;
-layout(location = 8) in float a_angularAcceleration;
-layout(location = 9) in float a_angularFriction;
-layout(location = 10) in vec3 a_tint;
-layout(location = 11) in float a_opacity;
-layout(location = 12) in float a_scale;
-layout(location = 13) in float a_spawnTime;
-layout(location = 14) in float a_textureIndex;
-
-out vec2 v_texCoord;
-out vec3 v_tint;
-out float v_opacity;
-out float v_textureIndex;
-
-void main() {
-   float age = (u_time - a_spawnTime) / 1000.0;
-
-   // Scale the particle to its size
-   vec2 position = a_vertPosition * a_halfParticleSize * a_scale;
-
-   // Calculate rotation
-   float rotation = a_rotation;
-   if (a_angularFriction > 0.0) {
-      // Calculate the age at which friction meets velocity
-      float stopAge = a_angularVelocity / a_angularFriction * sign(a_angularVelocity);
-
-      // Apply angular friction and angular velocity
-      float unitAngularVelocity = sign(a_angularVelocity);
-      if (age < stopAge) {
-         rotation += a_angularVelocity * age;
-
-         float friction = age * age * a_angularFriction * unitAngularVelocity * 0.5;
-         rotation -= friction;
-      } else {
-         rotation += a_angularVelocity * stopAge - stopAge * stopAge * a_angularFriction * unitAngularVelocity * 0.5;
-      }
-   } else {
-      // Account for velocity and acceleration
-      rotation += a_angularVelocity * age + a_angularAcceleration * age * age * 0.5;
-   }
-
-   // Rotate
-   float cosRotation = cos(rotation);
-   float sinRotation = sin(rotation);
-   float x = cosRotation * position.x + sinRotation * position.y;
-   float y = -sinRotation * position.x + cosRotation * position.y;
-   position.x = x;
-   position.y = y;
-   
-   // Translate to the particle's position
-   position += a_position;
-
-   if (a_friction > 0.0) {
-      // Calculate the age at which friction meets velocity
-      float stopAge = a_velocity.x / a_friction * sign(a_velocity.x);
-
-      // Apply friction and velocity
-      vec2 unitVelocity = normalize(a_velocity);
-      if (age < stopAge) {
-         position += a_velocity * age;
-
-         vec2 friction = age * age * a_friction * unitVelocity * 0.5;
-         position -= friction;
-      } else {
-         position += a_velocity * stopAge - stopAge * stopAge * a_friction * unitVelocity * 0.5;
-      }
-   } else {
-      // Account for velocity and acceleration
-      position += a_velocity * age + a_acceleration * age * age * 0.5;
-   }
-   
-   // Calculate position in canvas
-   vec2 screenPos = (position - u_playerPos) * u_zoom + u_halfWindowSize;
-   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
-   gl_Position = vec4(clipSpacePos, 0.0, 1.0);
-
-   v_texCoord = (a_vertPosition + 1.0) / 2.0; // Convert from vert position to texture coordinates
-   v_tint = a_tint;
-   v_opacity = a_opacity;
-   v_textureIndex = a_textureIndex;
-}
-`;
-
-const texturedFragmentShaderText = `#version 300 es
-precision mediump float;
-
-#define TEXTURE_ATLAS_SIZE 8.0
-
-uniform sampler2D u_textureAtlas;
-
-in vec2 v_texCoord;
-in float v_opacity;
-in vec3 v_tint;
-in float v_textureIndex;
-
-out vec4 outputColour;
-
-void main() {
-   float textureXIndex = mod(v_textureIndex, TEXTURE_ATLAS_SIZE);
-   float textureYIndex = floor(v_textureIndex / TEXTURE_ATLAS_SIZE);
-
-   float texCoordX = (textureXIndex + v_texCoord.x) / TEXTURE_ATLAS_SIZE;
-   float texCoordY = 1.0 - ((textureYIndex + v_texCoord.y) / TEXTURE_ATLAS_SIZE);
-
-   outputColour = texture(u_textureAtlas, vec2(texCoordX, texCoordY));
-   
-   if (v_tint.r > 0.0) {
-      outputColour.r = mix(outputColour.r, 1.0, v_tint.r);
-   } else {
-      outputColour.r = mix(outputColour.r, 0.0, -v_tint.r);
-   }
-   if (v_tint.g > 0.0) {
-      outputColour.g = mix(outputColour.g, 1.0, v_tint.g);
-   } else {
-      outputColour.g = mix(outputColour.g, 0.0, -v_tint.g);
-   }
-   if (v_tint.b > 0.0) {
-      outputColour.b = mix(outputColour.b, 1.0, v_tint.b);
-   } else {
-      outputColour.b = mix(outputColour.b, 0.0, -v_tint.b);
-   }
-
-   outputColour.a *= v_opacity;
-}
-`;
-
 let vertPositionBuffer: WebGLBuffer;
 
 export let lowMonocolourBufferContainer: ObjectBufferContainer;
@@ -294,6 +33,267 @@ let monocolourProgram: WebGLProgram;
 let texturedProgram: WebGLProgram;
 
 export function createParticleShaders(): void {
+   const monocolourVertexShaderText = `#version 300 es
+   precision mediump float;
+   
+   #define TPS 20.0
+   
+   layout(std140) uniform Camera {
+      vec2 u_playerPos;
+      vec2 u_halfWindowSize;
+      float u_zoom;
+   };
+   
+   layout(std140) uniform Time {
+      uniform float u_time;
+   };
+   
+   layout(location = 0) in vec2 a_vertPosition;
+   layout(location = 1) in vec2 a_halfParticleSize;
+   layout(location = 2) in vec2 a_position;
+   layout(location = 3) in vec2 a_velocity;
+   layout(location = 4) in vec2 a_acceleration;
+   layout(location = 5) in float a_friction;
+   layout(location = 6) in float a_rotation;
+   layout(location = 7) in float a_angularVelocity;
+   layout(location = 8) in float a_angularAcceleration;
+   layout(location = 9) in float a_angularFriction;
+   layout(location = 10) in vec3 a_colour;
+   layout(location = 11) in float a_opacity;
+   layout(location = 12) in float a_scale;
+   layout(location = 13) in float a_spawnTime;
+   
+   out vec2 v_texCoord;
+   out vec3 v_colour;
+   out float v_opacity;
+   
+   void main() {
+      float age = (u_time - a_spawnTime) / 1000.0;
+   
+      // Scale the particle to its size
+      vec2 position = a_vertPosition * a_halfParticleSize * a_scale;
+   
+      // Calculate rotation
+      float rotation = a_rotation;
+      if (a_angularFriction > 0.0) {
+         // Calculate the age at which friction meets velocity
+         float stopAge = a_angularVelocity / a_angularFriction * sign(a_angularVelocity);
+   
+         // Apply angular friction and angular velocity
+         float unitAngularVelocity = sign(a_angularVelocity);
+         if (age < stopAge) {
+            rotation += a_angularVelocity * age;
+   
+            float friction = age * age * a_angularFriction * unitAngularVelocity * 0.5;
+            rotation -= friction;
+         } else {
+            rotation += a_angularVelocity * stopAge - stopAge * stopAge * a_angularFriction * unitAngularVelocity * 0.5;
+         }
+      } else {
+         // Account for velocity and acceleration
+         rotation += a_angularVelocity * age + a_angularAcceleration * age * age * 0.5;
+      }
+      
+      // Rotate
+      float cosRotation = cos(rotation);
+      float sinRotation = sin(rotation);
+      float x = cosRotation * position.x + sinRotation * position.y;
+      float y = -sinRotation * position.x + cosRotation * position.y;
+      position.x = x;
+      position.y = y;
+      
+      // Translate to the particle's position
+      position += a_position;
+   
+      if (a_friction > 0.0) {
+         // Calculate the age at which friction meets velocity
+         float stopAge = a_velocity.x / a_friction * sign(a_velocity.x);
+   
+         // Apply friction and velocity
+         vec2 unitVelocity = normalize(a_velocity);
+         if (age < stopAge) {
+            position += a_velocity * age;
+   
+            vec2 friction = age * age * a_friction * unitVelocity * 0.5;
+            position -= friction;
+         } else {
+            position += a_velocity * stopAge - stopAge * stopAge * a_friction * unitVelocity * 0.5;
+         }
+      } else {
+         position += a_velocity * age + a_acceleration * age * age * 0.5;
+      }
+      
+      // Calculate position in canvas
+      vec2 screenPos = (position - u_playerPos) * u_zoom + u_halfWindowSize;
+      vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+      gl_Position = vec4(clipSpacePos, 0.0, 1.0);
+   
+      v_colour = a_colour;
+      v_opacity = a_opacity;
+   }
+   `;
+   
+   const monocolourFragmentShaderText = `#version 300 es
+   precision mediump float;
+   
+   in vec3 v_colour;
+   in float v_opacity;
+   
+   out vec4 outputColour;
+   
+   void main() {
+      outputColour = vec4(v_colour, v_opacity);
+   }
+   `;
+   
+   const texturedVertexShaderText = `#version 300 es
+   precision mediump float;
+   
+   #define TPS 20.0
+   
+   layout(std140) uniform Camera {
+      uniform vec2 u_playerPos;
+      uniform vec2 u_halfWindowSize;
+      uniform float u_zoom;
+   };
+   
+   layout(std140) uniform Time {
+      uniform float u_time;
+   };
+   
+   layout(location = 0) in vec2 a_vertPosition;
+   layout(location = 1) in vec2 a_halfParticleSize;
+   layout(location = 2) in vec2 a_position;
+   layout(location = 3) in vec2 a_velocity;
+   layout(location = 4) in vec2 a_acceleration;
+   layout(location = 5) in float a_friction;
+   layout(location = 6) in float a_rotation;
+   layout(location = 7) in float a_angularVelocity;
+   layout(location = 8) in float a_angularAcceleration;
+   layout(location = 9) in float a_angularFriction;
+   layout(location = 10) in vec3 a_tint;
+   layout(location = 11) in float a_opacity;
+   layout(location = 12) in float a_scale;
+   layout(location = 13) in float a_spawnTime;
+   layout(location = 14) in float a_textureIndex;
+   
+   out vec2 v_texCoord;
+   out vec3 v_tint;
+   out float v_opacity;
+   out float v_textureIndex;
+   
+   void main() {
+      float age = (u_time - a_spawnTime) / 1000.0;
+   
+      // Scale the particle to its size
+      vec2 position = a_vertPosition * a_halfParticleSize * a_scale;
+   
+      // Calculate rotation
+      float rotation = a_rotation;
+      if (a_angularFriction > 0.0) {
+         // Calculate the age at which friction meets velocity
+         float stopAge = a_angularVelocity / a_angularFriction * sign(a_angularVelocity);
+   
+         // Apply angular friction and angular velocity
+         float unitAngularVelocity = sign(a_angularVelocity);
+         if (age < stopAge) {
+            rotation += a_angularVelocity * age;
+   
+            float friction = age * age * a_angularFriction * unitAngularVelocity * 0.5;
+            rotation -= friction;
+         } else {
+            rotation += a_angularVelocity * stopAge - stopAge * stopAge * a_angularFriction * unitAngularVelocity * 0.5;
+         }
+      } else {
+         // Account for velocity and acceleration
+         rotation += a_angularVelocity * age + a_angularAcceleration * age * age * 0.5;
+      }
+   
+      // Rotate
+      float cosRotation = cos(rotation);
+      float sinRotation = sin(rotation);
+      float x = cosRotation * position.x + sinRotation * position.y;
+      float y = -sinRotation * position.x + cosRotation * position.y;
+      position.x = x;
+      position.y = y;
+      
+      // Translate to the particle's position
+      position += a_position;
+   
+      if (a_friction > 0.0) {
+         // Calculate the age at which friction meets velocity
+         float stopAge = a_velocity.x / a_friction * sign(a_velocity.x);
+   
+         // Apply friction and velocity
+         vec2 unitVelocity = normalize(a_velocity);
+         if (age < stopAge) {
+            position += a_velocity * age;
+   
+            vec2 friction = age * age * a_friction * unitVelocity * 0.5;
+            position -= friction;
+         } else {
+            position += a_velocity * stopAge - stopAge * stopAge * a_friction * unitVelocity * 0.5;
+         }
+      } else {
+         // Account for velocity and acceleration
+         position += a_velocity * age + a_acceleration * age * age * 0.5;
+      }
+      
+      // Calculate position in canvas
+      vec2 screenPos = (position - u_playerPos) * u_zoom + u_halfWindowSize;
+      vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+      gl_Position = vec4(clipSpacePos, 0.0, 1.0);
+   
+      v_texCoord = (a_vertPosition + 1.0) / 2.0; // Convert from vert position to texture coordinates
+      v_tint = a_tint;
+      v_opacity = a_opacity;
+      v_textureIndex = a_textureIndex;
+   }
+   `;
+   
+   const texturedFragmentShaderText = `#version 300 es
+   precision mediump float;
+   
+   #define TEXTURE_ATLAS_SIZE 8.0
+   
+   uniform sampler2D u_textureAtlas;
+   
+   in vec2 v_texCoord;
+   in float v_opacity;
+   in vec3 v_tint;
+   in float v_textureIndex;
+   
+   out vec4 outputColour;
+   
+   void main() {
+      float textureXIndex = mod(v_textureIndex, TEXTURE_ATLAS_SIZE);
+      float textureYIndex = floor(v_textureIndex / TEXTURE_ATLAS_SIZE);
+   
+      float texCoordX = (textureXIndex + v_texCoord.x) / TEXTURE_ATLAS_SIZE;
+      float texCoordY = 1.0 - ((textureYIndex + v_texCoord.y) / TEXTURE_ATLAS_SIZE);
+   
+      outputColour = texture(u_textureAtlas, vec2(texCoordX, texCoordY));
+      
+      if (v_tint.r > 0.0) {
+         outputColour.r = mix(outputColour.r, 1.0, v_tint.r);
+      } else {
+         outputColour.r = mix(outputColour.r, 0.0, -v_tint.r);
+      }
+      if (v_tint.g > 0.0) {
+         outputColour.g = mix(outputColour.g, 1.0, v_tint.g);
+      } else {
+         outputColour.g = mix(outputColour.g, 0.0, -v_tint.g);
+      }
+      if (v_tint.b > 0.0) {
+         outputColour.b = mix(outputColour.b, 1.0, v_tint.b);
+      } else {
+         outputColour.b = mix(outputColour.b, 0.0, -v_tint.b);
+      }
+   
+      outputColour.a *= v_opacity;
+   }
+   `;
+
    const vertPositionData = new Float32Array(12);
    vertPositionData[0] = -1;
    vertPositionData[1] = -1;

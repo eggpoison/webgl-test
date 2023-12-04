@@ -1,124 +1,124 @@
 import { SETTINGS, TileType } from "webgl-test-shared";
-import Camera from "../../Camera";
-import { TEXTURE_IMAGE_RECORD } from "../../textures";
-import { gl, createWebGLProgram, CAMERA_UNIFORM_BUFFER_BINDING_INDEX } from "../../webgl";
+import Camera from "../Camera";
+import { TEXTURE_IMAGE_RECORD } from "../textures";
+import { gl, createWebGLProgram, CAMERA_UNIFORM_BUFFER_BINDING_INDEX } from "../webgl";
 import { RENDER_CHUNK_SIZE, RenderChunkSolidTileInfo, getRenderChunkSolidTileInfo } from "./render-chunks";
-import Board from "../../Board";
-import { TILE_TYPE_TEXTURE_SOURCES } from "../../tile-type-texture-sources";
-
-const vertexShaderText = `#version 300 es
-precision mediump float;
-
-layout(std140) uniform Camera {
-   uniform vec2 u_playerPos;
-   uniform vec2 u_halfWindowSize;
-   uniform float u_zoom;
-};
-
-layout(location = 0) in vec2 a_tilePos;
-layout(location = 1) in vec2 a_texCoord;
-layout(location = 2) in float a_textureIndex;
-layout(location = 3) in float a_temperature;
-layout(location = 4) in float a_humidity;
-
-out vec2 v_texCoord;
-out float v_textureIndex;
-out float v_temperature;
-out float v_humidity;
-
-void main() {
-   vec2 screenPos = (a_tilePos - u_playerPos) * u_zoom + u_halfWindowSize;
-   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
-   gl_Position = vec4(clipSpacePos, 0.0, 1.0);
-
-   v_texCoord = a_texCoord;
-   v_textureIndex = a_textureIndex;
-   v_temperature = a_temperature;
-   v_humidity = a_humidity;
-}
-`;
-
-const fragmentShaderText = `#version 300 es
-precision highp float;
-
-uniform highp sampler2DArray u_sampler;
-
-in vec2 v_texCoord;
-in float v_textureIndex;
-in float v_temperature;
-in float v_humidity;
-
-out vec4 outputColour;
-
-// https://stackoverflow.com/questions/9234724/how-to-change-hue-of-a-texture-with-glsl
-vec4 hueShift(vec4 colour, float hueAdjust) {
-   const vec4 kRGBToYPrime = vec4 (0.299, 0.587, 0.114, 0.0);
-   const vec4 kRGBToI     = vec4 (0.596, -0.275, -0.321, 0.0);
-   const vec4 kRGBToQ     = vec4 (0.212, -0.523, 0.311, 0.0);
-
-   const vec4 kYIQToR   = vec4 (1.0, 0.956, 0.621, 0.0);
-   const vec4 kYIQToG   = vec4 (1.0, -0.272, -0.647, 0.0);
-   const vec4 kYIQToB   = vec4 (1.0, -1.107, 1.704, 0.0);
-
-   // Convert to YIQ
-   float   YPrime  = dot (colour, kRGBToYPrime);
-   float   I      = dot (colour, kRGBToI);
-   float   Q      = dot (colour, kRGBToQ);
-
-   // Calculate the hue and chroma
-   float   hue     = atan (Q, I);
-   float   chroma  = sqrt (I * I + Q * Q);
-
-   // Make the user's adjustments
-   hue += hueAdjust;
-
-   // Convert back to YIQ
-   Q = chroma * sin (hue);
-   I = chroma * cos (hue);
-
-   // Convert back to RGB
-   vec4    yIQ   = vec4 (YPrime, I, Q, 0.0);
-   colour.r = dot (yIQ, kYIQToR);
-   colour.g = dot (yIQ, kYIQToG);
-   colour.b = dot (yIQ, kYIQToB);
-
-   return colour;
-}
- 
-void main() {
-   outputColour = texture(u_sampler, vec3(v_texCoord, v_textureIndex));
-   
-   if (v_temperature >= 0.0) {
-      // Places with low temperature and high humidity don't exist, so if in low temperature
-      // then clamp the humidity to at most the temperature
-      float humidity = v_humidity;
-      if (v_temperature <= 0.5 && v_humidity > v_temperature) {
-         humidity = v_temperature;
-      }
-      
-      // Less humidity desaturates, more humidity saturates
-      float humidityMultiplier = (humidity - 0.5) * -0.7;
-      if (humidityMultiplier > 0.0) {
-         // Desaturate
-         outputColour.r = mix(outputColour.r, 1.0, humidityMultiplier * 0.7);
-         outputColour.b = mix(outputColour.b, 1.0, humidityMultiplier * 0.7);
-      } else {
-         // Saturate
-         outputColour.r = mix(outputColour.r, 0.0, -humidityMultiplier);
-         outputColour.b = mix(outputColour.b, 0.0, -humidityMultiplier);
-      }
-
-      // Positive hue adjust goes to blue, negative hue adjust goes to red
-      float hueAdjust = (v_temperature - 0.5) * 0.8;
-      outputColour = hueShift(outputColour, hueAdjust);
-   }
-}
-`;
+import Board from "../Board";
+import { TILE_TYPE_TEXTURE_SOURCES } from "../tile-type-texture-sources";
 
 let program: WebGLProgram;
 let tileTextureArray: WebGLTexture;
 
 export function createSolidTileShaders(): void {
+   const vertexShaderText = `#version 300 es
+   precision mediump float;
+   
+   layout(std140) uniform Camera {
+      uniform vec2 u_playerPos;
+      uniform vec2 u_halfWindowSize;
+      uniform float u_zoom;
+   };
+   
+   layout(location = 0) in vec2 a_tilePos;
+   layout(location = 1) in vec2 a_texCoord;
+   layout(location = 2) in float a_textureIndex;
+   layout(location = 3) in float a_temperature;
+   layout(location = 4) in float a_humidity;
+   
+   out vec2 v_texCoord;
+   out float v_textureIndex;
+   out float v_temperature;
+   out float v_humidity;
+   
+   void main() {
+      vec2 screenPos = (a_tilePos - u_playerPos) * u_zoom + u_halfWindowSize;
+      vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+      gl_Position = vec4(clipSpacePos, 0.0, 1.0);
+   
+      v_texCoord = a_texCoord;
+      v_textureIndex = a_textureIndex;
+      v_temperature = a_temperature;
+      v_humidity = a_humidity;
+   }
+   `;
+   
+   const fragmentShaderText = `#version 300 es
+   precision highp float;
+   
+   uniform highp sampler2DArray u_sampler;
+   
+   in vec2 v_texCoord;
+   in float v_textureIndex;
+   in float v_temperature;
+   in float v_humidity;
+   
+   out vec4 outputColour;
+   
+   // https://stackoverflow.com/questions/9234724/how-to-change-hue-of-a-texture-with-glsl
+   vec4 hueShift(vec4 colour, float hueAdjust) {
+      const vec4 kRGBToYPrime = vec4 (0.299, 0.587, 0.114, 0.0);
+      const vec4 kRGBToI     = vec4 (0.596, -0.275, -0.321, 0.0);
+      const vec4 kRGBToQ     = vec4 (0.212, -0.523, 0.311, 0.0);
+   
+      const vec4 kYIQToR   = vec4 (1.0, 0.956, 0.621, 0.0);
+      const vec4 kYIQToG   = vec4 (1.0, -0.272, -0.647, 0.0);
+      const vec4 kYIQToB   = vec4 (1.0, -1.107, 1.704, 0.0);
+   
+      // Convert to YIQ
+      float   YPrime  = dot (colour, kRGBToYPrime);
+      float   I      = dot (colour, kRGBToI);
+      float   Q      = dot (colour, kRGBToQ);
+   
+      // Calculate the hue and chroma
+      float   hue     = atan (Q, I);
+      float   chroma  = sqrt (I * I + Q * Q);
+   
+      // Make the user's adjustments
+      hue += hueAdjust;
+   
+      // Convert back to YIQ
+      Q = chroma * sin (hue);
+      I = chroma * cos (hue);
+   
+      // Convert back to RGB
+      vec4    yIQ   = vec4 (YPrime, I, Q, 0.0);
+      colour.r = dot (yIQ, kYIQToR);
+      colour.g = dot (yIQ, kYIQToG);
+      colour.b = dot (yIQ, kYIQToB);
+   
+      return colour;
+   }
+    
+   void main() {
+      outputColour = texture(u_sampler, vec3(v_texCoord, v_textureIndex));
+      
+      if (v_temperature >= 0.0) {
+         // Places with low temperature and high humidity don't exist, so if in low temperature
+         // then clamp the humidity to at most the temperature
+         float humidity = v_humidity;
+         if (v_temperature <= 0.5 && v_humidity > v_temperature) {
+            humidity = v_temperature;
+         }
+         
+         // Less humidity desaturates, more humidity saturates
+         float humidityMultiplier = (humidity - 0.5) * -0.7;
+         if (humidityMultiplier > 0.0) {
+            // Desaturate
+            outputColour.r = mix(outputColour.r, 1.0, humidityMultiplier * 0.7);
+            outputColour.b = mix(outputColour.b, 1.0, humidityMultiplier * 0.7);
+         } else {
+            // Saturate
+            outputColour.r = mix(outputColour.r, 0.0, -humidityMultiplier);
+            outputColour.b = mix(outputColour.b, 0.0, -humidityMultiplier);
+         }
+   
+         // Positive hue adjust goes to blue, negative hue adjust goes to red
+         float hueAdjust = (v_temperature - 0.5) * 0.8;
+         outputColour = hueShift(outputColour, hueAdjust);
+      }
+   }
+   `;
+
    program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
 
    const cameraBlockIndex = gl.getUniformBlockIndex(program, "Camera");

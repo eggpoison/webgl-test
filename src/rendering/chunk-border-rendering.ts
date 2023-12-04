@@ -1,44 +1,42 @@
 import { SETTINGS } from "webgl-test-shared";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 
-const chunkBorderColour = "1.0, 0.0, 0.0";
-
 const top = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE;
 const bottom = 0;
 const left = 0;
 const right = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE;
 
-const vertexShaderText = `#version 300 es
-precision mediump float;
-
-layout(std140) uniform Camera {
-   uniform vec2 u_playerPos;
-   uniform vec2 u_halfWindowSize;
-   uniform float u_zoom;
-};
-
-layout(location = 0) in vec2 a_position;
-
-void main() {
-   vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
-   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
-   gl_Position = vec4(clipSpacePos, 0.0, 1.0);
-}
-`;
-const fragmentShaderText = `#version 300 es
-precision mediump float;
-
-out vec4 outputColour;
-
-void main() {
-   outputColour = vec4(${chunkBorderColour}, 1.0);
-}
-`;
-
 let program: WebGLProgram;
 let buffer: WebGLBuffer;
 
 export function createChunkBorderShaders(): void {
+   const vertexShaderText = `#version 300 es
+   precision mediump float;
+   
+   layout(std140) uniform Camera {
+      uniform vec2 u_playerPos;
+      uniform vec2 u_halfWindowSize;
+      uniform float u_zoom;
+   };
+   
+   layout(location = 0) in vec2 a_position;
+   
+   void main() {
+      vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
+      vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+      gl_Position = vec4(clipSpacePos, 0.0, 1.0);
+   }
+   `;
+   const fragmentShaderText = `#version 300 es
+   precision mediump float;
+   
+   out vec4 outputColour;
+   
+   void main() {
+      outputColour = vec4(1.0, 0.0, 0.0, 1.0);
+   }
+   `;
+
    program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
 
    const cameraBlockIndex = gl.getUniformBlockIndex(program, "Camera");

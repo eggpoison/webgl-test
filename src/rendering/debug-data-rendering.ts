@@ -3,79 +3,79 @@ import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, generateLine, 
 import GameObject from "../GameObject";
 import Board from "../Board";
 
-const lineVertexShaderText = `#version 300 es
-precision mediump float;
-
-layout(std140) uniform Camera {
-   uniform vec2 u_playerPos;
-   uniform vec2 u_halfWindowSize;
-   uniform float u_zoom;
-};
-
-layout(location = 0) in vec2 a_position;
-layout(location = 1) in vec3 a_colour;
-
-out vec3 v_colour;
-
-void main() {
-   vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
-   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
-   gl_Position = vec4(clipSpacePos, 0.0, 1.0);
-
-   v_colour = a_colour;
-}
-`;
-const lineFragmentShaderText = `#version 300 es
-precision mediump float;
-
-in vec3 v_colour;
-
-out vec4 outputColour;
-
-void main() {
-   outputColour = vec4(v_colour, 1.0);   
-}
-`;
-
-const triangleVertexShaderText = `#version 300 es
-precision mediump float;
-
-layout(std140) uniform Camera {
-   uniform vec2 u_playerPos;
-   uniform vec2 u_halfWindowSize;
-   uniform float u_zoom;
-};
-
-layout(location = 0) in vec2 a_position;
-layout(location = 1) in vec3 a_colour;
-
-out vec3 v_colour;
-
-void main() {
-   vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
-   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
-   gl_Position = vec4(clipSpacePos, 0.0, 1.0);
-
-   v_colour = a_colour;
-}
-`;
-const triangleFragmentShaderText = `#version 300 es
-precision mediump float;
-
-in vec3 v_colour;
-
-out vec4 outputColour;
-
-void main() {
-   outputColour = vec4(v_colour, 0.6);
-}
-`;
-
 let lineProgram: WebGLProgram;
 
 let triangleProgram: WebGLProgram;
 
 export function createDebugDataShaders(): void {
+   const lineVertexShaderText = `#version 300 es
+   precision mediump float;
+   
+   layout(std140) uniform Camera {
+      uniform vec2 u_playerPos;
+      uniform vec2 u_halfWindowSize;
+      uniform float u_zoom;
+   };
+   
+   layout(location = 0) in vec2 a_position;
+   layout(location = 1) in vec3 a_colour;
+   
+   out vec3 v_colour;
+   
+   void main() {
+      vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
+      vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+      gl_Position = vec4(clipSpacePos, 0.0, 1.0);
+   
+      v_colour = a_colour;
+   }
+   `;
+   const lineFragmentShaderText = `#version 300 es
+   precision mediump float;
+   
+   in vec3 v_colour;
+   
+   out vec4 outputColour;
+   
+   void main() {
+      outputColour = vec4(v_colour, 1.0);   
+   }
+   `;
+   
+   const triangleVertexShaderText = `#version 300 es
+   precision mediump float;
+   
+   layout(std140) uniform Camera {
+      uniform vec2 u_playerPos;
+      uniform vec2 u_halfWindowSize;
+      uniform float u_zoom;
+   };
+   
+   layout(location = 0) in vec2 a_position;
+   layout(location = 1) in vec3 a_colour;
+   
+   out vec3 v_colour;
+   
+   void main() {
+      vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
+      vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+      gl_Position = vec4(clipSpacePos, 0.0, 1.0);
+   
+      v_colour = a_colour;
+   }
+   `;
+   const triangleFragmentShaderText = `#version 300 es
+   precision mediump float;
+   
+   in vec3 v_colour;
+   
+   out vec4 outputColour;
+   
+   void main() {
+      outputColour = vec4(v_colour, 0.6);
+   }
+   `;
+
    lineProgram = createWebGLProgram(gl, lineVertexShaderText, lineFragmentShaderText);
 
    const lineCameraBlockIndex = gl.getUniformBlockIndex(lineProgram, "Camera");

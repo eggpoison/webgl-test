@@ -11,33 +11,6 @@ const TARGET_RENDER_LINE_THICKNESS = 0.02;
 /** Time that frames are recorded for */
 export const FRAME_GRAPH_RECORD_TIME = 1;
 
-const vertexShaderText = `#version 300 es
-precision highp float;
-
-layout(location = 0) in vec2 a_position;
-layout(location = 1) in vec3 a_colour;
-
-out vec3 v_colour;
-
-void main() {
-   gl_Position = vec4(a_position, 0.0, 1.0);
-
-   v_colour = a_colour;
-}
-`;
-
-const fragmentShaderText = `#version 300 es
-precision highp float;
-
-in vec3 v_colour;
-
-out vec4 outputColour;
-
-void main() {
-   outputColour = vec4(v_colour, 1.0);
-}
-`;
-
 let frameGraphGL: WebGL2RenderingContext;
 
 let program: WebGLProgram;
@@ -57,6 +30,33 @@ const createGLContext = (): void => {
 }
 
 const createShaders = (): void => {
+   const vertexShaderText = `#version 300 es
+   precision highp float;
+   
+   layout(location = 0) in vec2 a_position;
+   layout(location = 1) in vec3 a_colour;
+   
+   out vec3 v_colour;
+   
+   void main() {
+      gl_Position = vec4(a_position, 0.0, 1.0);
+   
+      v_colour = a_colour;
+   }
+   `;
+   
+   const fragmentShaderText = `#version 300 es
+   precision highp float;
+   
+   in vec3 v_colour;
+   
+   out vec4 outputColour;
+   
+   void main() {
+      outputColour = vec4(v_colour, 1.0);
+   }
+   `;
+
    program = createWebGLProgram(frameGraphGL, vertexShaderText, fragmentShaderText);
 
    buffer = frameGraphGL.createBuffer()!;

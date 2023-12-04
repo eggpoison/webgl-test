@@ -1,6 +1,6 @@
 import { Point, SETTINGS, VisibleChunkBounds } from "webgl-test-shared";
 import { halfWindowHeight, halfWindowWidth } from "./webgl";
-import { RENDER_CHUNK_SIZE, WORLD_RENDER_CHUNK_SIZE } from "./rendering/tile-rendering/render-chunks";
+import { RENDER_CHUNK_SIZE, WORLD_RENDER_CHUNK_SIZE } from "./rendering/render-chunks";
 
 export type VisiblePositionBounds = [minX: number, maxX: number, minY: number, maxY: number];
 

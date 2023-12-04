@@ -4,60 +4,6 @@ import Player, { getPlayerSelectedItem } from "../entities/Player";
 import { getTexture } from "../textures";
 import { gl, halfWindowWidth, halfWindowHeight, createWebGLProgram } from "../webgl";
 import { PLACEABLE_ENTITY_INFO_RECORD, canPlaceItem } from "../player-input";
-// import PlaceableItem, { PLACEABLE_ENTITY_INFO_RECORD } from "../items/PlaceableItem";
-
-const vertexShaderText = `#version 300 es
-precision mediump float;
-
-uniform float u_zoom;
-uniform float u_preTranslation;
-uniform vec2 u_playerRotation;
-uniform vec2 u_halfWindowSize;
-
-layout(location = 0) in vec2 a_vertWorldPosition;
-layout(location = 1) in vec2 a_texCoord;
-
-out vec2 v_texCoord;
-
-void main() {
-   vec2 vertWorldOffsetFromPlayer = a_vertWorldPosition + vec2(0, u_preTranslation);
-   vec2 rotationOffset = vec2(
-      vertWorldOffsetFromPlayer.x * u_playerRotation.y + vertWorldOffsetFromPlayer.y * u_playerRotation.x,
-      vertWorldOffsetFromPlayer.y * u_playerRotation.y - vertWorldOffsetFromPlayer.x * u_playerRotation.x
-   );
-
-   rotationOffset *= u_zoom;
-
-   vec2 screenPos = rotationOffset + u_halfWindowSize;
-   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
-   gl_Position = vec4(clipSpacePos, 0.0, 1.0);
-
-   v_texCoord = a_texCoord;
-}
-`;
-
-const fragmentShaderText = `#version 300 es
-precision mediump float;
-
-uniform sampler2D u_texture;
-uniform float u_canPlace;
-
-in vec2 v_texCoord;
-
-out vec4 outputColour;
-
-void main() {
-   outputColour = texture(u_texture, v_texCoord);
-
-   outputColour.a *= 0.5;
-
-   if (u_canPlace < 0.5) {
-      outputColour.r *= 1.5;
-      outputColour.g *= 0.5;
-      outputColour.b *= 0.5;
-   }
-}
-`;
 
 let program: WebGLProgram;
 
@@ -72,6 +18,59 @@ let programHalfWindowSizeUniformLocation: WebGLUniformLocation;
 let programCanPlaceUniformLocation: WebGLUniformLocation;
 
 export function createPlaceableItemProgram(): void {
+   const vertexShaderText = `#version 300 es
+   precision mediump float;
+   
+   uniform float u_zoom;
+   uniform float u_preTranslation;
+   uniform vec2 u_playerRotation;
+   uniform vec2 u_halfWindowSize;
+   
+   layout(location = 0) in vec2 a_vertWorldPosition;
+   layout(location = 1) in vec2 a_texCoord;
+   
+   out vec2 v_texCoord;
+   
+   void main() {
+      vec2 vertWorldOffsetFromPlayer = a_vertWorldPosition + vec2(0, u_preTranslation);
+      vec2 rotationOffset = vec2(
+         vertWorldOffsetFromPlayer.x * u_playerRotation.y + vertWorldOffsetFromPlayer.y * u_playerRotation.x,
+         vertWorldOffsetFromPlayer.y * u_playerRotation.y - vertWorldOffsetFromPlayer.x * u_playerRotation.x
+      );
+   
+      rotationOffset *= u_zoom;
+   
+      vec2 screenPos = rotationOffset + u_halfWindowSize;
+      vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+      gl_Position = vec4(clipSpacePos, 0.0, 1.0);
+   
+      v_texCoord = a_texCoord;
+   }
+   `;
+   
+   const fragmentShaderText = `#version 300 es
+   precision mediump float;
+   
+   uniform sampler2D u_texture;
+   uniform float u_canPlace;
+   
+   in vec2 v_texCoord;
+   
+   out vec4 outputColour;
+   
+   void main() {
+      outputColour = texture(u_texture, v_texCoord);
+   
+      outputColour.a *= 0.5;
+   
+      if (u_canPlace < 0.5) {
+         outputColour.r *= 1.5;
+         outputColour.g *= 0.5;
+         outputColour.b *= 0.5;
+      }
+   }
+   `;
+
    program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
    
    zoomUniformLocation = gl.getUniformLocation(program, "u_zoom")!;

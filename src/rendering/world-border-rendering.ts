@@ -2,68 +2,68 @@ import { SETTINGS } from "webgl-test-shared";
 import Camera from "../Camera";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 
-const vertexShaderText = `#version 300 es
-precision mediump float;
-
-layout(std140) uniform Camera {
-   uniform vec2 u_playerPos;
-   uniform vec2 u_halfWindowSize;
-   uniform float u_zoom;
-};
-
-layout(location = 0) in vec2 a_position;
-
-out vec2 v_position;
-
-void main() {
-   vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
-   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
-   gl_Position = vec4(clipSpacePos, 0.0, 1.0);
-
-   v_position = a_position;
-}`;
-
-const fragmentShaderText = `#version 300 es
-precision mediump float;
-
-#define RANGE 200.0
-
-layout(std140) uniform Camera {
-   uniform vec2 u_playerPos;
-   uniform vec2 u_halfWindowSize;
-   uniform float u_zoom;
-};
-
-in vec2 v_position;
-
-out vec4 outputColour;
-
-float roundPixel(float num) {
-   return ceil(num / 4.0) * 4.0;
-}
-
-void main() {
-   float x = roundPixel(v_position.x);
-   float y = roundPixel(v_position.y);
-
-   float dist = distance(vec2(x, y), u_playerPos);
-   // Subtract the radius of the player so the wall is fully opaque when they hit it
-   dist -= 32.0;
-
-   if (dist < RANGE) {
-      float distMultiplier = 1.0 - dist / RANGE;
-      distMultiplier = pow(distMultiplier, 0.35);
-      outputColour = vec4(3.0/255.0, 200.0/255.0, 252.0/255.0, distMultiplier);
-   } else {
-      outputColour = vec4(0.0, 0.0, 0.0, 0.0);
-   }
-}
-`;
-
 let program: WebGLProgram;
 let buffer: WebGLBuffer;
 
 export function createWorldBorderShaders(): void {
+   const vertexShaderText = `#version 300 es
+   precision mediump float;
+   
+   layout(std140) uniform Camera {
+      uniform vec2 u_playerPos;
+      uniform vec2 u_halfWindowSize;
+      uniform float u_zoom;
+   };
+   
+   layout(location = 0) in vec2 a_position;
+   
+   out vec2 v_position;
+   
+   void main() {
+      vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
+      vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+      gl_Position = vec4(clipSpacePos, 0.0, 1.0);
+   
+      v_position = a_position;
+   }`;
+   
+   const fragmentShaderText = `#version 300 es
+   precision mediump float;
+   
+   #define RANGE 200.0
+   
+   layout(std140) uniform Camera {
+      uniform vec2 u_playerPos;
+      uniform vec2 u_halfWindowSize;
+      uniform float u_zoom;
+   };
+   
+   in vec2 v_position;
+   
+   out vec4 outputColour;
+   
+   float roundPixel(float num) {
+      return ceil(num / 4.0) * 4.0;
+   }
+   
+   void main() {
+      float x = roundPixel(v_position.x);
+      float y = roundPixel(v_position.y);
+   
+      float dist = distance(vec2(x, y), u_playerPos);
+      // Subtract the radius of the player so the wall is fully opaque when they hit it
+      dist -= 32.0;
+   
+      if (dist < RANGE) {
+         float distMultiplier = 1.0 - dist / RANGE;
+         distMultiplier = pow(distMultiplier, 0.35);
+         outputColour = vec4(3.0/255.0, 200.0/255.0, 252.0/255.0, distMultiplier);
+      } else {
+         outputColour = vec4(0.0, 0.0, 0.0, 0.0);
+      }
+   }
+   `;
+
    program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
 
    const cameraBlockIndex = gl.getUniformBlockIndex(program, "Camera");

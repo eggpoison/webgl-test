@@ -3,41 +3,41 @@ import Camera from "../Camera";
 import { Tile } from "../Tile";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 import Board from "../Board";
-import { RENDER_CHUNK_SIZE, RenderChunkWallBorderInfo, getRenderChunkWallBorderInfo } from "./tile-rendering/render-chunks";
+import { RENDER_CHUNK_SIZE, RenderChunkWallBorderInfo, getRenderChunkWallBorderInfo } from "./render-chunks";
 
 const BORDER_THICKNESS = 5;
-
-const vertexShaderText = `#version 300 es
-precision mediump float;
-
-layout(std140) uniform Camera {
-   uniform vec2 u_playerPos;
-   uniform vec2 u_halfWindowSize;
-   uniform float u_zoom;
-};
-
-layout(location = 0) in vec2 a_position;
-
-void main() {
-   vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
-   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
-   gl_Position = vec4(clipSpacePos, 0.0, 1.0);
-}
-`;
-
-const fragmentShaderText = `#version 300 es
-precision mediump float;
-
-out vec4 outputColour;
-
-void main() {
-   outputColour = vec4(0.15, 0.15, 0.15, 1.0);
-}
-`;
 
 let program: WebGLProgram;
 
 export function createWallBorderShaders(): void {
+   const vertexShaderText = `#version 300 es
+   precision mediump float;
+   
+   layout(std140) uniform Camera {
+      uniform vec2 u_playerPos;
+      uniform vec2 u_halfWindowSize;
+      uniform float u_zoom;
+   };
+   
+   layout(location = 0) in vec2 a_position;
+   
+   void main() {
+      vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
+      vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+      gl_Position = vec4(clipSpacePos, 0.0, 1.0);
+   }
+   `;
+   
+   const fragmentShaderText = `#version 300 es
+   precision mediump float;
+   
+   out vec4 outputColour;
+   
+   void main() {
+      outputColour = vec4(0.15, 0.15, 0.15, 1.0);
+   }
+   `;
+
    program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
 
    const cameraBlockIndex = gl.getUniformBlockIndex(program, "Camera");

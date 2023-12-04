@@ -1,68 +1,68 @@
 import { SETTINGS } from "webgl-test-shared";
 import Camera from "../Camera";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, TIME_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
-import { WORLD_RENDER_CHUNK_SIZE } from "./tile-rendering/render-chunks";
-
-const vertexShaderText = `#version 300 es
-precision mediump float;
-
-layout(std140) uniform Camera {
-   uniform vec2 u_playerPos;
-   uniform vec2 u_halfWindowSize;
-   uniform float u_zoom;
-};
-
-layout(location = 0) in vec2 a_position;
-
-out vec2 v_position;
-
-void main() {
-   vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
-   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
-   gl_Position = vec4(clipSpacePos, 0.0, 1.0);
-
-   v_position = a_position;
-}
-`;
-
-const fragmentShaderText = `#version 300 es
-precision highp float;
-
-#define INTERVAL 64.0
-#define PIXEL_SIZE 4.0
-
-layout(std140) uniform Time {
-   uniform float u_time;
-};
-
-in vec2 v_position;
-
-out vec4 outputColour;
-
-float roundPixel(float num) {
-   return ceil(num / PIXEL_SIZE) * PIXEL_SIZE;
-}
- 
-void main() {
-   float time_offset = u_time / 80.0;
-   
-   float x = roundPixel(v_position.x - time_offset);
-   float y = roundPixel(v_position.y - time_offset);
-   
-   float remainder = fract((x + y) / INTERVAL);
-   if (remainder < 0.35) {
-      float progress = remainder / 0.35;
-      progress = mix(0.7, 1.0, progress);
-      outputColour = vec4(3.0/255.0 * progress, 190.0/255.0 * progress, 252.0/255.0 * progress, 1.0);
-   } else {
-      outputColour = vec4(0.0, 0.0, 0.0, 0.0);
-   }
-}
-`;
+import { WORLD_RENDER_CHUNK_SIZE } from "./render-chunks";
 
 let program: WebGLProgram;
 
 export function createForcefieldShaders(): void {
+   const vertexShaderText = `#version 300 es
+   precision mediump float;
+   
+   layout(std140) uniform Camera {
+      uniform vec2 u_playerPos;
+      uniform vec2 u_halfWindowSize;
+      uniform float u_zoom;
+   };
+   
+   layout(location = 0) in vec2 a_position;
+   
+   out vec2 v_position;
+   
+   void main() {
+      vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
+      vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+      gl_Position = vec4(clipSpacePos, 0.0, 1.0);
+   
+      v_position = a_position;
+   }
+   `;
+   
+   const fragmentShaderText = `#version 300 es
+   precision highp float;
+   
+   #define INTERVAL 64.0
+   #define PIXEL_SIZE 4.0
+   
+   layout(std140) uniform Time {
+      uniform float u_time;
+   };
+   
+   in vec2 v_position;
+   
+   out vec4 outputColour;
+   
+   float roundPixel(float num) {
+      return ceil(num / PIXEL_SIZE) * PIXEL_SIZE;
+   }
+    
+   void main() {
+      float time_offset = u_time / 80.0;
+      
+      float x = roundPixel(v_position.x - time_offset);
+      float y = roundPixel(v_position.y - time_offset);
+      
+      float remainder = fract((x + y) / INTERVAL);
+      if (remainder < 0.35) {
+         float progress = remainder / 0.35;
+         progress = mix(0.7, 1.0, progress);
+         outputColour = vec4(3.0/255.0 * progress, 190.0/255.0 * progress, 252.0/255.0 * progress, 1.0);
+      } else {
+         outputColour = vec4(0.0, 0.0, 0.0, 0.0);
+      }
+   }
+   `;
+
    program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
 
    const cameraBlockIndex = gl.getUniformBlockIndex(program, "Camera");

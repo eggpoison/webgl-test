@@ -4,136 +4,136 @@ import Board from "../Board";
 import { ATLAS_SLOT_SIZE } from "../texture-atlases/texture-atlas-stitching";
 import { GAME_OBJECT_TEXTURE_ATLAS, GAME_OBJECT_TEXTURE_ATLAS_SIZE } from "../texture-atlases/game-object-texture-atlas";
 
-const vertexShaderText = `#version 300 es
-precision highp float;
-
-layout(std140) uniform Camera {
-   uniform vec2 u_playerPos;
-   uniform vec2 u_halfWindowSize;
-   uniform float u_zoom;
-};
-
-layout(location = 0) in vec2 a_position;
-layout(location = 1) in float a_depth;
-layout(location = 2) in vec2 a_texCoord;
-layout(location = 3) in float a_textureIndex;
-layout(location = 4) in vec2 a_textureSize;
-layout(location = 5) in vec3 a_tint;
-layout(location = 6) in float a_opacity;
-layout(location = 7) in float a_isInWater;
-
-out vec2 v_texCoord;
-out float v_textureIndex;
-out vec2 v_textureSize;
-out vec3 v_tint;
-out float v_opacity;
-out float v_isInWater;
- 
-void main() {
-   vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
-   vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
-   gl_Position = vec4(clipSpacePos, a_depth, 1.0);
-
-   v_texCoord = a_texCoord;
-   v_textureIndex = a_textureIndex;
-   v_textureSize = a_textureSize;
-   v_tint = a_tint;
-   v_opacity = a_opacity;
-   v_isInWater = a_isInWater;
-}
-`;
-
-// https://stackoverflow.com/questions/64837705/opengl-blurring
-
-const fragmentShaderText = `#version 300 es
-precision highp float;
-
-#define blurRange 2.0
-#define sx 512.0;
-#define ys 512.0;
-
-uniform sampler2D u_textureAtlas;
-uniform float u_atlasPixelSize;
-uniform float u_atlasSlotSize;
-
-in vec2 v_texCoord;
-in float v_textureIndex;
-in vec2 v_textureSize;
-in vec3 v_tint;
-in float v_opacity;
-in float v_isInWater;
-
-out vec4 outputColour;
-
-void main() { 
-   // Calculate the coordinates of the top left corner of the texture
-   float textureX = mod(v_textureIndex * u_atlasSlotSize, u_atlasPixelSize);
-   float textureY = floor(v_textureIndex * u_atlasSlotSize / u_atlasPixelSize) * u_atlasSlotSize;
-   
-   // @Incomplete: This is very hacky, the - 0.2 and + 0.1 shenanigans are to prevent texture bleeding but it causes tiny bits of the edge of the textures to get cut off.
-   float u = (textureX + v_texCoord.x * (v_textureSize.x - 0.2) + 0.1) / u_atlasPixelSize;
-   float v = 1.0 - ((textureY + (1.0 - v_texCoord.y) * (v_textureSize.y - 0.2) + 0.1) / u_atlasPixelSize);
-
-   if (v_isInWater > 0.5) {
-      float x,y,xx,yy,rr=blurRange*blurRange,dx,dy,w,w0;
-      w0 = 0.3780 / pow(blurRange, 1.975);
-      vec2 p;
-      vec4 col=vec4(0.0,0.0,0.0,0.0);
-
-      dx = 1.0 / sx;
-      x = -blurRange;
-      p.x = u + (x * dx);
-      while (x <= blurRange) {
-         xx = x * x;
-
-         dy = 1.0 / ys;
-         y = -blurRange;
-         p.y = v + (y * dy);
-         while (y <= blurRange) {
-            yy = y * y;
-            if (xx + yy <= rr) {
-               w = w0 * exp((-xx - yy) / (2.0 * rr));
-               col+=texture(u_textureAtlas, p) * w;
-            }
-            
-            y++;
-            p.y += dy;
-         }
-
-         x++;
-         p.x += dx;
-      }
-      outputColour = col;
-   } else {
-      outputColour = texture(u_textureAtlas, vec2(u, v));
-   }
-   
-   if (v_tint.r > 0.0) {
-      outputColour.r = mix(outputColour.r, 1.0, v_tint.r);
-   } else {
-      outputColour.r = mix(outputColour.r, 0.0, -v_tint.r);
-   }
-   if (v_tint.g > 0.0) {
-      outputColour.g = mix(outputColour.g, 1.0, v_tint.g);
-   } else {
-      outputColour.g = mix(outputColour.g, 0.0, -v_tint.g);
-   }
-   if (v_tint.b > 0.0) {
-      outputColour.b = mix(outputColour.b, 1.0, v_tint.b);
-   } else {
-      outputColour.b = mix(outputColour.b, 0.0, -v_tint.b);
-   }
-
-   outputColour.a *= v_opacity;
-}
-`;
-
 let program: WebGLProgram;
 let vao: WebGLVertexArrayObject;
 let buffer: WebGLBuffer;
 let indexBuffer: WebGLBuffer;
 
 export function createFishShaders(): void {
+   const vertexShaderText = `#version 300 es
+   precision highp float;
+   
+   layout(std140) uniform Camera {
+      uniform vec2 u_playerPos;
+      uniform vec2 u_halfWindowSize;
+      uniform float u_zoom;
+   };
+   
+   layout(location = 0) in vec2 a_position;
+   layout(location = 1) in float a_depth;
+   layout(location = 2) in vec2 a_texCoord;
+   layout(location = 3) in float a_textureIndex;
+   layout(location = 4) in vec2 a_textureSize;
+   layout(location = 5) in vec3 a_tint;
+   layout(location = 6) in float a_opacity;
+   layout(location = 7) in float a_isInWater;
+   
+   out vec2 v_texCoord;
+   out float v_textureIndex;
+   out vec2 v_textureSize;
+   out vec3 v_tint;
+   out float v_opacity;
+   out float v_isInWater;
+    
+   void main() {
+      vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
+      vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
+      gl_Position = vec4(clipSpacePos, a_depth, 1.0);
+   
+      v_texCoord = a_texCoord;
+      v_textureIndex = a_textureIndex;
+      v_textureSize = a_textureSize;
+      v_tint = a_tint;
+      v_opacity = a_opacity;
+      v_isInWater = a_isInWater;
+   }
+   `;
+   
+   // https://stackoverflow.com/questions/64837705/opengl-blurring
+   
+   const fragmentShaderText = `#version 300 es
+   precision highp float;
+   
+   #define blurRange 2.0
+   #define sx 512.0;
+   #define ys 512.0;
+   
+   uniform sampler2D u_textureAtlas;
+   uniform float u_atlasPixelSize;
+   uniform float u_atlasSlotSize;
+   
+   in vec2 v_texCoord;
+   in float v_textureIndex;
+   in vec2 v_textureSize;
+   in vec3 v_tint;
+   in float v_opacity;
+   in float v_isInWater;
+   
+   out vec4 outputColour;
+   
+   void main() { 
+      // Calculate the coordinates of the top left corner of the texture
+      float textureX = mod(v_textureIndex * u_atlasSlotSize, u_atlasPixelSize);
+      float textureY = floor(v_textureIndex * u_atlasSlotSize / u_atlasPixelSize) * u_atlasSlotSize;
+      
+      // @Incomplete: This is very hacky, the - 0.2 and + 0.1 shenanigans are to prevent texture bleeding but it causes tiny bits of the edge of the textures to get cut off.
+      float u = (textureX + v_texCoord.x * (v_textureSize.x - 0.2) + 0.1) / u_atlasPixelSize;
+      float v = 1.0 - ((textureY + (1.0 - v_texCoord.y) * (v_textureSize.y - 0.2) + 0.1) / u_atlasPixelSize);
+   
+      if (v_isInWater > 0.5) {
+         float x,y,xx,yy,rr=blurRange*blurRange,dx,dy,w,w0;
+         w0 = 0.3780 / pow(blurRange, 1.975);
+         vec2 p;
+         vec4 col=vec4(0.0,0.0,0.0,0.0);
+   
+         dx = 1.0 / sx;
+         x = -blurRange;
+         p.x = u + (x * dx);
+         while (x <= blurRange) {
+            xx = x * x;
+   
+            dy = 1.0 / ys;
+            y = -blurRange;
+            p.y = v + (y * dy);
+            while (y <= blurRange) {
+               yy = y * y;
+               if (xx + yy <= rr) {
+                  w = w0 * exp((-xx - yy) / (2.0 * rr));
+                  col+=texture(u_textureAtlas, p) * w;
+               }
+               
+               y++;
+               p.y += dy;
+            }
+   
+            x++;
+            p.x += dx;
+         }
+         outputColour = col;
+      } else {
+         outputColour = texture(u_textureAtlas, vec2(u, v));
+      }
+      
+      if (v_tint.r > 0.0) {
+         outputColour.r = mix(outputColour.r, 1.0, v_tint.r);
+      } else {
+         outputColour.r = mix(outputColour.r, 0.0, -v_tint.r);
+      }
+      if (v_tint.g > 0.0) {
+         outputColour.g = mix(outputColour.g, 1.0, v_tint.g);
+      } else {
+         outputColour.g = mix(outputColour.g, 0.0, -v_tint.g);
+      }
+      if (v_tint.b > 0.0) {
+         outputColour.b = mix(outputColour.b, 1.0, v_tint.b);
+      } else {
+         outputColour.b = mix(outputColour.b, 0.0, -v_tint.b);
+      }
+   
+      outputColour.a *= v_opacity;
+   }
+   `;
+
    program = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
 
    const cameraBlockIndex = gl.getUniformBlockIndex(program, "Camera");
