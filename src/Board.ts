@@ -24,6 +24,13 @@ interface TickCallback {
    readonly callback: () => void;
 }
 
+export interface Light {
+   readonly position: Point;
+   /** Number of tiles which the light extends from */
+   strength: number;
+   radius: number;
+}
+
 abstract class Board {
    public static ticks: number;
    public static time: number;
@@ -66,6 +73,8 @@ abstract class Board {
    private static riverFlowDirections: Record<number, Record<number, number>>;
 
    private static tickCallbacks = new Array<TickCallback>();
+
+   public static lights = new Array<Light>();
 
    // @Cleanup: This function gets called by Game.ts, which gets called by LoadingScreen.tsx, with these same parameters. This feels unnecessary.
    public static initialise(tiles: Array<Array<Tile>>, waterRocks: ReadonlyArray<WaterRockData>, riverSteppingStones: ReadonlyArray<RiverSteppingStoneData>, riverFlowDirections: Record<number, Record<number, number>>, edgeTiles: Array<ServerTileData>, grassInfo: Record<number, Record<number, GrassTileInfo>>, decorations: ReadonlyArray<DecorationInfo>): void {

@@ -1,7 +1,7 @@
 import { EntityType, HitData, HitFlags, SETTINGS, StatusEffectData, StatusEffect, lerp, randFloat, randItem, customTickIntervalHasPassed } from "webgl-test-shared";
 import GameObject from "../GameObject";
 import Particle from "../Particle";
-import Board from "../Board";
+import Board, { Light } from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
 import { BloodParticleSize, createBloodParticle, createSlimePoolParticle } from "../generic-particles";
 import Camera from "../Camera";
@@ -63,6 +63,8 @@ abstract class Entity extends GameObject {
    public secondsSinceLastHit = 99999;
 
    public statusEffects = new Array<StatusEffectData>();
+
+   private burningLight: Light | null = null;
 
    public tick(): void {
       super.tick();
@@ -152,6 +154,15 @@ abstract class Entity extends GameObject {
 
       const fireStatusEffect = this.getStatusEffect(StatusEffect.burning);
       if (fireStatusEffect !== null) {
+         if (this.burningLight === null) {
+            this.burningLight = {
+               position: this.position,
+               strength: 1.5,
+               radius: 0.2
+            };
+            Board.lights.push(this.burningLight);
+         }
+         
          // Ember particles
          if (customTickIntervalHasPassed(fireStatusEffect.ticksElapsed, 0.1)) {
             const spawnOffsetMagnitude = 30 * Math.random();
@@ -241,6 +252,12 @@ abstract class Entity extends GameObject {
             );
             Board.highTexturedParticles.push(particle);
          }
+      } else if (this.burningLight !== null) {
+         const idx = Board.lights.indexOf(this.burningLight);
+         if (idx !== -1) {
+            Board.lights.splice(idx, 1);
+         }
+         this.burningLight = null;
       }
 
       const bleedingStatusEffect = this.getStatusEffect(StatusEffect.bleeding);
@@ -312,6 +329,15 @@ abstract class Entity extends GameObject {
    }
 
    public onDie?(): void;
+
+   public onRemove(): void {
+      if (this.burningLight !== null) {
+         const idx = Board.lights.indexOf(this.burningLight);
+         if (idx !== -1) {
+            Board.lights.splice(idx, 1);
+         }
+      }
+   }
 }
 
 export default Entity;
