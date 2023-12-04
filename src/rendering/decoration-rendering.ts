@@ -153,6 +153,10 @@ export function renderDecorations(): void {
       }
    }
 
+   if (visibleDecorations.length === 0) {
+      return;
+   }
+
    // Create vertices
    const vertices = new Array<number>();
    for (const decoration of visibleDecorations) {

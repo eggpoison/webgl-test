@@ -124,7 +124,7 @@ export function createRenderChunks(): void {
       const renderChunkX = Math.floor(decoration.positionX / RENDER_CHUNK_UNITS);
       const renderChunkY = Math.floor(decoration.positionY / RENDER_CHUNK_UNITS);
       if (renderChunkX >= 0 && renderChunkX < WORLD_RENDER_CHUNK_SIZE && renderChunkY >= 0 && renderChunkY < WORLD_RENDER_CHUNK_SIZE) {
-         const renderChunk = renderChunks[renderChunkX][renderChunkY];
+         const renderChunk = renderChunks[renderChunkX + RENDER_CHUNK_EDGE_GENERATION][renderChunkY + RENDER_CHUNK_EDGE_GENERATION];
          renderChunk.decorations.push(decoration);
       }
    }
