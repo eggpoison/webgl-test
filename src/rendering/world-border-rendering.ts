@@ -26,6 +26,8 @@ void main() {
 const fragmentShaderText = `#version 300 es
 precision mediump float;
 
+#define RANGE 200.0
+
 layout(std140) uniform Camera {
    uniform vec2 u_playerPos;
    uniform vec2 u_halfWindowSize;
@@ -43,9 +45,13 @@ float roundPixel(float num) {
 void main() {
    float x = roundPixel(v_position.x);
    float y = roundPixel(v_position.y);
+
    float dist = distance(vec2(x, y), u_playerPos);
-   if (dist < 250.0) {
-      float distMultiplier = 1.0 - dist / 250.0;
+   // Subtract the radius of the player so the wall is fully opaque when they hit it
+   dist -= 32.0;
+
+   if (dist < RANGE) {
+      float distMultiplier = 1.0 - dist / RANGE;
       distMultiplier = pow(distMultiplier, 0.35);
       outputColour = vec4(3.0/255.0, 200.0/255.0, 252.0/255.0, distMultiplier);
    } else {

@@ -120,12 +120,8 @@ export function createAmbientOcclusionShaders(): void {
 }
 
 const tileIsWallInt = (tileX: number, tileY: number): number => {
-   if (!Board.tileIsInBoard(tileX, tileY)) {
-      return 0;
-   }
-   
-   const tile = Board.getTile(tileX, tileY);
-   return tile.isWall ? 1 : 0;
+   const tile = Board.getEdgeTile(tileX, tileY);
+   return (tile !== null && tile.isWall) ? 1 : 0;
 }
 
 export function calculateAmbientOcclusionInfo(renderChunkX: number, renderChunkY: number): RenderChunkAmbientOcclusionInfo | null {
@@ -138,8 +134,8 @@ export function calculateAmbientOcclusionInfo(renderChunkX: number, renderChunkY
    const edgeTiles = new Array<Tile>();
    for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
       for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
-         const tile = Board.getTile(tileX, tileY);
-         if (tile.isWall) {
+         const tile = Board.getEdgeTile(tileX, tileY);
+         if (tile === null || tile.isWall) {
             continue;
          }
 
@@ -148,14 +144,9 @@ export function calculateAmbientOcclusionInfo(renderChunkX: number, renderChunkY
             const neighbourTileX = tile.x + offset[0];
             const neighbourTileY = tile.y + offset[1];
 
-            // Don't add tiles which aren't in the board
-            if (!Board.tileIsInBoard(neighbourTileX, neighbourTileY)) {
-               continue;
-            }
-
             // If the tile is bordering a wall, add it and move on to the next tile
-            const neighbourTile = Board.getTile(neighbourTileX, neighbourTileY);
-            if (neighbourTile.isWall) {
+            const neighbourTile = Board.getEdgeTile(neighbourTileX, neighbourTileY);
+            if (neighbourTile !== null && neighbourTile.isWall) {
                edgeTiles.push(tile);
                break;
             }
@@ -310,8 +301,8 @@ export function renderAmbientOcclusion(): void {
    gl.enable(gl.BLEND);
    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-   for (let renderChunkX = Camera.minVisibleRenderChunkX; renderChunkX <= Camera.maxVisibleRenderChunkX; renderChunkX++) {
-      for (let renderChunkY = Camera.minVisibleRenderChunkY; renderChunkY <= Camera.maxVisibleRenderChunkY; renderChunkY++) {
+   for (let renderChunkX = Camera.absoluteMinVisibleRenderChunkX; renderChunkX <= Camera.absoluteMaxVisibleRenderChunkX; renderChunkX++) {
+      for (let renderChunkY = Camera.absoluteMinVisibleRenderChunkY; renderChunkY <= Camera.absoluteMaxVisibleRenderChunkY; renderChunkY++) {
          const renderInfo = getRenderChunkAmbientOcclusionInfo(renderChunkX, renderChunkY);
          if (renderInfo === null) {
             continue;

@@ -1,11 +1,13 @@
-import { SETTINGS, ServerTileUpdateData } from "webgl-test-shared";
+import { DecorationInfo, SETTINGS, ServerTileUpdateData } from "webgl-test-shared";
 import { createSolidTileRenderChunkData, recalculateSolidTileRenderChunkData } from "./solid-tile-rendering";
 import { calculateRiverRenderChunkData } from "./river-rendering";
 import { calculateAmbientOcclusionInfo } from "../ambient-occlusion-rendering";
 import { calculateWallBorderInfo } from "../wall-border-rendering";
+import Board from "../../Board";
 
 /** Width and height of a render chunk in tiles */
 export const RENDER_CHUNK_SIZE = 8;
+export const RENDER_CHUNK_UNITS = RENDER_CHUNK_SIZE * SETTINGS.TILE_SIZE;
 
 export const WORLD_RENDER_CHUNK_SIZE = SETTINGS.BOARD_DIMENSIONS / RENDER_CHUNK_SIZE;
 
@@ -46,14 +48,18 @@ export interface RenderChunk {
    readonly riverInfo: RenderChunkRiverInfo | null;
    readonly ambientOcclusionInfo: RenderChunkAmbientOcclusionInfo | null;
    readonly wallBorderInfo: RenderChunkWallBorderInfo | null;
+   decorations: Array<DecorationInfo>;
 }
 
 export interface EdgeRenderChunk {
    readonly solidTileInfo: RenderChunkSolidTileInfo;
+   readonly ambientOcclusionInfo: RenderChunkAmbientOcclusionInfo | null;
    readonly wallBorderInfo: RenderChunkWallBorderInfo | null;
 }
 
-// @Speed: Convert to 1d
+// @Cleanup: Is there a way to unify the board and edge render chunks??
+
+// @Speed: Convert to 1d array
 let renderChunks: Array<Array<RenderChunk>>;
 
 let edgeRenderChunks: Record<number, Record<number, EdgeRenderChunk>> = {};
@@ -70,7 +76,8 @@ export function createRenderChunks(): void {
             solidTileInfo: createSolidTileRenderChunkData(renderChunkX, renderChunkY),
             riverInfo: calculateRiverRenderChunkData(renderChunkX, renderChunkY),
             ambientOcclusionInfo: calculateAmbientOcclusionInfo(renderChunkX, renderChunkY),
-            wallBorderInfo: calculateWallBorderInfo(renderChunkX, renderChunkY)
+            wallBorderInfo: calculateWallBorderInfo(renderChunkX, renderChunkY),
+            decorations: []
          });
       }
    }
@@ -89,8 +96,19 @@ export function createRenderChunks(): void {
          }
          edgeRenderChunks[renderChunkX][renderChunkY] = {
             solidTileInfo: createSolidTileRenderChunkData(renderChunkX, renderChunkY),
+            ambientOcclusionInfo: calculateAmbientOcclusionInfo(renderChunkX, renderChunkY),
             wallBorderInfo: calculateWallBorderInfo(renderChunkX, renderChunkY)
          };
+      }
+   }
+
+   // Add decorations to chunks
+   for (const decoration of Board.decorations) {
+      const renderChunkX = Math.floor(decoration.positionX / RENDER_CHUNK_UNITS);
+      const renderChunkY = Math.floor(decoration.positionY / RENDER_CHUNK_UNITS);
+      if (renderChunkX >= 0 && renderChunkX < WORLD_RENDER_CHUNK_SIZE && renderChunkY >= 0 && renderChunkY < WORLD_RENDER_CHUNK_SIZE) {
+         const renderChuk = renderChunks[renderChunkX][renderChunkY];
+         renderChuk.decorations.push(decoration);
       }
    }
 }
@@ -119,7 +137,12 @@ export function getRenderChunkRiverInfo(renderChunkX: number, renderChunkY: numb
 }
 
 export function getRenderChunkAmbientOcclusionInfo(renderChunkX: number, renderChunkY: number): RenderChunkAmbientOcclusionInfo | null {
-   return renderChunks[renderChunkX][renderChunkY].ambientOcclusionInfo;
+   if (renderChunkX >= 0 && renderChunkX < WORLD_RENDER_CHUNK_SIZE && renderChunkY >= 0 && renderChunkY < WORLD_RENDER_CHUNK_SIZE) {
+      return renderChunks[renderChunkX][renderChunkY].ambientOcclusionInfo;
+   } else if (edgeRenderChunks.hasOwnProperty(renderChunkX) && edgeRenderChunks[renderChunkX].hasOwnProperty(renderChunkY)) {
+      return edgeRenderChunks[renderChunkX][renderChunkY].ambientOcclusionInfo;
+   }
+   return null;
 }
 
 export function getRenderChunkWallBorderInfo(renderChunkX: number, renderChunkY: number): RenderChunkWallBorderInfo | null {
@@ -129,4 +152,8 @@ export function getRenderChunkWallBorderInfo(renderChunkX: number, renderChunkY:
       return edgeRenderChunks[renderChunkX][renderChunkY].wallBorderInfo;
    }
    return null;
+}
+
+export function getRenderChunkDecorations(renderChunkX: number, renderChunkY: number): ReadonlyArray<DecorationInfo> {
+   return renderChunks[renderChunkX][renderChunkY].decorations;
 }

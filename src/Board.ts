@@ -1,5 +1,5 @@
 import Entity from "./entities/Entity";
-import { SETTINGS, Point, Vector, ServerTileUpdateData, rotatePoint, WaterRockData, RiverSteppingStoneData, RIVER_STEPPING_STONE_SIZES, EntityType, ServerTileData, GrassTileInfo } from "webgl-test-shared";
+import { SETTINGS, Point, Vector, ServerTileUpdateData, rotatePoint, WaterRockData, RiverSteppingStoneData, RIVER_STEPPING_STONE_SIZES, EntityType, ServerTileData, GrassTileInfo, DecorationInfo } from "webgl-test-shared";
 import Chunk from "./Chunk";
 import DroppedItem from "./items/DroppedItem";
 import { Tile } from "./Tile";
@@ -30,10 +30,15 @@ abstract class Board {
 
    private static tiles: Array<Array<Tile>>;
    private static chunks: Array<Array<Chunk>>;
+   private static edgeChunks: Record<number, Record<number, Chunk>>;
 
    public static edgeTiles: Record<number, Record<number, Tile>> = {};
 
    public static grassInfo: Record<number, Record<number, GrassTileInfo>>;
+
+   // @Cleanup: This is only used to fill the render chunks with decorations, doesn't
+   // need to stick around for the entirety of the game's duration
+   public static decorations: ReadonlyArray<DecorationInfo>;
    
    public static numVisibleRenderParts = 0;
    /** Game objects sorted in descending render weight */
@@ -63,7 +68,7 @@ abstract class Board {
    private static tickCallbacks = new Array<TickCallback>();
 
    // @Cleanup: This function gets called by Game.ts, which gets called by LoadingScreen.tsx, with these same parameters. This feels unnecessary.
-   public static initialise(tiles: Array<Array<Tile>>, waterRocks: ReadonlyArray<WaterRockData>, riverSteppingStones: ReadonlyArray<RiverSteppingStoneData>, riverFlowDirections: Record<number, Record<number, number>>, edgeTiles: Array<ServerTileData>, grassInfo: Record<number, Record<number, GrassTileInfo>>): void {
+   public static initialise(tiles: Array<Array<Tile>>, waterRocks: ReadonlyArray<WaterRockData>, riverSteppingStones: ReadonlyArray<RiverSteppingStoneData>, riverFlowDirections: Record<number, Record<number, number>>, edgeTiles: Array<ServerTileData>, grassInfo: Record<number, Record<number, GrassTileInfo>>, decorations: ReadonlyArray<DecorationInfo>): void {
       this.tiles = tiles;
       
       // Create the chunk array
@@ -110,6 +115,7 @@ abstract class Board {
       }
 
       this.grassInfo = grassInfo;
+      this.decorations = decorations;
    }
 
    public static addTickCallback(time: number, callback: () => void): void {
@@ -212,6 +218,10 @@ abstract class Board {
       if (tileX < 0 || tileX >= SETTINGS.BOARD_DIMENSIONS) throw new Error(`Tile x coordinate '${tileX}' is not a valid tile coordinate.`);
       if (tileY < 0 || tileY >= SETTINGS.BOARD_DIMENSIONS) throw new Error(`Tile x coordinate '${tileY}' is not a valid tile coordinate.`);
       return this.tiles[tileX][tileY];
+   }
+
+   public static tileIsWithinEdge(tileX: number, tileY: number): boolean {
+      return tileX >= -SETTINGS.EDGE_GENERATION_DISTANCE && tileX < SETTINGS.BOARD_DIMENSIONS + SETTINGS.EDGE_GENERATION_DISTANCE && tileY >= -SETTINGS.EDGE_GENERATION_DISTANCE && tileY < SETTINGS.BOARD_DIMENSIONS + SETTINGS.EDGE_GENERATION_DISTANCE;
    }
 
    public static getEdgeTile(tileX: number, tileY: number): Tile | null {

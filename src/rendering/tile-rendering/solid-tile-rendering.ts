@@ -89,8 +89,15 @@ void main() {
    outputColour = texture(u_sampler, vec3(v_texCoord, v_textureIndex));
    
    if (v_temperature >= 0.0) {
+      // Places with low temperature and high humidity don't exist, so if in low temperature
+      // then clamp the humidity to at most the temperature
+      float humidity = v_humidity;
+      if (v_temperature <= 0.5 && v_humidity > v_temperature) {
+         humidity = v_temperature;
+      }
+      
       // Less humidity desaturates, more humidity saturates
-      float humidityMultiplier = (v_humidity - 0.5) * -0.7;
+      float humidityMultiplier = (humidity - 0.5) * -0.7;
       if (humidityMultiplier > 0.0) {
          // Desaturate
          outputColour.r = mix(outputColour.r, 1.0, humidityMultiplier * 0.7);
@@ -168,6 +175,10 @@ const updateVertexData = (data: Float32Array, renderChunkX: number, renderChunkY
          let humidity = -1;
          if (tile.type === TileType.grass) {
             const grassInfo = Board.grassInfo[tileX][tileY];
+            if (typeof grassInfo === "undefined") {
+               console.log(tileX, tileY);
+               console.log(tile);
+            }
             temperature = grassInfo.temperature;
             humidity = grassInfo.humidity;
          }

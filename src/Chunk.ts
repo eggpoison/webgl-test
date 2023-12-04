@@ -3,14 +3,14 @@ import GameObject from "./GameObject";
 import Entity from "./entities/Entity";
 
 class Chunk {
+   public readonly x: number;
+   public readonly y: number;
+
    private readonly gameObjects = new Array<GameObject>();
    private readonly entities = new Array<Entity>();
 
    public readonly waterRocks = new Array<WaterRockData>();
    public readonly riverSteppingStones = new Array<RiverSteppingStoneData>();
-
-   public readonly x: number;
-   public readonly y: number;
 
    constructor(x: number, y: number) {
       this.x = x;

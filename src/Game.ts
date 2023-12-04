@@ -4,7 +4,7 @@ import { isDev } from "./utils";
 import { renderPlayerNames, createTextCanvasContext } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/game/ChatBox";
-import { GameDataPacket, GameObjectDebugData, GrassTileInfo, RiverSteppingStoneData, SETTINGS, ServerTileData, WaterRockData } from "webgl-test-shared";
+import { DecorationInfo, GameDataPacket, GameObjectDebugData, GrassTileInfo, RiverSteppingStoneData, SETTINGS, ServerTileData, WaterRockData } from "webgl-test-shared";
 import { createEntityShaders, renderGameObjects } from "./rendering/game-object-rendering";
 import Client from "./client/Client";
 import { calculateCursorWorldPositionX, calculateCursorWorldPositionY, cursorX, cursorY, getMouseTargetEntity, handleMouseMovement, renderCursorTooltip, updateChargeMeter } from "./mouse";
@@ -38,6 +38,7 @@ import { createGameObjectTextureAtlas } from "./texture-atlases/game-object-text
 import { createFishShaders } from "./rendering/fish-rendering";
 import { Tile } from "./Tile";
 import { createForcefieldShaders, renderForcefield } from "./rendering/world-border-forcefield-rendering";
+import { createDecorationShaders, renderDecorations } from "./rendering/decoration-rendering";
 
 let listenersHaveBeenCreated = false;
 
@@ -159,14 +160,14 @@ abstract class Game {
    /**
     * Prepares the game to be played. Called once just before the game starts.
     */
-   public static async initialise(tiles: Array<Array<Tile>>, waterRocks: ReadonlyArray<WaterRockData>, riverSteppingStones: ReadonlyArray<RiverSteppingStoneData>, riverFlowDirections: Record<number, Record<number, number>>, edgeTiles: Array<ServerTileData>, grassInfo: Record<number, Record<number, GrassTileInfo>>): Promise<void> {
+   public static async initialise(tiles: Array<Array<Tile>>, waterRocks: ReadonlyArray<WaterRockData>, riverSteppingStones: ReadonlyArray<RiverSteppingStoneData>, riverFlowDirections: Record<number, Record<number, number>>, edgeTiles: Array<ServerTileData>, grassInfo: Record<number, Record<number, GrassTileInfo>>, decorations: ReadonlyArray<DecorationInfo>): Promise<void> {
       if (!Game.hasInitialised) {
          return new Promise(async resolve => {
             createWebGLContext();
             createShaderStrings();
             createTextCanvasContext();
 
-            Board.initialise(tiles, waterRocks, riverSteppingStones, riverFlowDirections, edgeTiles, grassInfo);
+            Board.initialise(tiles, waterRocks, riverSteppingStones, riverFlowDirections, edgeTiles, grassInfo, decorations);
          
             createRiverSteppingStoneData(riverSteppingStones);
 
@@ -199,6 +200,7 @@ abstract class Game {
             createWallBorderShaders();
             createAmbientOcclusionShaders();
             createForcefieldShaders();
+            createDecorationShaders();
 
             if (isDev()) {
                setupFrameGraph();
@@ -325,7 +327,7 @@ abstract class Game {
          Player.instance.updateRenderPosition();
          Camera.setCameraPosition(Player.instance.renderPosition);
          Camera.updateVisibleChunkBounds();
-         Camera.updateVisibleRenderChunkBounds();
+      Camera.updateVisibleRenderChunkBounds();
       }
 
       // Update the camera buffer
@@ -346,6 +348,7 @@ abstract class Game {
 
       renderSolidTiles();
       renderRivers();
+      renderDecorations();
       renderAmbientOcclusion();
       renderWallBorders();
       if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Board.hasGameObjectID(this.gameObjectDebugData.gameObjectID)) {

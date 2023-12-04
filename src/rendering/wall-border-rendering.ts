@@ -63,19 +63,19 @@ export function calculateWallBorderInfo(renderChunkX: number, renderChunkY: numb
          }
 
          // Top border
-         if (Board.tileIsInBoard(tileX, tileY + 1) && !Board.getTile(tileX, tileY + 1).isWall) {
+         if (Board.tileIsWithinEdge(tileX, tileY + 1) && !Board.getEdgeTile(tileX, tileY + 1)?.isWall) {
             topBorderTiles.push(tile);
          }
          // Right border
-         if (Board.tileIsInBoard(tileX + 1, tileY) && !Board.getTile(tileX + 1, tileY).isWall) {
+         if (Board.tileIsWithinEdge(tileX + 1, tileY) && !Board.getEdgeTile(tileX + 1, tileY)?.isWall) {
             rightBorderTiles.push(tile);
          }
          // Bottom border
-         if (Board.tileIsInBoard(tileX, tileY - 1) && !Board.getTile(tileX, tileY - 1).isWall) {
+         if (Board.tileIsWithinEdge(tileX, tileY - 1) && !Board.getEdgeTile(tileX, tileY - 1)?.isWall) {
             bottomBorderTiles.push(tile);
          }
          // Left border
-         if (Board.tileIsInBoard(tileX - 1, tileY) && !Board.getTile(tileX - 1, tileY).isWall) {
+         if (Board.tileIsWithinEdge(tileX - 1, tileY) && !Board.getEdgeTile(tileX - 1, tileY)?.isWall) {
             leftBorderTiles.push(tile);
          }
       }
@@ -118,8 +118,8 @@ export function calculateWallBorderInfo(renderChunkX: number, renderChunkY: numb
 
    // Right borders
    for (const tile of rightBorderTiles) {
-      const topOvershoot = Board.tileIsInBoard(tile.x, tile.y + 1) && Board.getTile(tile.x, tile.y + 1).isWall ? BORDER_THICKNESS : 0;
-      const bottomOvershoot = Board.tileIsInBoard(tile.x, tile.y - 1) && Board.getTile(tile.x, tile.y - 1).isWall ? BORDER_THICKNESS : 0;
+      const topOvershoot = Board.tileIsWithinEdge(tile.x, tile.y + 1) && Board.getEdgeTile(tile.x, tile.y + 1)?.isWall ? BORDER_THICKNESS : 0;
+      const bottomOvershoot = Board.tileIsWithinEdge(tile.x, tile.y - 1) && Board.getEdgeTile(tile.x, tile.y - 1)?.isWall ? BORDER_THICKNESS : 0;
 
       const x1 = (tile.x + 1) * SETTINGS.TILE_SIZE - BORDER_THICKNESS;
       const x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
@@ -145,8 +145,8 @@ export function calculateWallBorderInfo(renderChunkX: number, renderChunkY: numb
 
    // Bottom borders
    for (const tile of bottomBorderTiles) {
-      const leftOvershoot = Board.tileIsInBoard(tile.x - 1, tile.y) && Board.getTile(tile.x - 1, tile.y).isWall ? BORDER_THICKNESS : 0;
-      const rightOvershoot = Board.tileIsInBoard(tile.x + 1, tile.y) && Board.getTile(tile.x + 1, tile.y).isWall ? BORDER_THICKNESS : 0;
+      const leftOvershoot = Board.tileIsWithinEdge(tile.x - 1, tile.y) && Board.getEdgeTile(tile.x - 1, tile.y)?.isWall ? BORDER_THICKNESS : 0;
+      const rightOvershoot = Board.tileIsWithinEdge(tile.x + 1, tile.y) && Board.getEdgeTile(tile.x + 1, tile.y)?.isWall ? BORDER_THICKNESS : 0;
 
       const x1 = tile.x * SETTINGS.TILE_SIZE - leftOvershoot;
       const x2 = (tile.x + 1) * SETTINGS.TILE_SIZE + rightOvershoot;
