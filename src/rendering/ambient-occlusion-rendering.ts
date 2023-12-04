@@ -3,7 +3,7 @@ import { Tile } from "../Tile";
 import Camera from "../Camera";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 import Board from "../Board";
-import { RenderChunkAmbientOcclusionInfo, RENDER_CHUNK_SIZE, getRenderChunkAmbientOcclusionInfo } from "./render-chunks";
+import { RenderChunkAmbientOcclusionInfo, RENDER_CHUNK_SIZE, getRenderChunk } from "./render-chunks";
 import { NEIGHBOUR_OFFSETS } from "../utils";
 
 let program: WebGLProgram;
@@ -301,9 +301,9 @@ export function renderAmbientOcclusion(): void {
    gl.enable(gl.BLEND);
    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-   for (let renderChunkX = Camera.absoluteMinVisibleRenderChunkX; renderChunkX <= Camera.absoluteMaxVisibleRenderChunkX; renderChunkX++) {
-      for (let renderChunkY = Camera.absoluteMinVisibleRenderChunkY; renderChunkY <= Camera.absoluteMaxVisibleRenderChunkY; renderChunkY++) {
-         const renderInfo = getRenderChunkAmbientOcclusionInfo(renderChunkX, renderChunkY);
+   for (let renderChunkX = Camera.minVisibleRenderChunkX; renderChunkX <= Camera.maxVisibleRenderChunkX; renderChunkX++) {
+      for (let renderChunkY = Camera.minVisibleRenderChunkY; renderChunkY <= Camera.maxVisibleRenderChunkY; renderChunkY++) {
+         const renderInfo = getRenderChunk(renderChunkX, renderChunkY).ambientOcclusionInfo;
          if (renderInfo === null) {
             continue;
          }

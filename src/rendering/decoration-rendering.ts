@@ -3,7 +3,7 @@ import Camera from "../Camera";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 import { GAME_OBJECT_TEXTURE_ATLAS, GAME_OBJECT_TEXTURE_ATLAS_SIZE, GAME_OBJECT_TEXTURE_SLOT_INDEXES, getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 import { ATLAS_SLOT_SIZE } from "../texture-atlases/texture-atlas-stitching";
-import { getRenderChunkDecorations } from "./render-chunks";
+import { getRenderChunk } from "./render-chunks";
 
 interface DecorationRenderInfo {
    readonly textureSource: string;
@@ -144,7 +144,7 @@ export function renderDecorations(): void {
    const visibleDecorations = new Array<DecorationInfo>();
    for (let renderChunkX = Camera.minVisibleRenderChunkX; renderChunkX <= Camera.maxVisibleRenderChunkX; renderChunkX++) {
       for (let renderChunkY = Camera.minVisibleRenderChunkY; renderChunkY <= Camera.maxVisibleRenderChunkY; renderChunkY++) {
-         const decorations = getRenderChunkDecorations(renderChunkX, renderChunkY);
+         const decorations = getRenderChunk(renderChunkX, renderChunkY).decorations;
          for (const decoration of decorations) {
             if (!visibleDecorations.includes(decoration)) {
                visibleDecorations.push(decoration);

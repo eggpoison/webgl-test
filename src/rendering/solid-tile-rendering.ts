@@ -2,7 +2,7 @@ import { SETTINGS, TileType } from "webgl-test-shared";
 import Camera from "../Camera";
 import { TEXTURE_IMAGE_RECORD } from "../textures";
 import { gl, createWebGLProgram, CAMERA_UNIFORM_BUFFER_BINDING_INDEX } from "../webgl";
-import { RENDER_CHUNK_SIZE, RenderChunkSolidTileInfo, getRenderChunkSolidTileInfo } from "./render-chunks";
+import { RENDER_CHUNK_SIZE, RenderChunkSolidTileInfo, getRenderChunk } from "./render-chunks";
 import Board from "../Board";
 import { TILE_TYPE_TEXTURE_SOURCES } from "../tile-type-texture-sources";
 
@@ -286,7 +286,7 @@ export function createSolidTileRenderChunkData(renderChunkX: number, renderChunk
 }
 
 export function recalculateSolidTileRenderChunkData(renderChunkX: number, renderChunkY: number): void {
-   const info = getRenderChunkSolidTileInfo(renderChunkX, renderChunkY)!;
+   const info = getRenderChunk(renderChunkX, renderChunkY).solidTileInfo;
    
    const vertexData = new Float32Array(info.vertexCount);
    updateVertexData(vertexData, renderChunkX, renderChunkY);
@@ -317,13 +317,11 @@ export function renderSolidTiles(): void {
    gl.activeTexture(gl.TEXTURE0);
    gl.bindTexture(gl.TEXTURE_2D_ARRAY, tileTextureArray);
    
-   for (let renderChunkX = Camera.absoluteMinVisibleRenderChunkX; renderChunkX <= Camera.absoluteMaxVisibleRenderChunkX; renderChunkX++) {
-      for (let renderChunkY = Camera.absoluteMinVisibleRenderChunkY; renderChunkY <= Camera.absoluteMaxVisibleRenderChunkY; renderChunkY++) {
-         const renderChunkInfo = getRenderChunkSolidTileInfo(renderChunkX, renderChunkY);
-         if (renderChunkInfo !== null) {
-            gl.bindVertexArray(renderChunkInfo.vao);
-            gl.drawArrays(gl.TRIANGLES, 0, renderChunkInfo.vertexCount);
-         }
+   for (let renderChunkX = Camera.minVisibleRenderChunkX; renderChunkX <= Camera.maxVisibleRenderChunkX; renderChunkX++) {
+      for (let renderChunkY = Camera.minVisibleRenderChunkY; renderChunkY <= Camera.maxVisibleRenderChunkY; renderChunkY++) {
+         const renderChunkInfo = getRenderChunk(renderChunkX, renderChunkY).solidTileInfo;
+         gl.bindVertexArray(renderChunkInfo.vao);
+         gl.drawArrays(gl.TRIANGLES, 0, renderChunkInfo.vertexCount);
       }
    }
 

@@ -3,7 +3,7 @@ import Camera from "../Camera";
 import { Tile } from "../Tile";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 import Board from "../Board";
-import { RENDER_CHUNK_SIZE, RenderChunkWallBorderInfo, getRenderChunkWallBorderInfo } from "./render-chunks";
+import { RENDER_CHUNK_SIZE, RenderChunkWallBorderInfo, getRenderChunk } from "./render-chunks";
 
 const BORDER_THICKNESS = 5;
 
@@ -216,9 +216,9 @@ export function calculateWallBorderInfo(renderChunkX: number, renderChunkY: numb
 export function renderWallBorders(): void {
    gl.useProgram(program);
    
-   for (let renderChunkX = Camera.absoluteMinVisibleRenderChunkX; renderChunkX <= Camera.absoluteMaxVisibleRenderChunkX; renderChunkX++) {
-      for (let renderChunkY = Camera.absoluteMinVisibleRenderChunkY; renderChunkY <= Camera.absoluteMaxVisibleRenderChunkY; renderChunkY++) {
-         const renderInfo = getRenderChunkWallBorderInfo(renderChunkX, renderChunkY);
+   for (let renderChunkX = Camera.minVisibleRenderChunkX; renderChunkX <= Camera.maxVisibleRenderChunkX; renderChunkX++) {
+      for (let renderChunkY = Camera.minVisibleRenderChunkY; renderChunkY <= Camera.maxVisibleRenderChunkY; renderChunkY++) {
+         const renderInfo = getRenderChunk(renderChunkX, renderChunkY).wallBorderInfo;
          if (renderInfo === null) {
             continue;
          }

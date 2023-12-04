@@ -11,6 +11,8 @@ export const RENDER_CHUNK_UNITS = RENDER_CHUNK_SIZE * SETTINGS.TILE_SIZE;
 
 export const WORLD_RENDER_CHUNK_SIZE = SETTINGS.BOARD_DIMENSIONS / RENDER_CHUNK_SIZE;
 
+export const RENDER_CHUNK_EDGE_GENERATION = Math.ceil(SETTINGS.EDGE_GENERATION_DISTANCE / RENDER_CHUNK_SIZE);
+
 export interface RenderChunkSolidTileInfo {
    readonly buffer: WebGLBuffer;
    vao: WebGLVertexArrayObject;
@@ -52,22 +54,12 @@ export interface RenderChunk {
    decorations: Array<DecorationInfo>;
 }
 
-export interface EdgeRenderChunk {
-   readonly solidTileInfo: RenderChunkSolidTileInfo;
-   readonly riverInfo: RenderChunkRiverInfo | null;
-   readonly ambientOcclusionInfo: RenderChunkAmbientOcclusionInfo | null;
-   readonly wallBorderInfo: RenderChunkWallBorderInfo | null;
-}
-
-// @Cleanup: Is there a way to unify the board and edge render chunks??
-
 // @Speed: Convert to 1d array
 let renderChunks: Array<Array<RenderChunk>>;
 
-let edgeRenderChunks: Record<number, Record<number, EdgeRenderChunk>> = {};
-
 export function createRenderChunks(): void {
    // Group water rocks
+   // @Speed: Garbage collection
    let waterRocksChunked: Record<number, Record<number, Array<WaterRockData>>> = {};
    for (const waterRock of Board.waterRocks) {
       const renderChunkX = Math.floor(waterRock.position[0] / RENDER_CHUNK_UNITS);
@@ -107,47 +99,23 @@ export function createRenderChunks(): void {
    }
 
    renderChunks = new Array<Array<RenderChunk>>();
-   for (let renderChunkX = 0; renderChunkX < WORLD_RENDER_CHUNK_SIZE; renderChunkX++) {
+   for (let renderChunkX = -RENDER_CHUNK_EDGE_GENERATION; renderChunkX < WORLD_RENDER_CHUNK_SIZE + RENDER_CHUNK_EDGE_GENERATION; renderChunkX++) {
       renderChunks.push(new Array<RenderChunk>());
 
-      for (let renderChunkY = 0; renderChunkY < WORLD_RENDER_CHUNK_SIZE; renderChunkY++) {
+      for (let renderChunkY = -RENDER_CHUNK_EDGE_GENERATION; renderChunkY < WORLD_RENDER_CHUNK_SIZE + RENDER_CHUNK_EDGE_GENERATION; renderChunkY++) {
          const waterRocks = (waterRocksChunked.hasOwnProperty(renderChunkX) && waterRocksChunked[renderChunkX].hasOwnProperty(renderChunkY)) ? waterRocksChunked[renderChunkX][renderChunkY] : [];
          const edgeSteppingStones = (edgeSteppingStonesChunked.hasOwnProperty(renderChunkX) && edgeSteppingStonesChunked[renderChunkX].hasOwnProperty(renderChunkY)) ? edgeSteppingStonesChunked[renderChunkX][renderChunkY] : [];
 
          // @Cleanup: Mismatching 'create' and 'calculate' in the function names
          // @Incomplete @Bug: This structure tries to access itself in calculateRiverRenderChunkData
          // restructure so that this doesn't happen
-         renderChunks[renderChunkX].push({
+         renderChunks[renderChunkX + RENDER_CHUNK_EDGE_GENERATION].push({
             solidTileInfo: createSolidTileRenderChunkData(renderChunkX, renderChunkY),
             riverInfo: calculateRiverRenderChunkData(renderChunkX, renderChunkY, waterRocks, edgeSteppingStones),
             ambientOcclusionInfo: calculateAmbientOcclusionInfo(renderChunkX, renderChunkY),
             wallBorderInfo: calculateWallBorderInfo(renderChunkX, renderChunkY),
             decorations: []
          });
-      }
-   }
-
-   const renderChunkEdgeDistance = Math.ceil(SETTINGS.EDGE_GENERATION_DISTANCE / RENDER_CHUNK_SIZE);
-   for (let renderChunkX = -renderChunkEdgeDistance; renderChunkX < WORLD_RENDER_CHUNK_SIZE + renderChunkEdgeDistance; renderChunkX++) {
-      for (let renderChunkY = -renderChunkEdgeDistance; renderChunkY < WORLD_RENDER_CHUNK_SIZE + renderChunkEdgeDistance; renderChunkY++) {
-         // Skip render chunks in the board
-         // @Speed: Whole lot of unnecessary continues
-         if (renderChunkX >= 0 && renderChunkX < WORLD_RENDER_CHUNK_SIZE && renderChunkY >= 0 && renderChunkY < WORLD_RENDER_CHUNK_SIZE) {
-            continue;
-         }
-
-         const waterRocks = (waterRocksChunked.hasOwnProperty(renderChunkX) && waterRocksChunked[renderChunkX].hasOwnProperty(renderChunkY)) ? waterRocksChunked[renderChunkX][renderChunkY] : [];
-         const edgeSteppingStones = (edgeSteppingStonesChunked.hasOwnProperty(renderChunkX) && edgeSteppingStonesChunked[renderChunkX].hasOwnProperty(renderChunkY)) ? edgeSteppingStonesChunked[renderChunkX][renderChunkY] : [];
-         
-         if (!edgeRenderChunks.hasOwnProperty(renderChunkX)) {
-            edgeRenderChunks[renderChunkX] = {};
-         }
-         edgeRenderChunks[renderChunkX][renderChunkY] = {
-            solidTileInfo: createSolidTileRenderChunkData(renderChunkX, renderChunkY),
-            riverInfo: calculateRiverRenderChunkData(renderChunkX, renderChunkY, waterRocks, edgeSteppingStones),
-            ambientOcclusionInfo: calculateAmbientOcclusionInfo(renderChunkX, renderChunkY),
-            wallBorderInfo: calculateWallBorderInfo(renderChunkX, renderChunkY)
-         };
       }
    }
 
@@ -172,58 +140,6 @@ export function updateRenderChunkFromTileUpdate(tileUpdate: ServerTileUpdateData
    recalculateSolidTileRenderChunkData(renderChunkX, renderChunkY);
 }
 
-// @Cleanup: All these functions seem superfluous
-
-export function getRenderChunkSolidTileInfo(renderChunkX: number, renderChunkY: number): RenderChunkSolidTileInfo | null {
-   if (renderChunkX >= 0 && renderChunkX < WORLD_RENDER_CHUNK_SIZE && renderChunkY >= 0 && renderChunkY < WORLD_RENDER_CHUNK_SIZE) {
-      return renderChunks[renderChunkX][renderChunkY].solidTileInfo;
-   } else if (edgeRenderChunks.hasOwnProperty(renderChunkX) && edgeRenderChunks[renderChunkX].hasOwnProperty(renderChunkY)) {
-      return edgeRenderChunks[renderChunkX][renderChunkY].solidTileInfo;
-   }
-   return null;
-}
-
-export function getRenderChunkRiverInfo(renderChunkX: number, renderChunkY: number): RenderChunkRiverInfo | null {
-   if (renderChunkX >= 0 && renderChunkX < WORLD_RENDER_CHUNK_SIZE && renderChunkY >= 0 && renderChunkY < WORLD_RENDER_CHUNK_SIZE) {
-      return renderChunks[renderChunkX][renderChunkY].riverInfo;
-   } else if (edgeRenderChunks.hasOwnProperty(renderChunkX) && edgeRenderChunks[renderChunkX].hasOwnProperty(renderChunkY)) {
-      return edgeRenderChunks[renderChunkX][renderChunkY].riverInfo;
-   }
-   return null;
-}
-
-export function getRenderChunkAmbientOcclusionInfo(renderChunkX: number, renderChunkY: number): RenderChunkAmbientOcclusionInfo | null {
-   if (renderChunkX >= 0 && renderChunkX < WORLD_RENDER_CHUNK_SIZE && renderChunkY >= 0 && renderChunkY < WORLD_RENDER_CHUNK_SIZE) {
-      return renderChunks[renderChunkX][renderChunkY].ambientOcclusionInfo;
-   } else if (edgeRenderChunks.hasOwnProperty(renderChunkX) && edgeRenderChunks[renderChunkX].hasOwnProperty(renderChunkY)) {
-      return edgeRenderChunks[renderChunkX][renderChunkY].ambientOcclusionInfo;
-   }
-   return null;
-}
-
-export function getRenderChunkWallBorderInfo(renderChunkX: number, renderChunkY: number): RenderChunkWallBorderInfo | null {
-   if (renderChunkX >= 0 && renderChunkX < WORLD_RENDER_CHUNK_SIZE && renderChunkY >= 0 && renderChunkY < WORLD_RENDER_CHUNK_SIZE) {
-      return renderChunks[renderChunkX][renderChunkY].wallBorderInfo;
-   } else if (edgeRenderChunks.hasOwnProperty(renderChunkX) && edgeRenderChunks[renderChunkX].hasOwnProperty(renderChunkY)) {
-      return edgeRenderChunks[renderChunkX][renderChunkY].wallBorderInfo;
-   }
-   return null;
-}
-
-export function getRenderChunkDecorations(renderChunkX: number, renderChunkY: number): ReadonlyArray<DecorationInfo> {
-   return renderChunks[renderChunkX][renderChunkY].decorations;
-}
-
-export function getRenderChunkWaterRocks(renderChunkX: number, renderChunkY: number): ReadonlyArray<WaterRockData> {
-   console.log(renderChunkX, renderChunkY);
-   console.log(renderChunks[renderChunkX][renderChunkY]);
-   if (typeof renderChunks[renderChunkX][renderChunkY].riverInfo === "undefined") {
-      console.log("BAD.");
-   }
-   if (renderChunkX >= 0 && renderChunkX < WORLD_RENDER_CHUNK_SIZE && renderChunkY >= 0 && renderChunkY < WORLD_RENDER_CHUNK_SIZE) {
-      return renderChunks[renderChunkX][renderChunkY].riverInfo!.waterRocks;
-   } else if (edgeRenderChunks.hasOwnProperty(renderChunkX) && edgeRenderChunks[renderChunkX].hasOwnProperty(renderChunkY)) {
-      return edgeRenderChunks[renderChunkX][renderChunkY].riverInfo!.waterRocks;
-   }
-   throw new Error("Out of bounds render chunk x=" + renderChunkX + " y=" + renderChunkY);
+export function getRenderChunk(renderChunkX: number, renderChunkY: number): RenderChunk {
+   return renderChunks[renderChunkX + RENDER_CHUNK_EDGE_GENERATION][renderChunkY + RENDER_CHUNK_EDGE_GENERATION]
 }

@@ -1,6 +1,6 @@
 import { Point, SETTINGS, VisibleChunkBounds } from "webgl-test-shared";
 import { halfWindowHeight, halfWindowWidth } from "./webgl";
-import { RENDER_CHUNK_SIZE, WORLD_RENDER_CHUNK_SIZE } from "./rendering/render-chunks";
+import { RENDER_CHUNK_EDGE_GENERATION, RENDER_CHUNK_SIZE, WORLD_RENDER_CHUNK_SIZE } from "./rendering/render-chunks";
 
 export type VisiblePositionBounds = [minX: number, maxX: number, minY: number, maxY: number];
 
@@ -14,11 +14,6 @@ abstract class Camera {
    public static maxVisibleChunkX = -1;
    public static minVisibleChunkY = -1;
    public static maxVisibleChunkY = -1;
-
-   public static absoluteMinVisibleRenderChunkX = -1;
-   public static absoluteMaxVisibleRenderChunkX = -1;
-   public static absoluteMinVisibleRenderChunkY = -1;
-   public static absoluteMaxVisibleRenderChunkY = -1;
 
    public static minVisibleRenderChunkX = -1;
    public static maxVisibleRenderChunkX = -1;
@@ -41,14 +36,10 @@ abstract class Camera {
    public static updateVisibleRenderChunkBounds(): void {
       const unitsInChunk = SETTINGS.TILE_SIZE * RENDER_CHUNK_SIZE;
 
-      this.absoluteMinVisibleRenderChunkX = Math.floor((this.position.x - halfWindowWidth / this.zoom) / unitsInChunk);
-      this.absoluteMaxVisibleRenderChunkX = Math.floor((this.position.x + halfWindowWidth / this.zoom) / unitsInChunk);
-      this.absoluteMinVisibleRenderChunkY = Math.floor((this.position.y - halfWindowHeight / this.zoom) / unitsInChunk);
-      this.absoluteMaxVisibleRenderChunkY = Math.floor((this.position.y + halfWindowHeight / this.zoom) / unitsInChunk);
-      this.minVisibleRenderChunkX = Math.max(this.absoluteMinVisibleRenderChunkX, 0);
-      this.maxVisibleRenderChunkX = Math.min(this.absoluteMaxVisibleRenderChunkX, WORLD_RENDER_CHUNK_SIZE - 1);
-      this.minVisibleRenderChunkY = Math.max(this.absoluteMinVisibleRenderChunkY, 0);
-      this.maxVisibleRenderChunkY = Math.min(this.absoluteMaxVisibleRenderChunkY, WORLD_RENDER_CHUNK_SIZE - 1);
+      this.minVisibleRenderChunkX = Math.max(Math.floor((this.position.x - halfWindowWidth / this.zoom) / unitsInChunk), -RENDER_CHUNK_EDGE_GENERATION);
+      this.maxVisibleRenderChunkX = Math.min(Math.floor((this.position.x + halfWindowWidth / this.zoom) / unitsInChunk), WORLD_RENDER_CHUNK_SIZE + RENDER_CHUNK_EDGE_GENERATION - 1);
+      this.minVisibleRenderChunkY = Math.max(Math.floor((this.position.y - halfWindowHeight / this.zoom) / unitsInChunk), -RENDER_CHUNK_EDGE_GENERATION);
+      this.maxVisibleRenderChunkY = Math.min(Math.floor((this.position.y + halfWindowHeight / this.zoom) / unitsInChunk), WORLD_RENDER_CHUNK_SIZE + RENDER_CHUNK_EDGE_GENERATION - 1);
    }
 
    public static setCameraPosition(position: Point): void {

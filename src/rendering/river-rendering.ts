@@ -3,7 +3,7 @@ import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, TIME_UNIFORM_BUFFER_BINDING_INDEX,
 import { getTexture } from "../textures";
 import Camera from "../Camera";
 import Board from "../Board";
-import { RENDER_CHUNK_SIZE, RenderChunkRiverInfo, WORLD_RENDER_CHUNK_SIZE, getRenderChunkRiverInfo } from "./render-chunks";
+import { RENDER_CHUNK_SIZE, RenderChunkRiverInfo, WORLD_RENDER_CHUNK_SIZE, getRenderChunk } from "./render-chunks";
 import { Tile } from "../Tile";
 import { NEIGHBOUR_OFFSETS } from "../utils";
 import { renderFish } from "./fish-rendering";
@@ -1631,9 +1631,9 @@ const calculateHighlightsVertexData = (waterTiles: ReadonlyArray<Tile>): Float32
 const calculateVisibleRenderChunks = (): ReadonlyArray<RenderChunkRiverInfo> => {
    const renderChunks = new Array<RenderChunkRiverInfo>();
 
-   for (let renderChunkX = Camera.absoluteMinVisibleRenderChunkX; renderChunkX <= Camera.absoluteMaxVisibleRenderChunkX; renderChunkX++) {
-      for (let renderChunkY = Camera.absoluteMinVisibleRenderChunkY; renderChunkY <= Camera.absoluteMaxVisibleRenderChunkY; renderChunkY++) {
-         const renderChunkInfo = getRenderChunkRiverInfo(renderChunkX, renderChunkY);
+   for (let renderChunkX = Camera.minVisibleRenderChunkX; renderChunkX <= Camera.maxVisibleRenderChunkX; renderChunkX++) {
+      for (let renderChunkY = Camera.minVisibleRenderChunkY; renderChunkY <= Camera.maxVisibleRenderChunkY; renderChunkY++) {
+         const renderChunkInfo = getRenderChunk(renderChunkX, renderChunkY).riverInfo;
          if (renderChunkInfo !== null) {
             renderChunks.push(renderChunkInfo);
          }
