@@ -1,7 +1,7 @@
 import Board from "./Board";
 import Player, { updateAvailableCraftingRecipes, updatePlayerRotation } from "./entities/Player";
 import { isDev } from "./utils";
-import { renderPlayerNames, createTextCanvasContext } from "./text-canvas";
+import { renderPlayerNames, createTextCanvasContext, clearTextCanvas, renderDamageNumbers, updateDamageNumbers } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/game/ChatBox";
 import { DecorationInfo, GameDataPacket, GameObjectDebugData, GrassTileInfo, RiverSteppingStoneData, SETTINGS, ServerTileData, WaterRockData } from "webgl-test-shared";
@@ -245,6 +245,7 @@ abstract class Game {
                   }
                }
 
+               updateDamageNumbers();
                Board.updateTickCallbacks();
                Board.tickGameObjects();
                this.update();
@@ -252,6 +253,7 @@ abstract class Game {
             } else {
                this.numSkippablePackets++;
                
+               updateDamageNumbers();
                Board.updateTickCallbacks();
                Board.updateParticles();
                Board.updateGameObjects();
@@ -344,11 +346,13 @@ abstract class Game {
       this.timeData[0] = performance.now();
       gl.bufferSubData(gl.UNIFORM_BUFFER, 0, this.timeData);
 
+      clearTextCanvas();
       renderPlayerNames();
+      renderDamageNumbers();
 
       renderSolidTiles();
       renderRivers();
-      renderDecorations();
+      // renderDecorations();
       renderAmbientOcclusion();
       renderWallBorders();
       if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Board.hasGameObjectID(this.gameObjectDebugData.gameObjectID)) {

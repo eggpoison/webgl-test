@@ -57,7 +57,10 @@ export function createWorldBorderShaders(): void {
       if (dist < RANGE) {
          float distMultiplier = 1.0 - dist / RANGE;
          distMultiplier = pow(distMultiplier, 0.35);
-         outputColour = vec4(3.0/255.0, 200.0/255.0, 252.0/255.0, distMultiplier);
+
+         float progress = 1.0 - dist / RANGE;
+         progress = mix(0.7, 1.0, progress);
+         outputColour = vec4(61.0/255.0 * progress, 215.0/255.0 * progress, 255.0/255.0 * progress, distMultiplier);
       } else {
          outputColour = vec4(0.0, 0.0, 0.0, 0.0);
       }

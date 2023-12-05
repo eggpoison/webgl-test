@@ -6,59 +6,59 @@ import { ATLAS_SLOT_SIZE } from "../texture-atlases/texture-atlas-stitching";
 import { getRenderChunk } from "./render-chunks";
 
 interface DecorationRenderInfo {
-   readonly textureSource: string;
+   readonly textureSources: ReadonlyArray<string>;
    readonly textureWidth: number;
    readonly textureHeight: number;
 }
 
 const DECORATION_RENDER_INFO: Record<DecorationType, DecorationRenderInfo> = {
    [DecorationType.pebble]: {
-      textureSource: "decorations/pebble.png",
+      textureSources: ["decorations/pebble.png"],
       textureWidth: 3,
       textureHeight: 3
    },
    [DecorationType.rock]: {
-      textureSource: "decorations/rock1.png",
+      textureSources: ["decorations/rock1.png"],
       textureWidth: 4,
       textureHeight: 4
    },
    [DecorationType.sandstoneRock]: {
-      textureSource: "decorations/sandstone-rock.png",
+      textureSources: ["decorations/sandstone-rock.png"],
       textureWidth: 4,
       textureHeight: 4
    },
    [DecorationType.sandstoneRockBig]: {
-      textureSource: "decorations/sandstone-rock-big.png",
+      textureSources: ["decorations/sandstone-rock-big1.png", "decorations/sandstone-rock-big2.png"],
       textureWidth: 5,
       textureHeight: 5
    },
    [DecorationType.blackRock]: {
-      textureSource: "decorations/rock1.png",
+      textureSources: ["decorations/black-rock.png"],
       textureWidth: 4,
       textureHeight: 4
    },
    [DecorationType.snowPile]: {
-      textureSource: "decorations/rock1.png",
-      textureWidth: 4,
-      textureHeight: 4
+      textureSources: ["decorations/snow-pile.png"],
+      textureWidth: 6,
+      textureHeight: 6
    },
    [DecorationType.flower1]: {
-      textureSource: "decorations/flower1.png",
+      textureSources: ["decorations/flower1.png"],
       textureWidth: 5,
       textureHeight: 5
    },
    [DecorationType.flower2]: {
-      textureSource: "decorations/flower2.png",
+      textureSources: ["decorations/flower2.png"],
       textureWidth: 5,
       textureHeight: 5
    },
    [DecorationType.flower3]: {
-      textureSource: "decorations/flower3.png",
+      textureSources: ["decorations/flower3.png"],
       textureWidth: 5,
       textureHeight: 5
    },
    [DecorationType.flower4]: {
-      textureSource: "decorations/flower4.png",
+      textureSources: ["decorations/flower4.png"],
       textureWidth: 5,
       textureHeight: 5
    },
@@ -157,9 +157,10 @@ export function renderDecorations(): void {
       return;
    }
 
-   // Create vertices
-   const vertices = new Array<number>();
-   for (const decoration of visibleDecorations) {
+   // Create vertex data
+   const vertexData = new Float32Array(visibleDecorations.length * 6 * 7);
+   for (let i = 0; i < visibleDecorations.length; i++) {
+      const decoration = visibleDecorations[i];
       const renderInfo = DECORATION_RENDER_INFO[decoration.type];
 
       const x1 = decoration.positionX - renderInfo.textureWidth * 2;
@@ -177,16 +178,57 @@ export function renderDecorations(): void {
       const bottomRightX = rotateXAroundPoint(x2, y1, decoration.positionX, decoration.positionY, decoration.rotation);
       const bottomRightY = rotateYAroundPoint(x2, y1, decoration.positionX, decoration.positionY, decoration.rotation);
 
-      const textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureArrayIndex(renderInfo.textureSource)];
+      const textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureArrayIndex(renderInfo.textureSources[decoration.variant])];
 
-      vertices.push(
-         bottomLeftX, bottomLeftY, 0, 0, textureSlotIndex, renderInfo.textureWidth, renderInfo.textureHeight,
-         bottomRightX, bottomRightY, 1, 0, textureSlotIndex, renderInfo.textureWidth, renderInfo.textureHeight,
-         topLeftX, topLeftY, 0, 1, textureSlotIndex, renderInfo.textureWidth, renderInfo.textureHeight,
-         topLeftX, topLeftY, 0, 1, textureSlotIndex, renderInfo.textureWidth, renderInfo.textureHeight,
-         bottomRightX, bottomRightY, 1, 0, textureSlotIndex, renderInfo.textureWidth, renderInfo.textureHeight,
-         topRightX, topRightY, 1, 1, textureSlotIndex, renderInfo.textureWidth, renderInfo.textureHeight
-      );
+      const dataOffset = i * 42;
+
+      vertexData[dataOffset] = bottomLeftX;
+      vertexData[dataOffset + 1] = bottomLeftY;
+      vertexData[dataOffset + 2] = 0;
+      vertexData[dataOffset + 3] = 0;
+      vertexData[dataOffset + 4] = textureSlotIndex;
+      vertexData[dataOffset + 5] = renderInfo.textureWidth;
+      vertexData[dataOffset + 6] = renderInfo.textureHeight;
+
+      vertexData[dataOffset + 7] = bottomRightX;
+      vertexData[dataOffset + 8] = bottomRightY;
+      vertexData[dataOffset + 9] = 1;
+      vertexData[dataOffset + 10] = 0;
+      vertexData[dataOffset + 11] = textureSlotIndex;
+      vertexData[dataOffset + 12] = renderInfo.textureWidth;
+      vertexData[dataOffset + 13] = renderInfo.textureHeight;
+
+      vertexData[dataOffset + 14] = topLeftX;
+      vertexData[dataOffset + 15] = topLeftY;
+      vertexData[dataOffset + 16] = 0;
+      vertexData[dataOffset + 17] = 1;
+      vertexData[dataOffset + 18] = textureSlotIndex;
+      vertexData[dataOffset + 19] = renderInfo.textureWidth;
+      vertexData[dataOffset + 20] = renderInfo.textureHeight;
+
+      vertexData[dataOffset + 21] = topLeftX;
+      vertexData[dataOffset + 22] = topLeftY;
+      vertexData[dataOffset + 23] = 0;
+      vertexData[dataOffset + 24] = 1;
+      vertexData[dataOffset + 25] = textureSlotIndex;
+      vertexData[dataOffset + 26] = renderInfo.textureWidth;
+      vertexData[dataOffset + 27] = renderInfo.textureHeight;
+
+      vertexData[dataOffset + 28] = bottomRightX;
+      vertexData[dataOffset + 29] = bottomRightY;
+      vertexData[dataOffset + 30] = 1;
+      vertexData[dataOffset + 31] = 0;
+      vertexData[dataOffset + 32] = textureSlotIndex;
+      vertexData[dataOffset + 33] = renderInfo.textureWidth;
+      vertexData[dataOffset + 34] = renderInfo.textureHeight;
+
+      vertexData[dataOffset + 35] = topRightX;
+      vertexData[dataOffset + 36] = topRightY;
+      vertexData[dataOffset + 37] = 1;
+      vertexData[dataOffset + 38] = 1;
+      vertexData[dataOffset + 39] = textureSlotIndex;
+      vertexData[dataOffset + 40] = renderInfo.textureWidth;
+      vertexData[dataOffset + 41] = renderInfo.textureHeight;
    }
    
    gl.useProgram(program);
@@ -199,7 +241,7 @@ export function renderDecorations(): void {
    gl.bindTexture(gl.TEXTURE_2D, GAME_OBJECT_TEXTURE_ATLAS);
 
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+   gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
 
    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 0);
    gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
@@ -212,7 +254,7 @@ export function renderDecorations(): void {
    gl.enableVertexAttribArray(2);
    gl.enableVertexAttribArray(3);
 
-   gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 7);
+   gl.drawArrays(gl.TRIANGLES, 0, visibleDecorations.length * 6);
 
    gl.disable(gl.BLEND);
    gl.blendFunc(gl.ONE, gl.ZERO);

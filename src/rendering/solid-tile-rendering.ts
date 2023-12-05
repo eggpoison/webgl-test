@@ -94,10 +94,10 @@ export function createSolidTileShaders(): void {
       
       if (v_temperature >= 0.0) {
          // Places with low temperature and high humidity don't exist, so if in low temperature
-         // then clamp the humidity to at most the temperature
+         // then reduce the humidity to at most the temperature
          float humidity = v_humidity;
-         if (v_temperature <= 0.5 && v_humidity > v_temperature) {
-            humidity = v_temperature;
+         if (v_temperature <= 0.5) {
+            humidity = mix(humidity, 0.0, 1.0 - v_temperature * 2.0);
          }
          
          // Less humidity desaturates, more humidity saturates
@@ -173,15 +173,15 @@ const updateVertexData = (data: Float32Array, renderChunkX: number, renderChunkY
 
          let temperature = -1;
          let humidity = -1;
-         if (tile.type === TileType.grass) {
-            const grassInfo = Board.grassInfo[tileX][tileY];
-            if (typeof grassInfo === "undefined") {
-               console.log(tileX, tileY);
-               console.log(tile);
-            }
-            temperature = grassInfo.temperature;
-            humidity = grassInfo.humidity;
-         }
+         // if (tile.type === TileType.grass) {
+         //    const grassInfo = Board.grassInfo[tileX][tileY];
+         //    if (typeof grassInfo === "undefined") {
+         //       console.log(tileX, tileY);
+         //       console.log(tile);
+         //    }
+         //    temperature = grassInfo.temperature;
+         //    humidity = grassInfo.humidity;
+         // }
 
          data[i * 42] = x1;
          data[i * 42 + 1] = y1;

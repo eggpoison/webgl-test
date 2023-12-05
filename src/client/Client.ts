@@ -21,7 +21,6 @@ import Camera from "../Camera";
 import { isDev } from "../utils";
 import Tribe from "../Tribe";
 import { updateRenderChunkFromTileUpdate } from "../rendering/render-chunks";
-import Entity from "../entities/Entity";
 import Board from "../Board";
 import { definiteGameState, latencyGameState } from "../game-state/game-states";
 import { BackpackInventoryMenu_update } from "../components/game/inventories/BackpackInventory";
@@ -31,6 +30,7 @@ import { addMonocolourParticleToBufferContainer, ParticleRenderLayer } from "../
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
 import { calculateDroppedItemRenderDepth, calculateEntityRenderDepth, calculateProjectileRenderDepth } from "../render-layers";
 import GameObject from "../GameObject";
+import { createDamageNumber } from "../text-canvas";
 
 const BUILDING_TYPES: ReadonlyArray<EntityType> = [EntityType.barrel, EntityType.campfire, EntityType.furnace, EntityType.tribe_totem, EntityType.tribe_hut, EntityType.workbench];
 
@@ -207,6 +207,16 @@ abstract class Client {
       }
 
       HealthBar_setHasFrostShield(gameDataPacket.hasFrostShield);
+
+      for (const hitData of gameDataPacket.hitsTaken) {
+         if (Board.entities.hasOwnProperty(hitData.hitEntityID)) {
+            const entity = Board.entities[hitData.hitEntityID];
+            entity.registerHit(hitData);
+            createDamageNumber(entity.position.x, entity.position.y, hitData.damage);
+         } else {
+            createDamageNumber(hitData.entityPositionX, hitData.entityPositionY, hitData.damage);
+         }
+      }
    }
 
    private static updateTribe(tribeData: TribeData | null): void {
@@ -247,18 +257,12 @@ abstract class Client {
             } else {
                (Board.entities[entityData.id] as Player).genericUpdateFromData(entityData as unknown as EntityData<EntityType.player> | EntityData<EntityType.tribesman>);
             }
-            for (const hit of entityData.hitsTaken) {
-               Board.entities[entityData.id].registerHit(hit);
-            }
             if (entityData.amountHealed > 0) {
                Board.entities[entityData.id].createHealingParticles(entityData.amountHealed);
             }
             Board.entities[entityData.id].statusEffects = entityData.statusEffects;
          } else {
-            const entity = this.createEntityFromData(entityData);
-            for (const hit of entityData.hitsTaken) {
-               entity.registerHit(hit);
-            }
+            this.createEntityFromData(entityData);
          }
 
          knownEntityIDs.delete(entityData.id);
@@ -490,7 +494,7 @@ abstract class Client {
       }
    }
 
-   public static createEntityFromData(entityData: EntityData<EntityType>): Entity {
+   public static createEntityFromData(entityData: EntityData<EntityType>): void {
       const position = Point.unpackage(entityData.position);
 
       const renderDepth = calculateEntityRenderDepth(entityData.type);
@@ -559,8 +563,6 @@ abstract class Client {
             Board.lowMonocolourParticles.push(particle);
          }
       }
-
-      return entity;
    }
 
    private static registerGameDataSyncPacket(gameDataSyncPacket: GameDataSyncPacket): void {
