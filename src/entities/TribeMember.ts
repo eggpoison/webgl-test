@@ -138,7 +138,7 @@ abstract class TribeMember extends Entity {
    private static readonly DEFAULT_ACTIVE_ITEM_SIZE = SETTINGS.ITEM_SIZE * 1.75;
    
    private static readonly HAND_RESTING_DIRECTION = Math.PI / 2.5;
-   private static readonly HAND_RESTING_OFFSET = 34;
+   private readonly handRestingOffset: number;
    private static readonly HAND_RESTING_ROTATION = 0;
    private static readonly HAND_CHARGING_BOW_DIRECTION = Math.PI / 4.2;
    private static readonly HAND_CHARGING_BOW_OFFSET = 37;
@@ -184,18 +184,19 @@ abstract class TribeMember extends Entity {
    public hasFrostShield: boolean;
 
    private rightHandDirection = TribeMember.HAND_RESTING_DIRECTION;
-   private rightHandOffset = TribeMember.HAND_RESTING_OFFSET;
+   private rightHandOffset: number;
    private rightHandRotation = TribeMember.HAND_RESTING_ROTATION;
 
    private leftHandDirection = -TribeMember.HAND_RESTING_DIRECTION;
-   private leftHandOffset = TribeMember.HAND_RESTING_OFFSET;
+   private leftHandOffset: number;
    private leftHandRotation = -TribeMember.HAND_RESTING_ROTATION;
 
    private activeItemDirection = TribeMember.HAND_RESTING_DIRECTION;
    private activeItemOffset = TribeMember.ITEM_RESTING_OFFSET;
    private activeItemRotation = TribeMember.ITEM_RESTING_ROTATION;
    
-   constructor(position: Point, id: number, renderDepth: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, action: TribeMemberAction, foodEatingType: ItemType | -1, lastActionTicks: number, hasFrostShield: boolean, warPaintType: number) {
+   // @Cleanup: We shouldn't pass entityType through the constructor, just do the related logic in the subclasses
+   constructor(position: Point, id: number, renderDepth: number, entityType: EntityType, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, action: TribeMemberAction, foodEatingType: ItemType | -1, lastActionTicks: number, hasFrostShield: boolean, warPaintType: number) {
       super(position, id, renderDepth);
 
       this.tribeID = tribeID;
@@ -213,30 +214,52 @@ abstract class TribeMember extends Entity {
 
       this.updateArmourRenderPart(armourSlotInventory.itemSlots.hasOwnProperty(1) ? armourSlotInventory.itemSlots[1].type : null);
 
+      this.handRestingOffset = entityType === EntityType.player ? 34 : 30;
+      this.rightHandOffset = this.handRestingOffset;
+      this.leftHandOffset = this.handRestingOffset;
+
       let bodyTextureSource: string;
       let fistTextureSource: string;
       switch (tribeType) {
          case TribeType.plainspeople: {
-            bodyTextureSource = "entities/tribe-members/plainspeople/plainsperson.png";
-            fistTextureSource = "entities/tribe-members/plainspeople/plainsperson-fist.png";
+            if (entityType === EntityType.player) {
+               bodyTextureSource = "entities/plainspeople/player.png";
+            } else {
+               bodyTextureSource = "entities/plainspeople/worker.png";
+            }
+            fistTextureSource = "entities/plainspeople/fist.png";
             break;
          }
          case TribeType.goblins: {
-            bodyTextureSource = "entities/tribe-members/goblins/goblin.png";
-            fistTextureSource = "entities/tribe-members/goblins/goblin-fist.png";
+            if (entityType === EntityType.player) {
+               bodyTextureSource = "entities/goblins/player.png";
+            } else {
+               bodyTextureSource = "entities/goblins/worker.png";
+            }
+            fistTextureSource = "entities/goblins/fist.png";
             break;
          }
          case TribeType.frostlings: {
-            bodyTextureSource = "entities/tribe-members/frostlings/frostling.png";
-            fistTextureSource = "entities/tribe-members/frostlings/frostling-fist.png";
+            if (entityType === EntityType.player) {
+               bodyTextureSource = "entities/frostlings/player.png";
+            } else {
+               bodyTextureSource = "entities/frostlings/worker.png";
+            }
+            fistTextureSource = "entities/frostlings/fist.png";
             break;
          }
          case TribeType.barbarians: {
-            bodyTextureSource = "entities/tribe-members/barbarians/barbarian.png";
-            fistTextureSource = "entities/tribe-members/barbarians/barbarian-fist.png";
+            if (entityType === EntityType.player) {
+               bodyTextureSource = "entities/barbarians/player.png";
+            } else {
+               bodyTextureSource = "entities/barbarians/worker.png";
+            }
+            fistTextureSource = "entities/barbarians/fist.png";
             break;
          }
       }
+
+      const radius = entityType === EntityType.player ? 32 : 28;
 
       // 
       // Body render part
@@ -244,8 +267,8 @@ abstract class TribeMember extends Entity {
       
       this.attachRenderPart(new RenderPart(
          this,
-         TribeMember.RADIUS * 2,
-         TribeMember.RADIUS * 2,
+         radius * 2,
+         radius * 2,
          getGameObjectTextureArrayIndex(bodyTextureSource),
          2,
          0
@@ -256,9 +279,9 @@ abstract class TribeMember extends Entity {
          this.attachRenderPart(
             new RenderPart(
                this,
-               TribeMember.RADIUS * 2,
-               TribeMember.RADIUS * 2,
-               getGameObjectTextureArrayIndex(`entities/tribe-members/goblins/goblin-warpaint-${warPaintType}.png`),
+               radius * 2,
+               radius * 2,
+               getGameObjectTextureArrayIndex(`entities/goblins/goblin-warpaint-${warPaintType}.png`),
                4,
                0
             )
@@ -269,11 +292,11 @@ abstract class TribeMember extends Entity {
             this,
             TribeMember.GOBLIN_EAR_WIDTH,
             TribeMember.GOBLIN_EAR_HEIGHT,
-            getGameObjectTextureArrayIndex("entities/tribe-members/goblins/goblin-ear.png"),
+            getGameObjectTextureArrayIndex("entities/goblins/goblin-ear.png"),
             3,
             Math.PI/2 - TribeMember.GOBLIN_EAR_ANGLE,
          );
-         leftEarRenderPart.offset = Point.fromVectorForm(TribeMember.RADIUS + TribeMember.GOBLIN_EAR_OFFSET, -TribeMember.GOBLIN_EAR_ANGLE);
+         leftEarRenderPart.offset = Point.fromVectorForm(radius + TribeMember.GOBLIN_EAR_OFFSET, -TribeMember.GOBLIN_EAR_ANGLE);
          leftEarRenderPart.flipX = true;
          this.attachRenderPart(leftEarRenderPart);
 
@@ -282,11 +305,11 @@ abstract class TribeMember extends Entity {
             this,
             TribeMember.GOBLIN_EAR_WIDTH,
             TribeMember.GOBLIN_EAR_HEIGHT,
-            getGameObjectTextureArrayIndex("entities/tribe-members/goblins/goblin-ear.png"),
+            getGameObjectTextureArrayIndex("entities/goblins/goblin-ear.png"),
             3,
             -Math.PI/2 + TribeMember.GOBLIN_EAR_ANGLE,
          );
-         rightEarRenderPart.offset = Point.fromVectorForm(TribeMember.RADIUS + TribeMember.GOBLIN_EAR_OFFSET, TribeMember.GOBLIN_EAR_ANGLE);
+         rightEarRenderPart.offset = Point.fromVectorForm(radius + TribeMember.GOBLIN_EAR_OFFSET, TribeMember.GOBLIN_EAR_ANGLE);
          this.attachRenderPart(rightEarRenderPart);
       }
 
@@ -384,10 +407,10 @@ abstract class TribeMember extends Entity {
             const eatingHandRotation = lerp(TribeMember.HAND_RESTING_ROTATION, TribeMember.HAND_RESTING_ROTATION - Math.PI/5, eatIntervalProgress);
 
             this.leftHandDirection = -TribeMember.HAND_RESTING_DIRECTION;
-            this.leftHandOffset = TribeMember.HAND_RESTING_OFFSET;
+            this.leftHandOffset = this.handRestingOffset;
             this.leftHandRotation = -TribeMember.HAND_RESTING_ROTATION;
             this.rightHandDirection = direction;
-            this.rightHandOffset = TribeMember.HAND_RESTING_OFFSET - insetAmount;
+            this.rightHandOffset = this.handRestingOffset - insetAmount;
             this.rightHandRotation = eatingHandRotation;
 
             this.activeItemOffset = TribeMember.ITEM_RESTING_OFFSET + itemSize/2 - insetAmount;
@@ -416,10 +439,10 @@ abstract class TribeMember extends Entity {
             }
             
             this.leftHandDirection = -TribeMember.HAND_RESTING_DIRECTION;
-            this.leftHandOffset = TribeMember.HAND_RESTING_OFFSET;
+            this.leftHandOffset = this.handRestingOffset;
             this.leftHandRotation = -TribeMember.HAND_RESTING_ROTATION;
             this.rightHandDirection = direction;
-            this.rightHandOffset = TribeMember.HAND_RESTING_OFFSET;
+            this.rightHandOffset = this.handRestingOffset;
             this.rightHandRotation = attackHandRotation;
 
             if (this.activeItemType !== null && ITEM_TYPE_RECORD[this.activeItemType] === "bow") {

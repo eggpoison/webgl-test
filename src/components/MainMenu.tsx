@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { isDev } from "../utils";
 import { setGameState } from "./App";
+import { createAudioContext } from "../sound";
 
 /** Checks whether a given username is valid or not */
 const usernameIsValid = (username: string): [warning: string, isValid: false] | [warning: null, isValid: true] => {
@@ -42,6 +43,7 @@ const MainMenu = ({ existingUsername, passUsername }: MainMenuProps) => {
    }
 
    const startGame = useCallback(() => {
+      createAudioContext();
       passUsername(username!);
       setGameState("loading");
    }, [username, passUsername]);

@@ -80,7 +80,7 @@ export async function stitchTextureAtlas(textureSources: ReadonlyArray<string>):
       atlasElement.height = ATLAS_SLOT_SIZE;
       const context = atlasElement.getContext("2d")!;
    
-      // Uncomment to see the atlas visually :D
+      // Uncomment to see the texture atlas visually :D
       // document.body.appendChild(atlasElement);
       // atlasElement.style.position = "absolute";
    

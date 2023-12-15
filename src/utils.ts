@@ -6,14 +6,12 @@ export function imageIsLoaded(image: HTMLImageElement): Promise<boolean> {
    });
 }
 
-const isDevBool = !process.env.NODE_ENV || process.env.NODE_ENV === "development";
-
 /**
  * Checks if the game is in development mode.
  * @returns If the game is in development mode.
  */
 export function isDev(): boolean {
-   return isDevBool;
+   return !process.env.NODE_ENV || process.env.NODE_ENV === "development";
 }
 
 export const ADJACENT_OFFSETS = [

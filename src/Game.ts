@@ -39,6 +39,7 @@ import { createFishShaders } from "./rendering/fish-rendering";
 import { Tile } from "./Tile";
 import { createForcefieldShaders, renderForcefield } from "./rendering/world-border-forcefield-rendering";
 import { createDecorationShaders, renderDecorations } from "./rendering/decoration-rendering";
+import { setupAudio } from "./sound";
 
 let listenersHaveBeenCreated = false;
 
@@ -201,6 +202,8 @@ abstract class Game {
             createAmbientOcclusionShaders();
             createForcefieldShaders();
             createDecorationShaders();
+
+            await setupAudio();
 
             if (isDev()) {
                setupFrameGraph();

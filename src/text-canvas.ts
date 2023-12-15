@@ -78,6 +78,7 @@ const getDamageNumberColour = (damage: number): string => {
 }
 
 export function renderDamageNumbers(): void {
+   if(1+1===2)return;
    ctx.lineWidth = 0;
 
    for (const damageNumber of damageNumbers) {
