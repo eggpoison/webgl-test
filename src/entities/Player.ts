@@ -13,7 +13,6 @@ import Board from "../Board";
 import { definiteGameState, latencyGameState } from "../game-state/game-states";
 import { createFootprintParticle } from "../generic-particles";
 import { keyIsPressed } from "../keyboard-input";
-import { playSound } from "../sound";
 
 /** Maximum distance from a crafting station which will allow its recipes to be crafted. */
 const MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION = 250;
@@ -155,7 +154,6 @@ class Player extends TribeMember {
       if (this.velocity.lengthSquared() >= 2500 && !this.isInRiver() && Board.tickIntervalHasPassed(0.15)) {
          createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 4);
          this.numFootstepsTaken++;
-         playSound("item-pickup.mp3");
       }
    }
 

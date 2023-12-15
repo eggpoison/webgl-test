@@ -31,6 +31,7 @@ import { createInventoryFromData, updateInventoryFromData } from "../inventory-m
 import { calculateDroppedItemRenderDepth, calculateEntityRenderDepth, calculateProjectileRenderDepth } from "../render-layers";
 import GameObject from "../GameObject";
 import { createDamageNumber } from "../text-canvas";
+import { playSound } from "../sound";
 
 const BUILDING_TYPES: ReadonlyArray<EntityType> = [EntityType.barrel, EntityType.campfire, EntityType.furnace, EntityType.tribe_totem, EntityType.tribe_hut, EntityType.workbench];
 
@@ -216,6 +217,10 @@ abstract class Client {
          } else {
             createDamageNumber(hitData.entityPositionX, hitData.entityPositionY, hitData.damage);
          }
+      }
+
+      if (gameDataPacket.pickedUpItem) {
+         playSound("item-pickup.mp3");
       }
    }
 

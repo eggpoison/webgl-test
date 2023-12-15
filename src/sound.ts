@@ -13,14 +13,10 @@ export function createAudioContext(): void {
 }
 
 export async function setupAudio(): Promise<void> {
-   if(1+1===2)return;
-   console.log(audioContext);
    const tempAudioBuffers: Partial<Record<AudioFilePath, AudioBuffer>> = {};
    for (const filePath of AUDIO_FILE_PATHS) {
-      const response = await fetch("http://localhost:3000/src/sounds/" + filePath);
-      console.log(response);
+      const response = await fetch(require("./sounds/" + filePath));
       const arrayBuffer = await response.arrayBuffer();
-      console.log(arrayBuffer);
       const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
       tempAudioBuffers[filePath] = audioBuffer;
    }
@@ -28,7 +24,6 @@ export async function setupAudio(): Promise<void> {
 }
 
 export function playSound(filePath: AudioFilePath): void {
-   if(1+1===2)return;
    const audioBuffer = audioBuffers[filePath];
    
    const trackSource = audioContext.createBufferSource();
