@@ -209,18 +209,28 @@ abstract class Client {
 
       HealthBar_setHasFrostShield(gameDataPacket.hasFrostShield);
 
-      for (const hitData of gameDataPacket.hitsTaken) {
-         if (Board.entities.hasOwnProperty(hitData.hitEntityID)) {
-            const entity = Board.entities[hitData.hitEntityID];
-            entity.registerHit(hitData);
-            createDamageNumber(entity.position.x, entity.position.y, hitData.damage);
-         } else {
-            createDamageNumber(hitData.entityPositionX, hitData.entityPositionY, hitData.damage);
+      if (Player.instance !== null) {
+         for (const hitData of gameDataPacket.hitsTaken) {
+            // Register hit
+            if (Board.entities.hasOwnProperty(hitData.hitEntityID)) {
+               const entity = Board.entities[hitData.hitEntityID];
+               entity.registerHit(hitData);
+            }
+
+            // Show damage numbers on player hits
+            if (hitData.attackerID === Player.instance.id) {
+               if (Board.entities.hasOwnProperty(hitData.hitEntityID)) {
+                  const entity = Board.entities[hitData.hitEntityID];
+                  createDamageNumber(entity.position.x, entity.position.y, hitData.damage);
+               } else {
+                  createDamageNumber(hitData.entityPositionX, hitData.entityPositionY, hitData.damage);
+               }
+            }
          }
       }
 
       if (gameDataPacket.pickedUpItem) {
-         playSound("item-pickup.mp3");
+         playSound("item-pickup.mp3", 0.4, Camera.position.x, Camera.position.y);
       }
    }
 

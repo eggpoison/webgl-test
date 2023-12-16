@@ -12,6 +12,7 @@ import { createInventoryFromData, updateInventoryFromData } from "../inventory-m
 import { GAME_OBJECT_TEXTURE_SLOT_INDEXES, getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 import OPTIONS from "../options";
 import { createDeepFrostHeartBloodParticles } from "../items/DroppedItem";
+import { AudioFilePath, playSound } from "../sound";
 
 type FilterFoodItemTypes<T extends ItemType> = (typeof ITEM_TYPE_RECORD)[T] extends "food" ? never : T;
 
@@ -124,6 +125,9 @@ const createFrostShieldBreakParticle = (positionX: number, positionY: number): v
    Board.highMonocolourParticles.push(particle);
 }
 
+const GOBLIN_HURT_SOUNDS: ReadonlyArray<AudioFilePath> = ["goblin-hurt-1.mp3", "goblin-hurt-2.mp3", "goblin-hurt-3.mp3", "goblin-hurt-4.mp3", "goblin-hurt-5.mp3"];
+const GOBLIN_DIE_SOUNDS: ReadonlyArray<AudioFilePath> = ["goblin-die-1.mp3", "goblin-die-2.mp3", "goblin-die-3.mp3", "goblin-die-4.mp3"];
+
 abstract class TribeMember extends Entity {
    protected static readonly RADIUS = 32;
 
@@ -162,7 +166,7 @@ abstract class TribeMember extends Entity {
       "miscellaneous/wooden-bow-charge-5.png"
    ];
    
-   private readonly tribeType: TribeType;
+   protected readonly tribeType: TribeType;
 
    public tribeID: number | null;
 
@@ -498,12 +502,26 @@ abstract class TribeMember extends Entity {
             createBloodParticle(Math.random() < 0.6 ? BloodParticleSize.small : BloodParticleSize.large, spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(150, 250), true);
          }
       }
+
+      switch (this.tribeType) {
+         case TribeType.goblins: {
+            playSound(randItem(GOBLIN_HURT_SOUNDS), 0.4, this.position.x, this.position.y);
+            break;
+         }
+      }
    }
 
    public onDie(): void {
       createBloodPoolParticle(this.position.x, this.position.y, 20);
 
       createBloodParticleFountain(this, TribeMember.BLOOD_FOUNTAIN_INTERVAL, 1);
+
+      switch (this.tribeType) {
+         case TribeType.goblins: {
+            playSound(randItem(GOBLIN_DIE_SOUNDS), 0.4, this.position.x, this.position.y);
+            break;
+         }
+      }
    }
 
    public tick(): void {

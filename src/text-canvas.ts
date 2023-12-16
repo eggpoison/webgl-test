@@ -10,14 +10,11 @@ const damageColourThresholds: ReadonlyArray<number> = [0, 3, 5, 7];
 
 let ctx: CanvasRenderingContext2D;
 
-interface DamageNumber {
-   readonly x: number;
-   readonly y: number;
-   readonly damage: number;
-   age: number;
-}
-
-const damageNumbers = new Array<DamageNumber>();
+let accumulatedDamage = 0;
+/** Time that the accumulated damage has existed */
+let damageTime = 0;
+let damageNumberX = -1;
+let damageNumberY = -1;
 
 export function createTextCanvasContext(): void {
    const textCanvas = document.getElementById("text-canvas") as HTMLCanvasElement;
@@ -42,25 +39,18 @@ export function createDamageNumber(originX: number, originY: number, damage: num
    // Add a random offset to the damage number
    const spawnOffsetDirection = 2 * Math.PI * Math.random();
    const spawnOffsetMagnitude = randFloat(0, 30);
-   const x = originX + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
-   const y = originY + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
-   
-   damageNumbers.push({
-      x: x,
-      y: y,
-      damage: damage,
-      age: 0
-   });
+   damageNumberX = originX + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
+   damageNumberY = originY + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
+
+   accumulatedDamage += damage;
+   damageTime = DAMAGE_NUMBER_LIFETIME;
 }
 
 export function updateDamageNumbers(): void {
-   for (let i = 0; i < damageNumbers.length; i++) {
-      const damageNumber = damageNumbers[i];
-      damageNumber.age += 1 / SETTINGS.TPS;
-      if (damageNumber.age >= DAMAGE_NUMBER_LIFETIME) {
-         damageNumbers.splice(i, 1);
-         i--;
-      }
+   damageTime -= 1 / SETTINGS.TPS;
+   if (damageTime < 0) {
+      damageTime = 0;
+      accumulatedDamage = 0;
    }
 }
 
@@ -78,33 +68,30 @@ const getDamageNumberColour = (damage: number): string => {
 }
 
 export function renderDamageNumbers(): void {
-   if(1+1===2)return;
    ctx.lineWidth = 0;
 
-   for (const damageNumber of damageNumbers) {
-      // Calculate position in camera
-      const cameraX = getXPosInCamera(damageNumber.x);
-      const cameraY = getYPosInCamera(damageNumber.y);
+   // Calculate position in camera
+   const cameraX = getXPosInCamera(damageNumberX);
+   const cameraY = getYPosInCamera(damageNumberY);
 
-      ctx.font = "bold 35px sans-serif";
-      ctx.lineJoin = "round";
-      ctx.miterLimit = 2;
+   ctx.font = "bold 35px sans-serif";
+   ctx.lineJoin = "round";
+   ctx.miterLimit = 2;
 
-      const deathProgress = damageNumber.age / DAMAGE_NUMBER_LIFETIME;
-      ctx.globalAlpha = 1 - Math.pow(deathProgress, 3);
+   const deathProgress = 1 - damageTime / DAMAGE_NUMBER_LIFETIME;
+   ctx.globalAlpha = 1 - Math.pow(deathProgress, 3);
 
-      const damageString = "-" + damageNumber.damage.toString();
-      const width = ctx.measureText(damageString).width;
+   const damageString = "-" + accumulatedDamage.toString();
+   const width = ctx.measureText(damageString).width;
 
-      // Draw text outline
-      const SHADOW_OFFSET = 4;
-      ctx.fillStyle = "#000";
-      ctx.fillText(damageString, cameraX - width / 2 + SHADOW_OFFSET, cameraY + SHADOW_OFFSET);
-      
-      // Draw text
-      ctx.fillStyle = getDamageNumberColour(damageNumber.damage);
-      ctx.fillText(damageString, cameraX - width / 2, cameraY);
-   }
+   // Draw text outline
+   const SHADOW_OFFSET = 4;
+   ctx.fillStyle = "#000";
+   ctx.fillText(damageString, cameraX - width / 2 + SHADOW_OFFSET, cameraY + SHADOW_OFFSET);
+   
+   // Draw text
+   ctx.fillStyle = getDamageNumberColour(accumulatedDamage);
+   ctx.fillText(damageString, cameraX - width / 2, cameraY);
 
    ctx.globalAlpha = 1;
 }

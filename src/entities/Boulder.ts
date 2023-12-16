@@ -1,8 +1,9 @@
-import { EntityType, Point, randFloat } from "webgl-test-shared";
+import { EntityType, Point, randFloat, randItem } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { createRockParticle, createRockSpeckParticle } from "../generic-particles";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
+import { ROCK_DESTROY_SOUNDS, ROCK_HIT_SOUNDS, playSound } from "../sound";
 
 class Boulder extends Entity {
    private static readonly RADIUS = 40;
@@ -44,6 +45,8 @@ class Boulder extends Entity {
       for (let i = 0; i < 5; i++) {
          createRockSpeckParticle(this.position.x, this.position.y, Boulder.RADIUS);
       }
+
+      playSound(randItem(ROCK_HIT_SOUNDS), 0.3, this.position.x, this.position.y);
    }
 
    public onDie(): void {
@@ -59,6 +62,8 @@ class Boulder extends Entity {
       for (let i = 0; i < 5; i++) {
          createRockSpeckParticle(this.position.x, this.position.y, Boulder.RADIUS);
       }
+
+      playSound(randItem(ROCK_DESTROY_SOUNDS), 0.4, this.position.x, this.position.y);
    }
 }
 

@@ -5,19 +5,6 @@ import { TILE_TYPE_TEXTURE_SOURCES } from "./tile-type-texture-sources";
 let TEXTURES: { [key: string]: WebGLTexture } = {};
 
 const TEXTURE_SOURCES: Array<string> = [
-   "ambient-occlusion/2edge1corner.png",
-   "ambient-occlusion/2edge-2.png",
-   "ambient-occlusion/1edge.png",
-   "ambient-occlusion/2edge.png",
-   "ambient-occlusion/1corner.png",
-   "ambient-occlusion/2corner.png",
-   "ambient-occlusion/3corner.png",
-   "ambient-occlusion/4corner.png",
-   "ambient-occlusion/1edge1corner.png",
-   "ambient-occlusion/1edge2corner.png",
-   "ambient-occlusion/2corner-2.png",
-   "ambient-occlusion/3edge.png",
-   "ambient-occlusion/4edge.png",
    "miscellaneous/river/gravel.png",
    "miscellaneous/river/water-rock-large.png",
    "miscellaneous/river/water-rock-small.png",

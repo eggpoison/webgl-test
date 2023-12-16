@@ -1,9 +1,15 @@
-import { EntityData, EntityType, InventoryData, ItemType, Point, TribeMemberAction, TribeType } from "webgl-test-shared";
+import { EntityData, EntityType, InventoryData, ItemType, Point, SETTINGS, TribeMemberAction, TribeType, TribesmanState, randItem } from "webgl-test-shared";
 import TribeMember from "./TribeMember";
 import { Inventory } from "../items/Item";
 import { createFootprintParticle } from "../generic-particles";
 import Board from "../Board";
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
+import { AudioFilePath, playSound } from "../sound";
+
+// @Memory
+const GOBLIN_ANGRY_SOUNDS: ReadonlyArray<AudioFilePath> = ["goblin-angry-1.mp3", "goblin-angry-2.mp3", "goblin-angry-3.mp3", "goblin-angry-4.mp3"];
+const GOBLIN_ESCAPE_SOUNDS: ReadonlyArray<AudioFilePath> = ["goblin-escape-1.mp3", "goblin-escape-2.mp3", "goblin-escape-3.mp3"];
+const GOBLIN_AMBIENT_SOUNDS: ReadonlyArray<AudioFilePath> = ["goblin-ambient-1.mp3", "goblin-ambient-2.mp3", "goblin-ambient-3.mp3", "goblin-ambient-4.mp3", "goblin-ambient-5.mp3"];
 
 class Tribesman extends TribeMember {
    public readonly type = EntityType.tribesman;
@@ -11,6 +17,7 @@ class Tribesman extends TribeMember {
    public readonly inventory: Inventory;
 
    private numFootstepsTaken = 0;
+   private state = TribesmanState.normal;
 
    public activeItemSlot: number;
 
@@ -29,6 +36,43 @@ class Tribesman extends TribeMember {
          createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 4);
          this.numFootstepsTaken++;
       }
+
+      // Sounds
+      switch (this.state) {
+         case TribesmanState.chasing: {
+            if (Math.random() < 0.2 / SETTINGS.TPS) {
+               switch (this.tribeType) {
+                  case TribeType.goblins: {
+                     playSound(randItem(GOBLIN_ANGRY_SOUNDS), 0.4, this.position.x, this.position.y);
+                     break;
+                  }
+               }
+            }
+            break;
+         }
+         case TribesmanState.escaping: {
+            if (Math.random() < 0.2 / SETTINGS.TPS) {
+               switch (this.tribeType) {
+                  case TribeType.goblins: {
+                     playSound(randItem(GOBLIN_ESCAPE_SOUNDS), 0.4, this.position.x, this.position.y);
+                     break;
+                  }
+               }
+            }
+            break;
+         }
+         case TribesmanState.normal: {
+            if (Math.random() < 0.2 / SETTINGS.TPS) {
+               switch (this.tribeType) {
+                  case TribeType.goblins: {
+                     playSound(randItem(GOBLIN_AMBIENT_SOUNDS), 0.4, this.position.x, this.position.y);
+                     break;
+                  }
+               }
+            }
+            break;
+         }
+      }
    }
 
    public updateFromData(entityData: EntityData<EntityType.tribesman>): void {
@@ -37,6 +81,7 @@ class Tribesman extends TribeMember {
       updateInventoryFromData(this.inventory, entityData.clientArgs[11]);
 
       this.activeItemSlot = entityData.clientArgs[12];
+      this.state = entityData.clientArgs[13];
    }
 }
 

@@ -1,8 +1,9 @@
-import { DeathInfo, EntityData, EntityType, Point, SETTINGS, randFloat } from "webgl-test-shared";
+import { DeathInfo, EntityData, EntityType, Point, SETTINGS, randFloat, randItem } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { createDirtParticle, createRockParticle, createRockSpeckParticle } from "../generic-particles";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
+import { playSound, ROCK_DESTROY_SOUNDS, ROCK_HIT_SOUNDS } from "../sound";
 
 class Tombstone extends Entity {
    private static readonly HITBOX_WIDTH = 48;
@@ -69,6 +70,8 @@ class Tombstone extends Entity {
 
          createRockSpeckParticle(spawnPositionX, spawnPositionY, 0);
       }
+
+      playSound(randItem(ROCK_HIT_SOUNDS), 0.3, this.position.x, this.position.y);
    }
 
    public onDie(): void {
@@ -85,6 +88,8 @@ class Tombstone extends Entity {
 
          createRockSpeckParticle(spawnPositionX, spawnPositionY, 0);
       }
+
+      playSound(randItem(ROCK_DESTROY_SOUNDS), 0.4, this.position.x, this.position.y);
    }
 
    public updateFromData(entityData: EntityData<EntityType.tombstone>): void {
