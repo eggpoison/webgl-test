@@ -1,9 +1,10 @@
-import { EntityType, HitData, Point, randFloat } from "webgl-test-shared";
+import { EntityType, HitData, Point, SETTINGS, randFloat, randInt } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle } from "../generic-particles";
 import Board from "../Board";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
+import { AudioFilePath, playSound } from "../sound";
 
 const ZOMBIE_TEXTURE_SOURCES: { [zombieType: number]: string } = {
    0: "entities/zombie/zombie1.png",
@@ -42,8 +43,12 @@ class Zombie extends Entity {
       // Create footsteps
       if (this.velocity.lengthSquared() >= 2500 && !this.isInRiver() && Board.tickIntervalHasPassed(0.3)) {
          createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 4);
-
+         this.createFootstepSound();
          this.numFootstepsTaken++;
+      }
+
+      if (Math.random() < 0.1 / SETTINGS.TPS) {
+         playSound(("zombie-ambient-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, this.position.x, this.position.y);
       }
    }
 

@@ -126,7 +126,13 @@ const TEXTURE_SOURCES: Array<string> = [
    "decorations/flower1.png",
    "decorations/flower2.png",
    "decorations/flower3.png",
-   "decorations/flower4.png"
+   "decorations/flower4.png",
+   "entities/berry-snowbush/berry-snowbush-1.png",
+   "entities/berry-snowbush/berry-snowbush-2.png",
+   "entities/berry-snowbush/berry-snowbush-3.png",
+   "entities/berry-snowbush/berry-snowbush-4.png",
+   "entities/berry-snowbush/berry-snowbush-5.png",
+   "entities/berry-snowbush/berry-snowbush-6.png"
 ];
 
 // Add item textures

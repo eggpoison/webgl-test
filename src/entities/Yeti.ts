@@ -71,7 +71,7 @@ class Yeti extends Entity {
       // Create footsteps
       if (this.velocity.lengthSquared() >= 2500 && !this.isInRiver() && Board.tickIntervalHasPassed(0.55)) {
          createFootprintParticle(this, this.numFootstepsTaken, 40, 96, 8);
-
+         this.createFootstepSound();
          this.numFootstepsTaken++;
       }
 

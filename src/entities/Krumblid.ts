@@ -34,9 +34,9 @@ class Krumblid extends Entity {
       super.tick();
 
       // Create footsteps
-      if (this.velocity.lengthSquared() >= 2500 && !this.isInRiver() && Board.tickIntervalHasPassed(0.3)) {
+      if (this.velocity.lengthSquared() >= 2500 && !this.isInRiver() && Board.tickIntervalHasPassed(0.15)) {
          createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 5);
-
+         this.createFootstepSound();
          this.numFootstepsTaken++;
       }
    }

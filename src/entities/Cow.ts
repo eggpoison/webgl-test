@@ -60,7 +60,7 @@ class Cow extends Entity {
       // Create footsteps
       if (this.velocity.lengthSquared() >= 2500 && !this.isInRiver() && Board.tickIntervalHasPassed(0.3)) {
          createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 5);
-
+         this.createFootstepSound();
          this.numFootstepsTaken++;
       }
 

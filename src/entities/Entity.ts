@@ -1,10 +1,11 @@
-import { EntityType, HitData, HitFlags, SETTINGS, StatusEffectData, StatusEffect, lerp, randFloat, randItem, customTickIntervalHasPassed } from "webgl-test-shared";
+import { EntityType, HitData, HitFlags, SETTINGS, StatusEffectData, StatusEffect, lerp, randFloat, randItem, customTickIntervalHasPassed, TileType, randInt } from "webgl-test-shared";
 import GameObject from "../GameObject";
 import Particle from "../Particle";
 import Board, { Light } from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
 import { BloodParticleSize, createBloodParticle, createSlimePoolParticle } from "../generic-particles";
 import Camera from "../Camera";
+import { AudioFilePath, playSound } from "../sound";
 
 // Use prime numbers / 100 to ensure a decent distribution of different types of particles
 const HEALING_PARTICLE_AMOUNTS = [0.05, 0.37, 1.01];
@@ -335,6 +336,18 @@ abstract class Entity extends GameObject {
          const idx = Board.lights.indexOf(this.burningLight);
          if (idx !== -1) {
             Board.lights.splice(idx, 1);
+         }
+      }
+   }
+
+   protected createFootstepSound(): void {
+      switch (this.tile.type) {
+         case TileType.sand: {
+            playSound(("sand-walk-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.05, this.position.x, this.position.y);
+            break;
+         }
+         case TileType.rock: {
+            playSound(("rock-walk-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.05, this.position.x, this.position.y);
          }
       }
    }

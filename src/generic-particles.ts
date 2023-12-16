@@ -368,6 +368,49 @@ export function createLeafSpeckParticle(originX: number, originY: number, offset
    Board.lowMonocolourParticles.push(particle);
 }
 
+export function createWoodSpeckParticle(originX: number, originY: number, offset: number): void {
+   const spawnOffsetDirection = 2 * Math.PI * Math.random();
+   const spawnPositionX = originX + offset * Math.sin(spawnOffsetDirection);
+   const spawnPositionY = originY + offset * Math.cos(spawnOffsetDirection);
+
+   const velocityMagnitude = randFloat(60, 80);
+   const velocityDirection = spawnOffsetDirection + randFloat(1, -1);
+   const velocityX = velocityMagnitude * Math.sin(velocityDirection);
+   const velocityY = velocityMagnitude * Math.cos(velocityDirection);
+
+   const lifetime = randFloat(0.3, 0.5);
+   
+   const particle = new Particle(lifetime);
+   particle.getOpacity = (): number => {
+      return Math.pow(1 - particle.age / lifetime, 0.3);
+   }
+   
+   const colourLerp = Math.random();
+   const r = lerp(64/255, 140/255, colourLerp);
+   const g = lerp(31/255, 94/255, colourLerp);
+   const b = lerp(2/255, 15/255, colourLerp);
+
+   const angularVelocity = randFloat(-Math.PI, Math.PI) * 2;
+
+   const scale = randFloat(1, 1.35);
+
+   addMonocolourParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.low,
+      6 * scale, 6 * scale,
+      spawnPositionX, spawnPositionY,
+      velocityX, velocityY,
+      0, 0,
+      velocityMagnitude / lifetime / 1.5,
+      2 * Math.PI * Math.random(),
+      angularVelocity,
+      0,
+      Math.abs(angularVelocity) / lifetime / 1.5,
+      r, g, b
+   );
+   Board.lowMonocolourParticles.push(particle);
+}
+
 export function createRockSpeckParticle(originX: number, originY: number, offset: number): void {
    const spawnOffsetDirection = 2 * Math.PI * Math.random();
    const spawnPositionX = originX + offset * Math.sin(spawnOffsetDirection);

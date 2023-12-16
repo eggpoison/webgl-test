@@ -40,7 +40,18 @@ const AUDIO_FILE_PATHS = [
    "goblin-ambient-2.mp3",
    "goblin-ambient-3.mp3",
    "goblin-ambient-4.mp3",
-   "goblin-ambient-5.mp3"
+   "goblin-ambient-5.mp3",
+   "sand-walk-1.mp3",
+   "sand-walk-2.mp3",
+   "sand-walk-3.mp3",
+   "sand-walk-4.mp3",
+   "rock-walk-1.mp3",
+   "rock-walk-2.mp3",
+   "rock-walk-3.mp3",
+   "rock-walk-4.mp3",
+   "zombie-ambient-1.mp3",
+   "zombie-ambient-2.mp3",
+   "zombie-ambient-3.mp3"
 ] as const;
 
 export type AudioFilePath = typeof AUDIO_FILE_PATHS[number];
