@@ -23,7 +23,6 @@ import Snowball from "./entities/Snowball";
 import Krumblid from "./entities/Krumblid";
 import FrozenYeti from "./entities/FrozenYeti";
 import Fish from "./entities/Fish";
-import BerrySnowbush from "./entities/BerrySnowbush";
 
 export type EntityClassType<T extends EntityType> = new (position: Point, id: number, renderDepth: number, ...clientParams: Parameters<EntityInfoClientArgs[T]>) => Entity;
 
@@ -50,8 +49,7 @@ const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
    [EntityType.snowball]: () => Snowball,
    [EntityType.krumblid]: () => Krumblid,
    [EntityType.frozen_yeti]: () => FrozenYeti,
-   [EntityType.fish]: () => Fish,
-   [EntityType.berry_snowbush]: () => BerrySnowbush
+   [EntityType.fish]: () => Fish
 };
 
 export default ENTITY_CLASS_RECORD;

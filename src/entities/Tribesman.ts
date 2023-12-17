@@ -1,4 +1,4 @@
-import { EntityData, EntityType, InventoryData, ItemType, Point, SETTINGS, TribeMemberAction, TribeType, TribesmanState, randItem } from "webgl-test-shared";
+import { EntityData, EntityType, InventoryData, ItemType, Point, SETTINGS, TribeMemberAction, TribeType, TribesmanState, randInt, randItem } from "webgl-test-shared";
 import TribeMember from "./TribeMember";
 import { Inventory } from "../items/Item";
 import { createFootprintParticle } from "../generic-particles";
@@ -17,6 +17,7 @@ class Tribesman extends TribeMember {
    public readonly inventory: Inventory;
 
    private numFootstepsTaken = 0;
+   private distanceTracker = 0;
    private state = TribesmanState.normal;
 
    public activeItemSlot: number;
@@ -34,8 +35,12 @@ class Tribesman extends TribeMember {
       // Footsteps
       if (this.velocity.lengthSquared() >= 2500 && !this.isInRiver() && Board.tickIntervalHasPassed(0.15)) {
          createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 4);
-         this.createFootstepSound();
          this.numFootstepsTaken++;
+      }
+      this.distanceTracker += this.velocity.length() / SETTINGS.TPS;
+      if (this.distanceTracker > 50) {
+         this.distanceTracker -= 50;
+         this.createFootstepSound();
       }
 
       // Sounds
@@ -45,6 +50,10 @@ class Tribesman extends TribeMember {
                switch (this.tribeType) {
                   case TribeType.goblins: {
                      playSound(randItem(GOBLIN_ANGRY_SOUNDS), 0.4, this.position.x, this.position.y);
+                     break;
+                  }
+                  case TribeType.barbarians: {
+                     playSound("barbarian-angry-1.mp3", 0.4, this.position.x, this.position.y);
                      break;
                   }
                }
@@ -67,6 +76,10 @@ class Tribesman extends TribeMember {
                switch (this.tribeType) {
                   case TribeType.goblins: {
                      playSound(randItem(GOBLIN_AMBIENT_SOUNDS), 0.4, this.position.x, this.position.y);
+                     break;
+                  }
+                  case TribeType.barbarians: {
+                     playSound(("barbarian-ambient-" + randInt(1, 2) + ".mp3") as AudioFilePath, 0.4, this.position.x, this.position.y);
                      break;
                   }
                }

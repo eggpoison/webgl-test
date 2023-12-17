@@ -1,4 +1,4 @@
-import { EntityType, HitData, Point, randFloat } from "webgl-test-shared";
+import { EntityType, HitData, Point, SETTINGS, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle } from "../generic-particles";
@@ -14,6 +14,7 @@ class Krumblid extends Entity {
    public readonly type = EntityType.krumblid;
 
    private numFootstepsTaken = 0;
+   private distanceTracker = 0;
 
    constructor(position: Point, id: number, renderDepth: number) {
       super(position, id, renderDepth);
@@ -36,8 +37,12 @@ class Krumblid extends Entity {
       // Create footsteps
       if (this.velocity.lengthSquared() >= 2500 && !this.isInRiver() && Board.tickIntervalHasPassed(0.15)) {
          createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 5);
-         this.createFootstepSound();
          this.numFootstepsTaken++;
+      }
+      this.distanceTracker += this.velocity.length() / SETTINGS.TPS;
+      if (this.distanceTracker > 50) {
+         this.distanceTracker -= 50;
+         this.createFootstepSound();
       }
    }
 

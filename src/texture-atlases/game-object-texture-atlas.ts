@@ -103,7 +103,7 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/fish/fish-gold.png",
    "entities/fish/fish-red.png",
    "entities/fish/fish-lime.png",
-   // @Robustness Right now we need to manually enter these tools, should instead be automatically added
+   // @Robustness Right now we need to manually enter tools, should instead be automatically added
    "items/large/wooden-sword.png",
    "items/large/wooden-pickaxe.png",
    "items/large/wooden-axe.png",
@@ -115,12 +115,13 @@ const TEXTURE_SOURCES: Array<string> = [
    "items/large/deepfrost-axe.png",
    "items/large/deepfrost-pickaxe.png",
    "items/large/flesh-sword.png",
-   // @Memory These shouldn't be in the game object texture atlas, shoulld instead be in its own separate atlas
+   // @Memory These shouldn't be in the game object texture atlas, should instead be in its own separate atlas
    "decorations/pebble.png",
    "decorations/rock1.png",
    "decorations/sandstone-rock.png",
    "decorations/sandstone-rock-big1.png",
    "decorations/sandstone-rock-big2.png",
+   "decorations/black-rock-small.png",
    "decorations/black-rock.png",
    "decorations/snow-pile.png",
    "decorations/flower1.png",

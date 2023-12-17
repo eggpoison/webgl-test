@@ -1,8 +1,9 @@
-import { EntityData, EntityType, Point, randFloat } from "webgl-test-shared";
+import { EntityData, EntityType, Point, randFloat, randInt } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 import { LeafParticleSize, createLeafParticle, createLeafSpeckParticle } from "../generic-particles";
 import { GAME_OBJECT_TEXTURE_SLOT_INDEXES, getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
+import { AudioFilePath, playSound } from "../sound";
 
 class BerryBush extends Entity {
    private static readonly RADIUS = 40;
@@ -56,6 +57,8 @@ class BerryBush extends Entity {
       for (let i = 0; i < 5; i++) {
          createLeafSpeckParticle(this.position.x, this.position.y, BerryBush.RADIUS, BerryBush.LEAF_SPECK_COLOUR_LOW, BerryBush.LEAF_SPECK_COLOUR_HIGH);
       }
+
+      playSound(("berry-bush-hit-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, this.position.x, this.position.y);
    }
 
    public onDie(): void {
@@ -69,9 +72,11 @@ class BerryBush extends Entity {
       }
       
       // Create leaf specks
-      for (let i = 0; i < 5; i++) {
-         createLeafSpeckParticle(this.position.x, this.position.y, BerryBush.RADIUS, BerryBush.LEAF_SPECK_COLOUR_LOW, BerryBush.LEAF_SPECK_COLOUR_HIGH);
+      for (let i = 0; i < 9; i++) {
+         createLeafSpeckParticle(this.position.x, this.position.y, BerryBush.RADIUS * Math.random(), BerryBush.LEAF_SPECK_COLOUR_LOW, BerryBush.LEAF_SPECK_COLOUR_HIGH);
       }
+
+      playSound("berry-bush-destroy-1.mp3", 0.4, this.position.x, this.position.y);
    }
 }
 

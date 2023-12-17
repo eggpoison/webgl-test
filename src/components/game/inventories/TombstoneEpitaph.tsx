@@ -12,7 +12,6 @@ const TOMBSTONE_DEATH_MESSAGES: Record<PlayerCauseOfDeath, string> = {
    [PlayerCauseOfDeath.zombie]: "Ripped to pieces",
    [PlayerCauseOfDeath.yeti]: "Tried to hug a yeti",
    [PlayerCauseOfDeath.god]: "Struck down by divine judgement",
-   [PlayerCauseOfDeath.berry_bush]: "Pricked to death",
    [PlayerCauseOfDeath.fire]: "Was unhealthily flammable",
    [PlayerCauseOfDeath.poison]: "Poisoned",
    [PlayerCauseOfDeath.tribe_member]: "Died to a tribe member",

@@ -173,15 +173,11 @@ const updateVertexData = (data: Float32Array, renderChunkX: number, renderChunkY
 
          let temperature = -1;
          let humidity = -1;
-         // if (tile.type === TileType.grass) {
-         //    const grassInfo = Board.grassInfo[tileX][tileY];
-         //    if (typeof grassInfo === "undefined") {
-         //       console.log(tileX, tileY);
-         //       console.log(tile);
-         //    }
-         //    temperature = grassInfo.temperature;
-         //    humidity = grassInfo.humidity;
-         // }
+         if (tile.type === TileType.grass) {
+            const grassInfo = Board.grassInfo[tileX][tileY];
+            temperature = grassInfo.temperature;
+            humidity = grassInfo.humidity;
+         }
 
          data[i * 42] = x1;
          data[i * 42 + 1] = y1;

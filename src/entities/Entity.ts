@@ -116,6 +116,8 @@ abstract class Entity extends GameObject {
             0, 0, 0
          );
          Board.lowTexturedParticles.push(particle);
+
+         playSound(("water-splash-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.25, this.position.x, this.position.y);
       }
       
       const poisonStatusEffect = this.getStatusEffect(StatusEffect.poisoned);
@@ -158,8 +160,8 @@ abstract class Entity extends GameObject {
          if (this.burningLight === null) {
             this.burningLight = {
                position: this.position,
-               strength: 1.5,
-               radius: 0.2
+               strength: 2.5,
+               radius: 0.3
             };
             Board.lights.push(this.burningLight);
          }
@@ -342,8 +344,12 @@ abstract class Entity extends GameObject {
 
    protected createFootstepSound(): void {
       switch (this.tile.type) {
+         case TileType.grass: {
+            playSound(("grass-walk-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.03, this.position.x, this.position.y);
+            break;
+         }
          case TileType.sand: {
-            playSound(("sand-walk-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.05, this.position.x, this.position.y);
+            playSound(("sand-walk-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.02, this.position.x, this.position.y);
             break;
          }
          case TileType.rock: {

@@ -120,6 +120,7 @@ class Player extends TribeMember {
    public readonly type = EntityType.player;
    
    private numFootstepsTaken = 0;
+   private distanceTracker = 0;
    
    public readonly username: string;
 
@@ -151,10 +152,16 @@ class Player extends TribeMember {
       super.tick();
 
       // Footsteps
-      if (this.velocity.lengthSquared() >= 2500 && !this.isInRiver() && Board.tickIntervalHasPassed(0.2)) {
-         createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 4);
+      if (this.velocity.lengthSquared() >= 2500 && !this.isInRiver()) {
+         if (Board.tickIntervalHasPassed(0.2)) {
+            createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 4);
+            this.numFootstepsTaken++;
+         }
+      }
+      this.distanceTracker += this.velocity.length() / SETTINGS.TPS;
+      if (this.distanceTracker > 64) {
+         this.distanceTracker -= 64;
          this.createFootstepSound();
-         this.numFootstepsTaken++;
       }
    }
 

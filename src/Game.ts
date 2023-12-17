@@ -39,7 +39,7 @@ import { createFishShaders } from "./rendering/fish-rendering";
 import { Tile } from "./Tile";
 import { createForcefieldShaders, renderForcefield } from "./rendering/world-border-forcefield-rendering";
 import { createDecorationShaders, renderDecorations } from "./rendering/decoration-rendering";
-import { setupAudio } from "./sound";
+import { playRiverSounds, setupAudio } from "./sound";
 
 let listenersHaveBeenCreated = false;
 
@@ -292,6 +292,8 @@ abstract class Game {
       
       updatePlayerItems();
 
+      playRiverSounds();
+
       if (isDev()) refreshDebugInfo();
    }
 
@@ -355,7 +357,7 @@ abstract class Game {
 
       renderSolidTiles();
       renderRivers();
-      // renderDecorations();
+      renderDecorations();
       renderAmbientOcclusion();
       renderWallBorders();
       if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Board.hasGameObjectID(this.gameObjectDebugData.gameObjectID)) {

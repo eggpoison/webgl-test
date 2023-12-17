@@ -508,6 +508,14 @@ abstract class TribeMember extends Entity {
             playSound(randItem(GOBLIN_HURT_SOUNDS), 0.4, this.position.x, this.position.y);
             break;
          }
+         case TribeType.plainspeople: {
+            playSound(("plainsperson-hurt-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, this.position.x, this.position.y);
+            break;
+         }
+         case TribeType.barbarians: {
+            playSound(("barbarian-hurt-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, this.position.x, this.position.y);
+            break;
+         }
       }
    }
 
@@ -519,6 +527,14 @@ abstract class TribeMember extends Entity {
       switch (this.tribeType) {
          case TribeType.goblins: {
             playSound(randItem(GOBLIN_DIE_SOUNDS), 0.4, this.position.x, this.position.y);
+            break;
+         }
+         case TribeType.plainspeople: {
+            playSound("plainsperson-die-1.mp3", 0.4, this.position.x, this.position.y);
+            break;
+         }
+         case TribeType.barbarians: {
+            playSound("barbarian-die-1.mp3", 0.4, this.position.x, this.position.y);
             break;
          }
       }

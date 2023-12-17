@@ -1,7 +1,8 @@
-import { EntityType, Point } from "webgl-test-shared";
+import { EntityType, HitData, Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
+import { playBuildingHitSound, playSound } from "../sound";
 
 class TribeHut extends Entity {
    public static readonly SIZE = 88;
@@ -40,6 +41,14 @@ class TribeHut extends Entity {
       );
       doorRenderPart.offset = new Point(-TribeHut.SIZE/4, TribeHut.SIZE/2 + TribeHut.DOOR_HEIGHT/2);
       this.attachRenderPart(doorRenderPart);
+   }
+
+   protected onHit(hitData: HitData): void {
+      playBuildingHitSound(this.position.x, this.position.y);
+   }
+
+   public onDie(): void {
+      playSound("building-destroy-1.mp3", 0.4, this.position.x, this.position.y);
    }
 }
 

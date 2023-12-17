@@ -1,9 +1,10 @@
-import { CowSpecies, EntityData, EntityType, HitData, Point, SETTINGS, randFloat } from "webgl-test-shared";
+import { CowSpecies, EntityData, EntityType, HitData, Point, SETTINGS, randFloat, randInt } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createDirtParticle, createFootprintParticle } from "../generic-particles";
 import Board from "../Board";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
+import { AudioFilePath, playSound } from "../sound";
 
 class Cow extends Entity {
    private static readonly HEAD_SIZE = 64;
@@ -21,6 +22,7 @@ class Cow extends Entity {
    private grazeProgress: number;
 
    private numFootstepsTaken = 0;
+   private distanceTracker = 0;
 
    constructor(position: Point, id: number, renderDepth: number, species: CowSpecies, grazeProgress: number) {
       super(position, id, renderDepth);
@@ -60,8 +62,12 @@ class Cow extends Entity {
       // Create footsteps
       if (this.velocity.lengthSquared() >= 2500 && !this.isInRiver() && Board.tickIntervalHasPassed(0.3)) {
          createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 5);
-         this.createFootstepSound();
          this.numFootstepsTaken++;
+      }
+      this.distanceTracker += this.velocity.length() / SETTINGS.TPS;
+      if (this.distanceTracker > 40) {
+         this.distanceTracker -= 40;
+         this.createFootstepSound();
       }
 
       if (this.grazeProgress !== -1 && Board.tickIntervalHasPassed(0.1)) {
@@ -70,6 +76,10 @@ class Cow extends Entity {
          const spawnPositionX = this.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
          const spawnPositionY = this.position.y + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
          createDirtParticle(spawnPositionX, spawnPositionY);
+      }
+
+      if (Math.random() < 0.1 / SETTINGS.TPS) {
+         playSound(("cow-ambient-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, this.position.x, this.position.y);
       }
    }
 
@@ -88,6 +98,8 @@ class Cow extends Entity {
             createBloodParticle(Math.random() < 0.6 ? BloodParticleSize.small : BloodParticleSize.large, spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(150, 250), true);
          }
       }
+
+      playSound(("cow-hurt-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, this.position.x, this.position.y);
    }
 
    public onDie(): void {

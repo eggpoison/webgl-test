@@ -32,6 +32,11 @@ const DECORATION_RENDER_INFO: Record<DecorationType, DecorationRenderInfo> = {
       textureWidth: 5,
       textureHeight: 5
    },
+   [DecorationType.blackRockSmall]: {
+      textureSources: ["decorations/black-rock-small.png"],
+      textureWidth: 3,
+      textureHeight: 3
+   },
    [DecorationType.blackRock]: {
       textureSources: ["decorations/black-rock.png"],
       textureWidth: 4,

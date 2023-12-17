@@ -1,5 +1,6 @@
-import { distance } from "webgl-test-shared";
+import { SETTINGS, TileType, distance, randInt } from "webgl-test-shared";
 import Camera from "./Camera";
+import Board from "./Board";
 
 const AUDIO_FILE_PATHS = [
    "item-pickup.mp3",
@@ -41,6 +42,17 @@ const AUDIO_FILE_PATHS = [
    "goblin-ambient-3.mp3",
    "goblin-ambient-4.mp3",
    "goblin-ambient-5.mp3",
+   "plainsperson-hurt-1.mp3",
+   "plainsperson-hurt-2.mp3",
+   "plainsperson-hurt-3.mp3",
+   "plainsperson-die-1.mp3",
+   "barbarian-hurt-1.mp3",
+   "barbarian-hurt-2.mp3",
+   "barbarian-hurt-3.mp3",
+   "barbarian-die-1.mp3",
+   "barbarian-ambient-1.mp3",
+   "barbarian-ambient-2.mp3",
+   "barbarian-angry-1.mp3",
    "sand-walk-1.mp3",
    "sand-walk-2.mp3",
    "sand-walk-3.mp3",
@@ -51,7 +63,31 @@ const AUDIO_FILE_PATHS = [
    "rock-walk-4.mp3",
    "zombie-ambient-1.mp3",
    "zombie-ambient-2.mp3",
-   "zombie-ambient-3.mp3"
+   "zombie-ambient-3.mp3",
+   "cow-ambient-1.mp3",
+   "cow-ambient-2.mp3",
+   "cow-ambient-3.mp3",
+   "cow-hurt-1.mp3",
+   "cow-hurt-2.mp3",
+   "cow-hurt-3.mp3",
+   "grass-walk-1.mp3",
+   "grass-walk-2.mp3",
+   "grass-walk-3.mp3",
+   "grass-walk-4.mp3",
+   "building-hit-1.mp3",
+   "building-hit-2.mp3",
+   "building-destroy-1.mp3",
+   "water-flowing-1.mp3",
+   "water-flowing-2.mp3",
+   "water-flowing-3.mp3",
+   "water-flowing-4.mp3",
+   "water-splash-1.mp3",
+   "water-splash-2.mp3",
+   "water-splash-3.mp3",
+   "berry-bush-hit-1.mp3",
+   "berry-bush-hit-2.mp3",
+   "berry-bush-hit-3.mp3",
+   "berry-bush-destroy-1.mp3"
 ] as const;
 
 export type AudioFilePath = typeof AUDIO_FILE_PATHS[number];
@@ -80,6 +116,7 @@ export async function setupAudio(): Promise<void> {
 }
 
 export function playSound(filePath: AudioFilePath, volume: number, sourceX: number, sourceY: number): void {
+   if(1+1===2)return;
    const audioBuffer = audioBuffers[filePath];
 
    // Calculate final volume accounting for distance
@@ -99,4 +136,30 @@ export function playSound(filePath: AudioFilePath, volume: number, sourceX: numb
    trackSource.connect(gainNode);
 
    trackSource.start();
+}
+
+export function playBuildingHitSound(sourceX: number, sourceY: number): void {
+   playSound(("building-hit-" + randInt(1, 2) + ".mp3") as AudioFilePath, 0.2, sourceX, sourceY);
+}
+
+export function playRiverSounds(): void {
+   const minTileX = Camera.minVisibleChunkX * SETTINGS.CHUNK_SIZE;
+   const maxTileX = (Camera.maxVisibleChunkX + 1) * SETTINGS.CHUNK_SIZE - 1;
+   const minTileY = Camera.minVisibleChunkY * SETTINGS.CHUNK_SIZE;
+   const maxTileY = (Camera.maxVisibleChunkY + 1) * SETTINGS.CHUNK_SIZE - 1;
+
+   for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
+      for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
+         const tile = Board.getEdgeTile(tileX, tileY);
+         if (tile === null) {
+            continue;
+         }
+
+         if (tile.type === TileType.water && Math.random() < 0.1 / SETTINGS.TPS) {
+            const x = (tileX + Math.random()) * SETTINGS.TILE_SIZE;
+            const y = (tileY + Math.random()) * SETTINGS.TILE_SIZE;
+            playSound(("water-flowing-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.2, x, y);
+         }
+      }
+   }
 }

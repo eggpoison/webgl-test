@@ -1,7 +1,7 @@
-import { EntityType, Point, TreeSize, randFloat, randInt, randItem } from "webgl-test-shared";
+import { EntityType, HitData, Point, TreeSize, randFloat, randInt, randItem } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import { LeafParticleSize, createLeafParticle, createLeafSpeckParticle } from "../generic-particles";
+import { LeafParticleSize, createLeafParticle, createLeafSpeckParticle, createWoodSpeckParticle } from "../generic-particles";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 import { AudioFilePath, playSound } from "../sound";
 
@@ -40,7 +40,7 @@ class Tree extends Entity {
       );
    }
 
-   protected onHit(): void {
+   protected onHit(hitData: HitData): void {
       // Create leaf particles
       {
          const moveDirection = 2 * Math.PI * Math.random();
@@ -55,6 +55,13 @@ class Tree extends Entity {
       const numSpecks = this.treeSize === TreeSize.small ? 4 : 7;
       for (let i = 0; i < numSpecks; i++) {
          createLeafSpeckParticle(this.position.x, this.position.y, this.radius, Tree.LEAF_SPECK_COLOUR_LOW, Tree.LEAF_SPECK_COLOUR_HIGH);
+      }
+      // Create wood specks at the point of hit
+      const spawnOffsetDirection = (hitData.angleFromAttacker || 2 * Math.PI * Math.random()) + Math.PI;
+      const spawnPositionX = this.position.x + (this.radius + 2) * Math.sin(spawnOffsetDirection);
+      const spawnPositionY = this.position.y + (this.radius + 2) * Math.cos(spawnOffsetDirection);
+      for (let i = 0; i < 4; i++) {
+         createWoodSpeckParticle(spawnPositionX, spawnPositionY, 3);
       }
 
       playSound(randItem(TREE_HIT_SOUNDS), 0.4, this.position.x, this.position.y);
@@ -80,6 +87,10 @@ class Tree extends Entity {
       const numSpecks = this.treeSize === TreeSize.small ? 4 : 7;
       for (let i = 0; i < numSpecks; i++) {
          createLeafSpeckParticle(this.position.x, this.position.y, this.radius, Tree.LEAF_SPECK_COLOUR_LOW, Tree.LEAF_SPECK_COLOUR_HIGH);
+      }
+
+      for (let i = 0; i < 10; i++) {
+         createWoodSpeckParticle(this.position.x, this.position.y, this.radius * Math.random());
       }
 
       playSound(randItem(TREE_DESTROY_SOUNDS), 0.5, this.position.x, this.position.y);

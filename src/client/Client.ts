@@ -230,7 +230,7 @@ abstract class Client {
       }
 
       if (gameDataPacket.pickedUpItem) {
-         playSound("item-pickup.mp3", 0.4, Camera.position.x, Camera.position.y);
+         playSound("item-pickup.mp3", 0.3, Camera.position.x, Camera.position.y);
       }
    }
 

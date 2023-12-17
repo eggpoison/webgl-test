@@ -1,7 +1,8 @@
-import { Point, TribeTotemBanner, EntityData, TribeType, EntityType } from "webgl-test-shared";
+import { Point, TribeTotemBanner, EntityData, TribeType, EntityType, HitData } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
+import { playBuildingHitSound, playSound } from "../sound";
 
 class TribeTotem extends Entity {
    public static readonly SIZE = 120;
@@ -100,6 +101,14 @@ class TribeTotem extends Entity {
 
       this.tribeType = entityData.clientArgs[1];
       this.updateBanners(entityData.clientArgs[2]);
+   }
+
+   protected onHit(hitData: HitData): void {
+      playBuildingHitSound(this.position.x, this.position.y);
+   }
+
+   public onDie(): void {
+      playSound("building-destroy-1.mp3", 0.4, this.position.x, this.position.y);
    }
 }
 

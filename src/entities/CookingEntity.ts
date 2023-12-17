@@ -1,7 +1,8 @@
-import { Point, InventoryData, EntityData, EntityType } from "webgl-test-shared";
+import { Point, InventoryData, EntityData, EntityType, randFloat } from "webgl-test-shared";
 import { Inventory } from "../items/Item";
 import Entity from "./Entity";
 import { createInventoryFromData } from "../inventory-manipulation";
+import Board, { Light } from "../Board";
 
 abstract class CookingEntity extends Entity {
    public fuelInventory: Inventory;
@@ -9,6 +10,8 @@ abstract class CookingEntity extends Entity {
    public outputInventory: Inventory;
    public heatingProgress: number;
    public isCooking: boolean
+
+   private readonly light: Light;
 
    constructor(position: Point, id: number, renderDepth: number, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData, heatingProgress: number, isCooking: boolean) {
       super(position, id, renderDepth);
@@ -18,6 +21,21 @@ abstract class CookingEntity extends Entity {
       this.outputInventory = createInventoryFromData(outputInventory);
       this.heatingProgress = heatingProgress;
       this.isCooking = isCooking;
+
+      this.light = {
+         position: this.position,
+         strength: 3.5,
+         radius: 40
+      };
+      Board.lights.push(this.light);
+   }
+
+   public tick(): void {
+      super.tick();
+
+      if (Board.tickIntervalHasPassed(0.15)) {
+         this.light.radius = 40 + randFloat(-7, 7);
+      }
    }
 
    public updateFromData(entityData: EntityData<EntityType.campfire | EntityType.furnace>): void {
@@ -28,6 +46,15 @@ abstract class CookingEntity extends Entity {
       this.outputInventory = createInventoryFromData(entityData.clientArgs[2]);
       this.heatingProgress = entityData.clientArgs[3];
       this.isCooking = entityData.clientArgs[4];
+   }
+
+   public onRemove(): void {
+      super.onRemove();
+      
+      const idx = Board.lights.indexOf(this.light);
+      if (idx !== -1) {
+         Board.lights.splice(idx, 1);
+      }
    }
 }
 

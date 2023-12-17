@@ -21,6 +21,7 @@ class Zombie extends Entity {
    public readonly type = EntityType.zombie;
 
    private numFootstepsTaken = 0;
+   private distanceTracker = 0;
    
    constructor(position: Point, id: number, renderDepth: number, zombieType: number) {
       super(position, id, renderDepth);
@@ -37,14 +38,18 @@ class Zombie extends Entity {
       );
    }
 
-   public tick(): void {
+public tick(): void {
       super.tick();
 
       // Create footsteps
       if (this.velocity.lengthSquared() >= 2500 && !this.isInRiver() && Board.tickIntervalHasPassed(0.3)) {
          createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 4);
-         this.createFootstepSound();
          this.numFootstepsTaken++;
+      }
+      this.distanceTracker += this.velocity.length() / SETTINGS.TPS;
+      if (this.distanceTracker > 45) {
+         this.distanceTracker -= 45;
+         this.createFootstepSound();
       }
 
       if (Math.random() < 0.1 / SETTINGS.TPS) {

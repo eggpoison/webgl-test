@@ -1,4 +1,4 @@
-import { Point, EntityData, lerp, HitData, randFloat, EntityType } from "webgl-test-shared";
+import { Point, EntityData, lerp, HitData, randFloat, EntityType, SETTINGS } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle, createSnowParticle, createWhiteSmokeParticle } from "../generic-particles";
@@ -21,6 +21,7 @@ class Yeti extends Entity {
    public type = EntityType.yeti;
 
    private numFootstepsTaken = 0;
+   private distanceTracker = 0;
 
    private lastAttackProgress = 1;
    private attackProgress = 1;
@@ -71,8 +72,12 @@ class Yeti extends Entity {
       // Create footsteps
       if (this.velocity.lengthSquared() >= 2500 && !this.isInRiver() && Board.tickIntervalHasPassed(0.55)) {
          createFootprintParticle(this, this.numFootstepsTaken, 40, 96, 8);
-         this.createFootstepSound();
          this.numFootstepsTaken++;
+      }
+      this.distanceTracker += this.velocity.length() / SETTINGS.TPS;
+      if (this.distanceTracker > 64) {
+         this.distanceTracker -= 64;
+         this.createFootstepSound();
       }
 
       // Create snow impact particles when the Yeti does a throw attack
