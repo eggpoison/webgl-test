@@ -345,15 +345,26 @@ abstract class Entity extends GameObject {
    protected createFootstepSound(): void {
       switch (this.tile.type) {
          case TileType.grass: {
-            playSound(("grass-walk-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.03, this.position.x, this.position.y);
+            playSound(("grass-walk-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.04, this.position.x, this.position.y);
             break;
          }
          case TileType.sand: {
             playSound(("sand-walk-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.02, this.position.x, this.position.y);
             break;
          }
+         case TileType.snow: {
+            playSound(("snow-walk-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.07, this.position.x, this.position.y);
+            break;
+         }
          case TileType.rock: {
-            playSound(("rock-walk-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.05, this.position.x, this.position.y);
+            playSound(("rock-walk-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.08, this.position.x, this.position.y);
+            break;
+         }
+         case TileType.water: {
+            if (!this.isInRiver()) {
+               playSound(("rock-walk-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.08, this.position.x, this.position.y);
+            }
+            break;
          }
       }
    }

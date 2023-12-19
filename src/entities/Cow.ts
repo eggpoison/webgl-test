@@ -108,6 +108,8 @@ class Cow extends Entity {
       }
 
       createBloodParticleFountain(this, Cow.BLOOD_FOUNTAIN_INTERVAL, 1.1);
+
+      playSound("cow-die-1.mp3", 0.2, this.position.x, this.position.y);
    }
 
    public updateFromData(entityData: EntityData<EntityType.cow>): void {

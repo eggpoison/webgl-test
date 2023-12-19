@@ -64,16 +64,28 @@ const AUDIO_FILE_PATHS = [
    "zombie-ambient-1.mp3",
    "zombie-ambient-2.mp3",
    "zombie-ambient-3.mp3",
+   "zombie-hurt-1.mp3",
+   "zombie-hurt-2.mp3",
+   "zombie-hurt-3.mp3",
+   "zombie-die-1.mp3",
+   "zombie-dig-2.mp3",
+   "zombie-dig-3.mp3",
+   "zombie-dig-4.mp3",
+   "zombie-dig-5.mp3",
    "cow-ambient-1.mp3",
    "cow-ambient-2.mp3",
    "cow-ambient-3.mp3",
    "cow-hurt-1.mp3",
    "cow-hurt-2.mp3",
    "cow-hurt-3.mp3",
+   "cow-die-1.mp3",
    "grass-walk-1.mp3",
    "grass-walk-2.mp3",
    "grass-walk-3.mp3",
    "grass-walk-4.mp3",
+   "snow-walk-1.mp3",
+   "snow-walk-2.mp3",
+   "snow-walk-3.mp3",
    "building-hit-1.mp3",
    "building-hit-2.mp3",
    "building-destroy-1.mp3",
@@ -87,7 +99,12 @@ const AUDIO_FILE_PATHS = [
    "berry-bush-hit-1.mp3",
    "berry-bush-hit-2.mp3",
    "berry-bush-hit-3.mp3",
-   "berry-bush-destroy-1.mp3"
+   "berry-bush-destroy-1.mp3",
+   "fish-hurt-1.mp3",
+   "fish-hurt-2.mp3",
+   "fish-hurt-3.mp3",
+   "fish-hurt-4.mp3",
+   "fish-die-1.mp3"
 ] as const;
 
 export type AudioFilePath = typeof AUDIO_FILE_PATHS[number];
@@ -98,6 +115,15 @@ export const ROCK_DESTROY_SOUNDS: ReadonlyArray<AudioFilePath> = ["rock-destroy-
 
 let audioContext: AudioContext;
 let audioBuffers: Record<AudioFilePath, AudioBuffer>;
+
+interface Sound {
+   readonly volume: number;
+   x: number;
+   y: number;
+   readonly gainNode: GainNode;
+}
+
+const activeSounds = new Array<Sound>();
 
 // Must be called after a user action
 export function createAudioContext(): void {
@@ -115,20 +141,23 @@ export async function setupAudio(): Promise<void> {
    audioBuffers = tempAudioBuffers as Record<AudioFilePath, AudioBuffer>;
 }
 
-export function playSound(filePath: AudioFilePath, volume: number, sourceX: number, sourceY: number): void {
-   if(1+1===2)return;
-   const audioBuffer = audioBuffers[filePath];
-
+const calculateSoundVolume = (volume: number, x: number, y: number): number => {
    // Calculate final volume accounting for distance
-   let distanceFromPlayer = distance(Camera.position.x, Camera.position.y, sourceX, sourceY);
+   let distanceFromPlayer = distance(Camera.position.x, Camera.position.y, x, y);
    distanceFromPlayer /= 150;
    if (distanceFromPlayer < 1) {
       distanceFromPlayer = 1;
    }
+
    const finalVolume = volume / (distanceFromPlayer * distanceFromPlayer);
+   return finalVolume;
+}
+
+export function playSound(filePath: AudioFilePath, volume: number, sourceX: number, sourceY: number): void {
+   const audioBuffer = audioBuffers[filePath];
 
    const gainNode = audioContext.createGain();
-   gainNode.gain.value = finalVolume;
+   gainNode.gain.value = calculateSoundVolume(volume, sourceX, sourceY);
    gainNode.connect(audioContext.destination);
    
    const trackSource = audioContext.createBufferSource();
@@ -136,6 +165,28 @@ export function playSound(filePath: AudioFilePath, volume: number, sourceX: numb
    trackSource.connect(gainNode);
 
    trackSource.start();
+
+   const soundInfo = {
+      volume: volume,
+      x: sourceX,
+      y: sourceY,
+      gainNode: gainNode
+   };
+   activeSounds.push(soundInfo);
+
+   trackSource.onended = () => {
+      const idx = activeSounds.indexOf(soundInfo);
+      if (idx !== -1) {
+         activeSounds.splice(idx, 1);
+      }
+   }
+}
+
+export function updateSoundEffectVolume(): void {
+   for (let i = 0; i < activeSounds.length; i++) {
+      const sound = activeSounds[i];
+      sound.gainNode.gain.value = calculateSoundVolume(sound.volume, sound.x, sound.y);
+   }
 }
 
 export function playBuildingHitSound(sourceX: number, sourceY: number): void {

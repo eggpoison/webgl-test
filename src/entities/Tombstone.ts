@@ -1,9 +1,9 @@
-import { DeathInfo, EntityData, EntityType, Point, SETTINGS, randFloat, randItem } from "webgl-test-shared";
+import { DeathInfo, EntityData, EntityType, Point, SETTINGS, randFloat, randInt, randItem } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { createDirtParticle, createRockParticle, createRockSpeckParticle } from "../generic-particles";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
-import { playSound, ROCK_DESTROY_SOUNDS, ROCK_HIT_SOUNDS } from "../sound";
+import { AudioFilePath, playSound, ROCK_DESTROY_SOUNDS, ROCK_HIT_SOUNDS } from "../sound";
 
 class Tombstone extends Entity {
    private static readonly HITBOX_WIDTH = 48;
@@ -49,6 +49,9 @@ class Tombstone extends Entity {
             if (Math.random() < 20 / SETTINGS.TPS) {
                createDirtParticle(this.zombieSpawnX, this.zombieSpawnY);
             }
+         }
+         if (this.ageTicks % 6 === 0) {
+            playSound(("zombie-dig-" + randInt(1, 5) + ".mp3") as AudioFilePath, 0.15, this.zombieSpawnX, this.zombieSpawnY);
          }
       }
    }

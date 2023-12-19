@@ -2,7 +2,7 @@ import { EntityType, InventoryData, Point, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import CookingEntity from "./CookingEntity";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
-import Board, { Light } from "../Board";
+import Board from "../Board";
 import { createEmberParticle, createSmokeParticle } from "../generic-particles";
 
 class Campfire extends CookingEntity {

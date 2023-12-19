@@ -84,12 +84,12 @@ export function createWebGLProgram(glRenderingContext: WebGL2RenderingContext, v
    glRenderingContext.shaderSource(fragmentShader, fragmentShaderText);
 
    glRenderingContext.compileShader(vertexShader);
-   if (!glRenderingContext.getShaderParameter(vertexShader, glRenderingContext.COMPILE_STATUS)) {
+   if (isDev() && !glRenderingContext.getShaderParameter(vertexShader, glRenderingContext.COMPILE_STATUS)) {
       throw new Error("ERROR compiling vertex shader! " + glRenderingContext.getShaderInfoLog(vertexShader));
    }
 
    glRenderingContext.compileShader(fragmentShader);
-   if (!glRenderingContext.getShaderParameter(fragmentShader, glRenderingContext.COMPILE_STATUS)) {
+   if (isDev() && !glRenderingContext.getShaderParameter(fragmentShader, glRenderingContext.COMPILE_STATUS)) {
       throw new Error("ERROR compiling fragment shader! " + glRenderingContext.getShaderInfoLog(fragmentShader));
    }
 
@@ -103,7 +103,7 @@ export function createWebGLProgram(glRenderingContext: WebGL2RenderingContext, v
    glRenderingContext.attachShader(program, fragmentShader);
 
    glRenderingContext.linkProgram(program);
-   if (!glRenderingContext.getProgramParameter(program, glRenderingContext.LINK_STATUS)) {
+   if (isDev() && !glRenderingContext.getProgramParameter(program, glRenderingContext.LINK_STATUS)) {
       throw new Error("ERROR linking program! " + glRenderingContext.getProgramInfoLog(program));
    }
 

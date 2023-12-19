@@ -71,12 +71,15 @@ public tick(): void {
             createBloodParticle(Math.random() < 0.6 ? BloodParticleSize.small : BloodParticleSize.large, spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(150, 250), true);
          }
       }
+
+      playSound(("zombie-hurt-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, this.position.x, this.position.y);
    }
 
    public onDie(): void {
       createBloodPoolParticle(this.position.x, this.position.y, 20);
-
       createBloodParticleFountain(this, Zombie.BLOOD_FOUNTAIN_INTERVAL, 1);
+
+      playSound("zombie-die-1.mp3", 0.4, this.position.x, this.position.y);
    }
 }
 

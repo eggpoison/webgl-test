@@ -39,7 +39,7 @@ import { createFishShaders } from "./rendering/fish-rendering";
 import { Tile } from "./Tile";
 import { createForcefieldShaders, renderForcefield } from "./rendering/world-border-forcefield-rendering";
 import { createDecorationShaders, renderDecorations } from "./rendering/decoration-rendering";
-import { playRiverSounds, setupAudio } from "./sound";
+import { playRiverSounds, setupAudio, updateSoundEffectVolume } from "./sound";
 
 let listenersHaveBeenCreated = false;
 
@@ -292,6 +292,7 @@ abstract class Game {
       
       updatePlayerItems();
 
+      updateSoundEffectVolume();
       playRiverSounds();
 
       if (isDev()) refreshDebugInfo();
