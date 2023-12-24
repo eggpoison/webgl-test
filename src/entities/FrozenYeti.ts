@@ -134,7 +134,7 @@ class FrozenYeti extends Entity {
    private static readonly ROAR_REACH = 450;
    private static readonly SNOWBALL_THROW_OFFSET = 150;
 
-   public readonly type = EntityType.frozen_yeti;
+   public readonly type = EntityType.frozenYeti;
 
    private readonly headRenderPart: RenderPart;
    /** Index 0: left paw, index 1: right paw */
@@ -145,7 +145,7 @@ class FrozenYeti extends Entity {
    private stageProgress: number;
    
    constructor(position: Point, id: number, renderDepth: number, attackType: FrozenYetiAttackType, attackStage: number, stageProgress: number) {
-      super(position, id, renderDepth);
+      super(position, id, EntityType.frozenYeti, renderDepth);
 
       this.attackType = attackType;
       this.attackStage = attackStage;
@@ -456,7 +456,7 @@ class FrozenYeti extends Entity {
       }
    }
 
-   public updateFromData(data: EntityData<EntityType.frozen_yeti>): void {
+   public updateFromData(data: EntityData<EntityType.frozenYeti>): void {
       super.updateFromData(data);
 
       // If the yeti did a bite attack, create a bite particle

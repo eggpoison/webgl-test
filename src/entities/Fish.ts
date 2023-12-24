@@ -22,7 +22,7 @@ class Fish extends Entity {
    ];
    
    constructor(position: Point, id: number, renderDepth: number, colour: FishColour) {
-      super(position, id, renderDepth);
+      super(position, id, EntityType.fish, renderDepth);
 
       const textureSource = randItem(Fish.TEXTURE_SOURCES);
       this.attachRenderPart(

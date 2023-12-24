@@ -10,7 +10,7 @@ class Slimewisp extends Entity {
    public type = EntityType.slimewisp;
 
    constructor(position: Point, id: number, renderDepth: number) {
-      super(position, id, renderDepth);
+      super(position, id, EntityType.slimewisp, renderDepth);
 
       const renderPart = new RenderPart(
          this,

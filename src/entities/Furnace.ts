@@ -11,7 +11,7 @@ class Furnace extends CookingEntity {
    public type = EntityType.furnace;
 
    constructor(position: Point, id: number, renderDepth: number, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData, heatingProgress: number, isCooking: boolean) {
-      super(position, id, renderDepth, fuelInventory, ingredientInventory, outputInventory, heatingProgress, isCooking);
+      super(position, id, EntityType.furnace, renderDepth, fuelInventory, ingredientInventory, outputInventory, heatingProgress, isCooking);
 
       this.attachRenderPart(
          new RenderPart(

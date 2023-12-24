@@ -10,12 +10,12 @@ class TribeHut extends Entity {
    private static readonly DOOR_WIDTH = 12;
    private static readonly DOOR_HEIGHT = 36;
 
-   public type = EntityType.tribe_hut;
+   public type = EntityType.tribeHut;
 
    public tribeID: number | null;
 
    constructor(position: Point, id: number, renderDepth: number, tribeID: number | null) {
-      super(position, id, renderDepth);
+      super(position, id, EntityType.tribeHut, renderDepth);
 
       this.tribeID = tribeID;
       

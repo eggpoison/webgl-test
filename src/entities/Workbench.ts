@@ -9,7 +9,7 @@ class Workbench extends Entity {
    public readonly type = EntityType.workbench;
    
    constructor(position: Point, id: number, renderDepth: number) {
-      super(position, id, renderDepth);
+      super(position, id, EntityType.workbench, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(

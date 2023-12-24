@@ -12,7 +12,7 @@ class TribeTotem extends Entity {
 
    private static readonly BANNER_LAYER_DISTANCES = [34, 52, 65];
    
-   public type = EntityType.tribe_totem;
+   public type = EntityType.tribeTotem;
 
    public tribeID: number;
    private tribeType: TribeType;
@@ -21,7 +21,7 @@ class TribeTotem extends Entity {
    private readonly bannerRenderParts: Record<number, RenderPart> = {};
 
    constructor(position: Point, id: number, renderDepth: number, tribeID: number, tribeType: TribeType, banners: Array<TribeTotemBanner>) {
-      super(position, id, renderDepth);
+      super(position, id, EntityType.tribeTotem, renderDepth);
 
       const renderPart = new RenderPart(
          this,
@@ -96,7 +96,7 @@ class TribeTotem extends Entity {
       }
    }
 
-   public updateFromData(entityData: EntityData<EntityType.tribe_totem>): void {
+   public updateFromData(entityData: EntityData<EntityType.tribeTotem>): void {
       super.updateFromData(entityData);
 
       this.tribeType = entityData.clientArgs[1];

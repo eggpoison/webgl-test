@@ -11,7 +11,7 @@ class BerryBush extends Entity {
    private static readonly LEAF_SPECK_COLOUR_LOW = [63/255, 204/255, 91/255] as const;
    private static readonly LEAF_SPECK_COLOUR_HIGH = [35/255, 158/255, 88/255] as const;
 
-   public readonly type = EntityType.berry_bush;
+   public readonly type = EntityType.berryBush;
 
    private static readonly TEXTURE_SOURCES = [
       "entities/berry-bush1.png",
@@ -25,7 +25,7 @@ class BerryBush extends Entity {
    private readonly renderPart: RenderPart;
 
    constructor(position: Point, id: number, renderDepth: number, numBerries: number) {
-      super(position, id, renderDepth);
+      super(position, id, EntityType.berryBush, renderDepth);
 
       this.renderPart = new RenderPart(
          this,
@@ -38,7 +38,7 @@ class BerryBush extends Entity {
       this.attachRenderPart(this.renderPart);
    }
 
-   public updateFromData(entityData: EntityData<EntityType.berry_bush>): void {
+   public updateFromData(entityData: EntityData<EntityType.berryBush>): void {
       super.updateFromData(entityData);
 
       const numBerries = entityData.clientArgs[0];

@@ -1,11 +1,9 @@
 import Entity from "./entities/Entity";
 import { SETTINGS, Point, Vector, ServerTileUpdateData, rotatePoint, WaterRockData, RiverSteppingStoneData, RIVER_STEPPING_STONE_SIZES, EntityType, ServerTileData, GrassTileInfo, DecorationInfo } from "webgl-test-shared";
 import Chunk from "./Chunk";
-import DroppedItem from "./items/DroppedItem";
 import { Tile } from "./Tile";
 import GameObject from "./GameObject";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
-import Projectile from "./projectiles/Projectile";
 import Particle from "./Particle";
 import CircularHitbox from "./hitboxes/CircularHitbox";
 import { highMonocolourBufferContainer, highTexturedBufferContainer, lowMonocolourBufferContainer, lowTexturedBufferContainer } from "./rendering/particle-rendering";
@@ -59,10 +57,8 @@ abstract class Board {
    /** All fish in the board */
    public static readonly fish = new Array<Fish>();
 
-   public static readonly gameObjects = new Set<GameObject>();
-   public static readonly entities: Record<number, Entity> = {};
-   public static readonly droppedItems: Record<number, DroppedItem> = {};
-   public static readonly projectiles: Record<number, Projectile> = {};
+   public static readonly entities = new Set<GameObject>();
+   public static readonly entityRecord: Record<number, GameObject> = {};
 
    /** Stores all player entities in the game. Necessary for rendering their names. */
    public static readonly players = new Array<Player>();
@@ -155,40 +151,24 @@ abstract class Board {
       return Math.floor(previousCheck) !== Math.floor(check);
    }
 
-   public static addEntity(entity: Entity): void {
+   public static addEntity(entity: GameObject): void {
+      this.entityRecord[entity.id] = entity;
+      this.entities.add(entity);
+
       if (entity.type === EntityType.fish) {
-         this.gameObjects.add(entity);
          this.fish.push(entity as Fish);
-         this.entities[entity.id] = entity;
       } else {
-         this.addGameObject(entity);
-         this.entities[entity.id] = entity;
-      }
-   }
-
-   public static addDroppedItem(droppedItem: DroppedItem): void {
-      this.addGameObject(droppedItem);
-      this.droppedItems[droppedItem.id] = droppedItem;
-   }
-
-   public static addProjectile(projectile: Projectile): void {
-      this.addGameObject(projectile);
-      this.projectiles[projectile.id] = projectile;
-   }
-
-   private static addGameObject(gameObject: GameObject): void {
-      this.gameObjects.add(gameObject);
-      
-      // Add into the sorted array
-      let idx = this.sortedGameObjects.length;
-      for (let i = 0; i < this.sortedGameObjects.length; i++) {
-         const currentGameObject = this.sortedGameObjects[i];
-         if (gameObject.renderDepth > currentGameObject.renderDepth) {
-            idx = i;
-            break;
+         // Add into the sorted array
+         let idx = this.sortedGameObjects.length;
+         for (let i = 0; i < this.sortedGameObjects.length; i++) {
+            const currentGameObject = this.sortedGameObjects[i];
+            if (entity.renderDepth > currentGameObject.renderDepth) {
+               idx = i;
+               break;
+            }
          }
+         this.sortedGameObjects.splice(idx, 0, entity);
       }
-      this.sortedGameObjects.splice(idx, 0, gameObject);
    }
 
    public static removeGameObject(gameObject: GameObject): void {
@@ -204,7 +184,7 @@ abstract class Board {
          gameObject.onRemove();
       }
 
-      this.gameObjects.delete(gameObject);
+      this.entities.delete(gameObject);
       if (gameObject instanceof Entity && gameObject.type === EntityType.fish) {
          const idx = this.fish.indexOf(gameObject as Fish);
          if (idx !== -1) {
@@ -305,13 +285,13 @@ abstract class Board {
 
    /** Ticks all game objects without updating them */
    public static tickGameObjects(): void {
-      for (const gameObject of this.gameObjects) {
+      for (const gameObject of this.entities) {
          gameObject.tick();
       }
    }
 
    public static updateGameObjects(): void {
-      for (const gameObject of this.gameObjects) {
+      for (const gameObject of this.entities) {
          gameObject.applyPhysics();
          gameObject.updateCurrentTile();
          gameObject.tick();
@@ -368,17 +348,8 @@ abstract class Board {
       return tileX >= 0 && tileX < SETTINGS.BOARD_DIMENSIONS && tileY >= 0 && tileY < SETTINGS.BOARD_DIMENSIONS;
    }
 
-   public static hasGameObjectID(gameObjectID: number): boolean {
-      if (this.entities.hasOwnProperty(gameObjectID)) {
-         return true;
-      }
-      if (this.droppedItems.hasOwnProperty(gameObjectID)) {
-         return true;
-      }
-      if (this.projectiles.hasOwnProperty(gameObjectID)) {
-         return true;
-      }
-      return false;
+   public static hasEntityID(entityID: number): boolean {
+      return this.entityRecord.hasOwnProperty(entityID);
    }
 }
 

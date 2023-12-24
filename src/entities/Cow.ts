@@ -25,7 +25,7 @@ class Cow extends Entity {
    private distanceTracker = 0;
 
    constructor(position: Point, id: number, renderDepth: number, species: CowSpecies, grazeProgress: number) {
-      super(position, id, renderDepth);
+      super(position, id, EntityType.cow, renderDepth);
 
       this.grazeProgress = grazeProgress;
 

@@ -30,7 +30,7 @@ const calculateRenderDepthFromLayer = (renderLayer: RenderLayer): number => {
 
 export function calculateEntityRenderDepth(entityType: EntityType): number {
    let renderLayer: RenderLayer;
-   if (entityType === EntityType.tree || entityType === EntityType.cactus || entityType === EntityType.berry_bush) {
+   if (entityType === EntityType.tree || entityType === EntityType.cactus || entityType === EntityType.berryBush) {
       renderLayer = RenderLayer.highEntities;
    } else {
       renderLayer = RenderLayer.lowEntities;

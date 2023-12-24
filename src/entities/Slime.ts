@@ -45,7 +45,7 @@ class Slime extends Entity {
    private internalTickCounter = 0;
 
    constructor(position: Point, id: number, renderDepth: number, size: SlimeSize, eyeRotation: number, orbs: ReadonlyArray<SlimeOrbData>) {
-      super(position, id, renderDepth);
+      super(position, id, EntityType.slime, renderDepth);
 
       const spriteSize = Slime.SIZES[size];
 

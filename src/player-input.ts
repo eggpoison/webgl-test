@@ -27,18 +27,11 @@ import RectangularHitbox from "./hitboxes/RectangularHitbox";
 /** Amount of seconds of forced delay on when an item can be used for attacking when switching between items */
 const GLOBAL_ATTACK_DELAY_ON_SWITCH = 0.1;
 
-/** Terminal velocity of the player while moving without any modifiers. */
-const PLAYER_TERMINAL_VELOCITY = 300;
-
-const PLAYER_LIGHTSPEED_TERMINAL_VELOCITY = 5000;
-
 /** Acceleration of the player while moving without any modifiers. */
 const PLAYER_ACCELERATION = 700;
 
 const PLAYER_LIGHTSPEED_ACCELERATION = 15000;
 
-/** Terminal velocity of the player while slowed. */
-const PLAYER_SLOW_TERMINAL_VELOCITY = 100;
 /** Acceleration of the player while slowed. */
 const PLAYER_SLOW_ACCELERATION = 400;
 
@@ -408,7 +401,7 @@ export function updateInteractInventory(): void {
       }
 
       // If the interactable entity was removed, hide the interact inventory
-      if (!Board.gameObjects.has(interactInventoryEntity)) {
+      if (!Board.entities.has(interactInventoryEntity)) {
          hideInteractInventory();
          return;
       }
@@ -533,20 +526,15 @@ export function updatePlayerMovement(): void {
 
    if (moveDirection !== null) {
       let acceleration: number;
-      let terminalVelocity: number;
       if (keyIsPressed("l")) {
          acceleration = PLAYER_LIGHTSPEED_ACCELERATION;
-         terminalVelocity = PLAYER_LIGHTSPEED_TERMINAL_VELOCITY;
       } else if (latencyGameState.playerAction === TribeMemberAction.eat || latencyGameState.playerAction === TribeMemberAction.charge_bow || latencyGameState.playerIsPlacingEntity) {
          acceleration = PLAYER_SLOW_ACCELERATION * getPlayerMoveSpeedMultiplier();
-         terminalVelocity = PLAYER_SLOW_TERMINAL_VELOCITY * getPlayerMoveSpeedMultiplier();
       } else {
          acceleration = PLAYER_ACCELERATION * getPlayerMoveSpeedMultiplier()
-         terminalVelocity = PLAYER_TERMINAL_VELOCITY * getPlayerMoveSpeedMultiplier()
       }
       Player.instance.acceleration.x = acceleration * Math.sin(moveDirection);
       Player.instance.acceleration.y = acceleration * Math.cos(moveDirection);
-      Player.instance.terminalVelocity = terminalVelocity;
    } else {
       Player.instance.acceleration.x = 0;
       Player.instance.acceleration.y = 0;

@@ -17,7 +17,7 @@ class Tombstone extends Entity {
    public readonly deathInfo: DeathInfo | null;
    
    constructor(position: Point, id: number, renderDepth: number, tombstoneType: number, zombieSpawnProgress: number, zombieSpawnX: number, zombieSpawnY: number, deathInfo: DeathInfo | null) {
-      super(position, id, renderDepth);
+      super(position, id, EntityType.tombstone, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(

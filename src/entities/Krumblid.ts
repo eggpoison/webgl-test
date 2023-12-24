@@ -17,7 +17,7 @@ class Krumblid extends Entity {
    private distanceTracker = 0;
 
    constructor(position: Point, id: number, renderDepth: number) {
-      super(position, id, renderDepth);
+      super(position, id, EntityType.krumblid, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(

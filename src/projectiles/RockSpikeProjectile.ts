@@ -1,13 +1,13 @@
-import { Point, SETTINGS, lerp, randFloat, randInt } from "webgl-test-shared";
+import { EntityType, Point, SETTINGS, lerp, randFloat, randInt } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
-import Projectile from "./Projectile"
 import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 import Board from "../Board";
 import { createRockParticle } from "../generic-particles";
+import GameObject from "../GameObject";
 
-class RockSpikeProjectile extends Projectile {
+class RockSpikeProjectile extends GameObject {
    private static readonly SPRITE_SIZES = [12 * 4, 16 * 4, 20 * 4];
    private static readonly SPRITE_TEXTURE_SOURCES = [
       "projectiles/rock-spike-small.png",
@@ -27,11 +27,11 @@ class RockSpikeProjectile extends Projectile {
 
    private readonly renderPart: RenderPart;
    
-   constructor(position: Point, id: number, renderDepth: number, data: any) {
-      super(position, id, renderDepth, data);
+   constructor(position: Point, id: number, renderDepth: number, size: number, lifetime: number) {
+      super(position, id, EntityType.rockSpikeProjectile, renderDepth);
 
-      this.size = data[0];
-      this.lifetime = data[1];
+      this.size = size;
+      this.lifetime = lifetime;
       
       this.shakeAmount = RockSpikeProjectile.ENTRANCE_SHAKE_AMOUNTS[this.size];
       
@@ -125,7 +125,7 @@ class RockSpikeProjectile extends Projectile {
       if (ageSeconds < RockSpikeProjectile.ENTRANCE_SHAKE_DURATION) {
          // Entrance
          const entranceProgress = ageSeconds / RockSpikeProjectile.ENTRANCE_SHAKE_DURATION;
-         this.shakeAmount = lerp(RockSpikeProjectile.ENTRANCE_SHAKE_AMOUNTS[this.data], 0, entranceProgress);
+         this.shakeAmount = lerp(RockSpikeProjectile.ENTRANCE_SHAKE_AMOUNTS[this.size], 0, entranceProgress);
          this.renderPart.scale = lerp(RockSpikeProjectile.ENTRANCE_SCALE, 1, Math.pow(entranceProgress, 0.5));
       } else if (ageSeconds > this.lifetime - RockSpikeProjectile.EXIT_SHAKE_DURATION) {
          // Exit

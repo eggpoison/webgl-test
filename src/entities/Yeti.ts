@@ -27,7 +27,7 @@ class Yeti extends Entity {
    private attackProgress = 1;
 
    constructor(position: Point, id: number, renderDepth: number, attackProgress: number) {
-      super(position, id, renderDepth);
+      super(position, id, EntityType.yeti, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(

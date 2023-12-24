@@ -16,7 +16,7 @@ class Barrel extends Entity {
    public tribeID: number | null;
 
    constructor(position: Point, id: number, renderDepth: number, tribeID: number | null, inventoryData: InventoryData) {
-      super(position, id, renderDepth);
+      super(position, id, EntityType.barrel, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(

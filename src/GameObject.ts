@@ -1,4 +1,4 @@
-import { EntityType, GameObjectData, Point, RIVER_STEPPING_STONE_SIZES, SETTINGS, TILE_FRICTIONS, TILE_MOVE_SPEED_MULTIPLIERS, TileType, distance } from "webgl-test-shared";
+import { EntityData, EntityType, HitData, HitFlags, Point, RIVER_STEPPING_STONE_SIZES, I_TPS, SETTINGS, StatusEffectData, TILE_FRICTIONS, TILE_MOVE_SPEED_MULTIPLIERS, TileType, distance } from "webgl-test-shared";
 import RenderPart, { RenderObject } from "./render-parts/RenderPart";
 import Chunk from "./Chunk";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
@@ -6,7 +6,8 @@ import { Tile } from "./Tile";
 import CircularHitbox from "./hitboxes/CircularHitbox";
 import Board from "./Board";
 import Entity from "./entities/Entity";
-import { createWaterSplashParticle } from "./generic-particles";
+import { createSlimePoolParticle, createWaterSplashParticle } from "./generic-particles";
+import Camera from "./Camera";
 
 let frameProgress: number;
 export function setFrameProgress(newFrameProgress: number): void {
@@ -19,6 +20,8 @@ export function getFrameProgress(): number {
 
 abstract class GameObject extends RenderObject {
    public readonly id: number;
+
+   public readonly type: EntityType;
 
    public position: Point;
    public velocity = new Point(0, 0);
@@ -39,9 +42,6 @@ abstract class GameObject extends RenderObject {
    public readonly hitboxes = new Set<CircularHitbox | RectangularHitbox>();
    public readonly hitboxHalfDiagonalLength?: number;
    
-   /** Limit to how many units the object can move in a second */
-   public terminalVelocity = 0;
-
    public chunks = new Set<Chunk>();
 
    /** Visual depth of the game object while being rendered */
@@ -54,13 +54,18 @@ abstract class GameObject extends RenderObject {
    /** Amount the game object's render parts will shake */
    public shakeAmount = 0;
 
-   constructor(position: Point, id: number, renderDepth: number) {
+   public secondsSinceLastHit = 99999;
+
+   public statusEffects = new Array<StatusEffectData>();
+
+   constructor(position: Point, id: number, type: EntityType, renderDepth: number) {
       super();
       
       this.position = position;
       this.renderPosition.x = position.x;
       this.renderPosition.y = position.y;
       this.id = id;
+      this.type = type;
       this.renderDepth = renderDepth;
 
       this.updateCurrentTile();
@@ -117,83 +122,21 @@ abstract class GameObject extends RenderObject {
       return true;
    }
 
+   // BIG PROBLEM: How to deal with forces pushing the 
+   // Idea: ditch the 'terminal velocity' concept
+
    public applyPhysics(): void {
-      // Accelerate
+      // Apply acceleration
       if (this.acceleration.x !== 0 || this.acceleration.y !== 0) {
          let tileMoveSpeedMultiplier = TILE_MOVE_SPEED_MULTIPLIERS[this.tile.type];
          if (this.tile.type === TileType.water && !this.isInRiver()) {
             tileMoveSpeedMultiplier = 1;
          }
-   
-         // @Cleanup: This is scuffed
-         if (typeof this.overrideTileMoveSpeedMultiplier !== "undefined") {
-            const speed = this.overrideTileMoveSpeedMultiplier();
-            if (speed !== null) {
-               tileMoveSpeedMultiplier = speed;
-            }
-         }
-
-         const terminalVelocity = this.terminalVelocity * tileMoveSpeedMultiplier;
 
          const friction = TILE_FRICTIONS[this.tile.type];
-         let accelerateAmountX = this.acceleration.x * friction * tileMoveSpeedMultiplier / SETTINGS.TPS;
-         let accelerateAmountY = this.acceleration.y * friction * tileMoveSpeedMultiplier / SETTINGS.TPS;
-
-         // Make acceleration slow as the game object reaches its terminal velocity
-         // Fix accelerating infinitely past terminal velocity
-         const progressToTerminalVelocity = this.velocity.length() / terminalVelocity;
-         if (progressToTerminalVelocity < 1) {
-            accelerateAmountX *= 1 - Math.pow(progressToTerminalVelocity, 2);
-            accelerateAmountY *= 1 - Math.pow(progressToTerminalVelocity, 2);
-         }
-
-         const amountBefore = this.velocity.length();
-         const divideAmount = 1 + 3 / SETTINGS.TPS * TILE_FRICTIONS[this.tile.type];
-         this.velocity.x /= divideAmount;
-         this.velocity.y /= divideAmount;
-         const tileFrictionReduceAmount = amountBefore - this.velocity.length();
-
-         // Undo tile friction, but in the direction of acceleration instead of velocity
-         const accelerateAmountLength = Math.sqrt(Math.pow(accelerateAmountX, 2) + Math.pow(accelerateAmountY, 2));
-         accelerateAmountX += tileFrictionReduceAmount * accelerateAmountX / accelerateAmountLength;
-         accelerateAmountY += tileFrictionReduceAmount * accelerateAmountY / accelerateAmountLength;
-
-         const magnitudeBeforeAdd = this.velocity.length();
          
-         // Add acceleration to velocity
-         this.velocity.x += accelerateAmountX;
-         this.velocity.y += accelerateAmountY;
-         
-         // Don't accelerate past terminal velocity
-         const velocityLength = this.velocity.length();
-         if (velocityLength > terminalVelocity && velocityLength > magnitudeBeforeAdd) {
-            if (magnitudeBeforeAdd < terminalVelocity) {
-               this.velocity.x *= terminalVelocity / velocityLength;
-               this.velocity.y *= terminalVelocity / velocityLength;
-            } else {
-               // If already exceeded terminal velocity, don't apply any velocity
-               this.velocity.x *= magnitudeBeforeAdd / velocityLength;
-               this.velocity.y *= magnitudeBeforeAdd / velocityLength;
-            }
-         }
-      } else if (this.velocity.x !== 0 || this.velocity.y !== 0) {
-         const divideAmount = 1 + 3 / SETTINGS.TPS * TILE_FRICTIONS[this.tile.type];
-         this.velocity.x /= divideAmount;
-         this.velocity.y /= divideAmount;
-
-         // 
-         // Apply friction
-         // 
-
-         const xSignBefore = Math.sign(this.velocity.x);
-         
-         const velocityLength = this.velocity.length();
-         this.velocity.x = (velocityLength - 3) * this.velocity.x / velocityLength;
-         this.velocity.y = (velocityLength - 3) * this.velocity.y / velocityLength;
-         if (Math.sign(this.velocity.x) !== xSignBefore) {
-            this.velocity.x = 0;
-            this.velocity.y = 0;
-         }
+         this.velocity.x += this.acceleration.x * friction * tileMoveSpeedMultiplier * I_TPS;
+         this.velocity.y += this.acceleration.y * friction * tileMoveSpeedMultiplier * I_TPS;
       }
 
       // If the game object is in a river, push them in the flow direction of the river
@@ -205,8 +148,24 @@ abstract class GameObject extends RenderObject {
       }
 
       // Apply velocity
-      this.position.x += this.velocity.x / SETTINGS.TPS;
-      this.position.y += this.velocity.y / SETTINGS.TPS;
+      if (this.velocity.x !== 0 || this.velocity.y !== 0) {
+         const friction = TILE_FRICTIONS[this.tile.type];
+
+         // Apply a friction based on the tile type to air resistance (???)
+         this.velocity.x *= 1 - friction * I_TPS * 2;
+         this.velocity.y *= 1 - friction * I_TPS * 2;
+
+         // Apply a constant friction based on the tile type to simulate ground friction
+         const velocityMagnitude = this.velocity.length();
+         if (velocityMagnitude > 0) {
+            const groundFriction = Math.min(friction, velocityMagnitude);
+            this.velocity.x -= groundFriction * this.velocity.x / velocityMagnitude;
+            this.velocity.y -= groundFriction * this.velocity.y / velocityMagnitude;
+         }
+         
+         this.position.x += this.velocity.x * I_TPS;
+         this.position.y += this.velocity.y * I_TPS;
+      }
 
       // @Cleanup: This may be incorrect to be done here
       this.resolveBorderCollisions();
@@ -215,6 +174,105 @@ abstract class GameObject extends RenderObject {
          throw new Error("Position was NaN.");
       }
    }
+
+   // public applyPhysics2(): void {
+   //    // Accelerate
+   //    if (this.acceleration.x !== 0 || this.acceleration.y !== 0) {
+   //       let tileMoveSpeedMultiplier = TILE_MOVE_SPEED_MULTIPLIERS[this.tile.type];
+   //       if (this.tile.type === TileType.water && !this.isInRiver()) {
+   //          tileMoveSpeedMultiplier = 1;
+   //       }
+   
+   //       // @Cleanup: This is scuffed
+   //       if (typeof this.overrideTileMoveSpeedMultiplier !== "undefined") {
+   //          const speed = this.overrideTileMoveSpeedMultiplier();
+   //          if (speed !== null) {
+   //             tileMoveSpeedMultiplier = speed;
+   //          }
+   //       }
+
+   //       const terminalVelocity = this.terminalVelocity * tileMoveSpeedMultiplier;
+
+   //       const friction = TILE_FRICTIONS[this.tile.type];
+   //       let accelerateAmountX = this.acceleration.x * friction * tileMoveSpeedMultiplier / SETTINGS.TPS;
+   //       let accelerateAmountY = this.acceleration.y * friction * tileMoveSpeedMultiplier / SETTINGS.TPS;
+
+   //       // Make acceleration slow as the game object reaches its terminal velocity
+   //       // Fix accelerating infinitely past terminal velocity
+   //       const progressToTerminalVelocity = this.velocity.length() / terminalVelocity;
+   //       if (progressToTerminalVelocity < 1) {
+   //          accelerateAmountX *= 1 - Math.pow(progressToTerminalVelocity, 2);
+   //          accelerateAmountY *= 1 - Math.pow(progressToTerminalVelocity, 2);
+   //       }
+
+   //       const amountBefore = this.velocity.length();
+   //       const divideAmount = 1 + 3 / SETTINGS.TPS * TILE_FRICTIONS[this.tile.type];
+   //       this.velocity.x /= divideAmount;
+   //       this.velocity.y /= divideAmount;
+   //       const tileFrictionReduceAmount = amountBefore - this.velocity.length();
+
+   //       // Undo tile friction, but in the direction of acceleration instead of velocity
+   //       const accelerateAmountLength = Math.sqrt(Math.pow(accelerateAmountX, 2) + Math.pow(accelerateAmountY, 2));
+   //       accelerateAmountX += tileFrictionReduceAmount * accelerateAmountX / accelerateAmountLength;
+   //       accelerateAmountY += tileFrictionReduceAmount * accelerateAmountY / accelerateAmountLength;
+
+   //       const magnitudeBeforeAdd = this.velocity.length();
+         
+   //       // Add acceleration to velocity
+   //       this.velocity.x += accelerateAmountX;
+   //       this.velocity.y += accelerateAmountY;
+         
+   //       // Don't accelerate past terminal velocity
+   //       const velocityLength = this.velocity.length();
+   //       if (velocityLength > terminalVelocity && velocityLength > magnitudeBeforeAdd) {
+   //          if (magnitudeBeforeAdd < terminalVelocity) {
+   //             this.velocity.x *= terminalVelocity / velocityLength;
+   //             this.velocity.y *= terminalVelocity / velocityLength;
+   //          } else {
+   //             // If already exceeded terminal velocity, don't apply any velocity
+   //             this.velocity.x *= magnitudeBeforeAdd / velocityLength;
+   //             this.velocity.y *= magnitudeBeforeAdd / velocityLength;
+   //          }
+   //       }
+   //    } else if (this.velocity.x !== 0 || this.velocity.y !== 0) {
+   //       const divideAmount = 1 + 3 / SETTINGS.TPS * TILE_FRICTIONS[this.tile.type];
+   //       this.velocity.x /= divideAmount;
+   //       this.velocity.y /= divideAmount;
+
+   //       // 
+   //       // Apply friction
+   //       // 
+
+   //       const xSignBefore = Math.sign(this.velocity.x);
+         
+   //       const velocityLength = this.velocity.length();
+   //       this.velocity.x = (velocityLength - 3) * this.velocity.x / velocityLength;
+   //       this.velocity.y = (velocityLength - 3) * this.velocity.y / velocityLength;
+   //       if (Math.sign(this.velocity.x) !== xSignBefore) {
+   //          this.velocity.x = 0;
+   //          this.velocity.y = 0;
+   //       }
+   //    }
+
+   //    // If the game object is in a river, push them in the flow direction of the river
+   //    const moveSpeedIsOverridden = typeof this.overrideTileMoveSpeedMultiplier !== "undefined" && this.overrideTileMoveSpeedMultiplier() !== null;
+   //    if (this.isInRiver() && !moveSpeedIsOverridden) {
+   //       const flowDirection = Board.getRiverFlowDirection(this.tile.x, this.tile.y);
+   //       this.velocity.x += 240 / SETTINGS.TPS * Math.sin(flowDirection);
+   //       this.velocity.y += 240 / SETTINGS.TPS * Math.cos(flowDirection);
+   //    }
+
+   //    // Apply velocity
+   //    this.position.x += this.velocity.x / SETTINGS.TPS;
+   //    this.position.y += this.velocity.y / SETTINGS.TPS;
+
+   //    // @Cleanup: This may be incorrect to be done here
+   //    this.resolveBorderCollisions();
+
+   //    if (isNaN(this.position.x)) {
+   //       throw new Error("Position was NaN.");
+   //    }
+   // }
 
    protected resolveBorderCollisions(): void {
       if (this.position.x < 0) {
@@ -290,7 +348,7 @@ abstract class GameObject extends RenderObject {
       }
    }
 
-   public updateFromData(data: GameObjectData): void {
+   public updateFromData(data: EntityData): void {
       this.position.x = data.position[0];
       this.position.y = data.position[1];
       this.velocity.x = data.velocity[0];
@@ -342,6 +400,35 @@ abstract class GameObject extends RenderObject {
             this.chunks.add(chunk);
          }
       }
+   }
+
+   // @Cleanup: Should this be here
+   public isVisible(): boolean {
+      for (const chunk of this.chunks) {
+         if (chunk.x >= Camera.minVisibleChunkX && chunk.x <= Camera.maxVisibleChunkX && chunk.y >= Camera.minVisibleChunkY && chunk.y <= Camera.maxVisibleChunkY) {
+            return true;
+         }
+      }
+      return false;
+   }
+
+   public onDie?(): void;
+
+   protected onHit?(hitData: HitData): void;
+
+   public registerHit(hitData: HitData): void {
+      // If the entity is hit by a flesh sword, create slime puddles
+      if (hitData.flags & HitFlags.HIT_BY_FLESH_SWORD) {
+         for (let i = 0; i < 2; i++) {
+            createSlimePoolParticle(this.position.x, this.position.y, 32);
+         }
+      }
+      
+      if (typeof this.onHit !== "undefined") {
+         this.onHit(hitData);
+      }
+
+      this.secondsSinceLastHit = 0;
    }
 }
 

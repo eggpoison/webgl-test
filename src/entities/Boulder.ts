@@ -16,7 +16,7 @@ class Boulder extends Entity {
    ];
 
    constructor(position: Point, id: number, renderDepth: number, boulderType: number) {
-      super(position, id, renderDepth);
+      super(position, id, EntityType.boulder, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(

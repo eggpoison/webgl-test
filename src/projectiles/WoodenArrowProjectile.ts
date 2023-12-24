@@ -1,12 +1,12 @@
-import { Point, randFloat, randInt } from "webgl-test-shared";
+import { EntityType, Point, randFloat, randInt } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import Projectile from "./Projectile";
 import Board from "../Board";
 import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
+import GameObject from "../GameObject";
 
-class WoodenArrowProjectile extends Projectile {
+class WoodenArrowProjectile extends GameObject {
    private static readonly HEIGHT = 64;
    private static readonly WIDTH = 20;
 
@@ -14,8 +14,8 @@ class WoodenArrowProjectile extends Projectile {
    private static readonly DESTROY_PARTICLE_BROWN_COLOUR = [135/255, 75/255, 28/255];
    private static readonly DESTROY_PARTICLE_ADD_VELOCITY = 80;
    
-   constructor(position: Point, id: number, renderDepth: number, data: any) {
-      super(position, id, renderDepth, data);
+   constructor(position: Point, id: number, renderDepth: number) {
+      super(position, id, EntityType.woodenArrowProjectile, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(

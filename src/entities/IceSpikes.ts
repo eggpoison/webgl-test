@@ -8,12 +8,12 @@ import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-t
 
 class IceSpikes extends Entity {
    private static readonly ICE_SPECK_COLOUR: ParticleColour = [140/255, 143/255, 207/255];
-   public type = EntityType.ice_spikes;
+   public type = EntityType.iceSpikes;
 
    private static readonly SIZE = 80;
 
    constructor(position: Point, id: number, renderDepth: number) {
-      super(position, id, renderDepth);
+      super(position, id, EntityType.iceSpikes, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(

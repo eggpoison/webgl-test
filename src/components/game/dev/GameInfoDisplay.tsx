@@ -114,12 +114,8 @@ const GameInfoDisplay = () => {
       </ul>
 
       <ul>
-         <li>{Board.gameObjects.size} Game Objects</li>
-         <ul>
-            <li>{Object.keys(Board.entities).length} Entities</li>
-            <li>{Object.keys(Board.projectiles).length} Projectiles</li>
-            <li>{Object.keys(Board.droppedItems).length} Dropped Items</li>
-         </ul>
+         <li>{Board.entities.size} Entities</li>
+         {/* @Incomplete: Subdivide into projectiles, item entities, and other */}
          <li>{Board.lowMonocolourParticles.length + Board.lowTexturedParticles.length + Board.highMonocolourParticles.length + Board.highTexturedParticles.length} Particles</li>
       </ul>
    </div>;

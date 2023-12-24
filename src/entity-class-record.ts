@@ -1,7 +1,6 @@
-import { EntityInfoClientArgs, EntityType, Point } from "webgl-test-shared";
+import { EntityType, Point, EntityInfoClientArgs } from "webgl-test-shared";
 import Boulder from "./entities/Boulder";
 import Cow from "./entities/Cow";
-import Entity from "./entities/Entity";
 import Player from "./entities/Player";
 import Tombstone from "./entities/Tombstone";
 import Tree from "./entities/Tree";
@@ -23,8 +22,13 @@ import Snowball from "./entities/Snowball";
 import Krumblid from "./entities/Krumblid";
 import FrozenYeti from "./entities/FrozenYeti";
 import Fish from "./entities/Fish";
+import DroppedItem from "./items/DroppedItem";
+import GameObject from "./GameObject";
+import WoodenArrowProjectile from "./projectiles/WoodenArrowProjectile";
+import IceShardsProjectile from "./projectiles/IceShardsProjectile";
+import RockSpikeProjectile from "./projectiles/RockSpikeProjectile";
 
-export type EntityClassType<T extends EntityType> = new (position: Point, id: number, renderDepth: number, ...clientParams: Parameters<EntityInfoClientArgs[T]>) => Entity;
+export type EntityClassType<T extends EntityType> = new (position: Point, id: number, renderDepth: number, ...clientParams: Parameters<typeof EntityInfoClientArgs[T]>) => GameObject;
 
 const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
    [EntityType.cow]: () => Cow,
@@ -33,23 +37,27 @@ const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
    [EntityType.tree]: () => Tree,
    [EntityType.workbench]: () => Workbench,
    [EntityType.boulder]: () => Boulder,
-   [EntityType.berry_bush]: () => BerryBush,
+   [EntityType.berryBush]: () => BerryBush,
    [EntityType.cactus]: () => Cactus,
    [EntityType.yeti]: () => Yeti,
-   [EntityType.ice_spikes]: () => IceSpikes,
+   [EntityType.iceSpikes]: () => IceSpikes,
    [EntityType.slime]: () => Slime,
    [EntityType.slimewisp]: () => Slimewisp,
    [EntityType.tribesman]: () => Tribesman,
    [EntityType.player]: () => Player,
-   [EntityType.tribe_totem]: () => TribeTotem,
-   [EntityType.tribe_hut]: () => TribeHut,
+   [EntityType.tribeTotem]: () => TribeTotem,
+   [EntityType.tribeHut]: () => TribeHut,
    [EntityType.barrel]: () => Barrel,
    [EntityType.campfire]: () => Campfire,
    [EntityType.furnace]: () => Furnace,
    [EntityType.snowball]: () => Snowball,
    [EntityType.krumblid]: () => Krumblid,
-   [EntityType.frozen_yeti]: () => FrozenYeti,
-   [EntityType.fish]: () => Fish
+   [EntityType.frozenYeti]: () => FrozenYeti,
+   [EntityType.fish]: () => Fish,
+   [EntityType.itemEntity]: () => DroppedItem,
+   [EntityType.woodenArrowProjectile]: () => WoodenArrowProjectile,
+   [EntityType.iceShardProjectile]: () => IceShardsProjectile,
+   [EntityType.rockSpikeProjectile]: () => RockSpikeProjectile
 };
 
 export default ENTITY_CLASS_RECORD;

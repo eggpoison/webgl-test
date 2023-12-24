@@ -361,7 +361,7 @@ abstract class Game {
       renderDecorations();
       renderAmbientOcclusion();
       renderWallBorders();
-      if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Board.hasGameObjectID(this.gameObjectDebugData.gameObjectID)) {
+      if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Board.hasEntityID(this.gameObjectDebugData.gameObjectID)) {
          renderTriangleDebugData(this.gameObjectDebugData);
       }
       renderForcefield();
@@ -388,7 +388,7 @@ abstract class Game {
       if (nerdVisionIsVisible() && OPTIONS.showHitboxes) {
          renderEntityHitboxes();
       }
-      if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Board.hasGameObjectID(this.gameObjectDebugData.gameObjectID)) {
+      if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Board.hasEntityID(this.gameObjectDebugData.gameObjectID)) {
          renderLineDebugData(this.gameObjectDebugData);
       }
 

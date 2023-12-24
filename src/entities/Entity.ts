@@ -1,10 +1,9 @@
-import { EntityType, HitData, HitFlags, SETTINGS, StatusEffectData, StatusEffect, lerp, randFloat, randItem, customTickIntervalHasPassed, TileType, randInt } from "webgl-test-shared";
+import { EntityType, SETTINGS, StatusEffectData, StatusEffect, lerp, randFloat, randItem, customTickIntervalHasPassed, TileType, randInt } from "webgl-test-shared";
 import GameObject from "../GameObject";
 import Particle from "../Particle";
 import Board, { Light } from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
-import { BloodParticleSize, createBloodParticle, createSlimePoolParticle } from "../generic-particles";
-import Camera from "../Camera";
+import { BloodParticleSize, createBloodParticle } from "../generic-particles";
 import { AudioFilePath, playSound } from "../sound";
 
 // Use prime numbers / 100 to ensure a decent distribution of different types of particles
@@ -62,8 +61,6 @@ abstract class Entity extends GameObject {
    public abstract readonly type: EntityType;
 
    public secondsSinceLastHit = 99999;
-
-   public statusEffects = new Array<StatusEffectData>();
 
    private burningLight: Light | null = null;
 
@@ -274,15 +271,6 @@ abstract class Entity extends GameObject {
       }
    }
 
-   public isVisible(): boolean {
-      for (const chunk of this.chunks) {
-         if (chunk.x >= Camera.minVisibleChunkX && chunk.x <= Camera.maxVisibleChunkX && chunk.y >= Camera.minVisibleChunkY && chunk.y <= Camera.maxVisibleChunkY) {
-            return true;
-         }
-      }
-      return false;
-   }
-
    public hasStatusEffect(type: StatusEffect): boolean {
       for (const statusEffect of this.statusEffects) {
          if (statusEffect.type === type) {
@@ -313,25 +301,6 @@ abstract class Entity extends GameObject {
          }
       }
    }
-
-   protected onHit?(hitData: HitData): void;
-
-   public registerHit(hitData: HitData): void {
-      // If the entity is hit by a flesh sword, create slime puddles
-      if (hitData.flags & HitFlags.HIT_BY_FLESH_SWORD) {
-         for (let i = 0; i < 2; i++) {
-            createSlimePoolParticle(this.position.x, this.position.y, 32);
-         }
-      }
-      
-      if (typeof this.onHit !== "undefined") {
-         this.onHit(hitData);
-      }
-
-      this.secondsSinceLastHit = 0;
-   }
-
-   public onDie?(): void;
 
    public onRemove(): void {
       if (this.burningLight !== null) {

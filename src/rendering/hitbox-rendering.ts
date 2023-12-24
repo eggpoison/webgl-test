@@ -49,7 +49,7 @@ export function createHitboxShaders(): void {
 const calculateVisibleGameObjects = (): Array<GameObject> => {
    const visibleGameObjects = new Array<GameObject>();
 
-   for (const gameObject of Board.gameObjects) {
+   for (const gameObject of Board.entities) {
       visibleGameObjects.push(gameObject);
    }
 

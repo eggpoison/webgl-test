@@ -200,8 +200,8 @@ abstract class TribeMember extends Entity {
    private activeItemRotation = TribeMember.ITEM_RESTING_ROTATION;
    
    // @Cleanup: We shouldn't pass entityType through the constructor, just do the related logic in the subclasses
-   constructor(position: Point, id: number, renderDepth: number, entityType: EntityType, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, action: TribeMemberAction, foodEatingType: ItemType | -1, lastActionTicks: number, hasFrostShield: boolean, warPaintType: number) {
-      super(position, id, renderDepth);
+   constructor(position: Point, id: number, entityType: EntityType, renderDepth: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, action: TribeMemberAction, foodEatingType: ItemType | -1, lastActionTicks: number, hasFrostShield: boolean, warPaintType: number) {
+      super(position, id, entityType, renderDepth);
 
       this.tribeID = tribeID;
       this.tribeType = tribeType;

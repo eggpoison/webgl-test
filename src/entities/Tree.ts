@@ -23,7 +23,7 @@ class Tree extends Entity {
    private static readonly LEAF_SPECK_COLOUR_HIGH = [35/255, 158/255, 88/255] as const;
    
    constructor(position: Point, id: number, renderDepth: number, treeSize: TreeSize) {
-      super(position, id, renderDepth);
+      super(position, id, EntityType.tree, renderDepth);
 
       this.treeSize = treeSize;
       this.radius = 40 + treeSize * 10;
