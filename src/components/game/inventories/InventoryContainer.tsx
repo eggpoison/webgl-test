@@ -1,6 +1,6 @@
+import { Inventory } from "webgl-test-shared";
 import { getItemTypeImage } from "../../../client-item-info";
 import { leftClickItemSlot, rightClickItemSlot } from "../../../inventory-manipulation";
-import { Inventory } from "../../../items/Item";
 import ItemSlot from "./ItemSlot";
 
 interface InventoryProps {

@@ -1,5 +1,4 @@
-import { SETTINGS, TribeMemberAction } from "webgl-test-shared";
-import { Inventory } from "../items/Item";
+import { Inventory, SETTINGS, TribeMemberAction } from "webgl-test-shared";
 
 /** Information about the game and player. */
 abstract class GameState {

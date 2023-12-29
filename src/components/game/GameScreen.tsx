@@ -10,6 +10,7 @@ import DeathScreen from "./DeathScreen";
 import BackpackInventoryMenu from "./inventories/BackpackInventory";
 import InteractInventory from "./inventories/InteractInventory";
 import ChargeMeter from "./ChargeMeter";
+import TechTree from "./TechTree";
 
 export let showPauseScreen: () => void = () => {};
 export let hidePauseScreen: () => void = () => {};
@@ -84,6 +85,8 @@ const GameScreen = () => {
       <NerdVision />
 
       {isPaused && !isDead ? <PauseScreen /> : null}
+
+      <TechTree />
    </>;
 }
 

@@ -1,10 +1,10 @@
 import {  useEffect, useReducer, useState } from "react";
-import { Inventory } from "../../../items/Item";
 import Entity from "../../../entities/Entity";
 import BarrelInventory from "./BarrelInventory";
 import TribesmanInventory from "./TribesmanInventory";
 import TombstoneEpitaph from "./TombstoneEpitaph";
 import CookingInventory from "./CookingInventory";
+import { Inventory } from "webgl-test-shared";
 
 export interface InteractInventoryInfo {
    readonly inventory: Inventory;

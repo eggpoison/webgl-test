@@ -16,7 +16,6 @@ interface Options {
     * @default false
     */
    showRenderChunkBorders: boolean;
-   readonly showTribeMemberHands: boolean;
    readonly showParticles: boolean;
 }
 
@@ -26,7 +25,6 @@ const OPTIONS: Options = {
    showHitboxes: false,
    showChunkBorders: false,
    showRenderChunkBorders: false,
-   showTribeMemberHands: true,
    showParticles: true
 };
 

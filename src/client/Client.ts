@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TribeData, InventoryData, TribeMemberAction } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TribeData, InventoryData, TribeMemberAction, TechID, Inventory } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -8,7 +8,6 @@ import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { Tile } from "../Tile";
 import { gameScreenSetIsDead } from "../components/game/GameScreen";
-import { Inventory } from "../items/Item";
 import { getInteractEntityID, removeSelectedItem, selectItem, updateInventoryIsOpen } from "../player-input";
 import { Hotbar_update } from "../components/game/inventories/Hotbar";
 import { setHeldItemVisual } from "../components/game/HeldItem";
@@ -27,6 +26,7 @@ import { calculateDroppedItemRenderDepth, calculateEntityRenderDepth } from "../
 import GameObject from "../GameObject";
 import { createDamageNumber } from "../text-canvas";
 import { playSound } from "../sound";
+import { updateTechTree } from "../components/game/TechTree";
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -241,6 +241,12 @@ abstract class Client {
             // Update existing tribe
             Game.tribe.numHuts = tribeData.numHuts;
          }
+
+         // Update unlocked techs
+         if (Game.tribe.unlockedTechs.length !== tribeData.unlockedTechs.length) {
+            updateTechTree();
+         }
+         Game.tribe.unlockedTechs = tribeData.unlockedTechs;
       }
    }
 
@@ -325,7 +331,7 @@ abstract class Client {
       } else {
          definiteGameState.craftingOutputSlot = createInventoryFromData(playerInventoryData.craftingOutputItemSlot);
       }
-      CraftingMenu_setCraftingMenuOutputItem(definiteGameState.craftingOutputSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.craftingOutputSlot.itemSlots[1] : null);
+      CraftingMenu_setCraftingMenuOutputItem(definiteGameState.craftingOutputSlot?.itemSlots.hasOwnProperty(1) ? definiteGameState.craftingOutputSlot.itemSlots[1] : null);
 
       // Backpack slot
       const backpackSlotHasChanged = this.inventoryHasChanged(definiteGameState.backpackSlot, playerInventoryData.backpackSlot);
@@ -603,6 +609,12 @@ abstract class Client {
 
       gameScreenSetIsDead(true);
       updateInventoryIsOpen(false);
+   }
+
+   public static sendUnlockTech(techID: TechID): void {
+      if (Game.isRunning && this.socket !== null) {
+         this.socket.emit("unlock_tech", techID);
+      }
    }
 }
 

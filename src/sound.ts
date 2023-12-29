@@ -104,7 +104,11 @@ const AUDIO_FILE_PATHS = [
    "fish-hurt-2.mp3",
    "fish-hurt-3.mp3",
    "fish-hurt-4.mp3",
-   "fish-die-1.mp3"
+   "fish-die-1.mp3",
+   "ice-spikes-hit-1.mp3",
+   "ice-spikes-hit-2.mp3",
+   "ice-spikes-hit-3.mp3",
+   "ice-spikes-destroy.mp3",
 ] as const;
 
 export type AudioFilePath = typeof AUDIO_FILE_PATHS[number];

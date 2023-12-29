@@ -9,7 +9,7 @@ import { createEntityShaders, renderGameObjects } from "./rendering/game-object-
 import Client from "./client/Client";
 import { calculateCursorWorldPositionX, calculateCursorWorldPositionY, cursorX, cursorY, getMouseTargetEntity, handleMouseMovement, renderCursorTooltip, updateChargeMeter } from "./mouse";
 import { refreshDebugInfo, setDebugInfoDebugData } from "./components/game/dev/DebugInfo";
-import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, TIME_UNIFORM_BUFFER_BINDING_INDEX, createShaderStrings, createWebGLContext, gl, halfWindowHeight, halfWindowWidth, resizeCanvas } from "./webgl";
+import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, TIME_UNIFORM_BUFFER_BINDING_INDEX, createWebGLContext, gl, halfWindowHeight, halfWindowWidth, resizeCanvas } from "./webgl";
 import { loadTextures } from "./textures";
 import { hidePauseScreen, showPauseScreen, toggleSettingsMenu } from "./components/game/GameScreen";
 import { getGameState } from "./components/App";
@@ -40,6 +40,7 @@ import { Tile } from "./Tile";
 import { createForcefieldShaders, renderForcefield } from "./rendering/world-border-forcefield-rendering";
 import { createDecorationShaders, renderDecorations } from "./rendering/decoration-rendering";
 import { playRiverSounds, setupAudio, updateSoundEffectVolume } from "./sound";
+import { createTechTreeShaders, renderTechTree } from "./rendering/tech-tree-rendering";
 
 let listenersHaveBeenCreated = false;
 
@@ -165,7 +166,6 @@ abstract class Game {
       if (!Game.hasInitialised) {
          return new Promise(async resolve => {
             createWebGLContext();
-            createShaderStrings();
             createTextCanvasContext();
 
             Board.initialise(tiles, waterRocks, riverSteppingStones, riverFlowDirections, edgeTiles, edgeRiverFlowDirections, edgeRiverSteppingStones, grassInfo, decorations);
@@ -202,6 +202,7 @@ abstract class Game {
             createAmbientOcclusionShaders();
             createForcefieldShaders();
             createDecorationShaders();
+            createTechTreeShaders();
 
             await setupAudio();
 
@@ -335,7 +336,7 @@ abstract class Game {
          Player.instance.updateRenderPosition();
          Camera.setCameraPosition(Player.instance.renderPosition);
          Camera.updateVisibleChunkBounds();
-      Camera.updateVisibleRenderChunkBounds();
+         Camera.updateVisibleRenderChunkBounds();
       }
 
       // Update the camera buffer
@@ -416,6 +417,8 @@ abstract class Game {
       updateInteractInventory();
 
       updateDebugScreenFPS();
+      
+      renderTechTree();
    }
 }
 

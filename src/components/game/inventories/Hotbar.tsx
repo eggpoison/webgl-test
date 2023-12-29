@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useReducer, useState } from "react";
-import { ITEM_TYPE_RECORD, ItemType } from "webgl-test-shared";
+import { ITEM_TYPE_RECORD, Item, ItemType } from "webgl-test-shared";
 import { getItemTypeImage } from "../../../client-item-info";
-import Item from "../../../items/Item";
 import { leftClickItemSlot, rightClickItemSlot } from "../../../inventory-manipulation";
 import ItemSlot from "./ItemSlot";
 import Player from "../../../entities/Player";

@@ -122,9 +122,6 @@ abstract class GameObject extends RenderObject {
       return true;
    }
 
-   // BIG PROBLEM: How to deal with forces pushing the 
-   // Idea: ditch the 'terminal velocity' concept
-
    public applyPhysics(): void {
       // Apply acceleration
       if (this.acceleration.x !== 0 || this.acceleration.y !== 0) {

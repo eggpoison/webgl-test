@@ -1,6 +1,5 @@
-import { EntityData, EntityType, InventoryData, ItemType, Point, SETTINGS, TribeMemberAction, TribeType, TribesmanState, randInt, randItem } from "webgl-test-shared";
+import { EntityData, EntityType, Inventory, InventoryData, ItemType, Point, SETTINGS, TribeMemberAction, TribeType, TribesmanState, randInt, randItem } from "webgl-test-shared";
 import TribeMember from "./TribeMember";
-import { Inventory } from "../items/Item";
 import { createFootprintParticle } from "../generic-particles";
 import Board from "../Board";
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";

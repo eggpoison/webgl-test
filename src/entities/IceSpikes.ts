@@ -1,10 +1,11 @@
-import { EntityType, Point, randFloat } from "webgl-test-shared";
+import { EntityType, Point, randFloat, randInt } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import Particle from "../Particle";
 import Board from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
+import { AudioFilePath, playSound } from "../sound";
 
 class IceSpikes extends Entity {
    private static readonly ICE_SPECK_COLOUR: ParticleColour = [140/255, 143/255, 207/255];
@@ -32,12 +33,16 @@ class IceSpikes extends Entity {
       for (let i = 0; i < 10; i++) {
          this.createIceSpeckProjectile();
       }
+      
+      playSound(("ice-spikes-hit-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, this.position.x, this.position.y);
    }
 
    public onDie(): void {
       for (let i = 0; i < 15; i++) {
          this.createIceSpeckProjectile();
       }
+
+      playSound("ice-spikes-destroy.mp3", 0.4, this.position.x, this.position.y);
    }
 
    private createIceSpeckProjectile(): void {

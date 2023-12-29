@@ -1,10 +1,9 @@
 import Client from "./client/Client";
 import { inventoryIsOpen } from "./components/game/menus/CraftingMenu";
 import { setHeldItemVisualPosition } from "./components/game/HeldItem";
-import Item, { Inventory, ItemSlots } from "./items/Item";
 import { interactInventoryIsOpen } from "./components/game/inventories/InteractInventory";
 import { definiteGameState } from "./game-state/game-states";
-import { InventoryData } from "webgl-test-shared";
+import { Inventory, InventoryData, Item, ItemSlots } from "webgl-test-shared";
 
 const canInteractWithItemSlots = (): boolean => {
    return inventoryIsOpen() || interactInventoryIsOpen();

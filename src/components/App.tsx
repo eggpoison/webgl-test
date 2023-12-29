@@ -76,6 +76,7 @@ function App() {
       <div id="canvas-wrapper" className={!canvasIsVisible ? "hidden" : undefined}>
          <canvas id="game-canvas"></canvas>
          <canvas id="text-canvas"></canvas>
+         <canvas id="tech-tree-canvas" className="hidden"></canvas>
          <FrameGraph />
       </div>
    </>;

@@ -1,4 +1,4 @@
-import { AttackPacket, EntityType, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, ItemType, PlaceableItemType, Point, SETTINGS, STATUS_EFFECT_MODIFIERS, ToolItemInfo, TribeMemberAction } from "webgl-test-shared";
+import { AttackPacket, EntityType, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, Item, ItemType, PlaceableItemType, Point, SETTINGS, STATUS_EFFECT_MODIFIERS, ToolItemInfo, TribeMemberAction } from "webgl-test-shared";
 import { addKeyListener, clearPressedKeys, keyIsPressed } from "./keyboard-input";
 import { CraftingMenu_setIsVisible } from "./components/game/menus/CraftingMenu";
 import Player from "./entities/Player";
@@ -9,7 +9,6 @@ import { BackpackInventoryMenu_setIsVisible } from "./components/game/inventorie
 import Entity from "./entities/Entity";
 import Tribesman from "./entities/Tribesman";
 import Tombstone from "./entities/Tombstone";
-import Item from "./items/Item";
 import Board from "./Board";
 import { definiteGameState, latencyGameState } from "./game-state/game-states";
 import Game from "./Game";

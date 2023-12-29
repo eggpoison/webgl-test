@@ -174,7 +174,7 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       entityTextureSource: "items/small/meat-suit.png",
       textureSource: "items/large/meat-suit.png",
       name: "Meat Suit",
-      description: "Your skin feels oily after wearing it, and you now have at least 5 NTDs. Looks cool though"
+      description: "You think you are Cow, but you are not. You are a mere imitation, a foolish attempt to recreate That which is divine. You will never approach Their divinity."
    },
    [ItemType.deepfrost_heart]: {
       entityTextureSource: "items/small/deepfrost-heart.png",
@@ -223,6 +223,27 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       textureSource: "items/large/fishlord-suit.png",
       name: "Fish Suit",
       description: ""
+   },
+   // @Incomplete
+   [ItemType.gathering_gloves]: {
+      entityTextureSource: "items/small/fishlord-suit.png",
+      textureSource: "items/large/fishlord-suit.png",
+      name: "Fish Suit",
+      description: ""
+   },
+   // @Incomplete
+   [ItemType.throngler]: {
+      entityTextureSource: "items/small/fishlord-suit.png",
+      textureSource: "items/large/fishlord-suit.png",
+      name: "Fish Suit",
+      description: ""
+   },
+   // @Incomplete
+   [ItemType.leather_armour]: {
+      entityTextureSource: "items/small/fishlord-suit.png",
+      textureSource: "items/large/fishlord-suit.png",
+      name: "Fish Suit",
+      description: ""
    }
 };
 
@@ -230,4 +251,4 @@ export function getItemTypeImage(itemType: ItemType): any {
    return require("./images/" + CLIENT_ITEM_INFO_RECORD[itemType].textureSource);
 }
 
-export default CLIENT_ITEM_INFO_RECORD
+export default CLIENT_ITEM_INFO_RECORD;

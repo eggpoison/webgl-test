@@ -1,7 +1,6 @@
-import { EntityData, EntityType, HitData, InventoryData, Point } from "webgl-test-shared";
+import { EntityData, EntityType, HitData, Inventory, InventoryData, Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import { Inventory } from "../items/Item";
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
 import { playBuildingHitSound, playSound } from "../sound";

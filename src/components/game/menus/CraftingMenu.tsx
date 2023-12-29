@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { canCraftRecipe, CRAFTING_RECIPES, CraftingRecipe, CraftingStation, ItemType } from "webgl-test-shared";
+import { hasEnoughItems, CRAFTING_RECIPES, CraftingRecipe, CraftingStation, getTechRequiredForItem, ItemType, Item, ItemSlots } from "webgl-test-shared";
 import CLIENT_ITEM_INFO_RECORD, { getItemTypeImage } from "../../../client-item-info";
 import Client from "../../../client/Client";
-import Item, { ItemSlots } from "../../../items/Item";
 import { windowHeight } from "../../../webgl";
 import ItemSlot from "../inventories/ItemSlot";
 import { leftClickItemSlot } from "../../../inventory-manipulation";
 import Player from "../../../entities/Player";
 import { definiteGameState } from "../../../game-state/game-states";
+import Game from "../../../Game";
 
 const CRAFTING_STATION_ICON_TEXTURE_SOURCES: Record<CraftingStation, string> = {
    [CraftingStation.workbench]: CLIENT_ITEM_INFO_RECORD[ItemType.workbench].textureSource,
@@ -209,7 +209,7 @@ const CraftingMenu = () => {
       
       const craftableRecipesArray = new Array<CraftingRecipe>();
       for (const recipe of availableRecipes) {
-         if (canCraftRecipe(availableItemSlots, recipe)) {
+         if (hasEnoughItems(availableItemSlots, recipe.ingredients)) {
             craftableRecipesArray.push(recipe);
          }
       }
@@ -257,33 +257,37 @@ const CraftingMenu = () => {
 
    // Create the recipe browser
    const recipeBrowser = new Array<JSX.Element>();
-   for (let i = 0; i < MIN_RECIPE_BROWSER_HEIGHT; i++) {
-      
-      // Create the item slots for the row
-      const itemSlots = new Array<JSX.Element>();
-      for (let j = 0; j < RECIPE_BROWSER_WIDTH; j++) {
-         let itemSlotIndex = i * RECIPE_BROWSER_WIDTH + j;
+   let currentRow = new Array<JSX.Element>();
+   for (let i = 0; i < MIN_RECIPE_BROWSER_HEIGHT * RECIPE_BROWSER_WIDTH; i++) {
+      let slot: JSX.Element;
+      if (i < availableRecipes.length) {
+         const recipe = availableRecipes[i];
 
-         if (itemSlotIndex <= availableRecipes.length - 1) {
-            const recipe = availableRecipes[itemSlotIndex];
-            const isCraftable = craftableRecipes.current.includes(recipe);
-            
-            itemSlots.push(
-               <ItemSlot onMouseOver={(e) => hoverRecipe(recipe, e)} onMouseOut={() => unhoverRecipe()} onMouseMove={e => mouseMove(e)} className={isCraftable ? "craftable" : undefined} isSelected={recipe === selectedRecipe} onClick={() => selectRecipe(recipe)} picturedItemImageSrc={getItemTypeImage(recipe.product)} itemCount={recipe.yield !== 1 ? recipe.yield : undefined} key={j} />
-            );
-         } else {
-            itemSlots.push(
-               <ItemSlot isSelected={false} key={j} />
-            );
+         const techRequired = getTechRequiredForItem(recipe.product);
+         if (techRequired !== null && (Game.tribe === null || !Game.tribe.hasUnlockedTech(techRequired))) {
+            continue;
          }
+
+         const isCraftable = craftableRecipes.current.includes(recipe);
+         slot = (
+            <ItemSlot onMouseOver={(e) => hoverRecipe(recipe, e)} onMouseOut={() => unhoverRecipe()} onMouseMove={e => mouseMove(e)} className={isCraftable ? "craftable" : undefined} isSelected={recipe === selectedRecipe} onClick={() => selectRecipe(recipe)} picturedItemImageSrc={getItemTypeImage(recipe.product)} itemCount={recipe.yield !== 1 ? recipe.yield : undefined} key={i} />
+         );
+      } else {
+         slot = (
+            <ItemSlot isSelected={false} key={i} />
+         );
       }
       
-      // Add the row
-      recipeBrowser.push(
-         <div className="item-row" key={i}>
-            {itemSlots}
-         </div>
-      );
+      currentRow.push(slot);
+      if (currentRow.length === RECIPE_BROWSER_WIDTH) {
+         // Add the row
+         recipeBrowser.push(
+            <div className="item-row" key={i}>
+               {currentRow}
+            </div>
+         );
+         currentRow = [];
+      }
    }
    
    return <div id="crafting-menu" className="inventory" ref={onCraftingMenuRefChange}>

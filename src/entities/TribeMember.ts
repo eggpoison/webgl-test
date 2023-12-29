@@ -1,4 +1,4 @@
-import { ArmourItemType, BowItemInfo, EntityData, EntityType, HitData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, InventoryData, ItemType, Point, SETTINGS, TileType, ToolItemInfo, TribeMemberAction, TribeType, lerp, randFloat, randInt, randItem } from "webgl-test-shared";
+import { ArmourItemType, BowItemInfo, EntityData, EntityType, HitData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, Inventory, InventoryData, ItemType, Point, SETTINGS, TileType, ToolItemInfo, TribeMemberAction, TribeType, lerp, randFloat, randInt, randItem } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 import CLIENT_ITEM_INFO_RECORD from "../client-item-info";
@@ -7,10 +7,8 @@ import Particle from "../Particle";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle } from "../generic-particles";
 import Board from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
-import { Inventory } from "../items/Item";
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
 import { GAME_OBJECT_TEXTURE_SLOT_INDEXES, getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
-import OPTIONS from "../options";
 import { createDeepFrostHeartBloodParticles } from "../items/DroppedItem";
 import { AudioFilePath, playSound } from "../sound";
 
@@ -64,6 +62,11 @@ interface ArmourInfo {
 }
 
 const ARMOUR_WORN_INFO: Record<ArmourItemType, ArmourInfo> = {
+   // @Incomplete
+   [ItemType.leather_armour]: {
+      textureSource: "armour/leather-armour.png",
+      pixelSize: 64
+   },
    [ItemType.frost_armour]: {
       textureSource: "armour/frost-armour.png",
       pixelSize: 72
@@ -317,30 +320,31 @@ abstract class TribeMember extends Entity {
          this.attachRenderPart(rightEarRenderPart);
       }
 
+      // 
       // Fist render parts
-      if (OPTIONS.showTribeMemberHands) {
-         // Barbarians have larger fists
-         const fistSize = tribeType === TribeType.barbarians ? 24 : 20;
+      // 
 
-         for (let i = 0; i < 2; i++) {
-            const renderPart = new RenderPart(
-               this,
-               fistSize,
-               fistSize,
-               getGameObjectTextureArrayIndex(fistTextureSource),
-               1,
-               0
-            );
-            renderPart.offset = () => {
-               const direction = i === 0 ? this.leftHandDirection : this.rightHandDirection;
-               const offset = i === 0 ? this.leftHandOffset : this.rightHandOffset;
-               return Point.fromVectorForm(offset, direction);
-            }
-            renderPart.getRotation = () => {
-               return i === 0 ? this.leftHandRotation : this.rightHandRotation;
-            }
-            this.attachRenderPart(renderPart);
+      // Barbarians have larger fists
+      const fistSize = tribeType === TribeType.barbarians ? 24 : 20;
+
+      for (let i = 0; i < 2; i++) {
+         const renderPart = new RenderPart(
+            this,
+            fistSize,
+            fistSize,
+            getGameObjectTextureArrayIndex(fistTextureSource),
+            1,
+            0
+         );
+         renderPart.offset = () => {
+            const direction = i === 0 ? this.leftHandDirection : this.rightHandDirection;
+            const offset = i === 0 ? this.leftHandOffset : this.rightHandOffset;
+            return Point.fromVectorForm(offset, direction);
          }
+         renderPart.getRotation = () => {
+            return i === 0 ? this.leftHandRotation : this.rightHandRotation;
+         }
+         this.attachRenderPart(renderPart);
       }
 
       this.activeItemRenderPart = new RenderPart(
@@ -358,7 +362,7 @@ abstract class TribeMember extends Entity {
          return this.activeItemRotation;
       }
       
-      if (activeItem !== null && OPTIONS.showTribeMemberHands) {
+      if (activeItem !== null) {
          this.attachRenderPart(this.activeItemRenderPart);
       }
    }
@@ -697,9 +701,7 @@ abstract class TribeMember extends Entity {
       this.action = entityData.clientArgs[6];
       this.foodEatingType = entityData.clientArgs[7]
       this.lastActionTicks = entityData.clientArgs[8];
-      if (OPTIONS.showTribeMemberHands) {
-         this.updateActiveItemRenderPart(this.activeItemType);
-      }
+      this.updateActiveItemRenderPart(this.activeItemType);
 
       this.updateBowChargeTexture();
 
@@ -738,9 +740,7 @@ abstract class TribeMember extends Entity {
    }
 
    public updateActiveItem(activeItemType: ItemType | null): void {
-      if (OPTIONS.showTribeMemberHands) {
-         this.updateActiveItemRenderPart(activeItemType);
-      }
+      this.updateActiveItemRenderPart(activeItemType);
       this.activeItemType = activeItemType;
    }
 }

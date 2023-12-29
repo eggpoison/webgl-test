@@ -1,5 +1,4 @@
-import { Point, InventoryData, EntityData, EntityType, randFloat } from "webgl-test-shared";
-import { Inventory } from "../items/Item";
+import { Point, InventoryData, EntityData, EntityType, randFloat, Inventory } from "webgl-test-shared";
 import Entity from "./Entity";
 import { createInventoryFromData } from "../inventory-manipulation";
 import Board, { Light } from "../Board";

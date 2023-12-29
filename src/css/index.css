@@ -15,10 +15,11 @@ body {
    --item-image-size: 3rem;
 }
 
-#game-canvas, #text-canvas {
+#canvas-wrapper canvas {
    position: absolute;
 }
 
+/* Vignette */
 #game-canvas::after {
    position: absolute;
    top: 0;

@@ -1,4 +1,4 @@
-import { BaseItemInfo, EntityType, ItemType, Point, SETTINGS, randFloat } from "webgl-test-shared";
+import { EntityType, ItemType, Point, SETTINGS, randFloat } from "webgl-test-shared";
 import GameObject from "../GameObject";
 import RenderPart from "../render-parts/RenderPart";
 import CLIENT_ITEM_INFO_RECORD from "../client-item-info";
@@ -60,7 +60,7 @@ export function createDeepFrostHeartBloodParticles(originX: number, originY: num
    }
 }
 
-class DroppedItem extends GameObject implements BaseItemInfo {
+class DroppedItem extends GameObject {
    public readonly itemType: ItemType;
 
    constructor(position: Point, id: number, renderDepth: number, itemType: ItemType) {

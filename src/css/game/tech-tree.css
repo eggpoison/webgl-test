@@ -1,0 +1,99 @@
+#tech-tree {
+   position: absolute;
+   top: 0;
+   right: 0;
+   bottom: 0;
+   left: 0;
+   z-index: 4;
+}
+
+#tech-tree-canvas {
+   z-index: 2;
+}
+
+#tech-tree .tech {
+   --locked-base-colour: rgb(138, 138, 138);
+   --unlocked-base-colour: rgb(219, 219, 219);
+   --height: 2.24rem;
+   min-width: 7.5rem;
+   height: var(--height);
+   border: 3px solid #000;
+   position: absolute;
+   transform: translate(-50%, calc(var(--height) / -2));
+   white-space: pre;
+   user-select: none;
+}
+
+
+#tech-tree .tech .content {
+   background-color: var(--locked-base-colour);
+}
+#tech-tree .tech.unlocked .content {
+   background-color: var(--unlocked-base-colour);
+}
+
+#tech-tree .tech .name {
+   text-transform: uppercase;
+   text-align: center;
+   font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+   font-size: 1.425rem;
+   font-weight: bold;
+   padding: 0.3rem 0.8rem;
+   margin: 0;
+}
+
+#tech-tree .tech .icon {
+   width: 32px;
+   height: 32px;
+   position: absolute;
+   bottom: -3px;
+   left: 50%;
+   transform: translate(-50%, 50%);
+   image-rendering: pixelated;
+   z-index: 0;
+}
+
+#tech-tree .tech .icon-bg {
+   width: 32px;
+   height: 32px;
+   border: 3px solid #000;
+   border-radius: 100%;
+   padding: 7px;
+   background-color: var(--locked-base-colour);
+   position: absolute;
+   bottom: 0;
+   left: 50%;
+   transform: translate(-50%, 50%);
+   z-index: -2;
+}
+#tech-tree .tech.unlocked .icon-bg {
+   background-color: var(--unlocked-base-colour);
+}
+
+#tech-tree .tech button {
+   margin-left: 50%;
+   transform: translateX(-50%);
+}
+
+#tech-details {
+   font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+   background-color: #bbb;
+   padding: 0.3rem;
+   border: 3px solid #000;
+   position: absolute;
+   top: 0;
+   right: 0;
+}
+
+#tech-details h2 {
+   text-align: center;
+   margin: 0;
+}
+
+#tech-details .list-before {
+   margin-bottom: 0.3rem;
+}
+
+#tech-details ul {
+   margin: 0;
+}

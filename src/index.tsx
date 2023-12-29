@@ -27,6 +27,7 @@ import "./css/game/nerd-vision/terminal-button.css";
 import "./css/game/nerd-vision/terminal.css";
 import "./css/game/nerd-vision/debug-info.css";
 import "./css/game/nerd-vision/frame-graph.css";
+import "./css/game/tech-tree.css";
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement

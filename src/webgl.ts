@@ -1,5 +1,6 @@
 import { Point } from "webgl-test-shared";
 import { isDev } from "./utils";
+import { updateTechTreeCanvasSize } from "./rendering/tech-tree-rendering";
 
 export const CIRCLE_VERTEX_COUNT = 50;
 
@@ -38,6 +39,11 @@ export function resizeCanvas(): void {
    const textCanvas = document.getElementById("text-canvas") as HTMLCanvasElement;
    textCanvas.width = windowWidth;
    textCanvas.height = windowHeight;
+
+   const techTreeCanvas = document.getElementById("tech-tree-canvas") as HTMLCanvasElement;
+   techTreeCanvas.width = windowWidth;
+   techTreeCanvas.height = windowHeight;
+   updateTechTreeCanvasSize();
 }
 
 // Run the resizeCanvas function whenever the window is resize
@@ -56,23 +62,6 @@ export function createWebGLContext(): void {
    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
    MAX_ACTIVE_TEXTURE_UNITS = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
-}
-
-const shaderStrings = new Array<string>();
-const shaderStringCallbacks = new Array<(shaderString: string) => void>();
-
-export function createShaderString(shaderString: string, callback: (shaderString: string) => void): void {
-   shaderStrings.push(shaderString);
-   shaderStringCallbacks.push(callback);
-}
-
-export function createShaderStrings(): void {
-   for (let i = 0; i < shaderStrings.length; i++) {
-      const unprocessedShaderString = shaderStrings[i];
-      // Replace all instances of "__MAX_ACTIVE_TEXTURE_UNITS__" with the actual max active texture units.
-      const shaderString = unprocessedShaderString.split("__MAX_ACTIVE_TEXTURE_UNITS__").join(MAX_ACTIVE_TEXTURE_UNITS.toString());
-      shaderStringCallbacks[i](shaderString);
-   }
 }
 
 export function createWebGLProgram(glRenderingContext: WebGL2RenderingContext, vertexShaderText: string, fragmentShaderText: string): WebGLProgram {

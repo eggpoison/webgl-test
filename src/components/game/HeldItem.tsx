@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getItemTypeImage } from "../../client-item-info";
-import Item from "../../items/Item";
+import { Item } from "webgl-test-shared";
 
 export let setHeldItemVisual: (heldItem: Item | null) => void = () => {};
 
