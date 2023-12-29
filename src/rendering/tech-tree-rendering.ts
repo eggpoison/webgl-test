@@ -1,6 +1,7 @@
 import { TECHS, TechInfo, angle, getTechByID } from "webgl-test-shared";
 import Game from "../Game";
 import { createWebGLProgram, halfWindowHeight, halfWindowWidth, windowHeight, windowWidth } from "../webgl";
+import { techIsHovered } from "../components/game/TechTree";
 
 const CONNECTOR_WIDTH = 10;
 
@@ -162,15 +163,16 @@ const addConnectorVertices = (vertices: Array<number>, startTech: TechInfo, endT
    const perpendicularDirection1 = direction + Math.PI / 2;
    const perpendicularDirection2 = direction - Math.PI / 2;
 
-   const a = 16;
-   const topLeftX = calculateXScreenPos(startTech.positionX * a + CONNECTOR_WIDTH * Math.sin(perpendicularDirection1));
-   const topLeftY = calculateYScreenPos(startTech.positionY * a + CONNECTOR_WIDTH * Math.cos(perpendicularDirection1));
-   const bottomLeftX = calculateXScreenPos(startTech.positionX * a + CONNECTOR_WIDTH * Math.sin(perpendicularDirection2));
-   const bottomLeftY = calculateYScreenPos(startTech.positionY * a + CONNECTOR_WIDTH * Math.cos(perpendicularDirection2));
-   const topRightX = calculateXScreenPos(endTech.positionX * a + CONNECTOR_WIDTH * Math.sin(perpendicularDirection1));
-   const topRightY = calculateYScreenPos(endTech.positionY * a + CONNECTOR_WIDTH * Math.cos(perpendicularDirection1));
-   const bottomRightX = calculateXScreenPos(endTech.positionX * a + CONNECTOR_WIDTH * Math.sin(perpendicularDirection2));
-   const bottomRightY = calculateYScreenPos(endTech.positionY * a + CONNECTOR_WIDTH * Math.cos(perpendicularDirection2));
+   const a = 16; // @Cleanup
+   const connectorWidth = (techIsHovered(startTech.id) || techIsHovered(endTech.id)) ? CONNECTOR_WIDTH * 1.3 : CONNECTOR_WIDTH;
+   const topLeftX = calculateXScreenPos(startTech.positionX * a + connectorWidth * Math.sin(perpendicularDirection1));
+   const topLeftY = calculateYScreenPos(startTech.positionY * a + connectorWidth * Math.cos(perpendicularDirection1));
+   const bottomLeftX = calculateXScreenPos(startTech.positionX * a + connectorWidth * Math.sin(perpendicularDirection2));
+   const bottomLeftY = calculateYScreenPos(startTech.positionY * a + connectorWidth * Math.cos(perpendicularDirection2));
+   const topRightX = calculateXScreenPos(endTech.positionX * a + connectorWidth * Math.sin(perpendicularDirection1));
+   const topRightY = calculateYScreenPos(endTech.positionY * a + connectorWidth * Math.cos(perpendicularDirection1));
+   const bottomRightX = calculateXScreenPos(endTech.positionX * a + connectorWidth * Math.sin(perpendicularDirection2));
+   const bottomRightY = calculateYScreenPos(endTech.positionY * a + connectorWidth * Math.cos(perpendicularDirection2));
 
    const isUnlockedInt = isUnlocked ? 1 : 0;
 
@@ -182,14 +184,6 @@ const addConnectorVertices = (vertices: Array<number>, startTech: TechInfo, endT
       bottomRightX, bottomRightY, isUnlockedInt,
       topRightX, topRightY, isUnlockedInt
    );
-   console.log(
-      bottomLeftX, bottomLeftY,
-      bottomRightX, bottomRightY,
-      topLeftX, topLeftY,
-      topLeftX, topLeftY,
-      bottomRightX, bottomRightY,
-      topRightX, topRightY
-   )
 }
 
 export function techIsDirectlyAccessible(techInfo: TechInfo): boolean {

@@ -8,6 +8,7 @@ const LIFE_MESSAGES: ReadonlyArray<string> = [
    "He lived as he died, kicking buckets."
 ];
 
+// @Incomplete
 const TOMBSTONE_DEATH_MESSAGES: Record<PlayerCauseOfDeath, string> = {
    [PlayerCauseOfDeath.zombie]: "Ripped to pieces",
    [PlayerCauseOfDeath.yeti]: "Tried to hug a yeti",
@@ -25,7 +26,8 @@ const TOMBSTONE_DEATH_MESSAGES: Record<PlayerCauseOfDeath, string> = {
    [PlayerCauseOfDeath.bloodloss]: "Ran out of blood",
    [PlayerCauseOfDeath.rock_spike]: "Impaled from hole to hole",
    [PlayerCauseOfDeath.lack_of_oxygen]: "Ran out of oxygen",
-   [PlayerCauseOfDeath.fish]: "Got beat up by a fish"
+   [PlayerCauseOfDeath.fish]: "Got beat up by a fish",
+   [PlayerCauseOfDeath.spear]: ""
 };
 
 interface TombstoneInventoryProps {

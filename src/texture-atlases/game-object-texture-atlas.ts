@@ -89,6 +89,7 @@ const TEXTURE_SOURCES: Array<string> = [
    "armour/frost-armour.png",
    "armour/meat-suit.png",
    "armour/fishlord-suit.png",
+   "armour/leather-armour.png",
    "entities/campfire/campfire.png",
    "entities/furnace/furnace.png",
    "entities/krumblid/krumblid.png",
@@ -107,18 +108,6 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/fish/fish-gold.png",
    "entities/fish/fish-red.png",
    "entities/fish/fish-lime.png",
-   // @Robustness Right now we need to manually enter tools, should instead be automatically added
-   "items/large/wooden-sword.png",
-   "items/large/wooden-pickaxe.png",
-   "items/large/wooden-axe.png",
-   "items/large/stone-sword.png",
-   "items/large/stone-pickaxe.png",
-   "items/large/stone-axe.png",
-   "items/large/wooden-bow.png",
-   "items/large/deepfrost-sword.png",
-   "items/large/deepfrost-axe.png",
-   "items/large/deepfrost-pickaxe.png",
-   "items/large/flesh-sword.png",
    // @Memory These shouldn't be in the game object texture atlas, should instead be in its own separate atlas
    "decorations/pebble.png",
    "decorations/rock1.png",
@@ -143,11 +132,17 @@ const TEXTURE_SOURCES: Array<string> = [
 // Add item textures
 for (const clientItemInfo of Object.values(CLIENT_ITEM_INFO_RECORD)) {
    TEXTURE_SOURCES.push(clientItemInfo.entityTextureSource);
+
+   // Add tool item textures
+   if (clientItemInfo.toolTextureSource !== "") {
+      TEXTURE_SOURCES.push(clientItemInfo.toolTextureSource);
+   }
 }
 
+
 export let GAME_OBJECT_TEXTURE_ATLAS: WebGLTexture;
-export let GAME_OBJECT_TEXTURE_WIDTHS: ReadonlyArray<number>;
-export let GAME_OBJECT_TEXTURE_HEIGHTS: ReadonlyArray<number>;
+let GAME_OBJECT_TEXTURE_WIDTHS: ReadonlyArray<number>;
+let GAME_OBJECT_TEXTURE_HEIGHTS: ReadonlyArray<number>;
 export let GAME_OBJECT_TEXTURE_SLOT_INDEXES: ReadonlyArray<number>;
 export let GAME_OBJECT_TEXTURE_ATLAS_SIZE: number;
 
@@ -166,4 +161,11 @@ export function getGameObjectTextureArrayIndex(textureSource: string): number {
       throw new Error(`Unknown texture source '${textureSource}'.`);
    }
    return textureIndex;
+}
+
+export function getTextureWidth(textureArrayIndex: number): number {
+   return GAME_OBJECT_TEXTURE_WIDTHS[textureArrayIndex];
+}
+export function getTextureHeight(textureArrayIndex: number): number {
+   return GAME_OBJECT_TEXTURE_HEIGHTS[textureArrayIndex];
 }

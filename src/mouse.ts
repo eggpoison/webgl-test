@@ -125,7 +125,7 @@ export function renderCursorTooltip(): void {
 }
 
 export function updateChargeMeter(): void {
-   if (latencyGameState.playerAction !== TribeMemberAction.charge_bow || Player.instance === null) {
+   if (latencyGameState.playerAction !== TribeMemberAction.chargeBow || Player.instance === null) {
       hideChargeMeter();
       return;
    }

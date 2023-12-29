@@ -136,7 +136,7 @@ export function updatePlayerItems(): void {
       } else {
          Player.instance.updateActiveItem(null);
       }
-      Player.instance.updateHandDirections();
+      Player.instance.updateHands();
 
       Player.instance.updateArmourRenderPart(definiteGameState.armourSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.armourSlot.itemSlots[1].type : null);
 
@@ -175,7 +175,7 @@ const attack = (): void => {
    };
    Client.sendAttackPacket(attackPacket);
 
-   if (latencyGameState.playerAction !== TribeMemberAction.charge_bow) {
+   if (latencyGameState.playerAction !== TribeMemberAction.chargeBow) {
       Player.instance.lastActionTicks = Board.ticks;
    }
 }
@@ -207,7 +207,7 @@ const createItemUseListeners = (): void => {
 
                // Reset the attack cooldown of the weapon
                const itemTypeInfo = ITEM_TYPE_RECORD[selectedItem.type];
-               if (itemTypeInfo === "axe" || itemTypeInfo === "pickaxe" || itemTypeInfo === "sword") {
+               if (itemTypeInfo === "axe" || itemTypeInfo === "pickaxe" || itemTypeInfo === "sword" || itemTypeInfo === "spear") {
                   const itemInfo = ITEM_INFO_RECORD[selectedItem.type];
                   itemAttackCooldowns[latencyGameState.selectedHotbarItemSlot] = (itemInfo as ToolItemInfo).attackCooldown;
                } else {
@@ -527,7 +527,7 @@ export function updatePlayerMovement(): void {
       let acceleration: number;
       if (keyIsPressed("l")) {
          acceleration = PLAYER_LIGHTSPEED_ACCELERATION;
-      } else if (latencyGameState.playerAction === TribeMemberAction.eat || latencyGameState.playerAction === TribeMemberAction.charge_bow || latencyGameState.playerIsPlacingEntity) {
+      } else if (latencyGameState.playerAction === TribeMemberAction.eat || latencyGameState.playerAction === TribeMemberAction.chargeBow || latencyGameState.playerIsPlacingEntity) {
          acceleration = PLAYER_SLOW_ACCELERATION * getPlayerMoveSpeedMultiplier();
       } else {
          acceleration = PLAYER_ACCELERATION * getPlayerMoveSpeedMultiplier()
@@ -546,7 +546,11 @@ const deselectItem = (item: Item): void => {
       case "bow": {
          latencyGameState.playerAction = TribeMemberAction.none;
          Player.instance!.action = TribeMemberAction.none;
-
+         break;
+      }
+      case "spear": {
+         latencyGameState.playerAction = TribeMemberAction.none;
+         Player.instance!.action = TribeMemberAction.none;
          break;
       }
       case "placeable": {
@@ -671,12 +675,18 @@ const itemRightClickDown = (item: Item): void => {
          break;
       }
       case "bow": {
-         latencyGameState.playerAction = TribeMemberAction.charge_bow;
-         Player.instance!.action = TribeMemberAction.charge_bow;
+         latencyGameState.playerAction = TribeMemberAction.chargeBow;
+         Player.instance!.action = TribeMemberAction.chargeBow;
          Player.instance!.lastActionTicks = Board.ticks;
          
          showChargeMeter();
 
+         break;
+      }
+      case "spear": {
+         latencyGameState.playerAction = TribeMemberAction.chargeSpear;
+         Player.instance!.action = TribeMemberAction.chargeSpear;
+         Player.instance!.lastActionTicks = Board.ticks;
          break;
       }
       case "armour": {
@@ -709,6 +719,13 @@ const itemRightClickUp = (item: Item): void => {
          latencyGameState.playerAction = TribeMemberAction.none;
          Player.instance!.action = TribeMemberAction.none;
 
+         break;
+      }
+      case "spear": {
+         Client.sendItemUsePacket();
+         latencyGameState.playerAction = TribeMemberAction.none;
+         Player.instance!.action = TribeMemberAction.none;
+         
          break;
       }
    }

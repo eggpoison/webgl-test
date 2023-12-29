@@ -27,6 +27,7 @@ import GameObject from "./GameObject";
 import WoodenArrowProjectile from "./projectiles/WoodenArrowProjectile";
 import IceShardsProjectile from "./projectiles/IceShardsProjectile";
 import RockSpikeProjectile from "./projectiles/RockSpikeProjectile";
+import SpearProjectile from "./projectiles/SpearProjectile";
 
 export type EntityClassType<T extends EntityType> = new (position: Point, id: number, renderDepth: number, ...clientParams: Parameters<typeof EntityInfoClientArgs[T]>) => GameObject;
 
@@ -57,7 +58,8 @@ const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
    [EntityType.itemEntity]: () => DroppedItem,
    [EntityType.woodenArrowProjectile]: () => WoodenArrowProjectile,
    [EntityType.iceShardProjectile]: () => IceShardsProjectile,
-   [EntityType.rockSpikeProjectile]: () => RockSpikeProjectile
+   [EntityType.rockSpikeProjectile]: () => RockSpikeProjectile,
+   [EntityType.spearProjectile]: () => SpearProjectile
 };
 
 export default ENTITY_CLASS_RECORD;

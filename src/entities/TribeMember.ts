@@ -8,7 +8,7 @@ import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, cr
 import Board from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
-import { GAME_OBJECT_TEXTURE_SLOT_INDEXES, getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
+import { GAME_OBJECT_TEXTURE_SLOT_INDEXES, getGameObjectTextureArrayIndex, getTextureHeight, getTextureWidth } from "../texture-atlases/game-object-texture-atlas";
 import { createDeepFrostHeartBloodParticles } from "../items/DroppedItem";
 import { AudioFilePath, playSound } from "../sound";
 
@@ -142,7 +142,7 @@ abstract class TribeMember extends Entity {
    private static readonly FOOD_EAT_INTERVAL = 0.3;
    
    private static readonly TOOL_ACTIVE_ITEM_SIZE = 48;
-   private static readonly DEFAULT_ACTIVE_ITEM_SIZE = SETTINGS.ITEM_SIZE * 1.75;
+   private static readonly DEFAULT_ACTIVE_ITEM_SIZE = 28;
    
    private static readonly HAND_RESTING_DIRECTION = Math.PI / 2.5;
    private readonly handRestingOffset: number;
@@ -179,6 +179,7 @@ abstract class TribeMember extends Entity {
    public backpackSlotInventory: Inventory;
    public backpackInventory: Inventory;
 
+   private readonly handRenderParts: ReadonlyArray<RenderPart>;
    private activeItemRenderPart: RenderPart;
 
    protected activeItemType: ItemType | null;
@@ -327,6 +328,7 @@ abstract class TribeMember extends Entity {
       // Barbarians have larger fists
       const fistSize = tribeType === TribeType.barbarians ? 24 : 20;
 
+      const handRenderParts = new Array<RenderPart>();
       for (let i = 0; i < 2; i++) {
          const renderPart = new RenderPart(
             this,
@@ -345,7 +347,9 @@ abstract class TribeMember extends Entity {
             return i === 0 ? this.leftHandRotation : this.rightHandRotation;
          }
          this.attachRenderPart(renderPart);
+         handRenderParts.push(renderPart);
       }
+      this.handRenderParts = handRenderParts;
 
       this.activeItemRenderPart = new RenderPart(
          this,
@@ -367,7 +371,7 @@ abstract class TribeMember extends Entity {
       }
    }
 
-   public updateHandDirections(): void {
+   public updateHands(): void {
       let direction = Math.PI / 4;
 
       // @Cleanup: As the offset function is called in the RenderPart constructor, this.activeItemRenderPart will initially
@@ -379,9 +383,11 @@ abstract class TribeMember extends Entity {
          itemSize = this.activeItemRenderPart.width;
       }
 
+      this.handRenderParts[1].shakeAmount = 0;
+
       const secondsSinceLastAction = this.getSecondsSinceLastAction();
       switch (this.action) {
-         case TribeMemberAction.charge_bow: {
+         case TribeMemberAction.chargeBow: {
             // 
             // Bow charge animation
             // 
@@ -396,6 +402,26 @@ abstract class TribeMember extends Entity {
             this.activeItemOffset = 22 + itemSize / 2;
             this.activeItemDirection = 0;
             this.activeItemRotation = -Math.PI / 4;
+            return;
+         }
+         case TribeMemberAction.chargeSpear: {
+            const chargeProgress = secondsSinceLastAction < 3 ? 1 - Math.pow(secondsSinceLastAction / 3 - 1, 2) : 1;
+
+            this.leftHandDirection = -TribeMember.HAND_RESTING_DIRECTION;
+            this.leftHandOffset = this.handRestingOffset;
+            this.leftHandRotation = -TribeMember.HAND_RESTING_ROTATION;
+
+            const rightHandDirection = lerp(TribeMember.HAND_RESTING_DIRECTION, Math.PI / 1.5, chargeProgress);
+
+            this.rightHandDirection = rightHandDirection;
+            this.rightHandOffset = this.handRestingOffset;
+            this.rightHandRotation = TribeMember.HAND_CHARGING_BOW_DIRECTION;
+
+            this.activeItemDirection = rightHandDirection - Math.PI/14;
+            this.activeItemOffset = TribeMember.ITEM_RESTING_OFFSET + itemSize/2;
+            this.activeItemRotation = TribeMember.ITEM_RESTING_ROTATION;
+
+            this.handRenderParts[1].shakeAmount = lerp(0, 1.5, chargeProgress);
             return;
          }
          case TribeMemberAction.eat: {
@@ -479,7 +505,7 @@ abstract class TribeMember extends Entity {
 
    private getAttackProgress(secondsSinceLastAttack: number): number {
       let attackDuration: number;
-      if (this.activeItemType !== null && (ITEM_TYPE_RECORD[this.activeItemType] === "sword" || ITEM_TYPE_RECORD[this.activeItemType] === "axe" || ITEM_TYPE_RECORD[this.activeItemType] === "pickaxe")) {
+      if (this.activeItemType !== null && (ITEM_TYPE_RECORD[this.activeItemType] === "sword" || ITEM_TYPE_RECORD[this.activeItemType] === "axe" || ITEM_TYPE_RECORD[this.activeItemType] === "pickaxe" || ITEM_TYPE_RECORD[this.activeItemType] === "spear")) {
          attackDuration = (ITEM_INFO_RECORD[this.activeItemType] as ToolItemInfo).attackCooldown;
       } else {
          attackDuration = SETTINGS.DEFAULT_ATTACK_COOLDOWN;
@@ -658,31 +684,33 @@ abstract class TribeMember extends Entity {
          this.attachRenderPart(this.activeItemRenderPart);
          
          if (this.showLargeItemTexture(activeItemType)) {
-            this.activeItemRenderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItemType].textureSource)];
-            this.activeItemRenderPart.textureWidth = 16;
-            this.activeItemRenderPart.textureHeight = 16;
+            const textureArrayIndex = getGameObjectTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItemType].toolTextureSource);
+            
+            this.activeItemRenderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[textureArrayIndex];
+            this.activeItemRenderPart.textureWidth = getTextureWidth(textureArrayIndex);
+            this.activeItemRenderPart.textureHeight = getTextureHeight(textureArrayIndex);
+            this.activeItemRenderPart.width = getTextureWidth(textureArrayIndex) * 4;
+            this.activeItemRenderPart.height = getTextureHeight(textureArrayIndex) * 4;
          } else {
             this.activeItemRenderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItemType].entityTextureSource)];
             this.activeItemRenderPart.textureWidth = 8;
             this.activeItemRenderPart.textureHeight = 8;
+            this.activeItemRenderPart.width = TribeMember.DEFAULT_ACTIVE_ITEM_SIZE;
+            this.activeItemRenderPart.height = TribeMember.DEFAULT_ACTIVE_ITEM_SIZE;
          }
-         const renderPartSize = this.getActiveItemSize(activeItemType);
-         this.activeItemRenderPart.width = renderPartSize;
-         this.activeItemRenderPart.height = renderPartSize;
       }
-   }
-
-   private getActiveItemSize(activeItemType: ItemType) {
-      const itemTypeInfo = ITEM_TYPE_RECORD[activeItemType];
-      if (itemTypeInfo === "axe" || itemTypeInfo === "sword" || itemTypeInfo === "bow" || itemTypeInfo === "pickaxe") {
-         return TribeMember.TOOL_ACTIVE_ITEM_SIZE;
-      }
-      return TribeMember.DEFAULT_ACTIVE_ITEM_SIZE;
    }
 
    private showLargeItemTexture(itemType: ItemType): boolean {
       const itemTypeInfo = ITEM_TYPE_RECORD[itemType];
-      return itemTypeInfo === "axe" || itemTypeInfo === "sword" || itemTypeInfo === "bow" || itemTypeInfo === "pickaxe";
+      return itemTypeInfo === "axe" || itemTypeInfo === "sword" || itemTypeInfo === "bow" || itemTypeInfo === "pickaxe" || itemTypeInfo === "spear";
+   }
+
+   private getActiveItemSize(activeItemType: ItemType) {
+      if (this.showLargeItemTexture(activeItemType)) {
+         return TribeMember.TOOL_ACTIVE_ITEM_SIZE;
+      }
+      return TribeMember.DEFAULT_ACTIVE_ITEM_SIZE;
    }
 
    public updateFromData(entityData: EntityData<EntityType.player> | EntityData<EntityType.tribesman>): void {
@@ -714,7 +742,7 @@ abstract class TribeMember extends Entity {
       }
       this.hasFrostShield = entityData.clientArgs[9];
       
-      this.updateHandDirections();
+      this.updateHands();
    }
 
    public createFrostShieldBreakParticles(): void {
@@ -725,7 +753,7 @@ abstract class TribeMember extends Entity {
 
    public updateBowChargeTexture(): void {
       // Change the bow charging texture based on the charge progress
-      if (this.action === TribeMemberAction.charge_bow && this.activeItemType !== null) {
+      if (this.action === TribeMemberAction.chargeBow && this.activeItemType !== null) {
          const bowInfo = ITEM_INFO_RECORD[this.activeItemType] as BowItemInfo;
          
          const secondsSinceLastAction = this.getSecondsSinceLastAction();

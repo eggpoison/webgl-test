@@ -247,7 +247,7 @@ class Zombie extends Entity {
 
       const secondsSinceLastAction = this.getSecondsSinceLastAction();
       switch (this.action) {
-         case TribeMemberAction.charge_bow: {
+         case TribeMemberAction.chargeBow: {
             // 
             // Bow charge animation
             // 
@@ -333,7 +333,7 @@ class Zombie extends Entity {
 
    private updateBowChargeTexture(): void {
       // Change the bow charging texture based on the charge progress
-      if (this.action === TribeMemberAction.charge_bow && this.activeItemType !== null) {
+      if (this.action === TribeMemberAction.chargeBow && this.activeItemType !== null) {
          const bowInfo = ITEM_INFO_RECORD[this.activeItemType] as BowItemInfo;
          
          const secondsSinceLastAction = this.getSecondsSinceLastAction();

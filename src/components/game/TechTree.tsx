@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { addKeyListener } from "../../keyboard-input";
-import { TECHS, TechID, TechInfo, getTechByID } from "webgl-test-shared";
+import { ItemType, TECHS, TechID, TechInfo, getTechByID } from "webgl-test-shared";
 import CLIENT_ITEM_INFO_RECORD, { getItemTypeImage } from "../../client-item-info";
 import Game from "../../Game";
 import Client from "../../client/Client";
@@ -46,8 +46,8 @@ const Tech = ({ techInfo, positionX, positionY, zoom, onMouseEnter, onMouseLeave
          {showDetails ? <>
             <div className="details">
                <ul>
-                  {techInfo.researchItemRequirements.map(([itemType, itemAmount], i) => {
-                     return <li key={i}>{CLIENT_ITEM_INFO_RECORD[itemType].name} x{itemAmount}</li>
+                  {Object.entries(techInfo.researchItemRequirements).map(([itemType, itemAmount], i) => {
+                     return <li key={i}>{CLIENT_ITEM_INFO_RECORD[itemType as unknown as ItemType].name} x{itemAmount}</li>
                   })}
                </ul>
             </div>
@@ -79,6 +79,8 @@ const TechDetails = ({ techID }: TechDetailsProps) => {
 }
 
 export let updateTechTree: () => void;
+
+export let techIsHovered: (techID: TechID) => boolean;
 
 const TechTree = () => {
    const [isVisible, setIsVisible] = useState(false);
@@ -136,6 +138,12 @@ const TechTree = () => {
          }
       }
    }, [zoom]);
+
+   useEffect(() => {
+      techIsHovered = (techID: TechID): boolean => {
+         return hoveredTech !== null && techID === hoveredTech;
+      }
+   }, [hoveredTech]);
 
    const onMouseDown = (e: MouseEvent): void => {
       isDragging.current = true;

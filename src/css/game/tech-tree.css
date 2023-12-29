@@ -16,6 +16,7 @@
    --unlocked-base-colour: rgb(219, 219, 219);
    --height: 2.24rem;
    min-width: 7.5rem;
+   /* @Hack: Remove, doesn't work properly when hovered over */
    height: var(--height);
    border: 3px solid #000;
    position: absolute;
@@ -23,7 +24,6 @@
    white-space: pre;
    user-select: none;
 }
-
 
 #tech-tree .tech .content {
    background-color: var(--locked-base-colour);

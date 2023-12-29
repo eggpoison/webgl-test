@@ -1,7 +1,7 @@
 import { Point, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import GameObject from "../GameObject";
 import Board from "../Board";
-import { GAME_OBJECT_TEXTURE_HEIGHTS, GAME_OBJECT_TEXTURE_SLOT_INDEXES, GAME_OBJECT_TEXTURE_WIDTHS } from "../texture-atlases/game-object-texture-atlas";
+import { GAME_OBJECT_TEXTURE_SLOT_INDEXES, getTextureHeight, getTextureWidth } from "../texture-atlases/game-object-texture-atlas";
 
 /** A thing which is able to hold render parts */
 export abstract class RenderObject {
@@ -96,8 +96,8 @@ class RenderPart extends RenderObject {
       this.rotation = rotation;
 
       this.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[textureArrayIndex];
-      this.textureWidth = GAME_OBJECT_TEXTURE_WIDTHS[textureArrayIndex];
-      this.textureHeight = GAME_OBJECT_TEXTURE_HEIGHTS[textureArrayIndex];
+      this.textureWidth = getTextureWidth(textureArrayIndex);
+      this.textureHeight = getTextureHeight(textureArrayIndex);
    }
 
    /** Updates the render part based on its parent */
