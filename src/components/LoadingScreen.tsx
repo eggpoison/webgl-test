@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { EntityType, InitialGameDataPacket, Point, TribeMemberAction, TribeType } from "webgl-test-shared";
+import { EntityType, InitialGameDataPacket, Point, TribeMemberAction, TribeType, randInt } from "webgl-test-shared";
 import Board from "../Board";
 import Client from "../client/Client";
 import Player from "../entities/Player";
@@ -8,16 +8,18 @@ import { setGameState, setLoadingScreenInitialStatus } from "./App";
 import Camera from "../Camera";
 import { definiteGameState } from "../game-state/game-states";
 import { calculateEntityRenderDepth } from "../render-layers";
+import Tribe from "../Tribe";
 
 // @Cleanup: This file does too much logic on its own. It should really only have UI/loading state
 
-export type LoadingScreenStatus = "establishing_connection" | "receiving_spawn_position" | "sending_player_data" | "receiving_game_data" | "initialising_game" | "connection_error";
+export type LoadingScreenStatus = "establishing_connection" | "sending_player_data" | "receiving_spawn_position" | "sending_visible_chunk_bounds" | "receiving_game_data" | "initialising_game" | "connection_error";
 
 interface LoadingScreenProps {
    readonly username: string;
+   readonly tribeType: TribeType;
    readonly initialStatus: LoadingScreenStatus;
 }
-const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
+const LoadingScreen = ({ username, tribeType, initialStatus }: LoadingScreenProps) => {
    const [status, setStatus] = useState<LoadingScreenStatus>(initialStatus);
    const initialGameDataPacketRef = useRef<InitialGameDataPacket | null>(null);
    const spawnPositionRef = useRef<Point | null>(null);
@@ -44,7 +46,7 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
                (async () => {
                   const connectionWasSuccessful = await Client.connectToServer();
                   if (connectionWasSuccessful) {
-                     setStatus("receiving_spawn_position");
+                     setStatus("sending_player_data");
                   } else {
                      setStatus("connection_error");
                   }
@@ -53,20 +55,27 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
 
             break;
          }
+         case "sending_player_data": {
+            Client.sendInitialPlayerData(username, tribeType);
+
+            setStatus("receiving_spawn_position");
+            
+            break;
+         }
          case "receiving_spawn_position": {
             (async () => {
                spawnPositionRef.current = await Client.requestSpawnPosition();
 
-               setStatus("sending_player_data");
+               setStatus("sending_visible_chunk_bounds");
             })();
 
             break;
          }
-         case "sending_player_data": {
+         case "sending_visible_chunk_bounds": {
             Camera.setCameraPosition(spawnPositionRef.current!);
             Camera.updateVisibleChunkBounds();
             Camera.updateVisibleRenderChunkBounds();
-            Client.sendInitialPlayerData(username, Camera.getVisibleChunkBounds());
+            Client.sendVisibleChunkBounds(Camera.getVisibleChunkBounds());
 
             setStatus("receiving_game_data");
             
@@ -85,6 +94,8 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
             (async () => {
                const initialGameDataPacket = initialGameDataPacketRef.current!;
 
+               Game.tribe = new Tribe(TribeType.plainspeople, initialGameDataPacket.tribeData.numHuts);
+
                const tiles = Client.parseServerTileDataArray(initialGameDataPacket.tiles);
                await Game.initialise(tiles, initialGameDataPacket.waterRocks, initialGameDataPacket.riverSteppingStones, initialGameDataPacket.riverFlowDirections, initialGameDataPacket.edgeTiles, initialGameDataPacket.edgeRiverFlowDirections, initialGameDataPacket.edgeRiverSteppingStones, initialGameDataPacket.grassInfo, initialGameDataPacket.decorations);
 
@@ -92,7 +103,7 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
                definiteGameState.playerUsername = username;
                const playerSpawnPosition = new Point(spawnPositionRef.current!.x, spawnPositionRef.current!.y);
                const renderDepth = calculateEntityRenderDepth(EntityType.player);
-               const player = new Player(playerSpawnPosition, initialGameDataPacket.playerID, renderDepth, null, TribeType.plainspeople, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, false, -1, username);
+               const player = new Player(playerSpawnPosition, initialGameDataPacket.playerID, renderDepth, null, tribeType, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, false, tribeType === TribeType.goblins ? randInt(1, 5) : -1, username);
                player.addCircularHitbox(Player.createNewPlayerHitbox());
                Player.setInstancePlayer(player);
                Board.addEntity(player);
@@ -107,7 +118,7 @@ const LoadingScreen = ({ username, initialStatus }: LoadingScreenProps) => {
             break;
          }
       }
-   }, [status, username]);
+   }, [status, username, tribeType]);
 
    if (status === "connection_error") {
       return <div id="loading-screen">

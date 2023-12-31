@@ -1,4 +1,4 @@
-import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitData, Point, SETTINGS, clampToBoardDimensions, TribeType, ItemType, InventoryData, TribeMemberAction, TileType, EntityType, ItemSlot, Item } from "webgl-test-shared";
+import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitData, Point, SETTINGS, clampToBoardDimensions, TribeType, ItemType, InventoryData, TribeMemberAction, TileType, EntityType, ItemSlot, Item, TRIBE_INFO_RECORD } from "webgl-test-shared";
 import Camera from "../Camera";
 import { setCraftingMenuAvailableRecipes, setCraftingMenuAvailableCraftingStations } from "../components/game/menus/CraftingMenu";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -111,8 +111,6 @@ enum TileCollisionAxis {
 }
 
 class Player extends TribeMember {
-   public static readonly MAX_HEALTH = 20;
-
    /** The player entity associated with the current player. */
    public static instance: Player | null = null;
 
@@ -138,7 +136,8 @@ class Player extends TribeMember {
 
       Camera.position = player.position;
 
-      definiteGameState.setPlayerHealth(Player.MAX_HEALTH);
+      const maxHealth = TRIBE_INFO_RECORD[player.tribeType].maxHealthPlayer;
+      definiteGameState.setPlayerHealth(maxHealth);
       definiteGameState.hotbar = {
          itemSlots: {},
          width: SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE,

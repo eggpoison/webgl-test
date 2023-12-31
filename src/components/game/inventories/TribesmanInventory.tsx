@@ -14,7 +14,7 @@ interface TribesmanInventoryProps {
 }
 
 function assertEntityIsTribesman(entity: Entity): asserts entity is Tribesman {
-   if (entity.type !== EntityType.tribesman) {
+   if (entity.type !== EntityType.tribeWorker && entity.type !== EntityType.tribeWarrior) {
       throw new Error("Entity passed into TribesmanInventory wasn't a tribesman.");
    }
 }

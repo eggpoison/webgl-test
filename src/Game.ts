@@ -1,7 +1,7 @@
 import Board from "./Board";
 import Player, { updateAvailableCraftingRecipes, updatePlayerRotation } from "./entities/Player";
 import { isDev } from "./utils";
-import { renderPlayerNames, createTextCanvasContext, clearTextCanvas, renderDamageNumbers, updateDamageNumbers } from "./text-canvas";
+import { renderPlayerNames, createTextCanvasContext, clearTextCanvas, renderDamageNumbers, updateTextNumbers, renderResearchNumbers } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/game/ChatBox";
 import { DecorationInfo, GameDataPacket, GameObjectDebugData, GrassTileInfo, RiverSteppingStoneData, SETTINGS, ServerTileData, WaterRockData } from "webgl-test-shared";
@@ -41,6 +41,8 @@ import { createForcefieldShaders, renderForcefield } from "./rendering/world-bor
 import { createDecorationShaders, renderDecorations } from "./rendering/decoration-rendering";
 import { playRiverSounds, setupAudio, updateSoundEffectVolume } from "./sound";
 import { createTechTreeShaders, renderTechTree } from "./rendering/tech-tree-rendering";
+import { createResearchNodeShaders, renderResearchNode } from "./rendering/research-node-rendering";
+import { attemptToResearch, updateActiveResearchBench } from "./research";
 
 let listenersHaveBeenCreated = false;
 
@@ -89,7 +91,7 @@ abstract class Game {
 
    private static gameObjectDebugData: GameObjectDebugData | null = null;
 
-   public static tribe: Tribe | null = null;
+   public static tribe: Tribe;
    
    private static cameraData = new Float32Array(8);
    private static cameraBuffer: WebGLBuffer;
@@ -203,6 +205,7 @@ abstract class Game {
             createForcefieldShaders();
             createDecorationShaders();
             createTechTreeShaders();
+            createResearchNodeShaders();
 
             await setupAudio();
 
@@ -249,7 +252,7 @@ abstract class Game {
                   }
                }
 
-               updateDamageNumbers();
+               updateTextNumbers();
                Board.updateTickCallbacks();
                Board.tickGameObjects();
                this.update();
@@ -257,7 +260,7 @@ abstract class Game {
             } else {
                this.numSkippablePackets++;
                
-               updateDamageNumbers();
+               updateTextNumbers();
                Board.updateTickCallbacks();
                Board.updateParticles();
                Board.updateGameObjects();
@@ -292,6 +295,8 @@ abstract class Game {
       updateAvailableCraftingRecipes();
       
       updatePlayerItems();
+      updateActiveResearchBench();
+      attemptToResearch();
 
       updateSoundEffectVolume();
       playRiverSounds();
@@ -353,9 +358,11 @@ abstract class Game {
       this.timeData[0] = performance.now();
       gl.bufferSubData(gl.UNIFORM_BUFFER, 0, this.timeData);
 
+      // @Cleanup: Call all these functions in the text-canvas file from one renderTextCanvas function
       clearTextCanvas();
       renderPlayerNames();
       renderDamageNumbers();
+      renderResearchNumbers();
 
       renderSolidTiles();
       renderRivers();
@@ -402,6 +409,7 @@ abstract class Game {
          }
       }
 
+      renderResearchNode();
       renderGhostPlaceableItem();
 
       this.cursorPositionX = calculateCursorWorldPositionX();

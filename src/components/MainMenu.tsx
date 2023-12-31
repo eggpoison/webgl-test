@@ -45,7 +45,7 @@ const MainMenu = ({ existingUsername, passUsername }: MainMenuProps) => {
    const startGame = useCallback(() => {
       createAudioContext();
       passUsername(username!);
-      setGameState("loading");
+      setGameState("tribe_selection");
    }, [username, passUsername]);
 
    return <div id="main-menu">

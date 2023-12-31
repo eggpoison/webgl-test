@@ -1,4 +1,4 @@
-import { AttackPacket, EntityType, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, Item, ItemType, PlaceableItemType, Point, SETTINGS, STATUS_EFFECT_MODIFIERS, ToolItemInfo, TribeMemberAction } from "webgl-test-shared";
+import { AttackPacket, EntityType, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, Item, ItemType, PlaceableItemType, Point, SETTINGS, STATUS_EFFECT_MODIFIERS, TRIBE_INFO_RECORD, ToolItemInfo, TribeMemberAction } from "webgl-test-shared";
 import { addKeyListener, clearPressedKeys, keyIsPressed } from "./keyboard-input";
 import { CraftingMenu_setIsVisible } from "./components/game/menus/CraftingMenu";
 import Player from "./entities/Player";
@@ -16,12 +16,14 @@ import { showChargeMeter } from "./components/game/ChargeMeter";
 import Barrel from "./entities/Barrel";
 import Campfire from "./entities/Campfire";
 import Furnace from "./entities/Furnace";
-import TribeHut from "./entities/TribeHut";
+import WorkerHut from "./entities/WorkerHut";
 import TribeTotem from "./entities/TribeTotem";
 import Workbench from "./entities/Workbench";
 import CircularHitbox from "./hitboxes/CircularHitbox";
 import Hitbox from "./hitboxes/Hitbox";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
+import { closeTechTree, techTreeIsOpen } from "./components/game/TechTree";
+import WarriorHut from "./entities/WarriorHut";
 
 /** Amount of seconds of forced delay on when an item can be used for attacking when switching between items */
 const GLOBAL_ATTACK_DELAY_ON_SWITCH = 0.1;
@@ -65,21 +67,28 @@ export const PLACEABLE_ENTITY_INFO_RECORD: Record<PlaceableItemType, PlaceableEn
       height: TribeTotem.SIZE,
       placeOffset: TribeTotem.SIZE / 2,
       canPlace: (): boolean => {
-         // The player can only place a tribe totem if they aren't in a tribe
-         return Game.tribe === null;
+         // The player can only place one tribe totem
+         return !Game.tribe.hasTotem;
       },
       hitboxType: PlaceableItemHitboxType.circular
    },
-   [ItemType.tribe_hut]: {
-      textureSource: "tribe-hut/tribe-hut.png",
-      width: TribeHut.SIZE,
-      height: TribeHut.SIZE,
-      placeOffset: TribeHut.SIZE / 2,
+   [ItemType.worker_hut]: {
+      textureSource: "worker-hut/worker-hut.png",
+      width: WorkerHut.SIZE,
+      height: WorkerHut.SIZE,
+      placeOffset: WorkerHut.SIZE / 2,
       canPlace: (): boolean => {
-         // The player can't place huts if they aren't in a tribe
-         if (Game.tribe === null) return false;
-
-         return Game.tribe.numHuts < Game.tribe.tribesmanCap;
+         return Game.tribe.hasTotem && Game.tribe.numHuts < Game.tribe.tribesmanCap;
+      },
+      hitboxType: PlaceableItemHitboxType.rectangular
+   },
+   [ItemType.warrior_hut]: {
+      textureSource: "warrior-hut/warrior-hut.png",
+      width: WarriorHut.SIZE,
+      height: WarriorHut.SIZE,
+      placeOffset: WarriorHut.SIZE / 2,
+      canPlace: (): boolean => {
+         return Game.tribe.hasTotem && Game.tribe.numHuts < Game.tribe.tribesmanCap;
       },
       hitboxType: PlaceableItemHitboxType.rectangular
    },
@@ -102,6 +111,13 @@ export const PLACEABLE_ENTITY_INFO_RECORD: Record<PlaceableItemType, PlaceableEn
       width: Furnace.SIZE,
       height: Furnace.SIZE,
       placeOffset: Furnace.SIZE / 2,
+      hitboxType: PlaceableItemHitboxType.rectangular
+   },
+   [ItemType.research_bench]: {
+      textureSource: "research-bench/research-bench.png",
+      width: 32 * 4,
+      height: 20 * 4,
+      placeOffset: 50,
       hitboxType: PlaceableItemHitboxType.rectangular
    }
 };
@@ -320,7 +336,7 @@ const getInteractEntity = (): Entity | null => {
                   closestInteractableEntity = entity;
                   minInteractionDistance = distance;
                }
-            } else if (entity.type === EntityType.tribesman) {
+            } else if (entity.type === EntityType.tribeWorker || entity.type === EntityType.tribeWarrior) {
                // Only interact with tribesman inventories if the player is of the same tribe
                if ((entity as Tribesman).tribeID === null || ((entity as Tribesman).tribeID) !== Player.instance.tribeID) {
                   continue;
@@ -366,7 +382,8 @@ const getInteractInventoryType = (entity: Entity): InteractInventoryType => {
       case EntityType.barrel: {
          return InteractInventoryType.barrel;
       }
-      case EntityType.tribesman: {
+      case EntityType.tribeWarrior:
+      case EntityType.tribeWorker: {
          return InteractInventoryType.tribesman;
       }
       case EntityType.campfire: {
@@ -448,6 +465,11 @@ const createInventoryToggleListeners = (): void => {
       }
    });
    addKeyListener("escape", () => {
+      if (techTreeIsOpen()) {
+         closeTechTree();
+         return;
+      }
+
       if (_inventoryIsOpen) {
          updateInventoryIsOpen(false);
       };
@@ -665,7 +687,8 @@ const itemRightClickDown = (item: Item): void => {
    const itemCategory = ITEM_TYPE_RECORD[item.type];
    switch (itemCategory) {
       case "food": {
-         if (definiteGameState.playerHealth < Player.MAX_HEALTH) {
+         const maxHealth = TRIBE_INFO_RECORD[Player.instance!.tribeType].maxHealthPlayer;
+         if (definiteGameState.playerHealth < maxHealth) {
             latencyGameState.playerAction = TribeMemberAction.eat;
             Player.instance!.action = TribeMemberAction.eat;
             Player.instance!.foodEatingType = item.type;
@@ -768,7 +791,8 @@ const tickItem = (item: Item, itemSlot: number): void => {
    switch (itemCategory) {
       case "food": {
          // If the player can no longer eat food without wasting it, stop eating
-         if (itemSlot === latencyGameState.selectedHotbarItemSlot && latencyGameState.playerAction === TribeMemberAction.eat && definiteGameState.playerHealth >= Player.MAX_HEALTH) {
+         const maxHealth = TRIBE_INFO_RECORD[Player.instance!.tribeType].maxHealthPlayer;
+         if (itemSlot === latencyGameState.selectedHotbarItemSlot && latencyGameState.playerAction === TribeMemberAction.eat && definiteGameState.playerHealth >= maxHealth) {
             latencyGameState.playerAction = TribeMemberAction.none;
             Player.instance!.action = TribeMemberAction.none;
             Player.instance!.foodEatingType = -1;

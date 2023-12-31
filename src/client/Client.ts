@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TribeData, InventoryData, TribeMemberAction, TechID, Inventory } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TribeData, InventoryData, TribeMemberAction, TechID, Inventory, TRIBE_INFO_RECORD } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -16,7 +16,6 @@ import { HealthBar_setHasFrostShield, updateHealthBar } from "../components/game
 import { registerServerTick, updateDebugScreenCurrentTime, updateDebugScreenTicks } from "../components/game/dev/GameInfoDisplay";
 import Camera from "../Camera";
 import { isDev } from "../utils";
-import Tribe from "../Tribe";
 import { updateRenderChunkFromTileUpdate } from "../rendering/render-chunks";
 import Board from "../Board";
 import { definiteGameState, latencyGameState } from "../game-state/game-states";
@@ -226,28 +225,18 @@ abstract class Client {
       }
    }
 
-   private static updateTribe(tribeData: TribeData | null): void {
-      if (tribeData === null) {
-         Game.tribe = null;
-      } else {
-         if (Player.instance !== null) {
-            Player.instance.tribeID = tribeData.id;
-         }
-         
-         if (Game.tribe === null) {
-            // Create tribe
-            Game.tribe = new Tribe(tribeData.tribeType, tribeData.numHuts)
-         } else {
-            // Update existing tribe
-            Game.tribe.numHuts = tribeData.numHuts;
-         }
-
-         // Update unlocked techs
-         if (Game.tribe.unlockedTechs.length !== tribeData.unlockedTechs.length) {
-            updateTechTree();
-         }
-         Game.tribe.unlockedTechs = tribeData.unlockedTechs;
+   private static updateTribe(tribeData: TribeData): void {
+      if (Player.instance !== null) {
+         Player.instance.tribeID = tribeData.id;
       }
+      
+      Game.tribe.hasTotem = tribeData.hasTotem;
+      Game.tribe.numHuts = tribeData.numHuts;
+      Game.tribe.selectedTechID = tribeData.selectedTechID;
+      Game.tribe.unlockedTechs = tribeData.unlockedTechs;
+      Game.tribe.techTreeUnlockProgress = tribeData.techTreeUnlockProgress;
+
+      updateTechTree();
    }
 
    /**
@@ -268,7 +257,7 @@ abstract class Client {
             if (Board.entityRecord[entityData.id] !== Player.instance) {
                Board.entityRecord[entityData.id].updateFromData(entityData);
             } else {
-               (Board.entityRecord[entityData.id] as Player).genericUpdateFromData(entityData as unknown as EntityData<EntityType.player> | EntityData<EntityType.tribesman>);
+               (Board.entityRecord[entityData.id] as Player).genericUpdateFromData(entityData as unknown as EntityData<EntityType.player> | EntityData<EntityType.tribeWorker> | EntityData<EntityType.tribeWarrior>);
             }
             // @Incomplete
             // if (entityData.amountHealed > 0) {
@@ -474,8 +463,9 @@ abstract class Client {
    }
 
    private static respawnPlayer(respawnDataPacket: RespawnDataPacket): void {
-      definiteGameState.setPlayerHealth(Player.MAX_HEALTH);
-      updateHealthBar(Player.MAX_HEALTH);
+      const maxHealth = TRIBE_INFO_RECORD[Game.tribe.tribeType].maxHealthPlayer;
+      definiteGameState.setPlayerHealth(maxHealth);
+      updateHealthBar(maxHealth);
       
       const spawnPosition = Point.unpackage(respawnDataPacket.spawnPosition);
       const renderDepth = calculateEntityRenderDepth(EntityType.player);
@@ -501,10 +491,17 @@ abstract class Client {
       }
    }
 
-   public static sendInitialPlayerData(username: string, visibleChunks: VisibleChunkBounds): void {
+   public static sendInitialPlayerData(username: string, tribeType: TribeType): void {
       // Send player data to the server
       if (this.socket !== null) {
-         this.socket.emit("initial_player_data", username, visibleChunks);
+         this.socket.emit("initial_player_data", username, tribeType);
+      }
+   }
+
+   public static sendVisibleChunkBounds(visibleChunks: VisibleChunkBounds): void {
+      // Send player data to the server
+      if (this.socket !== null) {
+         this.socket.emit("visible_chunk_bounds", visibleChunks);
       }
    }
 
@@ -611,9 +608,21 @@ abstract class Client {
       updateInventoryIsOpen(false);
    }
 
+   public static sendSelectTech(techID: TechID): void {
+      if (Game.isRunning && this.socket !== null) {
+         this.socket.emit("select_tech", techID);
+      }
+   }
+
    public static sendUnlockTech(techID: TechID): void {
       if (Game.isRunning && this.socket !== null) {
          this.socket.emit("unlock_tech", techID);
+      }
+   }
+
+   public static sendStudyTech(studyAmount: number): void {
+      if (Game.isRunning && this.socket !== null) {
+         this.socket.emit("study_tech", studyAmount);
       }
    }
 }

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import HealthIcon from "../../images/miscellaneous/health.png";
 import FrozenHealthIcon from "../../images/miscellaneous/health-frozen.png";
+import { TRIBE_INFO_RECORD } from "webgl-test-shared";
+import Player from "../../entities/Player";
 
 export let updateHealthBar: (newHealth: number) => void;
 
@@ -8,8 +10,14 @@ export let HealthBar_setHasFrostShield: (hasFrostShield: boolean) => void = () =
 
 const HealthBar = () => {
    const healthBarRef = useRef<HTMLDivElement | null>(null);
-   const [health, setHealth] = useState(20);
+   const [health, setHealth] = useState(TRIBE_INFO_RECORD[Player.instance!.tribeType].maxHealthPlayer);
    const [hasFrostShield, setHasFrostShield] = useState(false);
+
+   useEffect(() => {
+      if (healthBarRef.current !== null) {
+         healthBarRef.current.style.setProperty("--max-health", TRIBE_INFO_RECORD[Player.instance!.tribeType].maxHealthPlayer.toString());
+      }
+   }, []);
    
    useEffect(() => {
       HealthBar_setHasFrostShield = (hasFrostShield: boolean) => {

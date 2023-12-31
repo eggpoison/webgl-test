@@ -82,8 +82,10 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/tribe-totem/barbarian-banner.png",
    "entities/tribe-totem/plainspeople-banner.png",
    "entities/tribe-totem/frostling-banner.png",
-   "entities/tribe-hut/tribe-hut.png",
-   "entities/tribe-hut/tribe-hut-door.png",
+   "entities/worker-hut/worker-hut.png",
+   "entities/worker-hut/worker-hut-door.png",
+   "entities/warrior-hut/warrior-hut.png",
+   "entities/warrior-hut/warrior-hut-door.png",
    "entities/barrel/barrel.png",
    "armour/deepfrost-armour.png",
    "armour/frost-armour.png",
@@ -121,12 +123,7 @@ const TEXTURE_SOURCES: Array<string> = [
    "decorations/flower2.png",
    "decorations/flower3.png",
    "decorations/flower4.png",
-   "entities/berry-snowbush/berry-snowbush-1.png",
-   "entities/berry-snowbush/berry-snowbush-2.png",
-   "entities/berry-snowbush/berry-snowbush-3.png",
-   "entities/berry-snowbush/berry-snowbush-4.png",
-   "entities/berry-snowbush/berry-snowbush-5.png",
-   "entities/berry-snowbush/berry-snowbush-6.png"
+   "entities/research-bench/research-bench.png"
 ];
 
 // Add item textures

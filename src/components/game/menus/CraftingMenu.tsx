@@ -264,7 +264,7 @@ const CraftingMenu = () => {
          const recipe = availableRecipes[i];
 
          const techRequired = getTechRequiredForItem(recipe.product);
-         if (techRequired !== null && (Game.tribe === null || !Game.tribe.hasUnlockedTech(techRequired))) {
+         if (techRequired !== null && !Game.tribe.hasUnlockedTech(techRequired)) {
             continue;
          }
 

@@ -5,6 +5,7 @@ import CLIENT_ITEM_INFO_RECORD, { getItemTypeImage } from "../../client-item-inf
 import Game from "../../Game";
 import Client from "../../client/Client";
 import { setTechTreeX, setTechTreeY, setTechTreeZoom, techIsDirectlyAccessible } from "../../rendering/tech-tree-rendering";
+import OPTIONS from "../../options";
 
 interface TechProps {
    readonly techInfo: TechInfo;
@@ -26,7 +27,11 @@ const Tech = ({ techInfo, positionX, positionY, zoom, onMouseEnter, onMouseLeave
       }
    }, [techInfo.positionX, techInfo.positionY, positionX, positionY, zoom]);
 
-   const isUnlocked = Game.tribe !== null && Game.tribe.hasUnlockedTech(techInfo.id);
+   const isUnlocked = Game.tribe.hasUnlockedTech(techInfo.id);
+
+   const selectTech = (): void => {
+      Client.sendSelectTech(techInfo.id);
+   }
    
    const research = (): void => {
       if (isUnlocked) {
@@ -35,7 +40,9 @@ const Tech = ({ techInfo, positionX, positionY, zoom, onMouseEnter, onMouseLeave
       
       Client.sendUnlockTech(techInfo.id);
    }
-   
+
+   const studyProgress = (techInfo.researchStudyRequirements > 0 && Game.tribe.techTreeUnlockProgress.hasOwnProperty(techInfo.id)) ? Game.tribe.techTreeUnlockProgress[techInfo.id]!.studyProgress : 0;
+
    return <div ref={elementRef} className={`tech${isUnlocked ? " unlocked" : ""}`} onMouseEnter={() => { onMouseEnter(); setShowDetails(true) }} onMouseLeave={() => { onMouseLeave(); setShowDetails(false) }}>
       <img src={require("../../images/tech-tree/" + techInfo.iconSrc)} alt="" className="icon" />
       <div className="icon-bg"></div>
@@ -47,11 +54,19 @@ const Tech = ({ techInfo, positionX, positionY, zoom, onMouseEnter, onMouseLeave
             <div className="details">
                <ul>
                   {Object.entries(techInfo.researchItemRequirements).map(([itemType, itemAmount], i) => {
-                     return <li key={i}>{CLIENT_ITEM_INFO_RECORD[itemType as unknown as ItemType].name} x{itemAmount}</li>
+                     const itemProgress = (Game.tribe.techTreeUnlockProgress[techInfo.id]?.itemProgress.hasOwnProperty(itemType)) ? Game.tribe.techTreeUnlockProgress[techInfo.id]!.itemProgress[itemType as unknown as ItemType] : 0;
+                     return <li key={i}>{CLIENT_ITEM_INFO_RECORD[itemType as unknown as ItemType].name} {itemProgress}/{itemAmount}</li>
                   })}
                </ul>
             </div>
-            <button onClick={() => research()} className="research-button">Research</button>
+            {techInfo.researchStudyRequirements > 0 ? (
+               <div>Study: {studyProgress}/{techInfo.researchStudyRequirements}</div>
+            ) : null}
+            {(techInfo.researchStudyRequirements > 0 && studyProgress < techInfo.researchStudyRequirements) ? (
+               <button onClick={() => selectTech()} className="research-button">Select</button>
+            ) : (
+               <button onClick={() => research()} className="research-button">Research</button>
+            )}
          </> : null}
       </div>
    </div>;
@@ -78,9 +93,12 @@ const TechDetails = ({ techID }: TechDetailsProps) => {
    </div>;
 }
 
-export let updateTechTree: () => void;
+export let updateTechTree: () => void = () => {};
 
 export let techIsHovered: (techID: TechID) => boolean;
+
+export let techTreeIsOpen: () => boolean;
+export let closeTechTree: () => void;
 
 const TechTree = () => {
    const [isVisible, setIsVisible] = useState(false);
@@ -101,6 +119,10 @@ const TechTree = () => {
          updateTechTree = (): void => {
             forceUpdate();
          }
+
+         closeTechTree = () => {
+            changeVisibility.current!();
+         }
          
          // @Memleak: Remove the listener when the component is unmounted
          addKeyListener("p", () => {
@@ -115,6 +137,10 @@ const TechTree = () => {
    }, []);
 
    useEffect(() => {
+      techTreeIsOpen = (): boolean => {
+         return isVisible;
+      }
+
       changeVisibility.current = (): void => {
          if (!isVisible) {
             document.getElementById("tech-tree-canvas")!.classList.remove("hidden");
@@ -185,7 +211,7 @@ const TechTree = () => {
    }
    
    return <div id="tech-tree" onMouseDown={e => onMouseDown(e.nativeEvent)} onMouseMove={e => onMouseMove(e.nativeEvent)} onMouseUp={() => onMouseUp()}>
-      {TECHS.filter(tech => techIsDirectlyAccessible(tech)).map((techInfo, i) => {
+      {TECHS.filter(tech => OPTIONS.showAllTechs || techIsDirectlyAccessible(tech)).map((techInfo, i) => {
          return <Tech techInfo={techInfo} positionX={positionX} positionY={positionY} zoom={zoom} onMouseEnter={() => onTechEnter(techInfo)} onMouseLeave={() => onTechLeave()} key={i} />
       })}
 

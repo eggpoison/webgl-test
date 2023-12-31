@@ -154,14 +154,21 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       entityTextureSource: "items/small/tribe-totem.png",
       textureSource: "items/large/tribe-totem.png",
       toolTextureSource: "",
-      name: "Tribe Totem",
+      name: "Totem",
+      description: "Centerpiece of the tribe."
+   },
+   [ItemType.worker_hut]: {
+      entityTextureSource: "items/small/worker-hut.png",
+      textureSource: "items/large/worker-hut.png",
+      toolTextureSource: "",
+      name: "Worker Hut",
       description: ""
    },
-   [ItemType.tribe_hut]: {
-      entityTextureSource: "items/small/tribe-hut.png",
-      textureSource: "items/large/tribe-hut.png",
+   [ItemType.warrior_hut]: {
+      entityTextureSource: "items/small/warrior-hut.png",
+      textureSource: "items/large/warrior-hut.png",
       toolTextureSource: "",
-      name: "Tribe Hut",
+      name: "Warrior Hut",
       description: ""
    },
    [ItemType.barrel]: {
@@ -292,6 +299,20 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       toolTextureSource: "items/misc/spear.png",
       name: "Spear",
       description: "Pointy end works best."
+   },
+   [ItemType.paper]: {
+      entityTextureSource: "items/small/paper.png",
+      textureSource: "items/large/paper.png",
+      toolTextureSource: "",
+      name: "Paper",
+      description: ""
+   },
+   [ItemType.research_bench]: {
+      entityTextureSource: "items/small/research-bench.png",
+      textureSource: "items/large/research-bench.png",
+      toolTextureSource: "",
+      name: "Research Bench",
+      description: ""
    }
 };
 

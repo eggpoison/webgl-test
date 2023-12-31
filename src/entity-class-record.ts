@@ -12,9 +12,8 @@ import Yeti from "./entities/Yeti";
 import IceSpikes from "./entities/IceSpikes";
 import Slime from "./entities/Slime";
 import Slimewisp from "./entities/Slimewisp";
-import Tribesman from "./entities/Tribesman";
 import TribeTotem from "./entities/TribeTotem";
-import TribeHut from "./entities/TribeHut";
+import WorkerHut from "./entities/WorkerHut";
 import Barrel from "./entities/Barrel";
 import Campfire from "./entities/Campfire";
 import Furnace from "./entities/Furnace";
@@ -28,6 +27,10 @@ import WoodenArrowProjectile from "./projectiles/WoodenArrowProjectile";
 import IceShardsProjectile from "./projectiles/IceShardsProjectile";
 import RockSpikeProjectile from "./projectiles/RockSpikeProjectile";
 import SpearProjectile from "./projectiles/SpearProjectile";
+import ResearchBench from "./entities/ResearchBench";
+import WarriorHut from "./entities/WarriorHut";
+import TribeWorker from "./entities/TribeWorker";
+import TribeWarrior from "./entities/TribeWarrior";
 
 export type EntityClassType<T extends EntityType> = new (position: Point, id: number, renderDepth: number, ...clientParams: Parameters<typeof EntityInfoClientArgs[T]>) => GameObject;
 
@@ -44,10 +47,12 @@ const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
    [EntityType.iceSpikes]: () => IceSpikes,
    [EntityType.slime]: () => Slime,
    [EntityType.slimewisp]: () => Slimewisp,
-   [EntityType.tribesman]: () => Tribesman,
+   [EntityType.tribeWorker]: () => TribeWorker,
+   [EntityType.tribeWarrior]: () => TribeWarrior,
    [EntityType.player]: () => Player,
    [EntityType.tribeTotem]: () => TribeTotem,
-   [EntityType.tribeHut]: () => TribeHut,
+   [EntityType.workerHut]: () => WorkerHut,
+   [EntityType.warriorHut]: () => WarriorHut,
    [EntityType.barrel]: () => Barrel,
    [EntityType.campfire]: () => Campfire,
    [EntityType.furnace]: () => Furnace,
@@ -59,7 +64,8 @@ const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
    [EntityType.woodenArrowProjectile]: () => WoodenArrowProjectile,
    [EntityType.iceShardProjectile]: () => IceShardsProjectile,
    [EntityType.rockSpikeProjectile]: () => RockSpikeProjectile,
-   [EntityType.spearProjectile]: () => SpearProjectile
+   [EntityType.spearProjectile]: () => SpearProjectile,
+   [EntityType.researchBench]: () => ResearchBench
 };
 
 export default ENTITY_CLASS_RECORD;

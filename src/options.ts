@@ -17,6 +17,7 @@ interface Options {
     */
    showRenderChunkBorders: boolean;
    readonly showParticles: boolean;
+   readonly showAllTechs: boolean;
 }
 
 const OPTIONS: Options = {
@@ -25,7 +26,8 @@ const OPTIONS: Options = {
    showHitboxes: false,
    showChunkBorders: false,
    showRenderChunkBorders: false,
-   showParticles: true
+   showParticles: true,
+   showAllTechs: false
 };
 
 // @Cleanup: Should this exist?

@@ -187,17 +187,13 @@ const addConnectorVertices = (vertices: Array<number>, startTech: TechInfo, endT
 }
 
 export function techIsDirectlyAccessible(techInfo: TechInfo): boolean {
-   if (Game.tribe === null) {
-      return false;
-   }
-   
    if (Game.tribe.hasUnlockedTech(techInfo.id)) {
       return true;
    }
    
    // Make sure all dependencies have been unlocked
    for (const dependencyTechID of techInfo.dependencies) {
-      if (!Game.tribe!.hasUnlockedTech(dependencyTechID)) {
+      if (!Game.tribe.hasUnlockedTech(dependencyTechID)) {
          return false;
       }
    }
@@ -209,7 +205,7 @@ const calculateConnectorVertices = (): ReadonlyArray<number> => {
    const vertices = new Array<number>();
    
    // For all unlocked techs, draw the connectors for their dependencies
-   for (const techID of Game.tribe!.unlockedTechs) {
+   for (const techID of Game.tribe.unlockedTechs) {
       const tech = getTechByID(techID);
       for (const dependencyTechID of tech.dependencies) {
          const dependencyTech = getTechByID(dependencyTechID);
@@ -219,7 +215,7 @@ const calculateConnectorVertices = (): ReadonlyArray<number> => {
 
    // For all directly accessible locked techs, draw the connectors for their dependencies
    for (const tech of TECHS) {
-      if (!Game.tribe!.hasUnlockedTech(tech.id) && techIsDirectlyAccessible(tech)) {
+      if (!Game.tribe.hasUnlockedTech(tech.id) && techIsDirectlyAccessible(tech)) {
          for (const dependencyTechID of tech.dependencies) {
             const dependencyTech = getTechByID(dependencyTechID);
             addConnectorVertices(vertices, dependencyTech, tech, false);
@@ -231,10 +227,6 @@ const calculateConnectorVertices = (): ReadonlyArray<number> => {
 }
 
 const renderConnectors = (): void => {
-   if (Game.tribe === null) {
-      return;
-   }
-
    gl.useProgram(connectorProgram);
 
    gl.enable(gl.BLEND);
