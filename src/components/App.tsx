@@ -3,10 +3,9 @@ import GameScreen from "./game/GameScreen";
 import LoadingScreen, { LoadingScreenStatus } from "./LoadingScreen";
 import MainMenu from "./MainMenu";
 import FrameGraph from "./game/dev/FrameGraph";
-import TribeSelectionScreen from "./TribeSelectionScreen";
 import { TribeType } from "webgl-test-shared";
 
-type GameState = "main_menu" | "tribe_selection" | "loading" | "game";
+type GameState = "main_menu" | "loading" | "game";
 
 export let setGameState: (gameState: GameState) => Promise<void>;
 export let getGameState: () => GameState;
@@ -69,9 +68,7 @@ function App() {
 
    return <>
       {gameSection === "main_menu" ? <>
-         <MainMenu existingUsername={usernameRef.current} passUsername={(username: string) => passUsername(username)} />
-      </> : gameSection === "tribe_selection" ? <>
-         <TribeSelectionScreen passTribeType={(tribeType: TribeType) => { tribeTypeRef.current = tribeType }} />
+         <MainMenu existingUsername={usernameRef.current} passUsername={(username: string) => passUsername(username)} passTribeType={(tribeType: TribeType) => { tribeTypeRef.current = tribeType }} />
       </> : gameSection === "loading" ? <>
          <LoadingScreen username={usernameRef.current!} tribeType={tribeTypeRef.current!} initialStatus={initialLoadingScreenStatus.current} />
       </> : gameSection === "game" ? <>
