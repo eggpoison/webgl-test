@@ -1,7 +1,7 @@
 import { EntityType, InventoryData, Point, angle, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import CookingEntity from "./CookingEntity";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
+import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { createEmberParticle, createRockParticle, createRockSpeckParticle, createSmokeParticle } from "../generic-particles";
 import Board from "../Board";
 

@@ -10,12 +10,12 @@ export let HealthBar_setHasFrostShield: (hasFrostShield: boolean) => void = () =
 
 const HealthBar = () => {
    const healthBarRef = useRef<HTMLDivElement | null>(null);
-   const [health, setHealth] = useState(TRIBE_INFO_RECORD[Player.instance!.tribeType].maxHealthPlayer);
+   const [health, setHealth] = useState(Player.instance !== null ? TRIBE_INFO_RECORD[Player.instance.tribeType].maxHealthPlayer : 0);
    const [hasFrostShield, setHasFrostShield] = useState(false);
 
    useEffect(() => {
       if (healthBarRef.current !== null) {
-         healthBarRef.current.style.setProperty("--max-health", TRIBE_INFO_RECORD[Player.instance!.tribeType].maxHealthPlayer.toString());
+         healthBarRef.current.style.setProperty("--max-health", Player.instance !== null ? TRIBE_INFO_RECORD[Player.instance.tribeType].maxHealthPlayer.toString() : "0");
       }
    }, []);
    

@@ -313,6 +313,13 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       toolTextureSource: "",
       name: "Research Bench",
       description: ""
+   },
+   [ItemType.wooden_wall]: {
+      entityTextureSource: "items/small/wooden-wall.png",
+      textureSource: "items/large/wooden-wall.png",
+      toolTextureSource: "",
+      name: "Wooden Wall",
+      description: ""
    }
 };
 

@@ -172,105 +172,6 @@ abstract class GameObject extends RenderObject {
       }
    }
 
-   // public applyPhysics2(): void {
-   //    // Accelerate
-   //    if (this.acceleration.x !== 0 || this.acceleration.y !== 0) {
-   //       let tileMoveSpeedMultiplier = TILE_MOVE_SPEED_MULTIPLIERS[this.tile.type];
-   //       if (this.tile.type === TileType.water && !this.isInRiver()) {
-   //          tileMoveSpeedMultiplier = 1;
-   //       }
-   
-   //       // @Cleanup: This is scuffed
-   //       if (typeof this.overrideTileMoveSpeedMultiplier !== "undefined") {
-   //          const speed = this.overrideTileMoveSpeedMultiplier();
-   //          if (speed !== null) {
-   //             tileMoveSpeedMultiplier = speed;
-   //          }
-   //       }
-
-   //       const terminalVelocity = this.terminalVelocity * tileMoveSpeedMultiplier;
-
-   //       const friction = TILE_FRICTIONS[this.tile.type];
-   //       let accelerateAmountX = this.acceleration.x * friction * tileMoveSpeedMultiplier / SETTINGS.TPS;
-   //       let accelerateAmountY = this.acceleration.y * friction * tileMoveSpeedMultiplier / SETTINGS.TPS;
-
-   //       // Make acceleration slow as the game object reaches its terminal velocity
-   //       // Fix accelerating infinitely past terminal velocity
-   //       const progressToTerminalVelocity = this.velocity.length() / terminalVelocity;
-   //       if (progressToTerminalVelocity < 1) {
-   //          accelerateAmountX *= 1 - Math.pow(progressToTerminalVelocity, 2);
-   //          accelerateAmountY *= 1 - Math.pow(progressToTerminalVelocity, 2);
-   //       }
-
-   //       const amountBefore = this.velocity.length();
-   //       const divideAmount = 1 + 3 / SETTINGS.TPS * TILE_FRICTIONS[this.tile.type];
-   //       this.velocity.x /= divideAmount;
-   //       this.velocity.y /= divideAmount;
-   //       const tileFrictionReduceAmount = amountBefore - this.velocity.length();
-
-   //       // Undo tile friction, but in the direction of acceleration instead of velocity
-   //       const accelerateAmountLength = Math.sqrt(Math.pow(accelerateAmountX, 2) + Math.pow(accelerateAmountY, 2));
-   //       accelerateAmountX += tileFrictionReduceAmount * accelerateAmountX / accelerateAmountLength;
-   //       accelerateAmountY += tileFrictionReduceAmount * accelerateAmountY / accelerateAmountLength;
-
-   //       const magnitudeBeforeAdd = this.velocity.length();
-         
-   //       // Add acceleration to velocity
-   //       this.velocity.x += accelerateAmountX;
-   //       this.velocity.y += accelerateAmountY;
-         
-   //       // Don't accelerate past terminal velocity
-   //       const velocityLength = this.velocity.length();
-   //       if (velocityLength > terminalVelocity && velocityLength > magnitudeBeforeAdd) {
-   //          if (magnitudeBeforeAdd < terminalVelocity) {
-   //             this.velocity.x *= terminalVelocity / velocityLength;
-   //             this.velocity.y *= terminalVelocity / velocityLength;
-   //          } else {
-   //             // If already exceeded terminal velocity, don't apply any velocity
-   //             this.velocity.x *= magnitudeBeforeAdd / velocityLength;
-   //             this.velocity.y *= magnitudeBeforeAdd / velocityLength;
-   //          }
-   //       }
-   //    } else if (this.velocity.x !== 0 || this.velocity.y !== 0) {
-   //       const divideAmount = 1 + 3 / SETTINGS.TPS * TILE_FRICTIONS[this.tile.type];
-   //       this.velocity.x /= divideAmount;
-   //       this.velocity.y /= divideAmount;
-
-   //       // 
-   //       // Apply friction
-   //       // 
-
-   //       const xSignBefore = Math.sign(this.velocity.x);
-         
-   //       const velocityLength = this.velocity.length();
-   //       this.velocity.x = (velocityLength - 3) * this.velocity.x / velocityLength;
-   //       this.velocity.y = (velocityLength - 3) * this.velocity.y / velocityLength;
-   //       if (Math.sign(this.velocity.x) !== xSignBefore) {
-   //          this.velocity.x = 0;
-   //          this.velocity.y = 0;
-   //       }
-   //    }
-
-   //    // If the game object is in a river, push them in the flow direction of the river
-   //    const moveSpeedIsOverridden = typeof this.overrideTileMoveSpeedMultiplier !== "undefined" && this.overrideTileMoveSpeedMultiplier() !== null;
-   //    if (this.isInRiver() && !moveSpeedIsOverridden) {
-   //       const flowDirection = Board.getRiverFlowDirection(this.tile.x, this.tile.y);
-   //       this.velocity.x += 240 / SETTINGS.TPS * Math.sin(flowDirection);
-   //       this.velocity.y += 240 / SETTINGS.TPS * Math.cos(flowDirection);
-   //    }
-
-   //    // Apply velocity
-   //    this.position.x += this.velocity.x / SETTINGS.TPS;
-   //    this.position.y += this.velocity.y / SETTINGS.TPS;
-
-   //    // @Cleanup: This may be incorrect to be done here
-   //    this.resolveBorderCollisions();
-
-   //    if (isNaN(this.position.x)) {
-   //       throw new Error("Position was NaN.");
-   //    }
-   // }
-
    protected resolveBorderCollisions(): void {
       if (this.position.x < 0) {
          this.position.x = 0;
@@ -357,12 +258,39 @@ abstract class GameObject extends RenderObject {
       this.mass = data.mass;
       this.ageTicks = data.ageTicks;
 
+      // @Speed
+      // @Speed
+      // @Speed
+
       const containingChunks = new Set<Chunk>();
 
-      // Update the game object's hitboxes and containing chunks
-      for (const hitbox of this.hitboxes) {
-         hitbox.updateFromGameObject(this);
-         hitbox.updateHitboxBounds(this.rotation);
+      this.hitboxes.clear();
+      for (const hitboxData of data.circularHitboxes) {
+         const hitbox = new CircularHitbox(hitboxData.radius);
+         hitbox.offset = new Point(hitboxData.offsetX, hitboxData.offsetY);
+         this.addCircularHitbox(hitbox);
+
+         // Recalculate the game object's containing chunks based on the new hitbox bounds
+         const minChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[0] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+         const maxChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[1] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+         const minChunkY = Math.max(Math.min(Math.floor(hitbox.bounds[2] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+         const maxChunkY = Math.max(Math.min(Math.floor(hitbox.bounds[3] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+         
+         for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+            for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
+               const chunk = Board.getChunk(chunkX, chunkY);
+               if (!this.chunks.has(chunk)) {
+                  chunk.addGameObject(this as unknown as GameObject);
+                  this.chunks.add(chunk);
+               }
+               containingChunks.add(chunk);
+            }
+         }
+      }
+      for (const hitboxData of data.rectangularHitboxes) {
+         const hitbox = new RectangularHitbox(hitboxData.width, hitboxData.height);
+         hitbox.offset = new Point(hitboxData.offsetX, hitboxData.offsetY);
+         this.addRectangularHitbox(hitbox);
 
          // Recalculate the game object's containing chunks based on the new hitbox bounds
          const minChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[0] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);

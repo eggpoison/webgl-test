@@ -27,7 +27,8 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/barrel/barrel.png",
    "entities/worker-hut/worker-hut.png",
    "entities/warrior-hut/warrior-hut.png",
-   "entities/research-bench/research-bench.png"
+   "entities/research-bench/research-bench.png",
+   "entities/wooden-wall/wooden-wall.png"
 ];
 
 export const TEXTURE_IMAGE_RECORD: Record<string, HTMLImageElement> = {};

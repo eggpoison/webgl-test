@@ -1,6 +1,6 @@
 import { EntityType, Point, SETTINGS, lerp, randFloat, randInt } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
+import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 import Board from "../Board";

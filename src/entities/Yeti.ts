@@ -3,7 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle, createSnowParticle, createWhiteSmokeParticle } from "../generic-particles";
 import Board from "../Board";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
+import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 
 class Yeti extends Entity {
    private static readonly SIZE = 128;

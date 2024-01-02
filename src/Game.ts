@@ -34,7 +34,7 @@ import { registerFrame, updateFrameGraph } from "./components/game/dev/FrameGrap
 import { createNightShaders, renderNight } from "./rendering/night-rendering";
 import { createPlaceableItemProgram, renderGhostPlaceableItem } from "./rendering/placeable-item-rendering";
 import { setupFrameGraph } from "./rendering/frame-graph-rendering";
-import { createGameObjectTextureAtlas } from "./texture-atlases/game-object-texture-atlas";
+import { createGameObjectTextureAtlas } from "./texture-atlases/entity-texture-atlas";
 import { createFishShaders } from "./rendering/fish-rendering";
 import { Tile } from "./Tile";
 import { createForcefieldShaders, renderForcefield } from "./rendering/world-border-forcefield-rendering";

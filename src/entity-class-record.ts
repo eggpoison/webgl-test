@@ -31,6 +31,9 @@ import ResearchBench from "./entities/ResearchBench";
 import WarriorHut from "./entities/WarriorHut";
 import TribeWorker from "./entities/TribeWorker";
 import TribeWarrior from "./entities/TribeWarrior";
+import WoodenWall from "./entities/WoodenWall";
+import SlimeSpit from "./projectiles/SlimeSpit";
+import SpitPoison from "./projectiles/SpitPoison";
 
 export type EntityClassType<T extends EntityType> = new (position: Point, id: number, renderDepth: number, ...clientParams: Parameters<typeof EntityInfoClientArgs[T]>) => GameObject;
 
@@ -65,7 +68,10 @@ const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
    [EntityType.iceShardProjectile]: () => IceShardsProjectile,
    [EntityType.rockSpikeProjectile]: () => RockSpikeProjectile,
    [EntityType.spearProjectile]: () => SpearProjectile,
-   [EntityType.researchBench]: () => ResearchBench
+   [EntityType.researchBench]: () => ResearchBench,
+   [EntityType.woodenWall]: () => WoodenWall,
+   [EntityType.slimeSpit]: () => SlimeSpit,
+   [EntityType.spitPoison]: () => SpitPoison
 };
 
 export default ENTITY_CLASS_RECORD;

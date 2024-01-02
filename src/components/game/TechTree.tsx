@@ -1,23 +1,71 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { addKeyListener } from "../../keyboard-input";
-import { ItemType, TECHS, TechID, TechInfo, getTechByID } from "webgl-test-shared";
-import CLIENT_ITEM_INFO_RECORD, { getItemTypeImage } from "../../client-item-info";
+import { ItemType, TECHS, TechID, TechInfo } from "webgl-test-shared";
+import CLIENT_ITEM_INFO_RECORD from "../../client-item-info";
 import Game from "../../Game";
 import Client from "../../client/Client";
 import { setTechTreeX, setTechTreeY, setTechTreeZoom, techIsDirectlyAccessible } from "../../rendering/tech-tree-rendering";
 import OPTIONS from "../../options";
+
+let hoveredTechID: TechID | null = null;
+
+export function techIsHovered(techID: TechID): boolean {
+   return techID === hoveredTechID;
+}
+
+const selectTech = (techID: TechID): void => {
+   Client.sendSelectTech(techID);
+}
+   
+const researchTech = (techID: TechID): void => {
+   if (Game.tribe.hasUnlockedTech(techID)) {
+      return;
+   }
+   
+   Client.sendUnlockTech(techID);
+}
+
+interface TechTooltipProps {
+   readonly techInfo: TechInfo;
+   readonly techPositionX: number;
+   readonly techPositionY: number;
+   readonly zoom: number;
+}
+const TechTooltip = ({ techInfo, techPositionX, techPositionY, zoom }: TechTooltipProps) => {
+   const tooltipRef = useRef<HTMLDivElement | null>(null);
+   
+   useEffect(() => {
+      if (tooltipRef.current !== null) {
+         const tooltip = tooltipRef.current;
+         tooltip.style.left = `calc(50% + (${techInfo.positionX + 5}rem + ${techPositionX}px) * ${zoom})`;
+         tooltip.style.top = `calc(50% + (${-techInfo.positionY}rem + ${techPositionY}px) * ${zoom})`;
+      }
+   }, [techInfo.positionX, techInfo.positionY, techPositionX, techPositionY, zoom]);
+   
+   return <div ref={tooltipRef} id="tech-tooltip">
+      <h2 className="name">{techInfo.name}</h2>
+      <p className="description">{techInfo.description}</p>
+
+      <div className="details">
+         <ul>
+            {Object.entries(techInfo.researchItemRequirements).map(([itemType, itemAmount], i) => {
+               const itemProgress = (Game.tribe.techTreeUnlockProgress[techInfo.id]?.itemProgress.hasOwnProperty(itemType)) ? Game.tribe.techTreeUnlockProgress[techInfo.id]!.itemProgress[itemType as unknown as ItemType] : 0;
+               return <li key={i}>{CLIENT_ITEM_INFO_RECORD[itemType as unknown as ItemType].name} {itemProgress}/{itemAmount}</li>
+            })}
+         </ul>
+      </div>
+   </div>;
+}
 
 interface TechProps {
    readonly techInfo: TechInfo;
    readonly positionX: number;
    readonly positionY: number;
    readonly zoom: number;
-   readonly onMouseEnter: () => void;
-   readonly onMouseLeave: () => void;
 }
-const Tech = ({ techInfo, positionX, positionY, zoom, onMouseEnter, onMouseLeave }: TechProps) => {
+const Tech = ({ techInfo, positionX, positionY, zoom }: TechProps) => {
    const elementRef = useRef<HTMLDivElement | null>(null);
-   const [showDetails, setShowDetails] = useState(false);
+   const [isHovered, setIsHovered] = useState(false);
 
    useEffect(() => {
       if (elementRef.current !== null) {
@@ -28,74 +76,52 @@ const Tech = ({ techInfo, positionX, positionY, zoom, onMouseEnter, onMouseLeave
    }, [techInfo.positionX, techInfo.positionY, positionX, positionY, zoom]);
 
    const isUnlocked = Game.tribe.hasUnlockedTech(techInfo.id);
+   const isSelected = Game.tribe.selectedTechID === techInfo.id;
 
-   const selectTech = (): void => {
-      Client.sendSelectTech(techInfo.id);
+   const onMouseEnter = (): void => {
+      setIsHovered(true);
    }
-   
-   const research = (): void => {
+
+   const onMouseLeave = (): void => {
+      setIsHovered(false);
+   }
+
+   const onClick = (): void => {
+      if (isUnlocked) {
+         return;
+      }
+
+      if (techInfo.researchStudyRequirements > 0) {
+         selectTech(techInfo.id);
+      }
+
+      researchTech(techInfo.id);
+   }
+
+   const onRightClick = (e: MouseEvent): void => {
       if (isUnlocked) {
          return;
       }
       
-      Client.sendUnlockTech(techInfo.id);
+      if (techInfo.researchStudyRequirements > 0) {
+         selectTech(techInfo.id);
+      }
+      e.preventDefault();
    }
 
-   const studyProgress = (techInfo.researchStudyRequirements > 0 && Game.tribe.techTreeUnlockProgress.hasOwnProperty(techInfo.id)) ? Game.tribe.techTreeUnlockProgress[techInfo.id]!.studyProgress : 0;
-
-   return <div ref={elementRef} className={`tech${isUnlocked ? " unlocked" : ""}`} onMouseEnter={() => { onMouseEnter(); setShowDetails(true) }} onMouseLeave={() => { onMouseLeave(); setShowDetails(false) }}>
-      <img src={require("../../images/tech-tree/" + techInfo.iconSrc)} alt="" className="icon" />
-      <div className="icon-bg"></div>
-
-      <div className="content">
-         <p className="name">{techInfo.name}</p>
-
-         {showDetails ? <>
-            <div className="details">
-               <ul>
-                  {Object.entries(techInfo.researchItemRequirements).map(([itemType, itemAmount], i) => {
-                     const itemProgress = (Game.tribe.techTreeUnlockProgress[techInfo.id]?.itemProgress.hasOwnProperty(itemType)) ? Game.tribe.techTreeUnlockProgress[techInfo.id]!.itemProgress[itemType as unknown as ItemType] : 0;
-                     return <li key={i}>{CLIENT_ITEM_INFO_RECORD[itemType as unknown as ItemType].name} {itemProgress}/{itemAmount}</li>
-                  })}
-               </ul>
-            </div>
-            {techInfo.researchStudyRequirements > 0 ? (
-               <div>Study: {studyProgress}/{techInfo.researchStudyRequirements}</div>
-            ) : null}
-            {(techInfo.researchStudyRequirements > 0 && studyProgress < techInfo.researchStudyRequirements) ? (
-               <button onClick={() => selectTech()} className="research-button">Select</button>
-            ) : (
-               <button onClick={() => research()} className="research-button">Research</button>
-            )}
-         </> : null}
+   return <>
+      <div ref={elementRef} onClick={onClick} onContextMenu={e => onRightClick(e.nativeEvent)} className={`tech${isUnlocked ? " unlocked" : ""}${isSelected ? " selected" : ""}`} onMouseEnter={() => onMouseEnter()} onMouseLeave={() => onMouseLeave()}>
+         <div className="icon-wrapper">
+            <img src={require("../../images/tech-tree/" + techInfo.iconSrc)} alt="" className="icon" draggable={false} />
+         </div>
       </div>
-   </div>;
-}
-
-interface TechDetailsProps {
-   readonly techID: TechID;
-}
-const TechDetails = ({ techID }: TechDetailsProps) => {
-   const techInfo = getTechByID(techID);
-   
-   return <div id="tech-details">
-      <h2 className="name">{techInfo.name}</h2>
-      <div className="description">{techInfo.description}</div>
-      <p className="list-before">Unlocks the following items:</p>
-      <ul>
-         {techInfo.unlockedItems.map((itemType, i) => {
-            return <li key={i}>
-               <img src={getItemTypeImage(itemType)} alt="" />
-               {CLIENT_ITEM_INFO_RECORD[itemType].name}
-            </li>;
-         })}
-      </ul>
-   </div>;
+      {isHovered ? (
+         <TechTooltip techInfo={techInfo} techPositionX={positionX} techPositionY={positionY} zoom={zoom} />
+      ) : null}
+   </>;
 }
 
 export let updateTechTree: () => void = () => {};
-
-export let techIsHovered: (techID: TechID) => boolean;
 
 export let techTreeIsOpen: () => boolean;
 export let closeTechTree: () => void;
@@ -112,7 +138,6 @@ const TechTree = () => {
    const scrollFunc = useRef<(e: WheelEvent) => void>();
    const [zoom, setZoom] = useState(1);
    const [, forceUpdate] = useReducer(x => x + 1, 0);
-   const [hoveredTech, setHoveredTech] = useState<TechID | null>(null);
 
    useEffect(() => {
       if (!hasLoaded.current) {
@@ -165,12 +190,6 @@ const TechTree = () => {
       }
    }, [zoom]);
 
-   useEffect(() => {
-      techIsHovered = (techID: TechID): boolean => {
-         return hoveredTech !== null && techID === hoveredTech;
-      }
-   }, [hoveredTech]);
-
    const onMouseDown = (e: MouseEvent): void => {
       isDragging.current = true;
       lastDragX.current = e.clientX;
@@ -199,25 +218,14 @@ const TechTree = () => {
       isDragging.current = false;
    }
 
-   const onTechEnter = (tech: TechInfo): void => {
-      setHoveredTech(tech.id);
-   }
-   const onTechLeave = (): void => {
-      setHoveredTech(null);
-   }
-
    if (!isVisible) {
       return null;
    }
    
    return <div id="tech-tree" onMouseDown={e => onMouseDown(e.nativeEvent)} onMouseMove={e => onMouseMove(e.nativeEvent)} onMouseUp={() => onMouseUp()}>
       {TECHS.filter(tech => OPTIONS.showAllTechs || techIsDirectlyAccessible(tech)).map((techInfo, i) => {
-         return <Tech techInfo={techInfo} positionX={positionX} positionY={positionY} zoom={zoom} onMouseEnter={() => onTechEnter(techInfo)} onMouseLeave={() => onTechLeave()} key={i} />
+         return <Tech techInfo={techInfo} positionX={positionX} positionY={positionY} zoom={zoom} key={i} />
       })}
-
-      {hoveredTech !== null ? (
-         <TechDetails techID={hoveredTech} />
-      ) : null}
    </div>;
 }
 

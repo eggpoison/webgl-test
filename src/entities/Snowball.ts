@@ -5,7 +5,7 @@ import Board from "../Board";
 import { createSnowParticle } from "../generic-particles";
 import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
+import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 
 const getTextureSource = (size: SnowballSize): string => {
    switch (size) {

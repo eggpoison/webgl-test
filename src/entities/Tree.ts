@@ -2,7 +2,7 @@ import { EntityType, HitData, Point, TreeSize, randFloat, randInt, randItem } fr
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { LeafParticleSize, createLeafParticle, createLeafSpeckParticle, createWoodSpeckParticle } from "../generic-particles";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
+import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { AudioFilePath, playSound } from "../sound";
 
 const treeTextures: { [T in TreeSize]: string } = {

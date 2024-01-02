@@ -2,7 +2,7 @@ import { EntityData, EntityType, Point, SlimeOrbData, SlimeSize, TileType, lerp 
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { createSlimePoolParticle, createSlimeSpeckParticle } from "../generic-particles";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
+import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 
 class Slime extends Entity {
    private static readonly SIZES: ReadonlyArray<number> = [

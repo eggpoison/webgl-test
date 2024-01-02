@@ -1,18 +1,22 @@
 import { EntityType, Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
-import GameObject from "../GameObject";
+import Entity from "./Entity";
 
-class SpearProjectile extends GameObject {
+class WoodenWall extends Entity {
+   private static readonly SIZE = 64;
+
+   public type = EntityType.boulder;
+
    constructor(position: Point, id: number, renderDepth: number) {
-      super(position, id, EntityType.spearProjectile, renderDepth);
+      super(position, id, EntityType.boulder, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(
             this,
-            5 * 4,
-            24 * 4,
-            getGameObjectTextureArrayIndex("items/misc/spear.png"),
+            WoodenWall.SIZE,
+            WoodenWall.SIZE,
+            getGameObjectTextureArrayIndex("entities/wooden-wall/wooden-wall.png"),
             0,
             0
          )
@@ -20,4 +24,4 @@ class SpearProjectile extends GameObject {
    }
 }
 
-export default SpearProjectile;
+export default WoodenWall;

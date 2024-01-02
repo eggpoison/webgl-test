@@ -2,7 +2,7 @@ import { TileType, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-sha
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 import Board from "../Board";
 import { ATLAS_SLOT_SIZE } from "../texture-atlases/texture-atlas-stitching";
-import { GAME_OBJECT_TEXTURE_ATLAS, GAME_OBJECT_TEXTURE_ATLAS_SIZE } from "../texture-atlases/game-object-texture-atlas";
+import { GAME_OBJECT_TEXTURE_ATLAS, GAME_OBJECT_TEXTURE_ATLAS_SIZE } from "../texture-atlases/entity-texture-atlas";
 
 let program: WebGLProgram;
 let vao: WebGLVertexArrayObject;

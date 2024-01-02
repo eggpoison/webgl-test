@@ -2,7 +2,7 @@ import { EntityData, EntityType, HitData, Inventory, InventoryData, Point } from
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
+import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { playBuildingHitSound, playSound } from "../sound";
 
 class Barrel extends Entity {

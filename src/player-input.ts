@@ -24,6 +24,7 @@ import Hitbox from "./hitboxes/Hitbox";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import { closeTechTree, techTreeIsOpen } from "./components/game/TechTree";
 import WarriorHut from "./entities/WarriorHut";
+import GameObject from "./GameObject";
 
 /** Amount of seconds of forced delay on when an item can be used for attacking when switching between items */
 const GLOBAL_ATTACK_DELAY_ON_SWITCH = 0.1;
@@ -43,7 +44,7 @@ enum PlaceableItemHitboxType {
    rectangular
 }
 
-interface PlaceableEntityInfo {
+export interface PlaceableEntityInfo {
    readonly textureSource: string;
    readonly width: number;
    readonly height: number;
@@ -118,6 +119,13 @@ export const PLACEABLE_ENTITY_INFO_RECORD: Record<PlaceableItemType, PlaceableEn
       width: 32 * 4,
       height: 20 * 4,
       placeOffset: 50,
+      hitboxType: PlaceableItemHitboxType.rectangular
+   },
+   [ItemType.wooden_wall]: {
+      textureSource: "wooden-wall/wooden-wall.png",
+      width: 64,
+      height: 64,
+      placeOffset: 32,
       hitboxType: PlaceableItemHitboxType.rectangular
    }
 };
@@ -592,7 +600,63 @@ export function selectItem(item: Item): void {
    }
 }
 
-export function canPlaceItem(item: Item): boolean {
+const calculateRegularPlacePosition = (placeableEntityInfo: PlaceableEntityInfo): Point => {
+   const placePositionX = Player.instance!.position.x + (SETTINGS.ITEM_PLACE_DISTANCE + placeableEntityInfo.placeOffset) * Math.sin(Player.instance!.rotation);
+   const placePositionY = Player.instance!.position.y + (SETTINGS.ITEM_PLACE_DISTANCE + placeableEntityInfo.placeOffset) * Math.cos(Player.instance!.rotation);
+   return new Point(placePositionX, placePositionY);
+}
+
+export function calculateSnapID(placeableEntityInfo: PlaceableEntityInfo): number {
+   const minChunkX = Math.max(Math.floor((Player.instance!.position.x - SETTINGS.STRUCTURE_SNAP_RANGE) / SETTINGS.CHUNK_UNITS), 0);
+   const maxChunkX = Math.min(Math.floor((Player.instance!.position.x + SETTINGS.STRUCTURE_SNAP_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1);
+   const minChunkY = Math.max(Math.floor((Player.instance!.position.y - SETTINGS.STRUCTURE_SNAP_RANGE) / SETTINGS.CHUNK_UNITS), 0);
+   const maxChunkY = Math.min(Math.floor((Player.instance!.position.y + SETTINGS.STRUCTURE_SNAP_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1);
+   
+   const snappableEntities = new Array<GameObject>();
+   for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+      for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
+         const chunk = Board.getChunk(chunkX, chunkY);
+         for (const entity of chunk.getGameObjects()) {
+            const distance = Player.instance!.position.calculateDistanceBetween(entity.position);
+            if (distance > SETTINGS.STRUCTURE_SNAP_RANGE) {
+               continue;
+            }
+            
+            if (entity.type === EntityType.woodenWall) {
+               snappableEntities.push(entity);
+            }
+         }
+      }
+   }
+
+   for (const entity of snappableEntities) {
+      // Check the 4 potential snap positions for matches
+      for (let i = 0; i < 4; i++) {
+         
+      }
+   }
+   
+   return -1;
+}
+
+export function calculatePlacePosition(placeableEntityInfo: PlaceableEntityInfo, snapID: number): Point {
+   if (snapID === -1) {
+      return calculateRegularPlacePosition(placeableEntityInfo);
+   }
+   
+   // @Incomplete
+   return calculateRegularPlacePosition(placeableEntityInfo);
+}
+
+export function calculatePlaceRotation(snapID: number): number {
+   if (snapID !== -1) {
+      // @Incomplete
+   }
+
+   return Player.instance!.rotation;
+}
+
+export function canPlaceItem(placePosition: Point, placeRotation: number, item: Item): boolean {
    if (!PLACEABLE_ENTITY_INFO_RECORD.hasOwnProperty(item.type)) {
       throw new Error(`Item type '${item.type}' is not placeable.`);
    }
@@ -718,7 +782,11 @@ const itemRightClickDown = (item: Item): void => {
          break;
       }
       case "placeable": {
-         if (canPlaceItem(item)) {
+         const placeableEntityInfo = PLACEABLE_ENTITY_INFO_RECORD[item.type as PlaceableItemType]!;
+         const snapID = calculateSnapID(placeableEntityInfo);
+         const placePosition = calculatePlacePosition(placeableEntityInfo, snapID);
+         const placeRotation = calculatePlaceRotation(snapID);
+         if (canPlaceItem(placePosition, placeRotation, item)) {
             Client.sendItemUsePacket();
          }
          

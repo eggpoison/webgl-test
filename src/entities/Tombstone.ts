@@ -2,7 +2,7 @@ import { DeathInfo, EntityData, EntityType, Point, SETTINGS, randFloat, randInt,
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { createDirtParticle, createRockParticle, createRockSpeckParticle } from "../generic-particles";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/game-object-texture-atlas";
+import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { AudioFilePath, playSound, ROCK_DESTROY_SOUNDS, ROCK_HIT_SOUNDS } from "../sound";
 
 class Tombstone extends Entity {
