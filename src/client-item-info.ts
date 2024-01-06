@@ -320,7 +320,14 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       toolTextureSource: "",
       name: "Wooden Wall",
       description: ""
-   }
+   },
+   [ItemType.wooden_hammer]: {
+      entityTextureSource: "items/small/wooden-hammer.png",
+      textureSource: "items/large/wooden-hammer.png",
+      toolTextureSource: "items/large/wooden-hammer.png",
+      name: "Wooden Hammer",
+      description: ""
+   },
 };
 
 export function getItemTypeImage(itemType: ItemType): any {

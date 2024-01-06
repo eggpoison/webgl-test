@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export let setResearchBenchCaption: (caption: string) => void;
+export let setResearchBenchCaption: (caption: string) => void = () => {};
 
 const ResearchBenchCaption = () => {
    const [caption, setCaption] = useState("");

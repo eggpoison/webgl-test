@@ -3,7 +3,7 @@ import GameObject from "../GameObject";
 import Particle from "../Particle";
 import Board, { Light } from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
-import { BloodParticleSize, createBloodParticle } from "../generic-particles";
+import { BloodParticleSize, createBloodParticle, createPoisonBubble } from "../generic-particles";
 import { AudioFilePath, playSound } from "../sound";
 
 // Use prime numbers / 100 to ensure a decent distribution of different types of particles
@@ -70,6 +70,11 @@ abstract class Entity extends GameObject {
       if (this.hasStatusEffect(StatusEffect.freezing)) {
          this.tintB += 0.5;
          this.tintR -= 0.15;
+      }
+      if (this.hasStatusEffect(StatusEffect.poisoned)) {
+         this.tintR += 0.1;
+         this.tintG -= 0.15;
+         this.tintB += 0.18;
       }
 
       let redness: number;
@@ -149,6 +154,16 @@ abstract class Entity extends GameObject {
                0, 0, 0
             );
             Board.lowTexturedParticles.push(particle);
+         }
+
+         // Poison bubbles
+         if (customTickIntervalHasPassed(poisonStatusEffect.ticksElapsed, 0.1)) {
+            const spawnOffsetMagnitude = 30 * Math.random();
+            const spawnOffsetDirection = 2 * Math.PI * Math.random()
+            const spawnPositionX = this.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
+            const spawnPositionY = this.position.y + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
+
+            createPoisonBubble(spawnPositionX, spawnPositionY, randFloat(0.4, 0.6));
          }
       }
 

@@ -109,7 +109,9 @@ const AUDIO_FILE_PATHS = [
    "ice-spikes-hit-2.mp3",
    "ice-spikes-hit-3.mp3",
    "ice-spikes-destroy.mp3",
-   "door-open.mp3"
+   "door-open.mp3",
+   "slime-spit.mp3",
+   "acid-burn.mp3"
 ] as const;
 
 export type AudioFilePath = typeof AUDIO_FILE_PATHS[number];
@@ -121,8 +123,8 @@ export const ROCK_DESTROY_SOUNDS: ReadonlyArray<AudioFilePath> = ["rock-destroy-
 let audioContext: AudioContext;
 let audioBuffers: Record<AudioFilePath, AudioBuffer>;
 
-interface Sound {
-   readonly volume: number;
+export interface Sound {
+   volume: number;
    x: number;
    y: number;
    readonly gainNode: GainNode;
@@ -158,7 +160,11 @@ const calculateSoundVolume = (volume: number, x: number, y: number): number => {
    return finalVolume;
 }
 
-export function playSound(filePath: AudioFilePath, volume: number, sourceX: number, sourceY: number): void {
+export interface SoundInfo {
+   readonly trackSource: AudioBufferSourceNode;
+   readonly sound: Sound;
+}
+export function playSound(filePath: AudioFilePath, volume: number, sourceX: number, sourceY: number): SoundInfo {
    const audioBuffer = audioBuffers[filePath];
 
    const gainNode = audioContext.createGain();
@@ -185,6 +191,11 @@ export function playSound(filePath: AudioFilePath, volume: number, sourceX: numb
          activeSounds.splice(idx, 1);
       }
    }
+
+   return {
+      trackSource: trackSource,
+      sound: soundInfo
+   };
 }
 
 export function updateSoundEffectVolume(): void {

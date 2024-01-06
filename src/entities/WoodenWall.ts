@@ -6,10 +6,10 @@ import Entity from "./Entity";
 class WoodenWall extends Entity {
    private static readonly SIZE = 64;
 
-   public type = EntityType.boulder;
+   public type = EntityType.woodenWall;
 
    constructor(position: Point, id: number, renderDepth: number) {
-      super(position, id, EntityType.boulder, renderDepth);
+      super(position, id, EntityType.woodenWall, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(

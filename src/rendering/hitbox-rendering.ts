@@ -60,8 +60,6 @@ const calculateVisibleGameObjects = (): Array<GameObject> => {
 export function renderEntityHitboxes(): void {
    const gameObjects = calculateVisibleGameObjects();
    if (gameObjects.length === 0) return;
-   
-   gl.useProgram(program);
 
    // Calculate vertices
    const vertices = new Array<number>();
@@ -128,6 +126,8 @@ export function renderEntityHitboxes(): void {
          }
       }
    }
+   
+   gl.useProgram(program);
 
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);

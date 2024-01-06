@@ -68,22 +68,24 @@ export function createPlaceableItemProgram(): void {
 
    const programTextureUniformLocation = gl.getUniformLocation(program, "u_texture")!;
    gl.uniform1i(programTextureUniformLocation, 0);
+
+   programCanPlaceUniformLocation = gl.getUniformLocation(program, "u_canPlace")!;
 }
 
-const calculateVertices = (placePosition: Point, placeableEntityInfo: PlaceableEntityInfo): ReadonlyArray<number> => {
+const calculateVertices = (placePosition: Point, placeRotation: number, placeableEntityInfo: PlaceableEntityInfo): ReadonlyArray<number> => {
    const x1 = placePosition.x - placeableEntityInfo.width / 2;
    const x2 = placePosition.x + placeableEntityInfo.width / 2;
    const y1 = placePosition.y - placeableEntityInfo.height / 2;
    const y2 = placePosition.y + placeableEntityInfo.height / 2;
 
-   const tlX = rotateXAroundPoint(x1, y2, placePosition.x, placePosition.y, Player.instance!.rotation);
-   const tlY = rotateYAroundPoint(x1, y2, placePosition.x, placePosition.y, Player.instance!.rotation);
-   const trX = rotateXAroundPoint(x2, y2, placePosition.x, placePosition.y, Player.instance!.rotation);
-   const trY = rotateYAroundPoint(x2, y2, placePosition.x, placePosition.y, Player.instance!.rotation);
-   const blX = rotateXAroundPoint(x1, y1, placePosition.x, placePosition.y, Player.instance!.rotation);
-   const blY = rotateYAroundPoint(x1, y1, placePosition.x, placePosition.y, Player.instance!.rotation);
-   const brX = rotateXAroundPoint(x2, y1, placePosition.x, placePosition.y, Player.instance!.rotation);
-   const brY = rotateYAroundPoint(x2, y1, placePosition.x, placePosition.y, Player.instance!.rotation);
+   const tlX = rotateXAroundPoint(x1, y2, placePosition.x, placePosition.y, placeRotation);
+   const tlY = rotateYAroundPoint(x1, y2, placePosition.x, placePosition.y, placeRotation);
+   const trX = rotateXAroundPoint(x2, y2, placePosition.x, placePosition.y, placeRotation);
+   const trY = rotateYAroundPoint(x2, y2, placePosition.x, placePosition.y, placeRotation);
+   const blX = rotateXAroundPoint(x1, y1, placePosition.x, placePosition.y, placeRotation);
+   const blY = rotateYAroundPoint(x1, y1, placePosition.x, placePosition.y, placeRotation);
+   const brX = rotateXAroundPoint(x2, y1, placePosition.x, placePosition.y, placeRotation);
+   const brY = rotateYAroundPoint(x2, y1, placePosition.x, placePosition.y, placeRotation);
 
    return [
       blX, blY, 0, 0,
@@ -114,11 +116,11 @@ export function renderGhostPlaceableItem(): void {
    const xRotation = Math.cos(-Player.instance.rotation + Math.PI / 2);
    const yRotation = Math.sin(-Player.instance.rotation + Math.PI / 2);
 
-   const snapID = calculateSnapID(placeableEntityInfo);
-   const placePosition = calculatePlacePosition(placeableEntityInfo, snapID);
-   const placeRotation = calculatePlaceRotation(snapID);
+   const snapInfo = calculateSnapID(placeableEntityInfo);
+   const placePosition = calculatePlacePosition(placeableEntityInfo, snapInfo);
+   const placeRotation = calculatePlaceRotation(snapInfo);
 
-   const vertices = calculateVertices(placePosition, placeableEntityInfo);
+   const vertices = calculateVertices(placePosition, placeRotation, placeableEntityInfo);
    const buffer = gl.createBuffer()!;
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);

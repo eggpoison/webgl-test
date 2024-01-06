@@ -43,6 +43,8 @@ import { playRiverSounds, setupAudio, updateSoundEffectVolume } from "./sound";
 import { createTechTreeShaders, renderTechTree } from "./rendering/tech-tree-rendering";
 import { createResearchNodeShaders, renderResearchNode } from "./rendering/research-node-rendering";
 import { attemptToResearch, updateActiveResearchBench } from "./research";
+import { updateHighlightedStructure } from "./building";
+import { createStructureHighlightShaders, renderStructureHighlights } from "./rendering/structure-highlight-rendering";
 
 let listenersHaveBeenCreated = false;
 
@@ -86,6 +88,7 @@ abstract class Game {
    /** Amount of time the game is through the current frame */
    private static lag = 0;
 
+   // @Cleanup: Make these not be able to be null, just number
    public static cursorPositionX: number | null = null;
    public static cursorPositionY: number | null = null;
 
@@ -206,6 +209,7 @@ abstract class Game {
             createDecorationShaders();
             createTechTreeShaders();
             createResearchNodeShaders();
+            createStructureHighlightShaders();
 
             await setupAudio();
 
@@ -297,6 +301,8 @@ abstract class Game {
       updatePlayerItems();
       updateActiveResearchBench();
       attemptToResearch();
+
+      updateHighlightedStructure();
 
       updateSoundEffectVolume();
       playRiverSounds();
@@ -409,6 +415,7 @@ abstract class Game {
          }
       }
 
+      renderStructureHighlights();
       renderResearchNode();
       renderGhostPlaceableItem();
 

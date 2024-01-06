@@ -34,6 +34,7 @@ class Slime extends Entity {
 
    public type = EntityType.slime as const;
 
+   private readonly bodyRenderPart: RenderPart;
    private readonly eyeRenderPart: RenderPart;
    private readonly orbRenderParts = new Array<RenderPart>();
 
@@ -44,7 +45,7 @@ class Slime extends Entity {
 
    private internalTickCounter = 0;
 
-   constructor(position: Point, id: number, renderDepth: number, size: SlimeSize, eyeRotation: number, orbs: ReadonlyArray<SlimeOrbData>) {
+   constructor(position: Point, id: number, renderDepth: number, size: SlimeSize, eyeRotation: number, orbs: ReadonlyArray<SlimeOrbData>, spitChargeProgress: number) {
       super(position, id, EntityType.slime, renderDepth);
 
       const spriteSize = Slime.SIZES[size];
@@ -54,14 +55,16 @@ class Slime extends Entity {
       this.size = size;
 
       // Body
-      this.attachRenderPart(new RenderPart(
+      this.bodyRenderPart = new RenderPart(
          this,
          spriteSize,
          spriteSize,
          getGameObjectTextureArrayIndex(`entities/slime/slime-${sizeString}-body.png`),
          2,
          0
-      ));
+      );
+      this.bodyRenderPart.shakeAmount = this.createBodyShakeAmount(spitChargeProgress);
+      this.attachRenderPart(this.bodyRenderPart);
 
       // Eye
       this.eyeRenderPart = new RenderPart(
@@ -74,10 +77,10 @@ class Slime extends Entity {
       );
       this.eyeRenderPart.offset = Point.fromVectorForm(Slime.EYE_OFFSETS[this.size], eyeRotation);
       this.eyeRenderPart.inheritParentRotation = false;
-      this.attachRenderPart(this.eyeRenderPart);
+      this.bodyRenderPart.attachRenderPart(this.eyeRenderPart);
 
       // Shading
-      this.attachRenderPart(new RenderPart(
+      this.bodyRenderPart.attachRenderPart(new RenderPart(
          this,
          spriteSize,
          spriteSize,
@@ -164,6 +167,9 @@ class Slime extends Entity {
       }
 
       this.numOrbs = entityData.clientArgs[2].length;
+
+      const spitChargeProgress = entityData.clientArgs[4];
+      this.bodyRenderPart.shakeAmount = this.createBodyShakeAmount(spitChargeProgress);
    }
 
    protected onHit(): void {
@@ -187,6 +193,14 @@ class Slime extends Entity {
 
       for (let i = 0; i < Slime.NUM_SPECK_PARTICLES_ON_DEATH[this.size]; i++) {
          createSlimeSpeckParticle(this.position.x, this.position.y, radius * Math.random());
+      }
+   }
+
+   private createBodyShakeAmount(spitProgress: number): number {
+      if (spitProgress === -1) {
+         return 0;
+      } else {
+         return lerp(0, 5, spitProgress);
       }
    }
 }

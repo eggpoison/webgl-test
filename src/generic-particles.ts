@@ -626,3 +626,39 @@ export function createEmberParticle(spawnPositionX: number, spawnPositionY: numb
    );
    Board.highMonocolourParticles.push(particle);
 }
+
+export function createPoisonBubble(spawnPositionX: number, spawnPositionY: number, opacity: number) {
+   const lifetime = randFloat(0.2, 0.3);
+   
+   const moveSpeed = randFloat(75, 150);
+   const moveDirection = 2 * Math.PI * Math.random();
+   const velocityX = moveSpeed * Math.sin(moveDirection);
+   const velocityY = moveSpeed * Math.cos(moveDirection);
+
+   const particle = new Particle(lifetime);
+   particle.getOpacity = (): number => {
+      return (1 - particle.age / lifetime) * opacity;
+   };
+
+   const size = randInt(0, 1);
+   
+   const purp = Math.random() / 3;
+
+   addTexturedParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.high,
+      64, 64,
+      spawnPositionX, spawnPositionY,
+      velocityX, velocityY,
+      0, 0,
+      moveSpeed / lifetime / 1.1,
+      2 * Math.PI * Math.random(),
+      randFloat(-1, 1) * Math.PI * 2,
+      0,
+      0,
+      5 * 8 + 1 + size,
+      // 0, randFloat(-0.2, 0.3), 0
+      lerp(0, 1, purp), lerp(randFloat(-0.2, 0.3), -1, purp), lerp(0, 1, purp)
+   );
+   Board.highTexturedParticles.push(particle);
+}

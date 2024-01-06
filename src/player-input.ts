@@ -1,4 +1,4 @@
-import { AttackPacket, EntityType, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, Item, ItemType, PlaceableItemType, Point, SETTINGS, STATUS_EFFECT_MODIFIERS, TRIBE_INFO_RECORD, ToolItemInfo, TribeMemberAction } from "webgl-test-shared";
+import { AttackPacket, EntityType, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, Item, ItemType, PlaceableItemType, Point, SETTINGS, SNAP_OFFSETS, STATUS_EFFECT_MODIFIERS, StructureType, TRIBE_INFO_RECORD, ToolItemInfo, TribeMemberAction, distance } from "webgl-test-shared";
 import { addKeyListener, clearPressedKeys, keyIsPressed } from "./keyboard-input";
 import { CraftingMenu_setIsVisible } from "./components/game/menus/CraftingMenu";
 import Player from "./entities/Player";
@@ -231,7 +231,7 @@ const createItemUseListeners = (): void => {
 
                // Reset the attack cooldown of the weapon
                const itemTypeInfo = ITEM_TYPE_RECORD[selectedItem.type];
-               if (itemTypeInfo === "axe" || itemTypeInfo === "pickaxe" || itemTypeInfo === "sword" || itemTypeInfo === "spear") {
+               if (itemTypeInfo === "axe" || itemTypeInfo === "pickaxe" || itemTypeInfo === "sword" || itemTypeInfo === "spear" || itemTypeInfo === "hammer") {
                   const itemInfo = ITEM_INFO_RECORD[selectedItem.type];
                   itemAttackCooldowns[latencyGameState.selectedHotbarItemSlot] = (itemInfo as ToolItemInfo).attackCooldown;
                } else {
@@ -516,6 +516,8 @@ const getPlayerMoveSpeedMultiplier = (): number => {
       moveSpeedMultiplier *= STATUS_EFFECT_MODIFIERS[statusEffect.type].moveSpeedMultiplier;
    }
 
+   moveSpeedMultiplier *= TRIBE_INFO_RECORD[Game.tribe.tribeType].moveSpeedMultiplier;
+
    return moveSpeedMultiplier;
 }
 
@@ -560,7 +562,7 @@ export function updatePlayerMovement(): void {
       } else if (latencyGameState.playerAction === TribeMemberAction.eat || latencyGameState.playerAction === TribeMemberAction.chargeBow || latencyGameState.playerIsPlacingEntity) {
          acceleration = PLAYER_SLOW_ACCELERATION * getPlayerMoveSpeedMultiplier();
       } else {
-         acceleration = PLAYER_ACCELERATION * getPlayerMoveSpeedMultiplier()
+         acceleration = PLAYER_ACCELERATION * getPlayerMoveSpeedMultiplier();
       }
       Player.instance.acceleration.x = acceleration * Math.sin(moveDirection);
       Player.instance.acceleration.y = acceleration * Math.cos(moveDirection);
@@ -606,18 +608,26 @@ const calculateRegularPlacePosition = (placeableEntityInfo: PlaceableEntityInfo)
    return new Point(placePositionX, placePositionY);
 }
 
-export function calculateSnapID(placeableEntityInfo: PlaceableEntityInfo): number {
-   const minChunkX = Math.max(Math.floor((Player.instance!.position.x - SETTINGS.STRUCTURE_SNAP_RANGE) / SETTINGS.CHUNK_UNITS), 0);
-   const maxChunkX = Math.min(Math.floor((Player.instance!.position.x + SETTINGS.STRUCTURE_SNAP_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1);
-   const minChunkY = Math.max(Math.floor((Player.instance!.position.y - SETTINGS.STRUCTURE_SNAP_RANGE) / SETTINGS.CHUNK_UNITS), 0);
-   const maxChunkY = Math.min(Math.floor((Player.instance!.position.y + SETTINGS.STRUCTURE_SNAP_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1);
+interface BuildingSnapInfo {
+   /** -1 if no snap was found */
+   readonly x: number;
+   readonly y: number;
+   readonly direction: number;
+}
+export function calculateSnapID(placeableEntityInfo: PlaceableEntityInfo): BuildingSnapInfo {
+   const regularPlacePosition = calculateRegularPlacePosition(placeableEntityInfo);
+
+   const minChunkX = Math.max(Math.floor((regularPlacePosition.x - SETTINGS.STRUCTURE_SNAP_RANGE) / SETTINGS.CHUNK_UNITS), 0);
+   const maxChunkX = Math.min(Math.floor((regularPlacePosition.x + SETTINGS.STRUCTURE_SNAP_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1);
+   const minChunkY = Math.max(Math.floor((regularPlacePosition.y - SETTINGS.STRUCTURE_SNAP_RANGE) / SETTINGS.CHUNK_UNITS), 0);
+   const maxChunkY = Math.min(Math.floor((regularPlacePosition.y + SETTINGS.STRUCTURE_SNAP_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1);
    
    const snappableEntities = new Array<GameObject>();
    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
          const chunk = Board.getChunk(chunkX, chunkY);
          for (const entity of chunk.getGameObjects()) {
-            const distance = Player.instance!.position.calculateDistanceBetween(entity.position);
+            const distance = regularPlacePosition.calculateDistanceBetween(entity.position);
             if (distance > SETTINGS.STRUCTURE_SNAP_RANGE) {
                continue;
             }
@@ -630,30 +640,56 @@ export function calculateSnapID(placeableEntityInfo: PlaceableEntityInfo): numbe
    }
 
    for (const entity of snappableEntities) {
+      const snapOffset = SNAP_OFFSETS[entity.type as StructureType];
       // Check the 4 potential snap positions for matches
       for (let i = 0; i < 4; i++) {
+         const direction = i * Math.PI / 2;
+         const placeDirection = (entity.rotation + direction + Math.PI) % (Math.PI * 2) - Math.PI;
+         const x = entity.position.x + snapOffset * Math.sin(placeDirection);
+         const y = entity.position.y + snapOffset * Math.cos(placeDirection);
          
+         if (distance(regularPlacePosition.x, regularPlacePosition.y, x, y) > SETTINGS.STRUCTURE_POSITION_SNAP) {
+            continue;
+         }
+
+         const playerRotation = (Player.instance!.rotation + Math.PI) % (Math.PI * 2) - Math.PI;
+         for (let i = 0; i < 4; i++) {
+            const direction = i * Math.PI / 2;
+            const placeDirection = (entity.rotation + direction + Math.PI) % (Math.PI * 2) - Math.PI;
+            let angleDiff = playerRotation - placeDirection;
+            angleDiff = (angleDiff + Math.PI) % (Math.PI * 2) - Math.PI;
+            if (Math.abs(angleDiff) <= SETTINGS.STRUCTURE_ROTATION_SNAP) {
+               return {
+                  x: x,
+                  y: y,
+                  direction: placeDirection
+               };
+            }
+         }
       }
    }
    
-   return -1;
+   return {
+      x: -1,
+      y: -1,
+      direction: -1
+   };
 }
 
-export function calculatePlacePosition(placeableEntityInfo: PlaceableEntityInfo, snapID: number): Point {
-   if (snapID === -1) {
+export function calculatePlacePosition(placeableEntityInfo: PlaceableEntityInfo, snapInfo: BuildingSnapInfo): Point {
+   if (snapInfo.x === -1) {
       return calculateRegularPlacePosition(placeableEntityInfo);
    }
-   
-   // @Incomplete
-   return calculateRegularPlacePosition(placeableEntityInfo);
+
+   return new Point(snapInfo.x, snapInfo.y);
 }
 
-export function calculatePlaceRotation(snapID: number): number {
-   if (snapID !== -1) {
-      // @Incomplete
+export function calculatePlaceRotation(snapInfo: BuildingSnapInfo): number {
+   if (snapInfo.x === -1) {
+      return Player.instance!.rotation;
    }
 
-   return Player.instance!.rotation;
+   return snapInfo.direction;
 }
 
 export function canPlaceItem(placePosition: Point, placeRotation: number, item: Item): boolean {
@@ -675,12 +711,16 @@ export function canPlaceItem(placePosition: Point, placeRotation: number, item: 
       testRectangularHitbox.width = placeableInfo.width;
       testRectangularHitbox.height = placeableInfo.height;
       testRectangularHitbox.recalculateHalfDiagonalLength();
+      testRectangularHitbox.rotation = placeRotation + Math.PI * 3/2;
+      testRectangularHitbox.externalRotation = 0;
       placeTestHitbox = testRectangularHitbox;
    }
-
-   placeTestHitbox.offset = Point.fromVectorForm(SETTINGS.ITEM_PLACE_DISTANCE + placeableInfo.placeOffset, 0);
-   placeTestHitbox.updateFromGameObject(Player.instance!);
-   placeTestHitbox.updateHitboxBounds(Player.instance!.rotation);
+   
+   placeTestHitbox.offset.x = 0;
+   placeTestHitbox.offset.y = 0;
+   placeTestHitbox.position.x = placePosition.x;
+   placeTestHitbox.position.y = placePosition.y;
+   placeTestHitbox.updateHitboxBounds(0);
 
    // Don't allow placing buildings in borders
    if (placeTestHitbox.bounds[0] < 0 || placeTestHitbox.bounds[1] >= SETTINGS.BOARD_UNITS || placeTestHitbox.bounds[2] < 0 || placeTestHitbox.bounds[3] >= SETTINGS.BOARD_UNITS) {

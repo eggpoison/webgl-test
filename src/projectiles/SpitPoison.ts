@@ -1,9 +1,11 @@
-import { EntityType, Point, SETTINGS, randFloat } from "webgl-test-shared";
+import { EntityType, Point, SETTINGS, lerp, randFloat } from "webgl-test-shared";
 import GameObject from "../GameObject";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import Board from "../Board";
 import { ParticleRenderLayer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
 import Particle from "../Particle";
+import { createPoisonBubble } from "../generic-particles";
+import { Sound, playSound } from "../sound";
 
 const createParticle = (spawnPositionX: number, spawnPositionY: number): void => {
    const lifetime = randFloat(0.5, 0.7);
@@ -12,6 +14,8 @@ const createParticle = (spawnPositionX: number, spawnPositionY: number): void =>
    particle.getOpacity = (): number => {
       return Math.pow(1 - particle.age / lifetime, 0.5);
    };
+
+   const purp = Math.random() / 4;
 
    addTexturedParticleToBufferContainer(
       particle,
@@ -26,27 +30,50 @@ const createParticle = (spawnPositionX: number, spawnPositionY: number): void =>
       0,
       0,
       5 * 8 + 0,
-      0, 0, 0
+      // 0, randFloat(-0.2, 0.2), 0
+      lerp(0, 1, purp), lerp(randFloat(-0.2, 0.2), -1, purp), lerp(0, 1, purp)
    );
    Board.lowTexturedParticles.push(particle);
 }
 
 class SpitPoison extends GameObject {
+   private static readonly MAX_RANGE = 55;
+
+   private readonly trackSource: AudioBufferSourceNode;
+   private readonly sound: Sound;
+   
    constructor(position: Point, id: number, renderDepth: number) {
       super(position, id, EntityType.spitPoison, renderDepth);
+
+      const audioInfo = playSound("acid-burn.mp3", 0.25, this.position.x, this.position.y);
+      this.trackSource = audioInfo.trackSource;
+      this.sound = audioInfo.sound;
+
+      this.trackSource.loop = true;
    }
 
    public tick(): void {
-      this.createSpeckParticle();
-      
       // @Speed
       const hitbox = Array.from(this.hitboxes)[0] as CircularHitbox;
-      
-      if (Math.random() >= hitbox.radius * hitbox.radius / SETTINGS.TPS / 5) {
+      const range = hitbox.radius;
+
+      this.sound.volume = lerp(0.25, 0, 1 - range / SpitPoison.MAX_RANGE);
+
+      if (SpitPoison.MAX_RANGE * Math.random() < range) {
+         // Calculate spawn position
+         const offsetMagnitude = range * Math.random();
+         const moveDirection = 2 * Math.PI * Math.random();
+         const spawnPositionX = this.position.x + offsetMagnitude * Math.sin(moveDirection);
+         const spawnPositionY = this.position.y + offsetMagnitude * Math.cos(moveDirection);
+
+         createPoisonBubble(spawnPositionX, spawnPositionY, 1);
+      }
+
+      if (Math.random() >= range * range / SETTINGS.TPS / 5) {
          return;
       }
 
-      const offsetMagnitude = hitbox.radius * Math.random();
+      const offsetMagnitude = range * Math.random();
       const offsetDirection = 2 * Math.PI * Math.random();
       const x = this.position.x + offsetMagnitude * Math.sin(offsetDirection);
       const y = this.position.y + offsetMagnitude * Math.cos(offsetDirection);
@@ -54,8 +81,8 @@ class SpitPoison extends GameObject {
       createParticle(x, y);
    }
 
-   private createSpeckParticle(): void {
-
+   public onRemove(): void {
+      this.trackSource.disconnect();
    }
 }
 

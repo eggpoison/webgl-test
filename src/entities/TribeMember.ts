@@ -462,7 +462,7 @@ abstract class TribeMember extends Entity {
             // Attack animation
             // 
 
-            const attackProgress = this.getAttackProgress(secondsSinceLastAction);
+            const attackProgress = this.calculateAttackProgress(secondsSinceLastAction);
 
             if (this.activeItemType === ItemType.spear) {
                let direction: number;
@@ -537,9 +537,9 @@ abstract class TribeMember extends Entity {
       return secondsSinceLastAction;
    }
 
-   private getAttackProgress(secondsSinceLastAttack: number): number {
+   private calculateAttackProgress(secondsSinceLastAttack: number): number {
       let attackDuration: number;
-      if (this.activeItemType !== null && (ITEM_TYPE_RECORD[this.activeItemType] === "sword" || ITEM_TYPE_RECORD[this.activeItemType] === "axe" || ITEM_TYPE_RECORD[this.activeItemType] === "pickaxe" || ITEM_TYPE_RECORD[this.activeItemType] === "spear")) {
+      if (this.activeItemType !== null && (ITEM_TYPE_RECORD[this.activeItemType] === "sword" || ITEM_TYPE_RECORD[this.activeItemType] === "axe" || ITEM_TYPE_RECORD[this.activeItemType] === "pickaxe" || ITEM_TYPE_RECORD[this.activeItemType] === "spear" || ITEM_TYPE_RECORD[this.activeItemType] === "hammer")) {
          attackDuration = (ITEM_INFO_RECORD[this.activeItemType] as ToolItemInfo).attackCooldown;
       } else {
          attackDuration = SETTINGS.DEFAULT_ATTACK_COOLDOWN;
@@ -737,7 +737,7 @@ abstract class TribeMember extends Entity {
 
    private showLargeItemTexture(itemType: ItemType): boolean {
       const itemTypeInfo = ITEM_TYPE_RECORD[itemType];
-      return itemTypeInfo === "axe" || itemTypeInfo === "sword" || itemTypeInfo === "bow" || itemTypeInfo === "pickaxe" || itemTypeInfo === "spear";
+      return itemTypeInfo === "axe" || itemTypeInfo === "sword" || itemTypeInfo === "bow" || itemTypeInfo === "pickaxe" || itemTypeInfo === "spear" || itemTypeInfo === "hammer";
    }
 
    private getActiveItemSize(activeItemType: ItemType) {

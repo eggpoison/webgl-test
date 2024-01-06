@@ -125,7 +125,8 @@ const TEXTURE_SOURCES: Array<string> = [
    "decorations/flower4.png",
    "entities/research-bench/research-bench.png",
    "entities/wooden-wall/wooden-wall.png",
-   "projectiles/slime-spit-medium.png"
+   "projectiles/slime-spit-medium.png",
+   "projectiles/slime-spit-large.png"
 ];
 
 // Add item textures

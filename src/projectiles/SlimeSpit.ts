@@ -5,13 +5,14 @@ import GameObject from "../GameObject";
 import Board from "../Board";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 import Particle from "../Particle";
+import { playSound } from "../sound";
 
 const POISON_COLOUR_LOW = [34/255, 12/255, 0];
 const POISON_COLOUR_HIGH = [77/255, 173/255, 38/255];
 
 class SlimeSpit extends GameObject {
    private readonly renderParts: ReadonlyArray<RenderPart>;
-   constructor(position: Point, id: number, renderDepth: number) {
+   constructor(position: Point, id: number, renderDepth: number, size: number) {
       super(position, id, EntityType.slimeSpit, renderDepth);
 
       const renderParts = new Array<RenderPart>();
@@ -41,6 +42,8 @@ class SlimeSpit extends GameObject {
       renderParts.push(renderPart2);
 
       this.renderParts = renderParts;
+
+      playSound("slime-spit.mp3", 0.5, this.position.x, this.position.y);
    }
 
    public tick(): void {
