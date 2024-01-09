@@ -41,19 +41,31 @@ const TechTooltip = ({ techInfo, techPositionX, techPositionY, zoom }: TechToolt
          tooltip.style.top = `calc(50% + (${-techInfo.positionY}rem + ${techPositionY}px) * ${zoom})`;
       }
    }, [techInfo.positionX, techInfo.positionY, techPositionX, techPositionY, zoom]);
+
+   const studyProgress = Game.tribe.techTreeUnlockProgress[techInfo.id]?.studyProgress || 0;
    
    return <div ref={tooltipRef} id="tech-tooltip">
-      <h2 className="name">{techInfo.name}</h2>
-      <p className="description">{techInfo.description}</p>
+      <div className="container">
+         <h2 className="name">{techInfo.name}</h2>
+         <p className="description">{techInfo.description}</p>
 
-      <div className="details">
-         <ul>
-            {Object.entries(techInfo.researchItemRequirements).map(([itemType, itemAmount], i) => {
-               const itemProgress = (Game.tribe.techTreeUnlockProgress[techInfo.id]?.itemProgress.hasOwnProperty(itemType)) ? Game.tribe.techTreeUnlockProgress[techInfo.id]!.itemProgress[itemType as unknown as ItemType] : 0;
-               return <li key={i}>{CLIENT_ITEM_INFO_RECORD[itemType as unknown as ItemType].name} {itemProgress}/{itemAmount}</li>
-            })}
-         </ul>
+         <div className="details">
+            <ul>
+               {Object.entries(techInfo.researchItemRequirements).map(([itemType, itemAmount], i) => {
+                  const itemProgress = (Game.tribe.techTreeUnlockProgress[techInfo.id]?.itemProgress.hasOwnProperty(itemType)) ? Game.tribe.techTreeUnlockProgress[techInfo.id]!.itemProgress[itemType as unknown as ItemType] : 0;
+                  return <li key={i}>{CLIENT_ITEM_INFO_RECORD[itemType as unknown as ItemType].name} {itemProgress}/{itemAmount}</li>
+               })}
+            </ul>
+         </div>
       </div>
+      {studyProgress < techInfo.researchStudyRequirements ? (
+         <div className="container research-container">
+            <p className="research-progress">{studyProgress}/{techInfo.researchStudyRequirements}</p>
+            <div className="study-progress-bar-bg">
+               <div className="study-progress-bar"></div>
+            </div>
+         </div>
+      ) : null}
    </div>;
 }
 

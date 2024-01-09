@@ -43,8 +43,9 @@ import { playRiverSounds, setupAudio, updateSoundEffectVolume } from "./sound";
 import { createTechTreeShaders, renderTechTree } from "./rendering/tech-tree-rendering";
 import { createResearchNodeShaders, renderResearchNode } from "./rendering/research-node-rendering";
 import { attemptToResearch, updateActiveResearchBench } from "./research";
-import { updateHighlightedStructure } from "./building";
+import { updateHighlightedStructure, updateSelectedStructure } from "./structure-selection";
 import { createStructureHighlightShaders, renderStructureHighlights } from "./rendering/structure-highlight-rendering";
+import { updateStructureShapingMenu } from "./components/game/StructureShapingMenu";
 
 let listenersHaveBeenCreated = false;
 
@@ -303,6 +304,8 @@ abstract class Game {
       attemptToResearch();
 
       updateHighlightedStructure();
+      updateSelectedStructure();
+      updateStructureShapingMenu();
 
       updateSoundEffectVolume();
       playRiverSounds();

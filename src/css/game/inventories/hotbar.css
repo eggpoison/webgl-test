@@ -4,17 +4,25 @@
    bottom: 0.5rem;
    z-index: 2;
    display: flex;
-   justify-content: center;
+   /* justify-content: center; */
 }
+
+#hotbar .flex-container {
+   flex: 1;
+   display: flex;
+   justify-content: center;
+   flex-shrink: 0;
+}
+
+.flex-container:first-child > .inventory { margin-right: auto; }
+
+.flex-container:last-child  > .inventory { margin-left: auto;  }
 
 #hotbar .inventory {
    margin: 0 5rem;
+   flex-shrink: 0;
 }
 
-#hotbar .flex-balancer {
-   opacity: 0;
-}
-
-#hotbar > * {
-   display: inline-flex;
+#hotbar .inventory .item-slot {
+   display: inline-block;
 }

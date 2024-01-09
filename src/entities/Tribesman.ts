@@ -19,8 +19,8 @@ abstract class Tribesman extends TribeMember {
 
    public activeItemSlot: number;
 
-   constructor(position: Point, id: number, entityType: EntityType, renderDepth: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, action: TribeMemberAction, foodEatingType: ItemType | -1, lastActionTicks: number, hasFrostShield: boolean, warPaintType: number, inventoryData: InventoryData, activeItemSlot: number) {
-      super(position, id, entityType, renderDepth, tribeID, tribeType, armourSlotInventory, backpackSlotInventory, backpackInventory, activeItem, action, foodEatingType, lastActionTicks, hasFrostShield, warPaintType);
+   constructor(position: Point, id: number, entityType: EntityType, renderDepth: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, rightActiveItemType: ItemType | null, rightAction: TribeMemberAction, rightFoodEatingType: ItemType | -1, rightLastActionTicks: number, leftActiveItemType: ItemType | null, leftAction: TribeMemberAction, leftFoodEatingType: ItemType | -1, leftLastActionTicks: number, hasFrostShield: boolean, warPaintType: number, inventoryData: InventoryData, activeItemSlot: number) {
+      super(position, id, entityType, renderDepth, tribeID, tribeType, armourSlotInventory, backpackSlotInventory, backpackInventory, rightActiveItemType, rightAction, rightFoodEatingType, rightLastActionTicks, leftActiveItemType, leftAction, leftFoodEatingType, leftLastActionTicks, hasFrostShield, warPaintType);
 
       this.activeItemSlot = activeItemSlot;
       this.inventory = createInventoryFromData(inventoryData);
@@ -91,10 +91,10 @@ abstract class Tribesman extends TribeMember {
    public updateFromData(entityData: EntityData<EntityType.tribeWorker | EntityType.tribeWarrior>): void {
       super.updateFromData(entityData);
 
-      updateInventoryFromData(this.inventory, entityData.clientArgs[11]);
+      updateInventoryFromData(this.inventory, entityData.clientArgs[15]);
 
-      this.activeItemSlot = entityData.clientArgs[12];
-      this.state = entityData.clientArgs[13];
+      this.activeItemSlot = entityData.clientArgs[16];
+      this.state = entityData.clientArgs[17];
    }
 }
 

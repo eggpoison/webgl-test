@@ -2,8 +2,8 @@ import { Inventory, SETTINGS, TribeMemberAction } from "webgl-test-shared";
 
 /** Information about the game and player. */
 abstract class GameState {
-   /** The action the instance player is currently doing. */
-   public playerAction = TribeMemberAction.none;
+   public mainAction = TribeMemberAction.none;
+   public offhandAction = TribeMemberAction.none;
 
    /** Whether the instance player is placing an entity. */
    public playerIsPlacingEntity = false;
@@ -28,8 +28,11 @@ abstract class GameState {
 
    public armourSlot: Inventory = { itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot" };
 
+   public offhandInventory: Inventory = { itemSlots: {}, width: 1, height: 1, inventoryName: "offhand" };
+
    public resetFlags(): void {
-      this.playerAction = TribeMemberAction.none;
+      this.mainAction = TribeMemberAction.none;
+      this.offhandAction = TribeMemberAction.none;
       this.playerIsPlacingEntity = false;
    }
 }

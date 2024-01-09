@@ -1,0 +1,22 @@
+.structure-shaping-option {
+   width: 100px;
+   height: 100px;
+   background-image: url(../../images/miscellaneous/structure-shaping-slot.png);
+   background-size: 100% 100%;
+   position: absolute;
+   left: calc(1px * var(--end-x));
+   bottom: calc(1px * var(--end-y));
+   z-index: 2;
+   image-rendering: pixelated;
+   transform: translate(-50%, 50%);
+}
+
+.structure-shaping-option img {
+   width: 64px;
+   height: 16px;
+   image-rendering: pixelated;
+   position: absolute;
+   top: 50%;
+   left: 50%;
+   transform: translate(-50%, -50%);
+}

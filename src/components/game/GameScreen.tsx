@@ -12,6 +12,7 @@ import InteractInventory from "./inventories/InteractInventory";
 import ChargeMeter from "./ChargeMeter";
 import TechTree from "./TechTree";
 import ResearchBenchCaption from "./ResearchBenchCaption";
+import StructureShapingMenu from "./StructureShapingMenu";
 
 export let showPauseScreen: () => void = () => {};
 export let hidePauseScreen: () => void = () => {};
@@ -89,6 +90,8 @@ const GameScreen = () => {
 
       <TechTree />
       <ResearchBenchCaption />
+
+      <StructureShapingMenu />
    </>;
 }
 

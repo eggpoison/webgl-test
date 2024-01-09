@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TribeData, InventoryData, TribeMemberAction, TechID, Inventory, TRIBE_INFO_RECORD } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TribeData, InventoryData, TribeMemberAction, TechID, Inventory, TRIBE_INFO_RECORD, StructureShapeType } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -139,7 +139,8 @@ abstract class Client {
 
    /** Creates the socket used to connect to the server */
    private static createSocket(): ISocket {
-      return io(`ws://localhost:${SETTINGS.SERVER_PORT}`, {
+      // return io(`ws://localhost:${SETTINGS.SERVER_PORT}`, {
+      return io(`ws://172.20.122.53:${SETTINGS.SERVER_PORT}`, {
          transports: ["websocket", "polling", "flashsocket"],
          autoConnect: false,
          reconnection: false
@@ -333,12 +334,16 @@ abstract class Client {
       // Armour slot
       const armourSlotHasChanged = this.inventoryHasChanged(definiteGameState.armourSlot, playerInventoryData.armourSlot);
       updateInventoryFromData(definiteGameState.armourSlot, playerInventoryData.armourSlot);
+
+      // Offhand
+      const offhandHasChanged = this.inventoryHasChanged(definiteGameState.offhandInventory, playerInventoryData.offhand);
+      updateInventoryFromData(definiteGameState.offhandInventory, playerInventoryData.offhand);
       
       if (Player.instance !== null && armourSlotHasChanged) {
          updateInventoryFromData(Player.instance.armourSlotInventory, playerInventoryData.armourSlot);
       }
 
-      if (hotbarHasChanged || backpackSlotHasChanged || armourSlotHasChanged) {
+      if (hotbarHasChanged || backpackSlotHasChanged || armourSlotHasChanged || offhandHasChanged) {
          Hotbar_update();
       }
       if (backpackHasChanged || backpackSlotHasChanged) {
@@ -469,7 +474,7 @@ abstract class Client {
       
       const spawnPosition = Point.unpackage(respawnDataPacket.spawnPosition);
       const renderDepth = calculateEntityRenderDepth(EntityType.player);
-      const player = new Player(spawnPosition, respawnDataPacket.playerID, renderDepth, null, TribeType.plainspeople, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, false, -1, definiteGameState.playerUsername);
+      const player = new Player(spawnPosition, respawnDataPacket.playerID, renderDepth, null, TribeType.plainspeople, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, null, TribeMemberAction.none, -1, -99999, false, -1, definiteGameState.playerUsername);
       player.addCircularHitbox(Player.createNewPlayerHitbox());
       Player.setInstancePlayer(player);
       Board.addEntity(player);
@@ -514,7 +519,8 @@ abstract class Client {
             rotation: Player.instance.rotation,
             visibleChunkBounds: Camera.getVisibleChunkBounds(),
             selectedItemSlot: latencyGameState.selectedHotbarItemSlot,
-            action: latencyGameState.playerAction,
+            mainAction: latencyGameState.mainAction,
+            offhandAction: latencyGameState.offhandAction,
             interactingEntityID: getInteractEntityID()
          };
 
@@ -623,6 +629,18 @@ abstract class Client {
    public static sendStudyTech(studyAmount: number): void {
       if (Game.isRunning && this.socket !== null) {
          this.socket.emit("study_tech", studyAmount);
+      }
+   }
+
+   public static sendShapeStructure(structureID: number, type: StructureShapeType): void {
+      if (Game.isRunning && this.socket !== null) {
+         this.socket.emit("shape_structure", structureID, type);
+      }
+   }
+
+   public static sendStructureInteract(structureID: number): void {
+      if (Game.isRunning && this.socket !== null) {
+         this.socket.emit("structure_interact", structureID);
       }
    }
 }

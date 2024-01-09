@@ -71,11 +71,6 @@ abstract class Entity extends GameObject {
          this.tintB += 0.5;
          this.tintR -= 0.15;
       }
-      if (this.hasStatusEffect(StatusEffect.poisoned)) {
-         this.tintR += 0.1;
-         this.tintG -= 0.15;
-         this.tintB += 0.18;
-      }
 
       let redness: number;
       if (this.secondsSinceLastHit === null || this.secondsSinceLastHit > ATTACK_HIT_FLASH_DURATION) {

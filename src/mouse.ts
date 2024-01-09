@@ -125,7 +125,7 @@ export function renderCursorTooltip(): void {
 }
 
 export function updateChargeMeter(): void {
-   if (latencyGameState.playerAction !== TribeMemberAction.chargeBow || Player.instance === null) {
+   if (latencyGameState.mainAction !== TribeMemberAction.chargeBow || Player.instance === null) {
       hideChargeMeter();
       return;
    }
@@ -135,7 +135,7 @@ export function updateChargeMeter(): void {
    const selectedItem = definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot];
    const bowInfo = ITEM_INFO_RECORD[selectedItem.type] as BowItemInfo;
 
-   const secondsSinceLastAction = Player.instance.getSecondsSinceLastAction();
+   const secondsSinceLastAction = Player.instance.getSecondsSinceLastAction(Player.instance.rightLastActionTicks);
    let chargeProgress = secondsSinceLastAction / (bowInfo.shotCooldownTicks / SETTINGS.TPS);
    if (chargeProgress > 1) {
       chargeProgress = 1;

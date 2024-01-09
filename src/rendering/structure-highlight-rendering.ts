@@ -1,15 +1,26 @@
-import { rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
+import { EntityType, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import Board from "../Board";
-import { getHighlightedStructureID } from "../building";
+import { getHighlightedStructureID, getSelectedStructureID } from "../structure-selection";
 import { createWebGLProgram, gl, CAMERA_UNIFORM_BUFFER_BINDING_INDEX, TIME_UNIFORM_BUFFER_BINDING_INDEX } from "../webgl";
 
 const THICKNESS = 4;
 
+const HIGHLIGHTABLE_STRUCTURE_WIDTHS: Partial<Record<EntityType, number>> = {
+   [EntityType.woodenWall]: 64,
+   [EntityType.woodenDoor]: 64,
+   [EntityType.researchBench]: 32 * 4
+};
+
+const HIGHLIGHTABLE_STRUCTURE_HEIGHTS: Partial<Record<EntityType, number>> = {
+   [EntityType.woodenWall]: 64,
+   [EntityType.woodenDoor]: 16,
+   [EntityType.researchBench]: 20 * 4
+};
+
 let program: WebGLProgram;
 
-let originPositionLocation: WebGLUniformLocation;
-
-// @Incomplete: make the frame fade in and out radially (sorta like a spinning ball of doom)
+let originPositionUniformLocation: WebGLUniformLocation;
+let isSelectedUniformLocation: WebGLUniformLocation;
 
 export function createStructureHighlightShaders(): void {
    const vertexShaderText = `#version 300 es
@@ -41,6 +52,7 @@ export function createStructureHighlightShaders(): void {
    };
 
    uniform vec2 u_originPosition;
+   uniform float u_isSelected;
 
    #define PI 3.14159
    
@@ -54,12 +66,16 @@ export function createStructureHighlightShaders(): void {
    }
    
    void main() {
-      float theta = atan2(v_position.y - u_originPosition.y, v_position.x - u_originPosition.x);
-
-      float opacity = sin(theta * 3.0 + u_time * 0.003);
-      opacity = mix(0.65, 1.0, opacity);
-
-      outputColour = vec4(245.0/255.0, 234.0/255.0, 113.0/255.0, opacity);
+      if (u_isSelected > 0.5) {
+         outputColour = vec4(245.0/255.0, 234.0/255.0, 113.0/255.0, 1.0);
+      } else {
+         float theta = atan2(v_position.y - u_originPosition.y, v_position.x - u_originPosition.x);
+   
+         float opacity = sin(theta * 3.0 + u_time * 0.003);
+         opacity = mix(0.65, 1.0, opacity);
+   
+         outputColour = vec4(245.0/255.0, 234.0/255.0, 113.0/255.0, opacity);
+      }
    }
    `;
 
@@ -71,7 +87,8 @@ export function createStructureHighlightShaders(): void {
    const highlightsTimeBlockIndex = gl.getUniformBlockIndex(program, "Time");
    gl.uniformBlockBinding(program, highlightsTimeBlockIndex, TIME_UNIFORM_BUFFER_BINDING_INDEX);
 
-   originPositionLocation = gl.getUniformLocation(program, "u_originPosition")!;
+   originPositionUniformLocation = gl.getUniformLocation(program, "u_originPosition")!;
+   isSelectedUniformLocation = gl.getUniformLocation(program, "u_isSelected")!;
 }
 
 const addSideVertices = (vertices: Array<number>, centerX: number, centerY: number, x1: number, x2: number, y1: number, y2: number, rotation: number): void => {
@@ -99,14 +116,17 @@ const calculateVertices = (highlightedStructureID: number): ReadonlyArray<number
 
    const vertices = new Array<number>();
 
+   const halfWidth = HIGHLIGHTABLE_STRUCTURE_WIDTHS[structure.type]! / 2;
+   const halfHeight = HIGHLIGHTABLE_STRUCTURE_HEIGHTS[structure.type]! / 2;
+
    // Top
-   addSideVertices(vertices, structure.position.x, structure.position.y, structure.position.x - 32 - THICKNESS, structure.position.x + 32 + THICKNESS, structure.position.y + 32, structure.position.y + 32 + THICKNESS, structure.rotation);
+   addSideVertices(vertices, structure.position.x, structure.position.y, structure.position.x - halfWidth - THICKNESS, structure.position.x + halfWidth + THICKNESS, structure.position.y + halfHeight, structure.position.y + halfHeight + THICKNESS, structure.rotation);
    // Right
-   addSideVertices(vertices, structure.position.x, structure.position.y, structure.position.x + 32, structure.position.x + 32 + THICKNESS, structure.position.y - 32 - THICKNESS, structure.position.y + 32 + THICKNESS, structure.rotation);
+   addSideVertices(vertices, structure.position.x, structure.position.y, structure.position.x + halfWidth, structure.position.x + halfWidth + THICKNESS, structure.position.y - halfHeight - THICKNESS, structure.position.y + halfHeight + THICKNESS, structure.rotation);
    // Bottom
-   addSideVertices(vertices, structure.position.x, structure.position.y, structure.position.x - 32 - THICKNESS, structure.position.x + 32 + THICKNESS, structure.position.y - 32, structure.position.y - 32 - THICKNESS, structure.rotation);
+   addSideVertices(vertices, structure.position.x, structure.position.y, structure.position.x - halfWidth - THICKNESS, structure.position.x + halfWidth + THICKNESS, structure.position.y - halfHeight, structure.position.y - halfHeight - THICKNESS, structure.rotation);
    // Left
-   addSideVertices(vertices, structure.position.x, structure.position.y, structure.position.x - 32 - THICKNESS, structure.position.x - 32, structure.position.y - 32 - THICKNESS, structure.position.y + 32 + THICKNESS, structure.rotation);
+   addSideVertices(vertices, structure.position.x, structure.position.y, structure.position.x - halfWidth - THICKNESS, structure.position.x - halfWidth, structure.position.y - halfHeight - THICKNESS, structure.position.y + halfHeight + THICKNESS, structure.rotation);
 
    return vertices;
 }
@@ -132,7 +152,9 @@ export function renderStructureHighlights(): void {
    gl.enableVertexAttribArray(0);
 
    const highlightedEntity = Board.entityRecord[highlightedStructureID];
-   gl.uniform2f(originPositionLocation, highlightedEntity.position.x, highlightedEntity.position.y);
+   gl.uniform2f(originPositionUniformLocation, highlightedEntity.position.x, highlightedEntity.position.y);
+
+   gl.uniform1f(isSelectedUniformLocation, highlightedStructureID === getSelectedStructureID() ? 1 : 0);
 
    gl.drawArrays(gl.TRIANGLES, 0, 24);
 

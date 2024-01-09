@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useReducer, useState } from "react";
-import { ITEM_TYPE_RECORD, Item, ItemType } from "webgl-test-shared";
+import { ITEM_TYPE_RECORD, Item, ItemType, TribeType } from "webgl-test-shared";
 import { getItemTypeImage } from "../../../client-item-info";
 import { leftClickItemSlot, rightClickItemSlot } from "../../../inventory-manipulation";
 import ItemSlot from "./ItemSlot";
 import Player from "../../../entities/Player";
 import { definiteGameState } from "../../../game-state/game-states";
+import Game from "../../../Game";
 
 export let Hotbar_update: () => void = () => {};
 
@@ -15,6 +16,8 @@ export const backpackItemTypes: ReadonlyArray<ItemType> = [ItemType.leather_back
 const Hotbar = () => {
    const [selectedItemSlot, setSelectedItemSlot] = useState(1);
    const [, update] = useReducer(x => x + 1, 0);
+
+   // @Cleanup: Copy and paste
 
    const clickBackpackSlot = useCallback((e: MouseEvent): void => {
       // Stop the player placing a non-backpack item in the backpack slot
@@ -31,6 +34,10 @@ const Hotbar = () => {
       }
 
       leftClickItemSlot(e, Player.instance!.id, definiteGameState.armourSlot, 1);
+   }, []);
+
+   const clickOffhandItemSlot = useCallback((e: MouseEvent): void => {
+      leftClickItemSlot(e, Player.instance!.id, definiteGameState.offhandInventory, 1);
    }, []);
 
    useEffect(() => {
@@ -60,6 +67,15 @@ const Hotbar = () => {
       }
    }
 
+   let offhandSlotElement: JSX.Element;
+   if (definiteGameState.offhandInventory.itemSlots.hasOwnProperty(1)) {
+      const image = getItemTypeImage(definiteGameState.offhandInventory.itemSlots[1].type);
+      offhandSlotElement = <ItemSlot onClick={clickOffhandItemSlot} isSelected={false} picturedItemImageSrc={image} />
+   } else {
+      const imageSrc = require("../../../images/miscellaneous/offhand-wireframe.png");
+      offhandSlotElement = <ItemSlot onClick={clickOffhandItemSlot} isSelected={false} picturedItemImageSrc={imageSrc} />
+   }
+
    let backpackSlotElement: JSX.Element;
    if (definiteGameState.backpackSlot.itemSlots.hasOwnProperty(1)) {
       const image = getItemTypeImage(definiteGameState.backpackSlot.itemSlots[1].type);
@@ -79,19 +95,21 @@ const Hotbar = () => {
    }
 
    return <div id="hotbar">
-      {/* @Cleanup: This shouldn't be necessary, too overcomplicated */}
-      <div className="flex-balancer inventory">
-         <ItemSlot isSelected={false} />
-         <ItemSlot isSelected={false} />
+      <div className="flex-container">
+         <div className={"inventory" + (Game.tribe.tribeType !== TribeType.barbarians ? " hidden" : "")}>
+            {Game.tribe.tribeType === TribeType.barbarians ? offhandSlotElement : null}
+         </div>
       </div>
-
-      <div className="inventory">
-         {hotbarItemSlots}
+      <div className="flex-container">
+         <div className="inventory">
+            {hotbarItemSlots}
+         </div>
       </div>
-
-      <div id="special-item-slots" className="inventory">
-         {backpackSlotElement}
-         {armourItemSlotElement}
+      <div className="flex-container">
+         <div className="inventory">
+            {backpackSlotElement}
+            {armourItemSlotElement}
+         </div>
       </div>
    </div>;
 }

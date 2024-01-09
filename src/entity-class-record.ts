@@ -34,6 +34,7 @@ import TribeWarrior from "./entities/TribeWarrior";
 import WoodenWall from "./entities/WoodenWall";
 import SlimeSpit from "./projectiles/SlimeSpit";
 import SpitPoison from "./projectiles/SpitPoison";
+import WoodenDoor from "./entities/WoodenDoor";
 
 export type EntityClassType<T extends EntityType> = new (position: Point, id: number, renderDepth: number, ...clientParams: Parameters<typeof EntityInfoClientArgs[T]>) => GameObject;
 
@@ -71,7 +72,8 @@ const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
    [EntityType.researchBench]: () => ResearchBench,
    [EntityType.woodenWall]: () => WoodenWall,
    [EntityType.slimeSpit]: () => SlimeSpit,
-   [EntityType.spitPoison]: () => SpitPoison
+   [EntityType.spitPoison]: () => SpitPoison,
+   [EntityType.woodenDoor]: () => WoodenDoor
 };
 
 export default ENTITY_CLASS_RECORD;

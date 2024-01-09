@@ -5,10 +5,13 @@ import Board from "./Board";
 import Hitbox from "./hitboxes/Hitbox";
 import CircularHitbox from "./hitboxes/CircularHitbox";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
+import GameObject from "./GameObject";
+import Client from "./client/Client";
 
 const HIGHLIGHT_RANGE = 75;
 
 let highlightedStructureID = -1;
+let selectedStructureID = -1;
 
 const hitboxIsWithinRange = (position: Point, hitbox: Hitbox, visionRange: number): boolean => {
    // @Speed: This check is slow
@@ -27,18 +30,25 @@ export function getHighlightedStructureID(): number {
    return highlightedStructureID;
 }
 
+export function getSelectedStructureID(): number {
+   return selectedStructureID;
+}
+
+const entityCanBeSelected = (entity: GameObject): boolean => {
+   if (entity.type === EntityType.woodenWall) {
+      // Walls can be selected if the player is holding a hammer
+      const selectedItem = getPlayerSelectedItem();
+      return selectedItem !== null && ITEM_TYPE_RECORD[selectedItem.type] === "hammer";
+   }
+
+   return entity.type === EntityType.researchBench || entity.type === EntityType.woodenDoor;
+}
+
 export function updateHighlightedStructure(): void {
    if (Game.cursorPositionX === null || Game.cursorPositionY === null) {
       return;
    }
    
-   // Make sure the player is holding a hammer
-   const selectedItem = getPlayerSelectedItem();
-   if (selectedItem === null || ITEM_TYPE_RECORD[selectedItem.type] !== "hammer") {
-      highlightedStructureID = -1;
-      return;
-   }
-
    const minChunkX = Math.max(Math.floor((Game.cursorPositionX - HIGHLIGHT_RANGE) / SETTINGS.CHUNK_UNITS), 0);
    const maxChunkX = Math.min(Math.floor((Game.cursorPositionX + HIGHLIGHT_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1);
    const minChunkY = Math.max(Math.floor((Game.cursorPositionY - HIGHLIGHT_RANGE) / SETTINGS.CHUNK_UNITS), 0);
@@ -52,7 +62,7 @@ export function updateHighlightedStructure(): void {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
          const chunk = Board.getChunk(chunkX, chunkY);
          for (const entity of chunk.getGameObjects()) {
-            if (entity.type !== EntityType.woodenWall) {
+            if (!entityCanBeSelected(entity)) {
                continue;
             }
             
@@ -68,5 +78,22 @@ export function updateHighlightedStructure(): void {
             }
          }
       }
+   }
+}
+
+export function attemptStructureSelect(): void {
+   selectedStructureID = highlightedStructureID;
+
+   if (Board.entityRecord.hasOwnProperty(selectedStructureID)) {
+      const structure = Board.entityRecord[selectedStructureID];
+      if (structure.type === EntityType.woodenDoor) {
+         Client.sendStructureInteract(selectedStructureID);
+      }
+   }
+}
+
+export function updateSelectedStructure(): void {
+   if (highlightedStructureID === -1) {
+      selectedStructureID = -1;
    }
 }

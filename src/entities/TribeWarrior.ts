@@ -4,8 +4,8 @@ import Tribesman from "./Tribesman";
 class TribeWarrior extends Tribesman {
    public readonly type = EntityType.tribeWarrior;
 
-   constructor(position: Point, id: number, renderDepth: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, action: TribeMemberAction, foodEatingType: ItemType | -1, lastActionTicks: number, hasFrostShield: boolean, warPaintType: number, inventoryData: InventoryData, activeItemSlot: number) {
-      super(position, id, EntityType.tribeWarrior, renderDepth, tribeID, tribeType, armourSlotInventory, backpackSlotInventory, backpackInventory, activeItem, action, foodEatingType, lastActionTicks, hasFrostShield, warPaintType, inventoryData, activeItemSlot);
+   constructor(position: Point, id: number, renderDepth: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, rightActiveItemType: ItemType | null, rightAction: TribeMemberAction, rightFoodEatingType: ItemType | -1, rightLastActionTicks: number, leftActiveItemType: ItemType | null, leftAction: TribeMemberAction, leftFoodEatingType: ItemType | -1, leftLastActionTicks: number, hasFrostShield: boolean, warPaintType: number, inventoryData: InventoryData, activeItemSlot: number) {
+      super(position, id, EntityType.tribeWarrior, renderDepth, tribeID, tribeType, armourSlotInventory, backpackSlotInventory, backpackInventory, rightActiveItemType, rightAction, rightFoodEatingType, rightLastActionTicks, leftActiveItemType, leftAction, leftFoodEatingType, leftLastActionTicks, hasFrostShield, warPaintType, inventoryData, activeItemSlot);
    }
 }
 

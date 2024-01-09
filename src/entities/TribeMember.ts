@@ -181,40 +181,44 @@ abstract class TribeMember extends Entity {
    public backpackInventory: Inventory;
 
    private readonly handRenderParts: ReadonlyArray<RenderPart>;
-   private activeItemRenderPart: RenderPart;
+   /** First element is right active item, second is left */
+   private activeItemRenderParts: ReadonlyArray<RenderPart>;
 
-   protected activeItemType: ItemType | null;
+   protected rightActiveItemType: ItemType | null;
+   protected leftActiveItemType: ItemType | null;
 
-   public action: TribeMemberAction;
-   public foodEatingType: ItemType | -1;
+   public rightAction: TribeMemberAction;
+   public leftAction: TribeMemberAction;
+   public rightFoodEatingType: ItemType | -1;
+   public leftFoodEatingType: ItemType | -1;
 
-   public lastActionTicks: number;
+   public rightLastActionTicks: number;
+   public leftLastActionTicks: number;
 
    public hasFrostShield: boolean;
 
-   private rightHandDirection = TribeMember.HAND_RESTING_DIRECTION;
-   private rightHandOffset: number;
-   private rightHandRotation = TribeMember.HAND_RESTING_ROTATION;
+   private readonly handDirections = [TribeMember.HAND_RESTING_DIRECTION, -TribeMember.HAND_RESTING_DIRECTION];
+   private readonly handOffsets: [number, number];
+   private readonly handRotations = [TribeMember.HAND_RESTING_ROTATION, -TribeMember.HAND_RESTING_ROTATION];
 
-   private leftHandDirection = -TribeMember.HAND_RESTING_DIRECTION;
-   private leftHandOffset: number;
-   private leftHandRotation = -TribeMember.HAND_RESTING_ROTATION;
-
-   private activeItemDirection = TribeMember.HAND_RESTING_DIRECTION;
-   private activeItemOffset = TribeMember.ITEM_RESTING_OFFSET;
-   private activeItemRotation = TribeMember.ITEM_RESTING_ROTATION;
+   private readonly activeItemDirections = [TribeMember.HAND_RESTING_DIRECTION, -TribeMember.HAND_RESTING_DIRECTION];
+   private readonly activeItemOffsets = [TribeMember.ITEM_RESTING_OFFSET, TribeMember.ITEM_RESTING_OFFSET];
+   private readonly activeItemRotations = [TribeMember.ITEM_RESTING_ROTATION, -TribeMember.ITEM_RESTING_ROTATION];
    
    // @Cleanup: We shouldn't pass entityType through the constructor, just do the related logic in the subclasses
-   constructor(position: Point, id: number, entityType: EntityType, renderDepth: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, activeItem: ItemType | null, action: TribeMemberAction, foodEatingType: ItemType | -1, lastActionTicks: number, hasFrostShield: boolean, warPaintType: number) {
+   constructor(position: Point, id: number, entityType: EntityType, renderDepth: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, rightActiveItemType: ItemType | null, rightAction: TribeMemberAction, rightFoodEatingType: ItemType | -1, rightLastActionTicks: number, leftActiveItemType: ItemType | null, leftAction: TribeMemberAction, leftFoodEatingType: ItemType | -1, leftLastActionTicks: number, hasFrostShield: boolean, warPaintType: number) {
       super(position, id, entityType, renderDepth);
 
       this.tribeID = tribeID;
       this.tribeType = tribeType;
-      this.action = action;
-
-      this.activeItemType = activeItem;
-      this.lastActionTicks = lastActionTicks;
-      this.foodEatingType = foodEatingType;
+      this.leftAction = leftAction;
+      this.rightAction = rightAction;
+      this.leftActiveItemType = leftActiveItemType;
+      this.rightActiveItemType = rightActiveItemType;
+      this.leftLastActionTicks = leftLastActionTicks;
+      this.rightLastActionTicks = rightLastActionTicks;
+      this.rightFoodEatingType = rightFoodEatingType;
+      this.leftFoodEatingType = leftFoodEatingType;
       this.hasFrostShield = hasFrostShield;
 
       this.armourSlotInventory = createInventoryFromData(armourSlotInventory);
@@ -224,8 +228,7 @@ abstract class TribeMember extends Entity {
       this.updateArmourRenderPart(armourSlotInventory.itemSlots.hasOwnProperty(1) ? armourSlotInventory.itemSlots[1].type : null);
 
       this.handRestingOffset = entityType === EntityType.player || entityType === EntityType.tribeWarrior ? 34 : 30;
-      this.rightHandOffset = this.handRestingOffset;
-      this.leftHandOffset = this.handRestingOffset;
+      this.handOffsets = [this.handRestingOffset, this.handRestingOffset];
 
       let bodyTextureSource: string;
       let fistTextureSource: string;
@@ -322,13 +325,10 @@ abstract class TribeMember extends Entity {
          this.attachRenderPart(rightEarRenderPart);
       }
 
-      // 
-      // Fist render parts
-      // 
-
       // Barbarians have larger fists
       const fistSize = tribeType === TribeType.barbarians ? 24 : 20;
-
+      
+      // Fist render parts
       const handRenderParts = new Array<RenderPart>();
       for (let i = 0; i < 2; i++) {
          const renderPart = new RenderPart(
@@ -340,195 +340,188 @@ abstract class TribeMember extends Entity {
             0
          );
          renderPart.offset = () => {
-            const direction = i === 0 ? this.leftHandDirection : this.rightHandDirection;
-            const offsetMagnitude = i === 0 ? this.leftHandOffset : this.rightHandOffset;
-            const offset = Point.fromVectorForm(offsetMagnitude, direction);
+            const offset = Point.fromVectorForm(this.handOffsets[i], this.handDirections[i]);
             return offset;
          }
          renderPart.getRotation = () => {
-            return i === 0 ? this.leftHandRotation : this.rightHandRotation;
+            return this.handRotations[i];
          }
          this.attachRenderPart(renderPart);
          handRenderParts.push(renderPart);
       }
       this.handRenderParts = handRenderParts;
 
-      this.activeItemRenderPart = new RenderPart(
-         this,
-         TribeMember.TOOL_ACTIVE_ITEM_SIZE,
-         TribeMember.TOOL_ACTIVE_ITEM_SIZE,
-         activeItem !== null ? getGameObjectTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItem].entityTextureSource) : -1,
-         0,
-         0
-      );
-      this.activeItemRenderPart.offset = () => {
-         return Point.fromVectorForm(this.activeItemOffset, this.activeItemDirection);
+      // Active item render parts
+      const activeItemRenderParts = new Array<RenderPart>();
+      for (let i = 0; i < 2; i++) {
+         const activeItemType = i === 0 ? this.rightActiveItemType : this.leftActiveItemType;
+         
+         const renderPart = new RenderPart(
+            this,
+            TribeMember.TOOL_ACTIVE_ITEM_SIZE,
+            TribeMember.TOOL_ACTIVE_ITEM_SIZE,
+            activeItemType !== null ? getGameObjectTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItemType].entityTextureSource) : -1,
+            0,
+            0
+         );
+         renderPart.offset = () => {
+            return Point.fromVectorForm(this.activeItemOffsets[i], this.activeItemDirections[i]);
+         }
+         renderPart.getRotation = () => {
+            return this.activeItemRotations[i];
+         }
+         
+         if (activeItemType !== null) {
+            this.attachRenderPart(renderPart);
+         }
+         activeItemRenderParts.push(renderPart);
       }
-      this.activeItemRenderPart.getRotation = () => {
-         return this.activeItemRotation;
-      }
-      
-      if (activeItem !== null) {
-         this.attachRenderPart(this.activeItemRenderPart);
-      }
+      this.activeItemRenderParts = activeItemRenderParts;
    }
 
    public updateHands(): void {
-      let direction = Math.PI / 4;
-
-      // @Cleanup: As the offset function is called in the RenderPart constructor, this.activeItemRenderPart will initially
-      // be undefined and so we have to check for this case. Ideally this will not need to be done
-      let itemSize: number;
-      if (typeof this.activeItemRenderPart === "undefined") {
-         itemSize = this.getActiveItemSize(this.activeItemType!);
-      } else {
-         itemSize = this.activeItemRenderPart.width;
-      }
-
+      this.handRenderParts[0].shakeAmount = 0;
       this.handRenderParts[1].shakeAmount = 0;
 
-      const secondsSinceLastAction = this.getSecondsSinceLastAction();
-      switch (this.action) {
-         case TribeMemberAction.chargeBow: {
-            // 
-            // Bow charge animation
-            // 
-
-            this.leftHandDirection = -TribeMember.HAND_CHARGING_BOW_DIRECTION;
-            this.leftHandOffset = TribeMember.HAND_CHARGING_BOW_OFFSET;
-            this.leftHandRotation = -TribeMember.HAND_CHARGING_BOW_DIRECTION;
-            this.rightHandDirection = TribeMember.HAND_CHARGING_BOW_DIRECTION;
-            this.rightHandOffset = TribeMember.HAND_CHARGING_BOW_OFFSET;
-            this.rightHandRotation = TribeMember.HAND_CHARGING_BOW_DIRECTION;
-
-            this.activeItemOffset = 22 + itemSize / 2;
-            this.activeItemDirection = 0;
-            this.activeItemRotation = -Math.PI / 4;
-            return;
-         }
-         case TribeMemberAction.chargeSpear: {
-            // 
-            // Spear charge animation
-            // 
-            const chargeProgress = secondsSinceLastAction < 3 ? 1 - Math.pow(secondsSinceLastAction / 3 - 1, 2) : 1;
-
-            this.leftHandDirection = -TribeMember.HAND_RESTING_DIRECTION;
-            this.leftHandOffset = this.handRestingOffset;
-            this.leftHandRotation = -TribeMember.HAND_RESTING_ROTATION;
-
-            const rightHandDirection = lerp(TribeMember.HAND_RESTING_DIRECTION, Math.PI / 1.5, chargeProgress);
-
-            this.rightHandDirection = rightHandDirection;
-            this.rightHandOffset = this.handRestingOffset;
-            this.rightHandRotation = TribeMember.HAND_CHARGING_BOW_DIRECTION;
-
-            this.activeItemDirection = rightHandDirection - Math.PI/14;
-            this.activeItemOffset = TribeMember.ITEM_RESTING_OFFSET + itemSize/2;
-            this.activeItemRotation = TribeMember.ITEM_RESTING_ROTATION;
-
-            this.handRenderParts[1].shakeAmount = lerp(0, 1.5, chargeProgress);
-            return;
-         }
-         case TribeMemberAction.eat: {
-            // 
-            // Eating animation
-            // 
+      for (let i = 0; i < 2; i++) {
+         const handMult = i === 1 ? -1 : 1;
          
-            let eatIntervalProgress = (secondsSinceLastAction % TribeMember.FOOD_EAT_INTERVAL) / TribeMember.FOOD_EAT_INTERVAL * 2;
-            if (eatIntervalProgress > 1) {
-               eatIntervalProgress = 2 - eatIntervalProgress;
-            }
-            
-            direction -= lerp(0, Math.PI/5, eatIntervalProgress);
-
-            const insetAmount = lerp(0, 17, eatIntervalProgress);
-
-            const eatingHandRotation = lerp(TribeMember.HAND_RESTING_ROTATION, TribeMember.HAND_RESTING_ROTATION - Math.PI/5, eatIntervalProgress);
-
-            this.leftHandDirection = -TribeMember.HAND_RESTING_DIRECTION;
-            this.leftHandOffset = this.handRestingOffset;
-            this.leftHandRotation = -TribeMember.HAND_RESTING_ROTATION;
-            this.rightHandDirection = direction;
-            this.rightHandOffset = this.handRestingOffset - insetAmount;
-            this.rightHandRotation = eatingHandRotation;
-
-            this.activeItemOffset = TribeMember.ITEM_RESTING_OFFSET + itemSize/2 - insetAmount;
-            this.activeItemDirection = direction - Math.PI/14;
-            this.activeItemRotation = lerp(0, -Math.PI/3, eatIntervalProgress);
-            return;
-         }
-         case TribeMemberAction.none: {
-            // 
-            // Attack animation
-            // 
-
-            const attackProgress = this.calculateAttackProgress(secondsSinceLastAction);
-
-            if (this.activeItemType === ItemType.spear) {
-               let direction: number;
-               let attackHandRotation: number;
-               let extraOffset: number;
-               if (attackProgress < TribeMember.SPEAR_ATTACK_LUNGE_TIME) {
-                  // Lunge part of the animation
-                  direction = lerp(TribeMember.HAND_RESTING_DIRECTION, Math.PI / 4, attackProgress / TribeMember.SPEAR_ATTACK_LUNGE_TIME);
-                  attackHandRotation = lerp(TribeMember.ITEM_RESTING_ROTATION, -Math.PI / 7, attackProgress / TribeMember.SPEAR_ATTACK_LUNGE_TIME);
-                  extraOffset = lerp(0, 7, attackProgress / TribeMember.SPEAR_ATTACK_LUNGE_TIME);
-               } else {
-                  // Return part of the animation
-                  const returnProgress = (attackProgress - TribeMember.SPEAR_ATTACK_LUNGE_TIME) / (1 - TribeMember.SPEAR_ATTACK_LUNGE_TIME);
-                  direction = lerp(Math.PI / 4, TribeMember.HAND_RESTING_DIRECTION, returnProgress);
-                  attackHandRotation = lerp(-Math.PI / 7, TribeMember.ITEM_RESTING_ROTATION, returnProgress);
-                  extraOffset = lerp(7, 0, returnProgress);
-               }
-
-               this.leftHandDirection = -TribeMember.HAND_RESTING_DIRECTION;
-               this.leftHandOffset = this.handRestingOffset;
-               this.leftHandRotation = -TribeMember.HAND_RESTING_ROTATION;
-               this.rightHandDirection = direction;
-               this.rightHandOffset = this.handRestingOffset + extraOffset;
-               this.rightHandRotation = attackHandRotation;
+         let direction = Math.PI / 4;
    
-               this.activeItemOffset = TribeMember.ITEM_RESTING_OFFSET + itemSize/2 + extraOffset;
-               this.activeItemDirection = direction - Math.PI/14;
-               this.activeItemRotation = attackHandRotation;
-            } else {
-               let direction: number;
-               let attackHandRotation: number;
-               if (attackProgress < TribeMember.ATTACK_LUNGE_TIME) {
-                  // Lunge part of the animation
-                  direction = lerp(TribeMember.HAND_RESTING_DIRECTION, TribeMember.HAND_RESTING_DIRECTION - TribeMember.ITEM_SWING_RANGE, attackProgress / TribeMember.ATTACK_LUNGE_TIME);
-                  attackHandRotation = lerp(TribeMember.ITEM_RESTING_ROTATION, TribeMember.ITEM_END_ROTATION, attackProgress / TribeMember.ATTACK_LUNGE_TIME);
-               } else {
-                  // Return part of the animation
-                  const returnProgress = (attackProgress - TribeMember.ATTACK_LUNGE_TIME) / (1 - TribeMember.ATTACK_LUNGE_TIME);
-                  direction = lerp(TribeMember.HAND_RESTING_DIRECTION - TribeMember.ITEM_SWING_RANGE, TribeMember.HAND_RESTING_DIRECTION, returnProgress);
-                  attackHandRotation = lerp(TribeMember.ITEM_END_ROTATION, TribeMember.ITEM_RESTING_ROTATION, returnProgress);
+         // @Cleanup: As the offset function is called in the RenderPart constructor, this.activeItemRenderPart will initially
+         // be undefined and so we have to check for this case. Ideally this will not need to be done
+         let itemSize: number;
+         if (typeof this.activeItemRenderParts === "undefined") {
+            const activeItemType = i === 0 ? this.leftActiveItemType! : this.rightActiveItemType!;
+            itemSize = this.getActiveItemSize(activeItemType);
+         } else {
+            itemSize = this.activeItemRenderParts[i].width;
+         }
+
+         const lastActionTicks = i === 0 ? this.rightLastActionTicks : this.leftLastActionTicks;
+         const secondsSinceLastAction = this.getSecondsSinceLastAction(lastActionTicks);
+
+         const action = i === 0 ? this.rightAction : this.leftAction;
+         switch (action) {
+            case TribeMemberAction.chargeBow: {
+               // 
+               // Bow charge animation
+               // 
+
+               this.handDirections[i] = TribeMember.HAND_CHARGING_BOW_DIRECTION * handMult;
+               this.handOffsets[i] = TribeMember.HAND_CHARGING_BOW_OFFSET;
+               this.handRotations[i] = TribeMember.HAND_CHARGING_BOW_DIRECTION * handMult;
+
+               this.activeItemOffsets[i] = 22 + itemSize / 2;
+               this.activeItemDirections[i] = 0;
+               this.activeItemRotations[i] = -Math.PI / 4;
+               return;
+            }
+            case TribeMemberAction.chargeSpear: {
+               // 
+               // Spear charge animation
+               // 
+               const chargeProgress = secondsSinceLastAction < 3 ? 1 - Math.pow(secondsSinceLastAction / 3 - 1, 2) : 1;
+
+               const handDirection = lerp(TribeMember.HAND_RESTING_DIRECTION, Math.PI / 1.5, chargeProgress) * handMult;
+               
+               this.handDirections[i] = handDirection;
+               this.handOffsets[i] = this.handRestingOffset;
+               this.handRotations[i] = TribeMember.HAND_CHARGING_BOW_DIRECTION * handMult;
+
+               this.activeItemDirections[i] = (handDirection - Math.PI/14) * handMult;
+               this.activeItemOffsets[i] = TribeMember.ITEM_RESTING_OFFSET + itemSize/2;
+               this.activeItemRotations[i] = TribeMember.ITEM_RESTING_ROTATION * handMult;
+
+               this.handRenderParts[i].shakeAmount = lerp(0, 1.5, chargeProgress);
+               return;
+            }
+            case TribeMemberAction.eat: {
+               // 
+               // Eating animation
+               // 
+            
+               let eatIntervalProgress = (secondsSinceLastAction % TribeMember.FOOD_EAT_INTERVAL) / TribeMember.FOOD_EAT_INTERVAL * 2;
+               if (eatIntervalProgress > 1) {
+                  eatIntervalProgress = 2 - eatIntervalProgress;
                }
                
-               this.leftHandDirection = -TribeMember.HAND_RESTING_DIRECTION;
-               this.leftHandOffset = this.handRestingOffset;
-               this.leftHandRotation = -TribeMember.HAND_RESTING_ROTATION;
-               this.rightHandDirection = direction;
-               this.rightHandOffset = this.handRestingOffset;
-               this.rightHandRotation = attackHandRotation;
-   
-               if (this.activeItemType !== null && ITEM_TYPE_RECORD[this.activeItemType] === "bow") {
-                  this.activeItemOffset = TribeMember.ITEM_RESTING_OFFSET + 7;
-                  this.activeItemDirection = direction;
-                  this.activeItemRotation = attackHandRotation + Math.PI/10;
-               } else {
-                  this.activeItemOffset = TribeMember.ITEM_RESTING_OFFSET + itemSize/2;
-                  this.activeItemDirection = direction - Math.PI/14;
-                  this.activeItemRotation = attackHandRotation;
-               }
+               direction -= lerp(0, Math.PI/5, eatIntervalProgress);
+               direction *= handMult;
+
+               const insetAmount = lerp(0, 17, eatIntervalProgress);
+
+               this.handDirections[i] = direction;
+               this.handOffsets[i] = this.handRestingOffset - insetAmount;
+               this.handRotations[i] = lerp(TribeMember.HAND_RESTING_ROTATION, TribeMember.HAND_RESTING_ROTATION - Math.PI/5, eatIntervalProgress) * handMult;
+
+               this.activeItemOffsets[i] = TribeMember.ITEM_RESTING_OFFSET + itemSize/2 - insetAmount;
+               this.activeItemDirections[i] = (direction - Math.PI/14) * handMult;
+               this.activeItemRotations[i] = lerp(0, -Math.PI/3, eatIntervalProgress) * handMult;
+               return;
             }
-            return;
+            case TribeMemberAction.none: {
+               // 
+               // Attack animation
+               // 
+
+               const activeItemType = i === 0 ? this.rightActiveItemType : this.leftActiveItemType;
+               const attackProgress = this.calculateAttackProgress(activeItemType, secondsSinceLastAction);
+
+               if (this.leftActiveItemType === ItemType.spear) {
+                  let direction: number;
+                  let attackHandRotation: number;
+                  let extraOffset: number;
+                  if (attackProgress < TribeMember.SPEAR_ATTACK_LUNGE_TIME) {
+                     // Lunge part of the animation
+                     direction = lerp(TribeMember.HAND_RESTING_DIRECTION, Math.PI / 4, attackProgress / TribeMember.SPEAR_ATTACK_LUNGE_TIME);
+                     attackHandRotation = lerp(TribeMember.ITEM_RESTING_ROTATION, -Math.PI / 7, attackProgress / TribeMember.SPEAR_ATTACK_LUNGE_TIME);
+                     extraOffset = lerp(0, 7, attackProgress / TribeMember.SPEAR_ATTACK_LUNGE_TIME);
+                  } else {
+                     // Return part of the animation
+                     const returnProgress = (attackProgress - TribeMember.SPEAR_ATTACK_LUNGE_TIME) / (1 - TribeMember.SPEAR_ATTACK_LUNGE_TIME);
+                     direction = lerp(Math.PI / 4, TribeMember.HAND_RESTING_DIRECTION, returnProgress);
+                     attackHandRotation = lerp(-Math.PI / 7, TribeMember.ITEM_RESTING_ROTATION, returnProgress);
+                     extraOffset = lerp(7, 0, returnProgress);
+                  }
+
+                  this.handDirections[i] = direction * handMult;
+                  this.handOffsets[i] = this.handRestingOffset + extraOffset;
+                  this.handRotations[i] = attackHandRotation * handMult;
+      
+                  this.activeItemOffsets[i] = TribeMember.ITEM_RESTING_OFFSET + itemSize/2 + extraOffset;
+                  this.activeItemDirections[i] = (direction - Math.PI/14) * handMult;
+                  this.activeItemRotations[i] = attackHandRotation * handMult;
+               } else {
+                  let direction: number;
+                  let attackHandRotation: number;
+                  if (attackProgress < TribeMember.ATTACK_LUNGE_TIME) {
+                     // Lunge part of the animation
+                     direction = lerp(TribeMember.HAND_RESTING_DIRECTION, TribeMember.HAND_RESTING_DIRECTION - TribeMember.ITEM_SWING_RANGE, attackProgress / TribeMember.ATTACK_LUNGE_TIME);
+                     attackHandRotation = lerp(TribeMember.ITEM_RESTING_ROTATION, TribeMember.ITEM_END_ROTATION, attackProgress / TribeMember.ATTACK_LUNGE_TIME);
+                  } else {
+                     // Return part of the animation
+                     const returnProgress = (attackProgress - TribeMember.ATTACK_LUNGE_TIME) / (1 - TribeMember.ATTACK_LUNGE_TIME);
+                     direction = lerp(TribeMember.HAND_RESTING_DIRECTION - TribeMember.ITEM_SWING_RANGE, TribeMember.HAND_RESTING_DIRECTION, returnProgress);
+                     attackHandRotation = lerp(TribeMember.ITEM_END_ROTATION, TribeMember.ITEM_RESTING_ROTATION, returnProgress);
+                  }
+                  
+                  this.handDirections[i] = direction * handMult;
+                  this.handOffsets[i] = this.handRestingOffset;
+                  this.handRotations[i] = attackHandRotation * handMult;
+      
+                  this.activeItemOffsets[i] = TribeMember.ITEM_RESTING_OFFSET + itemSize/2;
+                  this.activeItemDirections[i] = (direction - Math.PI/14) * handMult;
+                  this.activeItemRotations[i] = attackHandRotation * handMult;
+               }
+               return;
+            }
          }
       }
    }
 
-   public getSecondsSinceLastAction(): number {
-      const ticksSinceLastAction = Board.ticks - this.lastActionTicks;
+   public getSecondsSinceLastAction(lastActionTicks: number): number {
+      const ticksSinceLastAction = Board.ticks - lastActionTicks;
       let secondsSinceLastAction = ticksSinceLastAction / SETTINGS.TPS;
 
       // Account for frame progress
@@ -537,10 +530,10 @@ abstract class TribeMember extends Entity {
       return secondsSinceLastAction;
    }
 
-   private calculateAttackProgress(secondsSinceLastAttack: number): number {
+   private calculateAttackProgress(activeItemType: ItemType | null, secondsSinceLastAttack: number): number {
       let attackDuration: number;
-      if (this.activeItemType !== null && (ITEM_TYPE_RECORD[this.activeItemType] === "sword" || ITEM_TYPE_RECORD[this.activeItemType] === "axe" || ITEM_TYPE_RECORD[this.activeItemType] === "pickaxe" || ITEM_TYPE_RECORD[this.activeItemType] === "spear" || ITEM_TYPE_RECORD[this.activeItemType] === "hammer")) {
-         attackDuration = (ITEM_INFO_RECORD[this.activeItemType] as ToolItemInfo).attackCooldown;
+      if (activeItemType !== null && (ITEM_TYPE_RECORD[activeItemType] === "sword" || ITEM_TYPE_RECORD[activeItemType] === "axe" || ITEM_TYPE_RECORD[activeItemType] === "pickaxe" || ITEM_TYPE_RECORD[activeItemType] === "spear" || ITEM_TYPE_RECORD[activeItemType] === "hammer")) {
+         attackDuration = (ITEM_INFO_RECORD[activeItemType] as ToolItemInfo).attackCooldown;
       } else {
          attackDuration = SETTINGS.DEFAULT_ATTACK_COOLDOWN;
       }
@@ -608,7 +601,7 @@ abstract class TribeMember extends Entity {
       super.tick();
 
       // Create food eating particles
-      if (this.foodEatingType !== -1 && Board.tickIntervalHasPassed(0.25)) {
+      if (this.leftFoodEatingType !== -1 && Board.tickIntervalHasPassed(0.25)) {
          for (let i = 0; i < 3; i++) {
             let spawnPositionX = this.position.x + 37 * Math.sin(this.rotation);
             let spawnPositionY = this.position.y + 37 * Math.cos(this.rotation);
@@ -631,7 +624,7 @@ abstract class TribeMember extends Entity {
                return 1 - Math.pow(particle.age / lifetime, 3);
             }
 
-            const colour = randItem(FOOD_EATING_COLOURS[this.foodEatingType as keyof typeof FOOD_EATING_COLOURS]);
+            const colour = randItem(FOOD_EATING_COLOURS[this.leftFoodEatingType as keyof typeof FOOD_EATING_COLOURS]);
 
             addMonocolourParticleToBufferContainer(
                particle,
@@ -652,8 +645,11 @@ abstract class TribeMember extends Entity {
       }
 
       // Make the deep frost heart item spew blue blood particles
-      if (this.activeItemType !== null && this.activeItemType === ItemType.deepfrost_heart) {
-         createDeepFrostHeartBloodParticles(this.activeItemRenderPart.renderPosition.x, this.activeItemRenderPart.renderPosition.y, this.velocity.x, this.velocity.y);
+      if (this.rightActiveItemType !== null && this.rightActiveItemType === ItemType.deepfrost_heart) {
+         createDeepFrostHeartBloodParticles(this.activeItemRenderParts[0].renderPosition.x, this.activeItemRenderParts[0].renderPosition.y, this.velocity.x, this.velocity.y);
+      }
+      if (this.leftActiveItemType !== null && this.leftActiveItemType === ItemType.deepfrost_heart) {
+         createDeepFrostHeartBloodParticles(this.activeItemRenderParts[1].renderPosition.x, this.activeItemRenderParts[1].renderPosition.y, this.velocity.x, this.velocity.y);
       }
    }
 
@@ -711,26 +707,27 @@ abstract class TribeMember extends Entity {
       }
    }
 
-   private updateActiveItemRenderPart(activeItemType: ItemType | null): void {
+   private updateActiveItemRenderPart(i: number, activeItemType: ItemType | null): void {
       if (activeItemType === null) {
-         this.removeRenderPart(this.activeItemRenderPart);
+         this.removeRenderPart(this.activeItemRenderParts[i]);
       } else {
-         this.attachRenderPart(this.activeItemRenderPart);
+         const renderPart = this.activeItemRenderParts[i];
+         this.attachRenderPart(renderPart);
          
          if (this.showLargeItemTexture(activeItemType)) {
             const textureArrayIndex = getGameObjectTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItemType].toolTextureSource);
             
-            this.activeItemRenderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[textureArrayIndex];
-            this.activeItemRenderPart.textureWidth = getTextureWidth(textureArrayIndex);
-            this.activeItemRenderPart.textureHeight = getTextureHeight(textureArrayIndex);
-            this.activeItemRenderPart.width = getTextureWidth(textureArrayIndex) * 4;
-            this.activeItemRenderPart.height = getTextureHeight(textureArrayIndex) * 4;
+            renderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[textureArrayIndex];
+            renderPart.textureWidth = getTextureWidth(textureArrayIndex);
+            renderPart.textureHeight = getTextureHeight(textureArrayIndex);
+            renderPart.width = getTextureWidth(textureArrayIndex) * 4;
+            renderPart.height = getTextureHeight(textureArrayIndex) * 4;
          } else {
-            this.activeItemRenderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItemType].entityTextureSource)];
-            this.activeItemRenderPart.textureWidth = 8;
-            this.activeItemRenderPart.textureHeight = 8;
-            this.activeItemRenderPart.width = TribeMember.DEFAULT_ACTIVE_ITEM_SIZE;
-            this.activeItemRenderPart.height = TribeMember.DEFAULT_ACTIVE_ITEM_SIZE;
+            renderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItemType].entityTextureSource)];
+            renderPart.textureWidth = 8;
+            renderPart.textureHeight = 8;
+            renderPart.width = TribeMember.DEFAULT_ACTIVE_ITEM_SIZE;
+            renderPart.height = TribeMember.DEFAULT_ACTIVE_ITEM_SIZE;
          }
       }
    }
@@ -759,11 +756,16 @@ abstract class TribeMember extends Entity {
       updateInventoryFromData(this.armourSlotInventory, entityData.clientArgs[2]);
       updateInventoryFromData(this.backpackSlotInventory, entityData.clientArgs[3]);
       updateInventoryFromData(this.backpackInventory, entityData.clientArgs[4]);
-      this.activeItemType = entityData.clientArgs[5];
-      this.action = entityData.clientArgs[6];
-      this.foodEatingType = entityData.clientArgs[7]
-      this.lastActionTicks = entityData.clientArgs[8];
-      this.updateActiveItemRenderPart(this.activeItemType);
+      this.rightActiveItemType = entityData.clientArgs[5];
+      this.rightAction = entityData.clientArgs[6];
+      this.rightFoodEatingType = entityData.clientArgs[7];
+      this.rightLastActionTicks = entityData.clientArgs[8];
+      this.leftActiveItemType = entityData.clientArgs[9];
+      this.leftAction = entityData.clientArgs[10];
+      this.leftFoodEatingType = entityData.clientArgs[11];
+      this.leftLastActionTicks = entityData.clientArgs[12];
+      this.updateActiveItemRenderPart(0, this.rightActiveItemType);
+      this.updateActiveItemRenderPart(1, this.leftActiveItemType);
 
       this.updateBowChargeTexture();
 
@@ -774,7 +776,7 @@ abstract class TribeMember extends Entity {
       if (this.hasFrostShield && !entityData.clientArgs[9]) {
          this.createFrostShieldBreakParticles();
       }
-      this.hasFrostShield = entityData.clientArgs[9];
+      this.hasFrostShield = entityData.clientArgs[13];
       
       this.updateHands();
    }
@@ -787,23 +789,27 @@ abstract class TribeMember extends Entity {
 
    public updateBowChargeTexture(): void {
       // Change the bow charging texture based on the charge progress
-      if (this.action === TribeMemberAction.chargeBow && this.activeItemType !== null) {
-         const bowInfo = ITEM_INFO_RECORD[this.activeItemType] as BowItemInfo;
+      if (this.leftAction === TribeMemberAction.chargeBow && this.leftActiveItemType !== null) {
+         const bowInfo = ITEM_INFO_RECORD[this.leftActiveItemType] as BowItemInfo;
          
-         const secondsSinceLastAction = this.getSecondsSinceLastAction();
+         const secondsSinceLastAction = this.getSecondsSinceLastAction(this.rightLastActionTicks);
          const chargeProgress = secondsSinceLastAction / (bowInfo.shotCooldownTicks / SETTINGS.TPS);
 
          let textureIdx = Math.floor(chargeProgress * TribeMember.BOW_CHARGE_TEXTURE_SOURCES.length);
          if (textureIdx >= TribeMember.BOW_CHARGE_TEXTURE_SOURCES.length) {
             textureIdx = TribeMember.BOW_CHARGE_TEXTURE_SOURCES.length - 1;
          }
-         this.activeItemRenderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureArrayIndex(TribeMember.BOW_CHARGE_TEXTURE_SOURCES[textureIdx])];
+         this.activeItemRenderParts[0].textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureArrayIndex(TribeMember.BOW_CHARGE_TEXTURE_SOURCES[textureIdx])];
       }
    }
 
-   public updateActiveItem(activeItemType: ItemType | null): void {
-      this.updateActiveItemRenderPart(activeItemType);
-      this.activeItemType = activeItemType;
+   public updateActiveItem(i: number, activeItemType: ItemType | null): void {
+      this.updateActiveItemRenderPart(i, activeItemType);
+      if (i === 0) {
+         this.rightActiveItemType = activeItemType;
+      } else {
+         this.leftActiveItemType = activeItemType;
+      }
    }
 }
 
