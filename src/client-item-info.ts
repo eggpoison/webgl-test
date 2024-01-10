@@ -81,7 +81,7 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       description: ""
    },
    [ItemType.stone_axe]: {
-      entityTextureSource: "items/small/stone-sword.png",
+      entityTextureSource: "items/small/stone-axe.png",
       textureSource: "items/large/stone-axe.png",
       toolTextureSource: "items/large/stone-axe.png",
       name: "Stone Axe",
@@ -326,6 +326,20 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       textureSource: "items/large/wooden-hammer.png",
       toolTextureSource: "items/large/wooden-hammer.png",
       name: "Wooden Hammer",
+      description: ""
+   },
+   [ItemType.stone_battleaxe]: {
+      entityTextureSource: "items/small/stone-battleaxe.png",
+      textureSource: "items/large/stone-battleaxe.png",
+      toolTextureSource: "items/large/stone-battleaxe.png",
+      name: "Stone Battleaxe",
+      description: ""
+   },
+   [ItemType.living_rock]: {
+      entityTextureSource: "items/small/living-rock.png",
+      textureSource: "items/large/living-rock.png",
+      toolTextureSource: "",
+      name: "Living Rock",
       description: ""
    },
 };

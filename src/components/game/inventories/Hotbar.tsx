@@ -11,10 +11,15 @@ export let Hotbar_update: () => void = () => {};
 
 export let Hotbar_setHotbarSelectedItemSlot: (itemSlot: number) => void = () => {};
 
+export let Hotbar_updateRightThrownBattleaxeItemID: (rightThrownBattleaxeItemID: number) => void = () => {};
+export let Hotbar_updateLeftThrownBattleaxeItemID: (leftThrownBattleaxeItemID: number) => void = () => {};
+
 export const backpackItemTypes: ReadonlyArray<ItemType> = [ItemType.leather_backpack, ItemType.raw_beef];
 
 const Hotbar = () => {
    const [selectedItemSlot, setSelectedItemSlot] = useState(1);
+   const [rightThrownBattleaxeItemID, setRightThrownBattleaxeItemID] = useState(-1);
+   const [leftThrownBattleaxeItemID, setLeftThrownBattleaxeItemID] = useState(-1);
    const [, update] = useReducer(x => x + 1, 0);
 
    // @Cleanup: Copy and paste
@@ -48,6 +53,14 @@ const Hotbar = () => {
       Hotbar_setHotbarSelectedItemSlot = (itemSlot: number): void => {
          setSelectedItemSlot(itemSlot);
       }
+
+      Hotbar_updateRightThrownBattleaxeItemID = (rightThrownBattleaxeItemID: number): void => {
+         setRightThrownBattleaxeItemID(rightThrownBattleaxeItemID);
+      }
+
+      Hotbar_updateLeftThrownBattleaxeItemID = (leftThrownBattleaxeItemID: number): void => {
+         setLeftThrownBattleaxeItemID(leftThrownBattleaxeItemID);
+      }
    }, []);
 
    // Create the item slots
@@ -58,7 +71,7 @@ const Hotbar = () => {
       if (typeof item !== "undefined") {
          const imageSrc = getItemTypeImage(item.type);
          hotbarItemSlots.push(
-            <ItemSlot onClick={e => leftClickItemSlot(e, Player.instance!.id, definiteGameState.hotbar, itemSlot)} onContextMenu={e => rightClickItemSlot(e, Player.instance!.id, definiteGameState.hotbar, itemSlot)} isSelected={itemSlot === selectedItemSlot} picturedItemImageSrc={imageSrc} itemCount={item.count} key={itemSlot} />
+            <ItemSlot className={rightThrownBattleaxeItemID === item.id ? "dark" : undefined} onClick={e => leftClickItemSlot(e, Player.instance!.id, definiteGameState.hotbar, itemSlot)} onContextMenu={e => rightClickItemSlot(e, Player.instance!.id, definiteGameState.hotbar, itemSlot)} isSelected={itemSlot === selectedItemSlot} picturedItemImageSrc={imageSrc} itemCount={item.count} key={itemSlot} />
          );
       } else {
          hotbarItemSlots.push(
@@ -69,8 +82,9 @@ const Hotbar = () => {
 
    let offhandSlotElement: JSX.Element;
    if (definiteGameState.offhandInventory.itemSlots.hasOwnProperty(1)) {
-      const image = getItemTypeImage(definiteGameState.offhandInventory.itemSlots[1].type);
-      offhandSlotElement = <ItemSlot onClick={clickOffhandItemSlot} isSelected={false} picturedItemImageSrc={image} />
+      const item = definiteGameState.offhandInventory.itemSlots[1];
+      const image = getItemTypeImage(item.type);
+      offhandSlotElement = <ItemSlot className={leftThrownBattleaxeItemID === item.id ? "dark" : undefined} onClick={clickOffhandItemSlot} isSelected={false} picturedItemImageSrc={image} />
    } else {
       const imageSrc = require("../../../images/miscellaneous/offhand-wireframe.png");
       offhandSlotElement = <ItemSlot onClick={clickOffhandItemSlot} isSelected={false} picturedItemImageSrc={imageSrc} />

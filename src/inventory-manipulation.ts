@@ -3,7 +3,7 @@ import { inventoryIsOpen } from "./components/game/menus/CraftingMenu";
 import { setHeldItemVisualPosition } from "./components/game/HeldItem";
 import { interactInventoryIsOpen } from "./components/game/inventories/InteractInventory";
 import { definiteGameState } from "./game-state/game-states";
-import { Inventory, InventoryData, Item, ItemSlots } from "webgl-test-shared";
+import { Inventory, InventoryData, Item, ItemData, ItemSlots } from "webgl-test-shared";
 
 const canInteractWithItemSlots = (): boolean => {
    return inventoryIsOpen() || interactInventoryIsOpen();
@@ -122,5 +122,13 @@ export function createInventoryFromData(inventoryData: InventoryData): Inventory
       width: inventoryData.width,
       height: inventoryData.height,
       inventoryName: inventoryData.inventoryName
+   };
+}
+
+export function serialiseItem(item: Item): ItemData {
+   return {
+      type: item.type,
+      count: item.count,
+      id: item.id
    };
 }

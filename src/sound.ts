@@ -1,6 +1,7 @@
 import { SETTINGS, TileType, distance, randInt } from "webgl-test-shared";
 import Camera from "./Camera";
 import Board from "./Board";
+import GameObject from "./GameObject";
 
 const AUDIO_FILE_PATHS = [
    "item-pickup.mp3",
@@ -111,7 +112,8 @@ const AUDIO_FILE_PATHS = [
    "ice-spikes-destroy.mp3",
    "door-open.mp3",
    "slime-spit.mp3",
-   "acid-burn.mp3"
+   "acid-burn.mp3",
+   "air-whoosh.mp3"
 ] as const;
 
 export type AudioFilePath = typeof AUDIO_FILE_PATHS[number];
@@ -130,7 +132,13 @@ export interface Sound {
    readonly gainNode: GainNode;
 }
 
+interface SoundAttachInfo {
+   readonly sound: Sound;
+   readonly entity: GameObject;
+}
+
 const activeSounds = new Array<Sound>();
+const entityAttachedSounds = new Array<SoundAttachInfo>();
 
 // Must be called after a user action
 export function createAudioContext(): void {
@@ -190,6 +198,14 @@ export function playSound(filePath: AudioFilePath, volume: number, sourceX: numb
       if (idx !== -1) {
          activeSounds.splice(idx, 1);
       }
+      
+      for (let i = 0; i < entityAttachedSounds.length; i++) {
+         const attachedSoundInfo = entityAttachedSounds[i];
+         if (attachedSoundInfo.sound === soundInfo) {
+            entityAttachedSounds.splice(i, 1);
+            break;
+         }
+      }
    }
 
    return {
@@ -198,7 +214,21 @@ export function playSound(filePath: AudioFilePath, volume: number, sourceX: numb
    };
 }
 
+export function attachSoundToEntity(sound: Sound, entity: GameObject): void {
+   entityAttachedSounds.push({
+      sound: sound,
+      entity: entity
+   });
+}
+
 export function updateSoundEffectVolume(): void {
+   for (let i = 0; i < entityAttachedSounds.length; i++) {
+      const attachedSoundInfo = entityAttachedSounds[i];
+
+      attachedSoundInfo.sound.x = attachedSoundInfo.entity.position.x;
+      attachedSoundInfo.sound.y = attachedSoundInfo.entity.position.y;
+   }
+   
    for (let i = 0; i < activeSounds.length; i++) {
       const sound = activeSounds[i];
       sound.gainNode.gain.value = calculateSoundVolume(sound.volume, sound.x, sound.y);

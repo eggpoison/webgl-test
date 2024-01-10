@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TribeData, InventoryData, TribeMemberAction, TechID, Inventory, TRIBE_INFO_RECORD, StructureShapeType } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TribeData, InventoryData, TribeMemberAction, TechID, Inventory, TRIBE_INFO_RECORD, StructureShapeType, randInt } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -9,7 +9,7 @@ import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { Tile } from "../Tile";
 import { gameScreenSetIsDead } from "../components/game/GameScreen";
 import { getInteractEntityID, removeSelectedItem, selectItem, updateInventoryIsOpen } from "../player-input";
-import { Hotbar_update } from "../components/game/inventories/Hotbar";
+import { Hotbar_update, Hotbar_updateLeftThrownBattleaxeItemID, Hotbar_updateRightThrownBattleaxeItemID } from "../components/game/inventories/Hotbar";
 import { setHeldItemVisual } from "../components/game/HeldItem";
 import { CraftingMenu_setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
 import { HealthBar_setHasFrostShield, updateHealthBar } from "../components/game/HealthBar";
@@ -139,8 +139,7 @@ abstract class Client {
 
    /** Creates the socket used to connect to the server */
    private static createSocket(): ISocket {
-      // return io(`ws://localhost:${SETTINGS.SERVER_PORT}`, {
-      return io(`ws://172.20.122.53:${SETTINGS.SERVER_PORT}`, {
+      return io(`ws://localhost:${SETTINGS.SERVER_PORT}`, {
          transports: ["websocket", "polling", "flashsocket"],
          autoConnect: false,
          reconnection: false
@@ -258,7 +257,18 @@ abstract class Client {
             if (Board.entityRecord[entityData.id] !== Player.instance) {
                Board.entityRecord[entityData.id].updateFromData(entityData);
             } else {
-               (Board.entityRecord[entityData.id] as Player).genericUpdateFromData(entityData as unknown as EntityData<EntityType.player> | EntityData<EntityType.tribeWorker> | EntityData<EntityType.tribeWarrior>);
+               const player = (Board.entityRecord[entityData.id] as Player);
+               player.genericUpdateFromData(entityData as unknown as EntityData<EntityType.player>);
+
+               // @Cleanup @Hack
+
+               const rightThrownBattleaxeItemID = entityData.clientArgs[9];
+               player.rightThrownBattleaxeItemID = rightThrownBattleaxeItemID;
+               Hotbar_updateRightThrownBattleaxeItemID(rightThrownBattleaxeItemID);
+
+               const leftThrownBattleaxeItemID = entityData.clientArgs[14] as number;
+               player.leftThrownBattleaxeItemID = leftThrownBattleaxeItemID;
+               Hotbar_updateLeftThrownBattleaxeItemID(leftThrownBattleaxeItemID);
             }
             // @Incomplete
             // if (entityData.amountHealed > 0) {
@@ -474,7 +484,7 @@ abstract class Client {
       
       const spawnPosition = Point.unpackage(respawnDataPacket.spawnPosition);
       const renderDepth = calculateEntityRenderDepth(EntityType.player);
-      const player = new Player(spawnPosition, respawnDataPacket.playerID, renderDepth, null, TribeType.plainspeople, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, null, TribeMemberAction.none, -1, -99999, false, -1, definiteGameState.playerUsername);
+      const player = new Player(spawnPosition, respawnDataPacket.playerID, renderDepth, null, Game.tribe.tribeType, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, -1, null, TribeMemberAction.none, -1, -99999, -1, false, Game.tribe.tribeType === TribeType.goblins ? randInt(1, 5) : -1, definiteGameState.playerUsername);
       player.addCircularHitbox(Player.createNewPlayerHitbox());
       Player.setInstancePlayer(player);
       Board.addEntity(player);

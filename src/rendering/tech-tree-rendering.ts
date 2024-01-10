@@ -187,6 +187,10 @@ const addConnectorVertices = (vertices: Array<number>, startTech: TechInfo, endT
 }
 
 export function techIsDirectlyAccessible(techInfo: TechInfo): boolean {
+   if (techInfo.blacklistedTribes.includes(Game.tribe.tribeType)) {
+      return false;
+   }
+   
    if (Game.tribe.hasUnlockedTech(techInfo.id)) {
       return true;
    }

@@ -3,7 +3,7 @@ import { addKeyListener, clearPressedKeys, keyIsPressed } from "./keyboard-input
 import { CraftingMenu_setIsVisible } from "./components/game/menus/CraftingMenu";
 import Player from "./entities/Player";
 import Client from "./client/Client";
-import { Hotbar_setHotbarSelectedItemSlot } from "./components/game/inventories/Hotbar";
+import { Hotbar_setHotbarSelectedItemSlot, Hotbar_updateLeftThrownBattleaxeItemID, Hotbar_updateRightThrownBattleaxeItemID } from "./components/game/inventories/Hotbar";
 import { InteractInventoryType, InteractInventory_clearInventory, InteractInventory_forceUpdate, InteractInventory_setInventory } from "./components/game/inventories/InteractInventory";
 import { BackpackInventoryMenu_setIsVisible } from "./components/game/inventories/BackpackInventory";
 import Entity from "./entities/Entity";
@@ -26,6 +26,7 @@ import { closeTechTree, techTreeIsOpen } from "./components/game/TechTree";
 import WarriorHut from "./entities/WarriorHut";
 import GameObject from "./GameObject";
 import { attemptStructureSelect } from "./structure-selection";
+import { serialiseItem } from "./inventory-manipulation";
 
 /** Acceleration of the player while moving without any modifiers. */
 const PLAYER_ACCELERATION = 700;
@@ -166,15 +167,15 @@ export function updatePlayerItems(): void {
    // @Cleanup: destroy this.
    if (Player.instance !== null) {
       if (definiteGameState.hotbar.itemSlots.hasOwnProperty(latencyGameState.selectedHotbarItemSlot)) {
-         Player.instance.updateActiveItem(0, definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot].type);
+         Player.instance.rightActiveItem = serialiseItem(definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot]);
          Player.instance.updateBowChargeTexture();
       } else {
-         Player.instance.updateActiveItem(0, null);
+         Player.instance.rightActiveItem = null;
       }
       if (definiteGameState.offhandInventory.itemSlots.hasOwnProperty(1)) {
-         Player.instance.updateActiveItem(1, definiteGameState.offhandInventory.itemSlots[1].type);
+         Player.instance.leftActiveItem = serialiseItem(definiteGameState.offhandInventory.itemSlots[1]);
       } else {
-         Player.instance.updateActiveItem(1, null);
+         Player.instance.leftActiveItem = null;
       }
       Player.instance.updateHands();
 
@@ -202,9 +203,9 @@ const attack = (isOffhand: boolean): void => {
    // Update bow charge cooldown
    if (latencyGameState.mainAction !== TribeMemberAction.chargeBow) {
       if (isOffhand) {
-         Player.instance!.rightLastActionTicks = Board.ticks;
-      } else {
          Player.instance!.leftLastActionTicks = Board.ticks;
+      } else {
+         Player.instance!.rightLastActionTicks = Board.ticks;
       }
    }
 }
@@ -213,6 +214,13 @@ const attemptInventoryAttack = (inventory: Inventory): boolean => {
    const isOffhand = inventory.inventoryName !== "hotbar";
    const attackCooldowns = isOffhand ? offhandItemAttackCooldowns : hotbarItemAttackCooldowns;
    const selectedItemSlot = isOffhand ? 1 : latencyGameState.selectedHotbarItemSlot;
+
+   // Don't attack if the hand is busy waiting for a battleaxe to return
+   const thrownBattleaxeItemID = isOffhand ? Player.instance!.leftThrownBattleaxeItemID : Player.instance!.rightThrownBattleaxeItemID;
+   const selectedItem = inventory.itemSlots[selectedItemSlot];
+   if (thrownBattleaxeItemID !== -1 && thrownBattleaxeItemID === selectedItem.id) {
+      return false;
+   }
    
    if (inventory.itemSlots.hasOwnProperty(selectedItemSlot)) {
       // Attack with item
@@ -220,9 +228,8 @@ const attemptInventoryAttack = (inventory: Inventory): boolean => {
          attack(isOffhand);
          
          // Reset the attack cooldown of the weapon
-         const selectedItem = inventory.itemSlots[selectedItemSlot];
          const itemTypeInfo = ITEM_TYPE_RECORD[selectedItem.type];
-         if (itemTypeInfo === "axe" || itemTypeInfo === "pickaxe" || itemTypeInfo === "sword" || itemTypeInfo === "spear" || itemTypeInfo === "hammer") {
+         if (itemTypeInfo === "axe" || itemTypeInfo === "pickaxe" || itemTypeInfo === "sword" || itemTypeInfo === "spear" || itemTypeInfo === "hammer" || itemTypeInfo === "battleaxe") {
             const itemInfo = ITEM_INFO_RECORD[selectedItem.type];
             attackCooldowns[selectedItemSlot] = (itemInfo as ToolItemInfo).attackCooldown;
          } else {
@@ -617,6 +624,7 @@ const deselectItem = (item: Item, isOffhand: boolean): void => {
    const itemCategory = ITEM_TYPE_RECORD[item.type];
    switch (itemCategory) {
       case "spear":
+      case "battleaxe":
       case "bow": {
          if (isOffhand) {
             latencyGameState.offhandAction = TribeMemberAction.none;
@@ -877,6 +885,26 @@ const itemRightClickDown = (item: Item, isOffhand: boolean): void => {
          }
          break;
       }
+      case "battleaxe": {
+         if (isOffhand) {
+            // If an axe is already thrown, don't throw another
+            if (Player.instance!.leftThrownBattleaxeItemID !== -1) {
+               break;
+            }
+            latencyGameState.offhandAction = TribeMemberAction.chargeBattleaxe;
+            Player.instance!.leftAction = TribeMemberAction.chargeBattleaxe;
+            Player.instance!.leftLastActionTicks = Board.ticks;
+         } else {
+            // If an axe is already thrown, don't throw another
+            if (Player.instance!.rightThrownBattleaxeItemID !== -1) {
+               break;
+            }
+            latencyGameState.mainAction = TribeMemberAction.chargeBattleaxe;
+            Player.instance!.rightAction = TribeMemberAction.chargeBattleaxe;
+            Player.instance!.rightLastActionTicks = Board.ticks;
+         }
+         break;
+      }
       case "armour": {
          Client.sendItemUsePacket();
 
@@ -912,8 +940,27 @@ const itemRightClickUp = (item: Item, isOffhand: boolean): void => {
 
          break;
       }
+      case "battleaxe":
       case "spear":
       case "bow": {
+         if (itemCategory === "battleaxe") {
+            if (isOffhand) {
+               // If an axe is already thrown, don't throw another
+               if (Player.instance!.leftThrownBattleaxeItemID !== -1) {
+                  break;
+               }
+               Player.instance!.leftThrownBattleaxeItemID = item.id;
+               Hotbar_updateLeftThrownBattleaxeItemID(item.id);
+            } else {
+               // If an axe is already thrown, don't throw another
+               if (Player.instance!.rightThrownBattleaxeItemID !== -1) {
+                  break;
+               }
+               Player.instance!.rightThrownBattleaxeItemID = item.id;
+               Hotbar_updateRightThrownBattleaxeItemID(item.id);
+            }
+         }
+
          Client.sendItemUsePacket();
          if (isOffhand) {
             latencyGameState.offhandAction = TribeMemberAction.none;
@@ -948,19 +995,20 @@ const selectItemSlot = (itemSlot: number): void => {
       
    Hotbar_setHotbarSelectedItemSlot(itemSlot);
 
-   // @Cleanup: Copy and paste, and Shouldn't be here
+   // @Cleanup: Copy and paste, and shouldn't be here
    if (Player.instance !== null) {
       if (definiteGameState.hotbar.itemSlots.hasOwnProperty(latencyGameState.selectedHotbarItemSlot)) {
-         Player.instance.updateActiveItem(0, definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot].type);
+         Player.instance.rightActiveItem = serialiseItem(definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot]);
          Player.instance.updateBowChargeTexture();
       } else {
-         Player.instance.updateActiveItem(0, null);
+         Player.instance.rightActiveItem = null;
       }
       if (definiteGameState.offhandInventory.itemSlots.hasOwnProperty(1)) {
-         Player.instance.updateActiveItem(1, definiteGameState.offhandInventory.itemSlots[1].type);
+         Player.instance.leftActiveItem = serialiseItem(definiteGameState.offhandInventory.itemSlots[1]);
       } else {
-         Player.instance.updateActiveItem(1, null);
+         Player.instance.leftActiveItem = null;
       }
+      // @Incomplete?? might want to call updateHands
    }
 }
 

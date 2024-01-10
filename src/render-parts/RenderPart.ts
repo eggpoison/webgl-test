@@ -51,6 +51,11 @@ export abstract class RenderObject {
       // @Incomplete: remove children
    }
 
+   public renderPartIsAttached(renderPart: RenderPart): boolean {
+      const root = this.getRoot();
+      return root.allRenderParts.indexOf(renderPart) !== -1;
+   }
+
    private getRoot(): GameObject {
       // @Cleanup: don't use hasOwnProperty, don't use as, maybe remove while loop
       let root: RenderObject = this;
