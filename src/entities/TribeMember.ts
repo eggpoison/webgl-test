@@ -415,7 +415,7 @@ abstract class TribeMember extends Entity {
                this.activeItemOffsets[i] = 22 + itemSize / 2;
                this.activeItemDirections[i] = 0;
                this.activeItemRotations[i] = -Math.PI / 4;
-               return;
+               break;
             }
             case TribeMemberAction.chargeSpear: {
                // 
@@ -434,7 +434,7 @@ abstract class TribeMember extends Entity {
                this.activeItemRotations[i] = TribeMember.ITEM_RESTING_ROTATION * handMult;
 
                this.handRenderParts[i].shakeAmount = lerp(0, 1.5, chargeProgress);
-               return;
+               break;
             }
             case TribeMemberAction.eat: {
                // 
@@ -458,7 +458,7 @@ abstract class TribeMember extends Entity {
                this.activeItemOffsets[i] = TribeMember.ITEM_RESTING_OFFSET + itemSize/2 - insetAmount;
                this.activeItemDirections[i] = (direction - Math.PI/14) * handMult;
                this.activeItemRotations[i] = lerp(0, -Math.PI/3, eatIntervalProgress) * handMult;
-               return;
+               break;
             }
             case TribeMemberAction.none: {
                // 
@@ -514,7 +514,7 @@ abstract class TribeMember extends Entity {
                   this.activeItemDirections[i] = (direction - Math.PI/14) * handMult;
                   this.activeItemRotations[i] = attackHandRotation * handMult;
                }
-               return;
+               break;
             }
          }
       }

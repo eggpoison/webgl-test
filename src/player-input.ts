@@ -37,6 +37,9 @@ const PLAYER_SLOW_ACCELERATION = 400;
 
 const PLAYER_INTERACT_RANGE = 125;
 
+export let rightMouseButtonIsPressed = false;
+export let leftMouseButtonIsPressed = false;
+
 enum PlaceableItemHitboxType {
    circular,
    rectangular
@@ -189,9 +192,8 @@ export function updatePlayerItems(): void {
    }
 }
 
-const attack = (inventoryName: string): void => {
+const attack = (isOffhand: boolean): void => {
    const attackPacket: AttackPacket = {
-      inventoryName: inventoryName,
       itemSlot: latencyGameState.selectedHotbarItemSlot,
       attackDirection: Player.instance!.rotation
    };
@@ -199,18 +201,23 @@ const attack = (inventoryName: string): void => {
 
    // Update bow charge cooldown
    if (latencyGameState.mainAction !== TribeMemberAction.chargeBow) {
-      Player.instance!.rightLastActionTicks = Board.ticks;
+      if (isOffhand) {
+         Player.instance!.rightLastActionTicks = Board.ticks;
+      } else {
+         Player.instance!.leftLastActionTicks = Board.ticks;
+      }
    }
 }
 
 const attemptInventoryAttack = (inventory: Inventory): boolean => {
-   const attackCooldowns = inventory.inventoryName === "hotbar" ? hotbarItemAttackCooldowns : offhandItemAttackCooldowns;
-   const selectedItemSlot = inventory.inventoryName === "hotbar" ? latencyGameState.selectedHotbarItemSlot : 1;
+   const isOffhand = inventory.inventoryName !== "hotbar";
+   const attackCooldowns = isOffhand ? offhandItemAttackCooldowns : hotbarItemAttackCooldowns;
+   const selectedItemSlot = isOffhand ? 1 : latencyGameState.selectedHotbarItemSlot;
    
    if (inventory.itemSlots.hasOwnProperty(selectedItemSlot)) {
       // Attack with item
       if (!attackCooldowns.hasOwnProperty(selectedItemSlot)) {
-         attack(inventory.inventoryName);
+         attack(isOffhand);
          
          // Reset the attack cooldown of the weapon
          const selectedItem = inventory.itemSlots[selectedItemSlot];
@@ -227,7 +234,7 @@ const attemptInventoryAttack = (inventory: Inventory): boolean => {
    } else {
       // Attack without item
       if (!attackCooldowns.hasOwnProperty(selectedItemSlot)) {
-         attack(inventory.inventoryName);
+         attack(isOffhand);
          attackCooldowns[selectedItemSlot] = SETTINGS.DEFAULT_ATTACK_COOLDOWN;
 
          return true;
@@ -246,8 +253,30 @@ const attemptAttack = (): void => {
    }
 }
 
-export let rightMouseButtonIsPressed = false;
-export let leftMouseButtonIsPressed = false;
+interface SelectedItemInfo {
+   readonly item: Item;
+   readonly isOffhand: boolean;
+}
+
+const getSelectedItemInfo = (): SelectedItemInfo | null => {
+   if (definiteGameState.hotbar.itemSlots.hasOwnProperty(latencyGameState.selectedHotbarItemSlot)) {
+      const item = definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot];
+      return {
+         item: item,
+         isOffhand: false
+      };
+   }
+
+   if (definiteGameState.offhandInventory.itemSlots.hasOwnProperty(1)) {
+      const item = definiteGameState.offhandInventory.itemSlots[1];
+      return {
+         item: item,
+         isOffhand: true
+      };
+   }
+
+   return null;
+}
 
 const createItemUseListeners = (): void => {
    document.addEventListener("mousedown", e => {
@@ -258,15 +287,15 @@ const createItemUseListeners = (): void => {
          return;
       }
 
-      const selectedItem = definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot];
       if (e.button === 0) { // Left click
          leftMouseButtonIsPressed = true;
          attemptAttack();
       } else if (e.button === 2) { // Right click
          rightMouseButtonIsPressed = true;
 
-         if (definiteGameState.hotbar.itemSlots.hasOwnProperty(latencyGameState.selectedHotbarItemSlot)) {
-            itemRightClickDown(selectedItem);
+         const selectedItemInfo = getSelectedItemInfo();
+         if (selectedItemInfo !== null) {
+            itemRightClickDown(selectedItemInfo.item, selectedItemInfo.isOffhand);
          }
          
          attemptStructureSelect();
@@ -281,17 +310,15 @@ const createItemUseListeners = (): void => {
          return;
       }
 
-      if (!definiteGameState.hotbar.itemSlots.hasOwnProperty(latencyGameState.selectedHotbarItemSlot)) {
-         return;
-      }
-      const selectedItem = definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot];
-
       if (e.button === 0) { // Left click
          leftMouseButtonIsPressed = false;
       } else if (e.button === 2) { // Right click
          rightMouseButtonIsPressed = false;
 
-         itemRightClickUp(selectedItem);
+         const selectedItemInfo = getSelectedItemInfo();
+         if (selectedItemInfo !== null) {
+            itemRightClickUp(selectedItemInfo.item, selectedItemInfo.isOffhand);
+         }
       }
    });
 
@@ -586,17 +613,18 @@ export function updatePlayerMovement(): void {
    }
 }
 
-const deselectItem = (item: Item): void => {
+const deselectItem = (item: Item, isOffhand: boolean): void => {
    const itemCategory = ITEM_TYPE_RECORD[item.type];
    switch (itemCategory) {
+      case "spear":
       case "bow": {
-         latencyGameState.mainAction = TribeMemberAction.none;
-         Player.instance!.rightAction = TribeMemberAction.none;
-         break;
-      }
-      case "spear": {
-         latencyGameState.mainAction = TribeMemberAction.none;
-         Player.instance!.rightAction = TribeMemberAction.none;
+         if (isOffhand) {
+            latencyGameState.offhandAction = TribeMemberAction.none;
+            Player.instance!.leftAction = TribeMemberAction.none;
+         } else {
+            latencyGameState.mainAction = TribeMemberAction.none;
+            Player.instance!.rightAction = TribeMemberAction.none;
+         }
          break;
       }
       case "placeable": {
@@ -801,33 +829,52 @@ export function canPlaceItem(placePosition: Point, placeRotation: number, item: 
    return true;
 }
 
-const itemRightClickDown = (item: Item): void => {
+const itemRightClickDown = (item: Item, isOffhand: boolean): void => {
    const itemCategory = ITEM_TYPE_RECORD[item.type];
    switch (itemCategory) {
       case "food": {
          const maxHealth = TRIBE_INFO_RECORD[Player.instance!.tribeType].maxHealthPlayer;
          if (definiteGameState.playerHealth < maxHealth) {
-            latencyGameState.mainAction = TribeMemberAction.eat;
-            Player.instance!.rightAction = TribeMemberAction.eat;
-            Player.instance!.rightFoodEatingType = item.type;
-            Player.instance!.rightLastActionTicks = Board.ticks;
+            if (isOffhand) {
+               latencyGameState.offhandAction = TribeMemberAction.eat;
+               Player.instance!.leftAction = TribeMemberAction.eat;
+               Player.instance!.leftFoodEatingType = item.type;
+               Player.instance!.leftLastActionTicks = Board.ticks;
+            } else {
+               latencyGameState.mainAction = TribeMemberAction.eat;
+               Player.instance!.rightAction = TribeMemberAction.eat;
+               Player.instance!.rightFoodEatingType = item.type;
+               Player.instance!.rightLastActionTicks = Board.ticks;
+            }
          }
 
          break;
       }
       case "bow": {
-         latencyGameState.mainAction = TribeMemberAction.chargeBow;
-         Player.instance!.rightAction = TribeMemberAction.chargeBow;
-         Player.instance!.rightLastActionTicks = Board.ticks;
+         if (isOffhand) {
+            latencyGameState.offhandAction = TribeMemberAction.chargeBow;
+            Player.instance!.leftAction = TribeMemberAction.chargeBow;
+            Player.instance!.leftLastActionTicks = Board.ticks;
+         } else {
+            latencyGameState.mainAction = TribeMemberAction.chargeBow;
+            Player.instance!.rightAction = TribeMemberAction.chargeBow;
+            Player.instance!.rightLastActionTicks = Board.ticks;
+         }
          
          showChargeMeter();
 
          break;
       }
       case "spear": {
-         latencyGameState.mainAction = TribeMemberAction.chargeSpear;
-         Player.instance!.rightAction = TribeMemberAction.chargeSpear;
-         Player.instance!.rightLastActionTicks = Board.ticks;
+         if (isOffhand) {
+            latencyGameState.offhandAction = TribeMemberAction.chargeSpear;
+            Player.instance!.leftAction = TribeMemberAction.chargeSpear;
+            Player.instance!.leftLastActionTicks = Board.ticks;
+         } else {
+            latencyGameState.mainAction = TribeMemberAction.chargeSpear;
+            Player.instance!.rightAction = TribeMemberAction.chargeSpear;
+            Player.instance!.rightLastActionTicks = Board.ticks;
+         }
          break;
       }
       case "armour": {
@@ -849,28 +896,33 @@ const itemRightClickDown = (item: Item): void => {
    }
 }
 
-const itemRightClickUp = (item: Item): void => {
+const itemRightClickUp = (item: Item, isOffhand: boolean): void => {
    const itemCategory = ITEM_TYPE_RECORD[item.type];
    switch (itemCategory) {
       case "food": {
-         latencyGameState.mainAction = TribeMemberAction.none;
-         Player.instance!.rightAction = TribeMemberAction.none;
-         Player.instance!.rightFoodEatingType = -1;
+         if (isOffhand) {
+            latencyGameState.offhandAction = TribeMemberAction.none;
+            Player.instance!.leftAction = TribeMemberAction.none;
+            Player.instance!.leftFoodEatingType = -1;
+         } else {
+            latencyGameState.mainAction = TribeMemberAction.none;
+            Player.instance!.rightAction = TribeMemberAction.none;
+            Player.instance!.rightFoodEatingType = -1;
+         }
 
          break;
       }
+      case "spear":
       case "bow": {
          Client.sendItemUsePacket();
-         latencyGameState.mainAction = TribeMemberAction.none;
-         Player.instance!.rightAction = TribeMemberAction.none;
+         if (isOffhand) {
+            latencyGameState.offhandAction = TribeMemberAction.none;
+            Player.instance!.leftAction = TribeMemberAction.none;
+         } else {
+            latencyGameState.mainAction = TribeMemberAction.none;
+            Player.instance!.rightAction = TribeMemberAction.none;
+         }
 
-         break;
-      }
-      case "spear": {
-         Client.sendItemUsePacket();
-         latencyGameState.mainAction = TribeMemberAction.none;
-         Player.instance!.rightAction = TribeMemberAction.none;
-         
          break;
       }
    }
@@ -883,12 +935,12 @@ const selectItemSlot = (itemSlot: number): void => {
 
    // Deselect the previous item and select the new item
    if (definiteGameState.hotbar.itemSlots.hasOwnProperty(latencyGameState.selectedHotbarItemSlot)) {
-      deselectItem(definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot]);
+      deselectItem(definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot], false);
    }
    if (definiteGameState.hotbar.itemSlots.hasOwnProperty(itemSlot)) {
       selectItem(definiteGameState.hotbar.itemSlots[itemSlot]);
       if (rightMouseButtonIsPressed && ITEM_TYPE_RECORD[definiteGameState.hotbar.itemSlots[itemSlot].type] === "bow") {
-         itemRightClickDown(definiteGameState.hotbar.itemSlots[itemSlot]);
+         itemRightClickDown(definiteGameState.hotbar.itemSlots[itemSlot], false);
       }
    }
 
