@@ -650,7 +650,7 @@ abstract class TribeMember extends Entity {
       super.tick();
 
       // Create food eating particles
-      if (this.leftFoodEatingType !== -1 && Board.tickIntervalHasPassed(0.25)) {
+      if ((this.rightFoodEatingType !== -1 || this.leftFoodEatingType !== -1) && Board.tickIntervalHasPassed(0.25)) {
          for (let i = 0; i < 3; i++) {
             let spawnPositionX = this.position.x + 37 * Math.sin(this.rotation);
             let spawnPositionY = this.position.y + 37 * Math.cos(this.rotation);
@@ -673,7 +673,7 @@ abstract class TribeMember extends Entity {
                return 1 - Math.pow(particle.age / lifetime, 3);
             }
 
-            const colour = randItem(FOOD_EATING_COLOURS[this.leftFoodEatingType as keyof typeof FOOD_EATING_COLOURS]);
+            const colour = randItem(FOOD_EATING_COLOURS[(this.rightFoodEatingType !== -1 ? this.rightFoodEatingType : this.leftFoodEatingType) as keyof typeof FOOD_EATING_COLOURS]);
 
             addMonocolourParticleToBufferContainer(
                particle,

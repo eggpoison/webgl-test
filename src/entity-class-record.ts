@@ -36,6 +36,7 @@ import SlimeSpit from "./projectiles/SlimeSpit";
 import SpitPoison from "./projectiles/SpitPoison";
 import WoodenDoor from "./entities/WoodenDoor";
 import BattleaxeProjectile from "./projectiles/BattleaxeProjectile";
+import Golem from "./entities/Golem";
 
 export type EntityClassType<T extends EntityType> = new (position: Point, id: number, renderDepth: number, ...clientParams: Parameters<typeof EntityInfoClientArgs[T]>) => GameObject;
 
@@ -75,7 +76,8 @@ const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
    [EntityType.slimeSpit]: () => SlimeSpit,
    [EntityType.spitPoison]: () => SpitPoison,
    [EntityType.woodenDoor]: () => WoodenDoor,
-   [EntityType.battleaxeProjectile]: () => BattleaxeProjectile
+   [EntityType.battleaxeProjectile]: () => BattleaxeProjectile,
+   [EntityType.golem]: () => Golem
 };
 
 export default ENTITY_CLASS_RECORD;

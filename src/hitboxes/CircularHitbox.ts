@@ -5,8 +5,8 @@ import RectangularHitbox from "./RectangularHitbox";
 class CircularHitbox extends Hitbox {
    public radius: number;
 
-   constructor(radius: number) {
-      super();
+   constructor(radius: number, localID: number) {
+      super(localID);
       
       this.radius = radius;
    }

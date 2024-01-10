@@ -39,7 +39,7 @@ abstract class GameObject extends RenderObject {
    /** Stores all render parts attached to the object, sorted ascending based on zIndex. (So that render part with smallest zIndex is rendered first) */
    public readonly allRenderParts = new Array<RenderPart>();
 
-   public readonly hitboxes = new Set<CircularHitbox | RectangularHitbox>();
+   public readonly hitboxes = new Array<CircularHitbox | RectangularHitbox>();
    public readonly hitboxHalfDiagonalLength?: number;
    
    public chunks = new Set<Chunk>();
@@ -75,13 +75,13 @@ abstract class GameObject extends RenderObject {
    }
 
    public addCircularHitbox(hitbox: CircularHitbox): void {
-      this.hitboxes.add(hitbox);
+      this.hitboxes.push(hitbox);
       hitbox.updateFromGameObject(this);
       hitbox.updateHitboxBounds();
    }
 
    public addRectangularHitbox(hitbox: RectangularHitbox): void {
-      this.hitboxes.add(hitbox);
+      this.hitboxes.push(hitbox);
       hitbox.updateFromGameObject(this);
       hitbox.updateHitboxBounds(this.rotation);
    }
@@ -148,7 +148,7 @@ abstract class GameObject extends RenderObject {
       if (this.velocity.x !== 0 || this.velocity.y !== 0) {
          const friction = TILE_FRICTIONS[this.tile.type];
 
-         // Apply a friction based on the tile type to air resistance (???)
+         // Apply a friction based on the tile type to simulate air resistance (???)
          this.velocity.x *= 1 - friction * I_TPS * 2;
          this.velocity.y *= 1 - friction * I_TPS * 2;
 
@@ -264,11 +264,29 @@ abstract class GameObject extends RenderObject {
 
       const containingChunks = new Set<Chunk>();
 
-      this.hitboxes.clear();
       for (const hitboxData of data.circularHitboxes) {
-         const hitbox = new CircularHitbox(hitboxData.radius);
-         hitbox.offset = new Point(hitboxData.offsetX, hitboxData.offsetY);
-         this.addCircularHitbox(hitbox);
+         let existingHitboxIndex = -1;
+         for (let i = 0; i < this.hitboxes.length; i++) {
+            const hitbox = this.hitboxes[i];
+            if (hitbox.localID === hitboxData.localID) {
+               existingHitboxIndex = i;
+               break;
+            }
+         }
+
+         let hitbox: CircularHitbox;
+         if (existingHitboxIndex === -1) {
+            console.log("-1");
+            hitbox = new CircularHitbox(hitboxData.radius, hitboxData.localID);
+            hitbox.offset.x = hitboxData.offsetX;
+            hitbox.offset.y = hitboxData.offsetY;
+            this.addCircularHitbox(hitbox);
+         } else {
+            hitbox = this.hitboxes[existingHitboxIndex] as CircularHitbox;
+            hitbox.offset.x = hitboxData.offsetX;
+            hitbox.offset.y = hitboxData.offsetY;
+            hitbox.updateFromGameObject(this);
+         }
 
          // Recalculate the game object's containing chunks based on the new hitbox bounds
          const minChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[0] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
@@ -288,9 +306,28 @@ abstract class GameObject extends RenderObject {
          }
       }
       for (const hitboxData of data.rectangularHitboxes) {
-         const hitbox = new RectangularHitbox(hitboxData.width, hitboxData.height);
-         hitbox.offset = new Point(hitboxData.offsetX, hitboxData.offsetY);
-         this.addRectangularHitbox(hitbox);
+         let existingHitboxIndex = -1;
+         for (let i = 0; i < this.hitboxes.length; i++) {
+            const hitbox = this.hitboxes[i];
+            if (hitbox.localID === hitboxData.localID) {
+               existingHitboxIndex = i;
+               break;
+            }
+         }
+
+         let hitbox: RectangularHitbox;
+         if (existingHitboxIndex === -1) {
+            console.log("-2");
+            hitbox = new RectangularHitbox(hitboxData.width, hitboxData.height, hitboxData.localID);
+            hitbox.offset.x = hitboxData.offsetX;
+            hitbox.offset.y = hitboxData.offsetY;
+            this.addRectangularHitbox(hitbox);
+         } else {
+            hitbox = this.hitboxes[existingHitboxIndex] as RectangularHitbox;
+            hitbox.offset.x = hitboxData.offsetX;
+            hitbox.offset.y = hitboxData.offsetY;
+            hitbox.updateFromGameObject(this);
+         }
 
          // Recalculate the game object's containing chunks based on the new hitbox bounds
          const minChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[0] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);

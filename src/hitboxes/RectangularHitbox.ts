@@ -17,8 +17,8 @@ class RectangularHitbox extends Hitbox {
 
    public sideAxes = [new Point(0, 0), new Point(0, 0)] as const;
 
-   constructor(width: number, height: number) {
-      super();
+   constructor(width: number, height: number, localID: number) {
+      super(localID);
       
       this.width = width;
       this.height = height;
