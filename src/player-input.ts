@@ -132,8 +132,8 @@ export const PLACEABLE_ENTITY_INFO_RECORD: Record<PlaceableItemType, PlaceableEn
    }
 };
 
-const testRectangularHitbox = new RectangularHitbox(-1, -1, 0);
-const testCircularHitbox = new CircularHitbox(-1, 0);
+const testRectangularHitbox = new RectangularHitbox(1, -1, -1, 0);
+const testCircularHitbox = new CircularHitbox(1, -1, 0);
 
 const hotbarItemAttackCooldowns: Record<number, number> = {};
 const offhandItemAttackCooldowns: Record<number, number> = {};
@@ -810,7 +810,7 @@ export function canPlaceItem(placePosition: Point, placeRotation: number, item: 
    // 
 
    // @Speed: Garbage collection
-   const tileHitbox = new RectangularHitbox(SETTINGS.TILE_SIZE, SETTINGS.TILE_SIZE, 0);
+   const tileHitbox = new RectangularHitbox(1, SETTINGS.TILE_SIZE, SETTINGS.TILE_SIZE, 0);
 
    const minTileX = Math.floor(placeTestHitbox.bounds[0] / SETTINGS.TILE_SIZE);
    const maxTileX = Math.floor(placeTestHitbox.bounds[1] / SETTINGS.TILE_SIZE);

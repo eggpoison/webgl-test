@@ -12,6 +12,7 @@ import Board from "../Board";
 import { definiteGameState, latencyGameState } from "../game-state/game-states";
 import { createFootprintParticle } from "../generic-particles";
 import { keyIsPressed } from "../keyboard-input";
+import Hitbox from "../hitboxes/Hitbox";
 
 /** Maximum distance from a crafting station which will allow its recipes to be crafted. */
 const MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION = 250;
@@ -309,58 +310,64 @@ class Player extends TribeMember {
          }
       }
    }
+
+   private static collide(entity: GameObject, playerHitbox: Hitbox, collingEntityHitbox: Hitbox): void {
+      if (entity instanceof DroppedItem) {
+         return;
+      }
+      
+      // If the two entities are exactly on top of each other, don't do anything
+      if (entity.position.x === Player.instance!.position.x && entity.position.y === Player.instance!.position.y) {
+         return;
+      }
+
+      // Calculate the force of the push
+      // Force gets greater the closer together the entities are
+      const distanceBetweenEntities = Player.instance!.position.calculateDistanceBetween(entity.position);
+      const maxDistanceBetweenEntities = this.calculateMaxDistanceFromGameObject(entity);
+      const dist = Math.max(distanceBetweenEntities / maxDistanceBetweenEntities, 0.1);
+      let forceMultiplier = 1 / dist;
+
+      // Push both entities away from each other
+      const force = SETTINGS.ENTITY_PUSH_FORCE / SETTINGS.TPS * forceMultiplier * collingEntityHitbox.mass / playerHitbox.mass;
+      const angle = Player.instance!.position.calculateAngleBetween(entity.position) + Math.PI;
+
+      // No need to apply force to other object as they will do it themselves
+      Player.instance!.velocity.x += force * Math.sin(angle);
+      Player.instance!.velocity.y += force * Math.cos(angle);
+   }
    
    private static resolveGameObjectCollisions(): void {
       if (Player.instance === null) throw new Error();
       
-      const collidingEntities = this.getCollidingGameObjects();
+      const potentialCollidingEntities = this.getPotentialCollidingEntities();
+      mainLoop:
+      for (let i = 0; i < potentialCollidingEntities.length; i++) {
+         const entity = potentialCollidingEntities[i];
 
-      for (const gameObject of collidingEntities) {
-         if (gameObject instanceof DroppedItem) {
-            continue;
-         }
-         
-         // If the two entities are exactly on top of each other, don't do anything
-         if (gameObject.position.x === Player.instance.position.x && gameObject.position.y === Player.instance.position.y) {
-            continue;
-         }
-
-         // Calculate the force of the push
-         // Force gets greater the closer together the entities are
-         const distanceBetweenEntities = Player.instance.position.calculateDistanceBetween(gameObject.position);
-         const maxDistanceBetweenEntities = this.calculateMaxDistanceFromGameObject(gameObject);
-         const dist = Math.max(distanceBetweenEntities / maxDistanceBetweenEntities, 0.1);
-         let forceMultiplier = 1 / dist;
-
-         // Push both entities away from each other
-         const force = SETTINGS.ENTITY_PUSH_FORCE / SETTINGS.TPS * forceMultiplier * gameObject.mass / Player.instance.mass;
-         const angle = Player.instance.position.calculateAngleBetween(gameObject.position) + Math.PI;
-
-         // No need to apply force to other object as they will do it themselves
-         Player.instance.velocity.x += force * Math.sin(angle);
-         Player.instance.velocity.y += force * Math.cos(angle);
-      }
-   }
-
-   private static getCollidingGameObjects(): ReadonlyArray<GameObject> {
-      const collidingGameObjects = new Array<GameObject>();
-
-      for (const chunk of Player.instance!.chunks) {
-         gameObjectLoop: for (const gameObject of chunk.getGameObjects()) {
-            if (gameObject === Player.instance) continue;
-
-            for (const hitbox of Player.instance!.hitboxes) {
-               for (const otherHitbox of gameObject.hitboxes) {
-                  if (hitbox.isColliding(otherHitbox)) {
-                     collidingGameObjects.push(gameObject);
-                     continue gameObjectLoop;
-                  }
+         for (const hitbox of Player.instance!.hitboxes) {
+            for (const otherHitbox of entity.hitboxes) {
+               if (hitbox.isColliding(otherHitbox)) {
+                  this.collide(entity, hitbox, otherHitbox);
+                  continue mainLoop;
                }
             }
          }
       }
+   }
 
-      return collidingGameObjects;
+   private static getPotentialCollidingEntities(): ReadonlyArray<GameObject> {
+      const entities = new Array<GameObject>();
+
+      for (const chunk of Player.instance!.chunks) {
+         for (const entity of chunk.getGameObjects()) {
+            if (entity !== Player.instance) {
+               entities.push(entity);
+            }
+         }
+      }
+
+      return entities;
    }
 
    private static calculateMaxDistanceFromGameObject(gameObject: GameObject): number {
@@ -392,7 +399,7 @@ class Player extends TribeMember {
    }
 
    public static createNewPlayerHitbox(): CircularHitbox {
-      const hitbox = new CircularHitbox(Player.RADIUS, 0);
+      const hitbox = new CircularHitbox(1, Player.RADIUS, 0);
       return hitbox;
    }
 }

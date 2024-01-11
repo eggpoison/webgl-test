@@ -412,7 +412,6 @@ abstract class Client {
 
       entity.velocity = Point.unpackage(entityData.velocity);
       entity.rotation = entityData.rotation;
-      entity.mass = entityData.mass;
       entity.ageTicks = entityData.ageTicks;
 
       this.addHitboxesToGameObject(entity, entityData);
@@ -440,7 +439,7 @@ abstract class Client {
       for (let i = 0; i < data.circularHitboxes.length; i++) {
          const hitboxData = data.circularHitboxes[i];
 
-         const hitbox = new CircularHitbox(hitboxData.radius, hitboxData.localID);
+         const hitbox = new CircularHitbox(hitboxData.mass, hitboxData.radius, hitboxData.localID);
          hitbox.offset.x = hitboxData.offsetX;
          hitbox.offset.y = hitboxData.offsetY;
 
@@ -450,7 +449,7 @@ abstract class Client {
       for (let i = 0; i < data.rectangularHitboxes.length; i++) {
          const hitboxData = data.rectangularHitboxes[i];
 
-         const hitbox = new RectangularHitbox(hitboxData.width, hitboxData.height, hitboxData.localID);
+         const hitbox = new RectangularHitbox(hitboxData.mass, hitboxData.width, hitboxData.height, hitboxData.localID);
          hitbox.offset.x = hitboxData.offsetX;
          hitbox.offset.y = hitboxData.offsetY;
 

@@ -30,8 +30,6 @@ abstract class GameObject extends RenderObject {
    /** Angle the object is facing, taken counterclockwise from the positive x axis (radians) */
    public rotation = 0;
 
-   public mass = 1;
-
    public ageTicks = 0;
 
    public tile!: Tile;
@@ -255,7 +253,6 @@ abstract class GameObject extends RenderObject {
       this.updateCurrentTile();
 
       this.rotation = data.rotation;
-      this.mass = data.mass;
       this.ageTicks = data.ageTicks;
 
       // @Speed
@@ -276,8 +273,7 @@ abstract class GameObject extends RenderObject {
 
          let hitbox: CircularHitbox;
          if (existingHitboxIndex === -1) {
-            console.log("-1");
-            hitbox = new CircularHitbox(hitboxData.radius, hitboxData.localID);
+            hitbox = new CircularHitbox(hitboxData.mass, hitboxData.radius, hitboxData.localID);
             hitbox.offset.x = hitboxData.offsetX;
             hitbox.offset.y = hitboxData.offsetY;
             this.addCircularHitbox(hitbox);
@@ -318,7 +314,7 @@ abstract class GameObject extends RenderObject {
          let hitbox: RectangularHitbox;
          if (existingHitboxIndex === -1) {
             console.log("-2");
-            hitbox = new RectangularHitbox(hitboxData.width, hitboxData.height, hitboxData.localID);
+            hitbox = new RectangularHitbox(hitboxData.mass, hitboxData.width, hitboxData.height, hitboxData.localID);
             hitbox.offset.x = hitboxData.offsetX;
             hitbox.offset.y = hitboxData.offsetY;
             this.addRectangularHitbox(hitbox);
