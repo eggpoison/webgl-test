@@ -111,6 +111,7 @@ const AUDIO_FILE_PATHS = [
    "ice-spikes-hit-3.mp3",
    "ice-spikes-destroy.mp3",
    "door-open.mp3",
+   "door-close.mp3",
    "slime-spit.mp3",
    "acid-burn.mp3",
    "air-whoosh.mp3"

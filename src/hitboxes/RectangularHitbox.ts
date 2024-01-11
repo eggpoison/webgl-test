@@ -46,12 +46,12 @@ class RectangularHitbox extends Hitbox {
       // Top right
       this.vertexPositions[1].x = rotateXAroundPoint(x2, y2, this.position.x, this.position.y, this.rotation + offsetRotation);
       this.vertexPositions[1].y = rotateYAroundPoint(x2, y2, this.position.x, this.position.y, this.rotation + offsetRotation);
-      // Bottom left
-      this.vertexPositions[2].x = rotateXAroundPoint(x1, y1, this.position.x, this.position.y, this.rotation + offsetRotation);
-      this.vertexPositions[2].y = rotateYAroundPoint(x1, y1, this.position.x, this.position.y, this.rotation + offsetRotation);
       // Bottom right
-      this.vertexPositions[3].x = rotateXAroundPoint(x2, y1, this.position.x, this.position.y, this.rotation + offsetRotation);
-      this.vertexPositions[3].y = rotateYAroundPoint(x2, y1, this.position.x, this.position.y, this.rotation + offsetRotation);
+      this.vertexPositions[2].x = rotateXAroundPoint(x2, y1, this.position.x, this.position.y, this.rotation + offsetRotation);
+      this.vertexPositions[2].y = rotateYAroundPoint(x2, y1, this.position.x, this.position.y, this.rotation + offsetRotation);
+      // Bottom left
+      this.vertexPositions[3].x = rotateXAroundPoint(x1, y1, this.position.x, this.position.y, this.rotation + offsetRotation);
+      this.vertexPositions[3].y = rotateYAroundPoint(x1, y1, this.position.x, this.position.y, this.rotation + offsetRotation);
    }
 
    public computeSideAxes(): void {
@@ -59,7 +59,7 @@ class RectangularHitbox extends Hitbox {
       this.sideAxes[0].x = Math.sin(angle1);
       this.sideAxes[0].y = Math.cos(angle1);
       
-      const angle2 = this.vertexPositions[2].calculateAngleBetween(this.vertexPositions[3]);
+      const angle2 = angle1 + Math.PI/2;
       this.sideAxes[1].x = Math.sin(angle2);
       this.sideAxes[1].y = Math.cos(angle2);
    }

@@ -7,6 +7,32 @@ import Client from "../../client/Client";
 import { setTechTreeX, setTechTreeY, setTechTreeZoom, techIsDirectlyAccessible } from "../../rendering/tech-tree-rendering";
 import OPTIONS from "../../options";
 
+const boundsScale = 16;
+
+let minX = 0;
+let maxX = 0;
+let minY = 0;
+let maxY = 0;
+for (let i = 0; i < TECHS.length; i++) {
+   const tech = TECHS[i];
+   if (tech.positionX < minX) {
+      minX = tech.positionX;
+   }
+   if (tech.positionX > maxX) {
+      maxX = tech.positionX;
+   }
+   if (tech.positionY < minY) {
+      minY = tech.positionY;
+   }
+   if (tech.positionY > maxY) {
+      maxY = tech.positionY;
+   }
+}
+minX *= boundsScale;
+maxX *= boundsScale;
+minY *= boundsScale;
+maxY *= boundsScale;
+
 let hoveredTechID: TechID | null = null;
 
 export function techIsHovered(techID: TechID): boolean {
@@ -60,9 +86,9 @@ const TechTooltip = ({ techInfo, techPositionX, techPositionY, zoom }: TechToolt
       </div>
       {studyProgress < techInfo.researchStudyRequirements ? (
          <div className="container research-container">
-            <p className="research-progress">{studyProgress}/{techInfo.researchStudyRequirements}</p>
             <div className="study-progress-bar-bg">
-               <div className="study-progress-bar"></div>
+               <p className="research-progress">{studyProgress}/{techInfo.researchStudyRequirements}</p>
+               <div style={{"--study-progress": studyProgress / techInfo.researchStudyRequirements} as React.CSSProperties} className="study-progress-bar"></div>
             </div>
          </div>
       ) : null}
@@ -191,11 +217,17 @@ const TechTree = () => {
    useEffect(() => {
       scrollFunc.current = (e: WheelEvent): void => {
          if (e.deltaY > 0) {
-            const newZoom = zoom / 1.2;
+            let newZoom = zoom / 1.2;
+            if (newZoom < 0.25) {
+               newZoom = zoom;
+            }
             setZoom(newZoom);
             setTechTreeZoom(newZoom);
          } else {
-            const newZoom = zoom * 1.2;
+            let newZoom = zoom * 1.2;
+            if (newZoom > 1) {
+               newZoom = zoom;
+            }
             setZoom(newZoom);
             setTechTreeZoom(newZoom);
          }
@@ -218,13 +250,24 @@ const TechTree = () => {
       lastDragX.current = e.clientX;
       lastDragY.current = e.clientY;
 
-      const x = positionX + dragX * 2;
-      const y = positionY + dragY * 2;
+      let x = positionX + dragX * 2 / zoom;
+      let y = positionY + dragY * 2 / zoom;
+      if (x < minX) {
+         x = minX;
+      } else if (x > maxX) {
+         x = maxX;
+      }
+      if (y < minY) {
+         y = minY;
+      } else if (y > maxY) {
+         y = maxY;
+      }
+      
       setPositionX(x);
       setPositionY(y);
       setTechTreeX(x);
       setTechTreeY(y);
-   }, [positionX, positionY]);
+   }, [positionX, positionY, zoom]);
 
    const onMouseUp = (): void => {
       isDragging.current = false;
@@ -234,7 +277,7 @@ const TechTree = () => {
       return null;
    }
    
-   return <div id="tech-tree" onMouseDown={e => onMouseDown(e.nativeEvent)} onMouseMove={e => onMouseMove(e.nativeEvent)} onMouseUp={() => onMouseUp()}>
+   return <div id="tech-tree" style={{"--zoom": zoom} as React.CSSProperties} onMouseDown={e => onMouseDown(e.nativeEvent)} onMouseMove={e => onMouseMove(e.nativeEvent)} onMouseUp={() => onMouseUp()}>
       {TECHS.filter(tech => OPTIONS.showAllTechs || techIsDirectlyAccessible(tech)).map((techInfo, i) => {
          return <Tech techInfo={techInfo} positionX={positionX} positionY={positionY} zoom={zoom} key={i} />
       })}

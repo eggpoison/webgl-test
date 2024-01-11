@@ -13,7 +13,7 @@ const HIGHLIGHTABLE_STRUCTURE_WIDTHS: Partial<Record<EntityType, number>> = {
 
 const HIGHLIGHTABLE_STRUCTURE_HEIGHTS: Partial<Record<EntityType, number>> = {
    [EntityType.woodenWall]: 64,
-   [EntityType.woodenDoor]: 16,
+   [EntityType.woodenDoor]: 24,
    [EntityType.researchBench]: 20 * 4
 };
 

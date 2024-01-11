@@ -1,4 +1,4 @@
-import { AttackPacket, EntityType, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, Inventory, Item, ItemType, PlaceableItemType, Point, SETTINGS, SNAP_OFFSETS, STATUS_EFFECT_MODIFIERS, StructureType, TRIBE_INFO_RECORD, ToolItemInfo, TribeMemberAction, TribeType, distance } from "webgl-test-shared";
+import { AttackPacket, EntityType, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, Inventory, Item, ItemType, PlaceableItemType, Point, SETTINGS, SNAP_OFFSETS, STATUS_EFFECT_MODIFIERS, STRUCTURE_TYPES, StructureType, TRIBE_INFO_RECORD, ToolItemInfo, TribeMemberAction, TribeType, distance } from "webgl-test-shared";
 import { addKeyListener, clearPressedKeys, keyIsPressed } from "./keyboard-input";
 import { CraftingMenu_setIsVisible } from "./components/game/menus/CraftingMenu";
 import Player from "./entities/Player";
@@ -664,7 +664,7 @@ interface BuildingSnapInfo {
    readonly y: number;
    readonly direction: number;
 }
-export function calculateSnapID(placeableEntityInfo: PlaceableEntityInfo): BuildingSnapInfo {
+export function calculateSnapInfo(placeableEntityInfo: PlaceableEntityInfo): BuildingSnapInfo {
    const regularPlacePosition = calculateRegularPlacePosition(placeableEntityInfo);
 
    const minChunkX = Math.max(Math.floor((regularPlacePosition.x - SETTINGS.STRUCTURE_SNAP_RANGE) / SETTINGS.CHUNK_UNITS), 0);
@@ -682,7 +682,7 @@ export function calculateSnapID(placeableEntityInfo: PlaceableEntityInfo): Build
                continue;
             }
             
-            if (entity.type === EntityType.woodenWall) {
+            if (STRUCTURE_TYPES.includes(entity.type as StructureType)) {
                snappableEntities.push(entity);
             }
          }
@@ -761,7 +761,7 @@ export function canPlaceItem(placePosition: Point, placeRotation: number, item: 
       testRectangularHitbox.width = placeableInfo.width;
       testRectangularHitbox.height = placeableInfo.height;
       testRectangularHitbox.recalculateHalfDiagonalLength();
-      testRectangularHitbox.rotation = placeRotation + Math.PI * 3/2;
+      testRectangularHitbox.rotation = placeRotation;
       testRectangularHitbox.externalRotation = 0;
       placeTestHitbox = testRectangularHitbox;
    }
@@ -786,20 +786,15 @@ export function canPlaceItem(placePosition: Point, placeRotation: number, item: 
    const minChunkY = Math.floor(placeTestHitbox.bounds[2] / SETTINGS.CHUNK_UNITS);
    const maxChunkY = Math.floor(placeTestHitbox.bounds[3] / SETTINGS.CHUNK_UNITS);
    
-   const previouslyCheckedEntityIDs = new Set<number>();
-
    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
          const chunk = Board.getChunk(chunkX, chunkY);
          for (const entity of chunk.getEntities()) {
-            if (!previouslyCheckedEntityIDs.has(entity.id)) {
-               for (const hitbox of entity.hitboxes) {   
-                  if (placeTestHitbox.isColliding(hitbox)) {
-                     return false;
-                  }
+            for (const hitbox of entity.hitboxes) {   
+               // @Temporary
+               if ((placeTestHitbox as RectangularHitbox).isColliding(hitbox)) {
+                  return false;
                }
-               
-               previouslyCheckedEntityIDs.add(entity.id);
             }
          }
       }
@@ -912,7 +907,7 @@ const itemRightClickDown = (item: Item, isOffhand: boolean): void => {
       }
       case "placeable": {
          const placeableEntityInfo = PLACEABLE_ENTITY_INFO_RECORD[item.type as PlaceableItemType]!;
-         const snapID = calculateSnapID(placeableEntityInfo);
+         const snapID = calculateSnapInfo(placeableEntityInfo);
          const placePosition = calculatePlacePosition(placeableEntityInfo, snapID);
          const placeRotation = calculatePlaceRotation(snapID);
          if (canPlaceItem(placePosition, placeRotation, item)) {

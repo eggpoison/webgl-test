@@ -11,8 +11,8 @@ import BackpackInventoryMenu from "./inventories/BackpackInventory";
 import InteractInventory from "./inventories/InteractInventory";
 import ChargeMeter from "./ChargeMeter";
 import TechTree from "./TechTree";
-import ResearchBenchCaption from "./ResearchBenchCaption";
 import StructureShapingMenu from "./StructureShapingMenu";
+import TechInfocard from "./TechInfocard";
 
 export let showPauseScreen: () => void = () => {};
 export let hidePauseScreen: () => void = () => {};
@@ -89,7 +89,7 @@ const GameScreen = () => {
       {isPaused && !isDead ? <PauseScreen /> : null}
 
       <TechTree />
-      <ResearchBenchCaption />
+      <TechInfocard />
 
       <StructureShapingMenu />
    </>;

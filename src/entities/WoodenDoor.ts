@@ -1,20 +1,24 @@
-import { EntityType, Point } from "webgl-test-shared";
+import { DoorToggleType, EntityData, EntityType, Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import Entity from "./Entity";
-import RectangularHitbox from "../hitboxes/RectangularHitbox";
+import { playSound } from "../sound";
 
 class WoodenDoor extends Entity {
    private static readonly WIDTH = 64;
-   private static readonly HEIGHT = 16;
+   private static readonly HEIGHT = 24;
 
    public type = EntityType.woodenDoor;
 
    // @Temporary: Remove once reworked to not use server-side hack
    private readonly doorRenderPart: RenderPart;
+
+   private toggleType: DoorToggleType
    
-   constructor(position: Point, id: number, renderDepth: number) {
+   constructor(position: Point, id: number, renderDepth: number, toggleType: DoorToggleType) {
       super(position, id, EntityType.woodenDoor, renderDepth);
+
+      this.toggleType = toggleType;
 
       this.doorRenderPart = new RenderPart(
          this,
@@ -27,12 +31,16 @@ class WoodenDoor extends Entity {
       this.attachRenderPart(this.doorRenderPart);
    }
 
-   public tick(): void {
-      super.tick();
+   public updateFromData(data: EntityData<EntityType.woodenDoor>): void {
+      super.updateFromData(data);
 
-      // @Speed
-      const hitbox = Array.from(this.hitboxes)[0] as RectangularHitbox;
-      this.doorRenderPart.offset = hitbox.offset;
+      const toggleType = data.clientArgs[0];
+      if (toggleType === DoorToggleType.open && this.toggleType === DoorToggleType.none) {
+         playSound("door-open.mp3", 0.4, this.position.x, this.position.y);
+      } else if (toggleType === DoorToggleType.close && this.toggleType === DoorToggleType.none) {
+         playSound("door-close.mp3", 0.4, this.position.x, this.position.y);
+      }
+      this.toggleType = toggleType;
    }
 }
 

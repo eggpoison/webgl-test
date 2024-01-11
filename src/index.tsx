@@ -28,6 +28,7 @@ import "./css/game/nerd-vision/terminal.css";
 import "./css/game/nerd-vision/debug-info.css";
 import "./css/game/nerd-vision/frame-graph.css";
 import "./css/game/tech-tree.css";
+import "./css/game/tech-infocard.css";
 import "./css/game/research-bench-caption.css";
 import "./css/game/structure-shaping-menu.css";
 

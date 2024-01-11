@@ -25,7 +25,8 @@ import { calculateDroppedItemRenderDepth, calculateEntityRenderDepth } from "../
 import GameObject from "../GameObject";
 import { createDamageNumber } from "../text-canvas";
 import { playSound } from "../sound";
-import { updateTechTree } from "../components/game/TechTree";
+import { closeTechTree, updateTechTree } from "../components/game/TechTree";
+import { TechInfocard_setSelectedTech } from "../components/game/TechInfocard";
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -237,6 +238,7 @@ abstract class Client {
       Game.tribe.techTreeUnlockProgress = tribeData.techTreeUnlockProgress;
 
       updateTechTree();
+      TechInfocard_setSelectedTech(Game.tribe.selectedTechID);
    }
 
    /**
@@ -621,6 +623,7 @@ abstract class Client {
 
       gameScreenSetIsDead(true);
       updateInventoryIsOpen(false);
+      closeTechTree();
    }
 
    public static sendSelectTech(techID: TechID): void {

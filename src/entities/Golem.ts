@@ -39,6 +39,19 @@ class Golem extends Entity {
 
    constructor(position: Point, id: number, renderDepth: number) {
       super(position, id, EntityType.golem, renderDepth);
+
+      for (let i = 0; i < 2; i++) {
+         const renderPart = new RenderPart(
+            this,
+            5 * 4,
+            3 * 4,
+            getGameObjectTextureArrayIndex("entities/golem/eye.png"),
+            5,
+            0
+         );
+         renderPart.offset = new Point(27 * (i === 0 ? -1 : 1), 30);
+         this.attachRenderPart(renderPart);
+      }
    }
 
    public addCircularHitbox(hitbox: CircularHitbox): void {

@@ -1,13 +1,12 @@
-import { EntityType, Point, SETTINGS, pointIsInRectangle, randFloat, rotateXAroundOrigin, rotateYAroundOrigin } from "webgl-test-shared";
+import { Point, SETTINGS, pointIsInRectangle, randFloat, rotateXAroundOrigin, rotateYAroundOrigin } from "webgl-test-shared";
 import Player from "./entities/Player";
 import Board from "./Board";
 import Game from "./Game";
 import Client from "./client/Client";
 import { createResearchNumber } from "./text-canvas";
-import { setResearchBenchCaption } from "./components/game/ResearchBenchCaption";
+import { getSelectedStructureID } from "./structure-selection";
 
-const RESEARCH_RANGE = 150;
-const NODE_COMPLETE_TIME = 1.5;
+const NODE_COMPLETE_TIME = 1.25;
 
 enum ResearchNodeSize {
    small,
@@ -58,49 +57,16 @@ export function getResearchNode(): ResearchNode | null {
 }
 
 export function updateActiveResearchBench(): void {
-   if (Player.instance === null) {
+   const selectedStructureID = getSelectedStructureID();
+   if (selectedStructureID === -1) {
+      currentResearchNode = null;
+      currentBenchID = -1;
       return;
    }
-   
-   const minChunkX = Math.max(Math.floor((Player.instance.position.x - RESEARCH_RANGE) / SETTINGS.CHUNK_UNITS), 0);
-   const maxChunkX = Math.min(Math.floor((Player.instance.position.x + RESEARCH_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1);
-   const minChunkY = Math.max(Math.floor((Player.instance.position.y - RESEARCH_RANGE) / SETTINGS.CHUNK_UNITS), 0);
-   const maxChunkY = Math.min(Math.floor((Player.instance.position.y + RESEARCH_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1);
 
-   let closestBenchID = -1;
-   let minDist = RESEARCH_RANGE + Number.EPSILON;
-   for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
-      for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
-         const chunk = Board.getChunk(chunkX, chunkY);
-         for (const entity of chunk.getGameObjects()) {
-            if (entity.type !== EntityType.researchBench) {
-               continue;
-            }
-
-            const distance = Player.instance.position.calculateDistanceBetween(entity.position);
-            if (distance < minDist) {
-               minDist = distance;
-               closestBenchID = entity.id;
-            }
-         }
-      }
-   }
-
-   if (closestBenchID !== -1) {
-      // If near a bench but no tech is selected, show a caption saying that none is selected
-      if (Game.tribe.selectedTechID === null) {
-         setResearchBenchCaption("No tech is selected");
-         return;
-      }
-
-      currentBenchID = closestBenchID;
-      if (currentResearchNode === null) {
-         currentResearchNode = generateResearchNode();
-      }
-      setResearchBenchCaption("");
-   } else {
-      setResearchBenchCaption("");
-      currentResearchNode = null;
+   currentBenchID = selectedStructureID;
+   if (currentResearchNode === null) {
+      currentResearchNode = generateResearchNode();
    }
 }
 

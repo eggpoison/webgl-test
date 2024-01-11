@@ -1,4 +1,4 @@
-import { EntityType, ITEM_TYPE_RECORD, Point, SETTINGS, circleAndRectangleDoIntersectWithOffset, circulesDoIntersectWithOffset } from "webgl-test-shared";
+import { EntityType, ITEM_TYPE_RECORD, Point, SETTINGS, circleAndRectangleDoIntersectWithOffset, circulesDoIntersectWithOffset, getTechByID } from "webgl-test-shared";
 import { getPlayerSelectedItem } from "./entities/Player";
 import Game from "./Game";
 import Board from "./Board";
@@ -7,6 +7,7 @@ import CircularHitbox from "./hitboxes/CircularHitbox";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import GameObject from "./GameObject";
 import Client from "./client/Client";
+import { latencyGameState } from "./game-state/game-states";
 
 const HIGHLIGHT_RANGE = 75;
 
@@ -41,11 +42,33 @@ const entityCanBeSelected = (entity: GameObject): boolean => {
       return selectedItem !== null && ITEM_TYPE_RECORD[selectedItem.type] === "hammer";
    }
 
-   return entity.type === EntityType.researchBench || entity.type === EntityType.woodenDoor;
+   if (entity.type === EntityType.researchBench) {
+      // Research benches can be selected if there is study able to be done
+
+      if (Game.tribe.selectedTechID === null) {
+         return false;
+      }
+
+      if (Game.tribe.techTreeUnlockProgress.hasOwnProperty(Game.tribe.selectedTechID)) {
+         const techInfo = getTechByID(Game.tribe.selectedTechID);
+         if (Game.tribe.techTreeUnlockProgress[Game.tribe.selectedTechID]!.studyProgress >= techInfo.researchStudyRequirements) {
+            return false;
+         }
+      }
+
+      return true;
+   }
+
+   return entity.type === EntityType.woodenDoor;
 }
 
 export function updateHighlightedStructure(): void {
    if (Game.cursorPositionX === null || Game.cursorPositionY === null) {
+      return;
+   }
+
+   if (latencyGameState.playerIsPlacingEntity) {
+      highlightedStructureID = -1;
       return;
    }
    

@@ -366,7 +366,7 @@ abstract class TribeMember extends Entity {
             TribeMember.TOOL_ACTIVE_ITEM_SIZE,
             TribeMember.TOOL_ACTIVE_ITEM_SIZE,
             activeItem !== null ? getGameObjectTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItem.type].entityTextureSource) : -1,
-            0,
+            i === 0 ? 0.5 : 0,
             0
          );
          renderPart.offset = () => {
@@ -374,6 +374,10 @@ abstract class TribeMember extends Entity {
          }
          renderPart.getRotation = () => {
             return this.activeItemRotations[i];
+         }
+
+         if (i === 1) {
+            renderPart.flipX = true;
          }
          
          if (activeItem !== null) {

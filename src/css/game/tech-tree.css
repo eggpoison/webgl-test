@@ -20,7 +20,7 @@
    border: var(--border-thickness) solid #000;
    border-radius: 100%;
    position: absolute;
-   transform: translate(-50%, -50%);
+   transform: translate(-50%, -50%) scale(var(--zoom));
    z-index: 1;
    white-space: pre;
    user-select: none;
@@ -85,40 +85,27 @@
    margin: 0.75rem 0 0;
 }
 
-#tech-tooltip .research-container {
-   height: 1rem;
+#tech-tooltip .study-progress-bar-bg {
+   border: 3px solid #000;
+   background-color: #333;
+   padding: 0.1rem;
 }
 
 #tech-tooltip .research-progress {
    color: #fff;
+   text-align: center;
    text-shadow: 2px 2px #000, -2px 2px #000, -2px -2px #000, 2px -2px #000;
    font-weight: bold;
    margin: 0;
    position: absolute;
-   top: calc(50% - 1px);
+   top: 50%;
    left: 50%;
    transform: translate(-50%, -50%);
-   z-index: 2;
    white-space: pre;
 }
 
-#tech-tooltip .study-progress-bar-bg {
-   --padding: 2px;
-   background-color: #333;
-   position: absolute;
-   top: var(--padding);
-   right: var(--padding);
-   bottom: var(--padding);
-   left: var(--padding);
-   z-index: 0;
-}
-
 #tech-tooltip .study-progress-bar {
-   position: absolute;
-   top: var(--padding);
-   right: var(--padding);
-   bottom: var(--padding);
-   left: var(--padding);
-   z-index: 1;
+   width: calc(100% * var(--study-progress));
+   height: 1.4rem;
    background-color: rgb(67, 238, 33);
 }

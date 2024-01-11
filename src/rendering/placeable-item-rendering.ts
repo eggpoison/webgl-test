@@ -3,7 +3,7 @@ import Camera from "../Camera";
 import Player, { getPlayerSelectedItem } from "../entities/Player";
 import { getTexture } from "../textures";
 import { gl, halfWindowWidth, halfWindowHeight, createWebGLProgram, CAMERA_UNIFORM_BUFFER_BINDING_INDEX } from "../webgl";
-import { PLACEABLE_ENTITY_INFO_RECORD, PlaceableEntityInfo, calculatePlacePosition, calculatePlaceRotation, calculateSnapID, canPlaceItem } from "../player-input";
+import { PLACEABLE_ENTITY_INFO_RECORD, PlaceableEntityInfo, calculatePlacePosition, calculatePlaceRotation, calculateSnapInfo, canPlaceItem } from "../player-input";
 
 let program: WebGLProgram;
 
@@ -112,11 +112,7 @@ export function renderGhostPlaceableItem(): void {
    gl.enable(gl.BLEND);
    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-   // Calculate rotation
-   const xRotation = Math.cos(-Player.instance.rotation + Math.PI / 2);
-   const yRotation = Math.sin(-Player.instance.rotation + Math.PI / 2);
-
-   const snapInfo = calculateSnapID(placeableEntityInfo);
+   const snapInfo = calculateSnapInfo(placeableEntityInfo);
    const placePosition = calculatePlacePosition(placeableEntityInfo, snapInfo);
    const placeRotation = calculatePlaceRotation(snapInfo);
 
@@ -134,7 +130,7 @@ export function renderGhostPlaceableItem(): void {
    const programPreTranslationUniformLocation = gl.getUniformLocation(program, "u_preTranslation")!;
    gl.uniform1f(programPreTranslationUniformLocation, SETTINGS.ITEM_PLACE_DISTANCE + placeableEntityInfo.placeOffset);
    gl.uniform1f(zoomUniformLocation, Camera.zoom);
-   gl.uniform2f(programPlayerRotationUniformLocation, xRotation, yRotation);
+   gl.uniform2f(programPlayerRotationUniformLocation, Math.sin(Player.instance.rotation), Math.cos(Player.instance.rotation));
    gl.uniform2f(programHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
    gl.uniform1f(programCanPlaceUniformLocation, canPlaceItem(placePosition, placeRotation, playerSelectedItem) ? 1 : 0);
 
