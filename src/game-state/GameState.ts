@@ -32,6 +32,8 @@ abstract class GameState {
 
    public offhandInventory: Inventory = { itemSlots: {}, width: 1, height: 1, inventoryName: "offhand" };
 
+   public hotbarCrossbowLoadProgressRecord: Record<number, number> = {};
+
    public resetFlags(): void {
       this.mainAction = TribeMemberAction.none;
       this.offhandAction = TribeMemberAction.none;

@@ -18,6 +18,8 @@ class SpearProjectile extends GameObject {
             0
          )
       );
+
+      playSound("spear-throw.mp3", 0.4, this.position.x, this.position.y);
    }
 
    public onDie(): void {

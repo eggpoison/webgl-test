@@ -9,7 +9,6 @@ import HeldItem from "./HeldItem";
 import DeathScreen from "./DeathScreen";
 import BackpackInventoryMenu from "./inventories/BackpackInventory";
 import InteractInventory from "./inventories/InteractInventory";
-import ChargeMeter from "./ChargeMeter";
 import TechTree from "./TechTree";
 import StructureShapingMenu from "./StructureShapingMenu";
 import TechInfocard from "./TechInfocard";
@@ -78,7 +77,6 @@ const GameScreen = () => {
       <InteractInventory />
 
       <HeldItem />
-      <ChargeMeter />
 
       {isDead ? (
          <DeathScreen />

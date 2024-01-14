@@ -12,7 +12,6 @@ import Tombstone from "./entities/Tombstone";
 import Board from "./Board";
 import { definiteGameState, latencyGameState } from "./game-state/game-states";
 import Game from "./Game";
-import { showChargeMeter } from "./components/game/ChargeMeter";
 import Barrel from "./entities/Barrel";
 import Campfire from "./entities/Campfire";
 import Furnace from "./entities/Furnace";
@@ -270,6 +269,7 @@ const attemptAttack = (): void => {
 
 interface SelectedItemInfo {
    readonly item: Item;
+   readonly itemSlot: number;
    readonly isOffhand: boolean;
 }
 
@@ -278,6 +278,7 @@ const getSelectedItemInfo = (): SelectedItemInfo | null => {
       const item = definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot];
       return {
          item: item,
+         itemSlot: latencyGameState.selectedHotbarItemSlot,
          isOffhand: false
       };
    }
@@ -286,6 +287,7 @@ const getSelectedItemInfo = (): SelectedItemInfo | null => {
       const item = definiteGameState.offhandInventory.itemSlots[1];
       return {
          item: item,
+         itemSlot: 1,
          isOffhand: true
       };
    }
@@ -310,7 +312,7 @@ const createItemUseListeners = (): void => {
 
          const selectedItemInfo = getSelectedItemInfo();
          if (selectedItemInfo !== null) {
-            itemRightClickDown(selectedItemInfo.item, selectedItemInfo.isOffhand);
+            itemRightClickDown(selectedItemInfo.item, selectedItemInfo.isOffhand, selectedItemInfo.itemSlot);
          }
          
          attemptStructureSelect();
@@ -847,7 +849,7 @@ export function canPlaceItem(placePosition: Point, placeRotation: number, item: 
    return true;
 }
 
-const itemRightClickDown = (item: Item, isOffhand: boolean): void => {
+const itemRightClickDown = (item: Item, isOffhand: boolean, itemSlot: number): void => {
    const itemCategory = ITEM_TYPE_RECORD[item.type];
    switch (itemCategory) {
       case "food": {
@@ -869,14 +871,22 @@ const itemRightClickDown = (item: Item, isOffhand: boolean): void => {
          break;
       }
       case "crossbow": {
-         if (isOffhand) {
-            latencyGameState.offhandAction = TribeMemberAction.loadCrossbow;
-            Player.instance!.leftAction = TribeMemberAction.loadCrossbow;
-            Player.instance!.leftLastActionTicks = Board.ticks;
+         if (!definiteGameState.hotbarCrossbowLoadProgressRecord.hasOwnProperty(itemSlot) || definiteGameState.hotbarCrossbowLoadProgressRecord[itemSlot] < 1) {
+            // Start loading crossbow
+            if (isOffhand) {
+               latencyGameState.offhandAction = TribeMemberAction.loadCrossbow;
+               Player.instance!.leftAction = TribeMemberAction.loadCrossbow;
+               Player.instance!.leftLastActionTicks = Board.ticks;
+            } else {
+               latencyGameState.mainAction = TribeMemberAction.loadCrossbow;
+               Player.instance!.rightAction = TribeMemberAction.loadCrossbow;
+               Player.instance!.rightLastActionTicks = Board.ticks;
+            }
+            playSound("crossbow-load.mp3", 0.4, Player.instance!.position.x, Player.instance!.position.y);
          } else {
-            latencyGameState.mainAction = TribeMemberAction.loadCrossbow;
-            Player.instance!.rightAction = TribeMemberAction.loadCrossbow;
-            Player.instance!.rightLastActionTicks = Board.ticks;
+            // Fire crossbow
+            Client.sendItemUsePacket();
+            playSound("crossbow-fire.mp3", 0.4, Player.instance!.position.x, Player.instance!.position.y);
          }
          break;
       }
@@ -891,8 +901,6 @@ const itemRightClickDown = (item: Item, isOffhand: boolean): void => {
             Player.instance!.rightLastActionTicks = Board.ticks;
          }
          
-         showChargeMeter();
-
          playSound("bow-charge.mp3", 0.4, Player.instance!.position.x, Player.instance!.position.y);
 
          break;
@@ -1000,7 +1008,7 @@ const itemRightClickUp = (item: Item, isOffhand: boolean): void => {
                break;
             }
             case ItemType.reinforced_bow: {
-               playSound("reinforced-bow-fire.mp3", 0.15, Player.instance!.position.x, Player.instance!.position.y);
+               playSound("reinforced-bow-fire.mp3", 0.2, Player.instance!.position.x, Player.instance!.position.y);
                break;
             }
             case ItemType.ice_bow: {
@@ -1036,7 +1044,7 @@ const selectItemSlot = (itemSlot: number): void => {
    if (definiteGameState.hotbar.itemSlots.hasOwnProperty(itemSlot)) {
       selectItem(definiteGameState.hotbar.itemSlots[itemSlot]);
       if (rightMouseButtonIsPressed && ITEM_TYPE_RECORD[definiteGameState.hotbar.itemSlots[itemSlot].type] === "bow") {
-         itemRightClickDown(definiteGameState.hotbar.itemSlots[itemSlot], false);
+         itemRightClickDown(definiteGameState.hotbar.itemSlots[itemSlot], false, itemSlot);
       }
    }
 

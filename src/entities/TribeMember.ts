@@ -225,6 +225,15 @@ abstract class TribeMember extends Entity {
       "miscellaneous/ice-bow-charge-4.png",
       "miscellaneous/ice-bow-charge-5.png"
    ];
+
+   private static readonly CROSSBOW_CHARGE_TEXTURE_SOURCES: ReadonlyArray<string> = [
+      "items/large/crossbow.png",
+      "miscellaneous/crossbow-charge-1.png",
+      "miscellaneous/crossbow-charge-2.png",
+      "miscellaneous/crossbow-charge-3.png",
+      "miscellaneous/crossbow-charge-4.png",
+      "miscellaneous/crossbow-charge-5.png"
+   ];
    
    public readonly tribeType: TribeType;
 
@@ -240,6 +249,7 @@ abstract class TribeMember extends Entity {
    private readonly handRenderParts: ReadonlyArray<RenderPart>;
    /** First element is right active item, second is left */
    private activeItemRenderParts: ReadonlyArray<RenderPart>;
+   private arrowRenderPart: RenderPart | null = null;
 
    public rightActiveItem: ItemData | null;
    public leftActiveItem: ItemData | null;
@@ -479,7 +489,7 @@ abstract class TribeMember extends Entity {
 
          // Both hands are used when charging a bow
          const otherAction = i === 0 ? this.leftAction : this.rightAction;
-         if (otherAction === TribeMemberAction.chargeBow) {
+         if (otherAction === TribeMemberAction.chargeBow || otherAction === TribeMemberAction.loadCrossbow) {
             this.handDirections[i] = TribeMember.HAND_CHARGING_BOW_DIRECTION * handMult;
             this.handOffsets[i] = TribeMember.HAND_CHARGING_BOW_OFFSET;
             this.handRotations[i] = TribeMember.HAND_CHARGING_BOW_DIRECTION * handMult;
@@ -505,10 +515,18 @@ abstract class TribeMember extends Entity {
 
          const action = i === 0 ? this.rightAction : this.leftAction;
          switch (action) {
+            // Bow charge animation
+            case TribeMemberAction.loadCrossbow:
             case TribeMemberAction.chargeBow: {
-               // 
-               // Bow charge animation
-               // 
+               if (this.arrowRenderPart !== null) {
+                  let chargeProgress = secondsSinceLastAction;
+                  if (chargeProgress > 1) {
+                     chargeProgress = 1;
+                  }
+
+                  const pullbackOffset = lerp(10, -8, chargeProgress);
+                  this.arrowRenderPart.offset = new Point(pullbackOffset, pullbackOffset);
+               }
 
                this.handDirections[i] = TribeMember.HAND_CHARGING_BOW_DIRECTION * handMult;
                this.handOffsets[i] = TribeMember.HAND_CHARGING_BOW_OFFSET;
@@ -894,24 +912,43 @@ abstract class TribeMember extends Entity {
 
    public updateBowChargeTexture(): void {
       // Change the bow charging texture based on the charge progress
-      if (this.rightAction === TribeMemberAction.chargeBow && this.rightActiveItem !== null) {
+      if ((this.rightAction === TribeMemberAction.chargeBow || this.rightAction === TribeMemberAction.loadCrossbow) && this.rightActiveItem !== null) {
          const bowInfo = ITEM_INFO_RECORD[this.rightActiveItem.type] as BowItemInfo;
          
          const secondsSinceLastAction = getSecondsSinceLastAction(this.rightLastActionTicks);
          const chargeProgress = secondsSinceLastAction / (bowInfo.shotCooldownTicks / SETTINGS.TPS);
 
          let textureSourceArray: ReadonlyArray<string>;
+         let arrowWidth: number;
+         let arrowHeight: number;
+         let arrowTextureSource: string;
          switch (this.rightActiveItem.type) {
             case ItemType.wooden_bow: {
                textureSourceArray = TribeMember.BOW_CHARGE_TEXTURE_SOURCES;
+               arrowWidth = 20;
+               arrowHeight = 64;
+               arrowTextureSource = "projectiles/wooden-arrow.png";
                break;
             }
             case ItemType.reinforced_bow: {
                textureSourceArray = TribeMember.REINFORCED_BOW_CHARGE_TEXTURE_SOURCES;
+               arrowWidth = 20;
+               arrowHeight = 64;
+               arrowTextureSource = "projectiles/wooden-arrow.png";
                break;
             }
             case ItemType.ice_bow: {
                textureSourceArray = TribeMember.ICE_BOW_CHARGE_TEXTURE_SOURCES;
+               arrowWidth = 20;
+               arrowHeight = 56;
+               arrowTextureSource = "projectiles/ice-arrow.png";
+               break;
+            }
+            case ItemType.crossbow: {
+               textureSourceArray = TribeMember.CROSSBOW_CHARGE_TEXTURE_SOURCES;
+               arrowWidth = 20;
+               arrowHeight = 64;
+               arrowTextureSource = "projectiles/wooden-arrow.png";
                break;
             }
             default: {
@@ -919,11 +956,26 @@ abstract class TribeMember extends Entity {
             }
          }
 
+         if (this.arrowRenderPart === null) {
+            console.log("create");
+            this.arrowRenderPart = new RenderPart(
+               this.activeItemRenderParts[0],
+               arrowWidth, arrowHeight,
+               getGameObjectTextureArrayIndex(arrowTextureSource),
+               this.activeItemRenderParts[0].zIndex + 0.1,
+               Math.PI/4
+            );
+            this.attachRenderPart(this.arrowRenderPart);
+         }
+
          let textureIdx = Math.floor(chargeProgress * textureSourceArray.length);
          if (textureIdx >= textureSourceArray.length) {
             textureIdx = textureSourceArray.length - 1;
          }
          this.activeItemRenderParts[0].textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureArrayIndex(textureSourceArray[textureIdx])];
+      } else if (this.arrowRenderPart !== null) {
+         this.removeRenderPart(this.arrowRenderPart);
+         this.arrowRenderPart = null;
       }
    }
 }

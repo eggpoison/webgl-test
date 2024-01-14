@@ -225,6 +225,8 @@ abstract class Client {
       if (gameDataPacket.pickedUpItem) {
          playSound("item-pickup.mp3", 0.3, Camera.position.x, Camera.position.y);
       }
+
+      definiteGameState.hotbarCrossbowLoadProgressRecord = gameDataPacket.hotbarCrossbowLoadProgressRecord;
    }
 
    private static updateTribe(tribeData: TribeData): void {
