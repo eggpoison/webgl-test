@@ -1,4 +1,4 @@
-import { ArmourItemType, BowItemInfo, EntityData, EntityType, HitData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, Inventory, InventoryData, ItemData, ItemType, Point, SETTINGS, TileType, ToolItemInfo, TribeMemberAction, TribeType, lerp, randFloat, randInt, randItem } from "webgl-test-shared";
+import { ArmourItemType, BowItemInfo, EntityData, EntityType, GloveItemType, HitData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, Inventory, InventoryData, ItemData, ItemType, Point, SETTINGS, TileType, ToolItemInfo, TribeMemberAction, TribeType, lerp, randFloat, randInt, randItem } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 import CLIENT_ITEM_INFO_RECORD from "../client-item-info";
@@ -62,7 +62,6 @@ interface ArmourInfo {
 }
 
 const ARMOUR_WORN_INFO: Record<ArmourItemType, ArmourInfo> = {
-   // @Incomplete
    [ItemType.leather_armour]: {
       textureSource: "armour/leather-armour.png",
       pixelSize: 64
@@ -82,6 +81,17 @@ const ARMOUR_WORN_INFO: Record<ArmourItemType, ArmourInfo> = {
    [ItemType.fishlord_suit]: {
       textureSource: "armour/fishlord-suit.png",
       pixelSize: 80
+   }
+};
+interface GloveInfo {
+   readonly textureSource: string;
+   readonly pixelSize: number;
+}
+
+const GLOVE_WORN_INFO: Record<GloveItemType, GloveInfo> = {
+   [ItemType.gathering_gloves]: {
+      textureSource: "gloves/gathering-gloves.png",
+      pixelSize: 64
    }
 };
 
@@ -131,6 +141,34 @@ const createFrostShieldBreakParticle = (positionX: number, positionY: number): v
 const GOBLIN_HURT_SOUNDS: ReadonlyArray<AudioFilePath> = ["goblin-hurt-1.mp3", "goblin-hurt-2.mp3", "goblin-hurt-3.mp3", "goblin-hurt-4.mp3", "goblin-hurt-5.mp3"];
 const GOBLIN_DIE_SOUNDS: ReadonlyArray<AudioFilePath> = ["goblin-die-1.mp3", "goblin-die-2.mp3", "goblin-die-3.mp3", "goblin-die-4.mp3"];
 
+export function getSecondsSinceLastAction(lastActionTicks: number): number {
+   const ticksSinceLastAction = Board.ticks - lastActionTicks;
+   let secondsSinceLastAction = ticksSinceLastAction / SETTINGS.TPS;
+
+   // Account for frame progress
+   secondsSinceLastAction += getFrameProgress() / SETTINGS.TPS;
+
+   return secondsSinceLastAction;
+}
+
+const getArmourTextureIndex = (armourType: ItemType): number => {
+   if (!ARMOUR_WORN_INFO.hasOwnProperty(armourType)) {
+      console.warn("Can't find armour info for item type '" + ItemType[armourType] + ".");
+      return -1;
+   }
+
+   return getGameObjectTextureArrayIndex(ARMOUR_WORN_INFO[armourType as ArmourItemType].textureSource);
+}
+
+const getGloveTextureIndex = (gloveType: ItemType): number => {
+   if (!GLOVE_WORN_INFO.hasOwnProperty(gloveType)) {
+      console.warn("Can't find glove info for item type '" + ItemType[gloveType] + ".");
+      return -1;
+   }
+
+   return getGameObjectTextureArrayIndex(GLOVE_WORN_INFO[gloveType as GloveItemType].textureSource);
+}
+
 abstract class TribeMember extends Entity {
    protected static readonly RADIUS = 32;
 
@@ -169,12 +207,31 @@ abstract class TribeMember extends Entity {
       "miscellaneous/wooden-bow-charge-4.png",
       "miscellaneous/wooden-bow-charge-5.png"
    ];
+
+   private static readonly REINFORCED_BOW_CHARGE_TEXTURE_SOURCES: ReadonlyArray<string> = [
+      "items/large/reinforced-bow.png",
+      "miscellaneous/reinforced-bow-charge-1.png",
+      "miscellaneous/reinforced-bow-charge-2.png",
+      "miscellaneous/reinforced-bow-charge-3.png",
+      "miscellaneous/reinforced-bow-charge-4.png",
+      "miscellaneous/reinforced-bow-charge-5.png"
+   ];
+
+   private static readonly ICE_BOW_CHARGE_TEXTURE_SOURCES: ReadonlyArray<string> = [
+      "items/large/ice-bow.png",
+      "miscellaneous/ice-bow-charge-1.png",
+      "miscellaneous/ice-bow-charge-2.png",
+      "miscellaneous/ice-bow-charge-3.png",
+      "miscellaneous/ice-bow-charge-4.png",
+      "miscellaneous/ice-bow-charge-5.png"
+   ];
    
    public readonly tribeType: TribeType;
 
    public tribeID: number | null;
 
    private armourRenderPart: RenderPart | null = null;
+   private gloveRenderPart: RenderPart | null = null;
 
    public armourSlotInventory: Inventory;
    public backpackSlotInventory: Inventory;
@@ -419,6 +476,15 @@ abstract class TribeMember extends Entity {
 
       for (let i = 0; i < 2; i++) {
          const handMult = i === 1 ? -1 : 1;
+
+         // Both hands are used when charging a bow
+         const otherAction = i === 0 ? this.leftAction : this.rightAction;
+         if (otherAction === TribeMemberAction.chargeBow) {
+            this.handDirections[i] = TribeMember.HAND_CHARGING_BOW_DIRECTION * handMult;
+            this.handOffsets[i] = TribeMember.HAND_CHARGING_BOW_OFFSET;
+            this.handRotations[i] = TribeMember.HAND_CHARGING_BOW_DIRECTION * handMult;
+            continue;
+         }
          
          let direction = Math.PI / 4;
    
@@ -435,7 +501,7 @@ abstract class TribeMember extends Entity {
          let shouldShowActiveItemRenderPart = true;
 
          const lastActionTicks = i === 0 ? this.rightLastActionTicks : this.leftLastActionTicks;
-         const secondsSinceLastAction = this.getSecondsSinceLastAction(lastActionTicks);
+         const secondsSinceLastAction = getSecondsSinceLastAction(lastActionTicks);
 
          const action = i === 0 ? this.rightAction : this.leftAction;
          switch (action) {
@@ -448,7 +514,7 @@ abstract class TribeMember extends Entity {
                this.handOffsets[i] = TribeMember.HAND_CHARGING_BOW_OFFSET;
                this.handRotations[i] = TribeMember.HAND_CHARGING_BOW_DIRECTION * handMult;
 
-               this.activeItemOffsets[i] = 22 + itemSize / 2;
+               this.activeItemOffsets[i] = 18 + itemSize / 2;
                this.activeItemDirections[i] = 0;
                this.activeItemRotations[i] = -Math.PI / 4;
                break;
@@ -559,10 +625,16 @@ abstract class TribeMember extends Entity {
                   this.handDirections[i] = direction * handMult;
                   this.handOffsets[i] = this.handRestingOffset;
                   this.handRotations[i] = attackHandRotation * handMult;
-      
-                  this.activeItemOffsets[i] = TribeMember.ITEM_RESTING_OFFSET + itemSize/2;
-                  this.activeItemDirections[i] = (direction - Math.PI/14) * handMult;
-                  this.activeItemRotations[i] = attackHandRotation * handMult;
+
+                  if (activeItem !== null && ITEM_TYPE_RECORD[activeItem.type] === "bow") {
+                     this.activeItemOffsets[i] = TribeMember.ITEM_RESTING_OFFSET + 7;
+                     this.activeItemDirections[i] = direction * handMult;
+                     this.activeItemRotations[i] = (attackHandRotation + Math.PI/10) * handMult;
+                  } else {
+                     this.activeItemOffsets[i] = TribeMember.ITEM_RESTING_OFFSET + itemSize/2;
+                     this.activeItemDirections[i] = (direction - Math.PI/14) * handMult;
+                     this.activeItemRotations[i] = attackHandRotation * handMult;
+                  }
                }
                break;
             }
@@ -571,16 +643,6 @@ abstract class TribeMember extends Entity {
          const activeItem = i === 0 ? this.rightActiveItem : this.leftActiveItem;
          this.updateActiveItemRenderPart(i, activeItem, shouldShowActiveItemRenderPart);
       }
-   }
-
-   public getSecondsSinceLastAction(lastActionTicks: number): number {
-      const ticksSinceLastAction = Board.ticks - lastActionTicks;
-      let secondsSinceLastAction = ticksSinceLastAction / SETTINGS.TPS;
-
-      // Account for frame progress
-      secondsSinceLastAction += getFrameProgress() / SETTINGS.TPS;
-
-      return secondsSinceLastAction;
    }
 
    private calculateAttackProgress(activeItemType: ItemType | null, secondsSinceLastAttack: number): number {
@@ -720,15 +782,6 @@ abstract class TribeMember extends Entity {
       return null;
    }
 
-   private getArmourTextureIndex(armourType: ItemType): number {
-      if (!ARMOUR_WORN_INFO.hasOwnProperty(armourType)) {
-         console.warn("Can't find armour info for item type '" + ItemType[armourType] + ".");
-         return -1;
-      }
-
-      return getGameObjectTextureArrayIndex(ARMOUR_WORN_INFO[armourType as ArmourItemType].textureSource);
-   }
-
    private getArmourPixelSize(armourType: ItemType): number {
       if (!ARMOUR_WORN_INFO.hasOwnProperty(armourType)) {
          console.warn("Can't find armour info for item type '" + ItemType[armourType] + ".");
@@ -746,13 +799,13 @@ abstract class TribeMember extends Entity {
                this,
                pixelSize,
                pixelSize,
-               this.getArmourTextureIndex(armourType),
+               getArmourTextureIndex(armourType),
                3,
                0
             );
             this.attachRenderPart(this.armourRenderPart);
          } else {
-            this.armourRenderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[this.getArmourTextureIndex(armourType)];
+            this.armourRenderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getArmourTextureIndex(armourType)];
          }
       } else if (this.armourRenderPart !== null) {
          this.removeRenderPart(this.armourRenderPart);
@@ -760,9 +813,32 @@ abstract class TribeMember extends Entity {
       }
    }
 
+   // @Cleanup: Copy and paste from armour
+   public updateGloveRenderPart(gloveType: ItemType | null): void {
+      if (gloveType !== null) {
+         if (this.gloveRenderPart === null) {
+            const pixelSize = 5 * 4;
+            this.gloveRenderPart = new RenderPart(
+               this.handRenderParts[0],
+               pixelSize,
+               pixelSize,
+               getGloveTextureIndex(gloveType),
+               1.1,
+               0
+            );
+            this.attachRenderPart(this.gloveRenderPart);
+         } else {
+            this.gloveRenderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGloveTextureIndex(gloveType)];
+         }
+      } else if (this.gloveRenderPart !== null) {
+         this.removeRenderPart(this.gloveRenderPart);
+         this.gloveRenderPart = null;
+      }
+   }
+
    private showLargeItemTexture(itemType: ItemType): boolean {
       const itemTypeInfo = ITEM_TYPE_RECORD[itemType];
-      return itemTypeInfo === "axe" || itemTypeInfo === "sword" || itemTypeInfo === "bow" || itemTypeInfo === "pickaxe" || itemTypeInfo === "spear" || itemTypeInfo === "hammer" || itemTypeInfo === "battleaxe";
+      return itemTypeInfo === "axe" || itemTypeInfo === "sword" || itemTypeInfo === "bow" || itemTypeInfo === "pickaxe" || itemTypeInfo === "spear" || itemTypeInfo === "hammer" || itemTypeInfo === "battleaxe" || itemTypeInfo === "crossbow";
    }
 
    private getActiveItemSize(activeItemType: ItemType) {
@@ -818,17 +894,36 @@ abstract class TribeMember extends Entity {
 
    public updateBowChargeTexture(): void {
       // Change the bow charging texture based on the charge progress
-      if (this.leftAction === TribeMemberAction.chargeBow && this.leftActiveItem !== null) {
-         const bowInfo = ITEM_INFO_RECORD[this.leftActiveItem.type] as BowItemInfo;
+      if (this.rightAction === TribeMemberAction.chargeBow && this.rightActiveItem !== null) {
+         const bowInfo = ITEM_INFO_RECORD[this.rightActiveItem.type] as BowItemInfo;
          
-         const secondsSinceLastAction = this.getSecondsSinceLastAction(this.rightLastActionTicks);
+         const secondsSinceLastAction = getSecondsSinceLastAction(this.rightLastActionTicks);
          const chargeProgress = secondsSinceLastAction / (bowInfo.shotCooldownTicks / SETTINGS.TPS);
 
-         let textureIdx = Math.floor(chargeProgress * TribeMember.BOW_CHARGE_TEXTURE_SOURCES.length);
-         if (textureIdx >= TribeMember.BOW_CHARGE_TEXTURE_SOURCES.length) {
-            textureIdx = TribeMember.BOW_CHARGE_TEXTURE_SOURCES.length - 1;
+         let textureSourceArray: ReadonlyArray<string>;
+         switch (this.rightActiveItem.type) {
+            case ItemType.wooden_bow: {
+               textureSourceArray = TribeMember.BOW_CHARGE_TEXTURE_SOURCES;
+               break;
+            }
+            case ItemType.reinforced_bow: {
+               textureSourceArray = TribeMember.REINFORCED_BOW_CHARGE_TEXTURE_SOURCES;
+               break;
+            }
+            case ItemType.ice_bow: {
+               textureSourceArray = TribeMember.ICE_BOW_CHARGE_TEXTURE_SOURCES;
+               break;
+            }
+            default: {
+               throw new Error("Not bow");
+            }
          }
-         this.activeItemRenderParts[0].textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureArrayIndex(TribeMember.BOW_CHARGE_TEXTURE_SOURCES[textureIdx])];
+
+         let textureIdx = Math.floor(chargeProgress * textureSourceArray.length);
+         if (textureIdx >= textureSourceArray.length) {
+            textureIdx = textureSourceArray.length - 1;
+         }
+         this.activeItemRenderParts[0].textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureArrayIndex(textureSourceArray[textureIdx])];
       }
    }
 }

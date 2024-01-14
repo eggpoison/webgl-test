@@ -41,6 +41,15 @@ const Hotbar = () => {
       leftClickItemSlot(e, Player.instance!.id, definiteGameState.armourSlot, 1);
    }, []);
 
+   const clickGloveItemSlot = useCallback((e: MouseEvent): void => {
+      // Don't click it the player is holding a non-armour item
+      if (definiteGameState.heldItemSlot.itemSlots.hasOwnProperty(1) && ITEM_TYPE_RECORD[definiteGameState.heldItemSlot.itemSlots[1].type] !== "glove") {
+         return;
+      }
+
+      leftClickItemSlot(e, Player.instance!.id, definiteGameState.gloveSlot, 1);
+   }, []);
+
    const clickOffhandItemSlot = useCallback((e: MouseEvent): void => {
       leftClickItemSlot(e, Player.instance!.id, definiteGameState.offhandInventory, 1);
    }, []);
@@ -108,6 +117,15 @@ const Hotbar = () => {
       armourItemSlotElement = <ItemSlot onClick={clickArmourItemSlot} isSelected={false} picturedItemImageSrc={imageSrc} />
    }
 
+   let gloveItemSlotElement: JSX.Element;
+   if (definiteGameState.gloveSlot.itemSlots.hasOwnProperty(1)) {
+      const image = getItemTypeImage(definiteGameState.gloveSlot.itemSlots[1].type);
+      gloveItemSlotElement = <ItemSlot onClick={clickGloveItemSlot} isSelected={false} picturedItemImageSrc={image} itemCount={definiteGameState.gloveSlot.itemSlots[1].count} />
+   } else {
+      const imageSrc = require("../../../images/miscellaneous/glove-wireframe.png");
+      gloveItemSlotElement = <ItemSlot onClick={clickGloveItemSlot} isSelected={false} picturedItemImageSrc={imageSrc} />
+   }
+
    return <div id="hotbar">
       <div className="flex-container">
          <div className={"inventory" + (Game.tribe.tribeType !== TribeType.barbarians ? " hidden" : "")}>
@@ -123,6 +141,7 @@ const Hotbar = () => {
          <div className="inventory">
             {backpackSlotElement}
             {armourItemSlotElement}
+            {gloveItemSlotElement}
          </div>
       </div>
    </div>;

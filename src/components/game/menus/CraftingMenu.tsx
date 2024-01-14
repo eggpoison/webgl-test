@@ -8,6 +8,7 @@ import { leftClickItemSlot } from "../../../inventory-manipulation";
 import Player from "../../../entities/Player";
 import { definiteGameState } from "../../../game-state/game-states";
 import Game from "../../../Game";
+import { playSound } from "../../../sound";
 
 const CRAFTING_STATION_ICON_TEXTURE_SOURCES: Record<CraftingStation, string> = {
    [CraftingStation.workbench]: CLIENT_ITEM_INFO_RECORD[ItemType.workbench].textureSource,
@@ -172,6 +173,7 @@ const CraftingMenu = () => {
          return;
       }
 
+      playSound("craft.mp3", 0.25, Player.instance!.position.x, Player.instance!.position.y);
       Client.sendCraftingPacket(selectedRecipeIndex.current);
    }, [selectedRecipe, craftableRecipes]);
 

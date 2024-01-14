@@ -1,4 +1,4 @@
-import { Point, SETTINGS, pointIsInRectangle, randFloat, rotateXAroundOrigin, rotateYAroundOrigin } from "webgl-test-shared";
+import { EntityType, Point, SETTINGS, pointIsInRectangle, randFloat, rotateXAroundOrigin, rotateYAroundOrigin } from "webgl-test-shared";
 import Player from "./entities/Player";
 import Board from "./Board";
 import Game from "./Game";
@@ -58,9 +58,14 @@ export function getResearchNode(): ResearchNode | null {
 
 export function updateActiveResearchBench(): void {
    const selectedStructureID = getSelectedStructureID();
-   if (selectedStructureID === -1) {
+   if (selectedStructureID === -1 || !Board.entityRecord.hasOwnProperty(selectedStructureID)) {
       currentResearchNode = null;
       currentBenchID = -1;
+      return;
+   }
+
+   const structure = Board.entityRecord[selectedStructureID];
+   if (structure.type !== EntityType.researchBench) {
       return;
    }
 

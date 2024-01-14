@@ -206,6 +206,27 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       name: "Wooden Bow",
       description: ""
    },
+   [ItemType.reinforced_bow]: {
+      entityTextureSource: "items/small/reinforced-bow.png",
+      textureSource: "items/large/reinforced-bow.png",
+      toolTextureSource: "items/large/reinforced-bow.png",
+      name: "Reinforced Bow",
+      description: ""
+   },
+   [ItemType.ice_bow]: {
+      entityTextureSource: "items/small/ice-bow.png",
+      textureSource: "items/large/ice-bow.png",
+      toolTextureSource: "items/large/ice-bow.png",
+      name: "Ice Bow",
+      description: ""
+   },
+   [ItemType.crossbow]: {
+      entityTextureSource: "items/small/crossbow.png",
+      textureSource: "items/large/crossbow.png",
+      toolTextureSource: "items/large/crossbow.png",
+      name: "Crossbow",
+      description: ""
+   },
    [ItemType.meat_suit]: {
       entityTextureSource: "items/small/meat-suit.png",
       textureSource: "items/large/meat-suit.png",
@@ -272,7 +293,7 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
    // @Incomplete
    [ItemType.gathering_gloves]: {
       entityTextureSource: "items/small/fishlord-suit.png",
-      textureSource: "items/large/fishlord-suit.png",
+      textureSource: "items/large/gathering-gloves.png",
       toolTextureSource: "",
       name: "Fish Suit",
       description: ""
@@ -342,6 +363,13 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       name: "Living Rock",
       description: ""
    },
+   [ItemType.planter_box]: {
+      entityTextureSource: "items/small/planter-box.png",
+      textureSource: "items/large/planter-box.png",
+      toolTextureSource: "",
+      name: "Planter Box",
+      description: ""
+   }
 };
 
 export function getItemTypeImage(itemType: ItemType): any {

@@ -12,6 +12,7 @@ import { Tile } from "./Tile";
 import { definiteGameState, latencyGameState } from "./game-state/game-states";
 import { hideChargeMeter, showChargeMeter, updateChargeMeterProgress } from "./components/game/ChargeMeter";
 import Player from "./entities/Player";
+import { getSecondsSinceLastAction } from "./entities/TribeMember";
 
 export let cursorX: number | null = null;
 export let cursorY: number | null = null;
@@ -135,7 +136,7 @@ export function updateChargeMeter(): void {
    const selectedItem = definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot];
    const bowInfo = ITEM_INFO_RECORD[selectedItem.type] as BowItemInfo;
 
-   const secondsSinceLastAction = Player.instance.getSecondsSinceLastAction(Player.instance.rightLastActionTicks);
+   const secondsSinceLastAction = getSecondsSinceLastAction(Player.instance.rightLastActionTicks);
    let chargeProgress = secondsSinceLastAction / (bowInfo.shotCooldownTicks / SETTINGS.TPS);
    if (chargeProgress > 1) {
       chargeProgress = 1;

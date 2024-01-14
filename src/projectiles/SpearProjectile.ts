@@ -2,6 +2,7 @@ import { EntityType, Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import GameObject from "../GameObject";
+import { playSound } from "../sound";
 
 class SpearProjectile extends GameObject {
    constructor(position: Point, id: number, renderDepth: number) {
@@ -17,6 +18,10 @@ class SpearProjectile extends GameObject {
             0
          )
       );
+   }
+
+   public onDie(): void {
+      playSound("spear-hit.mp3", 0.4, this.position.x, this.position.y);
    }
 }
 

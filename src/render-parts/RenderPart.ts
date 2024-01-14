@@ -1,6 +1,4 @@
 import { Point, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
-import GameObject from "../GameObject";
-import Board from "../Board";
 import { GAME_OBJECT_TEXTURE_SLOT_INDEXES, getTextureHeight, getTextureWidth } from "../texture-atlases/entity-texture-atlas";
 
 /** A thing which is able to hold render parts */
@@ -10,60 +8,6 @@ export abstract class RenderObject {
 
    public rotation = 0;
    public totalRotation = 0;
-   
-   public attachRenderPart(renderPart: RenderPart): void {
-      const root = this.getRoot();
-
-      // Don't add if already attached
-      if (root.allRenderParts.indexOf(renderPart) !== -1) {
-         return;
-      }
-
-      Board.numVisibleRenderParts++;
-      
-      // Add to the root array
-      let idx = root.allRenderParts.length;
-      for (let i = 0; i < root.allRenderParts.length; i++) {
-         const currentRenderPart = root.allRenderParts[i];
-         if (renderPart.zIndex < currentRenderPart.zIndex) {
-            idx = i;
-            break;
-         }
-      }
-      root.allRenderParts.splice(idx, 0, renderPart);
-
-      // @Incomplete: add children
-   }
-
-   public removeRenderPart(renderPart: RenderPart): void {
-      // Don't remove if already removed
-      const root = this.getRoot();
-      const idx = root.allRenderParts.indexOf(renderPart);
-      if (idx === -1) {
-         return;
-      }
-      
-      Board.numVisibleRenderParts--;
-      
-      // Remove from the root array
-      root.allRenderParts.splice(root.allRenderParts.indexOf(renderPart), 1);
-
-      // @Incomplete: remove children
-   }
-
-   public renderPartIsAttached(renderPart: RenderPart): boolean {
-      const root = this.getRoot();
-      return root.allRenderParts.indexOf(renderPart) !== -1;
-   }
-
-   private getRoot(): GameObject {
-      // @Cleanup: don't use hasOwnProperty, don't use as, maybe remove while loop
-      let root: RenderObject = this;
-      while (root.hasOwnProperty("parent")) {
-         root = (root as RenderPart).parent;
-      }
-      return root as GameObject;
-   }
 }
 
 class RenderPart extends RenderObject {
@@ -143,7 +87,7 @@ class RenderPart extends RenderObject {
       // Recalculate rotation
       // @Incomplete: Will this work for deeply nested render parts?
       if (this.inheritParentRotation) {
-         this.totalRotation = this.parent.rotation;
+         this.totalRotation = this.parent.rotation + this.parent.totalRotation;
       } else {
          this.totalRotation = 0;
       }

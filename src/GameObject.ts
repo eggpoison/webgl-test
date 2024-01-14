@@ -1,4 +1,4 @@
-import { EntityData, EntityType, HitData, HitFlags, Point, RIVER_STEPPING_STONE_SIZES, I_TPS, SETTINGS, StatusEffectData, TILE_FRICTIONS, TILE_MOVE_SPEED_MULTIPLIERS, TileType, distance } from "webgl-test-shared";
+import { EntityData, EntityType, HitData, HitFlags, Point, RIVER_STEPPING_STONE_SIZES, I_TPS, SETTINGS, StatusEffectData, TILE_FRICTIONS, TILE_MOVE_SPEED_MULTIPLIERS, TileType, distance, StatusEffect } from "webgl-test-shared";
 import RenderPart, { RenderObject } from "./render-parts/RenderPart";
 import Chunk from "./Chunk";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
@@ -9,7 +9,7 @@ import Entity from "./entities/Entity";
 import { createSlimePoolParticle, createWaterSplashParticle } from "./generic-particles";
 import Camera from "./Camera";
 
-let frameProgress: number;
+let frameProgress = Number.EPSILON;
 export function setFrameProgress(newFrameProgress: number): void {
    frameProgress = newFrameProgress;
 }
@@ -70,6 +70,57 @@ abstract class GameObject extends RenderObject {
 
       // Note: The chunks are calculated outside of the constructor immediately after the game object is created
       // so that all constructors have time to run
+   }
+   
+   public attachRenderPart(renderPart: RenderPart): void {
+      // Don't add if already attached
+      if (this.allRenderParts.indexOf(renderPart) !== -1) {
+         return;
+      }
+
+      Board.numVisibleRenderParts++;
+      
+      // Add to the root array
+      let idx = this.allRenderParts.length;
+      for (let i = 0; i < this.allRenderParts.length; i++) {
+         const currentRenderPart = this.allRenderParts[i];
+         if (renderPart.zIndex < currentRenderPart.zIndex) {
+            idx = i;
+            break;
+         }
+      }
+      this.allRenderParts.splice(idx, 0, renderPart);
+   }
+
+   public removeRenderPart(renderPart: RenderPart): void {
+      // Don't remove if already removed
+      const idx = this.allRenderParts.indexOf(renderPart);
+      if (idx === -1) {
+         return;
+      }
+      
+      Board.numVisibleRenderParts--;
+      
+      // Remove from the root array
+      this.allRenderParts.splice(this.allRenderParts.indexOf(renderPart), 1);
+   }
+
+   public hasStatusEffect(type: StatusEffect): boolean {
+      for (const statusEffect of this.statusEffects) {
+         if (statusEffect.type === type) {
+            return true;
+         }
+      }
+      return false;
+   }
+
+   public getStatusEffect(type: StatusEffect): StatusEffectData | null {
+      for (const statusEffect of this.statusEffects) {
+         if (statusEffect.type === type) {
+            return statusEffect;
+         }
+      }
+      return null;
    }
 
    public addCircularHitbox(hitbox: CircularHitbox): void {
@@ -313,7 +364,6 @@ abstract class GameObject extends RenderObject {
 
          let hitbox: RectangularHitbox;
          if (existingHitboxIndex === -1) {
-            console.log("-2");
             hitbox = new RectangularHitbox(hitboxData.mass, hitboxData.width, hitboxData.height, hitboxData.localID);
             hitbox.offset.x = hitboxData.offsetX;
             hitbox.offset.y = hitboxData.offsetY;

@@ -27,6 +27,7 @@ import WarriorHut from "./entities/WarriorHut";
 import GameObject from "./GameObject";
 import { attemptStructureSelect } from "./structure-selection";
 import { serialiseItem } from "./inventory-manipulation";
+import { playSound } from "./sound";
 
 /** Acceleration of the player while moving without any modifiers. */
 const PLAYER_ACCELERATION = 700;
@@ -129,6 +130,13 @@ export const PLACEABLE_ENTITY_INFO_RECORD: Record<PlaceableItemType, PlaceableEn
       height: 64,
       placeOffset: 32,
       hitboxType: PlaceableItemHitboxType.rectangular
+   },
+   [ItemType.planter_box]: {
+      textureSource: "planter-box/planter-box.png",
+      width: 80,
+      height: 80,
+      placeOffset: 40,
+      hitboxType: PlaceableItemHitboxType.rectangular
    }
 };
 
@@ -160,29 +168,29 @@ const updateAttackCooldowns = (inventory: Inventory, attackCooldowns: Record<num
 }
 
 export function updatePlayerItems(): void {
-   if (definiteGameState.hotbar === null) {
+   if (definiteGameState.hotbar === null || Player.instance === null) {
       return;
    }
 
    // @Cleanup: destroy this.
-   if (Player.instance !== null) {
-      if (definiteGameState.hotbar.itemSlots.hasOwnProperty(latencyGameState.selectedHotbarItemSlot)) {
-         Player.instance.rightActiveItem = serialiseItem(definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot]);
-         Player.instance.updateBowChargeTexture();
-      } else {
-         Player.instance.rightActiveItem = null;
-      }
-      if (definiteGameState.offhandInventory.itemSlots.hasOwnProperty(1)) {
-         Player.instance.leftActiveItem = serialiseItem(definiteGameState.offhandInventory.itemSlots[1]);
-      } else {
-         Player.instance.leftActiveItem = null;
-      }
-      Player.instance.updateHands();
 
-      Player.instance.updateArmourRenderPart(definiteGameState.armourSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.armourSlot.itemSlots[1].type : null);
-
-      Player.instance!.updateBowChargeTexture();
+   if (definiteGameState.hotbar.itemSlots.hasOwnProperty(latencyGameState.selectedHotbarItemSlot)) {
+      Player.instance.rightActiveItem = serialiseItem(definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot]);
+      Player.instance.updateBowChargeTexture();
+   } else {
+      Player.instance.rightActiveItem = null;
    }
+   if (definiteGameState.offhandInventory.itemSlots.hasOwnProperty(1)) {
+      Player.instance.leftActiveItem = serialiseItem(definiteGameState.offhandInventory.itemSlots[1]);
+   } else {
+      Player.instance.leftActiveItem = null;
+   }
+   Player.instance.updateHands();
+
+   Player.instance.updateArmourRenderPart(definiteGameState.armourSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.armourSlot.itemSlots[1].type : null);
+   Player.instance.updateGloveRenderPart(definiteGameState.gloveSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.gloveSlot.itemSlots[1].type : null);
+
+   Player.instance!.updateBowChargeTexture();
 
    updateAttackCooldowns(definiteGameState.hotbar, hotbarItemAttackCooldowns);
    updateAttackCooldowns(definiteGameState.offhandInventory, offhandItemAttackCooldowns);
@@ -229,7 +237,7 @@ const attemptInventoryAttack = (inventory: Inventory): boolean => {
          
          // Reset the attack cooldown of the weapon
          const itemTypeInfo = ITEM_TYPE_RECORD[selectedItem.type];
-         if (itemTypeInfo === "axe" || itemTypeInfo === "pickaxe" || itemTypeInfo === "sword" || itemTypeInfo === "spear" || itemTypeInfo === "hammer" || itemTypeInfo === "battleaxe") {
+         if (itemTypeInfo === "axe" || itemTypeInfo === "pickaxe" || itemTypeInfo === "sword" || itemTypeInfo === "spear" || itemTypeInfo === "hammer" || itemTypeInfo === "battleaxe" || itemTypeInfo === "crossbow") {
             const itemInfo = ITEM_INFO_RECORD[selectedItem.type];
             attackCooldowns[selectedItemSlot] = (itemInfo as ToolItemInfo).attackCooldown;
          } else {
@@ -352,6 +360,13 @@ const createHotbarKeyListeners = (): void => {
    for (let itemSlot = 1; itemSlot <= SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE; itemSlot++) {
       addKeyListener(itemSlot.toString(), () => selectItemSlot(itemSlot));
    }
+   addKeyListener("!", () => selectItemSlot(1));
+   addKeyListener("@", () => selectItemSlot(2));
+   addKeyListener("#", () => selectItemSlot(3));
+   addKeyListener("$", () => selectItemSlot(4));
+   addKeyListener("%", () => selectItemSlot(5));
+   addKeyListener("^", () => selectItemSlot(6));
+   addKeyListener("&", () => selectItemSlot(7));
 }
 
 const throwHeldItem = (): void => {
@@ -853,6 +868,18 @@ const itemRightClickDown = (item: Item, isOffhand: boolean): void => {
 
          break;
       }
+      case "crossbow": {
+         if (isOffhand) {
+            latencyGameState.offhandAction = TribeMemberAction.loadCrossbow;
+            Player.instance!.leftAction = TribeMemberAction.loadCrossbow;
+            Player.instance!.leftLastActionTicks = Board.ticks;
+         } else {
+            latencyGameState.mainAction = TribeMemberAction.loadCrossbow;
+            Player.instance!.rightAction = TribeMemberAction.loadCrossbow;
+            Player.instance!.rightLastActionTicks = Board.ticks;
+         }
+         break;
+      }
       case "bow": {
          if (isOffhand) {
             latencyGameState.offhandAction = TribeMemberAction.chargeBow;
@@ -865,6 +892,8 @@ const itemRightClickDown = (item: Item, isOffhand: boolean): void => {
          }
          
          showChargeMeter();
+
+         playSound("bow-charge.mp3", 0.4, Player.instance!.position.x, Player.instance!.position.y);
 
          break;
       }
@@ -900,9 +929,9 @@ const itemRightClickDown = (item: Item, isOffhand: boolean): void => {
          }
          break;
       }
+      case "glove":
       case "armour": {
          Client.sendItemUsePacket();
-
          break;
       }
       case "placeable": {
@@ -941,14 +970,14 @@ const itemRightClickUp = (item: Item, isOffhand: boolean): void => {
          if (itemCategory === "battleaxe") {
             if (isOffhand) {
                // If an axe is already thrown, don't throw another
-               if (Player.instance!.leftThrownBattleaxeItemID !== -1) {
+               if (Player.instance!.leftThrownBattleaxeItemID !== -1 || Player.instance!.leftAction !== TribeMemberAction.chargeBattleaxe) {
                   break;
                }
                Player.instance!.leftThrownBattleaxeItemID = item.id;
                Hotbar_updateLeftThrownBattleaxeItemID(item.id);
             } else {
                // If an axe is already thrown, don't throw another
-               if (Player.instance!.rightThrownBattleaxeItemID !== -1) {
+               if (Player.instance!.rightThrownBattleaxeItemID !== -1 || Player.instance!.rightAction !== TribeMemberAction.chargeBattleaxe) {
                   break;
                }
                Player.instance!.rightThrownBattleaxeItemID = item.id;
@@ -965,6 +994,31 @@ const itemRightClickUp = (item: Item, isOffhand: boolean): void => {
             Player.instance!.rightAction = TribeMemberAction.none;
          }
 
+         switch (item.type) {
+            case ItemType.wooden_bow: {
+               playSound("bow-fire.mp3", 0.4, Player.instance!.position.x, Player.instance!.position.y);
+               break;
+            }
+            case ItemType.reinforced_bow: {
+               playSound("reinforced-bow-fire.mp3", 0.15, Player.instance!.position.x, Player.instance!.position.y);
+               break;
+            }
+            case ItemType.ice_bow: {
+               playSound("ice-bow-fire.mp3", 0.4, Player.instance!.position.x, Player.instance!.position.y);
+               break;
+            }
+         }
+
+         break;
+      }
+      case "crossbow": {
+         if (isOffhand) {
+            latencyGameState.offhandAction = TribeMemberAction.none;
+            Player.instance!.leftAction = TribeMemberAction.none;
+         } else {
+            latencyGameState.mainAction = TribeMemberAction.none;
+            Player.instance!.rightAction = TribeMemberAction.none;
+         }
          break;
       }
    }

@@ -1,4 +1,4 @@
-import { EntityType, ITEM_TYPE_RECORD, Point, SETTINGS, circleAndRectangleDoIntersectWithOffset, circulesDoIntersectWithOffset, getTechByID } from "webgl-test-shared";
+import { EntityType, ITEM_TYPE_RECORD, Point, SETTINGS, circleAndRectangleDoIntersectWithOffset, circlesDoIntersectWithOffset, getTechByID } from "webgl-test-shared";
 import { getPlayerSelectedItem } from "./entities/Player";
 import Game from "./Game";
 import Board from "./Board";
@@ -19,7 +19,7 @@ const hitboxIsWithinRange = (position: Point, hitbox: Hitbox, visionRange: numbe
    if (hitbox.hasOwnProperty("radius")) {
       // Circular hitbox
       // @Speed
-      return circulesDoIntersectWithOffset(position, new Point(0, 0), visionRange, hitbox.position, hitbox.offset, (hitbox as CircularHitbox).radius);
+      return circlesDoIntersectWithOffset(position.x, position.y, visionRange, hitbox.position.x, hitbox.position.y, (hitbox as CircularHitbox).radius);
    } else {
       // Rectangular hitbox
       // @Speed

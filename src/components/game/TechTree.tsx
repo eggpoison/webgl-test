@@ -6,6 +6,7 @@ import Game from "../../Game";
 import Client from "../../client/Client";
 import { setTechTreeX, setTechTreeY, setTechTreeZoom, techIsDirectlyAccessible } from "../../rendering/tech-tree-rendering";
 import OPTIONS from "../../options";
+import Player from "../../entities/Player";
 
 const boundsScale = 16;
 
@@ -182,10 +183,6 @@ const TechTree = () => {
          updateTechTree = (): void => {
             forceUpdate();
          }
-
-         closeTechTree = () => {
-            changeVisibility.current!();
-         }
          
          // @Memleak: Remove the listener when the component is unmounted
          addKeyListener("p", () => {
@@ -200,12 +197,21 @@ const TechTree = () => {
    }, []);
 
    useEffect(() => {
+      closeTechTree = () => {
+         if (isVisible) {
+            changeVisibility.current!();
+         }
+      }
+
       techTreeIsOpen = (): boolean => {
          return isVisible;
       }
 
       changeVisibility.current = (): void => {
          if (!isVisible) {
+            if (Player.instance === null) {
+               return;
+            }
             document.getElementById("tech-tree-canvas")!.classList.remove("hidden");
          } else {
             document.getElementById("tech-tree-canvas")!.classList.add("hidden");

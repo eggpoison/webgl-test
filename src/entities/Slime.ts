@@ -77,10 +77,10 @@ class Slime extends Entity {
       );
       this.eyeRenderPart.offset = Point.fromVectorForm(Slime.EYE_OFFSETS[this.size], eyeRotation);
       this.eyeRenderPart.inheritParentRotation = false;
-      this.bodyRenderPart.attachRenderPart(this.eyeRenderPart);
+      this.attachRenderPart(this.eyeRenderPart);
 
       // Shading
-      this.bodyRenderPart.attachRenderPart(new RenderPart(
+      this.attachRenderPart(new RenderPart(
          this,
          spriteSize,
          spriteSize,

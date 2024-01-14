@@ -68,7 +68,7 @@ class Cactus extends Entity {
             2 * Math.PI * Math.random()
          )
          limbRenderPart.offset = Point.fromVectorForm(Cactus.RADIUS, limbInfo.direction);
-         baseRenderPart.attachRenderPart(limbRenderPart);
+         this.attachRenderPart(limbRenderPart);
          
          if (typeof limbInfo.flower !== "undefined") {
             const flowerInfo = limbInfo.flower;
@@ -82,7 +82,7 @@ class Cactus extends Entity {
                flowerInfo.rotation
             )
             flowerRenderPart.offset = Point.fromVectorForm(flowerInfo.height, flowerInfo.direction);
-            limbRenderPart.attachRenderPart(flowerRenderPart);
+            this.attachRenderPart(flowerRenderPart);
          }
       }
    }

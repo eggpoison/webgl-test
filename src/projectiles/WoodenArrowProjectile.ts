@@ -5,6 +5,7 @@ import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import GameObject from "../GameObject";
+import { playSound } from "../sound";
 
 class WoodenArrowProjectile extends GameObject {
    private static readonly HEIGHT = 64;
@@ -91,6 +92,10 @@ class WoodenArrowProjectile extends GameObject {
          )
          Board.lowMonocolourParticles.push(particle);
       }
+   }
+
+   public onDie(): void {
+      playSound("arrow-hit.mp3", 0.4, this.position.x, this.position.y);
    }
 }
 

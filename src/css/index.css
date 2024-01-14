@@ -15,7 +15,7 @@ body {
    --item-image-size: 3rem;
 }
 
-#canvas-wrapper canvas {
+#canvas-wrapper > canvas {
    position: absolute;
 }
 

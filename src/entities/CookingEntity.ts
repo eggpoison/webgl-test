@@ -23,8 +23,12 @@ abstract class CookingEntity extends Entity {
 
       this.light = {
          position: this.position,
+         intensity: 1,
          strength: 3.5,
-         radius: 40
+         radius: 40,
+         r: 0,
+         g: 0,
+         b: 0
       };
       Board.lights.push(this.light);
    }

@@ -109,7 +109,7 @@ const LoadingScreen = ({ username, tribeType, initialStatus }: LoadingScreenProp
                Player.setInstancePlayer(player);
                Board.addEntity(player);
 
-               Client.unloadGameDataPacket(initialGameDataPacket);
+               Client.processGameDataPacket(initialGameDataPacket);
 
                Game.start();
 

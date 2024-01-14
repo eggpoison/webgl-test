@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TribeData, InventoryData, TribeMemberAction, TechID, Inventory, TRIBE_INFO_RECORD, StructureShapeType, randInt } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TribeData, InventoryData, TribeMemberAction, TechID, Inventory, TRIBE_INFO_RECORD, StructureShapeType, randInt, StatusEffect } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -27,6 +27,7 @@ import { createDamageNumber } from "../text-canvas";
 import { playSound } from "../sound";
 import { closeTechTree, updateTechTree } from "../components/game/TechTree";
 import { TechInfocard_setSelectedTech } from "../components/game/TechInfocard";
+import { getSecondsSinceLastAction } from "../entities/TribeMember";
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -176,7 +177,7 @@ abstract class Client {
       return tiles;
    }
 
-   public static unloadGameDataPacket(gameDataPacket: GameDataPacket): void {
+   public static processGameDataPacket(gameDataPacket: GameDataPacket): void {
       Board.ticks = gameDataPacket.serverTicks;
       updateDebugScreenTicks(gameDataPacket.serverTicks);
       Board.time = gameDataPacket.serverTime;
@@ -260,14 +261,24 @@ abstract class Client {
                Board.entityRecord[entityData.id].updateFromData(entityData);
             } else {
                const player = (Board.entityRecord[entityData.id] as Player);
+
+               const rightAction = entityData.clientArgs[6] as TribeMemberAction;
+               if (rightAction === TribeMemberAction.chargeBattleaxe || rightAction === TribeMemberAction.chargeBow || rightAction === TribeMemberAction.chargeSpear) {
+                  const rightLastActionTicks = entityData.clientArgs[8] as TribeMemberAction;
+                  const secondsSinceLastAction = getSecondsSinceLastAction(rightLastActionTicks);
+                  const previousSecondsSinceLastAction = getSecondsSinceLastAction(rightLastActionTicks + 1);
+                  // @Incomplete: timing isn't right for bows
+                  if (secondsSinceLastAction >= 3 && previousSecondsSinceLastAction < 3) {
+                     playSound("charge-ready.mp3", 0.4, player.position.x, player.position.y);
+                  }
+               }
+
                player.genericUpdateFromData(entityData as unknown as EntityData<EntityType.player>);
 
                // @Cleanup @Hack
-
                const rightThrownBattleaxeItemID = entityData.clientArgs[9];
                player.rightThrownBattleaxeItemID = rightThrownBattleaxeItemID;
                Hotbar_updateRightThrownBattleaxeItemID(rightThrownBattleaxeItemID);
-
                const leftThrownBattleaxeItemID = entityData.clientArgs[14] as number;
                player.leftThrownBattleaxeItemID = leftThrownBattleaxeItemID;
                Hotbar_updateLeftThrownBattleaxeItemID(leftThrownBattleaxeItemID);
@@ -277,7 +288,19 @@ abstract class Client {
             //    Board.entityRecord[entityData.id].createHealingParticles(entityData.amountHealed);
             // }
 
-            Board.entityRecord[entityData.id].statusEffects = entityData.statusEffects;
+            const entity = Board.entityRecord[entityData.id];
+            for (const statusEffectData of entityData.statusEffects) {
+               if (!entity.hasStatusEffect(statusEffectData.type)) {
+                  switch (statusEffectData.type) {
+                     case StatusEffect.freezing: {
+                        playSound("freezing.mp3", 0.4, entity.position.x, entity.position.y)
+                        break;
+                     }
+                  }
+               }
+            }
+            
+            entity.statusEffects = entityData.statusEffects;
          } else {
             this.createEntityFromData(entityData);
          }
@@ -347,6 +370,10 @@ abstract class Client {
       const armourSlotHasChanged = this.inventoryHasChanged(definiteGameState.armourSlot, playerInventoryData.armourSlot);
       updateInventoryFromData(definiteGameState.armourSlot, playerInventoryData.armourSlot);
 
+      // Glove slot
+      const gloveSlotHasChanged = this.inventoryHasChanged(definiteGameState.gloveSlot, playerInventoryData.gloveSlot);
+      updateInventoryFromData(definiteGameState.gloveSlot, playerInventoryData.gloveSlot);
+
       // Offhand
       const offhandHasChanged = this.inventoryHasChanged(definiteGameState.offhandInventory, playerInventoryData.offhand);
       updateInventoryFromData(definiteGameState.offhandInventory, playerInventoryData.offhand);
@@ -355,7 +382,7 @@ abstract class Client {
          updateInventoryFromData(Player.instance.armourSlotInventory, playerInventoryData.armourSlot);
       }
 
-      if (hotbarHasChanged || backpackSlotHasChanged || armourSlotHasChanged || offhandHasChanged) {
+      if (hotbarHasChanged || backpackSlotHasChanged || armourSlotHasChanged || offhandHasChanged || gloveSlotHasChanged) {
          Hotbar_update();
       }
       if (backpackHasChanged || backpackSlotHasChanged) {
@@ -613,6 +640,8 @@ abstract class Client {
    }
 
    private static killPlayer(): void {
+      Player.instance!.onDie();
+
       // Remove the player from the game
       Board.removeGameObject(Player.instance!);
       delete Board.entityRecord[Player.instance!.id];

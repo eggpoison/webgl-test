@@ -114,7 +114,16 @@ const AUDIO_FILE_PATHS = [
    "door-close.mp3",
    "slime-spit.mp3",
    "acid-burn.mp3",
-   "air-whoosh.mp3"
+   "air-whoosh.mp3",
+   "charge-ready.mp3",
+   "arrow-hit.mp3",
+   "spear-hit.mp3",
+   "bow-fire.mp3",
+   "reinforced-bow-fire.mp3",
+   "freezing.mp3",
+   "ice-bow-fire.mp3",
+   "bow-charge.mp3",
+   "craft.mp3"
 ] as const;
 
 export type AudioFilePath = typeof AUDIO_FILE_PATHS[number];

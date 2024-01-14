@@ -1,4 +1,4 @@
-import { EntityType, SETTINGS, StatusEffectData, StatusEffect, lerp, randFloat, randItem, customTickIntervalHasPassed, TileType, randInt } from "webgl-test-shared";
+import { EntityType, SETTINGS, StatusEffect, lerp, randFloat, randItem, customTickIntervalHasPassed, TileType, randInt } from "webgl-test-shared";
 import GameObject from "../GameObject";
 import Particle from "../Particle";
 import Board, { Light } from "../Board";
@@ -167,8 +167,12 @@ abstract class Entity extends GameObject {
          if (this.burningLight === null) {
             this.burningLight = {
                position: this.position,
+               intensity: 1,
                strength: 2.5,
-               radius: 0.3
+               radius: 0.3,
+               r: 0,
+               g: 0,
+               b: 0
             };
             Board.lights.push(this.burningLight);
          }
@@ -279,24 +283,6 @@ abstract class Entity extends GameObject {
             createBloodParticle(Math.random() < 0.5 ? BloodParticleSize.small : BloodParticleSize.large, spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(40, 60), true);
          }
       }
-   }
-
-   public hasStatusEffect(type: StatusEffect): boolean {
-      for (const statusEffect of this.statusEffects) {
-         if (statusEffect.type === type) {
-            return true;
-         }
-      }
-      return false;
-   }
-
-   private getStatusEffect(type: StatusEffect): StatusEffectData | null {
-      for (const statusEffect of this.statusEffects) {
-         if (statusEffect.type === type) {
-            return statusEffect;
-         }
-      }
-      return null;
    }
 
    public createHealingParticles(amountHealed: number): void {

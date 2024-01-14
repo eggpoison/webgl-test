@@ -87,22 +87,35 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/warrior-hut/warrior-hut.png",
    "entities/warrior-hut/warrior-hut-door.png",
    "entities/barrel/barrel.png",
+   // @Robustness: Shouldn't have to hard-code armours and gloves
    "armour/deepfrost-armour.png",
    "armour/frost-armour.png",
    "armour/meat-suit.png",
    "armour/fishlord-suit.png",
    "armour/leather-armour.png",
+   "gloves/gathering-gloves.png",
    "entities/campfire/campfire.png",
    "entities/furnace/furnace.png",
    "entities/krumblid/krumblid.png",
    "entities/frozen-yeti/frozen-yeti.png",
    "entities/frozen-yeti/frozen-yeti-head.png",
    "entities/frozen-yeti/frozen-yeti-paw.png",
+   // @Robustness: Hardcoded
    "miscellaneous/wooden-bow-charge-1.png",
    "miscellaneous/wooden-bow-charge-2.png",
    "miscellaneous/wooden-bow-charge-3.png",
    "miscellaneous/wooden-bow-charge-4.png",
    "miscellaneous/wooden-bow-charge-5.png",
+   "miscellaneous/reinforced-bow-charge-1.png",
+   "miscellaneous/reinforced-bow-charge-2.png",
+   "miscellaneous/reinforced-bow-charge-3.png",
+   "miscellaneous/reinforced-bow-charge-4.png",
+   "miscellaneous/reinforced-bow-charge-5.png",
+   "miscellaneous/ice-bow-charge-1.png",
+   "miscellaneous/ice-bow-charge-2.png",
+   "miscellaneous/ice-bow-charge-3.png",
+   "miscellaneous/ice-bow-charge-4.png",
+   "miscellaneous/ice-bow-charge-5.png",
    "projectiles/rock-spike-small.png",
    "projectiles/rock-spike-medium.png",
    "projectiles/rock-spike-large.png",
@@ -131,7 +144,10 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/golem/golem-body-large.png",
    "entities/golem/golem-body-medium.png",
    "entities/golem/golem-body-small.png",
-   "entities/golem/eye.png"
+   "entities/golem/golem-body-massive.png",
+   "entities/golem/eye.png",
+   "entities/planter-box/planter-box.png",
+   "projectiles/ice-arrow.png"
 ];
 
 // Add item textures

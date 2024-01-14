@@ -82,6 +82,7 @@ abstract class Game {
    private static isPaused: boolean = false;
 
    /** If the game has recevied up-to-date game data from the server. Set to false when paused */
+   // @Cleanup: We might be able to remove this whole system by just always sending player data
    public static isSynced: boolean = true;
 
    public static hasInitialised = false;
@@ -244,11 +245,11 @@ abstract class Game {
                if (this.numSkippablePackets === 0 && this.queuedPackets.length >= 2) {
                   // Unload all the packets so that things like hits taken aren't skipped
                   for (let i = 0; i < this.queuedPackets.length; i++) {
-                     Client.unloadGameDataPacket(this.queuedPackets[i]);
+                     Client.processGameDataPacket(this.queuedPackets[i]);
                   }
                   this.queuedPackets.splice(0, this.queuedPackets.length);
                } else {
-                  Client.unloadGameDataPacket(this.queuedPackets[0]);
+                  Client.processGameDataPacket(this.queuedPackets[0]);
                   this.queuedPackets.splice(0, 1);
                   this.numSkippablePackets--;
                   

@@ -24,9 +24,13 @@ interface TickCallback {
 
 export interface Light {
    readonly position: Point;
+   readonly intensity: number;
    /** Number of tiles which the light extends from */
    strength: number;
    radius: number;
+   r: number;
+   g: number;
+   b: number;
 }
 
 abstract class Board {
