@@ -77,7 +77,7 @@ class RectangularHitbox extends Hitbox {
    public isColliding(otherHitbox: CircularHitbox | RectangularHitbox): boolean {
       if (otherHitbox.hasOwnProperty("radius")) {
          // Circular
-         return circleAndRectangleDoIntersect(otherHitbox.position, (otherHitbox as CircularHitbox).radius, this.position, this.width, this.height, this.rotation + this.externalRotation);
+         return circleAndRectangleDoIntersect(otherHitbox.position.x, otherHitbox.position.y, (otherHitbox as CircularHitbox).radius, this.position.x, this.position.y, this.width, this.height, this.rotation + this.externalRotation);
       } else {
          // Rectangular
 
@@ -87,7 +87,7 @@ class RectangularHitbox extends Hitbox {
             return false;
          }
          
-         return rectanglePointsDoIntersect(this.vertexPositions, (otherHitbox as RectangularHitbox).vertexPositions, this.sideAxes, (otherHitbox as RectangularHitbox).sideAxes);
+         return rectanglePointsDoIntersect(this.vertexPositions, (otherHitbox as RectangularHitbox).vertexPositions, 0, 0, 0, 0, this.sideAxes, (otherHitbox as RectangularHitbox).sideAxes);
       }
    }
 }

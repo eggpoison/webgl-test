@@ -27,7 +27,6 @@ import { createDamageNumber } from "../text-canvas";
 import { playSound } from "../sound";
 import { closeTechTree, updateTechTree } from "../components/game/TechTree";
 import { TechInfocard_setSelectedTech } from "../components/game/TechInfocard";
-import { getSecondsSinceLastAction } from "../entities/TribeMember";
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -263,17 +262,6 @@ abstract class Client {
                Board.entityRecord[entityData.id].updateFromData(entityData);
             } else {
                const player = (Board.entityRecord[entityData.id] as Player);
-
-               const rightAction = entityData.clientArgs[6] as TribeMemberAction;
-               if (rightAction === TribeMemberAction.chargeBattleaxe || rightAction === TribeMemberAction.chargeBow || rightAction === TribeMemberAction.chargeSpear) {
-                  const rightLastActionTicks = entityData.clientArgs[8] as TribeMemberAction;
-                  const secondsSinceLastAction = getSecondsSinceLastAction(rightLastActionTicks);
-                  const previousSecondsSinceLastAction = getSecondsSinceLastAction(rightLastActionTicks + 1);
-                  // @Incomplete: timing isn't right for bows
-                  if (secondsSinceLastAction >= 3 && previousSecondsSinceLastAction < 3) {
-                     playSound("charge-ready.mp3", 0.4, player.position.x, player.position.y);
-                  }
-               }
 
                player.genericUpdateFromData(entityData as unknown as EntityData<EntityType.player>);
 

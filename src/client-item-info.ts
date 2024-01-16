@@ -295,7 +295,7 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       entityTextureSource: "items/small/fishlord-suit.png",
       textureSource: "items/large/gathering-gloves.png",
       toolTextureSource: "",
-      name: "Fish Suit",
+      name: "Gathering Gloves",
       description: ""
    },
    // @Incomplete
@@ -303,7 +303,7 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       entityTextureSource: "items/small/fishlord-suit.png",
       textureSource: "items/large/fishlord-suit.png",
       toolTextureSource: "items/large/fishlord-suit.png",
-      name: "Fish Suit",
+      name: "The Throngler",
       description: ""
    },
    // @Incomplete

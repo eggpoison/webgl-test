@@ -411,15 +411,15 @@ export function createWoodSpeckParticle(originX: number, originY: number, offset
    Board.lowMonocolourParticles.push(particle);
 }
 
-export function createRockSpeckParticle(originX: number, originY: number, offset: number): void {
+export function createRockSpeckParticle(originX: number, originY: number, offset: number, velocityAddX: number, velocityAddY: number): void {
    const spawnOffsetDirection = 2 * Math.PI * Math.random();
    const spawnPositionX = originX + offset * Math.sin(spawnOffsetDirection);
    const spawnPositionY = originY + offset * Math.cos(spawnOffsetDirection);
 
    const velocityMagnitude = randFloat(60, 80);
    const velocityDirection = spawnOffsetDirection + randFloat(1, -1);
-   const velocityX = velocityMagnitude * Math.sin(velocityDirection);
-   const velocityY = velocityMagnitude * Math.cos(velocityDirection);
+   const velocityX = velocityAddX + velocityMagnitude * Math.sin(velocityDirection);
+   const velocityY = velocityAddY + velocityMagnitude * Math.cos(velocityDirection);
 
    const lifetime = randFloat(0.3, 0.5);
    
@@ -440,7 +440,7 @@ export function createRockSpeckParticle(originX: number, originY: number, offset
       spawnPositionX, spawnPositionY,
       velocityX, velocityY,
       0, 0,
-      velocityMagnitude / lifetime / 1.5,
+      velocityMagnitude / lifetime / 1.1,
       2 * Math.PI * Math.random(),
       angularVelocity,
       0,

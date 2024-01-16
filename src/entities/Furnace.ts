@@ -72,7 +72,7 @@ class Furnace extends CookingEntity {
       }
 
       for (let i = 0; i < 5; i++) {
-         createRockSpeckParticle(this.position.x, this.position.y, Furnace.SIZE / 2);
+         createRockSpeckParticle(this.position.x, this.position.y, Furnace.SIZE / 2, 0, 0);
       }
    }
 
@@ -85,7 +85,7 @@ class Furnace extends CookingEntity {
       }
 
       for (let i = 0; i < 5; i++) {
-         createRockSpeckParticle(this.position.x, this.position.y, Furnace.SIZE / 2);
+         createRockSpeckParticle(this.position.x, this.position.y, Furnace.SIZE / 2, 0, 0);
       }
    }
 }

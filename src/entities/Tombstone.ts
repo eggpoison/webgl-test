@@ -71,7 +71,7 @@ class Tombstone extends Entity {
          const spawnPositionX = this.position.x + randFloat(-Tombstone.HITBOX_WIDTH/2, Tombstone.HITBOX_WIDTH/2);
          const spawnPositionY = this.position.y + randFloat(-Tombstone.HITBOX_HEIGHT/2, Tombstone.HITBOX_HEIGHT/2);
 
-         createRockSpeckParticle(spawnPositionX, spawnPositionY, 0);
+         createRockSpeckParticle(spawnPositionX, spawnPositionY, 0, 0, 0);
       }
 
       playSound(randItem(ROCK_HIT_SOUNDS), 0.3, this.position.x, this.position.y);
@@ -89,7 +89,7 @@ class Tombstone extends Entity {
          const spawnPositionX = this.position.x + randFloat(-Tombstone.HITBOX_WIDTH/2, Tombstone.HITBOX_WIDTH/2);
          const spawnPositionY = this.position.y + randFloat(-Tombstone.HITBOX_HEIGHT/2, Tombstone.HITBOX_HEIGHT/2);
 
-         createRockSpeckParticle(spawnPositionX, spawnPositionY, 0);
+         createRockSpeckParticle(spawnPositionX, spawnPositionY, 0, 0, 0);
       }
 
       playSound(randItem(ROCK_DESTROY_SOUNDS), 0.4, this.position.x, this.position.y);

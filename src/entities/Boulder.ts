@@ -43,7 +43,7 @@ class Boulder extends Entity {
       }
 
       for (let i = 0; i < 5; i++) {
-         createRockSpeckParticle(this.position.x, this.position.y, Boulder.RADIUS);
+         createRockSpeckParticle(this.position.x, this.position.y, Boulder.RADIUS, 0, 0);
       }
 
       playSound(randItem(ROCK_HIT_SOUNDS), 0.3, this.position.x, this.position.y);
@@ -60,7 +60,7 @@ class Boulder extends Entity {
       }
 
       for (let i = 0; i < 5; i++) {
-         createRockSpeckParticle(this.position.x, this.position.y, Boulder.RADIUS);
+         createRockSpeckParticle(this.position.x, this.position.y, Boulder.RADIUS, 0, 0);
       }
 
       playSound(randItem(ROCK_DESTROY_SOUNDS), 0.4, this.position.x, this.position.y);

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { addKeyListener } from "../../keyboard-input";
-import { ItemType, TECHS, TechID, TechInfo } from "webgl-test-shared";
-import CLIENT_ITEM_INFO_RECORD from "../../client-item-info";
+import { ItemType, TECHS, TechID, TechInfo, getTechByID, getTechRequiredForItem } from "webgl-test-shared";
+import CLIENT_ITEM_INFO_RECORD, { getItemTypeImage } from "../../client-item-info";
 import Game from "../../Game";
 import Client from "../../client/Client";
 import { setTechTreeX, setTechTreeY, setTechTreeZoom, techIsDirectlyAccessible } from "../../rendering/tech-tree-rendering";
@@ -70,22 +70,38 @@ const TechTooltip = ({ techInfo, techPositionX, techPositionY, zoom }: TechToolt
    }, [techInfo.positionX, techInfo.positionY, techPositionX, techPositionY, zoom]);
 
    const studyProgress = Game.tribe.techTreeUnlockProgress[techInfo.id]?.studyProgress || 0;
+   const isUnlocked = Game.tribe.hasUnlockedTech(techInfo.id);
    
    return <div ref={tooltipRef} id="tech-tooltip">
       <div className="container">
+         
          <h2 className="name">{techInfo.name}</h2>
          <p className="description">{techInfo.description}</p>
 
-         <div className="details">
-            <ul>
-               {Object.entries(techInfo.researchItemRequirements).map(([itemType, itemAmount], i) => {
-                  const itemProgress = (Game.tribe.techTreeUnlockProgress[techInfo.id]?.itemProgress.hasOwnProperty(itemType)) ? Game.tribe.techTreeUnlockProgress[techInfo.id]!.itemProgress[itemType as unknown as ItemType] : 0;
-                  return <li key={i}>{CLIENT_ITEM_INFO_RECORD[itemType as unknown as ItemType].name} {itemProgress}/{itemAmount}</li>
-               })}
-            </ul>
-         </div>
+         <p className="unlocks">Unlocks {techInfo.unlockedItems.map((itemType, i) => {
+            const techRequired = getTechRequiredForItem(itemType);
+            if (techRequired === null || !getTechByID(techRequired).blacklistedTribes.includes(Game.tribe.tribeType)) {
+               return <><b>{CLIENT_ITEM_INFO_RECORD[itemType].name}</b>{i <= techInfo.unlockedItems.length - 2 ? ", " : "."}</>
+            } else {
+               return undefined;
+            }
+         })}</p>
+
+         <ul>
+            {Object.entries(techInfo.researchItemRequirements).map(([itemType, itemAmount], i) => {
+               const itemProgress = (Game.tribe.techTreeUnlockProgress[techInfo.id]?.itemProgress.hasOwnProperty(itemType)) ? Game.tribe.techTreeUnlockProgress[techInfo.id]!.itemProgress[itemType as unknown as ItemType] : 0;
+               return <li key={i}>
+                  <img src={getItemTypeImage(itemType as unknown as ItemType)} alt="" />
+                  <span>{CLIENT_ITEM_INFO_RECORD[itemType as unknown as ItemType].name} {itemProgress}/{itemAmount}</span>
+               </li>
+            })}
+         </ul>
+
+         {!isUnlocked && techInfo.conflictingTechs.length > 0 ? (
+            <p className="conflict">Conflicts with {getTechByID(techInfo.conflictingTechs[0]).name}</p>
+         ) : null}
       </div>
-      {studyProgress < techInfo.researchStudyRequirements ? (
+      {techInfo.researchStudyRequirements > 0 && !isUnlocked ? (
          <div className="container research-container">
             <div className="study-progress-bar-bg">
                <p className="research-progress">{studyProgress}/{techInfo.researchStudyRequirements}</p>
@@ -118,23 +134,19 @@ const Tech = ({ techInfo, positionX, positionY, zoom }: TechProps) => {
    const isSelected = Game.tribe.selectedTechID === techInfo.id;
 
    const onMouseEnter = (): void => {
+      hoveredTechID = techInfo.id;
       setIsHovered(true);
    }
 
    const onMouseLeave = (): void => {
+      hoveredTechID = null;
       setIsHovered(false);
    }
 
    const onClick = (): void => {
-      if (isUnlocked) {
-         return;
+      if (!isUnlocked) {
+         researchTech(techInfo.id);
       }
-
-      if (techInfo.researchStudyRequirements > 0) {
-         selectTech(techInfo.id);
-      }
-
-      researchTech(techInfo.id);
    }
 
    const onRightClick = (e: MouseEvent): void => {
@@ -162,7 +174,7 @@ const Tech = ({ techInfo, positionX, positionY, zoom }: TechProps) => {
 
 export let updateTechTree: () => void = () => {};
 
-export let techTreeIsOpen: () => boolean;
+export let techTreeIsOpen: () => boolean = () => false;
 export let closeTechTree: () => void;
 
 const TechTree = () => {
@@ -284,6 +296,8 @@ const TechTree = () => {
    }
    
    return <div id="tech-tree" style={{"--zoom": zoom} as React.CSSProperties} onMouseDown={e => onMouseDown(e.nativeEvent)} onMouseMove={e => onMouseMove(e.nativeEvent)} onMouseUp={() => onMouseUp()}>
+      <h1>Tech Tree</h1>
+      
       {TECHS.filter(tech => OPTIONS.showAllTechs || techIsDirectlyAccessible(tech)).map((techInfo, i) => {
          return <Tech techInfo={techInfo} positionX={positionX} positionY={positionY} zoom={zoom} key={i} />
       })}

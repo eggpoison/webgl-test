@@ -260,20 +260,32 @@ const CraftingMenu = () => {
    // Create the recipe browser
    const recipeBrowser = new Array<JSX.Element>();
    let currentRow = new Array<JSX.Element>();
+   let currentRecipeIndex = 0;
    for (let i = 0; i < MIN_RECIPE_BROWSER_HEIGHT * RECIPE_BROWSER_WIDTH; i++) {
       let slot: JSX.Element;
-      if (i < availableRecipes.length) {
-         const recipe = availableRecipes[i];
+      if (currentRecipeIndex < availableRecipes.length) {
+         let recipe: CraftingRecipe | undefined;
+         do {
+            const currentRecipe = availableRecipes[currentRecipeIndex];
+   
+            const techRequired = getTechRequiredForItem(currentRecipe.product);
+            if (techRequired === null || Game.tribe.hasUnlockedTech(techRequired)) {
+               recipe = currentRecipe;
+            }
 
-         const techRequired = getTechRequiredForItem(recipe.product);
-         if (techRequired !== null && !Game.tribe.hasUnlockedTech(techRequired)) {
-            continue;
+            currentRecipeIndex++;
+         } while (typeof recipe === "undefined" && currentRecipeIndex < availableRecipes.length);
+
+         if (typeof recipe !== "undefined") {
+            const isCraftable = craftableRecipes.current.includes(recipe);
+            slot = (
+               <ItemSlot onMouseOver={(e) => hoverRecipe(recipe!, e)} onMouseOut={() => unhoverRecipe()} onMouseMove={e => mouseMove(e)} className={isCraftable ? "craftable" : undefined} isSelected={recipe === selectedRecipe} onClick={() => selectRecipe(recipe!)} picturedItemImageSrc={getItemTypeImage(recipe.product)} itemCount={recipe.yield !== 1 ? recipe.yield : undefined} key={i} />
+            );
+         } else {
+            slot = (
+               <ItemSlot isSelected={false} key={i} />
+            );
          }
-
-         const isCraftable = craftableRecipes.current.includes(recipe);
-         slot = (
-            <ItemSlot onMouseOver={(e) => hoverRecipe(recipe, e)} onMouseOut={() => unhoverRecipe()} onMouseMove={e => mouseMove(e)} className={isCraftable ? "craftable" : undefined} isSelected={recipe === selectedRecipe} onClick={() => selectRecipe(recipe)} picturedItemImageSrc={getItemTypeImage(recipe.product)} itemCount={recipe.yield !== 1 ? recipe.yield : undefined} key={i} />
-         );
       } else {
          slot = (
             <ItemSlot isSelected={false} key={i} />

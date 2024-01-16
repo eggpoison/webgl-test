@@ -1,4 +1,4 @@
-import { EntityType, ITEM_TYPE_RECORD, Point, SETTINGS, circleAndRectangleDoIntersectWithOffset, circlesDoIntersectWithOffset, getTechByID } from "webgl-test-shared";
+import { EntityType, ITEM_TYPE_RECORD, Point, SETTINGS, circleAndRectangleDoIntersect, circlesDoIntersect, getTechByID } from "webgl-test-shared";
 import { getPlayerSelectedItem } from "./entities/Player";
 import Game from "./Game";
 import Board from "./Board";
@@ -15,15 +15,12 @@ let highlightedStructureID = -1;
 let selectedStructureID = -1;
 
 const hitboxIsWithinRange = (position: Point, hitbox: Hitbox, visionRange: number): boolean => {
-   // @Speed: This check is slow
    if (hitbox.hasOwnProperty("radius")) {
       // Circular hitbox
-      // @Speed
-      return circlesDoIntersectWithOffset(position.x, position.y, visionRange, hitbox.position.x, hitbox.position.y, (hitbox as CircularHitbox).radius);
+      return circlesDoIntersect(position.x, position.y, visionRange, hitbox.position.x, hitbox.position.y, (hitbox as CircularHitbox).radius);
    } else {
       // Rectangular hitbox
-      // @Speed
-      return circleAndRectangleDoIntersectWithOffset(position, new Point(0, 0), visionRange, hitbox.position, hitbox.offset, (hitbox as RectangularHitbox).width, (hitbox as RectangularHitbox).height, (hitbox as RectangularHitbox).rotation);
+      return circleAndRectangleDoIntersect(position.x, position.y, visionRange, hitbox.position.x, hitbox.position.y, (hitbox as RectangularHitbox).width, (hitbox as RectangularHitbox).height, (hitbox as RectangularHitbox).rotation + (hitbox as RectangularHitbox).externalRotation);
    }
 }
 

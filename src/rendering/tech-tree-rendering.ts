@@ -1,33 +1,40 @@
-import { TECHS, TechInfo, angle, getTechByID } from "webgl-test-shared";
+import { TECHS, TechID, TechInfo, angle, getTechByID } from "webgl-test-shared";
 import Game from "../Game";
 import { createWebGLProgram, halfWindowHeight, halfWindowWidth, windowHeight, windowWidth } from "../webgl";
 import { techIsHovered } from "../components/game/TechTree";
 
-const CONNECTOR_WIDTH = 10;
+const ConnectorType = {
+   unlocked: 0,
+   locked: 1,
+   conflicting: 2
+}
+
+const CONFLICTING_CONNECTOR_WIDTH = 10;
+const CONNECTOR_WIDTH = 15;
 
 let gl: WebGL2RenderingContext;
 
 let backgroundProgram: WebGLProgram;
 let connectorProgram: WebGLProgram;
 
-let TECH_TREE_X = 0;
-let TECH_TREE_Y = 0;
-let TECH_TREE_ZOOM = 1;
+let techTreeX = 0;
+let techTreeY = 0;
+let techTreeZoom = 1;
 
 export function updateTechTreeCanvasSize(): void {
    gl.viewport(0, 0, windowWidth, windowHeight);
 }
 
 export function setTechTreeX(x: number): void {
-   TECH_TREE_X = x;
+   techTreeX = x;
 }
 
 export function setTechTreeY(y: number): void {
-   TECH_TREE_Y = y;
+   techTreeY = y;
 }
 
 export function setTechTreeZoom(zoom: number): void {
-   TECH_TREE_ZOOM = zoom;
+   techTreeZoom = zoom;
 }
 
 const createGLContext = (): void => {
@@ -48,22 +55,128 @@ const createBackgroundShaders = (): void => {
    precision highp float;
    
    layout(location = 0) in vec2 a_position;
+
+   out vec2 v_position;
    
    void main() {
       gl_Position = vec4(a_position, 0.0, 1.0);
+
+      v_position = a_position;
    }
    `;
    
    const fragmentShaderText = `#version 300 es
    precision highp float;
+
+   #define BASE_BG_COLOUR 0.1;
+
+   #define PI 3.14159265358979323846
+
+   uniform vec2 u_screenSize;
+   uniform float u_zoom;
+   uniform vec2 u_scrollPos;
+   uniform vec2 u_techPositions[128];
+
+   in vec2 v_position;
    
    out vec4 outputColour;
    
+   float rand(vec2 c){
+      return fract(sin(dot(c.xy ,vec2(12.9898,78.233))) * 43758.5453);
+   }
+   
+   float noise(vec2 p, float freq ){
+      // float unit = u_screenWidth/freq;
+      float unit = 1000.0/freq;
+      vec2 ij = floor(p/unit);
+      vec2 xy = mod(p,unit)/unit;
+      //xy = 3.*xy*xy-2.*xy*xy*xy;
+      xy = .5*(1.-cos(PI*xy));
+      float a = rand((ij+vec2(0.,0.)));
+      float b = rand((ij+vec2(1.,0.)));
+      float c = rand((ij+vec2(0.,1.)));
+      float d = rand((ij+vec2(1.,1.)));
+      float x1 = mix(a, b, xy.x);
+      float x2 = mix(c, d, xy.x);
+      return mix(x1, x2, xy.y);
+   }
+   
+   float pNoise(vec2 p, int res){
+      float persistance = .5;
+      float n = 0.;
+      float normK = 0.;
+      float f = 4.;
+      float amp = 1.;
+      int iCount = 0;
+      for (int i = 0; i<50; i++){
+         n+=amp*noise(p, f);
+         f*=2.;
+         normK+=amp;
+         amp*=persistance;
+         if (iCount == res) break;
+         iCount++;
+      }
+      float nf = n/normK;
+      return nf*nf*nf*nf;
+   }
+
+   vec2 getPos(float scaleFactor, float offset) {
+      vec2 pos = v_position;
+      pos *= u_screenSize / 1000.0;
+      return (pos * 500.0 * scaleFactor) / u_zoom - u_scrollPos * 0.8 * scaleFactor * scaleFactor + vec2(offset, offset);
+   }
+   
    void main() {
-      outputColour = vec4(0.2, 0.2, 0.2, 1.0);
+      float height1 = pNoise(getPos(0.25, 10000.0), 5);
+      
+      float colour1;
+      if (height1 > 0.2) {
+         colour1 = 0.125;
+      } else {
+         colour1 = BASE_BG_COLOUR;
+      }
+
+      float height2 = pNoise(getPos(0.5, 500.0), 5);
+      
+      float colour2;
+      if (height2 > 0.2) {
+         colour2 = 0.15;
+      } else {
+         colour2 = BASE_BG_COLOUR;
+      }
+
+      float height3 = pNoise(getPos(1.0, 0.0), 5);
+      
+      float colour3;
+      if (height3 > 0.2) {
+         colour3 = 0.175;
+      } else {
+         colour3 = BASE_BG_COLOUR;
+      }
+
+      float colour = max(colour1, colour2);
+      colour = max(colour, colour3);
+
+      vec2 position = v_position * u_screenSize / 1000.0;
+      position = position * 50.0 / u_zoom - u_scrollPos * 0.08;
+      float minDistance = 9999.0;
+      for (int i = 0; i < 128; i++) {
+         vec2 techPos = u_techPositions[i];
+         float dist = distance(position, techPos);
+         if (dist < minDistance) {
+            minDistance = dist;
+         }
+      }
+
+      if (minDistance > 50.0) {
+         float fadeFactor = (minDistance - 50.0) * 0.05;
+         colour = mix(colour, 0.05, fadeFactor);
+      }
+      
+      outputColour = vec4(colour, colour, colour, 1.0);
    }
    `;
-
+   
    backgroundProgram = createWebGLProgram(gl, vertexShaderText, fragmentShaderText);
 }
 
@@ -72,14 +185,19 @@ const createConnectorShaders = (): void => {
    precision highp float;
    
    layout(location = 0) in vec2 a_position;
-   layout(location = 1) in float a_isUnlocked;
+   layout(location = 1) in float a_type;
+   layout(location = 2) in float a_direction;
 
-   out float v_isUnlocked;
+   out vec2 v_position;
+   out float v_type;
+   out float v_direction;
    
    void main() {
       gl_Position = vec4(a_position, 0.0, 1.0);
 
-      v_isUnlocked = a_isUnlocked;
+      v_position = a_position;
+      v_type = a_type;
+      v_direction = a_direction;
    }
    `;
    
@@ -88,17 +206,43 @@ const createConnectorShaders = (): void => {
 
    #define UNLOCKED_COLOUR 0.2, 1.0, 0.2
    #define LOCKED_COLOUR 1.0, 0.3, 0.1
+   #define CONFLICTING_COLOUR 1.0, 0.0, 0.0
 
-   in float v_isUnlocked;
+   in vec2 v_position;
+   in float v_type;
+   in float v_direction;
    
    out vec4 outputColour;
+
+   float minimum_distance(vec2 v, vec2 w, vec2 p) {
+      // Return minimum distance between line segment vw and point p
+      float l2 = pow(distance(v, w), 2.0);  // i.e. |w-v|^2 -  avoid a sqrt
+      if (l2 == 0.0) return distance(p, v);   // v == w case
+      // Consider the line extending the segment, parameterized as v + t (w - v).
+      // We find projection of point p onto the line. 
+      // It falls where t = [(p-v) . (w-v)] / |w-v|^2
+      // We clamp t from [0,1] to handle points outside the segment vw.
+      // float t = max(0, min(1, dot(p - v, w - v) / l2));
+      float t = dot(p - v, w - v) / l2;
+      vec2 projection = v + t * (w - v);  // Projection falls on the segment
+      return distance(p, projection);
+    }
    
    void main() {
-      if (v_isUnlocked > 0.5) {
+      vec2 pos = v_position;
+
+      float dist = minimum_distance(vec2(0.0, 0.0), vec2(cos(v_direction), sin(v_direction)), pos);
+      
+      if (v_type == ${ConnectorType.unlocked.toFixed(1)}) {
          outputColour = vec4(UNLOCKED_COLOUR, 1.0);
-      } else {
+      } else if (v_type == ${ConnectorType.locked.toFixed(1)}) {
          outputColour = vec4(LOCKED_COLOUR, 1.0);
+      } else if (v_type == ${ConnectorType.conflicting.toFixed(1)}) {
+         outputColour = vec4(CONFLICTING_COLOUR, 1.0);
       }
+
+      float d = dist;
+      outputColour = vec4(d, d, d, 1.0);
    }
    `;
 
@@ -112,11 +256,31 @@ export function createTechTreeShaders(): void {
 }
 
 const renderBackground = (): void => {
+   const techPositions = new Array<number>();
+   for (const tech of TECHS) {
+      if (techIsDirectlyAccessible(tech)) {
+         techPositions.push(tech.positionX);
+         techPositions.push(tech.positionY);
+      }
+   }
+
    gl.useProgram(backgroundProgram);
 
    gl.enable(gl.BLEND);
    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
+   const screenWidthUniformLocation = gl.getUniformLocation(backgroundProgram, "u_screenSize");
+   gl.uniform2f(screenWidthUniformLocation, windowWidth, windowHeight);
+
+   const zoomUniformLocation = gl.getUniformLocation(backgroundProgram, "u_zoom");
+   gl.uniform1f(zoomUniformLocation, techTreeZoom);
+
+   const scrollPosUniformLocation = gl.getUniformLocation(backgroundProgram, "u_scrollPos");
+   gl.uniform2f(scrollPosUniformLocation, techTreeX, -techTreeY);
+
+   const techPositionsUniformLocation = gl.getUniformLocation(backgroundProgram, "u_techPositions");
+   gl.uniform2fv(techPositionsUniformLocation, techPositions);
+   
    const vertices = [
       -1, -1,
       1, 1,
@@ -141,9 +305,9 @@ const renderBackground = (): void => {
 /** X position in the screen (0 = left, windowWidth = right) */
 const calculateXScreenPos = (x: number): number => {
    // Account for the player position
-   let position = x + TECH_TREE_X;
+   let position = x + techTreeX;
    // Account for zoom
-   position = position * TECH_TREE_ZOOM + halfWindowWidth;
+   position = position * techTreeZoom + halfWindowWidth;
    position = position / halfWindowWidth - 1;
    return position;
 }
@@ -151,20 +315,32 @@ const calculateXScreenPos = (x: number): number => {
 /** Y position in the screen (0 = bottom, windowHeight = top) */
 const calculateYScreenPos = (y: number): number => {
    // Account for the player position
-   let position = y - TECH_TREE_Y;
+   let position = y - techTreeY;
    // Account for zoom
-   position = position * TECH_TREE_ZOOM + halfWindowHeight;
+   position = position * techTreeZoom + halfWindowHeight;
    position = position / halfWindowHeight - 1;
    return position;
 }
 
-const addConnectorVertices = (vertices: Array<number>, startTech: TechInfo, endTech: TechInfo, isUnlocked: boolean): void => {
+const addConnectorVertices = (vertices: Array<number>, startTech: TechInfo, endTech: TechInfo, type: number): void => {
    const direction = angle(endTech.positionX - startTech.positionX, endTech.positionY - startTech.positionY);
    const perpendicularDirection1 = direction + Math.PI / 2;
    const perpendicularDirection2 = direction - Math.PI / 2;
 
+   const fDirection = Math.PI/2 - direction;
+
    const a = 16; // @Cleanup
-   const connectorWidth = (techIsHovered(startTech.id) || techIsHovered(endTech.id)) ? CONNECTOR_WIDTH * 1.3 : CONNECTOR_WIDTH;
+
+   let connectorWidth: number;
+   if (type === ConnectorType.conflicting) {
+      connectorWidth = CONFLICTING_CONNECTOR_WIDTH;
+   } else {
+      if (techIsHovered(startTech.id) || techIsHovered(endTech.id)) {
+         connectorWidth = CONNECTOR_WIDTH * 1.3;
+      } else {
+         connectorWidth = CONNECTOR_WIDTH;
+      }
+   }
    const topLeftX = calculateXScreenPos(startTech.positionX * a + connectorWidth * Math.sin(perpendicularDirection1));
    const topLeftY = calculateYScreenPos(startTech.positionY * a + connectorWidth * Math.cos(perpendicularDirection1));
    const bottomLeftX = calculateXScreenPos(startTech.positionX * a + connectorWidth * Math.sin(perpendicularDirection2));
@@ -174,15 +350,13 @@ const addConnectorVertices = (vertices: Array<number>, startTech: TechInfo, endT
    const bottomRightX = calculateXScreenPos(endTech.positionX * a + connectorWidth * Math.sin(perpendicularDirection2));
    const bottomRightY = calculateYScreenPos(endTech.positionY * a + connectorWidth * Math.cos(perpendicularDirection2));
 
-   const isUnlockedInt = isUnlocked ? 1 : 0;
-
    vertices.push(
-      bottomLeftX, bottomLeftY, isUnlockedInt,
-      bottomRightX, bottomRightY, isUnlockedInt,
-      topLeftX, topLeftY, isUnlockedInt,
-      topLeftX, topLeftY, isUnlockedInt,
-      bottomRightX, bottomRightY, isUnlockedInt,
-      topRightX, topRightY, isUnlockedInt
+      bottomLeftX, bottomLeftY, type, fDirection,
+      bottomRightX, bottomRightY, type, fDirection,
+      topLeftX, topLeftY, type, fDirection,
+      topLeftX, topLeftY, type, fDirection,
+      bottomRightX, bottomRightY, type, fDirection,
+      topRightX, topRightY, type, fDirection
    );
 }
 
@@ -213,7 +387,7 @@ const calculateConnectorVertices = (): ReadonlyArray<number> => {
       const tech = getTechByID(techID);
       for (const dependencyTechID of tech.dependencies) {
          const dependencyTech = getTechByID(dependencyTechID);
-         addConnectorVertices(vertices, dependencyTech, tech, true);
+         addConnectorVertices(vertices, dependencyTech, tech, ConnectorType.unlocked);
       }
    }
 
@@ -222,7 +396,24 @@ const calculateConnectorVertices = (): ReadonlyArray<number> => {
       if (!Game.tribe.hasUnlockedTech(tech.id) && techIsDirectlyAccessible(tech)) {
          for (const dependencyTechID of tech.dependencies) {
             const dependencyTech = getTechByID(dependencyTechID);
-            addConnectorVertices(vertices, dependencyTech, tech, false);
+            addConnectorVertices(vertices, dependencyTech, tech, ConnectorType.locked);
+         }
+      }
+   }
+
+   // Conflicting connection ids
+   const conflictingConnectionIDs = new Array<TechID>();
+   for (const tech of TECHS) {
+      if (!Game.tribe.hasUnlockedTech(tech.id) && techIsDirectlyAccessible(tech)) {
+         for (const conflictingTechID of tech.conflictingTechs) {
+            if (conflictingConnectionIDs.includes(tech.id) || conflictingConnectionIDs.includes(conflictingTechID)) {
+               continue;
+            }
+            
+            const otherTech = getTechByID(conflictingTechID);
+            addConnectorVertices(vertices, otherTech, tech, ConnectorType.conflicting);
+
+            conflictingConnectionIDs.push(conflictingTechID);
          }
       }
    }
@@ -242,8 +433,9 @@ const renderConnectors = (): void => {
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
-   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 3 * Float32Array.BYTES_PER_ELEMENT, 0);
-   gl.vertexAttribPointer(1, 1, gl.FLOAT, false, 3 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0);
+   gl.vertexAttribPointer(1, 1, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(2, 1, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 3 * Float32Array.BYTES_PER_ELEMENT);
 
    gl.enableVertexAttribArray(0);
    gl.enableVertexAttribArray(1);

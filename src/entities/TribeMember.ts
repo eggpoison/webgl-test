@@ -11,6 +11,7 @@ import { createInventoryFromData, updateInventoryFromData } from "../inventory-m
 import { GAME_OBJECT_TEXTURE_SLOT_INDEXES, getGameObjectTextureArrayIndex, getTextureHeight, getTextureWidth } from "../texture-atlases/entity-texture-atlas";
 import { createDeepFrostHeartBloodParticles } from "../items/DroppedItem";
 import { AudioFilePath, playSound } from "../sound";
+import { definiteGameState, latencyGameState } from "../game-state/game-states";
 
 type FilterFoodItemTypes<T extends ItemType> = (typeof ITEM_TYPE_RECORD)[T] extends "food" ? never : T;
 
@@ -250,6 +251,7 @@ abstract class TribeMember extends Entity {
    /** First element is right active item, second is left */
    private activeItemRenderParts: ReadonlyArray<RenderPart>;
    private arrowRenderPart: RenderPart | null = null;
+   private inactiveCrossbowArrowRenderPart: RenderPart | null = null;
 
    public rightActiveItem: ItemData | null;
    public leftActiveItem: ItemData | null;
@@ -458,14 +460,46 @@ abstract class TribeMember extends Entity {
    private updateActiveItemRenderPart(i: number, activeItem: ItemData | null, shouldShow: boolean): void {
       if (activeItem === null || !shouldShow) {
          this.removeRenderPart(this.activeItemRenderParts[i]);
+
+         if (i === 0 && this.inactiveCrossbowArrowRenderPart !== null) {
+            this.removeRenderPart(this.inactiveCrossbowArrowRenderPart);
+            this.inactiveCrossbowArrowRenderPart = null;
+         }
       } else {
          const renderPart = this.activeItemRenderParts[i];
          this.attachRenderPart(renderPart);
          
          if (this.showLargeItemTexture(activeItem.type)) {
-            const textureArrayIndex = getGameObjectTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItem.type].toolTextureSource);
-            
-            renderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[textureArrayIndex];
+            let textureArrayIndex: number;
+            // @Incomplete: Only works for player
+            if (i === 0 && this.rightAction === TribeMemberAction.none && activeItem.type === ItemType.crossbow && definiteGameState.hotbarCrossbowLoadProgressRecord.hasOwnProperty(latencyGameState.selectedHotbarItemSlot) && definiteGameState.hotbarCrossbowLoadProgressRecord[latencyGameState.selectedHotbarItemSlot] === 1) {
+               const textureSource = "miscellaneous/crossbow-charge-5.png";
+               textureArrayIndex = getGameObjectTextureArrayIndex(textureSource);
+               renderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[textureArrayIndex];
+
+               if (this.inactiveCrossbowArrowRenderPart === null) {
+                  const arrowTextureSource = "projectiles/wooden-arrow.png";
+                  const arrowTextureArrayIndex = getGameObjectTextureArrayIndex(arrowTextureSource);
+
+                  this.inactiveCrossbowArrowRenderPart = new RenderPart(
+                     this.activeItemRenderParts[0],
+                     getTextureWidth(arrowTextureArrayIndex) * 4, getTextureHeight(arrowTextureArrayIndex) * 4,
+                     getGameObjectTextureArrayIndex(arrowTextureSource),
+                     this.activeItemRenderParts[0].zIndex + 0.1,
+                     Math.PI/4
+                  );
+                  this.attachRenderPart(this.inactiveCrossbowArrowRenderPart);
+               }
+            } else {
+               textureArrayIndex = getGameObjectTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItem.type].toolTextureSource);
+               renderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[textureArrayIndex];
+               
+               if (i === 0 && this.inactiveCrossbowArrowRenderPart !== null) {
+                  this.removeRenderPart(this.inactiveCrossbowArrowRenderPart);
+                  this.inactiveCrossbowArrowRenderPart = null;
+               }
+            }
+
             renderPart.textureWidth = getTextureWidth(textureArrayIndex);
             renderPart.textureHeight = getTextureHeight(textureArrayIndex);
             renderPart.width = getTextureWidth(textureArrayIndex) * 4;
@@ -545,12 +579,19 @@ abstract class TribeMember extends Entity {
                const chargeProgress = secondsSinceLastAction < 3 ? 1 - Math.pow(secondsSinceLastAction / 3 - 1, 2) : 1;
 
                const handDirection = lerp(TribeMember.HAND_RESTING_DIRECTION, Math.PI / 1.5, chargeProgress) * handMult;
+
+               let itemDirection: number;
+               if (action === TribeMemberAction.chargeSpear) {
+                  itemDirection = handDirection - Math.PI/14 * handMult;
+               } else {
+                  itemDirection = lerp(TribeMember.HAND_RESTING_DIRECTION - Math.PI/14, Math.PI / 2.2, chargeProgress) * handMult
+               }
                
                this.handDirections[i] = handDirection;
                this.handOffsets[i] = this.handRestingOffset;
                this.handRotations[i] = TribeMember.HAND_CHARGING_BOW_DIRECTION * handMult;
 
-               this.activeItemDirections[i] = (handDirection - Math.PI/14) * handMult;
+               this.activeItemDirections[i] = itemDirection;
                this.activeItemOffsets[i] = TribeMember.ITEM_RESTING_OFFSET + itemSize/2;
                this.activeItemRotations[i] = TribeMember.ITEM_RESTING_ROTATION * handMult;
 
@@ -957,7 +998,6 @@ abstract class TribeMember extends Entity {
          }
 
          if (this.arrowRenderPart === null) {
-            console.log("create");
             this.arrowRenderPart = new RenderPart(
                this.activeItemRenderParts[0],
                arrowWidth, arrowHeight,

@@ -69,8 +69,8 @@ class RenderPart extends RenderObject {
             rotatedOffsetX = rotateXAroundPoint(offset.x, offset.y, 0, 0, this.parent.rotation + this.parent.totalRotation);
             rotatedOffsetY = rotateYAroundPoint(offset.x, offset.y, 0, 0, this.parent.rotation + this.parent.totalRotation);
          } else {
-            rotatedOffsetX = offset.x;
-            rotatedOffsetY = offset.y;
+            rotatedOffsetX = rotateXAroundPoint(offset.x, offset.y, 0, 0, this.parent.totalRotation);
+            rotatedOffsetY = rotateYAroundPoint(offset.x, offset.y, 0, 0, this.parent.totalRotation);
          }
 
          this.renderPosition.x += rotatedOffsetX;
@@ -89,7 +89,7 @@ class RenderPart extends RenderObject {
       if (this.inheritParentRotation) {
          this.totalRotation = this.parent.rotation + this.parent.totalRotation;
       } else {
-         this.totalRotation = 0;
+         this.totalRotation = this.parent.totalRotation;
       }
       if (typeof this.getRotation !== "undefined") {
          this.rotation = this.getRotation();

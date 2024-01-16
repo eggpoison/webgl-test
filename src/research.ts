@@ -1,4 +1,4 @@
-import { EntityType, Point, SETTINGS, pointIsInRectangle, randFloat, rotateXAroundOrigin, rotateYAroundOrigin } from "webgl-test-shared";
+import { EntityType, SETTINGS, pointIsInRectangle, randFloat, rotateXAroundOrigin, rotateYAroundOrigin } from "webgl-test-shared";
 import Player from "./entities/Player";
 import Board from "./Board";
 import Game from "./Game";
@@ -90,8 +90,7 @@ export function attemptToResearch(): void {
    }
    
    const nodeSize = RESEARCH_NODE_SIZES[currentResearchNode.size];
-   const rectPos = new Point(currentResearchNode.positionX, currentResearchNode.positionY);
-   if (pointIsInRectangle(Game.cursorPositionX, Game.cursorPositionY, rectPos, new Point(0, 0), nodeSize, nodeSize, currentResearchNode.rotation)) {
+   if (pointIsInRectangle(Game.cursorPositionX, Game.cursorPositionY, currentResearchNode.positionX, currentResearchNode.positionY, nodeSize, nodeSize, currentResearchNode.rotation)) {
       nodeCompleteProgress += 1 / SETTINGS.TPS;
       if (nodeCompleteProgress >= NODE_COMPLETE_TIME) {
          completeNode();

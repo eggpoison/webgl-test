@@ -115,7 +115,6 @@ const AUDIO_FILE_PATHS = [
    "slime-spit.mp3",
    "acid-burn.mp3",
    "air-whoosh.mp3",
-   "charge-ready.mp3",
    "arrow-hit.mp3",
    "spear-hit.mp3",
    "bow-fire.mp3",
