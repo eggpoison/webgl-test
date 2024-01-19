@@ -2,7 +2,7 @@ import { EntityType, HitData, Point, TreeSize, randFloat, randInt, randItem } fr
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { LeafParticleSize, createLeafParticle, createLeafSpeckParticle, createWoodSpeckParticle } from "../generic-particles";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { AudioFilePath, playSound } from "../sound";
 
 const treeTextures: { [T in TreeSize]: string } = {
@@ -14,8 +14,6 @@ const TREE_HIT_SOUNDS: ReadonlyArray<AudioFilePath> = ["tree-hit-1.mp3", "tree-h
 const TREE_DESTROY_SOUNDS: ReadonlyArray<AudioFilePath> = ["tree-destroy-1.mp3", "tree-destroy-2.mp3", "tree-destroy-3.mp3", "tree-destroy-4.mp3"];
 
 class Tree extends Entity {
-   public readonly type = EntityType.tree;
-
    private readonly treeSize: TreeSize;
    private readonly radius: number;
 
@@ -33,7 +31,7 @@ class Tree extends Entity {
             this,
             this.radius * 2,
             this.radius * 2,
-            getGameObjectTextureArrayIndex(treeTextures[treeSize]),
+            getEntityTextureArrayIndex(treeTextures[treeSize]),
             0,
             0
          )

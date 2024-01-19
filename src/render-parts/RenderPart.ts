@@ -1,5 +1,5 @@
 import { Point, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
-import { GAME_OBJECT_TEXTURE_SLOT_INDEXES, getTextureHeight, getTextureWidth } from "../texture-atlases/entity-texture-atlas";
+import { ENTITY_TEXTURE_SLOT_INDEXES, getTextureHeight, getTextureWidth } from "../texture-atlases/entity-texture-atlas";
 
 /** A thing which is able to hold render parts */
 export abstract class RenderObject {
@@ -8,6 +8,10 @@ export abstract class RenderObject {
 
    public rotation = 0;
    public totalRotation = 0;
+
+   public tintR = 0;
+   public tintG = 0;
+   public tintB = 0;
 }
 
 class RenderPart extends RenderObject {
@@ -44,7 +48,7 @@ class RenderPart extends RenderObject {
       this.zIndex = zIndex;
       this.rotation = rotation;
 
-      this.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[textureArrayIndex];
+      this.textureSlotIndex = ENTITY_TEXTURE_SLOT_INDEXES[textureArrayIndex];
       this.textureWidth = getTextureWidth(textureArrayIndex);
       this.textureHeight = getTextureHeight(textureArrayIndex);
    }

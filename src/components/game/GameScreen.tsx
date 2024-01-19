@@ -10,7 +10,7 @@ import DeathScreen from "./DeathScreen";
 import BackpackInventoryMenu from "./inventories/BackpackInventory";
 import InteractInventory from "./inventories/InteractInventory";
 import TechTree from "./TechTree";
-import StructureShapingMenu from "./StructureShapingMenu";
+import BlueprintMenu from "./BlueprintMenu";
 import TechInfocard from "./TechInfocard";
 
 export let showPauseScreen: () => void = () => {};
@@ -89,7 +89,7 @@ const GameScreen = () => {
       <TechTree />
       <TechInfocard />
 
-      <StructureShapingMenu />
+      <BlueprintMenu />
    </>;
 }
 

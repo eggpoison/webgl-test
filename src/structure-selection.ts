@@ -1,5 +1,5 @@
 import { EntityType, ITEM_TYPE_RECORD, Point, SETTINGS, circleAndRectangleDoIntersect, circlesDoIntersect, getTechByID } from "webgl-test-shared";
-import { getPlayerSelectedItem } from "./entities/Player";
+import Player, { getPlayerSelectedItem } from "./entities/Player";
 import Game from "./Game";
 import Board from "./Board";
 import Hitbox from "./hitboxes/Hitbox";
@@ -8,8 +8,10 @@ import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import GameObject from "./GameObject";
 import Client from "./client/Client";
 import { latencyGameState } from "./game-state/game-states";
+import { isHoveringInBlueprintMenu } from "./components/game/BlueprintMenu";
 
 const HIGHLIGHT_RANGE = 75;
+const HIGHLIGHT_DISTANCE = 150;
 
 let highlightedStructureID = -1;
 let selectedStructureID = -1;
@@ -60,12 +62,16 @@ const entityCanBeSelected = (entity: GameObject): boolean => {
 }
 
 export function updateHighlightedStructure(): void {
-   if (Game.cursorPositionX === null || Game.cursorPositionY === null) {
+   if (Player.instance === null || Game.cursorPositionX === null || Game.cursorPositionY === null) {
       return;
    }
 
    if (latencyGameState.playerIsPlacingEntity) {
       highlightedStructureID = -1;
+      return;
+   }
+
+   if (isHoveringInBlueprintMenu()) {
       return;
    }
    
@@ -83,6 +89,11 @@ export function updateHighlightedStructure(): void {
          const chunk = Board.getChunk(chunkX, chunkY);
          for (const entity of chunk.getGameObjects()) {
             if (!entityCanBeSelected(entity)) {
+               continue;
+            }
+
+            // @Incomplete: Should do it based on the distance from the closest hitbox rather than distance from center
+            if (Player.instance.position.calculateDistanceBetween(entity.position) > HIGHLIGHT_DISTANCE) {
                continue;
             }
             

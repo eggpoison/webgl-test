@@ -158,7 +158,7 @@ const createBackgroundShaders = (): void => {
       colour = max(colour, colour3);
 
       vec2 position = v_position * u_screenSize / 1000.0;
-      position = position * 50.0 / u_zoom - u_scrollPos * 0.08;
+      position = (position * 500.0 / u_zoom - u_scrollPos) / 16.0;
       float minDistance = 9999.0;
       for (int i = 0; i < 128; i++) {
          vec2 techPos = u_techPositions[i];
@@ -168,8 +168,8 @@ const createBackgroundShaders = (): void => {
          }
       }
 
-      if (minDistance > 50.0) {
-         float fadeFactor = (minDistance - 50.0) * 0.05;
+      if (minDistance > 30.0) {
+         float fadeFactor = (minDistance - 30.0) * 0.05;
          colour = mix(colour, 0.05, fadeFactor);
       }
       
@@ -182,35 +182,48 @@ const createBackgroundShaders = (): void => {
 
 const createConnectorShaders = (): void => {
    const vertexShaderText = `#version 300 es
-   precision highp float;
+   precision mediump float;
    
    layout(location = 0) in vec2 a_position;
    layout(location = 1) in float a_type;
-   layout(location = 2) in float a_direction;
+   layout(location = 2) in vec2 a_startPos;
+   layout(location = 3) in vec2 a_endPos;
 
    out vec2 v_position;
    out float v_type;
-   out float v_direction;
+   out vec2 v_startPos;
+   out vec2 v_endPos;
    
    void main() {
       gl_Position = vec4(a_position, 0.0, 1.0);
 
       v_position = a_position;
       v_type = a_type;
-      v_direction = a_direction;
+      v_startPos = a_startPos;
+      v_endPos = a_endPos;
    }
    `;
    
    const fragmentShaderText = `#version 300 es
-   precision highp float;
+   precision mediump float;
 
    #define UNLOCKED_COLOUR 0.2, 1.0, 0.2
+   #define UNLOCKED_COLOUR_DARK 0.0, 143.0/255.0, 0.0
+   // @Incomplete: make locked colour more orange
    #define LOCKED_COLOUR 1.0, 0.3, 0.1
+   #define LOCKED_COLOUR_DARK 156.0/255.0, 4.0/255.0, 2.0/255.0
    #define CONFLICTING_COLOUR 1.0, 0.0, 0.0
+
+   uniform vec2 u_screenSize;
+   uniform float u_zoom;
+   uniform vec2 u_scrollPos;
+   // @Speed: Use uniform block
+   uniform float u_time;
 
    in vec2 v_position;
    in float v_type;
-   in float v_direction;
+   in vec2 v_startPos;
+   in vec2 v_endPos;
    
    out vec4 outputColour;
 
@@ -229,20 +242,24 @@ const createConnectorShaders = (): void => {
     }
    
    void main() {
-      vec2 pos = v_position;
+      vec2 position = v_position * u_screenSize / 1000.0;
+      position = (position * 500.0 / u_zoom - u_scrollPos) / 16.0;
 
-      float dist = minimum_distance(vec2(0.0, 0.0), vec2(cos(v_direction), sin(v_direction)), pos);
+      float dist = minimum_distance(v_startPos, v_endPos, position);
       
       if (v_type == ${ConnectorType.unlocked.toFixed(1)}) {
          outputColour = vec4(UNLOCKED_COLOUR, 1.0);
+         outputColour.rgb = mix(vec3(UNLOCKED_COLOUR), vec3(UNLOCKED_COLOUR_DARK), dist * dist);
       } else if (v_type == ${ConnectorType.locked.toFixed(1)}) {
          outputColour = vec4(LOCKED_COLOUR, 1.0);
+         outputColour.rgb = mix(vec3(LOCKED_COLOUR), vec3(LOCKED_COLOUR_DARK), dist * dist);
       } else if (v_type == ${ConnectorType.conflicting.toFixed(1)}) {
-         outputColour = vec4(CONFLICTING_COLOUR, 1.0);
-      }
+         vec2 endOffset = v_endPos - v_startPos;
+         vec2 perpendicularPos = v_startPos + vec2(-endOffset.y, endOffset.x);
+         dist = minimum_distance(v_startPos, perpendicularPos, position);
 
-      float d = dist;
-      outputColour = vec4(d, d, d, 1.0);
+         outputColour = vec4(CONFLICTING_COLOUR, sin(dist * 1.5 + u_time * 0.005) * 0.5 + 0.5);
+      }
    }
    `;
 
@@ -265,9 +282,6 @@ const renderBackground = (): void => {
    }
 
    gl.useProgram(backgroundProgram);
-
-   gl.enable(gl.BLEND);
-   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
    const screenWidthUniformLocation = gl.getUniformLocation(backgroundProgram, "u_screenSize");
    gl.uniform2f(screenWidthUniformLocation, windowWidth, windowHeight);
@@ -297,9 +311,6 @@ const renderBackground = (): void => {
    gl.enableVertexAttribArray(0);
 
    gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-   gl.disable(gl.BLEND);
-   gl.blendFunc(gl.ONE, gl.ZERO);
 }
 
 /** X position in the screen (0 = left, windowWidth = right) */
@@ -327,8 +338,6 @@ const addConnectorVertices = (vertices: Array<number>, startTech: TechInfo, endT
    const perpendicularDirection1 = direction + Math.PI / 2;
    const perpendicularDirection2 = direction - Math.PI / 2;
 
-   const fDirection = Math.PI/2 - direction;
-
    const a = 16; // @Cleanup
 
    let connectorWidth: number;
@@ -341,6 +350,7 @@ const addConnectorVertices = (vertices: Array<number>, startTech: TechInfo, endT
          connectorWidth = CONNECTOR_WIDTH;
       }
    }
+
    const topLeftX = calculateXScreenPos(startTech.positionX * a + connectorWidth * Math.sin(perpendicularDirection1));
    const topLeftY = calculateYScreenPos(startTech.positionY * a + connectorWidth * Math.cos(perpendicularDirection1));
    const bottomLeftX = calculateXScreenPos(startTech.positionX * a + connectorWidth * Math.sin(perpendicularDirection2));
@@ -351,12 +361,12 @@ const addConnectorVertices = (vertices: Array<number>, startTech: TechInfo, endT
    const bottomRightY = calculateYScreenPos(endTech.positionY * a + connectorWidth * Math.cos(perpendicularDirection2));
 
    vertices.push(
-      bottomLeftX, bottomLeftY, type, fDirection,
-      bottomRightX, bottomRightY, type, fDirection,
-      topLeftX, topLeftY, type, fDirection,
-      topLeftX, topLeftY, type, fDirection,
-      bottomRightX, bottomRightY, type, fDirection,
-      topRightX, topRightY, type, fDirection
+      bottomLeftX, bottomLeftY, type, startTech.positionX, startTech.positionY, endTech.positionX, endTech.positionY,
+      bottomRightX, bottomRightY, type, startTech.positionX, startTech.positionY, endTech.positionX, endTech.positionY,
+      topLeftX, topLeftY, type, startTech.positionX, startTech.positionY, endTech.positionX, endTech.positionY,
+      topLeftX, topLeftY, type, startTech.positionX, startTech.positionY, endTech.positionX, endTech.positionY,
+      bottomRightX, bottomRightY, type, startTech.positionX, startTech.positionY, endTech.positionX, endTech.positionY,
+      topRightX, topRightY, type, startTech.positionX, startTech.positionY, endTech.positionX, endTech.positionY
    );
 }
 
@@ -427,20 +437,35 @@ const renderConnectors = (): void => {
    gl.enable(gl.BLEND);
    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
+   const screenWidthUniformLocation = gl.getUniformLocation(connectorProgram, "u_screenSize");
+   gl.uniform2f(screenWidthUniformLocation, windowWidth, windowHeight);
+
+   const zoomUniformLocation = gl.getUniformLocation(connectorProgram, "u_zoom");
+   gl.uniform1f(zoomUniformLocation, techTreeZoom);
+
+   const scrollPosUniformLocation = gl.getUniformLocation(connectorProgram, "u_scrollPos");
+   gl.uniform2f(scrollPosUniformLocation, techTreeX, -techTreeY);
+
+   const timeUniformLocation = gl.getUniformLocation(connectorProgram, "u_time");
+   gl.uniform1f(timeUniformLocation, performance.now());
+
    const vertices = calculateConnectorVertices();
 
    const buffer = gl.createBuffer()!;
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
-   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0);
-   gl.vertexAttribPointer(1, 1, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(2, 1, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 3 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 0);
+   gl.vertexAttribPointer(1, 1, gl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(2, 2, gl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 3 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(3, 2, gl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
 
    gl.enableVertexAttribArray(0);
    gl.enableVertexAttribArray(1);
+   gl.enableVertexAttribArray(2);
+   gl.enableVertexAttribArray(3);
 
-   gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 3);
+   gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 7);
 
    gl.disable(gl.BLEND);
    gl.blendFunc(gl.ONE, gl.ZERO);

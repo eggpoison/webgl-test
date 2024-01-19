@@ -146,6 +146,8 @@ const TEXTURE_SOURCES: Array<string> = [
    "projectiles/slime-spit-medium.png",
    "projectiles/slime-spit-large.png",
    "entities/wooden-door/wooden-door.png",
+   "entities/wooden-door/wooden-door-blueprint-1.png",
+   "entities/wooden-door/wooden-door-blueprint-2.png",
    "entities/golem/golem-body-large.png",
    "entities/golem/golem-body-medium.png",
    "entities/golem/golem-body-small.png",
@@ -155,7 +157,12 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/planter-box/planter-box.png",
    "projectiles/ice-arrow.png",
    "entities/pebblum/pebblum-nose.png",
-   "entities/pebblum/pebblum-body.png"
+   "entities/pebblum/pebblum-body.png",
+   "entities/wooden-embrasure/wooden-embrasure.png",
+   "entities/wooden-floor-spikes/wooden-floor-spikes.png",
+   "entities/wooden-wall-spikes/wooden-wall-spikes.png",
+   "entities/wall-punji-sticks/wall-punji-sticks.png",
+   "entities/floor-punji-sticks/floor-punji-sticks.png"
 ];
 
 // Add item textures
@@ -169,22 +176,22 @@ for (const clientItemInfo of Object.values(CLIENT_ITEM_INFO_RECORD)) {
 }
 
 
-export let GAME_OBJECT_TEXTURE_ATLAS: WebGLTexture;
-let GAME_OBJECT_TEXTURE_WIDTHS: ReadonlyArray<number>;
-let GAME_OBJECT_TEXTURE_HEIGHTS: ReadonlyArray<number>;
-export let GAME_OBJECT_TEXTURE_SLOT_INDEXES: ReadonlyArray<number>;
-export let GAME_OBJECT_TEXTURE_ATLAS_SIZE: number;
+export let ENTITY_TEXTURE_ATLAS: WebGLTexture;
+let ENTITY_TEXTURE_WIDTHS: ReadonlyArray<number>;
+let ENTITY_TEXTURE_HEIGHTS: ReadonlyArray<number>;
+export let ENTITY_TEXTURE_SLOT_INDEXES: ReadonlyArray<number>;
+export let ENTITY_TEXTURE_ATLAS_SIZE: number;
 
-export async function createGameObjectTextureAtlas(): Promise<void> {
+export async function createEntityTextureAtlas(): Promise<void> {
    const atlasInfo = await stitchTextureAtlas(TEXTURE_SOURCES)
-   GAME_OBJECT_TEXTURE_ATLAS = atlasInfo.texture;
-   GAME_OBJECT_TEXTURE_WIDTHS = atlasInfo.textureWidths;
-   GAME_OBJECT_TEXTURE_HEIGHTS = atlasInfo.textureHeights;
-   GAME_OBJECT_TEXTURE_ATLAS_SIZE = atlasInfo.atlasSize * ATLAS_SLOT_SIZE;
-   GAME_OBJECT_TEXTURE_SLOT_INDEXES = atlasInfo.textureSlotIndexes;
+   ENTITY_TEXTURE_ATLAS = atlasInfo.texture;
+   ENTITY_TEXTURE_WIDTHS = atlasInfo.textureWidths;
+   ENTITY_TEXTURE_HEIGHTS = atlasInfo.textureHeights;
+   ENTITY_TEXTURE_ATLAS_SIZE = atlasInfo.atlasSize * ATLAS_SLOT_SIZE;
+   ENTITY_TEXTURE_SLOT_INDEXES = atlasInfo.textureSlotIndexes;
 }
 
-export function getGameObjectTextureArrayIndex(textureSource: string): number {
+export function getEntityTextureArrayIndex(textureSource: string): number {
    const textureIndex = TEXTURE_SOURCES.indexOf(textureSource);
    if (textureIndex === -1) {
       throw new Error(`Unknown texture source '${textureSource}'.`);
@@ -193,8 +200,8 @@ export function getGameObjectTextureArrayIndex(textureSource: string): number {
 }
 
 export function getTextureWidth(textureArrayIndex: number): number {
-   return GAME_OBJECT_TEXTURE_WIDTHS[textureArrayIndex];
+   return ENTITY_TEXTURE_WIDTHS[textureArrayIndex];
 }
 export function getTextureHeight(textureArrayIndex: number): number {
-   return GAME_OBJECT_TEXTURE_HEIGHTS[textureArrayIndex];
+   return ENTITY_TEXTURE_HEIGHTS[textureArrayIndex];
 }

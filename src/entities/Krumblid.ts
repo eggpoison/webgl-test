@@ -3,15 +3,13 @@ import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle } from "../generic-particles";
 import Board from "../Board";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 
 class Krumblid extends Entity {
    private static readonly SPRITE_WIDTH = 16 * 4;
    private static readonly SPRITE_HEIGHT = 14 * 4;
 
    private static readonly BLOOD_FOUNTAIN_INTERVAL = 0.1;
-
-   public readonly type = EntityType.krumblid;
 
    private numFootstepsTaken = 0;
    private distanceTracker = 0;
@@ -24,7 +22,7 @@ class Krumblid extends Entity {
             this,
             Krumblid.SPRITE_WIDTH,
             Krumblid.SPRITE_HEIGHT,
-            getGameObjectTextureArrayIndex("entities/krumblid/krumblid.png"),
+            getEntityTextureArrayIndex("entities/krumblid/krumblid.png"),
             0,
             0
          )

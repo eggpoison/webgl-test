@@ -58,8 +58,6 @@ abstract class Entity extends GameObject {
 
    private static readonly BURNING_SMOKE_PARTICLE_FADEIN_TIME = 0.15;
    
-   public abstract readonly type: EntityType;
-
    public secondsSinceLastHit = 99999;
 
    private burningLight: Light | null = null;

@@ -2,7 +2,7 @@ import { EntityData, EntityType, Point, randFloat, randInt } from "webgl-test-sh
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 import { LeafParticleSize, createLeafParticle, createLeafSpeckParticle } from "../generic-particles";
-import { GAME_OBJECT_TEXTURE_SLOT_INDEXES, getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { ENTITY_TEXTURE_SLOT_INDEXES, getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { AudioFilePath, playSound } from "../sound";
 
 class BerryBush extends Entity {
@@ -10,8 +10,6 @@ class BerryBush extends Entity {
 
    private static readonly LEAF_SPECK_COLOUR_LOW = [63/255, 204/255, 91/255] as const;
    private static readonly LEAF_SPECK_COLOUR_HIGH = [35/255, 158/255, 88/255] as const;
-
-   public readonly type = EntityType.berryBush;
 
    private static readonly TEXTURE_SOURCES = [
       "entities/berry-bush1.png",
@@ -31,7 +29,7 @@ class BerryBush extends Entity {
          this,
          BerryBush.RADIUS * 2,
          BerryBush.RADIUS * 2,
-         getGameObjectTextureArrayIndex(BerryBush.TEXTURE_SOURCES[numBerries]),
+         getEntityTextureArrayIndex(BerryBush.TEXTURE_SOURCES[numBerries]),
          0,
          0
       );
@@ -42,7 +40,7 @@ class BerryBush extends Entity {
       super.updateFromData(entityData);
 
       const numBerries = entityData.clientArgs[0];
-      this.renderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureArrayIndex(BerryBush.TEXTURE_SOURCES[numBerries])];
+      this.renderPart.textureSlotIndex = ENTITY_TEXTURE_SLOT_INDEXES[getEntityTextureArrayIndex(BerryBush.TEXTURE_SOURCES[numBerries])];
    }
 
    protected onHit(): void {

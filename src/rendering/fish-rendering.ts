@@ -2,7 +2,7 @@ import { TileType, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-sha
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 import Board from "../Board";
 import { ATLAS_SLOT_SIZE } from "../texture-atlases/texture-atlas-stitching";
-import { GAME_OBJECT_TEXTURE_ATLAS, GAME_OBJECT_TEXTURE_ATLAS_SIZE } from "../texture-atlases/entity-texture-atlas";
+import { ENTITY_TEXTURE_ATLAS, ENTITY_TEXTURE_ATLAS_SIZE } from "../texture-atlases/entity-texture-atlas";
 
 let program: WebGLProgram;
 let vao: WebGLVertexArrayObject;
@@ -145,7 +145,7 @@ export function createFishShaders(): void {
 
    gl.useProgram(program);
    gl.uniform1i(textureUniformLocation, 0);
-   gl.uniform1f(atlasPixelSizeUniformLocation, GAME_OBJECT_TEXTURE_ATLAS_SIZE);
+   gl.uniform1f(atlasPixelSizeUniformLocation, ENTITY_TEXTURE_ATLAS_SIZE);
    gl.uniform1f(atlasSlotSizeUniformLocation, ATLAS_SLOT_SIZE);
 
    // 
@@ -304,7 +304,7 @@ export function renderFish(): void {
 
    // Bind texture atlas
    gl.activeTexture(gl.TEXTURE0);
-   gl.bindTexture(gl.TEXTURE_2D, GAME_OBJECT_TEXTURE_ATLAS);
+   gl.bindTexture(gl.TEXTURE_2D, ENTITY_TEXTURE_ATLAS);
 
    gl.bindVertexArray(vao);
 

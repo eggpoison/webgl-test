@@ -4,7 +4,7 @@ import Entity from "./Entity";
 import Particle from "../Particle";
 import Board from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 
 class Cactus extends Entity {
    private static readonly CACTUS_SPINE_PARTICLE_COLOUR: ParticleColour = [0, 0, 0];
@@ -14,8 +14,6 @@ class Cactus extends Entity {
    private static readonly RADIUS = 40;
 
    private static readonly LIMB_SIZE = 36;
-
-   public type = EntityType.cactus;
 
    private readonly flowerData: ReadonlyArray<CactusBodyFlowerData>;
    private readonly limbData: ReadonlyArray<CactusLimbData>;
@@ -27,7 +25,7 @@ class Cactus extends Entity {
          this,
          Cactus.RADIUS * 2,
          Cactus.RADIUS * 2,
-         getGameObjectTextureArrayIndex("entities/cactus/cactus.png"),
+         getEntityTextureArrayIndex("entities/cactus/cactus.png"),
          2,
          0
       );
@@ -46,7 +44,7 @@ class Cactus extends Entity {
             this,
             flowerSize,
             flowerSize,
-            getGameObjectTextureArrayIndex(this.getFlowerTextureSource(flowerInfo.type, flowerInfo.size)),
+            getEntityTextureArrayIndex(this.getFlowerTextureSource(flowerInfo.type, flowerInfo.size)),
             3 + Math.random(),
             flowerInfo.rotation
          );
@@ -63,7 +61,7 @@ class Cactus extends Entity {
             baseRenderPart,
             Cactus.LIMB_SIZE,
             Cactus.LIMB_SIZE,
-            getGameObjectTextureArrayIndex("entities/cactus/cactus-limb.png"),
+            getEntityTextureArrayIndex("entities/cactus/cactus-limb.png"),
             Math.random(),
             2 * Math.PI * Math.random()
          )
@@ -77,7 +75,7 @@ class Cactus extends Entity {
                limbRenderPart,
                16,
                16,
-               getGameObjectTextureArrayIndex(this.getFlowerTextureSource(flowerInfo.type, CactusFlowerSize.small)),
+               getEntityTextureArrayIndex(this.getFlowerTextureSource(flowerInfo.type, CactusFlowerSize.small)),
                1 + Math.random(),
                flowerInfo.rotation
             )

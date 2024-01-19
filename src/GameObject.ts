@@ -45,10 +45,6 @@ abstract class GameObject extends RenderObject {
    /** Visual depth of the game object while being rendered */
    public readonly renderDepth: number;
 
-   public tintR = 0;
-   public tintG = 0;
-   public tintB = 0;
-
    /** Amount the game object's render parts will shake */
    public shakeAmount = 0;
 

@@ -369,6 +369,27 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       toolTextureSource: "",
       name: "Planter Box",
       description: ""
+   },
+   [ItemType.poop]: {
+      entityTextureSource: "items/small/poop.png",
+      textureSource: "items/large/poop.png",
+      toolTextureSource: "",
+      name: "Poop",
+      description: ""
+   },
+   [ItemType.wooden_spikes]: {
+      entityTextureSource: "items/small/wooden-spikes.png",
+      textureSource: "items/large/wooden-spikes.png",
+      toolTextureSource: "",
+      name: "Wooden Spikes",
+      description: ""
+   },
+   [ItemType.punji_sticks]: {
+      entityTextureSource: "items/small/punji-sticks.png",
+      textureSource: "items/large/punji-sticks.png",
+      toolTextureSource: "",
+      name: "Punji Sticks",
+      description: ""
    }
 };
 

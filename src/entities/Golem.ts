@@ -2,7 +2,7 @@ import { EntityData, EntityType, Point, SETTINGS } from "webgl-test-shared";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RenderPart from "../render-parts/RenderPart";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { createFootprintParticle, createRockSpeckParticle } from "../generic-particles";
 import Board, { Light } from "../Board";
 
@@ -69,8 +69,6 @@ const getZIndex = (size: GolemRockSize): number => {
 }
 
 class Golem extends Entity {
-   public type = EntityType.golem;
-
    private readonly rockRenderParts = new Array<RenderPart>();
    private readonly eyeRenderParts = new Array<RenderPart>();
 
@@ -96,7 +94,7 @@ class Golem extends Entity {
          this,
          hitbox.radius * 2,
          hitbox.radius * 2,
-         getGameObjectTextureArrayIndex(getTextureSource(size)),
+         getEntityTextureArrayIndex(getTextureSource(size)),
          getZIndex(size),
          2 * Math.PI * Math.random()
       );
@@ -110,7 +108,7 @@ class Golem extends Entity {
                renderPart,
                5 * 4,
                3 * 4,
-               getGameObjectTextureArrayIndex("entities/golem/eye.png"),
+               getEntityTextureArrayIndex("entities/golem/eye.png"),
                6,
                0
             );

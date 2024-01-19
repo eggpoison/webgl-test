@@ -5,7 +5,7 @@ import Board from "../Board";
 import { createSnowParticle } from "../generic-particles";
 import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 
 const getTextureSource = (size: SnowballSize): string => {
    switch (size) {
@@ -19,8 +19,6 @@ const getTextureSource = (size: SnowballSize): string => {
 }
 
 class Snowball extends Entity {
-   public type = EntityType.snowball;
-
    private readonly size: SnowballSize;
    private readonly pixelSize: number;
 
@@ -35,7 +33,7 @@ class Snowball extends Entity {
             this,
             this.pixelSize,
             this.pixelSize,
-            getGameObjectTextureArrayIndex(getTextureSource(size)),
+            getEntityTextureArrayIndex(getTextureSource(size)),
             0,
             0
          )

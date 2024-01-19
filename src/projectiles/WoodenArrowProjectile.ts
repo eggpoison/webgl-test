@@ -3,7 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import Board from "../Board";
 import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import GameObject from "../GameObject";
 import { playSound } from "../sound";
 
@@ -23,7 +23,7 @@ class WoodenArrowProjectile extends GameObject {
             this,
             WoodenArrowProjectile.WIDTH,
             WoodenArrowProjectile.HEIGHT,
-            getGameObjectTextureArrayIndex("projectiles/wooden-arrow.png"),
+            getEntityTextureArrayIndex("projectiles/wooden-arrow.png"),
             0,
             0
          )

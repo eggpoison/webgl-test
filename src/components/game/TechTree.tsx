@@ -143,8 +143,10 @@ const Tech = ({ techInfo, positionX, positionY, zoom }: TechProps) => {
       setIsHovered(false);
    }
 
-   const onClick = (): void => {
-      if (!isUnlocked) {
+   const onClick = (e: MouseEvent): void => {
+      if (e.shiftKey) {
+         Client.sendForceUnlockTech(techInfo.id);
+      } else if (!isUnlocked) {
          researchTech(techInfo.id);
       }
    }
@@ -161,7 +163,7 @@ const Tech = ({ techInfo, positionX, positionY, zoom }: TechProps) => {
    }
 
    return <>
-      <div ref={elementRef} onClick={onClick} onContextMenu={e => onRightClick(e.nativeEvent)} className={`tech${isUnlocked ? " unlocked" : ""}${isSelected ? " selected" : ""}`} onMouseEnter={() => onMouseEnter()} onMouseLeave={() => onMouseLeave()}>
+      <div ref={elementRef} onClick={e => onClick(e.nativeEvent)} onContextMenu={e => onRightClick(e.nativeEvent)} className={`tech${isUnlocked ? " unlocked" : ""}${isSelected ? " selected" : ""}`} onMouseEnter={() => onMouseEnter()} onMouseLeave={() => onMouseLeave()}>
          <div className="icon-wrapper">
             <img src={require("../../images/tech-tree/" + techInfo.iconSrc)} alt="" className="icon" draggable={false} />
          </div>

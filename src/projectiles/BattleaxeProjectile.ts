@@ -1,6 +1,6 @@
 import { EntityType, Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import GameObject from "../GameObject";
 import Board from "../Board";
 import { attachSoundToEntity, playSound } from "../sound";
@@ -14,7 +14,7 @@ class BattleaxeProjectile extends GameObject {
             this,
             64,
             64,
-            getGameObjectTextureArrayIndex("items/large/stone-battleaxe.png"),
+            getEntityTextureArrayIndex("items/large/stone-battleaxe.png"),
             0,
             0
          )

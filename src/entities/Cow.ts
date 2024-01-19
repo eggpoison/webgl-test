@@ -3,7 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createDirtParticle, createFootprintParticle } from "../generic-particles";
 import Board from "../Board";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { AudioFilePath, playSound } from "../sound";
 
 class Cow extends Entity {
@@ -16,8 +16,6 @@ class Cow extends Entity {
    private static readonly BODY_HEIGHT = 96;
 
    private static readonly BLOOD_FOUNTAIN_INTERVAL = 0.1;
-
-   public readonly type = EntityType.cow;
 
    private grazeProgress: number;
 
@@ -36,7 +34,7 @@ class Cow extends Entity {
          this,
          Cow.BODY_WIDTH,
          Cow.BODY_HEIGHT,
-         getGameObjectTextureArrayIndex(`entities/cow/cow-body-${cowNum}.png`),
+         getEntityTextureArrayIndex(`entities/cow/cow-body-${cowNum}.png`),
          0,
          0
       );
@@ -48,7 +46,7 @@ class Cow extends Entity {
          this,
          Cow.HEAD_IMAGE_WIDTH,
          Cow.HEAD_IMAGE_HEIGHT,
-         getGameObjectTextureArrayIndex(`entities/cow/cow-head-${cowNum}.png`),
+         getEntityTextureArrayIndex(`entities/cow/cow-head-${cowNum}.png`),
          1,
          0
       );

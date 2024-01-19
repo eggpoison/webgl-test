@@ -1,16 +1,22 @@
-import { PlaceableItemType, Point, SETTINGS, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
-import Camera from "../Camera";
+import { PlaceableItemType, Point, StructureShapeType, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import Player, { getPlayerSelectedItem } from "../entities/Player";
 import { getTexture } from "../textures";
-import { gl, halfWindowWidth, halfWindowHeight, createWebGLProgram, CAMERA_UNIFORM_BUFFER_BINDING_INDEX } from "../webgl";
-import { PLACEABLE_ENTITY_INFO_RECORD, PlaceableEntityInfo, calculatePlacePosition, calculatePlaceRotation, calculateSnapInfo, canPlaceItem } from "../player-input";
+import { gl, createWebGLProgram, CAMERA_UNIFORM_BUFFER_BINDING_INDEX } from "../webgl";
+import { PLACEABLE_ENTITY_INFO_RECORD, PLACEABLE_ENTITY_TEXTURE_SOURCES, calculatePlacePosition, calculatePlaceRotation, calculateSnapInfo, canPlaceItem } from "../player-input";
+import { getEntityTextureArrayIndex, getTextureHeight, getTextureWidth } from "../texture-atlases/entity-texture-atlas";
+import { getHoveredShapeType } from "../components/game/BlueprintMenu";
+import Board from "../Board";
+import { getSelectedStructureID } from "../structure-selection";
+import GameObject from "../GameObject";
+
+export const SHAPE_TYPE_TEXTURE_SOURCES: Record<StructureShapeType, string> = {
+   [StructureShapeType.door]: "entities/wooden-door/wooden-door.png",
+   [StructureShapeType.embrasure]: "entities/wooden-embrasure/wooden-embrasure.png"
+}
 
 let program: WebGLProgram;
 
-let zoomUniformLocation: WebGLUniformLocation;
-let programPlayerRotationUniformLocation: WebGLUniformLocation;
-let programHalfWindowSizeUniformLocation: WebGLUniformLocation;
-let programCanPlaceUniformLocation: WebGLUniformLocation;
+let tintUniformLocation: WebGLUniformLocation;
 
 export function createPlaceableItemProgram(): void {
    const vertexShaderText = `#version 300 es
@@ -40,7 +46,7 @@ export function createPlaceableItemProgram(): void {
    precision mediump float;
    
    uniform sampler2D u_texture;
-   uniform float u_canPlace;
+   uniform vec3 u_tint;
    
    in vec2 v_texCoord;
    
@@ -48,14 +54,9 @@ export function createPlaceableItemProgram(): void {
    
    void main() {
       outputColour = texture(u_texture, v_texCoord);
-   
+
+      outputColour.rgb *= u_tint;
       outputColour.a *= 0.5;
-   
-      if (u_canPlace < 0.5) {
-         outputColour.r *= 1.5;
-         outputColour.g *= 0.5;
-         outputColour.b *= 0.5;
-      }
    }
    `;
 
@@ -69,14 +70,19 @@ export function createPlaceableItemProgram(): void {
    const programTextureUniformLocation = gl.getUniformLocation(program, "u_texture")!;
    gl.uniform1i(programTextureUniformLocation, 0);
 
-   programCanPlaceUniformLocation = gl.getUniformLocation(program, "u_canPlace")!;
+   tintUniformLocation = gl.getUniformLocation(program, "u_tint")!;
 }
 
-const calculateVertices = (placePosition: Point, placeRotation: number, placeableEntityInfo: PlaceableEntityInfo): ReadonlyArray<number> => {
-   const x1 = placePosition.x - placeableEntityInfo.width / 2;
-   const x2 = placePosition.x + placeableEntityInfo.width / 2;
-   const y1 = placePosition.y - placeableEntityInfo.height / 2;
-   const y2 = placePosition.y + placeableEntityInfo.height / 2;
+const calculateVertices = (placePosition: Point, placeRotation: number, textureSource: string): ReadonlyArray<number> => {
+   // Find texture size
+   const textureArrayIndex = getEntityTextureArrayIndex(textureSource);
+   const width = getTextureWidth(textureArrayIndex) * 4;
+   const height = getTextureHeight(textureArrayIndex) * 4;
+   
+   const x1 = placePosition.x - width / 2;
+   const x2 = placePosition.x + width / 2;
+   const y1 = placePosition.y - height / 2;
+   const y2 = placePosition.y + height / 2;
 
    const tlX = rotateXAroundPoint(x1, y2, placePosition.x, placePosition.y, placeRotation);
    const tlY = rotateYAroundPoint(x1, y2, placePosition.x, placePosition.y, placeRotation);
@@ -97,26 +103,94 @@ const calculateVertices = (placePosition: Point, placeRotation: number, placeabl
    ];
 }
 
-export function renderGhostPlaceableItem(): void {
-   // Don't render a placeable item if there is no placeable item selected
+const getStructureShapePosition = (existingStructure: GameObject, shapeType: StructureShapeType, blueprintRotation: number): Point => {
+   switch (shapeType) {
+      case StructureShapeType.door: {
+         return existingStructure.position.copy();
+      }
+      case StructureShapeType.embrasure: {
+         const position = existingStructure.position.copy();
+         position.x += 22 * Math.sin(blueprintRotation);
+         position.y += 22 * Math.cos(blueprintRotation);
+         return position;
+      }
+   }
+}
+
+interface GhostInfo {
+   readonly position: Point;
+   readonly rotation: number;
+   readonly textureSource: string;
+   readonly tint: [number, number, number];
+}
+
+const snapRotationToPlayer = (structure: GameObject, rotation: number): number => {
+   const playerDirection = Player.instance!.position.calculateAngleBetween(structure.position);
+   let snapRotation = playerDirection - rotation;
+
+   // Snap to nearest PI/2 interval
+   snapRotation = Math.round(snapRotation / Math.PI*2) * Math.PI/2;
+
+   snapRotation += rotation;
+   return snapRotation;
+}
+
+const getGhostInfo = (): GhostInfo | null => {
+   // Placeable item ghost
    const playerSelectedItem = getPlayerSelectedItem();
-   if (playerSelectedItem === null || !PLACEABLE_ENTITY_INFO_RECORD.hasOwnProperty(playerSelectedItem.type)) return;
+   if (playerSelectedItem !== null && PLACEABLE_ENTITY_INFO_RECORD.hasOwnProperty(playerSelectedItem.type)) {
+      const placeableEntityInfo = PLACEABLE_ENTITY_INFO_RECORD[playerSelectedItem.type as PlaceableItemType]!;
+      
+      const snapInfo = calculateSnapInfo(placeableEntityInfo);
+      const placePosition = calculatePlacePosition(placeableEntityInfo, snapInfo);
+      const placeRotation = calculatePlaceRotation(snapInfo);
 
-   // Don't render if there is no player
-   if (Player.instance === null) return;
+      const canPlace = canPlaceItem(placePosition, placeRotation, playerSelectedItem, snapInfo !== null ? snapInfo.entityType : placeableEntityInfo.entityType);
 
-   const placeableEntityInfo = PLACEABLE_ENTITY_INFO_RECORD[playerSelectedItem.type as PlaceableItemType]!;
+      return {
+         position: placePosition,
+         rotation: placeRotation,
+         textureSource: PLACEABLE_ENTITY_TEXTURE_SOURCES[snapInfo !== null ? snapInfo.entityType : placeableEntityInfo.entityType]!,
+         tint: canPlace ? [1, 1, 1] : [1.5, 0.5, 0.5]
+      };
+   }
+
+   // Blueprint ghost
+   const hoveredShapeType = getHoveredShapeType();
+   if (hoveredShapeType !== -1) {
+      const selectedStructureID = getSelectedStructureID();
+      const selectedStructure = Board.entityRecord[selectedStructureID];
+
+      const blueprintRotation = snapRotationToPlayer(selectedStructure, selectedStructure.rotation);
+
+      return {
+         position: getStructureShapePosition(selectedStructure, hoveredShapeType, blueprintRotation),
+         rotation: blueprintRotation,
+         textureSource: SHAPE_TYPE_TEXTURE_SOURCES[hoveredShapeType],
+         tint: [1, 1, 1]
+      };
+   }
+
+   return null;
+}
+
+export function renderGhostPlaceableItem(): void {
+   if (Player.instance === null) {
+      return;
+   }
+
+   const ghostInfo = getGhostInfo();
+   if (ghostInfo === null) {
+      return;
+   }
+
+   const vertices = calculateVertices(ghostInfo.position, ghostInfo.rotation, ghostInfo.textureSource);
 
    gl.useProgram(program);
 
    gl.enable(gl.BLEND);
    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-   const snapInfo = calculateSnapInfo(placeableEntityInfo);
-   const placePosition = calculatePlacePosition(placeableEntityInfo, snapInfo);
-   const placeRotation = calculatePlaceRotation(snapInfo);
-
-   const vertices = calculateVertices(placePosition, placeRotation, placeableEntityInfo);
    const buffer = gl.createBuffer()!;
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
@@ -127,14 +201,9 @@ export function renderGhostPlaceableItem(): void {
    gl.enableVertexAttribArray(0);
    gl.enableVertexAttribArray(1);
 
-   const programPreTranslationUniformLocation = gl.getUniformLocation(program, "u_preTranslation")!;
-   gl.uniform1f(programPreTranslationUniformLocation, SETTINGS.ITEM_PLACE_DISTANCE + placeableEntityInfo.placeOffset);
-   gl.uniform1f(zoomUniformLocation, Camera.zoom);
-   gl.uniform2f(programPlayerRotationUniformLocation, Math.sin(Player.instance.rotation), Math.cos(Player.instance.rotation));
-   gl.uniform2f(programHalfWindowSizeUniformLocation, halfWindowWidth, halfWindowHeight);
-   gl.uniform1f(programCanPlaceUniformLocation, canPlaceItem(placePosition, placeRotation, playerSelectedItem) ? 1 : 0);
+   gl.uniform3f(tintUniformLocation, ghostInfo.tint[0], ghostInfo.tint[1], ghostInfo.tint[2]);
 
-   const texture = getTexture("entities/" + placeableEntityInfo.textureSource);
+   const texture = getTexture(ghostInfo.textureSource);
    gl.activeTexture(gl.TEXTURE0);
    gl.bindTexture(gl.TEXTURE_2D, texture);
 

@@ -2,15 +2,13 @@ import { DeathInfo, EntityData, EntityType, Point, SETTINGS, randFloat, randInt,
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { createDirtParticle, createRockParticle, createRockSpeckParticle } from "../generic-particles";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { AudioFilePath, playSound, ROCK_DESTROY_SOUNDS, ROCK_HIT_SOUNDS } from "../sound";
 
 class Tombstone extends Entity {
    private static readonly HITBOX_WIDTH = 48;
    private static readonly HITBOX_HEIGHT = 88;
 
-   public readonly type = EntityType.tombstone;
-   
    private zombieSpawnProgress: number;
    private zombieSpawnX: number;
    private zombieSpawnY: number;
@@ -24,7 +22,7 @@ class Tombstone extends Entity {
             this,
             64,
             96,
-            getGameObjectTextureArrayIndex(`entities/tombstone/tombstone${tombstoneType + 1}.png`),
+            getEntityTextureArrayIndex(`entities/tombstone/tombstone${tombstoneType + 1}.png`),
             0,
             0
          )

@@ -29,7 +29,13 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/warrior-hut/warrior-hut.png",
    "entities/research-bench/research-bench.png",
    "entities/wooden-wall/wooden-wall.png",
-   "entities/planter-box/planter-box.png"
+   "entities/planter-box/planter-box.png",
+   "entities/wooden-floor-spikes/wooden-floor-spikes.png",
+   "entities/wooden-wall-spikes/wooden-wall-spikes.png",
+   "entities/wall-punji-sticks/wall-punji-sticks.png",
+   "entities/floor-punji-sticks/floor-punji-sticks.png",
+   "entities/wooden-door/wooden-door.png",
+   "entities/wooden-embrasure/wooden-embrasure.png"
 ];
 
 export const TEXTURE_IMAGE_RECORD: Record<string, HTMLImageElement> = {};

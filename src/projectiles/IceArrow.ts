@@ -3,7 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import Board from "../Board";
 import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import GameObject from "../GameObject";
 import { playSound } from "../sound";
 
@@ -16,7 +16,7 @@ class IceArrow extends GameObject {
             this,
             5 * 4,
             14 * 4,
-            getGameObjectTextureArrayIndex("projectiles/ice-arrow.png"),
+            getEntityTextureArrayIndex("projectiles/ice-arrow.png"),
             0,
             0
          )

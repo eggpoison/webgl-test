@@ -1,14 +1,12 @@
 import { EntityType, InventoryData, Point, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import CookingEntity from "./CookingEntity";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import Board from "../Board";
 import { createEmberParticle, createSmokeParticle } from "../generic-particles";
 
 class Campfire extends CookingEntity {
    public static readonly SIZE = 104;
-
-   public type = EntityType.campfire;
 
    constructor(position: Point, id: number, renderDepth: number, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData, heatingProgress: number, isCooking: boolean) {
       super(position, id, EntityType.campfire, renderDepth, fuelInventory, ingredientInventory, outputInventory, heatingProgress, isCooking);
@@ -18,7 +16,7 @@ class Campfire extends CookingEntity {
             this,
             Campfire.SIZE,
             Campfire.SIZE,
-            getGameObjectTextureArrayIndex("entities/campfire/campfire.png"),
+            getEntityTextureArrayIndex("entities/campfire/campfire.png"),
             0,
             0
          )

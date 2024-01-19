@@ -30,7 +30,7 @@ import "./css/game/nerd-vision/frame-graph.css";
 import "./css/game/tech-tree.css";
 import "./css/game/tech-infocard.css";
 import "./css/game/research-bench-caption.css";
-import "./css/game/structure-shaping-menu.css";
+import "./css/game/blueprint-menu.css";
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement

@@ -2,7 +2,7 @@ import { EntityData, EntityType, Point, SlimeOrbData, SlimeSize, TileType, lerp 
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { createSlimePoolParticle, createSlimeSpeckParticle } from "../generic-particles";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 
 class Slime extends Entity {
    private static readonly SIZES: ReadonlyArray<number> = [
@@ -32,8 +32,6 @@ class Slime extends Entity {
    private static readonly NUM_SPECK_PARTICLES_ON_HIT: ReadonlyArray<number> = [3, 5, 7];
    private static readonly NUM_SPECK_PARTICLES_ON_DEATH: ReadonlyArray<number> = [6, 10, 15];
 
-   public type = EntityType.slime as const;
-
    private readonly bodyRenderPart: RenderPart;
    private readonly eyeRenderPart: RenderPart;
    private readonly orbRenderParts = new Array<RenderPart>();
@@ -59,7 +57,7 @@ class Slime extends Entity {
          this,
          spriteSize,
          spriteSize,
-         getGameObjectTextureArrayIndex(`entities/slime/slime-${sizeString}-body.png`),
+         getEntityTextureArrayIndex(`entities/slime/slime-${sizeString}-body.png`),
          2,
          0
       );
@@ -71,7 +69,7 @@ class Slime extends Entity {
          this,
          Slime.EYE_WIDTHS[size],
          Slime.EYE_HEIGHTS[size],
-         getGameObjectTextureArrayIndex(`entities/slime/slime-${sizeString}-eye.png`),
+         getEntityTextureArrayIndex(`entities/slime/slime-${sizeString}-eye.png`),
          3,
          eyeRotation
       );
@@ -84,7 +82,7 @@ class Slime extends Entity {
          this,
          spriteSize,
          spriteSize,
-         getGameObjectTextureArrayIndex(`entities/slime/slime-${sizeString}-shading.png`),
+         getEntityTextureArrayIndex(`entities/slime/slime-${sizeString}-shading.png`),
          0,
          0
       ));
@@ -111,7 +109,7 @@ class Slime extends Entity {
          this,
          orbSize,
          orbSize,
-         getGameObjectTextureArrayIndex(`entities/slime/slime-orb-${sizeString}.png`),
+         getEntityTextureArrayIndex(`entities/slime/slime-orb-${sizeString}.png`),
          1,
          orbData.rotation
       );

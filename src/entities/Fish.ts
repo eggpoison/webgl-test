@@ -1,7 +1,7 @@
 import { EntityType, FishColour, HitData, Point, TileType, randFloat, randInt, randItem } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import Board from "../Board";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createWaterSplashParticle } from "../generic-particles";
 import { AudioFilePath, playSound } from "../sound";
@@ -10,8 +10,6 @@ class Fish extends Entity {
    private static readonly SPRITE_WIDTH = 9 * 4;
    private static readonly SPRITE_HEIGHT = 16 * 4;
    
-   public readonly type = EntityType.fish;
-
    public readonly waterOpacityMultiplier = randFloat(0.6, 1);
 
    private static readonly TEXTURE_SOURCES: ReadonlyArray<string> = [
@@ -29,7 +27,7 @@ class Fish extends Entity {
          new RenderPart(
             this,
             Fish.SPRITE_WIDTH, Fish.SPRITE_HEIGHT,
-            getGameObjectTextureArrayIndex(textureSource),
+            getEntityTextureArrayIndex(textureSource),
             0,
             0
          )

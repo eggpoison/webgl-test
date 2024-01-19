@@ -2,13 +2,11 @@ import { EntityType, Point, randFloat, randItem } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { createRockParticle, createRockSpeckParticle } from "../generic-particles";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { ROCK_DESTROY_SOUNDS, ROCK_HIT_SOUNDS, playSound } from "../sound";
 
 class Boulder extends Entity {
    private static readonly RADIUS = 40;
-
-   public type = EntityType.boulder;
 
    private static readonly TEXTURE_SOURCES = [
       "entities/boulder/boulder1.png",
@@ -23,7 +21,7 @@ class Boulder extends Entity {
             this,
             Boulder.RADIUS * 2,
             Boulder.RADIUS * 2,
-            getGameObjectTextureArrayIndex(Boulder.TEXTURE_SOURCES[boulderType]),
+            getEntityTextureArrayIndex(Boulder.TEXTURE_SOURCES[boulderType]),
             0,
             0
          )

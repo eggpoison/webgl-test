@@ -1,13 +1,11 @@
 import { EntityType, Point, SETTINGS } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { createFootprintParticle } from "../generic-particles";
 import Board from "../Board";
 
 class Pebblum extends Entity {
-   public type = EntityType.pebblum;
-
    private numFootstepsTaken = 0;
    private distanceTracker = 0;
 
@@ -19,7 +17,7 @@ class Pebblum extends Entity {
          this,
          8 * 4,
          8 * 4,
-         getGameObjectTextureArrayIndex("entities/pebblum/pebblum-nose.png"),
+         getEntityTextureArrayIndex("entities/pebblum/pebblum-nose.png"),
          0,
          2 * Math.PI * Math.random()
       )
@@ -31,7 +29,7 @@ class Pebblum extends Entity {
          this,
          10 * 4,
          10 * 4,
-         getGameObjectTextureArrayIndex("entities/pebblum/pebblum-body.png"),
+         getEntityTextureArrayIndex("entities/pebblum/pebblum-body.png"),
          1,
          2 * Math.PI * Math.random()
       )

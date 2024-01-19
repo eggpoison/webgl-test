@@ -2,13 +2,11 @@ import { EntityData, EntityType, HitData, Inventory, InventoryData, Point } from
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { playBuildingHitSound, playSound } from "../sound";
 
 class Barrel extends Entity {
    public static readonly SIZE = 80;
-
-   public type = EntityType.barrel;
 
    public readonly inventory: Inventory;
 
@@ -22,7 +20,7 @@ class Barrel extends Entity {
             this,
             Barrel.SIZE,
             Barrel.SIZE,
-            getGameObjectTextureArrayIndex("entities/barrel/barrel.png"),
+            getEntityTextureArrayIndex("entities/barrel/barrel.png"),
             0,
             0
          )

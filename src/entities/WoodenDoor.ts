@@ -1,6 +1,6 @@
 import { DoorToggleType, EntityData, EntityType, Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import Entity from "./Entity";
 import { playSound } from "../sound";
 
@@ -8,12 +8,10 @@ class WoodenDoor extends Entity {
    private static readonly WIDTH = 64;
    private static readonly HEIGHT = 24;
 
-   public type = EntityType.woodenDoor;
-
    // @Temporary: Remove once reworked to not use server-side hack
    private readonly doorRenderPart: RenderPart;
 
-   private toggleType: DoorToggleType
+   private toggleType: DoorToggleType;
    
    constructor(position: Point, id: number, renderDepth: number, toggleType: DoorToggleType) {
       super(position, id, EntityType.woodenDoor, renderDepth);
@@ -24,7 +22,7 @@ class WoodenDoor extends Entity {
          this,
          WoodenDoor.WIDTH,
          WoodenDoor.HEIGHT,
-         getGameObjectTextureArrayIndex("entities/wooden-door/wooden-door.png"),
+         getEntityTextureArrayIndex("entities/wooden-door/wooden-door.png"),
          0,
          0
       );

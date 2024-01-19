@@ -34,7 +34,7 @@ import { registerFrame, updateFrameGraph } from "./components/game/dev/FrameGrap
 import { createNightShaders, renderNight } from "./rendering/night-rendering";
 import { createPlaceableItemProgram, renderGhostPlaceableItem } from "./rendering/placeable-item-rendering";
 import { setupFrameGraph } from "./rendering/frame-graph-rendering";
-import { createGameObjectTextureAtlas } from "./texture-atlases/entity-texture-atlas";
+import { createEntityTextureAtlas } from "./texture-atlases/entity-texture-atlas";
 import { createFishShaders } from "./rendering/fish-rendering";
 import { Tile } from "./Tile";
 import { createForcefieldShaders, renderForcefield } from "./rendering/world-border-forcefield-rendering";
@@ -45,7 +45,7 @@ import { createResearchNodeShaders, renderResearchNode } from "./rendering/resea
 import { attemptToResearch, updateActiveResearchBench } from "./research";
 import { updateHighlightedStructure, updateSelectedStructure } from "./structure-selection";
 import { createStructureHighlightShaders, renderStructureHighlights } from "./rendering/structure-highlight-rendering";
-import { updateStructureShapingMenu } from "./components/game/StructureShapingMenu";
+import { updateBlueprintMenu } from "./components/game/BlueprintMenu";
 
 let listenersHaveBeenCreated = false;
 
@@ -191,7 +191,7 @@ abstract class Game {
             
             // We load the textures before we create the shaders because some shader initialisations stitch textures together
             await loadTextures();
-            await createGameObjectTextureAtlas();
+            await createEntityTextureAtlas();
             
             // Create shaders
             createSolidTileShaders();
@@ -226,6 +226,7 @@ abstract class Game {
             resolve();
          });
       } else {
+         Board.initialise(tiles, waterRocks, riverSteppingStones, riverFlowDirections, edgeTiles, edgeRiverFlowDirections, edgeRiverSteppingStones, grassInfo, decorations);
          createRenderChunks();
       }
    }
@@ -306,7 +307,7 @@ abstract class Game {
 
       updateHighlightedStructure();
       updateSelectedStructure();
-      updateStructureShapingMenu();
+      updateBlueprintMenu();
 
       updateSoundEffectVolume();
       playRiverSounds();
@@ -427,9 +428,7 @@ abstract class Game {
       this.cursorPositionY = calculateCursorWorldPositionY();
       renderCursorTooltip();
       
-      if (!OPTIONS.nightVisionIsEnabled) {
-         renderNight();
-      }
+      renderNight();
 
       updateInteractInventory();
 

@@ -27,6 +27,7 @@ import GameObject from "./GameObject";
 import { attemptStructureSelect } from "./structure-selection";
 import { serialiseItem } from "./inventory-manipulation";
 import { playSound } from "./sound";
+import { createWoodenWallSpawnParticles } from "./entities/WoodenWall";
 
 /** Acceleration of the player while moving without any modifiers. */
 const PLAYER_ACCELERATION = 700;
@@ -47,10 +48,10 @@ enum PlaceableItemHitboxType {
 }
 
 export interface PlaceableEntityInfo {
-   readonly textureSource: string;
+   readonly entityType: EntityType;
+   readonly wallEntityType: EntityType;
    readonly width: number;
    readonly height: number;
-   readonly placeOffset: number;
    readonly hitboxType: PlaceableItemHitboxType;
    /** Optionally defines extra criteria for being placed */
    canPlace?(): boolean;
@@ -58,17 +59,17 @@ export interface PlaceableEntityInfo {
 
 export const PLACEABLE_ENTITY_INFO_RECORD: Record<PlaceableItemType, PlaceableEntityInfo> = {
    [ItemType.workbench]: {
-      textureSource: "workbench/workbench.png",
+      entityType: EntityType.workbench,
+      wallEntityType: EntityType.workbench,
       width: Workbench.SIZE,
       height: Workbench.SIZE,
-      placeOffset: Workbench.SIZE / 2,
       hitboxType: PlaceableItemHitboxType.rectangular
    },
    [ItemType.tribe_totem]: {
-      textureSource: "tribe-totem/tribe-totem.png",
+      entityType: EntityType.tribeTotem,
+      wallEntityType: EntityType.tribeTotem,
       width: TribeTotem.SIZE,
       height: TribeTotem.SIZE,
-      placeOffset: TribeTotem.SIZE / 2,
       canPlace: (): boolean => {
          // The player can only place one tribe totem
          return !Game.tribe.hasTotem;
@@ -76,67 +77,105 @@ export const PLACEABLE_ENTITY_INFO_RECORD: Record<PlaceableItemType, PlaceableEn
       hitboxType: PlaceableItemHitboxType.circular
    },
    [ItemType.worker_hut]: {
-      textureSource: "worker-hut/worker-hut.png",
+      entityType: EntityType.workerHut,
+      wallEntityType: EntityType.workerHut,
       width: WorkerHut.SIZE,
       height: WorkerHut.SIZE,
-      placeOffset: WorkerHut.SIZE / 2,
       canPlace: (): boolean => {
          return Game.tribe.hasTotem && Game.tribe.numHuts < Game.tribe.tribesmanCap;
       },
       hitboxType: PlaceableItemHitboxType.rectangular
    },
    [ItemType.warrior_hut]: {
-      textureSource: "warrior-hut/warrior-hut.png",
+      entityType: EntityType.warriorHut,
+      wallEntityType: EntityType.warriorHut,
       width: WarriorHut.SIZE,
       height: WarriorHut.SIZE,
-      placeOffset: WarriorHut.SIZE / 2,
       canPlace: (): boolean => {
          return Game.tribe.hasTotem && Game.tribe.numHuts < Game.tribe.tribesmanCap;
       },
       hitboxType: PlaceableItemHitboxType.rectangular
    },
    [ItemType.barrel]: {
-      textureSource: "barrel/barrel.png",
+      entityType: EntityType.barrel,
+      wallEntityType: EntityType.barrel,
       width: Barrel.SIZE,
       height: Barrel.SIZE,
-      placeOffset: Barrel.SIZE / 2,
       hitboxType: PlaceableItemHitboxType.circular
    },
    [ItemType.campfire]: {
-      textureSource: "campfire/campfire.png",
+      entityType: EntityType.campfire,
+      wallEntityType: EntityType.campfire,
       width: Campfire.SIZE,
       height: Campfire.SIZE,
-      placeOffset: Campfire.SIZE / 2,
       hitboxType: PlaceableItemHitboxType.circular
    },
    [ItemType.furnace]: {
-      textureSource: "furnace/furnace.png",
+      entityType: EntityType.furnace,
+      wallEntityType: EntityType.furnace,
       width: Furnace.SIZE,
       height: Furnace.SIZE,
-      placeOffset: Furnace.SIZE / 2,
       hitboxType: PlaceableItemHitboxType.rectangular
    },
    [ItemType.research_bench]: {
-      textureSource: "research-bench/research-bench.png",
+      entityType: EntityType.researchBench,
+      wallEntityType: EntityType.researchBench,
       width: 32 * 4,
       height: 20 * 4,
-      placeOffset: 50,
       hitboxType: PlaceableItemHitboxType.rectangular
    },
    [ItemType.wooden_wall]: {
-      textureSource: "wooden-wall/wooden-wall.png",
+      entityType: EntityType.woodenWall,
+      wallEntityType: EntityType.woodenWall,
       width: 64,
       height: 64,
-      placeOffset: 32,
       hitboxType: PlaceableItemHitboxType.rectangular
    },
    [ItemType.planter_box]: {
-      textureSource: "planter-box/planter-box.png",
+      entityType: EntityType.planterBox,
+      wallEntityType: EntityType.planterBox,
       width: 80,
       height: 80,
-      placeOffset: 40,
+      hitboxType: PlaceableItemHitboxType.rectangular
+   },
+   [ItemType.wooden_spikes]: {
+      entityType: EntityType.woodenFloorSpikes,
+      wallEntityType: EntityType.woodenWallSpikes,
+      width: 40,
+      height: 40,
+      hitboxType: PlaceableItemHitboxType.rectangular
+   },
+   [ItemType.punji_sticks]: {
+      entityType: EntityType.floorPunjiSticks,
+      wallEntityType: EntityType.wallPunjiSticks,
+      width: 48,
+      height: 48,
       hitboxType: PlaceableItemHitboxType.rectangular
    }
+};
+
+export const PLACEABLE_ENTITY_TEXTURE_SOURCES: Partial<Record<EntityType, string>> = {
+   [EntityType.workbench]: "entities/workbench/workbench.png",
+   [EntityType.tribeTotem]: "entities/tribe-totem/tribe-totem.png",
+   [EntityType.workerHut]: "entities/worker-hut/worker-hut.png",
+   [EntityType.warriorHut]: "entities/warrior-hut/warrior-hut.png",
+   [EntityType.barrel]: "entities/barrel/barrel.png",
+   [EntityType.campfire]: "entities/campfire/campfire.png",
+   [EntityType.furnace]: "entities/furnace/furnace.png",
+   [EntityType.researchBench]: "entities/research-bench/research-bench.png",
+   [EntityType.woodenWall]: "entities/wooden-wall/wooden-wall.png",
+   [EntityType.planterBox]: "entities/planter-box/planter-box.png",
+   [EntityType.woodenFloorSpikes]: "entities/wooden-floor-spikes/wooden-floor-spikes.png",
+   [EntityType.woodenWallSpikes]: "entities/wooden-wall-spikes/wooden-wall-spikes.png",
+   [EntityType.floorPunjiSticks]: "entities/floor-punji-sticks/floor-punji-sticks.png"
+};
+
+const PLACEABLE_WALL_ENTITY_WIDTHS: Partial<Record<EntityType, number>> = {
+   [EntityType.woodenWallSpikes]: 68
+};
+
+const PLACEABLE_WALL_ENTITY_HEIGHTS: Partial<Record<EntityType, number>> = {
+   [EntityType.woodenWallSpikes]: 32
 };
 
 const testRectangularHitbox = new RectangularHitbox(1, -1, -1, 0);
@@ -670,8 +709,9 @@ export function selectItem(item: Item): void {
 }
 
 const calculateRegularPlacePosition = (placeableEntityInfo: PlaceableEntityInfo): Point => {
-   const placePositionX = Player.instance!.position.x + (SETTINGS.ITEM_PLACE_DISTANCE + placeableEntityInfo.placeOffset) * Math.sin(Player.instance!.rotation);
-   const placePositionY = Player.instance!.position.y + (SETTINGS.ITEM_PLACE_DISTANCE + placeableEntityInfo.placeOffset) * Math.cos(Player.instance!.rotation);
+   const placeOffset = placeableEntityInfo.height / 2;
+   const placePositionX = Player.instance!.position.x + (SETTINGS.ITEM_PLACE_DISTANCE + placeOffset) * Math.sin(Player.instance!.rotation);
+   const placePositionY = Player.instance!.position.y + (SETTINGS.ITEM_PLACE_DISTANCE + placeOffset) * Math.cos(Player.instance!.rotation);
    return new Point(placePositionX, placePositionY);
 }
 
@@ -679,9 +719,10 @@ interface BuildingSnapInfo {
    /** -1 if no snap was found */
    readonly x: number;
    readonly y: number;
-   readonly direction: number;
+   readonly rotation: number;
+   readonly entityType: EntityType;
 }
-export function calculateSnapInfo(placeableEntityInfo: PlaceableEntityInfo): BuildingSnapInfo {
+export function calculateSnapInfo(placeableEntityInfo: PlaceableEntityInfo): BuildingSnapInfo | null {
    const regularPlacePosition = calculateRegularPlacePosition(placeableEntityInfo);
 
    const minChunkX = Math.max(Math.floor((regularPlacePosition.x - SETTINGS.STRUCTURE_SNAP_RANGE) / SETTINGS.CHUNK_UNITS), 0);
@@ -706,60 +747,89 @@ export function calculateSnapInfo(placeableEntityInfo: PlaceableEntityInfo): Bui
       }
    }
 
-   for (const entity of snappableEntities) {
-      const snapOffset = SNAP_OFFSETS[entity.type as StructureType];
+   for (const snapEntity of snappableEntities) {
+      let snapOrigin: Point;
+      switch (snapEntity.type as StructureType) {
+         case EntityType.woodenWall:
+         case EntityType.woodenDoor:
+         case EntityType.woodenFloorSpikes:
+         case EntityType.woodenWallSpikes: {
+            snapOrigin = snapEntity.position;
+            break;
+         }
+         case EntityType.woodenEmbrasure: {
+            const x = snapEntity.position.x - 22 * Math.sin(snapEntity.rotation);
+            const y = snapEntity.position.y - 22 * Math.cos(snapEntity.rotation);
+            snapOrigin = new Point(x, y);
+         }
+      }
+      
+      const placingEntityType = snapEntity.type === EntityType.woodenWall ? placeableEntityInfo.wallEntityType : placeableEntityInfo.entityType;
+      const snapOffset = SNAP_OFFSETS[snapEntity.type as StructureType] / 2 + SNAP_OFFSETS[placingEntityType as StructureType] / 2;
+
       // Check the 4 potential snap positions for matches
       for (let i = 0; i < 4; i++) {
          const direction = i * Math.PI / 2;
-         const placeDirection = (entity.rotation + direction + Math.PI) % (Math.PI * 2) - Math.PI;
-         const x = entity.position.x + snapOffset * Math.sin(placeDirection);
-         const y = entity.position.y + snapOffset * Math.cos(placeDirection);
+         const placeDirection = (snapEntity.rotation + direction + Math.PI) % (Math.PI * 2) - Math.PI;
+         const x = snapOrigin.x + snapOffset * Math.sin(placeDirection);
+         const y = snapOrigin.y + snapOffset * Math.cos(placeDirection);
          
          if (distance(regularPlacePosition.x, regularPlacePosition.y, x, y) > SETTINGS.STRUCTURE_POSITION_SNAP) {
             continue;
          }
 
-         const playerRotation = (Player.instance!.rotation + Math.PI) % (Math.PI * 2) - Math.PI;
-         for (let i = 0; i < 4; i++) {
-            const direction = i * Math.PI / 2;
-            const placeDirection = (entity.rotation + direction + Math.PI) % (Math.PI * 2) - Math.PI;
-            let angleDiff = playerRotation - placeDirection;
-            angleDiff = (angleDiff + Math.PI) % (Math.PI * 2) - Math.PI;
-            if (Math.abs(angleDiff) <= SETTINGS.STRUCTURE_ROTATION_SNAP) {
-               return {
-                  x: x,
-                  y: y,
-                  direction: placeDirection
-               };
+         // Check the 4 rotations
+         let placeRotation = -999;
+         if (placingEntityType === placeableEntityInfo.entityType) {
+            // If not placing on wall, check all 4 rotations to see if they match the player's rotation
+            // @Speed: Might only need to check 1 direction
+            const playerRotation = (Player.instance!.rotation + Math.PI) % (Math.PI * 2) - Math.PI;
+            for (let i = 0; i < 4; i++) {
+               const direction = i * Math.PI / 2;
+               const placeDirection = (snapEntity.rotation + direction + Math.PI) % (Math.PI * 2) - Math.PI;
+               let angleDiff = playerRotation - placeDirection;
+               angleDiff = (angleDiff + Math.PI) % (Math.PI * 2) - Math.PI;
+               if (Math.abs(angleDiff) <= SETTINGS.STRUCTURE_ROTATION_SNAP) {
+                  placeRotation = placeDirection;
+               }
             }
+         } else {
+            // If placing on wall, always face away from the wall
+            // @Speed: Garbage collection
+            placeRotation = snapEntity.position.calculateAngleBetween(new Point(x, y));
+         }
+         
+         if (placeRotation !== -999) {
+            return {
+               x: x,
+               y: y,
+               rotation: placeRotation,
+               entityType: placingEntityType
+            };
          }
       }
    }
    
-   return {
-      x: -1,
-      y: -1,
-      direction: -1
-   };
+   return null;
 }
 
-export function calculatePlacePosition(placeableEntityInfo: PlaceableEntityInfo, snapInfo: BuildingSnapInfo): Point {
-   if (snapInfo.x === -1) {
+export function calculatePlacePosition(placeableEntityInfo: PlaceableEntityInfo, snapInfo: BuildingSnapInfo | null): Point {
+   if (snapInfo === null) {
       return calculateRegularPlacePosition(placeableEntityInfo);
    }
 
    return new Point(snapInfo.x, snapInfo.y);
 }
 
-export function calculatePlaceRotation(snapInfo: BuildingSnapInfo): number {
-   if (snapInfo.x === -1) {
+export function calculatePlaceRotation(snapInfo: BuildingSnapInfo | null): number {
+   if (snapInfo === null) {
       return Player.instance!.rotation;
    }
 
-   return snapInfo.direction;
+   return snapInfo.rotation;
 }
 
-export function canPlaceItem(placePosition: Point, placeRotation: number, item: Item): boolean {
+export function canPlaceItem(placePosition: Point, placeRotation: number, item: Item, placingEntityType: EntityType): boolean {
    if (!PLACEABLE_ENTITY_INFO_RECORD.hasOwnProperty(item.type)) {
       throw new Error(`Item type '${item.type}' is not placeable.`);
    }
@@ -770,13 +840,16 @@ export function canPlaceItem(placePosition: Point, placeRotation: number, item: 
       return false;
    }
 
+   const width = PLACEABLE_WALL_ENTITY_WIDTHS.hasOwnProperty(placingEntityType) ? PLACEABLE_WALL_ENTITY_WIDTHS[placingEntityType]! : placeableInfo.width;
+   const height = PLACEABLE_WALL_ENTITY_HEIGHTS.hasOwnProperty(placingEntityType) ? PLACEABLE_WALL_ENTITY_HEIGHTS[placingEntityType]! : placeableInfo.height;
+
    let placeTestHitbox: Hitbox;
    if (placeableInfo.hitboxType === PlaceableItemHitboxType.circular) {
-      testCircularHitbox.radius = placeableInfo.width / 2; // For a circular hitbox, width and height will be the same
+      testCircularHitbox.radius = width / 2; // For a circular hitbox, width and height will be the same
       placeTestHitbox = testCircularHitbox;
    } else {
-      testRectangularHitbox.width = placeableInfo.width;
-      testRectangularHitbox.height = placeableInfo.height;
+      testRectangularHitbox.width = width;
+      testRectangularHitbox.height = height;
       testRectangularHitbox.recalculateHalfDiagonalLength();
       testRectangularHitbox.rotation = placeRotation;
       testRectangularHitbox.externalRotation = 0;
@@ -808,8 +881,8 @@ export function canPlaceItem(placePosition: Point, placeRotation: number, item: 
          const chunk = Board.getChunk(chunkX, chunkY);
          for (const entity of chunk.getEntities()) {
             for (const hitbox of entity.hitboxes) {   
-               // @Temporary
-               if ((placeTestHitbox as RectangularHitbox).isColliding(hitbox)) {
+               if (placeTestHitbox.isColliding(hitbox)) {
+                  console.log("false");
                   return false;
                }
             }
@@ -944,11 +1017,17 @@ const itemRightClickDown = (item: Item, isOffhand: boolean, itemSlot: number): v
       }
       case "placeable": {
          const placeableEntityInfo = PLACEABLE_ENTITY_INFO_RECORD[item.type as PlaceableItemType]!;
-         const snapID = calculateSnapInfo(placeableEntityInfo);
-         const placePosition = calculatePlacePosition(placeableEntityInfo, snapID);
-         const placeRotation = calculatePlaceRotation(snapID);
-         if (canPlaceItem(placePosition, placeRotation, item)) {
+         const snapInfo = calculateSnapInfo(placeableEntityInfo);
+         const placePosition = calculatePlacePosition(placeableEntityInfo, snapInfo);
+         const placeRotation = calculatePlaceRotation(snapInfo);
+         if (canPlaceItem(placePosition, placeRotation, item, snapInfo !== null ? snapInfo.entityType : placeableEntityInfo.entityType)) {
             Client.sendItemUsePacket();
+            switch (item.type) {
+               case ItemType.wooden_wall: {
+                  createWoodenWallSpawnParticles(placePosition.x, placePosition.y);
+                  break;
+               }
+            }
          }
          
          break;

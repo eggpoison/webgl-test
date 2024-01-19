@@ -3,7 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle } from "../generic-particles";
 import Board from "../Board";
-import { GAME_OBJECT_TEXTURE_SLOT_INDEXES, getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { ENTITY_TEXTURE_SLOT_INDEXES, getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { AudioFilePath, playSound } from "../sound";
 import { getFrameProgress } from "../GameObject";
 import CLIENT_ITEM_INFO_RECORD from "../client-item-info";
@@ -50,8 +50,6 @@ class Zombie extends Entity {
    private static readonly LUNGE_ANIMATION_TIME = 0.4;
    private static readonly HAND_LUNGE_DIRECTION = Math.PI / 5;
 
-   public readonly type = EntityType.zombie;
-
    private numFootstepsTaken = 0;
    private distanceTracker = 0;
 
@@ -87,7 +85,7 @@ class Zombie extends Entity {
             this,
             Zombie.RADIUS * 2,
             Zombie.RADIUS * 2,
-            getGameObjectTextureArrayIndex(ZOMBIE_TEXTURE_SOURCES[zombieType]),
+            getEntityTextureArrayIndex(ZOMBIE_TEXTURE_SOURCES[zombieType]),
             2,
             0
          )
@@ -99,7 +97,7 @@ class Zombie extends Entity {
             this,
             20,
             20,
-            getGameObjectTextureArrayIndex(ZOMBIE_HAND_TEXTURE_SOURCES[zombieType]),
+            getEntityTextureArrayIndex(ZOMBIE_HAND_TEXTURE_SOURCES[zombieType]),
             1,
             0
          );
@@ -118,7 +116,7 @@ class Zombie extends Entity {
          this,
          Zombie.TOOL_ACTIVE_ITEM_SIZE,
          Zombie.TOOL_ACTIVE_ITEM_SIZE,
-         activeItemType !== null ? getGameObjectTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItemType].entityTextureSource) : -1,
+         activeItemType !== null ? getEntityTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItemType].entityTextureSource) : -1,
          0,
          0
       );
@@ -317,11 +315,11 @@ class Zombie extends Entity {
          this.attachRenderPart(this.activeItemRenderPart);
          
          if (this.showLargeItemTexture(activeItemType)) {
-            this.activeItemRenderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItemType].textureSource)];
+            this.activeItemRenderPart.textureSlotIndex = ENTITY_TEXTURE_SLOT_INDEXES[getEntityTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItemType].textureSource)];
             this.activeItemRenderPart.textureWidth = 16;
             this.activeItemRenderPart.textureHeight = 16;
          } else {
-            this.activeItemRenderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItemType].entityTextureSource)];
+            this.activeItemRenderPart.textureSlotIndex = ENTITY_TEXTURE_SLOT_INDEXES[getEntityTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItemType].entityTextureSource)];
             this.activeItemRenderPart.textureWidth = 8;
             this.activeItemRenderPart.textureHeight = 8;
          }
@@ -343,7 +341,7 @@ class Zombie extends Entity {
          if (textureIdx >= Zombie.BOW_CHARGE_TEXTURE_SOURCES.length) {
             textureIdx = Zombie.BOW_CHARGE_TEXTURE_SOURCES.length - 1;
          }
-         this.activeItemRenderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureArrayIndex(Zombie.BOW_CHARGE_TEXTURE_SOURCES[textureIdx])];
+         this.activeItemRenderPart.textureSlotIndex = ENTITY_TEXTURE_SLOT_INDEXES[getEntityTextureArrayIndex(Zombie.BOW_CHARGE_TEXTURE_SOURCES[textureIdx])];
       }
    }
 

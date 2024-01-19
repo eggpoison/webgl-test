@@ -1,6 +1,6 @@
 import { EntityType, Point, SETTINGS, lerp, randFloat, randInt } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 import Board from "../Board";
@@ -40,7 +40,7 @@ class RockSpikeProjectile extends GameObject {
          this,
          spriteSize,
          spriteSize,
-         getGameObjectTextureArrayIndex(RockSpikeProjectile.SPRITE_TEXTURE_SOURCES[this.size]),
+         getEntityTextureArrayIndex(RockSpikeProjectile.SPRITE_TEXTURE_SOURCES[this.size]),
          0,
          0
       );

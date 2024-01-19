@@ -1,7 +1,7 @@
 import { EntityData, EntityType, Point, SETTINGS, lerp } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { playBuildingHitSound, playSound } from "../sound";
 import Board from "../Board";
 
@@ -30,8 +30,6 @@ class WorkerHut extends Entity {
    private static readonly DOOR_WIDTH = 12;
    private static readonly DOOR_HEIGHT = 48;
 
-   public type = EntityType.workerHut;
-
    public tribeID: number | null;
 
    /** Amount the door should swing outwards from 0 to 1 */
@@ -48,7 +46,7 @@ class WorkerHut extends Entity {
          this,
          WorkerHut.SIZE,
          WorkerHut.SIZE,
-         getGameObjectTextureArrayIndex("entities/worker-hut/worker-hut.png"),
+         getEntityTextureArrayIndex("entities/worker-hut/worker-hut.png"),
          2,
          0
       );
@@ -59,7 +57,7 @@ class WorkerHut extends Entity {
          this,
          WorkerHut.DOOR_WIDTH,
          WorkerHut.DOOR_HEIGHT,
-         getGameObjectTextureArrayIndex("entities/worker-hut/worker-hut-door.png"),
+         getEntityTextureArrayIndex("entities/worker-hut/worker-hut-door.png"),
          1,
          0
       );

@@ -2,7 +2,7 @@ import { rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 import Board from "../Board";
 import { ATLAS_SLOT_SIZE } from "../texture-atlases/texture-atlas-stitching";
-import { GAME_OBJECT_TEXTURE_ATLAS, GAME_OBJECT_TEXTURE_ATLAS_SIZE } from "../texture-atlases/entity-texture-atlas";
+import { ENTITY_TEXTURE_ATLAS, ENTITY_TEXTURE_ATLAS_SIZE } from "../texture-atlases/entity-texture-atlas";
 
 let program: WebGLProgram;
 let vao: WebGLVertexArrayObject;
@@ -102,7 +102,7 @@ export function createEntityShaders(): void {
 
    gl.useProgram(program);
    gl.uniform1i(textureUniformLocation, 0);
-   gl.uniform1f(atlasPixelSizeUniformLocation, GAME_OBJECT_TEXTURE_ATLAS_SIZE);
+   gl.uniform1f(atlasPixelSizeUniformLocation, ENTITY_TEXTURE_ATLAS_SIZE);
    gl.uniform1f(atlasSlotSizeUniformLocation, ATLAS_SLOT_SIZE);
 
    // 
@@ -175,6 +175,10 @@ export function renderGameObjects(): void {
 
          const vertexDataOffset = i * 4 * 12;
 
+         const tintR = gameObject.tintR + renderPart.tintR;
+         const tintG = gameObject.tintG + renderPart.tintG;
+         const tintB = gameObject.tintB + renderPart.tintB;
+
          vertexData[vertexDataOffset] = bottomLeftX;
          vertexData[vertexDataOffset + 1] = bottomLeftY;
          vertexData[vertexDataOffset + 2] = depth;
@@ -183,9 +187,9 @@ export function renderGameObjects(): void {
          vertexData[vertexDataOffset + 5] = renderPart.textureSlotIndex;
          vertexData[vertexDataOffset + 6] = renderPart.textureWidth;
          vertexData[vertexDataOffset + 7] = renderPart.textureHeight;
-         vertexData[vertexDataOffset + 8] = gameObject.tintR;
-         vertexData[vertexDataOffset + 9] = gameObject.tintG;
-         vertexData[vertexDataOffset + 10] = gameObject.tintB;
+         vertexData[vertexDataOffset + 8] = tintR;
+         vertexData[vertexDataOffset + 9] = tintG;
+         vertexData[vertexDataOffset + 10] = tintB;
          vertexData[vertexDataOffset + 11] = renderPart.opacity;
 
          vertexData[vertexDataOffset + 12] = bottomRightX;
@@ -196,9 +200,9 @@ export function renderGameObjects(): void {
          vertexData[vertexDataOffset + 17] = renderPart.textureSlotIndex;
          vertexData[vertexDataOffset + 18] = renderPart.textureWidth;
          vertexData[vertexDataOffset + 19] = renderPart.textureHeight;
-         vertexData[vertexDataOffset + 20] = gameObject.tintR;
-         vertexData[vertexDataOffset + 21] = gameObject.tintG;
-         vertexData[vertexDataOffset + 22] = gameObject.tintB;
+         vertexData[vertexDataOffset + 20] = tintR;
+         vertexData[vertexDataOffset + 21] = tintG;
+         vertexData[vertexDataOffset + 22] = tintB;
          vertexData[vertexDataOffset + 23] = renderPart.opacity;
 
          vertexData[vertexDataOffset + 24] = topLeftX;
@@ -209,9 +213,9 @@ export function renderGameObjects(): void {
          vertexData[vertexDataOffset + 29] = renderPart.textureSlotIndex;
          vertexData[vertexDataOffset + 30] = renderPart.textureWidth;
          vertexData[vertexDataOffset + 31] = renderPart.textureHeight;
-         vertexData[vertexDataOffset + 32] = gameObject.tintR;
-         vertexData[vertexDataOffset + 33] = gameObject.tintG;
-         vertexData[vertexDataOffset + 34] = gameObject.tintB;
+         vertexData[vertexDataOffset + 32] = tintR;
+         vertexData[vertexDataOffset + 33] = tintG;
+         vertexData[vertexDataOffset + 34] = tintB;
          vertexData[vertexDataOffset + 35] = renderPart.opacity;
 
          vertexData[vertexDataOffset + 36] = topRightX;
@@ -222,9 +226,9 @@ export function renderGameObjects(): void {
          vertexData[vertexDataOffset + 41] = renderPart.textureSlotIndex;
          vertexData[vertexDataOffset + 42] = renderPart.textureWidth;
          vertexData[vertexDataOffset + 43] = renderPart.textureHeight;
-         vertexData[vertexDataOffset + 44] = gameObject.tintR;
-         vertexData[vertexDataOffset + 45] = gameObject.tintG;
-         vertexData[vertexDataOffset + 46] = gameObject.tintB;
+         vertexData[vertexDataOffset + 44] = tintR;
+         vertexData[vertexDataOffset + 45] = tintG;
+         vertexData[vertexDataOffset + 46] = tintB;
          vertexData[vertexDataOffset + 47] = renderPart.opacity;
 
          const indicesDataOffset = i * 6;
@@ -253,7 +257,7 @@ export function renderGameObjects(): void {
 
    // Bind texture atlas
    gl.activeTexture(gl.TEXTURE0);
-   gl.bindTexture(gl.TEXTURE_2D, GAME_OBJECT_TEXTURE_ATLAS);
+   gl.bindTexture(gl.TEXTURE_2D, ENTITY_TEXTURE_ATLAS);
 
    gl.bindVertexArray(vao);
 

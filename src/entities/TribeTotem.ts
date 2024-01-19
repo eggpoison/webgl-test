@@ -1,7 +1,7 @@
 import { Point, TribeTotemBanner, EntityData, TribeType, EntityType, HitData } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { playBuildingHitSound, playSound } from "../sound";
 
 class TribeTotem extends Entity {
@@ -11,8 +11,6 @@ class TribeTotem extends Entity {
    private static readonly BANNER_HEIGHT = 16;
 
    private static readonly BANNER_LAYER_DISTANCES = [34, 52, 65];
-   
-   public type = EntityType.tribeTotem;
 
    public tribeID: number;
    private tribeType: TribeType;
@@ -27,7 +25,7 @@ class TribeTotem extends Entity {
          this,
          TribeTotem.SIZE,
          TribeTotem.SIZE,
-         getGameObjectTextureArrayIndex(`entities/tribe-totem/tribe-totem.png`),
+         getEntityTextureArrayIndex(`entities/tribe-totem/tribe-totem.png`),
          1,
          0
       );
@@ -63,7 +61,7 @@ class TribeTotem extends Entity {
          this,
          TribeTotem.BANNER_WIDTH,
          TribeTotem.BANNER_HEIGHT,
-         getGameObjectTextureArrayIndex(`entities/tribe-totem/${totemTextureSourceID}`),
+         getEntityTextureArrayIndex(`entities/tribe-totem/${totemTextureSourceID}`),
          2,
          banner.direction
       );

@@ -40,9 +40,16 @@ import Golem from "./entities/Golem";
 import PlanterBox from "./entities/PlanterBox";
 import IceArrow from "./projectiles/IceArrow";
 import Pebblum from "./entities/Pebblum";
+import WoodenEmbrasure from "./entities/WoodenEmbrasure";
+import WoodenFloorSpikes from "./entities/WoodenFloorSpikes";
+import WoodenWallSpikes from "./entities/WoodenWallSpikes";
+import FloorPunjiSticks from "./entities/FloorPunjiSticks";
+import WallPunjiSticks from "./entities/WallPunjiSticks";
+import BlueprintEntity from "./entities/BlueprintEntity";
 
 export type EntityClassType<T extends EntityType> = new (position: Point, id: number, renderDepth: number, ...clientParams: Parameters<typeof EntityInfoClientArgs[T]>) => GameObject;
 
+// @Incomplete: Move to server-like system
 const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
    [EntityType.cow]: () => Cow,
    [EntityType.zombie]: () => Zombie,
@@ -83,7 +90,13 @@ const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
    [EntityType.golem]: () => Golem,
    [EntityType.planterBox]: () => PlanterBox,
    [EntityType.iceArrow]: () => IceArrow,
-   [EntityType.pebblum]: () => Pebblum
+   [EntityType.pebblum]: () => Pebblum,
+   [EntityType.woodenEmbrasure]: () => WoodenEmbrasure,
+   [EntityType.woodenFloorSpikes]: () => WoodenFloorSpikes,
+   [EntityType.woodenWallSpikes]: () => WoodenWallSpikes,
+   [EntityType.floorPunjiSticks]: () => FloorPunjiSticks,
+   [EntityType.wallPunjiSticks]: () => WallPunjiSticks,
+   [EntityType.blueprintEntity]: () => BlueprintEntity
 };
 
 export default ENTITY_CLASS_RECORD;

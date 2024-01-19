@@ -9,7 +9,7 @@ import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { Tile } from "../Tile";
 import { gameScreenSetIsDead } from "../components/game/GameScreen";
 import { getInteractEntityID, removeSelectedItem, selectItem, updateInventoryIsOpen } from "../player-input";
-import { Hotbar_update, Hotbar_updateLeftThrownBattleaxeItemID, Hotbar_updateRightThrownBattleaxeItemID } from "../components/game/inventories/Hotbar";
+import { Hotbar_setHotbarSelectedItemSlot, Hotbar_update, Hotbar_updateLeftThrownBattleaxeItemID, Hotbar_updateRightThrownBattleaxeItemID } from "../components/game/inventories/Hotbar";
 import { setHeldItemVisual } from "../components/game/HeldItem";
 import { CraftingMenu_setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
 import { HealthBar_setHasFrostShield, updateHealthBar } from "../components/game/HealthBar";
@@ -471,6 +471,7 @@ abstract class Client {
          const hitbox = new RectangularHitbox(hitboxData.mass, hitboxData.width, hitboxData.height, hitboxData.localID);
          hitbox.offset.x = hitboxData.offsetX;
          hitbox.offset.y = hitboxData.offsetY;
+         hitbox.rotation = hitboxData.rotation;
 
          gameObject.addRectangularHitbox(hitbox);
       }
@@ -496,6 +497,9 @@ abstract class Client {
    }
 
    private static respawnPlayer(respawnDataPacket: RespawnDataPacket): void {
+      latencyGameState.selectedHotbarItemSlot = 1;
+      Hotbar_setHotbarSelectedItemSlot(1);
+      
       const maxHealth = TRIBE_INFO_RECORD[Game.tribe.tribeType].maxHealthPlayer;
       definiteGameState.setPlayerHealth(maxHealth);
       updateHealthBar(maxHealth);
@@ -654,6 +658,12 @@ abstract class Client {
    public static sendUnlockTech(techID: TechID): void {
       if (Game.isRunning && this.socket !== null) {
          this.socket.emit("unlock_tech", techID);
+      }
+   }
+
+   public static sendForceUnlockTech(techID: TechID): void {
+      if (Game.isRunning && this.socket !== null) {
+         this.socket.emit("force_unlock_tech", techID);
       }
    }
 

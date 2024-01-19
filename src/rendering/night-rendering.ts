@@ -1,6 +1,7 @@
 import { SETTINGS, lerp } from "webgl-test-shared";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 import Board from "../Board";
+import OPTIONS from "../options";
 
 const NIGHT_LIGHT = 0.4;
 
@@ -179,8 +180,6 @@ export function createNightShaders(): void {
 }
 
 export function renderNight(): void {
-   // Don't render nighttime if it is day
-
    let ambientLight: number;
    if (Board.time >= 6 && Board.time < 18) {
       ambientLight = 1;
@@ -208,29 +207,31 @@ export function renderNight(): void {
       lightColours.push(light.b);
    }
 
-   gl.useProgram(darknessProgram);
-
-   gl.enable(gl.BLEND);
-   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-
-   gl.bindVertexArray(vao);
-
-   gl.uniform1f(darkenFactorUniformLocation, ambientLight);
-
-   const darknessNumLightsLocation = gl.getUniformLocation(darknessProgram, "u_numLights")!;
-   gl.uniform1i(darknessNumLightsLocation, Board.lights.length);
-   if (Board.lights.length > 0) {
-      const lightPosLocation = gl.getUniformLocation(darknessProgram, "u_lightPositions")!;
-      gl.uniform2fv(lightPosLocation, new Float32Array(lightPositions));
-      const lightIntensityLocation = gl.getUniformLocation(darknessProgram, "u_lightIntensities")!;
-      gl.uniform1fv(lightIntensityLocation, new Float32Array(lightIntensities));
-      const lightStrengthLocation = gl.getUniformLocation(darknessProgram, "u_lightStrengths")!;
-      gl.uniform1fv(lightStrengthLocation, new Float32Array(lightStrengths));
-      const lightRadiiLocation = gl.getUniformLocation(darknessProgram, "u_lightRadii")!;
-      gl.uniform1fv(lightRadiiLocation, new Float32Array(lightRadii));
+   if (!OPTIONS.nightVisionIsEnabled) {
+      gl.useProgram(darknessProgram);
+   
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+   
+      gl.bindVertexArray(vao);
+   
+      gl.uniform1f(darkenFactorUniformLocation, ambientLight);
+   
+      const darknessNumLightsLocation = gl.getUniformLocation(darknessProgram, "u_numLights")!;
+      gl.uniform1i(darknessNumLightsLocation, Board.lights.length);
+      if (Board.lights.length > 0) {
+         const lightPosLocation = gl.getUniformLocation(darknessProgram, "u_lightPositions")!;
+         gl.uniform2fv(lightPosLocation, new Float32Array(lightPositions));
+         const lightIntensityLocation = gl.getUniformLocation(darknessProgram, "u_lightIntensities")!;
+         gl.uniform1fv(lightIntensityLocation, new Float32Array(lightIntensities));
+         const lightStrengthLocation = gl.getUniformLocation(darknessProgram, "u_lightStrengths")!;
+         gl.uniform1fv(lightStrengthLocation, new Float32Array(lightStrengths));
+         const lightRadiiLocation = gl.getUniformLocation(darknessProgram, "u_lightRadii")!;
+         gl.uniform1fv(lightRadiiLocation, new Float32Array(lightRadii));
+      }
+   
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
    }
-
-   gl.drawArrays(gl.TRIANGLES, 0, 6);
 
    gl.useProgram(colourProgram);
 

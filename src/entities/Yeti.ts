@@ -3,7 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle, createSnowParticle, createWhiteSmokeParticle } from "../generic-particles";
 import Board from "../Board";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 
 class Yeti extends Entity {
    private static readonly SIZE = 128;
@@ -17,8 +17,6 @@ class Yeti extends Entity {
 
    private static readonly BLOOD_POOL_SIZE = 30;
    private static readonly BLOOD_FOUNTAIN_INTERVAL = 0.15;
-
-   public type = EntityType.yeti;
 
    private numFootstepsTaken = 0;
    private distanceTracker = 0;
@@ -34,7 +32,7 @@ class Yeti extends Entity {
             this,
             Yeti.SIZE,
             Yeti.SIZE,
-            getGameObjectTextureArrayIndex("entities/yeti/yeti.png"),
+            getEntityTextureArrayIndex("entities/yeti/yeti.png"),
             1,
             0
          )
@@ -52,7 +50,7 @@ class Yeti extends Entity {
          this,
          Yeti.PAW_SIZE,
          Yeti.PAW_SIZE,
-         getGameObjectTextureArrayIndex("entities/yeti/yeti-paw.png"),
+         getEntityTextureArrayIndex("entities/yeti/yeti-paw.png"),
          0,
          0
       );
