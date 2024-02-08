@@ -18,8 +18,6 @@ class IceSpikes extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            IceSpikes.SIZE,
-            IceSpikes.SIZE,
             getEntityTextureArrayIndex(`entities/ice-spikes/ice-spikes.png`),
             0,
             0

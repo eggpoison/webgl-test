@@ -7,9 +7,6 @@ import { playBuildingHitSound, playSound } from "../sound";
 class TribeTotem extends Entity {
    public static readonly SIZE = 120;
 
-   private static readonly BANNER_WIDTH = 40;
-   private static readonly BANNER_HEIGHT = 16;
-
    private static readonly BANNER_LAYER_DISTANCES = [34, 52, 65];
 
    public tribeID: number;
@@ -23,8 +20,6 @@ class TribeTotem extends Entity {
 
       const renderPart = new RenderPart(
          this,
-         TribeTotem.SIZE,
-         TribeTotem.SIZE,
          getEntityTextureArrayIndex(`entities/tribe-totem/tribe-totem.png`),
          1,
          0
@@ -59,8 +54,6 @@ class TribeTotem extends Entity {
 
       const renderPart = new RenderPart(
          this,
-         TribeTotem.BANNER_WIDTH,
-         TribeTotem.BANNER_HEIGHT,
          getEntityTextureArrayIndex(`entities/tribe-totem/${totemTextureSourceID}`),
          2,
          banner.direction

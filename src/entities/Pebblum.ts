@@ -15,8 +15,6 @@ class Pebblum extends Entity {
       // Nose
       const nose = new RenderPart(
          this,
-         8 * 4,
-         8 * 4,
          getEntityTextureArrayIndex("entities/pebblum/pebblum-nose.png"),
          0,
          2 * Math.PI * Math.random()
@@ -27,8 +25,6 @@ class Pebblum extends Entity {
       // Body
       const body = new RenderPart(
          this,
-         10 * 4,
-         10 * 4,
          getEntityTextureArrayIndex("entities/pebblum/pebblum-body.png"),
          1,
          2 * Math.PI * Math.random()

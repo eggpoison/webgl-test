@@ -12,15 +12,7 @@ class Slime extends Entity {
    ];
    private static readonly SIZE_STRINGS: ReadonlyArray<string> = ["small", "medium", "large"];
 
-   private static readonly ORB_SIZES: ReadonlyArray<number> = [
-      16,
-      20,
-      28
-   ];
-
    private static readonly EYE_OFFSETS: ReadonlyArray<number> = [16, 24, 34];
-   private static readonly EYE_WIDTHS: ReadonlyArray<number> = [28, 40, 52];
-   private static readonly EYE_HEIGHTS: ReadonlyArray<number> = [12, 20, 24];
 
    private static readonly EYE_SHAKE_START_FREQUENCY = 0.5;
    private static readonly EYE_SHAKE_END_FREQUENCY = 1.25;
@@ -46,8 +38,6 @@ class Slime extends Entity {
    constructor(position: Point, id: number, ageTicks: number, renderDepth: number, size: SlimeSize, eyeRotation: number, orbs: ReadonlyArray<SlimeOrbData>, spitChargeProgress: number) {
       super(position, id, EntityType.slime, ageTicks, renderDepth);
 
-      const spriteSize = Slime.SIZES[size];
-
       const sizeString = Slime.SIZE_STRINGS[size];
 
       this.size = size;
@@ -55,8 +45,6 @@ class Slime extends Entity {
       // Body
       this.bodyRenderPart = new RenderPart(
          this,
-         spriteSize,
-         spriteSize,
          getEntityTextureArrayIndex(`entities/slime/slime-${sizeString}-body.png`),
          2,
          0
@@ -67,8 +55,6 @@ class Slime extends Entity {
       // Eye
       this.eyeRenderPart = new RenderPart(
          this,
-         Slime.EYE_WIDTHS[size],
-         Slime.EYE_HEIGHTS[size],
          getEntityTextureArrayIndex(`entities/slime/slime-${sizeString}-eye.png`),
          3,
          eyeRotation
@@ -80,8 +66,6 @@ class Slime extends Entity {
       // Shading
       this.attachRenderPart(new RenderPart(
          this,
-         spriteSize,
-         spriteSize,
          getEntityTextureArrayIndex(`entities/slime/slime-${sizeString}-shading.png`),
          0,
          0
@@ -97,8 +81,6 @@ class Slime extends Entity {
    private createOrbRenderPart(orbData: SlimeOrbData, i: number): void {
       const sizeString = Slime.SIZE_STRINGS[orbData.size];
       
-      const orbSize = Slime.ORB_SIZES[orbData.size];
-      
       // Calculate the orb's offset from the center of the slime
       const spriteSize = Slime.SIZES[this.size];
       const offsetMagnitude = spriteSize / 2 * lerp(0.3, 0.7, orbData.offset);
@@ -107,8 +89,6 @@ class Slime extends Entity {
 
       this.orbRenderParts[i] = new RenderPart(
          this,
-         orbSize,
-         orbSize,
          getEntityTextureArrayIndex(`entities/slime/slime-orb-${sizeString}.png`),
          1,
          orbData.rotation

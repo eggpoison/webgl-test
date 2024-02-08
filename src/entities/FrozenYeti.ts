@@ -125,7 +125,6 @@ class FrozenYeti extends Entity {
    private static readonly HEAD_SIZE = 80;
    private static readonly HEAD_DISTANCE = 60;
 
-   private static readonly PAW_SIZE = 32;
    private static readonly PAW_OFFSET = 80;
    private static readonly PAW_RESTING_ANGLE = Math.PI / 3.5;
    private static readonly PAW_HIGH_ANGLE = Math.PI / 6;
@@ -151,8 +150,6 @@ class FrozenYeti extends Entity {
 
       this.attachRenderPart(new RenderPart(
          this,
-         FrozenYeti.SIZE,
-         FrozenYeti.SIZE,
          getEntityTextureArrayIndex("entities/frozen-yeti/frozen-yeti.png"),
          1,
          0
@@ -160,8 +157,6 @@ class FrozenYeti extends Entity {
 
       this.headRenderPart = new RenderPart(
          this,
-         FrozenYeti.HEAD_SIZE,
-         FrozenYeti.HEAD_SIZE,
          getEntityTextureArrayIndex("entities/frozen-yeti/frozen-yeti-head.png"),
          2,
          0
@@ -173,8 +168,6 @@ class FrozenYeti extends Entity {
       for (let i = 0; i < 2; i++) {
          const paw = new RenderPart(
             this,
-            FrozenYeti.PAW_SIZE,
-            FrozenYeti.PAW_SIZE,
             getEntityTextureArrayIndex("entities/frozen-yeti/frozen-yeti-paw.png"),
             0,
             0

@@ -10,8 +10,6 @@ class ResearchBench extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            32 * 4,
-            20 * 4,
             getEntityTextureArrayIndex("entities/research-bench/research-bench.png"),
             0,
             0

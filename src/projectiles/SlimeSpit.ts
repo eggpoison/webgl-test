@@ -19,8 +19,6 @@ class SlimeSpit extends GameObject {
 
       const renderPart1 = new RenderPart(
          this,
-         6 * 4,
-         6 * 4,
          getEntityTextureArrayIndex("projectiles/slime-spit-medium.png"),
          1,
          0
@@ -31,8 +29,6 @@ class SlimeSpit extends GameObject {
 
       const renderPart2 = new RenderPart(
          this,
-         6 * 4,
-         6 * 4,
          getEntityTextureArrayIndex("projectiles/slime-spit-medium.png"),
          0,
          Math.PI/4

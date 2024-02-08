@@ -4,16 +4,12 @@ import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-at
 import GameObject from "../GameObject";
 
 class IceShardsProjectile extends GameObject {
-   private static readonly SIZE = 44;
-   
    constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
       super(position, id, EntityType.iceShardProjectile, ageTicks, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(
             this,
-            IceShardsProjectile.SIZE,
-            IceShardsProjectile.SIZE,
             getEntityTextureArrayIndex("projectiles/ice-shard.png"),
             0,
             0

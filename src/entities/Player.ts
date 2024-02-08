@@ -5,7 +5,7 @@ import CircularHitbox from "../hitboxes/CircularHitbox";
 import { halfWindowHeight, halfWindowWidth } from "../webgl";
 import GameObject from "../GameObject";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import DroppedItem from "../items/DroppedItem";
+import ItemEntity from "../items/DroppedItem";
 import TribeMember from "./TribeMember";
 import Board from "../Board";
 import { definiteGameState, latencyGameState } from "../game-state/game-states";
@@ -364,7 +364,7 @@ class Player extends TribeMember {
       for (let i = 0; i < potentialCollidingEntities.length; i++) {
          const entity = potentialCollidingEntities[i];
 
-         if (entity instanceof DroppedItem) {
+         if (entity instanceof ItemEntity) {
             continue;
          }
       

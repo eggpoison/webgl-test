@@ -21,7 +21,7 @@ import Snowball from "./entities/Snowball";
 import Krumblid from "./entities/Krumblid";
 import FrozenYeti from "./entities/FrozenYeti";
 import Fish from "./entities/Fish";
-import DroppedItem from "./items/DroppedItem";
+import ItemEntity from "./items/DroppedItem";
 import GameObject from "./GameObject";
 import WoodenArrowProjectile from "./projectiles/WoodenArrowProjectile";
 import IceShardsProjectile from "./projectiles/IceShardsProjectile";
@@ -79,7 +79,7 @@ const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
    [EntityType.krumblid]: () => Krumblid,
    [EntityType.frozenYeti]: () => FrozenYeti,
    [EntityType.fish]: () => Fish,
-   [EntityType.itemEntity]: () => DroppedItem,
+   [EntityType.itemEntity]: () => ItemEntity,
    [EntityType.woodenArrowProjectile]: () => WoodenArrowProjectile,
    [EntityType.iceShardProjectile]: () => IceShardsProjectile,
    [EntityType.rockSpikeProjectile]: () => RockSpikeProjectile,

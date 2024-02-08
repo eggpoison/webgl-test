@@ -12,8 +12,6 @@ class BattleaxeProjectile extends GameObject {
       this.attachRenderPart(
          new RenderPart(
             this,
-            64,
-            64,
             getEntityTextureArrayIndex("items/large/stone-battleaxe.png"),
             0,
             0

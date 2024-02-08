@@ -27,7 +27,6 @@ const calculateDoorSwingAmount = (lastDoorSwingTicks: number): number => {
 class WorkerHut extends Entity {
    public static readonly SIZE = 88;
 
-   private static readonly DOOR_WIDTH = 12;
    private static readonly DOOR_HEIGHT = 48;
 
    public tribeID: number | null;
@@ -44,8 +43,6 @@ class WorkerHut extends Entity {
       // Hut
       const hutRenderPart = new RenderPart(
          this,
-         WorkerHut.SIZE,
-         WorkerHut.SIZE,
          getEntityTextureArrayIndex("entities/worker-hut/worker-hut.png"),
          2,
          0
@@ -55,8 +52,6 @@ class WorkerHut extends Entity {
       // Door
       const doorRenderPart = new RenderPart(
          this,
-         WorkerHut.DOOR_WIDTH,
-         WorkerHut.DOOR_HEIGHT,
          getEntityTextureArrayIndex("entities/worker-hut/worker-hut-door.png"),
          1,
          0

@@ -20,8 +20,6 @@ class Tombstone extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            64,
-            96,
             getEntityTextureArrayIndex(`entities/tombstone/tombstone${tombstoneType + 1}.png`),
             0,
             0

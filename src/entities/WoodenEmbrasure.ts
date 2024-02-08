@@ -6,17 +6,12 @@ import { playSound } from "../sound";
 import { createLightWoodSpeckParticle, createWoodShardParticle } from "./WoodenWall";
 
 class WoodenEmbrasure extends Entity {
-   private static readonly WIDTH = 64;
-   private static readonly HEIGHT = 20;
-
    constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
       super(position, id, EntityType.woodenEmbrasure, ageTicks, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(
             this,
-            WoodenEmbrasure.WIDTH,
-            WoodenEmbrasure.HEIGHT,
             getEntityTextureArrayIndex("entities/wooden-embrasure/wooden-embrasure.png"),
             0,
             0

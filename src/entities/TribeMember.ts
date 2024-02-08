@@ -8,7 +8,7 @@ import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, cr
 import Board from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
-import { ENTITY_TEXTURE_SLOT_INDEXES, getEntityTextureArrayIndex, getTextureHeight, getTextureWidth } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex, getTextureWidth } from "../texture-atlases/entity-texture-atlas";
 import { createDeepFrostHeartBloodParticles } from "../items/DroppedItem";
 import { AudioFilePath, playSound } from "../sound";
 import { definiteGameState, latencyGameState } from "../game-state/game-states";
@@ -152,22 +152,22 @@ export function getSecondsSinceLastAction(lastActionTicks: number): number {
    return secondsSinceLastAction;
 }
 
-const getArmourTextureIndex = (armourType: ItemType): number => {
+const getArmourTextureSource = (armourType: ItemType): string => {
    if (!ARMOUR_WORN_INFO.hasOwnProperty(armourType)) {
       console.warn("Can't find armour info for item type '" + ItemType[armourType] + ".");
-      return -1;
+      return "";
    }
 
-   return getEntityTextureArrayIndex(ARMOUR_WORN_INFO[armourType as ArmourItemType].textureSource);
+   return ARMOUR_WORN_INFO[armourType as ArmourItemType].textureSource;
 }
 
-const getGloveTextureIndex = (gloveType: ItemType): number => {
+const getGloveTextureSource = (gloveType: ItemType): string => {
    if (!GLOVE_WORN_INFO.hasOwnProperty(gloveType)) {
       console.warn("Can't find glove info for item type '" + ItemType[gloveType] + ".");
-      return -1;
+      return "";
    }
 
-   return getEntityTextureArrayIndex(GLOVE_WORN_INFO[gloveType as GloveItemType].textureSource);
+   return GLOVE_WORN_INFO[gloveType as GloveItemType].textureSource;
 }
 
 abstract class TribeMember extends Entity {
@@ -353,8 +353,6 @@ abstract class TribeMember extends Entity {
       
       this.attachRenderPart(new RenderPart(
          this,
-         radius * 2,
-         radius * 2,
          getEntityTextureArrayIndex(bodyTextureSource),
          2,
          0
@@ -365,8 +363,6 @@ abstract class TribeMember extends Entity {
          this.attachRenderPart(
             new RenderPart(
                this,
-               radius * 2,
-               radius * 2,
                getEntityTextureArrayIndex(`entities/goblins/goblin-warpaint-${warPaintType}.png`),
                4,
                0
@@ -376,8 +372,6 @@ abstract class TribeMember extends Entity {
          // Left ear
          const leftEarRenderPart = new RenderPart(
             this,
-            TribeMember.GOBLIN_EAR_WIDTH,
-            TribeMember.GOBLIN_EAR_HEIGHT,
             getEntityTextureArrayIndex("entities/goblins/goblin-ear.png"),
             3,
             Math.PI/2 - TribeMember.GOBLIN_EAR_ANGLE,
@@ -389,8 +383,6 @@ abstract class TribeMember extends Entity {
          // Right ear
          const rightEarRenderPart = new RenderPart(
             this,
-            TribeMember.GOBLIN_EAR_WIDTH,
-            TribeMember.GOBLIN_EAR_HEIGHT,
             getEntityTextureArrayIndex("entities/goblins/goblin-ear.png"),
             3,
             -Math.PI/2 + TribeMember.GOBLIN_EAR_ANGLE,
@@ -399,16 +391,11 @@ abstract class TribeMember extends Entity {
          this.attachRenderPart(rightEarRenderPart);
       }
 
-      // Barbarians have larger fists
-      const fistSize = tribeType === TribeType.barbarians ? 24 : 20;
-      
       // Fist render parts
       const handRenderParts = new Array<RenderPart>();
       for (let i = 0; i < 2; i++) {
          const renderPart = new RenderPart(
             this,
-            fistSize,
-            fistSize,
             getEntityTextureArrayIndex(fistTextureSource),
             1,
             0
@@ -432,8 +419,6 @@ abstract class TribeMember extends Entity {
          
          const renderPart = new RenderPart(
             this,
-            TribeMember.TOOL_ACTIVE_ITEM_SIZE,
-            TribeMember.TOOL_ACTIVE_ITEM_SIZE,
             activeItem !== null ? getEntityTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItem.type].entityTextureSource) : -1,
             i === 0 ? 0.5 : 0,
             0
@@ -470,20 +455,15 @@ abstract class TribeMember extends Entity {
          this.attachRenderPart(renderPart);
          
          if (this.showLargeItemTexture(activeItem.type)) {
-            let textureArrayIndex: number;
             // @Incomplete: Only works for player
             if (i === 0 && this.rightAction === TribeMemberAction.none && activeItem.type === ItemType.crossbow && definiteGameState.hotbarCrossbowLoadProgressRecord.hasOwnProperty(latencyGameState.selectedHotbarItemSlot) && definiteGameState.hotbarCrossbowLoadProgressRecord[latencyGameState.selectedHotbarItemSlot] === 1) {
-               const textureSource = "miscellaneous/crossbow-charge-5.png";
-               textureArrayIndex = getEntityTextureArrayIndex(textureSource);
-               renderPart.textureSlotIndex = ENTITY_TEXTURE_SLOT_INDEXES[textureArrayIndex];
+               renderPart.switchTextureSource("miscellaneous/crossbow-charge-5.png");
 
                if (this.inactiveCrossbowArrowRenderPart === null) {
                   const arrowTextureSource = "projectiles/wooden-arrow.png";
-                  const arrowTextureArrayIndex = getEntityTextureArrayIndex(arrowTextureSource);
 
                   this.inactiveCrossbowArrowRenderPart = new RenderPart(
                      this.activeItemRenderParts[0],
-                     getTextureWidth(arrowTextureArrayIndex) * 4, getTextureHeight(arrowTextureArrayIndex) * 4,
                      getEntityTextureArrayIndex(arrowTextureSource),
                      this.activeItemRenderParts[0].zIndex + 0.1,
                      Math.PI/4
@@ -491,25 +471,15 @@ abstract class TribeMember extends Entity {
                   this.attachRenderPart(this.inactiveCrossbowArrowRenderPart);
                }
             } else {
-               textureArrayIndex = getEntityTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItem.type].toolTextureSource);
-               renderPart.textureSlotIndex = ENTITY_TEXTURE_SLOT_INDEXES[textureArrayIndex];
+               renderPart.switchTextureSource(CLIENT_ITEM_INFO_RECORD[activeItem.type].toolTextureSource);
                
                if (i === 0 && this.inactiveCrossbowArrowRenderPart !== null) {
                   this.removeRenderPart(this.inactiveCrossbowArrowRenderPart);
                   this.inactiveCrossbowArrowRenderPart = null;
                }
             }
-
-            renderPart.textureWidth = getTextureWidth(textureArrayIndex);
-            renderPart.textureHeight = getTextureHeight(textureArrayIndex);
-            renderPart.width = getTextureWidth(textureArrayIndex) * 4;
-            renderPart.height = getTextureHeight(textureArrayIndex) * 4;
          } else {
-            renderPart.textureSlotIndex = ENTITY_TEXTURE_SLOT_INDEXES[getEntityTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItem.type].entityTextureSource)];
-            renderPart.textureWidth = 8;
-            renderPart.textureHeight = 8;
-            renderPart.width = TribeMember.DEFAULT_ACTIVE_ITEM_SIZE;
-            renderPart.height = TribeMember.DEFAULT_ACTIVE_ITEM_SIZE;
+            renderPart.switchTextureSource(CLIENT_ITEM_INFO_RECORD[activeItem.type].entityTextureSource);
          }
       }
    }
@@ -539,7 +509,7 @@ abstract class TribeMember extends Entity {
             const activeItemType = i === 0 ? this.leftActiveItem!.type : this.rightActiveItem!.type;
             itemSize = this.getActiveItemSize(activeItemType);
          } else {
-            itemSize = this.activeItemRenderParts[i].width;
+            itemSize = getTextureWidth(this.activeItemRenderParts[i].textureArrayIndex) * 4;
          }
 
          let shouldShowActiveItemRenderPart = true;
@@ -848,30 +818,18 @@ abstract class TribeMember extends Entity {
       return null;
    }
 
-   private getArmourPixelSize(armourType: ItemType): number {
-      if (!ARMOUR_WORN_INFO.hasOwnProperty(armourType)) {
-         console.warn("Can't find armour info for item type '" + ItemType[armourType] + ".");
-         return -1;
-      }
-
-      return ARMOUR_WORN_INFO[armourType as ArmourItemType].pixelSize;
-   }
-
    public updateArmourRenderPart(armourType: ItemType | null): void {
       if (armourType !== null) {
          if (this.armourRenderPart === null) {
-            const pixelSize = this.getArmourPixelSize(armourType);
             this.armourRenderPart = new RenderPart(
                this,
-               pixelSize,
-               pixelSize,
-               getArmourTextureIndex(armourType),
+               getEntityTextureArrayIndex(getArmourTextureSource(armourType)),
                3,
                0
             );
             this.attachRenderPart(this.armourRenderPart);
          } else {
-            this.armourRenderPart.textureSlotIndex = ENTITY_TEXTURE_SLOT_INDEXES[getArmourTextureIndex(armourType)];
+            this.armourRenderPart.switchTextureSource(getArmourTextureSource(armourType));
          }
       } else if (this.armourRenderPart !== null) {
          this.removeRenderPart(this.armourRenderPart);
@@ -883,18 +841,15 @@ abstract class TribeMember extends Entity {
    public updateGloveRenderPart(gloveType: ItemType | null): void {
       if (gloveType !== null) {
          if (this.gloveRenderPart === null) {
-            const pixelSize = 5 * 4;
             this.gloveRenderPart = new RenderPart(
                this.handRenderParts[0],
-               pixelSize,
-               pixelSize,
-               getGloveTextureIndex(gloveType),
+               getEntityTextureArrayIndex(getGloveTextureSource(gloveType)),
                1.1,
                0
             );
             this.attachRenderPart(this.gloveRenderPart);
          } else {
-            this.gloveRenderPart.textureSlotIndex = ENTITY_TEXTURE_SLOT_INDEXES[getGloveTextureIndex(gloveType)];
+            this.gloveRenderPart.switchTextureSource(getGloveTextureSource(gloveType));
          }
       } else if (this.gloveRenderPart !== null) {
          this.removeRenderPart(this.gloveRenderPart);
@@ -967,35 +922,25 @@ abstract class TribeMember extends Entity {
          const chargeProgress = secondsSinceLastAction / (bowInfo.shotCooldownTicks / SETTINGS.TPS);
 
          let textureSourceArray: ReadonlyArray<string>;
-         let arrowWidth: number;
-         let arrowHeight: number;
          let arrowTextureSource: string;
          switch (this.rightActiveItem.type) {
             case ItemType.wooden_bow: {
                textureSourceArray = TribeMember.BOW_CHARGE_TEXTURE_SOURCES;
-               arrowWidth = 20;
-               arrowHeight = 64;
                arrowTextureSource = "projectiles/wooden-arrow.png";
                break;
             }
             case ItemType.reinforced_bow: {
                textureSourceArray = TribeMember.REINFORCED_BOW_CHARGE_TEXTURE_SOURCES;
-               arrowWidth = 20;
-               arrowHeight = 64;
                arrowTextureSource = "projectiles/wooden-arrow.png";
                break;
             }
             case ItemType.ice_bow: {
                textureSourceArray = TribeMember.ICE_BOW_CHARGE_TEXTURE_SOURCES;
-               arrowWidth = 20;
-               arrowHeight = 56;
                arrowTextureSource = "projectiles/ice-arrow.png";
                break;
             }
             case ItemType.crossbow: {
                textureSourceArray = TribeMember.CROSSBOW_CHARGE_TEXTURE_SOURCES;
-               arrowWidth = 20;
-               arrowHeight = 64;
                arrowTextureSource = "projectiles/wooden-arrow.png";
                break;
             }
@@ -1007,7 +952,6 @@ abstract class TribeMember extends Entity {
          if (this.arrowRenderPart === null) {
             this.arrowRenderPart = new RenderPart(
                this.activeItemRenderParts[0],
-               arrowWidth, arrowHeight,
                getEntityTextureArrayIndex(arrowTextureSource),
                this.activeItemRenderParts[0].zIndex + 0.1,
                Math.PI/4
@@ -1019,7 +963,7 @@ abstract class TribeMember extends Entity {
          if (textureIdx >= textureSourceArray.length) {
             textureIdx = textureSourceArray.length - 1;
          }
-         this.activeItemRenderParts[0].textureSlotIndex = ENTITY_TEXTURE_SLOT_INDEXES[getEntityTextureArrayIndex(textureSourceArray[textureIdx])];
+         this.activeItemRenderParts[0].switchTextureSource(textureSourceArray[textureIdx]);
       } else if (this.arrowRenderPart !== null) {
          this.removeRenderPart(this.arrowRenderPart);
          this.arrowRenderPart = null;

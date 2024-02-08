@@ -8,11 +8,8 @@ import { AudioFilePath, playSound } from "../sound";
 
 class Cow extends Entity {
    private static readonly HEAD_SIZE = 64;
-   private static readonly HEAD_IMAGE_WIDTH = 18 * 4;
-   private static readonly HEAD_IMAGE_HEIGHT = 16 * 4;
    /** How far the head overlaps the body */
    private static readonly HEAD_OVERLAP = 24;
-   private static readonly BODY_WIDTH = 64;
    private static readonly BODY_HEIGHT = 96;
 
    private static readonly BLOOD_FOUNTAIN_INTERVAL = 0.1;
@@ -32,8 +29,6 @@ class Cow extends Entity {
       // Body
       const bodyRenderPart = new RenderPart(
          this,
-         Cow.BODY_WIDTH,
-         Cow.BODY_HEIGHT,
          getEntityTextureArrayIndex(`entities/cow/cow-body-${cowNum}.png`),
          0,
          0
@@ -44,8 +39,6 @@ class Cow extends Entity {
       // Head
       const headRenderPart = new RenderPart(
          this,
-         Cow.HEAD_IMAGE_WIDTH,
-         Cow.HEAD_IMAGE_HEIGHT,
          getEntityTextureArrayIndex(`entities/cow/cow-head-${cowNum}.png`),
          1,
          0

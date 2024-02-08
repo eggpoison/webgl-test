@@ -26,7 +26,6 @@ class Fish extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            Fish.SPRITE_WIDTH, Fish.SPRITE_HEIGHT,
             getEntityTextureArrayIndex(textureSource),
             0,
             0

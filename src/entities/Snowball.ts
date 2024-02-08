@@ -31,8 +31,6 @@ class Snowball extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            this.pixelSize,
-            this.pixelSize,
             getEntityTextureArrayIndex(getTextureSource(size)),
             0,
             0

@@ -12,8 +12,6 @@ class Slimewisp extends Entity {
 
       const renderPart = new RenderPart(
          this,
-         Slimewisp.RADIUS * 2,
-         Slimewisp.RADIUS * 2,
          getEntityTextureArrayIndex(`entities/slimewisp/slimewisp.png`),
          0,
          0

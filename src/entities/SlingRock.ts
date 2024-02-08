@@ -11,7 +11,6 @@ class SlingRock extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            24, 24,
             getEntityTextureArrayIndex("entities/sling-rock/sling-rock.png"),
             0,
             0

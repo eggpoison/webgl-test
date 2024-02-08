@@ -1,6 +1,6 @@
 import { EntityData, EntityType, Point, StructureShapeType, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import { ENTITY_TEXTURE_SLOT_INDEXES, getEntityTextureArrayIndex, getTextureHeight, getTextureWidth } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import Entity from "./Entity";
 import { SHAPE_TYPE_TEXTURE_SOURCES } from "../rendering/placeable-item-rendering";
 import Board from "../Board";
@@ -61,8 +61,6 @@ class BlueprintEntity extends Entity {
 
       const renderPart = new RenderPart(
          this,
-         getTextureWidth(textureArrayIndex) * 4,
-         getTextureHeight(textureArrayIndex) * 4,
          textureArrayIndex,
          0,
          0
@@ -131,15 +129,13 @@ class BlueprintEntity extends Entity {
       if (this.partialRenderPart === null) {
          this.partialRenderPart = new RenderPart(
             this,
-            getTextureWidth(textureArrayIndex) * 4,
-            getTextureHeight(textureArrayIndex) * 4,
             textureArrayIndex,
             1,
             0
          );
          this.attachRenderPart(this.partialRenderPart);
       } else {
-         this.partialRenderPart.textureSlotIndex = ENTITY_TEXTURE_SLOT_INDEXES[textureArrayIndex];
+         this.partialRenderPart.switchTextureSource(textureSource);
       }
    }
 }

@@ -1,6 +1,6 @@
 import { EntityData, EntityType, HitData, Point, lerp, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import { ENTITY_TEXTURE_SLOT_INDEXES, getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import Entity from "./Entity";
 import { playSound } from "../sound";
 import Board from "../Board";
@@ -113,8 +113,6 @@ class WoodenWall extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            WoodenWall.SIZE,
-            WoodenWall.SIZE,
             getEntityTextureArrayIndex("entities/wooden-wall/wooden-wall.png"),
             0,
             0
@@ -140,18 +138,16 @@ class WoodenWall extends Entity {
       }
 
       const textureSource = "entities/wooden-wall/wooden-wall-damage-" + damageStage + ".png";
-      const textureArrayIndex = getEntityTextureArrayIndex(textureSource);
       if (this.damageRenderPart === null) {
          this.damageRenderPart = new RenderPart(
             this,
-            WoodenWall.SIZE, WoodenWall.SIZE,
-            textureArrayIndex,
+            getEntityTextureArrayIndex(textureSource),
             1,
             0
          );
          this.attachRenderPart(this.damageRenderPart);
       } else {
-         this.damageRenderPart.textureSlotIndex = ENTITY_TEXTURE_SLOT_INDEXES[textureArrayIndex];
+         this.damageRenderPart.switchTextureSource(textureSource);
       }
    }
    public updateFromData(data: EntityData<EntityType.woodenWall>): void {

@@ -17,8 +17,6 @@ class FloorPunjiSticks extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            FloorPunjiSticks.WIDTH,
-            FloorPunjiSticks.HEIGHT,
             getEntityTextureArrayIndex("entities/floor-punji-sticks/floor-punji-sticks.png"),
             0,
             0

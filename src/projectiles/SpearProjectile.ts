@@ -11,8 +11,6 @@ class SpearProjectile extends GameObject {
       this.attachRenderPart(
          new RenderPart(
             this,
-            5 * 4,
-            24 * 4,
             getEntityTextureArrayIndex("items/misc/spear.png"),
             0,
             0

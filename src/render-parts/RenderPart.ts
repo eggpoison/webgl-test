@@ -1,5 +1,5 @@
 import { Point, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
-import { ENTITY_TEXTURE_SLOT_INDEXES, getEntityTextureArrayIndex, getTextureHeight, getTextureWidth } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 
 /** A thing which is able to hold render parts */
 export abstract class RenderObject {
@@ -19,8 +19,6 @@ class RenderPart extends RenderObject {
 
    // @Speed: Reduce polymorphism
    public offset?: Point | (() => Point);
-   public width: number;
-   public height: number;
    public readonly zIndex: number;
    public rotation = 0;
 
@@ -28,10 +26,7 @@ class RenderPart extends RenderObject {
    public scale = 1;
    public shakeAmount = 0;
    
-   /** Slot index of the render part's texture in the game object texture atlas */
-   public textureSlotIndex: number;
-   public textureWidth: number;
-   public textureHeight: number;
+   public textureArrayIndex: number;
 
    public getRotation?: () => number;
 
@@ -39,18 +34,13 @@ class RenderPart extends RenderObject {
    public inheritParentRotation = true;
    public flipX = false;
    
-   constructor(parent: RenderObject, width: number, height: number, textureArrayIndex: number, zIndex: number, rotation: number) {
+   constructor(parent: RenderObject, textureArrayIndex: number, zIndex: number, rotation: number) {
       super();
 
       this.parent = parent;
-      this.width = width;
-      this.height = height;
+      this.textureArrayIndex = textureArrayIndex;
       this.zIndex = zIndex;
       this.rotation = rotation;
-
-      this.textureSlotIndex = ENTITY_TEXTURE_SLOT_INDEXES[textureArrayIndex];
-      this.textureWidth = getTextureWidth(textureArrayIndex);
-      this.textureHeight = getTextureHeight(textureArrayIndex);
    }
 
    /** Updates the render part based on its parent */
@@ -105,12 +95,7 @@ class RenderPart extends RenderObject {
    }
 
    public switchTextureSource(newTextureSource: string): void {
-      const textureArrayIndex = getEntityTextureArrayIndex(newTextureSource);
-      this.textureSlotIndex = ENTITY_TEXTURE_SLOT_INDEXES[textureArrayIndex];
-      this.textureWidth = getTextureWidth(textureArrayIndex);
-      this.textureHeight = getTextureHeight(textureArrayIndex);
-      this.width = this.textureWidth * 4;
-      this.height = this.textureHeight * 4;
+      this.textureArrayIndex = getEntityTextureArrayIndex(newTextureSource);
    }
 }
 

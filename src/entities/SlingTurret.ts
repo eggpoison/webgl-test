@@ -1,7 +1,7 @@
 import { EntityData, EntityType, Point, lerp } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import { ENTITY_TEXTURE_SLOT_INDEXES, getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { playSound } from "../sound";
 
 const CHARGE_TEXTURE_SOURCES = ["entities/sling-turret/sling-turret-sling.png", "entities/sling-turret/sling-charge-1.png", "entities/sling-turret/sling-charge-2.png", "entities/sling-turret/sling-charge-3.png", "entities/sling-turret/sling-charge-4.png", "entities/sling-turret/sling-charge-5.png"];
@@ -22,7 +22,6 @@ class SlingTurret extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            80, 80,
             getEntityTextureArrayIndex("entities/sling-turret/sling-turret-base.png"),
             0,
             0
@@ -32,7 +31,6 @@ class SlingTurret extends Entity {
       // Plate
       this.plateRenderPart = new RenderPart(
          this,
-         64, 64,
          getEntityTextureArrayIndex("entities/sling-turret/sling-turret-plate.png"),
          1,
          0
@@ -42,7 +40,6 @@ class SlingTurret extends Entity {
       // Sling
       this.slingRenderPart = new RenderPart(
          this.plateRenderPart,
-         80, 80,
          getEntityTextureArrayIndex("entities/sling-turret/sling-turret-sling.png"),
          2,
          0
@@ -63,16 +60,13 @@ class SlingTurret extends Entity {
          stage = CHARGE_TEXTURE_SOURCES.length - 1;
       }
 
-      const textureSource = CHARGE_TEXTURE_SOURCES[stage];
-      const textureArrayIndex = getEntityTextureArrayIndex(textureSource);
-      this.slingRenderPart.textureSlotIndex = ENTITY_TEXTURE_SLOT_INDEXES[textureArrayIndex];
+      this.slingRenderPart.switchTextureSource(CHARGE_TEXTURE_SOURCES[stage]);
 
       // Update rock render part
       if (chargeProgress > 0 || reloadProgress > 0) {
          if (this.rockRenderPart === null) {
             this.rockRenderPart = new RenderPart(
                this,
-               24, 24,
                getEntityTextureArrayIndex("entities/sling-rock/sling-rock.png"),
                1.5,
                0

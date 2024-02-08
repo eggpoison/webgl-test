@@ -6,9 +6,6 @@ import { playSound } from "../sound";
 import { createLightWoodSpeckParticle, createWoodShardParticle } from "./WoodenWall";
 
 class WoodenDoor extends Entity {
-   private static readonly WIDTH = 64;
-   private static readonly HEIGHT = 24;
-
    // @Temporary: Remove once reworked to not use server-side hack
    private readonly doorRenderPart: RenderPart;
 
@@ -23,8 +20,6 @@ class WoodenDoor extends Entity {
 
       this.doorRenderPart = new RenderPart(
          this,
-         WoodenDoor.WIDTH,
-         WoodenDoor.HEIGHT,
          getEntityTextureArrayIndex("entities/wooden-door/wooden-door.png"),
          0,
          0

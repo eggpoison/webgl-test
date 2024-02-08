@@ -12,8 +12,6 @@ class Workbench extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            Workbench.SIZE,
-            Workbench.SIZE,
             getEntityTextureArrayIndex("entities/workbench/workbench.png"),
             0,
             0

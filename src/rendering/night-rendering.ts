@@ -3,6 +3,8 @@ import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../
 import Board from "../Board";
 import OPTIONS from "../options";
 
+// @Cleanup: Rename file to something more fitting like light-rendering
+
 const NIGHT_LIGHT = 0.4;
 
 let darknessProgram: WebGLProgram;

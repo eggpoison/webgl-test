@@ -3,7 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle } from "../particles";
 import Board from "../Board";
-import { ENTITY_TEXTURE_SLOT_INDEXES, getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex, getTextureWidth } from "../texture-atlases/entity-texture-atlas";
 import { AudioFilePath, playSound } from "../sound";
 import { getFrameProgress } from "../GameObject";
 import CLIENT_ITEM_INFO_RECORD from "../client-item-info";
@@ -83,8 +83,6 @@ class Zombie extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            Zombie.RADIUS * 2,
-            Zombie.RADIUS * 2,
             getEntityTextureArrayIndex(ZOMBIE_TEXTURE_SOURCES[zombieType]),
             2,
             0
@@ -95,8 +93,6 @@ class Zombie extends Entity {
       for (let i = 0; i < 2; i++) {
          const renderPart = new RenderPart(
             this,
-            20,
-            20,
             getEntityTextureArrayIndex(ZOMBIE_HAND_TEXTURE_SOURCES[zombieType]),
             1,
             0
@@ -114,8 +110,6 @@ class Zombie extends Entity {
 
       this.activeItemRenderPart = new RenderPart(
          this,
-         Zombie.TOOL_ACTIVE_ITEM_SIZE,
-         Zombie.TOOL_ACTIVE_ITEM_SIZE,
          activeItemType !== null ? getEntityTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItemType].entityTextureSource) : -1,
          0,
          0
@@ -240,7 +234,7 @@ class Zombie extends Entity {
       if (typeof this.activeItemRenderPart === "undefined") {
          itemSize = this.getActiveItemSize(this.activeItemType!);
       } else {
-         itemSize = this.activeItemRenderPart.width;
+         itemSize = getTextureWidth(this.activeItemRenderPart.textureArrayIndex) * 4;
       }
 
       const secondsSinceLastAction = this.getSecondsSinceLastAction();
@@ -315,17 +309,10 @@ class Zombie extends Entity {
          this.attachRenderPart(this.activeItemRenderPart);
          
          if (this.showLargeItemTexture(activeItemType)) {
-            this.activeItemRenderPart.textureSlotIndex = ENTITY_TEXTURE_SLOT_INDEXES[getEntityTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItemType].textureSource)];
-            this.activeItemRenderPart.textureWidth = 16;
-            this.activeItemRenderPart.textureHeight = 16;
+            this.activeItemRenderPart.switchTextureSource(CLIENT_ITEM_INFO_RECORD[activeItemType].textureSource);
          } else {
-            this.activeItemRenderPart.textureSlotIndex = ENTITY_TEXTURE_SLOT_INDEXES[getEntityTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItemType].entityTextureSource)];
-            this.activeItemRenderPart.textureWidth = 8;
-            this.activeItemRenderPart.textureHeight = 8;
+            this.activeItemRenderPart.switchTextureSource(CLIENT_ITEM_INFO_RECORD[activeItemType].entityTextureSource);
          }
-         const renderPartSize = this.getActiveItemSize(activeItemType);
-         this.activeItemRenderPart.width = renderPartSize;
-         this.activeItemRenderPart.height = renderPartSize;
       }
    }
 
@@ -341,7 +328,7 @@ class Zombie extends Entity {
          if (textureIdx >= Zombie.BOW_CHARGE_TEXTURE_SOURCES.length) {
             textureIdx = Zombie.BOW_CHARGE_TEXTURE_SOURCES.length - 1;
          }
-         this.activeItemRenderPart.textureSlotIndex = ENTITY_TEXTURE_SLOT_INDEXES[getEntityTextureArrayIndex(Zombie.BOW_CHARGE_TEXTURE_SOURCES[textureIdx])];
+         this.activeItemRenderPart.switchTextureSource(Zombie.BOW_CHARGE_TEXTURE_SOURCES[textureIdx]);
       }
    }
 

@@ -92,8 +92,6 @@ class Golem extends Entity {
 
       const renderPart = new RenderPart(
          this,
-         hitbox.radius * 2,
-         hitbox.radius * 2,
          getEntityTextureArrayIndex(getTextureSource(size)),
          getZIndex(size),
          2 * Math.PI * Math.random()
@@ -106,8 +104,6 @@ class Golem extends Entity {
          for (let i = 0; i < 2; i++) {
             const eyeRenderPart = new RenderPart(
                renderPart,
-               5 * 4,
-               3 * 4,
                getEntityTextureArrayIndex("entities/golem/eye.png"),
                6,
                0

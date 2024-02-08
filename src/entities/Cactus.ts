@@ -9,11 +9,10 @@ import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-at
 class Cactus extends Entity {
    private static readonly CACTUS_SPINE_PARTICLE_COLOUR: ParticleColour = [0, 0, 0];
 
+   // @Incomplete
    private static readonly FLOWER_PARTICLE_FADE_TIME = 1;
    
    private static readonly RADIUS = 40;
-
-   private static readonly LIMB_SIZE = 36;
 
    private readonly flowerData: ReadonlyArray<CactusBodyFlowerData>;
    private readonly limbData: ReadonlyArray<CactusLimbData>;
@@ -23,8 +22,6 @@ class Cactus extends Entity {
 
       const baseRenderPart = new RenderPart(
          this,
-         Cactus.RADIUS * 2,
-         Cactus.RADIUS * 2,
          getEntityTextureArrayIndex("entities/cactus/cactus.png"),
          2,
          0
@@ -38,12 +35,8 @@ class Cactus extends Entity {
       for (let i = 0; i < flowers.length; i++) {
          const flowerInfo = flowers[i];
 
-         const flowerSize = (flowerInfo.type === 4 || flowerInfo.size === CactusFlowerSize.large) ? 20 : 16;
-
          const renderPart = new RenderPart(
             this,
-            flowerSize,
-            flowerSize,
             getEntityTextureArrayIndex(this.getFlowerTextureSource(flowerInfo.type, flowerInfo.size)),
             3 + Math.random(),
             flowerInfo.rotation
@@ -59,8 +52,6 @@ class Cactus extends Entity {
 
          const limbRenderPart = new RenderPart(
             baseRenderPart,
-            Cactus.LIMB_SIZE,
-            Cactus.LIMB_SIZE,
             getEntityTextureArrayIndex("entities/cactus/cactus-limb.png"),
             Math.random(),
             2 * Math.PI * Math.random()
@@ -73,8 +64,6 @@ class Cactus extends Entity {
 
             const flowerRenderPart = new RenderPart(
                limbRenderPart,
-               16,
-               16,
                getEntityTextureArrayIndex(this.getFlowerTextureSource(flowerInfo.type, CactusFlowerSize.small)),
                1 + Math.random(),
                flowerInfo.rotation

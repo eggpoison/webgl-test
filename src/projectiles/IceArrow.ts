@@ -15,8 +15,6 @@ class IceArrow extends GameObject {
       this.attachRenderPart(
          new RenderPart(
             this,
-            5 * 4,
-            14 * 4,
             getEntityTextureArrayIndex("projectiles/ice-arrow.png"),
             0,
             0

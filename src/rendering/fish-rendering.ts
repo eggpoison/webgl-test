@@ -2,7 +2,9 @@ import { TileType, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-sha
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 import Board from "../Board";
 import { ATLAS_SLOT_SIZE } from "../texture-atlases/texture-atlas-stitching";
-import { ENTITY_TEXTURE_ATLAS, ENTITY_TEXTURE_ATLAS_SIZE } from "../texture-atlases/entity-texture-atlas";
+import { ENTITY_TEXTURE_ATLAS, ENTITY_TEXTURE_ATLAS_LENGTH, ENTITY_TEXTURE_ATLAS_SIZE, getTextureHeight, getTextureWidth } from "../texture-atlases/entity-texture-atlas";
+
+// @Cleanup: This all sucks. should really be combined with game-object-rendering, as apart from the blur this is just a 1-1 copy of it
 
 let program: WebGLProgram;
 let vao: WebGLVertexArrayObject;
@@ -22,15 +24,13 @@ export function createFishShaders(): void {
    layout(location = 0) in vec2 a_position;
    layout(location = 1) in float a_depth;
    layout(location = 2) in vec2 a_texCoord;
-   layout(location = 3) in float a_textureIndex;
-   layout(location = 4) in vec2 a_textureSize;
-   layout(location = 5) in vec3 a_tint;
-   layout(location = 6) in float a_opacity;
-   layout(location = 7) in float a_isInWater;
+   layout(location = 3) in float a_textureArrayIndex;
+   layout(location = 4) in vec3 a_tint;
+   layout(location = 5) in float a_opacity;
+   layout(location = 6) in float a_isInWater;
    
    out vec2 v_texCoord;
-   out float v_textureIndex;
-   out vec2 v_textureSize;
+   out float v_textureArrayIndex;
    out vec3 v_tint;
    out float v_opacity;
    out float v_isInWater;
@@ -41,8 +41,7 @@ export function createFishShaders(): void {
       gl_Position = vec4(clipSpacePos, a_depth, 1.0);
    
       v_texCoord = a_texCoord;
-      v_textureIndex = a_textureIndex;
-      v_textureSize = a_textureSize;
+      v_textureArrayIndex = a_textureArrayIndex;
       v_tint = a_tint;
       v_opacity = a_opacity;
       v_isInWater = a_isInWater;
@@ -61,24 +60,30 @@ export function createFishShaders(): void {
    uniform sampler2D u_textureAtlas;
    uniform float u_atlasPixelSize;
    uniform float u_atlasSlotSize;
+   uniform float u_textureSlotIndexes[${ENTITY_TEXTURE_ATLAS_LENGTH}];
+   uniform vec2 u_textureSizes[${ENTITY_TEXTURE_ATLAS_LENGTH}];
    
    in vec2 v_texCoord;
-   in float v_textureIndex;
-   in vec2 v_textureSize;
+   in float v_textureArrayIndex;
    in vec3 v_tint;
    in float v_opacity;
    in float v_isInWater;
    
    out vec4 outputColour;
    
-   void main() { 
+   void main() {
+      int textureArrayIndex = int(v_textureArrayIndex);
+      
+      float textureIndex = u_textureSlotIndexes[textureArrayIndex];
+      vec2 textureSize = u_textureSizes[textureArrayIndex];
+
       // Calculate the coordinates of the top left corner of the texture
-      float textureX = mod(v_textureIndex * u_atlasSlotSize, u_atlasPixelSize);
-      float textureY = floor(v_textureIndex * u_atlasSlotSize / u_atlasPixelSize) * u_atlasSlotSize;
+      float textureX = mod(textureIndex * u_atlasSlotSize, u_atlasPixelSize);
+      float textureY = floor(textureIndex * u_atlasSlotSize / u_atlasPixelSize) * u_atlasSlotSize;
       
       // @Incomplete: This is very hacky, the - 0.2 and + 0.1 shenanigans are to prevent texture bleeding but it causes tiny bits of the edge of the textures to get cut off.
-      float u = (textureX + v_texCoord.x * (v_textureSize.x - 0.2) + 0.1) / u_atlasPixelSize;
-      float v = 1.0 - ((textureY + (1.0 - v_texCoord.y) * (v_textureSize.y - 0.2) + 0.1) / u_atlasPixelSize);
+      float u = (textureX + v_texCoord.x * (textureSize.x - 0.2) + 0.1) / u_atlasPixelSize;
+      float v = 1.0 - ((textureY + (1.0 - v_texCoord.y) * (textureSize.y - 0.2) + 0.1) / u_atlasPixelSize);
    
       if (v_isInWater > 0.5) {
          float x,y,xx,yy,rr=blurRange*blurRange,dx,dy,w,w0;
@@ -201,10 +206,13 @@ export function renderFish(): void {
          const u0 = renderPart.flipX ? 1 : 0;
          const u1 = 1 - u0;
 
-         const x1 = renderPart.renderPosition.x - renderPart.width / 2 * renderPart.scale;
-         const x2 = renderPart.renderPosition.x + renderPart.width / 2 * renderPart.scale;
-         const y1 = renderPart.renderPosition.y - renderPart.height / 2 * renderPart.scale;
-         const y2 = renderPart.renderPosition.y + renderPart.height / 2 * renderPart.scale;
+         const width = getTextureWidth(renderPart.textureArrayIndex) * 4;
+         const height = getTextureHeight(renderPart.textureArrayIndex) * 4;
+
+         const x1 = renderPart.renderPosition.x - width / 2 * renderPart.scale;
+         const x2 = renderPart.renderPosition.x + width / 2 * renderPart.scale;
+         const y1 = renderPart.renderPosition.y - height / 2 * renderPart.scale;
+         const y2 = renderPart.renderPosition.y + height / 2 * renderPart.scale;
 
          // Rotate the render part to match its rotation
          // @Speed: hopefully remove the need for this with instanced rendering
@@ -231,9 +239,7 @@ export function renderFish(): void {
          vertexData[vertexDataOffset + 2] = depth;
          vertexData[vertexDataOffset + 3] = u0;
          vertexData[vertexDataOffset + 4] = 0;
-         vertexData[vertexDataOffset + 5] = renderPart.textureSlotIndex;
-         vertexData[vertexDataOffset + 6] = renderPart.textureWidth;
-         vertexData[vertexDataOffset + 7] = renderPart.textureHeight;
+         vertexData[vertexDataOffset + 5] = renderPart.textureArrayIndex;
          vertexData[vertexDataOffset + 8] = fish.tintR;
          vertexData[vertexDataOffset + 9] = fish.tintG;
          vertexData[vertexDataOffset + 10] = fish.tintB;
@@ -246,9 +252,7 @@ export function renderFish(): void {
          vertexData[vertexDataOffset + 15] = depth;
          vertexData[vertexDataOffset + 16] = u1;
          vertexData[vertexDataOffset + 17] = 0;
-         vertexData[vertexDataOffset + 18] = renderPart.textureSlotIndex;
-         vertexData[vertexDataOffset + 19] = renderPart.textureWidth;
-         vertexData[vertexDataOffset + 20] = renderPart.textureHeight;
+         vertexData[vertexDataOffset + 18] = renderPart.textureArrayIndex;
          vertexData[vertexDataOffset + 21] = fish.tintR;
          vertexData[vertexDataOffset + 22] = fish.tintG;
          vertexData[vertexDataOffset + 23] = fish.tintB;
@@ -260,9 +264,7 @@ export function renderFish(): void {
          vertexData[vertexDataOffset + 28] = depth;
          vertexData[vertexDataOffset + 29] = u0;
          vertexData[vertexDataOffset + 30] = 1;
-         vertexData[vertexDataOffset + 31] = renderPart.textureSlotIndex;
-         vertexData[vertexDataOffset + 32] = renderPart.textureWidth;
-         vertexData[vertexDataOffset + 33] = renderPart.textureHeight;
+         vertexData[vertexDataOffset + 31] = renderPart.textureArrayIndex;
          vertexData[vertexDataOffset + 34] = fish.tintR;
          vertexData[vertexDataOffset + 35] = fish.tintG;
          vertexData[vertexDataOffset + 36] = fish.tintB;
@@ -274,9 +276,7 @@ export function renderFish(): void {
          vertexData[vertexDataOffset + 41] = depth;
          vertexData[vertexDataOffset + 42] = u1;
          vertexData[vertexDataOffset + 43] = 1;
-         vertexData[vertexDataOffset + 44] = renderPart.textureSlotIndex;
-         vertexData[vertexDataOffset + 45] = renderPart.textureWidth;
-         vertexData[vertexDataOffset + 46] = renderPart.textureHeight;
+         vertexData[vertexDataOffset + 44] = renderPart.textureArrayIndex;
          vertexData[vertexDataOffset + 47] = fish.tintR;
          vertexData[vertexDataOffset + 48] = fish.tintG;
          vertexData[vertexDataOffset + 49] = fish.tintB;

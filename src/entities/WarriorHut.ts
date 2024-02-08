@@ -42,8 +42,6 @@ class WarriorHut extends Entity {
       // Hut
       const hutRenderPart = new RenderPart(
          this,
-         WarriorHut.SIZE,
-         WarriorHut.SIZE,
          getEntityTextureArrayIndex("entities/warrior-hut/warrior-hut.png"),
          2,
          0
@@ -54,8 +52,6 @@ class WarriorHut extends Entity {
       for (let i = 0; i < 2; i++) {
          const doorRenderPart = new RenderPart(
             this,
-            WarriorHut.DOOR_WIDTH,
-            WarriorHut.DOOR_HEIGHT,
             getEntityTextureArrayIndex("entities/warrior-hut/warrior-hut-door.png"),
             1,
             0

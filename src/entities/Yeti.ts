@@ -8,8 +8,6 @@ import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-at
 class Yeti extends Entity {
    private static readonly SIZE = 128;
 
-   private static readonly PAW_SIZE = 28;
-
    private static readonly PAW_START_ANGLE = Math.PI/3;
    private static readonly PAW_END_ANGLE = Math.PI/6;
 
@@ -30,8 +28,6 @@ class Yeti extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            Yeti.SIZE,
-            Yeti.SIZE,
             getEntityTextureArrayIndex("entities/yeti/yeti.png"),
             1,
             0
@@ -48,8 +44,6 @@ class Yeti extends Entity {
    private createPaw(i: number): void {
       const paw = new RenderPart(
          this,
-         Yeti.PAW_SIZE,
-         Yeti.PAW_SIZE,
          getEntityTextureArrayIndex("entities/yeti/yeti-paw.png"),
          0,
          0

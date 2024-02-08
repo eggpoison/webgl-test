@@ -1,7 +1,7 @@
 import { BallistaAmmoType, EntityData, EntityType, Inventory, InventoryData, ItemType, Point, lerp, rotateXAroundOrigin, rotateYAroundOrigin } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import { ENTITY_TEXTURE_SLOT_INDEXES, getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { createInventoryFromData, inventoryHasItems, updateInventoryFromData } from "../inventory-manipulation";
 import { playSound } from "../sound";
 
@@ -62,7 +62,6 @@ class Ballista extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            100, 100,
             getEntityTextureArrayIndex("entities/ballista/base.png"),
             0,
             0
@@ -74,7 +73,6 @@ class Ballista extends Entity {
       for (let i = 0; i < 2; i++) {
          const renderPart = new RenderPart(
             this,
-            48, 48,
             getEntityTextureArrayIndex("entities/ballista/gear.png"),
             2 + i * 0.1,
             0
@@ -87,7 +85,6 @@ class Ballista extends Entity {
       // Ammo box
       const ammoBoxRenderPart = new RenderPart(
          this,
-         44, 36,
          getEntityTextureArrayIndex("entities/ballista/ammo-box.png"),
          1,
          Math.PI / 2
@@ -98,7 +95,6 @@ class Ballista extends Entity {
       // Shaft
       const shaftRenderPart = new RenderPart(
          this,
-         120, 120,
          getEntityTextureArrayIndex("entities/ballista/shaft.png"),
          3,
          0
@@ -109,7 +105,6 @@ class Ballista extends Entity {
       // Crossbow
       const crossbowRenderPart = new RenderPart(
          this,
-         120, 120,
          getEntityTextureArrayIndex(getBallistaCrossbarTextureSource(chargeProgress)),
          5,
          0
@@ -119,7 +114,6 @@ class Ballista extends Entity {
 
       this.projectileRenderPart = new RenderPart(
          this,
-         20, 80,
          getEntityTextureArrayIndex("projectiles/wooden-bolt.png"),
          4,
          0
@@ -207,7 +201,7 @@ class Ballista extends Entity {
       }
       this.chargeProgress = chargeProgress;
 
-      this.crossbowRenderPart.textureSlotIndex = ENTITY_TEXTURE_SLOT_INDEXES[getEntityTextureArrayIndex(getBallistaCrossbarTextureSource(chargeProgress))];
+      this.crossbowRenderPart.switchTextureSource(getBallistaCrossbarTextureSource(chargeProgress));
       
       const reloadProgress = data.clientArgs[2];
       

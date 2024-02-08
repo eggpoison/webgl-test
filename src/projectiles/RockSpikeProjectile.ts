@@ -8,7 +8,7 @@ import { createRockParticle } from "../particles";
 import GameObject from "../GameObject";
 
 class RockSpikeProjectile extends GameObject {
-   private static readonly SPRITE_SIZES = [12 * 4, 16 * 4, 20 * 4];
+   private static readonly SIZES = [12 * 4, 16 * 4, 20 * 4];
    private static readonly SPRITE_TEXTURE_SOURCES = [
       "projectiles/rock-spike-small.png",
       "projectiles/rock-spike-medium.png",
@@ -35,11 +35,8 @@ class RockSpikeProjectile extends GameObject {
       
       this.shakeAmount = RockSpikeProjectile.ENTRANCE_SHAKE_AMOUNTS[this.size];
       
-      const spriteSize = RockSpikeProjectile.SPRITE_SIZES[this.size];
       this.renderPart = new RenderPart(
          this,
-         spriteSize,
-         spriteSize,
          getEntityTextureArrayIndex(RockSpikeProjectile.SPRITE_TEXTURE_SOURCES[this.size]),
          0,
          0
@@ -73,8 +70,8 @@ class RockSpikeProjectile extends GameObject {
 
       for (let i = 0; i < numSpeckParticles; i++) {
          const spawnOffsetDirection = 2 * Math.PI * Math.random();
-         const spawnPositionX = this.position.x + RockSpikeProjectile.SPRITE_SIZES[this.size] / 2 * Math.sin(spawnOffsetDirection);
-         const spawnPositionY = this.position.y + RockSpikeProjectile.SPRITE_SIZES[this.size] / 2 * Math.cos(spawnOffsetDirection);
+         const spawnPositionX = this.position.x + RockSpikeProjectile.SIZES[this.size] / 2 * Math.sin(spawnOffsetDirection);
+         const spawnPositionY = this.position.y + RockSpikeProjectile.SIZES[this.size] / 2 * Math.cos(spawnOffsetDirection);
          
          const lifetime = randFloat(1, 1.2);
       
@@ -111,8 +108,8 @@ class RockSpikeProjectile extends GameObject {
 
       for (let i = 0; i < numTexturedParticles; i++) {
          const spawnOffsetDirection = 2 * Math.PI * Math.random();
-         const spawnPositionX = this.position.x + RockSpikeProjectile.SPRITE_SIZES[this.size] / 2 * Math.sin(spawnOffsetDirection);
-         const spawnPositionY = this.position.y + RockSpikeProjectile.SPRITE_SIZES[this.size] / 2 * Math.cos(spawnOffsetDirection);
+         const spawnPositionX = this.position.x + RockSpikeProjectile.SIZES[this.size] / 2 * Math.sin(spawnOffsetDirection);
+         const spawnPositionY = this.position.y + RockSpikeProjectile.SIZES[this.size] / 2 * Math.cos(spawnOffsetDirection);
 
          createRockParticle(spawnPositionX, spawnPositionY, spawnOffsetDirection + randFloat(-0.5, 0.5), randFloat(80, 125));
       }

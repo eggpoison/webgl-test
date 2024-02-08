@@ -6,9 +6,6 @@ import Board from "../Board";
 import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 
 class Krumblid extends Entity {
-   private static readonly SPRITE_WIDTH = 16 * 4;
-   private static readonly SPRITE_HEIGHT = 14 * 4;
-
    private static readonly BLOOD_FOUNTAIN_INTERVAL = 0.1;
 
    private numFootstepsTaken = 0;
@@ -20,8 +17,6 @@ class Krumblid extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            Krumblid.SPRITE_WIDTH,
-            Krumblid.SPRITE_HEIGHT,
             getEntityTextureArrayIndex("entities/krumblid/krumblid.png"),
             0,
             0

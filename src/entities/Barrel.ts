@@ -18,8 +18,6 @@ class Barrel extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            Barrel.SIZE,
-            Barrel.SIZE,
             getEntityTextureArrayIndex("entities/barrel/barrel.png"),
             0,
             0

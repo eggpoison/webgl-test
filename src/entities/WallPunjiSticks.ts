@@ -5,17 +5,12 @@ import Entity from "./Entity";
 import { playSound } from "../sound";
 
 class WallPunjiSticks extends Entity {
-   private static readonly WIDTH = 68;
-   private static readonly HEIGHT = 32;
-
    constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
       super(position, id, EntityType.wallPunjiSticks, ageTicks, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(
             this,
-            WallPunjiSticks.WIDTH,
-            WallPunjiSticks.HEIGHT,
             getEntityTextureArrayIndex("entities/wall-punji-sticks/wall-punji-sticks.png"),
             0,
             0

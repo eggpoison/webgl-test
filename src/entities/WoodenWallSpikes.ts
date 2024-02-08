@@ -5,17 +5,12 @@ import Entity from "./Entity";
 import { playSound } from "../sound";
 
 class WoodenWallSpikes extends Entity {
-   private static readonly WIDTH = 68;
-   private static readonly HEIGHT = 28;
-
    constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
       super(position, id, EntityType.woodenWallSpikes, ageTicks, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(
             this,
-            WoodenWallSpikes.WIDTH,
-            WoodenWallSpikes.HEIGHT,
             getEntityTextureArrayIndex("entities/wooden-wall-spikes/wooden-wall-spikes.png"),
             0,
             0
