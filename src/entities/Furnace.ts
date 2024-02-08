@@ -2,14 +2,14 @@ import { EntityType, InventoryData, Point, angle, randFloat } from "webgl-test-s
 import RenderPart from "../render-parts/RenderPart";
 import CookingEntity from "./CookingEntity";
 import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
-import { createEmberParticle, createRockParticle, createRockSpeckParticle, createSmokeParticle } from "../generic-particles";
+import { createEmberParticle, createRockParticle, createRockSpeckParticle, createSmokeParticle } from "../particles";
 import Board from "../Board";
 
 class Furnace extends CookingEntity {
    public static readonly SIZE = 80;
 
-   constructor(position: Point, id: number, renderDepth: number, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData, heatingProgress: number, isCooking: boolean) {
-      super(position, id, EntityType.furnace, renderDepth, fuelInventory, ingredientInventory, outputInventory, heatingProgress, isCooking);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData, heatingProgress: number, isCooking: boolean) {
+      super(position, id, EntityType.furnace, ageTicks, renderDepth, fuelInventory, ingredientInventory, outputInventory, heatingProgress, isCooking);
 
       this.attachRenderPart(
          new RenderPart(

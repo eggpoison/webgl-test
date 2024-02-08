@@ -1,7 +1,7 @@
 import { Point, EntityData, lerp, HitData, randFloat, EntityType, SETTINGS } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle, createSnowParticle, createWhiteSmokeParticle } from "../generic-particles";
+import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle, createSnowParticle, createWhiteSmokeParticle } from "../particles";
 import Board from "../Board";
 import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 
@@ -24,8 +24,8 @@ class Yeti extends Entity {
    private lastAttackProgress = 1;
    private attackProgress = 1;
 
-   constructor(position: Point, id: number, renderDepth: number, attackProgress: number) {
-      super(position, id, EntityType.yeti, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, attackProgress: number) {
+      super(position, id, EntityType.yeti, ageTicks, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(

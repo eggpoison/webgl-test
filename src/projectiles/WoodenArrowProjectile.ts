@@ -1,29 +1,33 @@
-import { EntityType, Point, randFloat, randInt } from "webgl-test-shared";
+import { EntityType, GenericArrowType, Point, randFloat, randInt } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Board from "../Board";
 import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex, getTextureHeight, getTextureWidth } from "../texture-atlases/entity-texture-atlas";
 import GameObject from "../GameObject";
 import { playSound } from "../sound";
 
-class WoodenArrowProjectile extends GameObject {
-   private static readonly HEIGHT = 64;
-   private static readonly WIDTH = 20;
+const ARROW_TEXTURE_SOURCES: Record<GenericArrowType, string> = {
+   [GenericArrowType.woodenArrow]: "projectiles/wooden-arrow.png",
+   [GenericArrowType.woodenBolt]: "projectiles/wooden-bolt.png",
+   [GenericArrowType.ballistaRock]: "projectiles/ballista-rock.png"
+};
 
+class WoodenArrowProjectile extends GameObject {
    private static readonly DESTROY_PARTICLE_GRAY_COLOUR = [0.6, 0.6, 0.6];
    private static readonly DESTROY_PARTICLE_BROWN_COLOUR = [135/255, 75/255, 28/255];
    private static readonly DESTROY_PARTICLE_ADD_VELOCITY = 80;
    
-   constructor(position: Point, id: number, renderDepth: number) {
-      super(position, id, EntityType.woodenArrowProjectile, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, arrowType: GenericArrowType) {
+      super(position, id, EntityType.woodenArrowProjectile, ageTicks, renderDepth);
 
+      const textureArrayIndex = getEntityTextureArrayIndex(ARROW_TEXTURE_SOURCES[arrowType]);
       this.attachRenderPart(
          new RenderPart(
             this,
-            WoodenArrowProjectile.WIDTH,
-            WoodenArrowProjectile.HEIGHT,
-            getEntityTextureArrayIndex("projectiles/wooden-arrow.png"),
+            getTextureWidth(textureArrayIndex) * 4,
+            getTextureHeight(textureArrayIndex) * 4,
+            textureArrayIndex,
             0,
             0
          )
@@ -95,7 +99,7 @@ class WoodenArrowProjectile extends GameObject {
    }
 
    public onDie(): void {
-      playSound("arrow-hit.mp3", 0.4, this.position.x, this.position.y);
+      playSound("arrow-hit.mp3", 0.4, 1, this.position.x, this.position.y);
    }
 }
 

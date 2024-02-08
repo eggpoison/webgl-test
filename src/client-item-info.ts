@@ -389,6 +389,21 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       textureSource: "items/large/punji-sticks.png",
       toolTextureSource: "",
       name: "Punji Sticks",
+      description: "Slightly weaker than wooden spikes, but inflicts additional poison damage."
+   },
+   [ItemType.ballista]: {
+      entityTextureSource: "items/small/ballista.png",
+      textureSource: "items/large/ballista.png",
+      toolTextureSource: "",
+      name: "Ballista",
+      description: "An automatic crossbow turret. Requires ammo to function."
+   },
+   [ItemType.sling_turret]: {
+      // @Incomplete
+      entityTextureSource: "items/small/ballista.png",
+      textureSource: "items/large/sling-turret.png",
+      toolTextureSource: "",
+      name: "Sling Turret",
       description: ""
    }
 };

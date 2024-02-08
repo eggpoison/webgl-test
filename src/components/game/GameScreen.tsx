@@ -8,10 +8,10 @@ import CraftingMenu from "./menus/CraftingMenu";
 import HeldItem from "./HeldItem";
 import DeathScreen from "./DeathScreen";
 import BackpackInventoryMenu from "./inventories/BackpackInventory";
-import InteractInventory from "./inventories/InteractInventory";
 import TechTree from "./TechTree";
 import BlueprintMenu from "./BlueprintMenu";
 import TechInfocard from "./TechInfocard";
+import InventorySelector from "./inventories/InventorySelector";
 
 export let showPauseScreen: () => void = () => {};
 export let hidePauseScreen: () => void = () => {};
@@ -74,7 +74,6 @@ const GameScreen = () => {
       {/* Note: BackpackInventoryMenu must be exactly before CraftingMenu because of CSS hijinks */}
       <BackpackInventoryMenu />
       <CraftingMenu />
-      <InteractInventory />
 
       <HeldItem />
 
@@ -90,6 +89,8 @@ const GameScreen = () => {
       <TechInfocard />
 
       <BlueprintMenu />
+
+      <InventorySelector />
    </>;
 }
 

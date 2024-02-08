@@ -1,7 +1,7 @@
 import { EntityType, Point, randFloat, randItem } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import { createRockParticle, createRockSpeckParticle } from "../generic-particles";
+import { createRockParticle, createRockSpeckParticle } from "../particles";
 import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { ROCK_DESTROY_SOUNDS, ROCK_HIT_SOUNDS, playSound } from "../sound";
 
@@ -13,8 +13,8 @@ class Boulder extends Entity {
       "entities/boulder/boulder2.png"
    ];
 
-   constructor(position: Point, id: number, renderDepth: number, boulderType: number) {
-      super(position, id, EntityType.boulder, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, boulderType: number) {
+      super(position, id, EntityType.boulder, ageTicks, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(
@@ -44,7 +44,7 @@ class Boulder extends Entity {
          createRockSpeckParticle(this.position.x, this.position.y, Boulder.RADIUS, 0, 0);
       }
 
-      playSound(randItem(ROCK_HIT_SOUNDS), 0.3, this.position.x, this.position.y);
+      playSound(randItem(ROCK_HIT_SOUNDS), 0.3, 1, this.position.x, this.position.y);
    }
 
    public onDie(): void {
@@ -61,7 +61,7 @@ class Boulder extends Entity {
          createRockSpeckParticle(this.position.x, this.position.y, Boulder.RADIUS, 0, 0);
       }
 
-      playSound(randItem(ROCK_DESTROY_SOUNDS), 0.4, this.position.x, this.position.y);
+      playSound(randItem(ROCK_DESTROY_SOUNDS), 0.4, 1, this.position.x, this.position.y);
    }
 }
 

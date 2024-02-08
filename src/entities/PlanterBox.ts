@@ -6,8 +6,8 @@ import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-at
 class PlanterBox extends Entity {
    private static readonly SIZE = 80;
 
-   constructor(position: Point, id: number, renderDepth: number) {
-      super(position, id, EntityType.planterBox, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
+      super(position, id, EntityType.planterBox, ageTicks, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(

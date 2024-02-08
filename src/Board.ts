@@ -1,5 +1,4 @@
-import Entity from "./entities/Entity";
-import { SETTINGS, Point, Vector, ServerTileUpdateData, rotatePoint, WaterRockData, RiverSteppingStoneData, RIVER_STEPPING_STONE_SIZES, EntityType, ServerTileData, GrassTileInfo, DecorationInfo } from "webgl-test-shared";
+import { SETTINGS, Point, Vector, ServerTileUpdateData, rotatePoint, RiverSteppingStoneData, RIVER_STEPPING_STONE_SIZES, EntityType, ServerTileData, GrassTileInfo, TileType } from "webgl-test-shared";
 import Chunk from "./Chunk";
 import { Tile } from "./Tile";
 import GameObject from "./GameObject";
@@ -11,6 +10,8 @@ import ObjectBufferContainer from "./rendering/ObjectBufferContainer";
 import { tempFloat32ArrayLength1 } from "./webgl";
 import Player from "./entities/Player";
 import Fish from "./entities/Fish";
+import { entityIsVisible } from "./Camera";
+import { NEIGHBOUR_OFFSETS } from "./utils";
 
 export interface EntityHitboxInfo {
    readonly vertexPositions: readonly [Point, Point, Point, Point];
@@ -37,24 +38,13 @@ abstract class Board {
    public static ticks: number;
    public static time: number;
 
-   private static tiles: Array<Array<Tile>>;
+   private static tiles = new Array<Tile>();
    private static chunks: Array<Array<Chunk>>;
 
-   public static edgeTiles: Record<number, Record<number, Tile>> = {};
    public static edgeRiverFlowDirections: Record<number, Record<number, number>>; 
 
    public static grassInfo: Record<number, Record<number, GrassTileInfo>>;
 
-   // @Cleanup: This is only used to fill the render chunks with decorations, doesn't
-   // need to stick around for the entirety of the game's duration
-   public static decorations: ReadonlyArray<DecorationInfo>;
-   // @Cleanup: This is only used to fill the render chunks with water rocks, doesn't
-   // need to stick around for the entirety of the game's duration
-   public static waterRocks: ReadonlyArray<WaterRockData>;
-   // @Cleanup: This is only used to fill the render chunks with edge stepping stones, doesn't
-   // need to stick around for the entirety of the game's duration
-   public static edgeRiverSteppingStones: ReadonlyArray<RiverSteppingStoneData>;
-   
    public static numVisibleRenderParts = 0;
    /** Game objects sorted in descending render weight */
    public static readonly sortedGameObjects = new Array<GameObject>();
@@ -73,8 +63,6 @@ abstract class Board {
    public static readonly lowTexturedParticles = new Array<Particle>();
    public static readonly highMonocolourParticles = new Array<Particle>();
    public static readonly highTexturedParticles = new Array<Particle>();
-   /** Stores the IDs of all particles sent by the server */
-   public static readonly serverParticleIDs = new Set<number>();
 
    private static riverFlowDirections: Record<number, Record<number, number>>;
 
@@ -83,8 +71,60 @@ abstract class Board {
    public static lights = new Array<Light>();
 
    // @Cleanup: This function gets called by Game.ts, which gets called by LoadingScreen.tsx, with these same parameters. This feels unnecessary.
-   public static initialise(tiles: Array<Array<Tile>>, waterRocks: ReadonlyArray<WaterRockData>, riverSteppingStones: ReadonlyArray<RiverSteppingStoneData>, riverFlowDirections: Record<number, Record<number, number>>, edgeTiles: Array<ServerTileData>, edgeRiverFlowDirections: Record<number, Record<number, number>>, edgeRiverSteppingStones: ReadonlyArray<RiverSteppingStoneData>, grassInfo: Record<number, Record<number, GrassTileInfo>>, decorations: ReadonlyArray<DecorationInfo>): void {
-      this.tiles = tiles;
+   public static initialise(tiles: Array<Array<Tile>>, riverFlowDirections: Record<number, Record<number, number>>, edgeTiles: Array<ServerTileData>, edgeRiverFlowDirections: Record<number, Record<number, number>>, grassInfo: Record<number, Record<number, GrassTileInfo>>): void {
+      const edgeTilesRecord: Record<number, Record<number, Tile>> = {};
+      for (const tileData of edgeTiles) {
+         if (!edgeTilesRecord.hasOwnProperty(tileData.x)) {
+            edgeTilesRecord[tileData.x] = {};
+         }
+         edgeTilesRecord[tileData.x][tileData.y] = new Tile(tileData.x, tileData.y, tileData.type, tileData.biomeName, tileData.isWall);
+      }
+
+      // Combine the tiles and edge tiles
+      for (let tileY = -SETTINGS.EDGE_GENERATION_DISTANCE; tileY < SETTINGS.BOARD_DIMENSIONS + SETTINGS.EDGE_GENERATION_DISTANCE; tileY++) {
+         for (let tileX = -SETTINGS.EDGE_GENERATION_DISTANCE; tileX < SETTINGS.BOARD_DIMENSIONS + SETTINGS.EDGE_GENERATION_DISTANCE; tileX++) {
+            if (tileX >= 0 && tileX < SETTINGS.BOARD_DIMENSIONS && tileY >= 0 && tileY < SETTINGS.BOARD_DIMENSIONS) {
+               this.tiles.push(tiles[tileX][tileY]);
+            } else {
+               this.tiles.push(edgeTilesRecord[tileX][tileY]);
+            }
+         }
+      }
+
+      // Flag all tiles which border water or walls
+      for (let i = 0; i < this.tiles.length; i++) {
+         const tile = this.tiles[i];
+
+         if (tile.isWall) {
+            const tileX = i % (SETTINGS.BOARD_DIMENSIONS + SETTINGS.EDGE_GENERATION_DISTANCE * 2) - SETTINGS.EDGE_GENERATION_DISTANCE;
+            const tileY = Math.floor(i / (SETTINGS.BOARD_DIMENSIONS + SETTINGS.EDGE_GENERATION_DISTANCE * 2)) - SETTINGS.EDGE_GENERATION_DISTANCE;
+
+            for (let j = 0; j < NEIGHBOUR_OFFSETS.length; j++) {
+               const neighbourTileX = tileX + NEIGHBOUR_OFFSETS[j][0];
+               const neighbourTileY = tileY + NEIGHBOUR_OFFSETS[j][1];
+
+               if (this.tileIsWithinEdge(neighbourTileX, neighbourTileY)) {
+                  const neighbourTile = this.getTile(neighbourTileX, neighbourTileY);
+                  neighbourTile.bordersWall = true;
+               }
+            }
+         }
+
+         if (tile.type === TileType.water) {
+            const tileX = i % (SETTINGS.BOARD_DIMENSIONS + SETTINGS.EDGE_GENERATION_DISTANCE * 2) - SETTINGS.EDGE_GENERATION_DISTANCE;
+            const tileY = Math.floor(i / (SETTINGS.BOARD_DIMENSIONS + SETTINGS.EDGE_GENERATION_DISTANCE * 2)) - SETTINGS.EDGE_GENERATION_DISTANCE;
+
+            for (let j = 0; j < NEIGHBOUR_OFFSETS.length; j++) {
+               const neighbourTileX = tileX + NEIGHBOUR_OFFSETS[j][0];
+               const neighbourTileY = tileY + NEIGHBOUR_OFFSETS[j][1];
+
+               if (this.tileIsWithinEdge(neighbourTileX, neighbourTileY)) {
+                  const neighbourTile = this.getTile(neighbourTileX, neighbourTileY);
+                  neighbourTile.bordersWater = true;
+               }
+            }
+         }
+      }
       
       // Create the chunk array
       this.chunks = new Array<Array<Chunk>>();
@@ -97,12 +137,12 @@ abstract class Board {
 
       this.riverFlowDirections = riverFlowDirections;
       this.edgeRiverFlowDirections = edgeRiverFlowDirections;
-      this.edgeRiverSteppingStones = edgeRiverSteppingStones;
 
-      this.waterRocks = waterRocks;
+      this.grassInfo = grassInfo;
+   }
 
-      // Add river stepping stones to chunks
-      for (const steppingStone of riverSteppingStones) {
+   public static addRiverSteppingStonesToChunks(steppingStones: ReadonlyArray<RiverSteppingStoneData>): void {
+      for (const steppingStone of steppingStones) {
          const size = RIVER_STEPPING_STONE_SIZES[steppingStone.size];
 
          const minChunkX = Math.max(Math.min(Math.floor((steppingStone.positionX - size/2) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
@@ -117,16 +157,6 @@ abstract class Board {
             }
          }
       }
-
-      for (const tileData of edgeTiles) {
-         if (!this.edgeTiles.hasOwnProperty(tileData.x)) {
-            this.edgeTiles[tileData.x] = {};
-         }
-         this.edgeTiles[tileData.x][tileData.y] = new Tile(tileData.x, tileData.y, tileData.type, tileData.biomeName, tileData.isWall);
-      }
-
-      this.grassInfo = grassInfo;
-      this.decorations = decorations;
    }
 
    public static addTickCallback(time: number, callback: () => void): void {
@@ -175,30 +205,43 @@ abstract class Board {
       }
    }
 
-   public static removeGameObject(gameObject: GameObject): void {
-      if (typeof gameObject === "undefined") {
+   public static removeGameObject(entity: GameObject): void {
+      if (typeof entity === "undefined") {
          throw new Error("Tried to remove an undefined game object.");
       }
 
-      for (const chunk of gameObject.chunks) {
-         chunk.removeGameObject(gameObject);
-      }
-   
-      if (typeof gameObject.onRemove !== "undefined") {
-         gameObject.onRemove();
+      delete Board.entityRecord[entity.id];
+
+      if (typeof entity.onDie !== "undefined" && entityIsVisible(entity)) {
+         entity.onDie();
       }
 
-      this.entities.delete(gameObject);
-      if (gameObject instanceof Entity && gameObject.type === EntityType.fish) {
-         const idx = this.fish.indexOf(gameObject as Fish);
+      if (entity.type === EntityType.player) {
+         const idx = Board.players.indexOf(entity as Player);
+         if (idx !== -1) {
+            Board.players.splice(idx, 1);
+         }
+      }
+
+      for (const chunk of entity.chunks) {
+         chunk.removeGameObject(entity);
+      }
+   
+      if (typeof entity.onRemove !== "undefined") {
+         entity.onRemove();
+      }
+
+      this.entities.delete(entity);
+      if (entity.type === EntityType.fish) {
+         const idx = this.fish.indexOf(entity as Fish);
          if (idx !== -1) {
             this.fish.splice(idx, 1);
          }
       } else {
-         this.sortedGameObjects.splice(this.sortedGameObjects.indexOf(gameObject), 1);
+         this.sortedGameObjects.splice(this.sortedGameObjects.indexOf(entity), 1);
       }
    
-      this.numVisibleRenderParts -= gameObject.allRenderParts.length;
+      this.numVisibleRenderParts -= entity.allRenderParts.length;
    }
 
    public static getRiverFlowDirection(tileX: number, tileY: number): number {
@@ -219,24 +262,13 @@ abstract class Board {
    }
 
    public static getTile(tileX: number, tileY: number): Tile {
-      if (tileX < 0 || tileX >= SETTINGS.BOARD_DIMENSIONS) throw new Error(`Tile x coordinate '${tileX}' is not a valid tile coordinate.`);
-      if (tileY < 0 || tileY >= SETTINGS.BOARD_DIMENSIONS) throw new Error(`Tile x coordinate '${tileY}' is not a valid tile coordinate.`);
-      return this.tiles[tileX][tileY];
+      const x = tileX + SETTINGS.EDGE_GENERATION_DISTANCE;
+      const y = tileY + SETTINGS.EDGE_GENERATION_DISTANCE;
+      return this.tiles[y * (SETTINGS.BOARD_DIMENSIONS + SETTINGS.EDGE_GENERATION_DISTANCE * 2) + x];
    }
 
    public static tileIsWithinEdge(tileX: number, tileY: number): boolean {
       return tileX >= -SETTINGS.EDGE_GENERATION_DISTANCE && tileX < SETTINGS.BOARD_DIMENSIONS + SETTINGS.EDGE_GENERATION_DISTANCE && tileY >= -SETTINGS.EDGE_GENERATION_DISTANCE && tileY < SETTINGS.BOARD_DIMENSIONS + SETTINGS.EDGE_GENERATION_DISTANCE;
-   }
-
-   public static getEdgeTile(tileX: number, tileY: number): Tile | null {
-      if (tileX >= 0 && tileX < SETTINGS.BOARD_DIMENSIONS && tileY >= 0 && tileY < SETTINGS.BOARD_DIMENSIONS) {
-         return this.getTile(tileX, tileY);
-      } else {
-         if (!this.edgeTiles.hasOwnProperty(tileX) || !this.edgeTiles[tileX].hasOwnProperty(tileY)) {
-            return null;
-         }
-         return this.edgeTiles[tileX][tileY];
-      }
    }
 
    public static getChunk(x: number, y: number): Chunk {
@@ -275,9 +307,6 @@ abstract class Board {
          bufferContainer.removeObject(particle.id);
          particles.splice(idx, 1);
       }
-
-      // bufferContainer.pushBufferData(10);
-      // bufferContainer.pushBufferData(11);
    }
 
    public static updateParticles(): void {

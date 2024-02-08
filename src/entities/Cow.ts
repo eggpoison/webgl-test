@@ -1,7 +1,7 @@
 import { CowSpecies, EntityData, EntityType, HitData, Point, SETTINGS, randFloat, randInt } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createDirtParticle, createFootprintParticle } from "../generic-particles";
+import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createDirtParticle, createFootprintParticle } from "../particles";
 import Board from "../Board";
 import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { AudioFilePath, playSound } from "../sound";
@@ -22,8 +22,8 @@ class Cow extends Entity {
    private numFootstepsTaken = 0;
    private distanceTracker = 0;
 
-   constructor(position: Point, id: number, renderDepth: number, species: CowSpecies, grazeProgress: number) {
-      super(position, id, EntityType.cow, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, species: CowSpecies, grazeProgress: number) {
+      super(position, id, EntityType.cow, ageTicks, renderDepth);
 
       this.grazeProgress = grazeProgress;
 
@@ -77,7 +77,7 @@ class Cow extends Entity {
       }
 
       if (Math.random() < 0.1 / SETTINGS.TPS) {
-         playSound(("cow-ambient-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, this.position.x, this.position.y);
+         playSound(("cow-ambient-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.2, 1, this.position.x, this.position.y);
       }
    }
 
@@ -97,7 +97,7 @@ class Cow extends Entity {
          }
       }
 
-      playSound(("cow-hurt-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, this.position.x, this.position.y);
+      playSound(("cow-hurt-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, 1, this.position.x, this.position.y);
    }
 
    public onDie(): void {
@@ -107,7 +107,7 @@ class Cow extends Entity {
 
       createBloodParticleFountain(this, Cow.BLOOD_FOUNTAIN_INTERVAL, 1.1);
 
-      playSound("cow-die-1.mp3", 0.2, this.position.x, this.position.y);
+      playSound("cow-die-1.mp3", 0.2, 1, this.position.x, this.position.y);
    }
 
    public updateFromData(entityData: EntityData<EntityType.cow>): void {

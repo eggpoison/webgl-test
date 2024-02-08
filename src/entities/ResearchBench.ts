@@ -4,8 +4,8 @@ import Entity from "./Entity";
 import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 
 class ResearchBench extends Entity {
-   constructor(position: Point, id: number, renderDepth: number) {
-      super(position, id, EntityType.researchBench, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
+      super(position, id, EntityType.researchBench, ageTicks, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(

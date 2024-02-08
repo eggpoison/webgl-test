@@ -214,6 +214,7 @@ const createConnectorShaders = (): void => {
    #define LOCKED_COLOUR_DARK 156.0/255.0, 4.0/255.0, 2.0/255.0
    #define CONFLICTING_COLOUR 1.0, 0.0, 0.0
 
+   // @Speed: Use uniform block
    uniform vec2 u_screenSize;
    uniform float u_zoom;
    uniform vec2 u_scrollPos;

@@ -4,7 +4,6 @@
    bottom: 0.5rem;
    z-index: 2;
    display: flex;
-   /* justify-content: center; */
 }
 
 #hotbar .flex-container {

@@ -2,7 +2,7 @@ import { rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 import Board from "../Board";
 import { ATLAS_SLOT_SIZE } from "../texture-atlases/texture-atlas-stitching";
-import { ENTITY_TEXTURE_ATLAS, ENTITY_TEXTURE_ATLAS_SIZE } from "../texture-atlases/entity-texture-atlas";
+import { ENTITY_TEXTURE_ATLAS, ENTITY_TEXTURE_ATLAS_LENGTH, ENTITY_TEXTURE_ATLAS_SIZE } from "../texture-atlases/entity-texture-atlas";
 
 let program: WebGLProgram;
 let vao: WebGLVertexArrayObject;
@@ -23,7 +23,7 @@ export function createEntityShaders(): void {
    layout(location = 1) in float a_depth;
    layout(location = 2) in vec2 a_texCoord;
    layout(location = 3) in float a_textureIndex;
-   layout(location = 4) in vec2 a_textureSize;
+   layout(location = 4) in vec2 a_textureSize; // @Speed: This can be calculated using the texture index
    layout(location = 5) in vec3 a_tint;
    layout(location = 6) in float a_opacity;
    
@@ -48,10 +48,12 @@ export function createEntityShaders(): void {
    
    const fragmentShaderText = `#version 300 es
    precision highp float;
-   
+
    uniform sampler2D u_textureAtlas;
    uniform float u_atlasPixelSize;
    uniform float u_atlasSlotSize;
+   uniform int u_textureSlotIndexes[${ENTITY_TEXTURE_ATLAS_LENGTH}];
+   uniform vec2 u_textureSizes[${ENTITY_TEXTURE_ATLAS_LENGTH}];
    
    in vec2 v_texCoord;
    in float v_textureIndex;

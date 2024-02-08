@@ -1,14 +1,14 @@
 import { EntityType, Point, TileType } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import { createSlimePoolParticle, createSlimeSpeckParticle } from "../generic-particles";
+import { createSlimePoolParticle, createSlimeSpeckParticle } from "../particles";
 import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 
 class Slimewisp extends Entity {
    private static readonly RADIUS = 16;
 
-   constructor(position: Point, id: number, renderDepth: number) {
-      super(position, id, EntityType.slimewisp, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
+      super(position, id, EntityType.slimewisp, ageTicks, renderDepth);
 
       const renderPart = new RenderPart(
          this,

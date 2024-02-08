@@ -4,7 +4,7 @@ import RenderPart from "../render-parts/RenderPart";
 import CLIENT_ITEM_INFO_RECORD from "../client-item-info";
 import { getFrameProgress } from "../GameObject";
 import Particle from "../Particle";
-import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle } from "../generic-particles";
+import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle } from "../particles";
 import Board from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
@@ -278,8 +278,8 @@ abstract class TribeMember extends Entity {
    private readonly activeItemRotations = [TribeMember.ITEM_RESTING_ROTATION, -TribeMember.ITEM_RESTING_ROTATION];
    
    // @Cleanup: We shouldn't pass entityType through the constructor, just do the related logic in the subclasses
-   constructor(position: Point, id: number, entityType: EntityType, renderDepth: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, rightActiveItem: ItemData | null, rightAction: TribeMemberAction, rightFoodEatingType: ItemType | -1, rightLastActionTicks: number, rightThrownBattleaxeItemID: number, leftActiveItem: ItemData | null, leftAction: TribeMemberAction, leftFoodEatingType: ItemType | -1, leftLastActionTicks: number, leftThrownBattleaxeItemID: number, hasFrostShield: boolean, warPaintType: number) {
-      super(position, id, entityType, renderDepth);
+   constructor(position: Point, id: number, entityType: EntityType, ageTicks: number, renderDepth: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, rightActiveItem: ItemData | null, rightAction: TribeMemberAction, rightFoodEatingType: ItemType | -1, rightLastActionTicks: number, rightThrownBattleaxeItemID: number, leftActiveItem: ItemData | null, leftAction: TribeMemberAction, leftFoodEatingType: ItemType | -1, leftLastActionTicks: number, leftThrownBattleaxeItemID: number, hasFrostShield: boolean, warPaintType: number) {
+      super(position, id, entityType, ageTicks, renderDepth);
 
       this.tribeID = tribeID;
       this.tribeType = tribeType;
@@ -692,9 +692,13 @@ abstract class TribeMember extends Entity {
                      this.activeItemOffsets[i] = TribeMember.ITEM_RESTING_OFFSET + 7;
                      this.activeItemDirections[i] = direction * handMult;
                      this.activeItemRotations[i] = (attackHandRotation + Math.PI/10) * handMult;
-                  } else {
+                  } else if (activeItem !== null && this.showLargeItemTexture(activeItem.type)) {
                      this.activeItemOffsets[i] = TribeMember.ITEM_RESTING_OFFSET + itemSize/2;
                      this.activeItemDirections[i] = itemDirection * handMult;
+                     this.activeItemRotations[i] = attackHandRotation * handMult;
+                  } else {
+                     this.activeItemOffsets[i] = TribeMember.ITEM_RESTING_OFFSET + itemSize/2;
+                     this.activeItemDirections[i] = direction * handMult;
                      this.activeItemRotations[i] = attackHandRotation * handMult;
                   }
                }
@@ -739,15 +743,15 @@ abstract class TribeMember extends Entity {
 
       switch (this.tribeType) {
          case TribeType.goblins: {
-            playSound(randItem(GOBLIN_HURT_SOUNDS), 0.4, this.position.x, this.position.y);
+            playSound(randItem(GOBLIN_HURT_SOUNDS), 0.4, 1, this.position.x, this.position.y);
             break;
          }
          case TribeType.plainspeople: {
-            playSound(("plainsperson-hurt-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, this.position.x, this.position.y);
+            playSound(("plainsperson-hurt-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, 1, this.position.x, this.position.y);
             break;
          }
          case TribeType.barbarians: {
-            playSound(("barbarian-hurt-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, this.position.x, this.position.y);
+            playSound(("barbarian-hurt-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, 1, this.position.x, this.position.y);
             break;
          }
       }
@@ -760,15 +764,15 @@ abstract class TribeMember extends Entity {
 
       switch (this.tribeType) {
          case TribeType.goblins: {
-            playSound(randItem(GOBLIN_DIE_SOUNDS), 0.4, this.position.x, this.position.y);
+            playSound(randItem(GOBLIN_DIE_SOUNDS), 0.4, 1, this.position.x, this.position.y);
             break;
          }
          case TribeType.plainspeople: {
-            playSound("plainsperson-die-1.mp3", 0.4, this.position.x, this.position.y);
+            playSound("plainsperson-die-1.mp3", 0.4, 1, this.position.x, this.position.y);
             break;
          }
          case TribeType.barbarians: {
-            playSound("barbarian-die-1.mp3", 0.4, this.position.x, this.position.y);
+            playSound("barbarian-die-1.mp3", 0.4, 1, this.position.x, this.position.y);
             break;
          }
       }

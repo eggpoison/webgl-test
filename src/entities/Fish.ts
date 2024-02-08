@@ -3,7 +3,7 @@ import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import Board from "../Board";
-import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createWaterSplashParticle } from "../generic-particles";
+import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createWaterSplashParticle } from "../particles";
 import { AudioFilePath, playSound } from "../sound";
 
 class Fish extends Entity {
@@ -19,8 +19,8 @@ class Fish extends Entity {
       "entities/fish/fish-lime.png"
    ];
    
-   constructor(position: Point, id: number, renderDepth: number, colour: FishColour) {
-      super(position, id, EntityType.fish, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, colour: FishColour) {
+      super(position, id, EntityType.fish, ageTicks, renderDepth);
 
       const textureSource = randItem(Fish.TEXTURE_SOURCES);
       this.attachRenderPart(
@@ -59,13 +59,13 @@ class Fish extends Entity {
          }
       }
 
-      playSound(("fish-hurt-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.4, this.position.x, this.position.y);
+      playSound(("fish-hurt-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.4, 1, this.position.x, this.position.y);
    }
 
    public onDie(): void {
       createBloodParticleFountain(this, 0.1, 0.8);
       
-      playSound("fish-die-1.mp3", 0.4, this.position.x, this.position.y);
+      playSound("fish-die-1.mp3", 0.4, 1, this.position.x, this.position.y);
    }
 }
 

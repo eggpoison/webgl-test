@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TribeData, InventoryData, TribeMemberAction, TechID, Inventory, TRIBE_INFO_RECORD, StructureShapeType, randInt, StatusEffect } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TribeData, InventoryData, TribeMemberAction, TechID, Inventory, TRIBE_INFO_RECORD, StructureShapeType, randInt, StatusEffect, STRUCTURE_TYPES } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -8,7 +8,7 @@ import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { Tile } from "../Tile";
 import { gameScreenSetIsDead } from "../components/game/GameScreen";
-import { getInteractEntityID, removeSelectedItem, selectItem, updateInventoryIsOpen } from "../player-input";
+import { removeSelectedItem, selectItem, updateInventoryIsOpen } from "../player-input";
 import { Hotbar_setHotbarSelectedItemSlot, Hotbar_update, Hotbar_updateLeftThrownBattleaxeItemID, Hotbar_updateRightThrownBattleaxeItemID } from "../components/game/inventories/Hotbar";
 import { setHeldItemVisual } from "../components/game/HeldItem";
 import { CraftingMenu_setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
@@ -27,6 +27,7 @@ import { createDamageNumber } from "../text-canvas";
 import { playSound } from "../sound";
 import { closeTechTree, updateTechTree } from "../components/game/TechTree";
 import { TechInfocard_setSelectedTech } from "../components/game/TechInfocard";
+import { getSelectedEntityID } from "../entity-selection";
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -204,7 +205,6 @@ abstract class Client {
          for (const hitData of gameDataPacket.hitsTaken) {
             // Register hit
             if (Board.entityRecord.hasOwnProperty(hitData.hitEntityID)) {
-               // @Incomplete
                const entity = Board.entityRecord[hitData.hitEntityID];
                entity.registerHit(hitData);
             }
@@ -222,7 +222,7 @@ abstract class Client {
       }
 
       if (gameDataPacket.pickedUpItem) {
-         playSound("item-pickup.mp3", 0.3, Camera.position.x, Camera.position.y);
+         playSound("item-pickup.mp3", 0.3, 1, Camera.position.x, Camera.position.y);
       }
 
       definiteGameState.hotbarCrossbowLoadProgressRecord = gameDataPacket.hotbarCrossbowLoadProgressRecord;
@@ -273,17 +273,23 @@ abstract class Client {
                player.leftThrownBattleaxeItemID = leftThrownBattleaxeItemID;
                Hotbar_updateLeftThrownBattleaxeItemID(leftThrownBattleaxeItemID);
             }
-            // @Incomplete
-            // if (entityData.amountHealed > 0) {
-            //    Board.entityRecord[entityData.id].createHealingParticles(entityData.amountHealed);
-            // }
 
             const entity = Board.entityRecord[entityData.id];
+            
+            if (entityData.amountHealed > 0) {
+               entity.createHealingParticles(entityData.amountHealed);
+
+               // @Hack @Incomplete: This will trigger the repair sound effect even if a hammer isn't the one healing the structure
+               if (STRUCTURE_TYPES.includes(entity.type as any)) { // @Cleanup
+                  playSound("repair.mp3", 0.4, 1, entity.position.x, entity.position.y);
+               }
+            }
+
             for (const statusEffectData of entityData.statusEffects) {
                if (!entity.hasStatusEffect(statusEffectData.type)) {
                   switch (statusEffectData.type) {
                      case StatusEffect.freezing: {
-                        playSound("freezing.mp3", 0.4, entity.position.x, entity.position.y)
+                        playSound("freezing.mp3", 0.4, 1, entity.position.x, entity.position.y)
                         break;
                      }
                   }
@@ -301,22 +307,7 @@ abstract class Client {
       // All known entity ids which haven't been removed are ones which are dead
       for (const id of knownEntityIDs) {
          const entity = Board.entityRecord[id];
-
-         if (entity.isVisible()) {
-            if (typeof entity.onDie !== "undefined") {
-               entity.onDie();
-            }
-         }
-
-         if (entity.type === EntityType.player) {
-            const idx = Board.players.indexOf(entity as Player);
-            if (idx !== -1) {
-               Board.players.splice(idx, 1);
-            }
-         }
-
          Board.removeGameObject(entity);
-         delete Board.entityRecord[id];
       }
    }
 
@@ -427,11 +418,10 @@ abstract class Client {
 
       // Create the entity
       const entityConstructor = ENTITY_CLASS_RECORD[entityData.type]() as EntityClassType<EntityType>;
-      const entity = new entityConstructor(position, entityData.id, renderDepth, ...entityData.clientArgs);
+      const entity = new entityConstructor(position, entityData.id, entityData.ageTicks, renderDepth, ...entityData.clientArgs);
 
       entity.velocity = Point.unpackage(entityData.velocity);
       entity.rotation = entityData.rotation;
-      entity.ageTicks = entityData.ageTicks;
 
       this.addHitboxesToGameObject(entity, entityData);
 
@@ -506,7 +496,7 @@ abstract class Client {
       
       const spawnPosition = Point.unpackage(respawnDataPacket.spawnPosition);
       const renderDepth = calculateEntityRenderDepth(EntityType.player);
-      const player = new Player(spawnPosition, respawnDataPacket.playerID, renderDepth, null, Game.tribe.tribeType, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, -1, null, TribeMemberAction.none, -1, -99999, -1, false, Game.tribe.tribeType === TribeType.goblins ? randInt(1, 5) : -1, definiteGameState.playerUsername);
+      const player = new Player(spawnPosition, respawnDataPacket.playerID, 0, renderDepth, null, Game.tribe.tribeType, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, -1, null, TribeMemberAction.none, -1, -99999, -1, false, Game.tribe.tribeType === TribeType.goblins ? randInt(1, 5) : -1, definiteGameState.playerUsername);
       player.addCircularHitbox(Player.createNewPlayerHitbox());
       Player.setInstancePlayer(player);
       Board.addEntity(player);
@@ -544,6 +534,15 @@ abstract class Client {
 
    public static sendPlayerDataPacket(): void {
       if (Game.isRunning && this.socket !== null && Player.instance !== null) {
+         let interactingEntityID = -1;
+         const selectedEntityID = getSelectedEntityID();
+         if (Board.entityRecord.hasOwnProperty(selectedEntityID)) {
+            const entity = Board.entityRecord[selectedEntityID];
+            if (entity.type === EntityType.tribeWorker || entity.type === EntityType.tribeWarrior) {
+               interactingEntityID = entity.id;
+            }
+         }
+         
          const packet: PlayerDataPacket = {
             position: Player.instance.position.package(),
             velocity: Player.instance.velocity.package() || null,
@@ -553,7 +552,7 @@ abstract class Client {
             selectedItemSlot: latencyGameState.selectedHotbarItemSlot,
             mainAction: latencyGameState.mainAction,
             offhandAction: latencyGameState.offhandAction,
-            interactingEntityID: getInteractEntityID()
+            interactingEntityID: interactingEntityID
          };
 
          this.socket.emit("player_data_packet", packet);
@@ -634,11 +633,8 @@ abstract class Client {
    }
 
    private static killPlayer(): void {
-      Player.instance!.onDie();
-
       // Remove the player from the game
       Board.removeGameObject(Player.instance!);
-      delete Board.entityRecord[Player.instance!.id];
       Player.instance = null;
 
       latencyGameState.resetFlags();

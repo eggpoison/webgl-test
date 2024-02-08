@@ -15,7 +15,7 @@ import { hidePauseScreen, showPauseScreen, toggleSettingsMenu } from "./componen
 import { getGameState } from "./components/App";
 import { clearPressedKeys } from "./keyboard-input";
 import { createHitboxShaders, renderEntityHitboxes } from "./rendering/hitbox-rendering";
-import { updateInteractInventory, updatePlayerItems, updatePlayerMovement } from "./player-input";
+import { updatePlayerItems, updatePlayerMovement } from "./player-input";
 import { clearServerTicks, updateDebugScreenFPS, updateDebugScreenRenderTime } from "./components/game/dev/GameInfoDisplay";
 import { createWorldBorderShaders, renderWorldBorder } from "./rendering/world-border-rendering";
 import { createSolidTileShaders, renderSolidTiles } from "./rendering/solid-tile-rendering";
@@ -41,11 +41,13 @@ import { createForcefieldShaders, renderForcefield } from "./rendering/world-bor
 import { createDecorationShaders, renderDecorations } from "./rendering/decoration-rendering";
 import { playRiverSounds, setupAudio, updateSoundEffectVolume } from "./sound";
 import { createTechTreeShaders, renderTechTree } from "./rendering/tech-tree-rendering";
-import { createResearchNodeShaders, renderResearchNode } from "./rendering/research-node-rendering";
-import { attemptToResearch, updateActiveResearchBench } from "./research";
-import { updateHighlightedStructure, updateSelectedStructure } from "./structure-selection";
-import { createStructureHighlightShaders, renderStructureHighlights } from "./rendering/structure-highlight-rendering";
+import { createResearchOrbShaders, renderResearchOrb } from "./rendering/research-orb-rendering";
+import { attemptToResearch, updateActiveResearchBench, updateResearchOrb } from "./research";
+import { updateHighlightedEntity, updateSelectedStructure } from "./entity-selection";
+import { createStructureHighlightShaders, renderStructureHighlights } from "./rendering/entity-highlight-rendering";
 import { updateBlueprintMenu } from "./components/game/BlueprintMenu";
+import { InventorySelector_forceUpdate } from "./components/game/inventories/InventorySelector";
+import { createTurretRangeShaders, renderTurretRange } from "./rendering/turret-range-rendering";
 
 let listenersHaveBeenCreated = false;
 
@@ -175,7 +177,8 @@ abstract class Game {
             createWebGLContext();
             createTextCanvasContext();
 
-            Board.initialise(tiles, waterRocks, riverSteppingStones, riverFlowDirections, edgeTiles, edgeRiverFlowDirections, edgeRiverSteppingStones, grassInfo, decorations);
+            Board.initialise(tiles, riverFlowDirections, edgeTiles, edgeRiverFlowDirections, grassInfo);
+            Board.addRiverSteppingStonesToChunks(riverSteppingStones);
          
             createRiverSteppingStoneData(riverSteppingStones);
 
@@ -210,8 +213,9 @@ abstract class Game {
             createForcefieldShaders();
             createDecorationShaders();
             createTechTreeShaders();
-            createResearchNodeShaders();
+            createResearchOrbShaders();
             createStructureHighlightShaders();
+            createTurretRangeShaders();
 
             await setupAudio();
 
@@ -219,15 +223,17 @@ abstract class Game {
                setupFrameGraph();
             }
 
-            createRenderChunks();
+            createRenderChunks(decorations, waterRocks, edgeRiverSteppingStones);
 
             this.hasInitialised = true;
    
             resolve();
          });
       } else {
-         Board.initialise(tiles, waterRocks, riverSteppingStones, riverFlowDirections, edgeTiles, edgeRiverFlowDirections, edgeRiverSteppingStones, grassInfo, decorations);
-         createRenderChunks();
+         Board.initialise(tiles, riverFlowDirections, edgeTiles, edgeRiverFlowDirections, grassInfo);
+         Board.addRiverSteppingStonesToChunks(riverSteppingStones);
+
+         createRenderChunks(decorations, waterRocks, edgeRiverSteppingStones);
       }
    }
 
@@ -303,14 +309,20 @@ abstract class Game {
       
       updatePlayerItems();
       updateActiveResearchBench();
+      updateResearchOrb();
       attemptToResearch();
 
-      updateHighlightedStructure();
+      updateHighlightedEntity();
       updateSelectedStructure();
       updateBlueprintMenu();
+      InventorySelector_forceUpdate();
 
       updateSoundEffectVolume();
       playRiverSounds();
+
+      this.cursorPositionX = calculateCursorWorldPositionX();
+      this.cursorPositionY = calculateCursorWorldPositionY();
+      renderCursorTooltip();
 
       if (isDev()) refreshDebugInfo();
    }
@@ -378,6 +390,7 @@ abstract class Game {
       renderSolidTiles();
       renderRivers();
       renderDecorations();
+      renderTurretRange();
       renderAmbientOcclusion();
       renderWallBorders();
       if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Board.hasEntityID(this.gameObjectDebugData.gameObjectID)) {
@@ -398,6 +411,9 @@ abstract class Game {
       }
 
       renderGameObjects();
+
+      renderStructureHighlights();
+      renderResearchOrb();
       
       if (OPTIONS.showParticles) {
          renderMonocolourParticles(ParticleRenderLayer.high);
@@ -420,17 +436,9 @@ abstract class Game {
          }
       }
 
-      renderStructureHighlights();
-      renderResearchNode();
       renderGhostPlaceableItem();
-
-      this.cursorPositionX = calculateCursorWorldPositionX();
-      this.cursorPositionY = calculateCursorWorldPositionY();
-      renderCursorTooltip();
       
       renderNight();
-
-      updateInteractInventory();
 
       updateDebugScreenFPS();
       

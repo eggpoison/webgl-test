@@ -2,7 +2,7 @@ import { EntityType, HitData, Point, SNOWBALL_SIZES, SnowballSize, randFloat, ra
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import Board from "../Board";
-import { createSnowParticle } from "../generic-particles";
+import { createSnowParticle } from "../particles";
 import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
@@ -22,8 +22,8 @@ class Snowball extends Entity {
    private readonly size: SnowballSize;
    private readonly pixelSize: number;
 
-   constructor(position: Point, id: number, renderDepth: number, size: SnowballSize) {
-      super(position, id, EntityType.snowball, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, size: SnowballSize) {
+      super(position, id, EntityType.snowball, ageTicks, renderDepth);
 
       this.size = size;
       this.pixelSize = SNOWBALL_SIZES[size];

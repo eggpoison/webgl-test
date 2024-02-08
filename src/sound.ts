@@ -130,7 +130,14 @@ const AUDIO_FILE_PATHS = [
    "spear-throw.mp3",
    "bow-charge.mp3",
    "crossbow-fire.mp3",
-   "blueprint-place.mp3"
+   "blueprint-place.mp3",
+   "blueprint-work.mp3",
+   "wooden-spikes-destroy.mp3",
+   "wooden-spikes-hit.mp3",
+   "spike-stab.mp3",
+   "repair.mp3",
+   "orb-complete.mp3",
+   "sling-turret-fire.mp3"
 ] as const;
 
 export type AudioFilePath = typeof AUDIO_FILE_PATHS[number];
@@ -189,7 +196,7 @@ export interface SoundInfo {
    readonly trackSource: AudioBufferSourceNode;
    readonly sound: Sound;
 }
-export function playSound(filePath: AudioFilePath, volume: number, sourceX: number, sourceY: number): SoundInfo {
+export function playSound(filePath: AudioFilePath, volume: number, pitchMultiplier: number, sourceX: number, sourceY: number): SoundInfo {
    const audioBuffer = audioBuffers[filePath];
 
    const gainNode = audioContext.createGain();
@@ -198,6 +205,7 @@ export function playSound(filePath: AudioFilePath, volume: number, sourceX: numb
    
    const trackSource = audioContext.createBufferSource();
    trackSource.buffer = audioBuffer;
+   trackSource.playbackRate.value = pitchMultiplier;
    trackSource.connect(gainNode);
 
    trackSource.start();
@@ -253,7 +261,7 @@ export function updateSoundEffectVolume(): void {
 }
 
 export function playBuildingHitSound(sourceX: number, sourceY: number): void {
-   playSound(("building-hit-" + randInt(1, 2) + ".mp3") as AudioFilePath, 0.2, sourceX, sourceY);
+   playSound(("building-hit-" + randInt(1, 2) + ".mp3") as AudioFilePath, 0.2, 1, sourceX, sourceY);
 }
 
 export function playRiverSounds(): void {
@@ -264,7 +272,7 @@ export function playRiverSounds(): void {
 
    for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
       for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
-         const tile = Board.getEdgeTile(tileX, tileY);
+         const tile = Board.getTile(tileX, tileY);
          if (tile === null) {
             continue;
          }
@@ -272,7 +280,7 @@ export function playRiverSounds(): void {
          if (tile.type === TileType.water && Math.random() < 0.1 / SETTINGS.TPS) {
             const x = (tileX + Math.random()) * SETTINGS.TILE_SIZE;
             const y = (tileY + Math.random()) * SETTINGS.TILE_SIZE;
-            playSound(("water-flowing-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.2, x, y);
+            playSound(("water-flowing-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.2, 1, x, y);
          }
       }
    }

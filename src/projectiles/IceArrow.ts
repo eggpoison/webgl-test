@@ -1,4 +1,4 @@
-import { EntityType, Point, randFloat } from "webgl-test-shared";
+import { EntityType, Point, SETTINGS, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Board from "../Board";
 import Particle from "../Particle";
@@ -6,10 +6,11 @@ import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../
 import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import GameObject from "../GameObject";
 import { playSound } from "../sound";
+import { createSnowflakeParticle } from "../particles";
 
 class IceArrow extends GameObject {
-   constructor(position: Point, id: number, renderDepth: number) {
-      super(position, id, EntityType.iceArrow, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
+      super(position, id, EntityType.iceArrow, ageTicks, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(
@@ -21,6 +22,21 @@ class IceArrow extends GameObject {
             0
          )
       );
+   }
+
+   public tick(): void {
+      super.tick();
+
+      if (Math.random() < 30 / SETTINGS.TPS) {
+         createSnowflakeParticle(this.position.x, this.position.y);
+      }
+
+      if (Math.random() < 30 / SETTINGS.TPS) {
+         // @Incomplete: These types of particles don't fit
+         this.createIceSpeckProjectile();
+      }
+
+      // @Incomplete: Need snow speck particles
    }
 
    public onRemove(): void {
@@ -67,7 +83,7 @@ class IceArrow extends GameObject {
    }
 
    public onDie(): void {
-      playSound("arrow-hit.mp3", 0.4, this.position.x, this.position.y);
+      playSound("arrow-hit.mp3", 0.4, 1, this.position.x, this.position.y);
    }
 }
 

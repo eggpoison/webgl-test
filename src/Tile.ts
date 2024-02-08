@@ -8,6 +8,9 @@ export class Tile implements TileInfo {
    public biomeName: BiomeName;
    public isWall: boolean;
 
+   public bordersWater = false;
+   public bordersWall = false;
+
    public flowOffset = Math.random();
 
    constructor(x: number, y: number, tileType: TileType, biomeName: BiomeName, isWall: boolean) {

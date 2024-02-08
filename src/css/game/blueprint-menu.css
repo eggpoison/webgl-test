@@ -3,7 +3,7 @@
 
 #blueprint-menu {
    border: 4px solid #d6d6d6;
-   background-color: rgba(53, 53, 53, 0.2);
+   background-color: rgba(53, 53, 53, 0.3);
    padding: 0.8rem 0 0 0;
    position: absolute;
    left: calc(1px * var(--x));
@@ -22,6 +22,7 @@
    top: 0;
    left: 50%;
    transform: translate(-50%, -120%);
+   text-shadow: 0 0 2px #000, 0 0 3px #000;
 }
 
 #blueprint-menu .structure-shaping-option {

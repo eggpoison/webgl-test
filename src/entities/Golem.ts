@@ -3,7 +3,7 @@ import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RenderPart from "../render-parts/RenderPart";
 import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
-import { createFootprintParticle, createRockSpeckParticle } from "../generic-particles";
+import { createFootprintParticle, createRockSpeckParticle } from "../particles";
 import Board, { Light } from "../Board";
 
 enum GolemRockSize {
@@ -79,8 +79,8 @@ class Golem extends Entity {
    private numFootstepsTaken = 0;
    private distanceTracker = 0;
 
-   constructor(position: Point, id: number, renderDepth: number, wakeProgress: number) {
-      super(position, id, EntityType.golem, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, wakeProgress: number) {
+      super(position, id, EntityType.golem, ageTicks, renderDepth);
 
       this.wakeProgress = wakeProgress;
    }

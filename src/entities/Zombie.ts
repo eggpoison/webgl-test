@@ -1,7 +1,7 @@
 import { BowItemInfo, EntityData, EntityType, HitData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, ItemType, Point, SETTINGS, ToolItemInfo, TribeMemberAction, lerp, randFloat, randInt } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle } from "../generic-particles";
+import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle } from "../particles";
 import Board from "../Board";
 import { ENTITY_TEXTURE_SLOT_INDEXES, getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { AudioFilePath, playSound } from "../sound";
@@ -72,8 +72,8 @@ class Zombie extends Entity {
    public action: TribeMemberAction;
    private lastActionTicks: number;
    
-   constructor(position: Point, id: number, renderDepth: number, zombieType: number, activeItemType: ItemType | null, lastActionTicks: number, action: TribeMemberAction) {
-      super(position, id, EntityType.zombie, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, zombieType: number, activeItemType: ItemType | null, lastActionTicks: number, action: TribeMemberAction) {
+      super(position, id, EntityType.zombie, ageTicks, renderDepth);
 
       this.activeItemType = activeItemType;
       this.lastActionTicks = lastActionTicks;
@@ -147,7 +147,7 @@ class Zombie extends Entity {
       }
 
       if (Math.random() < 0.1 / SETTINGS.TPS) {
-         playSound(("zombie-ambient-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, this.position.x, this.position.y);
+         playSound(("zombie-ambient-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, 1, this.position.x, this.position.y);
       }
    }
 
@@ -166,14 +166,14 @@ class Zombie extends Entity {
          }
       }
 
-      playSound(("zombie-hurt-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, this.position.x, this.position.y);
+      playSound(("zombie-hurt-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, 1, this.position.x, this.position.y);
    }
 
    public onDie(): void {
       createBloodPoolParticle(this.position.x, this.position.y, 20);
       createBloodParticleFountain(this, Zombie.BLOOD_FOUNTAIN_INTERVAL, 1);
 
-      playSound("zombie-die-1.mp3", 0.4, this.position.x, this.position.y);
+      playSound("zombie-die-1.mp3", 0.4, 1, this.position.x, this.position.y);
    }
 
    public getSecondsSinceLastAction(): number {

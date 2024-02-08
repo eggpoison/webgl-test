@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { getSelectedStructureID } from "../../structure-selection";
+import { deselectSelectedEntity, getSelectedEntityID } from "../../entity-selection";
 import Board from "../../Board";
 import Camera from "../../Camera";
 import Client from "../../client/Client";
@@ -37,11 +37,13 @@ const BlueprintMenu = () => {
    const hasLoaded = useRef(false);
 
    const shapeStructure = (type: StructureShapeType): void => {
-      const selectedStructureID = getSelectedStructureID();
+      const selectedStructureID = getSelectedEntityID();
       Client.sendShapeStructure(selectedStructureID, type);
 
+      deselectSelectedEntity();
+
       // @Incomplete
-      playSound("blueprint-place.mp3", 0.4, Player.instance!.position.x, Player.instance!.position.y);
+      playSound("blueprint-place.mp3", 0.4, 1, Player.instance!.position.x, Player.instance!.position.y);
    }
 
    useEffect(() => {
@@ -73,7 +75,7 @@ const BlueprintMenu = () => {
          setIsVisible(false);
       }
    }, []);
-
+   
    const hoverOption = (type: StructureShapeType): void => {
       hoveredShapeType = type;
    }
@@ -108,7 +110,7 @@ const BlueprintMenu = () => {
 export default BlueprintMenu;
 
 export function updateBlueprintMenu(): void {
-   const selectedStructureID = getSelectedStructureID();
+   const selectedStructureID = getSelectedEntityID();
    if (selectedStructureID === -1 || !Board.entityRecord.hasOwnProperty(selectedStructureID)) {
       hideStructureShapingMenu();
       return;

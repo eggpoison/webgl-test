@@ -1,4 +1,4 @@
-import { Point, TribeTotemBanner, EntityData, TribeType, EntityType, HitData } from "webgl-test-shared";
+import { Point, TribeTotemBanner, EntityData, TribeType, EntityType } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
@@ -18,8 +18,8 @@ class TribeTotem extends Entity {
    private readonly banners: Record<number, TribeTotemBanner> = {};
    private readonly bannerRenderParts: Record<number, RenderPart> = {};
 
-   constructor(position: Point, id: number, renderDepth: number, tribeID: number, tribeType: TribeType, banners: Array<TribeTotemBanner>) {
-      super(position, id, EntityType.tribeTotem, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, tribeID: number, tribeType: TribeType, banners: Array<TribeTotemBanner>) {
+      super(position, id, EntityType.tribeTotem, ageTicks, renderDepth);
 
       const renderPart = new RenderPart(
          this,
@@ -101,12 +101,12 @@ class TribeTotem extends Entity {
       this.updateBanners(entityData.clientArgs[2]);
    }
 
-   protected onHit(hitData: HitData): void {
+   protected onHit(): void {
       playBuildingHitSound(this.position.x, this.position.y);
    }
 
    public onDie(): void {
-      playSound("building-destroy-1.mp3", 0.4, this.position.x, this.position.y);
+      playSound("building-destroy-1.mp3", 0.4, 1, this.position.x, this.position.y);
    }
 }
 

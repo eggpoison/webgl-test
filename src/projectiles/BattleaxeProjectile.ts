@@ -6,8 +6,8 @@ import Board from "../Board";
 import { attachSoundToEntity, playSound } from "../sound";
 
 class BattleaxeProjectile extends GameObject {
-   constructor(position: Point, id: number, renderDepth: number) {
-      super(position, id, EntityType.battleaxeProjectile, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
+      super(position, id, EntityType.battleaxeProjectile, ageTicks, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(
@@ -32,7 +32,7 @@ class BattleaxeProjectile extends GameObject {
    }
 
    private playWhoosh(): void {
-      const soundInfo = playSound("air-whoosh.mp3", 0.25, this.position.x, this.position.y);
+      const soundInfo = playSound("air-whoosh.mp3", 0.25, 1, this.position.x, this.position.y);
       attachSoundToEntity(soundInfo.sound, this);
    }
 }

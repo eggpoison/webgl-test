@@ -5,8 +5,8 @@ import GameObject from "../GameObject";
 import { playSound } from "../sound";
 
 class SpearProjectile extends GameObject {
-   constructor(position: Point, id: number, renderDepth: number) {
-      super(position, id, EntityType.spearProjectile, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
+      super(position, id, EntityType.spearProjectile, ageTicks, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(
@@ -19,11 +19,11 @@ class SpearProjectile extends GameObject {
          )
       );
 
-      playSound("spear-throw.mp3", 0.4, this.position.x, this.position.y);
+      playSound("spear-throw.mp3", 0.4, 1, this.position.x, this.position.y);
    }
 
    public onDie(): void {
-      playSound("spear-hit.mp3", 0.4, this.position.x, this.position.y);
+      playSound("spear-hit.mp3", 0.4, 1, this.position.x, this.position.y);
    }
 }
 

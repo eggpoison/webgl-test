@@ -4,7 +4,7 @@ import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-at
 import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 import Board from "../Board";
-import { createRockParticle } from "../generic-particles";
+import { createRockParticle } from "../particles";
 import GameObject from "../GameObject";
 
 class RockSpikeProjectile extends GameObject {
@@ -27,8 +27,8 @@ class RockSpikeProjectile extends GameObject {
 
    private readonly renderPart: RenderPart;
    
-   constructor(position: Point, id: number, renderDepth: number, size: number, lifetime: number) {
-      super(position, id, EntityType.rockSpikeProjectile, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, size: number, lifetime: number) {
+      super(position, id, EntityType.rockSpikeProjectile, ageTicks, renderDepth);
 
       this.size = size;
       this.lifetime = lifetime;

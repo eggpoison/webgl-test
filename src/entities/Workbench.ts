@@ -6,8 +6,8 @@ import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-at
 class Workbench extends Entity {
    public static readonly SIZE = 80;
    
-   constructor(position: Point, id: number, renderDepth: number) {
-      super(position, id, EntityType.workbench, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
+      super(position, id, EntityType.workbench, ageTicks, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(

@@ -12,8 +12,8 @@ abstract class CookingEntity extends Entity {
 
    private readonly light: Light;
 
-   constructor(position: Point, id: number, entityType: EntityType, renderDepth: number, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData, heatingProgress: number, isCooking: boolean) {
-      super(position, id, entityType, renderDepth);
+   constructor(position: Point, id: number, entityType: EntityType, ageTicks: number, renderDepth: number, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData, heatingProgress: number, isCooking: boolean) {
+      super(position, id, entityType, ageTicks, renderDepth);
 
       this.fuelInventory = createInventoryFromData(fuelInventory);
       this.ingredientInventory = createInventoryFromData(ingredientInventory);

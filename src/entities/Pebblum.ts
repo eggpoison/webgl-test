@@ -2,15 +2,15 @@ import { EntityType, Point, SETTINGS } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
-import { createFootprintParticle } from "../generic-particles";
+import { createFootprintParticle } from "../particles";
 import Board from "../Board";
 
 class Pebblum extends Entity {
    private numFootstepsTaken = 0;
    private distanceTracker = 0;
 
-   constructor(position: Point, id: number, renderDepth: number) {
-      super(position, id, EntityType.pebblum, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
+      super(position, id, EntityType.pebblum, ageTicks, renderDepth);
 
       // Nose
       const nose = new RenderPart(

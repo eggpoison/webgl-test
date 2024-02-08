@@ -173,7 +173,7 @@ const CraftingMenu = () => {
          return;
       }
 
-      playSound("craft.mp3", 0.25, Player.instance!.position.x, Player.instance!.position.y);
+      playSound("craft.mp3", 0.25, 1, Player.instance!.position.x, Player.instance!.position.y);
       Client.sendCraftingPacket(selectedRecipeIndex.current);
    }, [selectedRecipe, craftableRecipes]);
 

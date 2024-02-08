@@ -3,9 +3,8 @@ import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, TIME_UNIFORM_BUFFER_BINDING_INDEX,
 import { getTexture } from "../textures";
 import Camera from "../Camera";
 import Board from "../Board";
-import { RENDER_CHUNK_SIZE, RenderChunkRiverInfo, WORLD_RENDER_CHUNK_SIZE, getRenderChunk } from "./render-chunks";
+import { RenderChunkRiverInfo, WORLD_RENDER_CHUNK_SIZE, getRenderChunkMaxTileX, getRenderChunkMaxTileY, getRenderChunkMinTileX, getRenderChunkMinTileY, getRenderChunkRiverInfo } from "./render-chunks";
 import { Tile } from "../Tile";
-import { NEIGHBOUR_OFFSETS } from "../utils";
 import { renderFish } from "./fish-rendering";
 
 const SHALLOW_WATER_COLOUR = [118/255, 185/255, 242/255] as const;
@@ -724,41 +723,23 @@ const tileIsWaterInt = (tileX: number, tileY: number): number => {
       return 0;
    }
    
-   const tile = Board.getEdgeTile(tileX, tileY);
-   return (tile !== null && tile.type === TileType.water) ? 1 : 0;
+   const tile = Board.getTile(tileX, tileY);
+   return tile.type === TileType.water ? 1 : 0;
 }
 
 const calculateTransitionVertexData = (renderChunkX: number, renderChunkY: number): Float32Array => {
-   const minTileX = renderChunkX * RENDER_CHUNK_SIZE;
-   const maxTileX = (renderChunkX + 1) * RENDER_CHUNK_SIZE - 1;
-   const minTileY = renderChunkY * RENDER_CHUNK_SIZE;
-   const maxTileY = (renderChunkY + 1) * RENDER_CHUNK_SIZE - 1;
+   const minTileX = getRenderChunkMinTileX(renderChunkX);
+   const maxTileX = getRenderChunkMaxTileX(renderChunkX);
+   const minTileY = getRenderChunkMinTileY(renderChunkY);
+   const maxTileY = getRenderChunkMaxTileY(renderChunkY);
 
    // Find all tiles neighbouring water in the render chunk
    const edgeTiles = new Array<Tile>();
    for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
       for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
-         const tile = Board.getEdgeTile(tileX, tileY);
-         if (tile === null || tile.type === TileType.water) {
-            continue;
-         }
-
-         // Check for neighbouring water tiles
-         for (const offset of NEIGHBOUR_OFFSETS) {
-            const neighbourTileX = tile.x + offset[0];
-            const neighbourTileY = tile.y + offset[1];
-
-            // Don't add tiles which aren't in the board
-            if (!Board.tileIsWithinEdge(neighbourTileX, neighbourTileY)) {
-               continue;
-            }
-
-            // If the tile is neighbouring water, add it and move on to the next tile
-            const neighbourTile = Board.getEdgeTile(neighbourTileX, neighbourTileY);
-            if (neighbourTile !== null && neighbourTile.type === TileType.water) {
-               edgeTiles.push(tile);
-               break;
-            }
+         const tile = Board.getTile(tileX, tileY);
+         if (tile.type !== TileType.water && tile.bordersWater) {
+            edgeTiles.push(tile);
          }
       }
    }
@@ -1290,16 +1271,16 @@ const createSteppingStoneVAO = (buffer: WebGLBuffer): WebGLVertexArrayObject => 
 }
 
 const getRenderChunkWaterTiles = (renderChunkX: number, renderChunkY: number): ReadonlyArray<Tile> => {
-   const minTileX = renderChunkX * RENDER_CHUNK_SIZE;
-   const maxTileX = (renderChunkX + 1) * RENDER_CHUNK_SIZE - 1;
-   const minTileY = renderChunkY * RENDER_CHUNK_SIZE;
-   const maxTileY = (renderChunkY + 1) * RENDER_CHUNK_SIZE - 1;
+   const minTileX = getRenderChunkMinTileX(renderChunkX);
+   const maxTileX = getRenderChunkMaxTileX(renderChunkX);
+   const minTileY = getRenderChunkMinTileY(renderChunkY);
+   const maxTileY = getRenderChunkMaxTileY(renderChunkY);
 
    const tiles = new Array<Tile>();
    for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
       for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
-         const tile = Board.getEdgeTile(tileX, tileY);
-         if (tile !== null && tile.type === TileType.water) {
+         const tile = Board.getTile(tileX, tileY);
+         if (tile.type === TileType.water) {
             tiles.push(tile);
          }
       }
@@ -1309,16 +1290,16 @@ const getRenderChunkWaterTiles = (renderChunkX: number, renderChunkY: number): R
 }
 
 const renderChunkHasBorderingWaterTiles = (renderChunkX: number, renderChunkY: number): boolean => {
-   const leftTileX = renderChunkX * RENDER_CHUNK_SIZE - 1;
-   const rightTileX = (renderChunkX + 1) * RENDER_CHUNK_SIZE;
-   const topTileY = (renderChunkY + 1) * RENDER_CHUNK_SIZE;
-   const bottomTileY = renderChunkY * RENDER_CHUNK_SIZE - 1;
+   const leftTileX = getRenderChunkMinTileX(renderChunkX);
+   const rightTileX = getRenderChunkMaxTileX(renderChunkX);
+   const bottomTileY = getRenderChunkMinTileY(renderChunkY);
+   const topTileY = getRenderChunkMaxTileY(renderChunkY);
 
    // Left border tiles
    for (let tileY = bottomTileY; tileY <= topTileY; tileY++) {
       if (Board.tileIsWithinEdge(leftTileX, tileY)) {
-         const tile = Board.getEdgeTile(leftTileX, tileY);
-         if (tile !== null && tile.type === TileType.water) {
+         const tile = Board.getTile(leftTileX, tileY);
+         if (tile.type === TileType.water) {
             return true;
          }
       }
@@ -1327,8 +1308,8 @@ const renderChunkHasBorderingWaterTiles = (renderChunkX: number, renderChunkY: n
    // Right border tiles
    for (let tileY = bottomTileY; tileY <= topTileY; tileY++) {
       if (Board.tileIsWithinEdge(rightTileX, tileY)) {
-         const tile = Board.getEdgeTile(rightTileX, tileY);
-         if (tile !== null && tile.type === TileType.water) {
+         const tile = Board.getTile(rightTileX, tileY);
+         if (tile.type === TileType.water) {
             return true;
          }
       }
@@ -1337,8 +1318,8 @@ const renderChunkHasBorderingWaterTiles = (renderChunkX: number, renderChunkY: n
    // Top border tiles
    for (let tileX = leftTileX; tileX <= rightTileX; tileX++) {
       if (Board.tileIsWithinEdge(tileX, topTileY)) {
-         const tile = Board.getEdgeTile(tileX, topTileY);
-         if (tile !== null && tile.type === TileType.water) {
+         const tile = Board.getTile(tileX, topTileY);
+         if (tile.type === TileType.water) {
             return true;
          }
       }
@@ -1347,8 +1328,8 @@ const renderChunkHasBorderingWaterTiles = (renderChunkX: number, renderChunkY: n
    // Bottom border tiles
    for (let tileX = leftTileX; tileX <= rightTileX; tileX++) {
       if (Board.tileIsWithinEdge(tileX, bottomTileY)) {
-         const tile = Board.getEdgeTile(tileX, bottomTileY);
-         if (tile !== null && tile.type === TileType.water) {
+         const tile = Board.getTile(tileX, bottomTileY);
+         if (tile.type === TileType.water) {
             return true;
          }
       }
@@ -1628,23 +1609,23 @@ const calculateHighlightsVertexData = (waterTiles: ReadonlyArray<Tile>): Float32
    return vertexData;
 }
 
-const calculateVisibleRenderChunks = (): ReadonlyArray<RenderChunkRiverInfo> => {
-   const renderChunks = new Array<RenderChunkRiverInfo>();
+const calculateVisibleRiverInfo = (): ReadonlyArray<RenderChunkRiverInfo> => {
+   const riverInfoArray = new Array<RenderChunkRiverInfo>();
 
    for (let renderChunkX = Camera.minVisibleRenderChunkX; renderChunkX <= Camera.maxVisibleRenderChunkX; renderChunkX++) {
       for (let renderChunkY = Camera.minVisibleRenderChunkY; renderChunkY <= Camera.maxVisibleRenderChunkY; renderChunkY++) {
-         const renderChunkInfo = getRenderChunk(renderChunkX, renderChunkY).riverInfo;
-         if (renderChunkInfo !== null) {
-            renderChunks.push(renderChunkInfo);
+         const riverInfo = getRenderChunkRiverInfo(renderChunkX, renderChunkY);
+         if (riverInfo !== null) {
+            riverInfoArray.push(riverInfo);
          }
       }
    }
 
-   return renderChunks;
+   return riverInfoArray;
 }
 
 export function renderRivers(): void {
-   const visibleRenderChunks = calculateVisibleRenderChunks();
+   const visibleRenderChunks = calculateVisibleRiverInfo();
 
    // Calculate visible stepping stone groups
    const steppingStoneGroupIDs = new Array<number>();

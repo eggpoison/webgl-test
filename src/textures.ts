@@ -18,24 +18,7 @@ const TEXTURE_SOURCES: Array<string> = [
    "miscellaneous/river/river-bed-highlights-2.png",
    "miscellaneous/river/river-bed-highlights-3.png",
    "miscellaneous/particle-texture-atlas.png",
-   "miscellaneous/gravel-noise-texture.png",
-   // @Robustness: Shouldn't have to hardcode
-   "entities/campfire/campfire.png",
-   "entities/furnace/furnace.png",
-   "entities/tribe-totem/tribe-totem.png",
-   "entities/workbench/workbench.png",
-   "entities/barrel/barrel.png",
-   "entities/worker-hut/worker-hut.png",
-   "entities/warrior-hut/warrior-hut.png",
-   "entities/research-bench/research-bench.png",
-   "entities/wooden-wall/wooden-wall.png",
-   "entities/planter-box/planter-box.png",
-   "entities/wooden-floor-spikes/wooden-floor-spikes.png",
-   "entities/wooden-wall-spikes/wooden-wall-spikes.png",
-   "entities/wall-punji-sticks/wall-punji-sticks.png",
-   "entities/floor-punji-sticks/floor-punji-sticks.png",
-   "entities/wooden-door/wooden-door.png",
-   "entities/wooden-embrasure/wooden-embrasure.png"
+   "miscellaneous/gravel-noise-texture.png"
 ];
 
 export const TEXTURE_IMAGE_RECORD: Record<string, HTMLImageElement> = {};

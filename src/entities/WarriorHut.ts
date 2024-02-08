@@ -33,8 +33,8 @@ class WarriorHut extends Entity {
    /** Amount the door should swing outwards from 0 to 1 */
    private doorSwingAmount: number;
 
-   constructor(position: Point, id: number, renderDepth: number, tribeID: number | null, lastDoorSwingTicks: number) {
-      super(position, id, EntityType.warriorHut, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, tribeID: number | null, lastDoorSwingTicks: number) {
+      super(position, id, EntityType.warriorHut, ageTicks, renderDepth);
 
       this.tribeID = tribeID;
       this.doorSwingAmount = calculateDoorSwingAmount(lastDoorSwingTicks);
@@ -82,7 +82,7 @@ class WarriorHut extends Entity {
    }
 
    public onDie(): void {
-      playSound("building-destroy-1.mp3", 0.4, this.position.x, this.position.y);
+      playSound("building-destroy-1.mp3", 0.4, 1, this.position.x, this.position.y);
    }
 
    public updateFromData(data: EntityData<EntityType.warriorHut>): void {

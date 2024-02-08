@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { roundNum } from "webgl-test-shared";
 import OPTIONS from "../../../options";
 import Board from "../../../Board";
+import Camera from "../../../Camera";
 
 let serverTicks = 0;
 
@@ -40,8 +41,11 @@ const formatTime = (time: number): string => {
 }
 
 const GameInfoDisplay = () => {
+   const rangeInputRef = useRef<HTMLInputElement | null>(null);
+   
    const [currentTime, setCurrentTime] = useState(0);
    const [ticks, setTicks] = useState(Board.ticks);
+   const [zoom, setZoom] = useState(Camera.zoom);
 
    const [nightVisionIsEnabled, setNightvisionIsEnabled] = useState(OPTIONS.nightVisionIsEnabled);
    const [showHitboxes, setShowEntityHitboxes] = useState(OPTIONS.showHitboxes);
@@ -80,6 +84,16 @@ const GameInfoDisplay = () => {
       OPTIONS.showRenderChunkBorders = !showRenderChunkBorders;
       setShowRenderChunkBorders(!showRenderChunkBorders);
    }, [showRenderChunkBorders]);
+
+   const changeZoom = () => {
+      if (rangeInputRef.current === null) {
+         return;
+      }
+
+      const rangeInputVal = Number(rangeInputRef.current.value);
+      Camera.zoom = rangeInputVal;
+      setZoom(rangeInputVal);
+   }
    
    return <div id="game-info-display">
       <p>Time: {formatTime(roundNum(currentTime, 2))}</p>
@@ -117,6 +131,15 @@ const GameInfoDisplay = () => {
          <li>{Board.entities.size} Entities</li>
          {/* @Incomplete: Subdivide into projectiles, item entities, and other */}
          <li>{Board.lowMonocolourParticles.length + Board.lowTexturedParticles.length + Board.highMonocolourParticles.length + Board.highTexturedParticles.length} Particles</li>
+      </ul>
+
+      <ul>
+         <li>
+            <label>
+               <input ref={rangeInputRef} type="range" name="zoom-input" defaultValue={1.75} min={1} max={2.25} step={0.25} onChange={changeZoom} />
+               <br></br>Zoom ({zoom})
+            </label>
+         </li>
       </ul>
    </div>;
 }

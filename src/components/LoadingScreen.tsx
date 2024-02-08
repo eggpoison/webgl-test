@@ -104,7 +104,7 @@ const LoadingScreen = ({ username, tribeType, initialStatus }: LoadingScreenProp
                const playerSpawnPosition = new Point(spawnPositionRef.current!.x, spawnPositionRef.current!.y);
                const renderDepth = calculateEntityRenderDepth(EntityType.player);
                // @Cleanup: Copy and paste from Client
-               const player = new Player(playerSpawnPosition, initialGameDataPacket.playerID, renderDepth, null, tribeType, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, -1, null, TribeMemberAction.none, -1, -99999, -1, false, tribeType === TribeType.goblins ? randInt(1, 5) : -1, username);
+               const player = new Player(playerSpawnPosition, initialGameDataPacket.playerID, 0, renderDepth, null, tribeType, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, -1, null, TribeMemberAction.none, -1, -99999, -1, false, tribeType === TribeType.goblins ? randInt(1, 5) : -1, username);
                player.addCircularHitbox(Player.createNewPlayerHitbox());
                Player.setInstancePlayer(player);
                Board.addEntity(player);

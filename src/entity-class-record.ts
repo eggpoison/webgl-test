@@ -46,8 +46,11 @@ import WoodenWallSpikes from "./entities/WoodenWallSpikes";
 import FloorPunjiSticks from "./entities/FloorPunjiSticks";
 import WallPunjiSticks from "./entities/WallPunjiSticks";
 import BlueprintEntity from "./entities/BlueprintEntity";
+import Ballista from "./entities/Ballista";
+import SlingTurret from "./entities/SlingTurret";
+import SlingRock from "./entities/SlingRock";
 
-export type EntityClassType<T extends EntityType> = new (position: Point, id: number, renderDepth: number, ...clientParams: Parameters<typeof EntityInfoClientArgs[T]>) => GameObject;
+export type EntityClassType<T extends EntityType> = new (position: Point, id: number, ageTicks: number, renderDepth: number, ...clientParams: Parameters<typeof EntityInfoClientArgs[T]>) => GameObject;
 
 // @Incomplete: Move to server-like system
 const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
@@ -96,7 +99,10 @@ const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
    [EntityType.woodenWallSpikes]: () => WoodenWallSpikes,
    [EntityType.floorPunjiSticks]: () => FloorPunjiSticks,
    [EntityType.wallPunjiSticks]: () => WallPunjiSticks,
-   [EntityType.blueprintEntity]: () => BlueprintEntity
+   [EntityType.blueprintEntity]: () => BlueprintEntity,
+   [EntityType.ballista]: () => Ballista,
+   [EntityType.slingTurret]: () => SlingTurret,
+   [EntityType.slingRock]: () => SlingRock
 };
 
 export default ENTITY_CLASS_RECORD;

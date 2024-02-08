@@ -7,7 +7,7 @@ import Board from "../Board";
 import Particle from "../Particle";
 import { addTexturedParticleToBufferContainer, ParticleRenderLayer } from "../rendering/particle-rendering";
 import { playSound } from "../sound";
-import { createLightWoodSpeckParticle } from "./WoodenWall";
+import { createLightWoodSpeckParticle, createWoodShardParticle } from "./WoodenWall";
 
 const createSawdustCloud = (x: number, y: number): void => {
    const lifetime = randFloat(0.4, 0.7);
@@ -43,15 +43,19 @@ const createSawdustCloud = (x: number, y: number): void => {
 
 const PARTIAL_TEXTURE_SOURCES: Record<StructureShapeType, ReadonlyArray<string>> = {
    [StructureShapeType.door]: ["entities/wooden-door/wooden-door-blueprint-1.png", "entities/wooden-door/wooden-door-blueprint-2.png"],
-   [StructureShapeType.embrasure]: []
+   [StructureShapeType.embrasure]: ["entities/wooden-embrasure/wooden-embrasure-blueprint-1.png", "entities/wooden-embrasure/wooden-embrasure-blueprint-2.png", "entities/wooden-embrasure/wooden-embrasure-blueprint-3.png"]
 };
 
 class BlueprintEntity extends Entity {
    private partialRenderPart: RenderPart | null = null;
-   
-   constructor(position: Point, id: number, renderDepth: number, shapeType: StructureShapeType, blueprintProgress: number) {
-      super(position, id, EntityType.woodenFloorSpikes, renderDepth);
 
+   private lastBlueprintProgress: number;
+   
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, shapeType: StructureShapeType, blueprintProgress: number) {
+      super(position, id, EntityType.woodenFloorSpikes, ageTicks, renderDepth);
+
+      this.lastBlueprintProgress = blueprintProgress;
+      
       const textureSource = SHAPE_TYPE_TEXTURE_SOURCES[shapeType];
       const textureArrayIndex = getEntityTextureArrayIndex(textureSource);
 
@@ -73,7 +77,8 @@ class BlueprintEntity extends Entity {
    }
 
    public onDie(): void {
-      playSound("structure-shaping.mp3", 0.4, this.position.x, this.position.y);
+      playSound("blueprint-work.mp3", 0.4, 1, this.position.x, this.position.y);
+      playSound("structure-shaping.mp3", 0.4, 1, this.position.x, this.position.y);
 
       for (let i = 0; i < 5; i++) {
          const x = this.position.x + randFloat(-32, 32);
@@ -91,7 +96,27 @@ class BlueprintEntity extends Entity {
 
       const shapeType = data.clientArgs[0];
       const blueprintProgress = data.clientArgs[1];
+
       this.updatePartialTexture(shapeType, blueprintProgress);
+
+      if (blueprintProgress !== this.lastBlueprintProgress) {
+         playSound("blueprint-work.mp3", 0.4, 1, this.position.x, this.position.y);
+         
+         for (let i = 0; i < 2; i++) {
+            createWoodShardParticle(this.position.x, this.position.y, 24);
+         }
+
+         for (let i = 0; i < 3; i++) {
+            createLightWoodSpeckParticle(this.position.x, this.position.y, 24 * Math.random());
+         }
+
+         for (let i = 0; i < 2; i++) {
+            const x = this.position.x + randFloat(-24, 24);
+            const y = this.position.y + randFloat(-24, 24);
+            createSawdustCloud(x, y);
+         }
+      }
+      this.lastBlueprintProgress = blueprintProgress;
    }
 
    private updatePartialTexture(shapeType: StructureShapeType, blueprintProgress: number): void {

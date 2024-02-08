@@ -5,7 +5,7 @@ import Player from "./Player";
 import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
 import Board from "../Board";
-import { BloodParticleSize, createRockParticle, createSnowParticle, createWhiteSmokeParticle } from "../generic-particles";
+import { BloodParticleSize, createRockParticle, createSnowParticle, createWhiteSmokeParticle } from "../particles";
 import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 
 const createBiteParticle = (spawnPositionX: number, spawnPositionY: number): void => {
@@ -142,8 +142,8 @@ class FrozenYeti extends Entity {
    private attackStage: number;
    private stageProgress: number;
    
-   constructor(position: Point, id: number, renderDepth: number, attackType: FrozenYetiAttackType, attackStage: number, stageProgress: number) {
-      super(position, id, EntityType.frozenYeti, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, attackType: FrozenYetiAttackType, attackStage: number, stageProgress: number) {
+      super(position, id, EntityType.frozenYeti, ageTicks, renderDepth);
 
       this.attackType = attackType;
       this.attackStage = attackStage;

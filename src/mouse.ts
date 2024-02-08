@@ -56,6 +56,7 @@ export function getMouseTargetTile(): Tile | null {
 /**
  * Finds the entity the user is hovering over.
  */
+// @Cleanup: Use the highlighted entity system instead of having this custom function
 export function getMouseTargetEntity(): Entity | null {
    if (Game.cursorPositionX === null || Game.cursorPositionY === null) return null;
    

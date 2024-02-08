@@ -1,4 +1,4 @@
-import { EntityData, EntityType, HitData, HitFlags, Point, RIVER_STEPPING_STONE_SIZES, I_TPS, SETTINGS, StatusEffectData, TILE_FRICTIONS, TILE_MOVE_SPEED_MULTIPLIERS, TileType, distance, StatusEffect } from "webgl-test-shared";
+import { EntityData, EntityType, HitData, HitFlags, Point, RIVER_STEPPING_STONE_SIZES, I_TPS, SETTINGS, StatusEffectData, TILE_FRICTIONS, TILE_MOVE_SPEED_MULTIPLIERS, TileType, distance, StatusEffect, randFloat, randInt, rotateXAroundOrigin, rotateYAroundOrigin } from "webgl-test-shared";
 import RenderPart, { RenderObject } from "./render-parts/RenderPart";
 import Chunk from "./Chunk";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
@@ -6,8 +6,11 @@ import { Tile } from "./Tile";
 import CircularHitbox from "./hitboxes/CircularHitbox";
 import Board from "./Board";
 import Entity from "./entities/Entity";
-import { createSlimePoolParticle, createWaterSplashParticle } from "./generic-particles";
-import Camera from "./Camera";
+import { createHealingParticle, createSlimePoolParticle, createWaterSplashParticle } from "./particles";
+import { playSound } from "./sound";
+
+// Use prime numbers / 100 to ensure a decent distribution of different types of particles
+const HEALING_PARTICLE_AMOUNTS = [0.05, 0.37, 1.01];
 
 let frameProgress = Number.EPSILON;
 export function setFrameProgress(newFrameProgress: number): void {
@@ -16,6 +19,27 @@ export function setFrameProgress(newFrameProgress: number): void {
 
 export function getFrameProgress(): number {
    return frameProgress;
+}
+
+export function getRandomPointInEntity(entity: GameObject): Point {
+   const hitbox = entity.hitboxes[randInt(0, entity.hitboxes.length - 1)];
+
+   if (hitbox.hasOwnProperty("radius")) {
+      const offsetMagnitude = (hitbox as CircularHitbox).radius * Math.random();
+      const offsetDirection = 2 * Math.PI * Math.random();
+      return new Point(entity.position.x + offsetMagnitude * Math.sin(offsetDirection), entity.position.y + offsetMagnitude * Math.cos(offsetDirection));
+   } else {
+      const halfWidth = (hitbox as RectangularHitbox).width / 2;
+      const halfHeight = (hitbox as RectangularHitbox).height / 2;
+      
+      const xOffset = randFloat(-halfWidth, halfWidth);
+      const yOffset = randFloat(-halfHeight, halfHeight);
+
+      const hitboxRotation = (hitbox as RectangularHitbox).rotation;
+      const x = entity.position.x + rotateXAroundOrigin(xOffset, yOffset, entity.rotation + hitboxRotation);
+      const y = entity.position.y + rotateYAroundOrigin(xOffset, yOffset, entity.rotation + hitboxRotation);
+      return new Point(x, y);
+   }
 }
 
 abstract class GameObject extends RenderObject {
@@ -30,7 +54,7 @@ abstract class GameObject extends RenderObject {
    /** Angle the object is facing, taken counterclockwise from the positive x axis (radians) */
    public rotation = 0;
 
-   public ageTicks = 0;
+   public ageTicks: number;
 
    public tile!: Tile;
 
@@ -52,7 +76,7 @@ abstract class GameObject extends RenderObject {
 
    public statusEffects = new Array<StatusEffectData>();
 
-   constructor(position: Point, id: number, type: EntityType, renderDepth: number) {
+   constructor(position: Point, id: number, type: EntityType, ageTicks: number, renderDepth: number) {
       super();
       
       this.position = position;
@@ -60,6 +84,7 @@ abstract class GameObject extends RenderObject {
       this.renderPosition.y = position.y;
       this.id = id;
       this.type = type;
+      this.ageTicks = ageTicks;
       this.renderDepth = renderDepth;
 
       this.updateCurrentTile();
@@ -406,16 +431,6 @@ abstract class GameObject extends RenderObject {
       }
    }
 
-   // @Cleanup: Should this be here
-   public isVisible(): boolean {
-      for (const chunk of this.chunks) {
-         if (chunk.x >= Camera.minVisibleChunkX && chunk.x <= Camera.maxVisibleChunkX && chunk.y >= Camera.minVisibleChunkY && chunk.y <= Camera.maxVisibleChunkY) {
-            return true;
-         }
-      }
-      return false;
-   }
-
    public onDie?(): void;
 
    protected onHit?(hitData: HitData): void;
@@ -427,12 +442,39 @@ abstract class GameObject extends RenderObject {
             createSlimePoolParticle(this.position.x, this.position.y, 32);
          }
       }
+
+      // a bit @Hacky
+      if (Board.entityRecord.hasOwnProperty(hitData.attackerID)) {
+         const attacker = Board.entityRecord[hitData.attackerID];
+         switch (attacker.type) {
+            case EntityType.woodenFloorSpikes:
+            case EntityType.woodenWallSpikes:
+            case EntityType.floorPunjiSticks:
+            case EntityType.wallPunjiSticks: {
+               playSound("spike-stab.mp3", 0.3, 1, attacker.position.x, attacker.position.y);
+               break;
+            }
+         }
+      }
       
       if (typeof this.onHit !== "undefined") {
          this.onHit(hitData);
       }
 
       this.secondsSinceLastHit = 0;
+   }
+
+   public createHealingParticles(amountHealed: number): void {
+      // Create healing particles depending on the amount the entity was healed
+      let remainingHealing = amountHealed;
+      for (let size = 2; size >= 0;) {
+         if (remainingHealing >= HEALING_PARTICLE_AMOUNTS[size]) {
+            createHealingParticle(this, size);
+            remainingHealing -= HEALING_PARTICLE_AMOUNTS[size];
+         } else {
+            size--;
+         }
+      }
    }
 }
 

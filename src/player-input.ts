@@ -4,11 +4,7 @@ import { CraftingMenu_setIsVisible } from "./components/game/menus/CraftingMenu"
 import Player from "./entities/Player";
 import Client from "./client/Client";
 import { Hotbar_setHotbarSelectedItemSlot, Hotbar_updateLeftThrownBattleaxeItemID, Hotbar_updateRightThrownBattleaxeItemID } from "./components/game/inventories/Hotbar";
-import { InteractInventoryType, InteractInventory_clearInventory, InteractInventory_forceUpdate, InteractInventory_setInventory } from "./components/game/inventories/InteractInventory";
 import { BackpackInventoryMenu_setIsVisible } from "./components/game/inventories/BackpackInventory";
-import Entity from "./entities/Entity";
-import Tribesman from "./entities/Tribesman";
-import Tombstone from "./entities/Tombstone";
 import Board from "./Board";
 import { definiteGameState, latencyGameState } from "./game-state/game-states";
 import Game from "./Game";
@@ -24,10 +20,11 @@ import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import { closeTechTree, techTreeIsOpen } from "./components/game/TechTree";
 import WarriorHut from "./entities/WarriorHut";
 import GameObject from "./GameObject";
-import { attemptStructureSelect } from "./structure-selection";
+import { attemptStructureSelect, deselectSelectedEntity, getSelectedEntityID } from "./entity-selection";
 import { serialiseItem } from "./inventory-manipulation";
 import { playSound } from "./sound";
-import { createWoodenWallSpawnParticles } from "./entities/WoodenWall";
+import { InventoryMenuType, InventorySelector_inventoryIsOpen, InventorySelector_setInventoryMenuType } from "./components/game/inventories/InventorySelector";
+import { attemptToCompleteNode } from "./research";
 
 /** Acceleration of the player while moving without any modifiers. */
 const PLAYER_ACCELERATION = 700;
@@ -37,10 +34,10 @@ const PLAYER_LIGHTSPEED_ACCELERATION = 15000;
 /** Acceleration of the player while slowed. */
 const PLAYER_SLOW_ACCELERATION = 400;
 
-const PLAYER_INTERACT_RANGE = 125;
-
 export let rightMouseButtonIsPressed = false;
 export let leftMouseButtonIsPressed = false;
+
+// Cleanup: All this item placing logic should be moved to another file
 
 enum PlaceableItemHitboxType {
    circular,
@@ -148,34 +145,34 @@ export const PLACEABLE_ENTITY_INFO_RECORD: Record<PlaceableItemType, PlaceableEn
    [ItemType.punji_sticks]: {
       entityType: EntityType.floorPunjiSticks,
       wallEntityType: EntityType.wallPunjiSticks,
-      width: 48,
-      height: 48,
+      width: 40,
+      height: 40,
       hitboxType: PlaceableItemHitboxType.rectangular
+   },
+   [ItemType.ballista]: {
+      entityType: EntityType.ballista,
+      wallEntityType: EntityType.ballista,
+      width: 88,
+      height: 88,
+      hitboxType: PlaceableItemHitboxType.rectangular
+   },
+   [ItemType.sling_turret]: {
+      entityType: EntityType.slingTurret,
+      wallEntityType: EntityType.slingTurret,
+      width: 72,
+      height: 72,
+      hitboxType: PlaceableItemHitboxType.circular
    }
 };
 
-export const PLACEABLE_ENTITY_TEXTURE_SOURCES: Partial<Record<EntityType, string>> = {
-   [EntityType.workbench]: "entities/workbench/workbench.png",
-   [EntityType.tribeTotem]: "entities/tribe-totem/tribe-totem.png",
-   [EntityType.workerHut]: "entities/worker-hut/worker-hut.png",
-   [EntityType.warriorHut]: "entities/warrior-hut/warrior-hut.png",
-   [EntityType.barrel]: "entities/barrel/barrel.png",
-   [EntityType.campfire]: "entities/campfire/campfire.png",
-   [EntityType.furnace]: "entities/furnace/furnace.png",
-   [EntityType.researchBench]: "entities/research-bench/research-bench.png",
-   [EntityType.woodenWall]: "entities/wooden-wall/wooden-wall.png",
-   [EntityType.planterBox]: "entities/planter-box/planter-box.png",
-   [EntityType.woodenFloorSpikes]: "entities/wooden-floor-spikes/wooden-floor-spikes.png",
-   [EntityType.woodenWallSpikes]: "entities/wooden-wall-spikes/wooden-wall-spikes.png",
-   [EntityType.floorPunjiSticks]: "entities/floor-punji-sticks/floor-punji-sticks.png"
-};
-
 const PLACEABLE_WALL_ENTITY_WIDTHS: Partial<Record<EntityType, number>> = {
-   [EntityType.woodenWallSpikes]: 68
+   [EntityType.woodenWallSpikes]: 68,
+   [EntityType.wallPunjiSticks]: 68
 };
 
 const PLACEABLE_WALL_ENTITY_HEIGHTS: Partial<Record<EntityType, number>> = {
-   [EntityType.woodenWallSpikes]: 32
+   [EntityType.woodenWallSpikes]: 28,
+   [EntityType.wallPunjiSticks]: 28
 };
 
 const testRectangularHitbox = new RectangularHitbox(1, -1, -1, 0);
@@ -187,12 +184,12 @@ const offhandItemAttackCooldowns: Record<number, number> = {};
 /** Whether the inventory is open or not. */
 let _inventoryIsOpen = false;
 
-let _interactInventoryIsOpen = false;
-let interactInventoryEntity: Entity | null = null;
+// let _interactInventoryIsOpen = false;
+// let interactInventoryEntity: Entity | null = null;
 
-export function getInteractEntityID(): number | null {
-   return interactInventoryEntity !== null ? interactInventoryEntity.id : null;
-}
+// export function getInteractEntityID(): number | null {
+//    return interactInventoryEntity !== null ? interactInventoryEntity.id : null;
+// }
 
 const updateAttackCooldowns = (inventory: Inventory, attackCooldowns: Record<number, number>): void => {
    for (let itemSlot = 1; itemSlot <= inventory.width; itemSlot++) {
@@ -355,6 +352,7 @@ const createItemUseListeners = (): void => {
          }
          
          attemptStructureSelect();
+         attemptToCompleteNode();
       }
    });
 
@@ -428,120 +426,122 @@ export function updateInventoryIsOpen(inventoryIsOpen: boolean): void {
    }
 }
 
-const getInteractEntity = (): Entity | null => {
-   if (Player.instance === null) return null;
+// const getInteractEntity = (): Entity | null => {
+//    if (Player.instance === null) return null;
 
-   const minChunkX = Math.max(Math.min(Math.floor((Player.instance.position.x - PLAYER_INTERACT_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
-   const maxChunkX = Math.max(Math.min(Math.floor((Player.instance.position.x + PLAYER_INTERACT_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
-   const minChunkY = Math.max(Math.min(Math.floor((Player.instance.position.y - PLAYER_INTERACT_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
-   const maxChunkY = Math.max(Math.min(Math.floor((Player.instance.position.y + PLAYER_INTERACT_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
+//    const minChunkX = Math.max(Math.min(Math.floor((Player.instance.position.x - PLAYER_INTERACT_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
+//    const maxChunkX = Math.max(Math.min(Math.floor((Player.instance.position.x + PLAYER_INTERACT_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
+//    const minChunkY = Math.max(Math.min(Math.floor((Player.instance.position.y - PLAYER_INTERACT_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
+//    const maxChunkY = Math.max(Math.min(Math.floor((Player.instance.position.y + PLAYER_INTERACT_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
    
-   let minInteractionDistance = PLAYER_INTERACT_RANGE + Number.EPSILON;
-   let closestInteractableEntity: Entity | null = null;
-   for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
-      for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
-         const chunk = Board.getChunk(chunkX, chunkY);
-         for (const entity of chunk.getEntities()) {
-            if (entity.type === EntityType.barrel) {
-               const distance = Player.instance.position.calculateDistanceBetween(entity.position);
-               if (distance < minInteractionDistance) {
-                  closestInteractableEntity = entity;
-                  minInteractionDistance = distance;
-               }
-            } else if (entity.type === EntityType.tribeWorker || entity.type === EntityType.tribeWarrior) {
-               // Only interact with tribesman inventories if the player is of the same tribe
-               if ((entity as Tribesman).tribeID === null || ((entity as Tribesman).tribeID) !== Player.instance.tribeID) {
-                  continue;
-               }
+//    let minInteractionDistance = PLAYER_INTERACT_RANGE + Number.EPSILON;
+//    let closestInteractableEntity: Entity | null = null;
+//    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+//       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
+//          const chunk = Board.getChunk(chunkX, chunkY);
+//          for (const entity of chunk.getEntities()) {
+//             if (entity.type === EntityType.barrel) {
+//                const distance = Player.instance.position.calculateDistanceBetween(entity.position);
+//                if (distance < minInteractionDistance) {
+//                   closestInteractableEntity = entity;
+//                   minInteractionDistance = distance;
+//                }
+//             } else if (entity.type === EntityType.tribeWorker || entity.type === EntityType.tribeWarrior) {
+//                // Only interact with tribesman inventories if the player is of the same tribe
+//                if ((entity as Tribesman).tribeID === null || ((entity as Tribesman).tribeID) !== Player.instance.tribeID) {
+//                   continue;
+//                }
                
-               const distance = Player.instance.position.calculateDistanceBetween(entity.position);
-               if (distance < minInteractionDistance) {
-                  closestInteractableEntity = entity;
-                  minInteractionDistance = distance;
-               }
-            } else if (entity.type === EntityType.campfire) {
-               const distance = Player.instance.position.calculateDistanceBetween(entity.position);
-               if (distance < minInteractionDistance) {
-                  closestInteractableEntity = entity;
-                  minInteractionDistance = distance;
-               }
-            } else if (entity.type === EntityType.furnace) {
-               const distance = Player.instance.position.calculateDistanceBetween(entity.position);
-               if (distance < minInteractionDistance) {
-                  closestInteractableEntity = entity;
-                  minInteractionDistance = distance;
-               }
-            } else if (entity.type === EntityType.tombstone) {
-               if ((entity as Tombstone).deathInfo === null) {
-                  continue;
-               }
+//                const distance = Player.instance.position.calculateDistanceBetween(entity.position);
+//                if (distance < minInteractionDistance) {
+//                   closestInteractableEntity = entity;
+//                   minInteractionDistance = distance;
+//                }
+//             } else if (entity.type === EntityType.campfire) {
+//                const distance = Player.instance.position.calculateDistanceBetween(entity.position);
+//                if (distance < minInteractionDistance) {
+//                   closestInteractableEntity = entity;
+//                   minInteractionDistance = distance;
+//                }
+//             } else if (entity.type === EntityType.furnace) {
+//                const distance = Player.instance.position.calculateDistanceBetween(entity.position);
+//                if (distance < minInteractionDistance) {
+//                   closestInteractableEntity = entity;
+//                   minInteractionDistance = distance;
+//                }
+//             } else if (entity.type === EntityType.tombstone) {
+//                if ((entity as Tombstone).deathInfo === null) {
+//                   continue;
+//                }
 
-               const distance = Player.instance.position.calculateDistanceBetween(entity.position);
-               if (distance < minInteractionDistance) {
-                  closestInteractableEntity = entity;
-                  minInteractionDistance = distance;
-               }
-            }
-         }
-      }
-   }
+//                const distance = Player.instance.position.calculateDistanceBetween(entity.position);
+//                if (distance < minInteractionDistance) {
+//                   closestInteractableEntity = entity;
+//                   minInteractionDistance = distance;
+//                }
+//             }
+//          }
+//       }
+//    }
 
-   return closestInteractableEntity;
-}
+//    return closestInteractableEntity;
+// }
 
-const getInteractInventoryType = (entity: Entity): InteractInventoryType => {
-   switch (entity.type) {
-      case EntityType.barrel: {
-         return InteractInventoryType.barrel;
-      }
-      case EntityType.tribeWarrior:
-      case EntityType.tribeWorker: {
-         return InteractInventoryType.tribesman;
-      }
-      case EntityType.campfire: {
-         return InteractInventoryType.campfire;
-      }
-      case EntityType.furnace: {
-         return InteractInventoryType.furnace;
-      }
-      case EntityType.tombstone: {
-         return InteractInventoryType.tombstoneEpitaph;
-      }
-      default: {
-         throw new Error(`Can't find appropriate interact inventory type for entity type'${entity.type}'.`);
-      }
-   }
-}
+// const getInteractInventoryType = (entity: Entity): InteractInventoryType => {
+//    switch (entity.type) {
+//       case EntityType.barrel: {
+//          return InteractInventoryType.barrel;
+//       }
+//       case EntityType.tribeWarrior:
+//       case EntityType.tribeWorker: {
+//          return InteractInventoryType.tribesman;
+//       }
+//       case EntityType.campfire: {
+//          return InteractInventoryType.campfire;
+//       }
+//       case EntityType.furnace: {
+//          return InteractInventoryType.furnace;
+//       }
+//       case EntityType.tombstone: {
+//          return InteractInventoryType.tombstoneEpitaph;
+//       }
+//       default: {
+//          throw new Error(`Can't find appropriate interact inventory type for entity type'${entity.type}'.`);
+//       }
+//    }
+// }
 
-export function hideInteractInventory(): void {
-   _interactInventoryIsOpen = false;
-   interactInventoryEntity = null;
+      // @Incomplete
 
-   InteractInventory_clearInventory();
-}
+// export function hideInteractInventory(): void {
+//    _interactInventoryIsOpen = false;
+//    interactInventoryEntity = null;
 
-export function updateInteractInventory(): void {
-   if (Player.instance === null) return;
+//    InteractInventory_clearInventory();
+// }
+
+// export function updateInteractInventory(): void {
+//    if (Player.instance === null) return;
    
-   if (_interactInventoryIsOpen) {
-      if (interactInventoryEntity === null) {
-         throw new Error("Interactable entity was null.");
-      }
+//    if (_interactInventoryIsOpen) {
+//       if (interactInventoryEntity === null) {
+//          throw new Error("Interactable entity was null.");
+//       }
 
-      // If the interactable entity was removed, hide the interact inventory
-      if (!Board.entities.has(interactInventoryEntity)) {
-         hideInteractInventory();
-         return;
-      }
+//       // If the interactable entity was removed, hide the interact inventory
+//       if (!Board.entities.has(interactInventoryEntity)) {
+//          hideInteractInventory();
+//          return;
+//       }
 
-      const distanceToInteractEntity = Player.instance.position.calculateDistanceBetween(interactInventoryEntity.position);
-      if (distanceToInteractEntity <= PLAYER_INTERACT_RANGE) {
-         InteractInventory_forceUpdate();
-      } else {
-         hideInteractInventory();
-      }
-   }
-}
+//       const distanceToInteractEntity = Player.instance.position.calculateDistanceBetween(interactInventoryEntity.position);
+//       if (distanceToInteractEntity <= PLAYER_INTERACT_RANGE) {
+//          InteractInventory_forceUpdate();
+//       } else {
+//          hideInteractInventory();
+//       }
+//    }
+// }
 
 /** Creates the key listener to toggle the inventory on and off. */
 const createInventoryToggleListeners = (): void => {
@@ -549,9 +549,9 @@ const createInventoryToggleListeners = (): void => {
       if (!Game.isRunning) {
          return;
       }
-      
-      if (_interactInventoryIsOpen) {
-         hideInteractInventory();
+
+      if (InventorySelector_inventoryIsOpen()) {
+         InventorySelector_setInventoryMenuType(InventoryMenuType.none);
          return;
       }
 
@@ -564,17 +564,18 @@ const createInventoryToggleListeners = (): void => {
          return;
       }
       
-      if (_interactInventoryIsOpen) {
-         hideInteractInventory();
-      } else {
-         const interactEntity = getInteractEntity();
-         if (interactEntity !== null) {
-            interactInventoryEntity = interactEntity;
-            const interactInventoryType = getInteractInventoryType(interactInventoryEntity);
-            _interactInventoryIsOpen = true;
-            InteractInventory_setInventory(interactInventoryType, interactInventoryEntity);
-         }
-      }
+      // @Incomplete
+      // if (_interactInventoryIsOpen) {
+      //    hideInteractInventory();
+      // } else {
+      //    const interactEntity = getInteractEntity();
+      //    if (interactEntity !== null) {
+      //       interactInventoryEntity = interactEntity;
+      //       const interactInventoryType = getInteractInventoryType(interactInventoryEntity);
+      //       _interactInventoryIsOpen = true;
+      //       InteractInventory_setInventory(interactInventoryType, interactInventoryEntity);
+      //    }
+      // }
    });
    addKeyListener("escape", () => {
       if (techTreeIsOpen()) {
@@ -584,7 +585,12 @@ const createInventoryToggleListeners = (): void => {
 
       if (_inventoryIsOpen) {
          updateInventoryIsOpen(false);
-      };
+         return;
+      }
+
+      if (getSelectedEntityID() !== -1) {
+         deselectSelectedEntity();
+      }
    });
 }
 
@@ -753,7 +759,11 @@ export function calculateSnapInfo(placeableEntityInfo: PlaceableEntityInfo): Bui
          case EntityType.woodenWall:
          case EntityType.woodenDoor:
          case EntityType.woodenFloorSpikes:
-         case EntityType.woodenWallSpikes: {
+         case EntityType.woodenWallSpikes:
+         case EntityType.floorPunjiSticks:
+         case EntityType.wallPunjiSticks:
+         case EntityType.slingTurret:
+         case EntityType.ballista: {
             snapOrigin = snapEntity.position;
             break;
          }
@@ -778,7 +788,6 @@ export function calculateSnapInfo(placeableEntityInfo: PlaceableEntityInfo): Bui
             continue;
          }
 
-         // Check the 4 rotations
          let placeRotation = -999;
          if (placingEntityType === placeableEntityInfo.entityType) {
             // If not placing on wall, check all 4 rotations to see if they match the player's rotation
@@ -882,7 +891,6 @@ export function canPlaceItem(placePosition: Point, placeRotation: number, item: 
          for (const entity of chunk.getEntities()) {
             for (const hitbox of entity.hitboxes) {   
                if (placeTestHitbox.isColliding(hitbox)) {
-                  console.log("false");
                   return false;
                }
             }
@@ -955,11 +963,11 @@ const itemRightClickDown = (item: Item, isOffhand: boolean, itemSlot: number): v
                Player.instance!.rightAction = TribeMemberAction.loadCrossbow;
                Player.instance!.rightLastActionTicks = Board.ticks;
             }
-            playSound("crossbow-load.mp3", 0.4, Player.instance!.position.x, Player.instance!.position.y);
+            playSound("crossbow-load.mp3", 0.4, 1, Player.instance!.position.x, Player.instance!.position.y);
          } else {
             // Fire crossbow
             Client.sendItemUsePacket();
-            playSound("crossbow-fire.mp3", 0.4, Player.instance!.position.x, Player.instance!.position.y);
+            playSound("crossbow-fire.mp3", 0.4, 1, Player.instance!.position.x, Player.instance!.position.y);
          }
          break;
       }
@@ -974,7 +982,7 @@ const itemRightClickDown = (item: Item, isOffhand: boolean, itemSlot: number): v
             Player.instance!.rightLastActionTicks = Board.ticks;
          }
          
-         playSound("bow-charge.mp3", 0.4, Player.instance!.position.x, Player.instance!.position.y);
+         playSound("bow-charge.mp3", 0.4, 1, Player.instance!.position.x, Player.instance!.position.y);
 
          break;
       }
@@ -1020,16 +1028,18 @@ const itemRightClickDown = (item: Item, isOffhand: boolean, itemSlot: number): v
          const snapInfo = calculateSnapInfo(placeableEntityInfo);
          const placePosition = calculatePlacePosition(placeableEntityInfo, snapInfo);
          const placeRotation = calculatePlaceRotation(snapInfo);
-         if (canPlaceItem(placePosition, placeRotation, item, snapInfo !== null ? snapInfo.entityType : placeableEntityInfo.entityType)) {
-            Client.sendItemUsePacket();
-            switch (item.type) {
-               case ItemType.wooden_wall: {
-                  createWoodenWallSpawnParticles(placePosition.x, placePosition.y);
-                  break;
-               }
-            }
+         if (!canPlaceItem(placePosition, placeRotation, item, snapInfo !== null ? snapInfo.entityType : placeableEntityInfo.entityType)) {
+            return;
          }
-         
+
+         Client.sendItemUsePacket();
+
+         if (isOffhand) {
+            Player.instance!.leftLastActionTicks = Board.ticks;
+         } else {
+            Player.instance!.rightLastActionTicks = Board.ticks;
+         }
+
          break;
       }
    }
@@ -1083,15 +1093,15 @@ const itemRightClickUp = (item: Item, isOffhand: boolean): void => {
 
          switch (item.type) {
             case ItemType.wooden_bow: {
-               playSound("bow-fire.mp3", 0.4, Player.instance!.position.x, Player.instance!.position.y);
+               playSound("bow-fire.mp3", 0.4, 1, Player.instance!.position.x, Player.instance!.position.y);
                break;
             }
             case ItemType.reinforced_bow: {
-               playSound("reinforced-bow-fire.mp3", 0.2, Player.instance!.position.x, Player.instance!.position.y);
+               playSound("reinforced-bow-fire.mp3", 0.2, 1, Player.instance!.position.x, Player.instance!.position.y);
                break;
             }
             case ItemType.ice_bow: {
-               playSound("ice-bow-fire.mp3", 0.4, Player.instance!.position.x, Player.instance!.position.y);
+               playSound("ice-bow-fire.mp3", 0.4, 1, Player.instance!.position.x, Player.instance!.position.y);
                break;
             }
          }
@@ -1145,6 +1155,7 @@ const selectItemSlot = (itemSlot: number): void => {
          Player.instance.leftActiveItem = null;
       }
       // @Incomplete?? might want to call updateHands
+      Player.instance!.updateHands();
    }
 }
 

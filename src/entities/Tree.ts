@@ -1,7 +1,7 @@
 import { EntityType, HitData, Point, TreeSize, randFloat, randInt, randItem } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import { LeafParticleSize, createLeafParticle, createLeafSpeckParticle, createWoodSpeckParticle } from "../generic-particles";
+import { LeafParticleSize, createLeafParticle, createLeafSpeckParticle, createWoodSpeckParticle } from "../particles";
 import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { AudioFilePath, playSound } from "../sound";
 
@@ -20,8 +20,8 @@ class Tree extends Entity {
    private static readonly LEAF_SPECK_COLOUR_LOW = [63/255, 204/255, 91/255] as const;
    private static readonly LEAF_SPECK_COLOUR_HIGH = [35/255, 158/255, 88/255] as const;
    
-   constructor(position: Point, id: number, renderDepth: number, treeSize: TreeSize) {
-      super(position, id, EntityType.tree, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, treeSize: TreeSize) {
+      super(position, id, EntityType.tree, ageTicks, renderDepth);
 
       this.treeSize = treeSize;
       this.radius = 40 + treeSize * 10;
@@ -62,7 +62,7 @@ class Tree extends Entity {
          createWoodSpeckParticle(spawnPositionX, spawnPositionY, 3);
       }
 
-      playSound(randItem(TREE_HIT_SOUNDS), 0.4, this.position.x, this.position.y);
+      playSound(randItem(TREE_HIT_SOUNDS), 0.4, 1, this.position.x, this.position.y);
    }
 
    public onDie(): void {
@@ -91,7 +91,7 @@ class Tree extends Entity {
          createWoodSpeckParticle(this.position.x, this.position.y, this.radius * Math.random());
       }
 
-      playSound(randItem(TREE_DESTROY_SOUNDS), 0.5, this.position.x, this.position.y);
+      playSound(randItem(TREE_DESTROY_SOUNDS), 0.5, 1, this.position.x, this.position.y);
    }
 }
 

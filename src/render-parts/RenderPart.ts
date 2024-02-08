@@ -1,5 +1,5 @@
 import { Point, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
-import { ENTITY_TEXTURE_SLOT_INDEXES, getTextureHeight, getTextureWidth } from "../texture-atlases/entity-texture-atlas";
+import { ENTITY_TEXTURE_SLOT_INDEXES, getEntityTextureArrayIndex, getTextureHeight, getTextureWidth } from "../texture-atlases/entity-texture-atlas";
 
 /** A thing which is able to hold render parts */
 export abstract class RenderObject {
@@ -102,6 +102,15 @@ class RenderPart extends RenderObject {
             throw new Error("Render part's rotation was NaN.");
          }
       }
+   }
+
+   public switchTextureSource(newTextureSource: string): void {
+      const textureArrayIndex = getEntityTextureArrayIndex(newTextureSource);
+      this.textureSlotIndex = ENTITY_TEXTURE_SLOT_INDEXES[textureArrayIndex];
+      this.textureWidth = getTextureWidth(textureArrayIndex);
+      this.textureHeight = getTextureHeight(textureArrayIndex);
+      this.width = this.textureWidth * 4;
+      this.height = this.textureHeight * 4;
    }
 }
 

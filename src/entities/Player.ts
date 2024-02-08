@@ -1,4 +1,4 @@
-import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitData, Point, SETTINGS, clampToBoardDimensions, TribeType, ItemType, InventoryData, TribeMemberAction, TileType, EntityType, ItemSlot, Item, TRIBE_INFO_RECORD, ItemData, rotateXAroundPoint, rotateYAroundPoint, entityHasHardCollision, IEntityType } from "webgl-test-shared";
+import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitData, Point, SETTINGS, clampToBoardDimensions, TribeType, ItemType, InventoryData, TribeMemberAction, TileType, EntityType, ItemSlot, Item, TRIBE_INFO_RECORD, ItemData, rotateXAroundPoint, rotateYAroundPoint, DoorToggleType } from "webgl-test-shared";
 import Camera from "../Camera";
 import { setCraftingMenuAvailableRecipes, setCraftingMenuAvailableCraftingStations } from "../components/game/menus/CraftingMenu";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -9,9 +9,10 @@ import DroppedItem from "../items/DroppedItem";
 import TribeMember from "./TribeMember";
 import Board from "../Board";
 import { definiteGameState, latencyGameState } from "../game-state/game-states";
-import { createFootprintParticle } from "../generic-particles";
+import { createFootprintParticle } from "../particles";
 import { keyIsPressed } from "../keyboard-input";
 import Hitbox from "../hitboxes/Hitbox";
+import WoodenDoor from "./WoodenDoor";
 
 /** Maximum distance from a crafting station which will allow its recipes to be crafted. */
 const MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION = 250;
@@ -103,6 +104,15 @@ export function getPlayerSelectedItem(): ItemSlot {
    return item || null;
 }
 
+const entityHasHardCollision = (entity: GameObject): boolean => {
+   // Doors have hard collision when closing/closed
+   if (entity.type === EntityType.woodenDoor) {
+      return (entity as WoodenDoor).toggleType === DoorToggleType.close || (entity as WoodenDoor).openProgress === 0;
+   }
+   
+   return entity.type === EntityType.woodenWall || entity.type === EntityType.woodenEmbrasure;
+}
+
 class Player extends TribeMember {
    /** The player entity associated with the current player. */
    public static instance: Player | null = null;
@@ -112,8 +122,8 @@ class Player extends TribeMember {
    
    public readonly username: string;
 
-   constructor(position: Point, id: number, renderDepth: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, rightActiveItem: ItemData | null, rightAction: TribeMemberAction, rightFoodEatingType: ItemType | -1, rightLastActionTicks: number, rightThrownBattleaxeItemID: number, leftActiveItem: ItemData | null, leftAction: TribeMemberAction, leftFoodEatingType: ItemType | -1, leftLastActionTicks: number, leftThrownBattleaxeItemID: number, hasFrostShield: boolean, warPaintType: number, username: string) {
-      super(position, id, EntityType.player, renderDepth, tribeID, tribeType, armourSlotInventory, backpackSlotInventory, backpackInventory, rightActiveItem, rightAction, rightFoodEatingType, rightLastActionTicks, rightThrownBattleaxeItemID, leftActiveItem, leftAction, leftFoodEatingType, leftLastActionTicks, leftThrownBattleaxeItemID, hasFrostShield, warPaintType);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, rightActiveItem: ItemData | null, rightAction: TribeMemberAction, rightFoodEatingType: ItemType | -1, rightLastActionTicks: number, rightThrownBattleaxeItemID: number, leftActiveItem: ItemData | null, leftAction: TribeMemberAction, leftFoodEatingType: ItemType | -1, leftLastActionTicks: number, leftThrownBattleaxeItemID: number, hasFrostShield: boolean, warPaintType: number, username: string) {
+      super(position, id, EntityType.player, ageTicks, renderDepth, tribeID, tribeType, armourSlotInventory, backpackSlotInventory, backpackInventory, rightActiveItem, rightAction, rightFoodEatingType, rightLastActionTicks, rightThrownBattleaxeItemID, leftActiveItem, leftAction, leftFoodEatingType, leftLastActionTicks, leftThrownBattleaxeItemID, hasFrostShield, warPaintType);
 
       this.username = username;
    }
@@ -367,7 +377,7 @@ class Player extends TribeMember {
             for (const otherHitbox of entity.hitboxes) {
                if (hitbox.isColliding(otherHitbox)) {
                   // Collide
-                  if (entityHasHardCollision(entity.type as unknown as IEntityType)) {
+                  if (entityHasHardCollision(entity)) {
                      this.resolveCollisionHard(hitbox as CircularHitbox, otherHitbox);
                   } else {
                      this.resolveCollisionSoft(hitbox, entity, otherHitbox);

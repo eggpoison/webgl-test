@@ -3,13 +3,13 @@ import RenderPart from "../render-parts/RenderPart";
 import CookingEntity from "./CookingEntity";
 import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import Board from "../Board";
-import { createEmberParticle, createSmokeParticle } from "../generic-particles";
+import { createEmberParticle, createSmokeParticle } from "../particles";
 
 class Campfire extends CookingEntity {
    public static readonly SIZE = 104;
 
-   constructor(position: Point, id: number, renderDepth: number, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData, heatingProgress: number, isCooking: boolean) {
-      super(position, id, EntityType.campfire, renderDepth, fuelInventory, ingredientInventory, outputInventory, heatingProgress, isCooking);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData, heatingProgress: number, isCooking: boolean) {
+      super(position, id, EntityType.campfire, ageTicks, renderDepth, fuelInventory, ingredientInventory, outputInventory, heatingProgress, isCooking);
 
       this.attachRenderPart(
          new RenderPart(

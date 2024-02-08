@@ -1,6 +1,7 @@
 import { Point, SETTINGS, VisibleChunkBounds } from "webgl-test-shared";
 import { halfWindowHeight, halfWindowWidth } from "./webgl";
 import { RENDER_CHUNK_EDGE_GENERATION, RENDER_CHUNK_SIZE, WORLD_RENDER_CHUNK_SIZE } from "./rendering/render-chunks";
+import GameObject from "./GameObject";
 
 export type VisiblePositionBounds = [minX: number, maxX: number, minY: number, maxY: number];
 
@@ -61,6 +62,15 @@ abstract class Camera {
       // Account for zoom
       return playerRelativePosition * this.zoom + halfWindowHeight;
    }
+}
+
+export function entityIsVisible(entity: GameObject): boolean {
+   for (const chunk of entity.chunks) {
+      if (chunk.x >= Camera.minVisibleChunkX && chunk.x <= Camera.maxVisibleChunkX && chunk.y >= Camera.minVisibleChunkY && chunk.y <= Camera.maxVisibleChunkY) {
+         return true;
+      }
+   }
+   return false;
 }
 
 export default Camera;

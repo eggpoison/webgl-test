@@ -54,8 +54,8 @@ class RectangularHitbox extends Hitbox {
       this.vertexPositions[3].y = rotateYAroundPoint(x1, y1, this.position.x, this.position.y, this.rotation + offsetRotation);
    }
 
-   public computeSideAxes(): void {
-      const angle1 = this.vertexPositions[0].calculateAngleBetween(this.vertexPositions[1]);
+   public computeSideAxes(offsetRotation: number): void {
+      const angle1 = this.rotation + offsetRotation + Math.PI/2;
       this.sideAxes[0].x = Math.sin(angle1);
       this.sideAxes[0].y = Math.cos(angle1);
       
@@ -66,7 +66,7 @@ class RectangularHitbox extends Hitbox {
 
    public updateHitboxBounds(offsetRotation: number): void {
       this.computeVertexPositions(offsetRotation);
-      this.computeSideAxes();
+      this.computeSideAxes(offsetRotation);
 
       this.bounds[0] = Math.min(this.vertexPositions[0].x, this.vertexPositions[1].x, this.vertexPositions[2].x, this.vertexPositions[3].x);
       this.bounds[1] = Math.max(this.vertexPositions[0].x, this.vertexPositions[1].x, this.vertexPositions[2].x, this.vertexPositions[3].x);

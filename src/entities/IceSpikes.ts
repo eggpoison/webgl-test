@@ -12,8 +12,8 @@ class IceSpikes extends Entity {
 
    private static readonly SIZE = 80;
 
-   constructor(position: Point, id: number, renderDepth: number) {
-      super(position, id, EntityType.iceSpikes, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
+      super(position, id, EntityType.iceSpikes, ageTicks, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(
@@ -33,7 +33,7 @@ class IceSpikes extends Entity {
          this.createIceSpeckProjectile();
       }
       
-      playSound(("ice-spikes-hit-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, this.position.x, this.position.y);
+      playSound(("ice-spikes-hit-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, 1, this.position.x, this.position.y);
    }
 
    public onDie(): void {
@@ -41,7 +41,7 @@ class IceSpikes extends Entity {
          this.createIceSpeckProjectile();
       }
 
-      playSound("ice-spikes-destroy.mp3", 0.4, this.position.x, this.position.y);
+      playSound("ice-spikes-destroy.mp3", 0.4, 1, this.position.x, this.position.y);
    }
 
    private createIceSpeckProjectile(): void {

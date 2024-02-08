@@ -1,7 +1,7 @@
 import { EntityData, EntityType, Point, randFloat, randInt } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
-import { LeafParticleSize, createLeafParticle, createLeafSpeckParticle } from "../generic-particles";
+import { LeafParticleSize, createLeafParticle, createLeafSpeckParticle } from "../particles";
 import { ENTITY_TEXTURE_SLOT_INDEXES, getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { AudioFilePath, playSound } from "../sound";
 
@@ -22,8 +22,8 @@ class BerryBush extends Entity {
 
    private readonly renderPart: RenderPart;
 
-   constructor(position: Point, id: number, renderDepth: number, numBerries: number) {
-      super(position, id, EntityType.berryBush, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, numBerries: number) {
+      super(position, id, EntityType.berryBush, ageTicks, renderDepth);
 
       this.renderPart = new RenderPart(
          this,
@@ -56,7 +56,7 @@ class BerryBush extends Entity {
          createLeafSpeckParticle(this.position.x, this.position.y, BerryBush.RADIUS, BerryBush.LEAF_SPECK_COLOUR_LOW, BerryBush.LEAF_SPECK_COLOUR_HIGH);
       }
 
-      playSound(("berry-bush-hit-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, this.position.x, this.position.y);
+      playSound(("berry-bush-hit-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, 1, this.position.x, this.position.y);
    }
 
    public onDie(): void {
@@ -74,7 +74,7 @@ class BerryBush extends Entity {
          createLeafSpeckParticle(this.position.x, this.position.y, BerryBush.RADIUS * Math.random(), BerryBush.LEAF_SPECK_COLOUR_LOW, BerryBush.LEAF_SPECK_COLOUR_HIGH);
       }
 
-      playSound("berry-bush-destroy-1.mp3", 0.4, this.position.x, this.position.y);
+      playSound("berry-bush-destroy-1.mp3", 0.4, 1, this.position.x, this.position.y);
    }
 }
 

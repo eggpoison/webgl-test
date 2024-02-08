@@ -3,7 +3,6 @@ import { createSolidTileRenderChunkData, recalculateSolidTileRenderChunkData } f
 import { calculateRiverRenderChunkData } from "./river-rendering";
 import { calculateAmbientOcclusionInfo } from "./ambient-occlusion-rendering";
 import { calculateWallBorderInfo } from "./wall-border-rendering";
-import Board from "../Board";
 
 /** Width and height of a render chunk in tiles */
 export const RENDER_CHUNK_SIZE = 8;
@@ -45,23 +44,49 @@ export interface RenderChunkWallBorderInfo {
    readonly vertexCount: number;
 }
 
-/** Stores rendering information about one render chunk of the world.*/
-export interface RenderChunk {
-   readonly solidTileInfo: RenderChunkSolidTileInfo;
-   readonly riverInfo: RenderChunkRiverInfo | null;
-   readonly ambientOcclusionInfo: RenderChunkAmbientOcclusionInfo | null;
-   readonly wallBorderInfo: RenderChunkWallBorderInfo | null;
-   decorations: Array<DecorationInfo>;
+export interface RenderChunkDecorationInfo {
+   readonly decorations: Array<DecorationInfo>;
 }
 
-// @Speed: Convert to 1d array
-let renderChunks: Array<Array<RenderChunk>>;
+let solidTileInfoArray: Array<RenderChunkSolidTileInfo>;
+// @Speed: Polymorphism
+let riverInfoArray: Array<RenderChunkRiverInfo | null>;
+// @Speed: Polymorphism
+let ambientOcclusionInfoArray: Array<RenderChunkAmbientOcclusionInfo | null>;
+let wallBorderInfoArray: Array<RenderChunkWallBorderInfo>;
+let decorationInfoArray: Array<RenderChunkDecorationInfo>;
 
-export function createRenderChunks(): void {
+export function getRenderChunkIndex(renderChunkX: number, renderChunkY: number): number {
+   const x = renderChunkX + RENDER_CHUNK_EDGE_GENERATION;
+   const y = renderChunkY + RENDER_CHUNK_EDGE_GENERATION;
+   return y * (WORLD_RENDER_CHUNK_SIZE + RENDER_CHUNK_EDGE_GENERATION * 2) + x;
+}
+
+export function getRenderChunkDecorationInfo(renderChunkX: number, renderChunkY: number): RenderChunkDecorationInfo {
+   return decorationInfoArray[getRenderChunkIndex(renderChunkX, renderChunkY)];
+}
+
+export function getRenderChunkRiverInfo(renderChunkX: number, renderChunkY: number): RenderChunkRiverInfo | null {
+   return riverInfoArray[getRenderChunkIndex(renderChunkX, renderChunkY)];
+}
+
+export function getRenderChunkSolidTileInfo(renderChunkX: number, renderChunkY: number): RenderChunkSolidTileInfo {
+   return solidTileInfoArray[getRenderChunkIndex(renderChunkX, renderChunkY)];
+}
+
+export function getRenderChunkWallBorderInfo(renderChunkX: number, renderChunkY: number): RenderChunkWallBorderInfo {
+   return wallBorderInfoArray[getRenderChunkIndex(renderChunkX, renderChunkY)];
+}
+
+export function getRenderChunkAmbientOcclusionInfo(renderChunkX: number, renderChunkY: number): RenderChunkAmbientOcclusionInfo | null {
+   return ambientOcclusionInfoArray[getRenderChunkIndex(renderChunkX, renderChunkY)];
+}
+
+export function createRenderChunks(decorations: ReadonlyArray<DecorationInfo>, waterRocks: ReadonlyArray<WaterRockData>, edgeRiverSteppingStones: ReadonlyArray<RiverSteppingStoneData>): void {
    // Group water rocks
    // @Speed: Garbage collection
    let waterRocksChunked: Record<number, Record<number, Array<WaterRockData>>> = {};
-   for (const waterRock of Board.waterRocks) {
+   for (const waterRock of waterRocks) {
       const renderChunkX = Math.floor(waterRock.position[0] / RENDER_CHUNK_UNITS);
       const renderChunkY = Math.floor(waterRock.position[1] / RENDER_CHUNK_UNITS);
       if (!waterRocksChunked.hasOwnProperty(renderChunkX)) {
@@ -75,7 +100,7 @@ export function createRenderChunks(): void {
 
    // Group edge stepping stones
    let edgeSteppingStonesChunked: Record<number, Record<number, Array<RiverSteppingStoneData>>> = {};
-   for (const steppingStone of Board.edgeRiverSteppingStones) {
+   for (const steppingStone of edgeRiverSteppingStones) {
       const size = RIVER_STEPPING_STONE_SIZES[steppingStone.size];
       
       const minRenderChunkX = Math.max(Math.min(Math.floor((steppingStone.positionX - size/2) / RENDER_CHUNK_UNITS), WORLD_RENDER_CHUNK_SIZE - 1), 0);
@@ -98,33 +123,61 @@ export function createRenderChunks(): void {
       }
    }
 
-   renderChunks = new Array<Array<RenderChunk>>();
-   for (let renderChunkX = -RENDER_CHUNK_EDGE_GENERATION; renderChunkX < WORLD_RENDER_CHUNK_SIZE + RENDER_CHUNK_EDGE_GENERATION; renderChunkX++) {
-      renderChunks.push(new Array<RenderChunk>());
+   // Solid tile info
+   solidTileInfoArray = [];
+   for (let renderChunkY = -RENDER_CHUNK_EDGE_GENERATION; renderChunkY < WORLD_RENDER_CHUNK_SIZE + RENDER_CHUNK_EDGE_GENERATION; renderChunkY++) {
+      for (let renderChunkX = -RENDER_CHUNK_EDGE_GENERATION; renderChunkX < WORLD_RENDER_CHUNK_SIZE + RENDER_CHUNK_EDGE_GENERATION; renderChunkX++) {
+         const data = createSolidTileRenderChunkData(renderChunkX, renderChunkY);
+         solidTileInfoArray.push(data);
+      }
+   }
 
-      for (let renderChunkY = -RENDER_CHUNK_EDGE_GENERATION; renderChunkY < WORLD_RENDER_CHUNK_SIZE + RENDER_CHUNK_EDGE_GENERATION; renderChunkY++) {
+   // River info
+   riverInfoArray = [];
+   for (let renderChunkY = -RENDER_CHUNK_EDGE_GENERATION; renderChunkY < WORLD_RENDER_CHUNK_SIZE + RENDER_CHUNK_EDGE_GENERATION; renderChunkY++) {
+      for (let renderChunkX = -RENDER_CHUNK_EDGE_GENERATION; renderChunkX < WORLD_RENDER_CHUNK_SIZE + RENDER_CHUNK_EDGE_GENERATION; renderChunkX++) {
          const waterRocks = (waterRocksChunked.hasOwnProperty(renderChunkX) && waterRocksChunked[renderChunkX].hasOwnProperty(renderChunkY)) ? waterRocksChunked[renderChunkX][renderChunkY] : [];
          const edgeSteppingStones = (edgeSteppingStonesChunked.hasOwnProperty(renderChunkX) && edgeSteppingStonesChunked[renderChunkX].hasOwnProperty(renderChunkY)) ? edgeSteppingStonesChunked[renderChunkX][renderChunkY] : [];
 
-         // @Cleanup: Mismatching 'create' and 'calculate' in the function names
-         // @Incomplete @Bug: This structure tries to access itself in calculateRiverRenderChunkData
-         // restructure so that this doesn't happen
-         renderChunks[renderChunkX + RENDER_CHUNK_EDGE_GENERATION].push({
-            solidTileInfo: createSolidTileRenderChunkData(renderChunkX, renderChunkY),
-            riverInfo: calculateRiverRenderChunkData(renderChunkX, renderChunkY, waterRocks, edgeSteppingStones),
-            ambientOcclusionInfo: calculateAmbientOcclusionInfo(renderChunkX, renderChunkY),
-            wallBorderInfo: calculateWallBorderInfo(renderChunkX, renderChunkY),
-            decorations: []
-         });
+         const data = calculateRiverRenderChunkData(renderChunkX, renderChunkY, waterRocks, edgeSteppingStones);
+         riverInfoArray.push(data);
+      }
+   }
+
+   // Ambient occlusion info
+   ambientOcclusionInfoArray = [];
+   for (let renderChunkY = -RENDER_CHUNK_EDGE_GENERATION; renderChunkY < WORLD_RENDER_CHUNK_SIZE + RENDER_CHUNK_EDGE_GENERATION; renderChunkY++) {
+      for (let renderChunkX = -RENDER_CHUNK_EDGE_GENERATION; renderChunkX < WORLD_RENDER_CHUNK_SIZE + RENDER_CHUNK_EDGE_GENERATION; renderChunkX++) {
+         const data = calculateAmbientOcclusionInfo(renderChunkX, renderChunkY);
+         ambientOcclusionInfoArray.push(data);
+      }
+   }
+
+   // Wall border info
+   wallBorderInfoArray = [];
+   for (let renderChunkY = -RENDER_CHUNK_EDGE_GENERATION; renderChunkY < WORLD_RENDER_CHUNK_SIZE + RENDER_CHUNK_EDGE_GENERATION; renderChunkY++) {
+      for (let renderChunkX = -RENDER_CHUNK_EDGE_GENERATION; renderChunkX < WORLD_RENDER_CHUNK_SIZE + RENDER_CHUNK_EDGE_GENERATION; renderChunkX++) {
+         const data = calculateWallBorderInfo(renderChunkX, renderChunkY);
+         wallBorderInfoArray.push(data);
+      }
+   }
+
+   // Decoration info
+   decorationInfoArray = [];
+   for (let renderChunkY = -RENDER_CHUNK_EDGE_GENERATION; renderChunkY < WORLD_RENDER_CHUNK_SIZE + RENDER_CHUNK_EDGE_GENERATION; renderChunkY++) {
+      for (let renderChunkX = -RENDER_CHUNK_EDGE_GENERATION; renderChunkX < WORLD_RENDER_CHUNK_SIZE + RENDER_CHUNK_EDGE_GENERATION; renderChunkX++) {
+         decorationInfoArray.push({ decorations: [] });
       }
    }
 
    // Add decorations to chunks
-   for (const decoration of Board.decorations) {
+   for (let i = 0; i < decorations.length; i++) {
+      const decoration = decorations[i];
+
       const renderChunkX = Math.floor(decoration.positionX / RENDER_CHUNK_UNITS);
       const renderChunkY = Math.floor(decoration.positionY / RENDER_CHUNK_UNITS);
-      const renderChunk = renderChunks[renderChunkX + RENDER_CHUNK_EDGE_GENERATION][renderChunkY + RENDER_CHUNK_EDGE_GENERATION];
-      renderChunk.decorations.push(decoration);
+      const renderChunkIndex = getRenderChunkIndex(renderChunkX, renderChunkY);
+      decorationInfoArray[renderChunkIndex].decorations.push(decoration);
    }
 }
 
@@ -138,6 +191,34 @@ export function updateRenderChunkFromTileUpdate(tileUpdate: ServerTileUpdateData
    recalculateSolidTileRenderChunkData(renderChunkX, renderChunkY);
 }
 
-export function getRenderChunk(renderChunkX: number, renderChunkY: number): RenderChunk {
-   return renderChunks[renderChunkX + RENDER_CHUNK_EDGE_GENERATION][renderChunkY + RENDER_CHUNK_EDGE_GENERATION]
+export function getRenderChunkMinTileX(renderChunkX: number): number {
+   let tileMinX = renderChunkX * RENDER_CHUNK_SIZE;
+   if (tileMinX < -SETTINGS.EDGE_GENERATION_DISTANCE) {
+      tileMinX = SETTINGS.EDGE_GENERATION_DISTANCE;
+   }
+   return tileMinX;
+}
+
+export function getRenderChunkMaxTileX(renderChunkX: number): number {
+   let tileMaxX = (renderChunkX + 1) * RENDER_CHUNK_SIZE - 1;
+   if (tileMaxX > SETTINGS.BOARD_DIMENSIONS + SETTINGS.EDGE_GENERATION_DISTANCE) {
+      tileMaxX = SETTINGS.BOARD_DIMENSIONS + SETTINGS.EDGE_GENERATION_DISTANCE;
+   }
+   return tileMaxX;
+}
+
+export function getRenderChunkMinTileY(renderChunkY: number): number {
+   let tileMinY = renderChunkY * RENDER_CHUNK_SIZE;
+   if (tileMinY < -SETTINGS.EDGE_GENERATION_DISTANCE) {
+      tileMinY = SETTINGS.EDGE_GENERATION_DISTANCE;
+   }
+   return tileMinY;
+}
+
+export function getRenderChunkMaxTileY(renderChunkY: number): number {
+   let tileMaxY = (renderChunkY + 1) * RENDER_CHUNK_SIZE - 1;
+   if (tileMaxY > SETTINGS.BOARD_DIMENSIONS + SETTINGS.EDGE_GENERATION_DISTANCE) {
+      tileMaxY = SETTINGS.BOARD_DIMENSIONS + SETTINGS.EDGE_GENERATION_DISTANCE;
+   }
+   return tileMaxY;
 }

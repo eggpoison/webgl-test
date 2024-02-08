@@ -1,7 +1,7 @@
 import { EntityType, HitData, Point, SETTINGS, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle } from "../generic-particles";
+import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle } from "../particles";
 import Board from "../Board";
 import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 
@@ -14,8 +14,8 @@ class Krumblid extends Entity {
    private numFootstepsTaken = 0;
    private distanceTracker = 0;
 
-   constructor(position: Point, id: number, renderDepth: number) {
-      super(position, id, EntityType.krumblid, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
+      super(position, id, EntityType.krumblid, ageTicks, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(

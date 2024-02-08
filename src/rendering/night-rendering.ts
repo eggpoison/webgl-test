@@ -206,11 +206,12 @@ export function renderNight(): void {
       lightColours.push(light.g);
       lightColours.push(light.b);
    }
+   
+   gl.enable(gl.BLEND);
 
    if (!OPTIONS.nightVisionIsEnabled) {
       gl.useProgram(darknessProgram);
    
-      gl.enable(gl.BLEND);
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
    
       gl.bindVertexArray(vao);
@@ -237,6 +238,7 @@ export function renderNight(): void {
 
    gl.blendFunc(gl.ONE, gl.ONE);
 
+   // @Speed: pre-calculate uniform locations
    const colourNumLightsLocation = gl.getUniformLocation(colourProgram, "u_numLights")!;
    gl.uniform1i(colourNumLightsLocation, Board.lights.length);
    if (Board.lights.length > 0) {

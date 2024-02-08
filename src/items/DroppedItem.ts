@@ -3,7 +3,7 @@ import GameObject from "../GameObject";
 import RenderPart from "../render-parts/RenderPart";
 import CLIENT_ITEM_INFO_RECORD from "../client-item-info";
 import Board from "../Board";
-import { BloodParticleSize } from "../generic-particles";
+import { BloodParticleSize } from "../particles";
 import Particle from "../Particle";
 import { addMonocolourParticleToBufferContainer, ParticleRenderLayer } from "../rendering/particle-rendering";
 import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
@@ -63,8 +63,8 @@ export function createDeepFrostHeartBloodParticles(originX: number, originY: num
 class DroppedItem extends GameObject {
    public readonly itemType: ItemType;
 
-   constructor(position: Point, id: number, renderDepth: number, itemType: ItemType) {
-      super(position, id, EntityType.itemEntity, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, itemType: ItemType) {
+      super(position, id, EntityType.itemEntity, ageTicks, renderDepth);
       
       this.itemType = itemType;
 

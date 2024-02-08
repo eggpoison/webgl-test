@@ -1,7 +1,7 @@
 import { EntityData, EntityType, Point, SlimeOrbData, SlimeSize, TileType, lerp } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import { createSlimePoolParticle, createSlimeSpeckParticle } from "../generic-particles";
+import { createSlimePoolParticle, createSlimeSpeckParticle } from "../particles";
 import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 
 class Slime extends Entity {
@@ -43,8 +43,8 @@ class Slime extends Entity {
 
    private internalTickCounter = 0;
 
-   constructor(position: Point, id: number, renderDepth: number, size: SlimeSize, eyeRotation: number, orbs: ReadonlyArray<SlimeOrbData>, spitChargeProgress: number) {
-      super(position, id, EntityType.slime, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, size: SlimeSize, eyeRotation: number, orbs: ReadonlyArray<SlimeOrbData>, spitChargeProgress: number) {
+      super(position, id, EntityType.slime, ageTicks, renderDepth);
 
       const spriteSize = Slime.SIZES[size];
 

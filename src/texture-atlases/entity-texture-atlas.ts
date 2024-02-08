@@ -62,6 +62,7 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/ice-spikes/ice-spikes.png",
    "projectiles/ice-shard.png",
    "projectiles/wooden-arrow.png",
+   "projectiles/wooden-bolt.png",
    "entities/snowball/snowball-large.png",
    "entities/snowball/snowball-small.png",
    "entities/slime/slime-small-body.png",
@@ -143,6 +144,12 @@ const TEXTURE_SOURCES: Array<string> = [
    "decorations/flower4.png",
    "entities/research-bench/research-bench.png",
    "entities/wooden-wall/wooden-wall.png",
+   "entities/wooden-wall/wooden-wall-damage-1.png",
+   "entities/wooden-wall/wooden-wall-damage-2.png",
+   "entities/wooden-wall/wooden-wall-damage-3.png",
+   "entities/wooden-wall/wooden-wall-damage-4.png",
+   "entities/wooden-wall/wooden-wall-damage-5.png",
+   "entities/wooden-wall/wooden-wall-damage-6.png",
    "projectiles/slime-spit-medium.png",
    "projectiles/slime-spit-large.png",
    "entities/wooden-door/wooden-door.png",
@@ -159,10 +166,36 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/pebblum/pebblum-nose.png",
    "entities/pebblum/pebblum-body.png",
    "entities/wooden-embrasure/wooden-embrasure.png",
+   "entities/wooden-embrasure/wooden-embrasure-blueprint-1.png",
+   "entities/wooden-embrasure/wooden-embrasure-blueprint-2.png",
+   "entities/wooden-embrasure/wooden-embrasure-blueprint-3.png",
    "entities/wooden-floor-spikes/wooden-floor-spikes.png",
    "entities/wooden-wall-spikes/wooden-wall-spikes.png",
    "entities/wall-punji-sticks/wall-punji-sticks.png",
-   "entities/floor-punji-sticks/floor-punji-sticks.png"
+   "entities/floor-punji-sticks/floor-punji-sticks.png",
+   "entities/ballista/base.png",
+   "entities/ballista/shaft.png",
+   "entities/ballista/crossbow-1.png",
+   "entities/ballista/crossbow-2.png",
+   "entities/ballista/crossbow-3.png",
+   "entities/ballista/crossbow-4.png",
+   "entities/ballista/crossbow-5.png",
+   "entities/ballista/crossbow-6.png",
+   "entities/ballista/crossbow-7.png",
+   "entities/ballista/crossbow-8.png",
+   "entities/ballista/crossbow-9.png",
+   "entities/ballista/gear.png",
+   "entities/ballista/ammo-box.png",
+   "entities/sling-turret/sling-turret-base.png",
+   "entities/sling-turret/sling-turret-plate.png",
+   "entities/sling-turret/sling-turret-sling.png",
+   "entities/sling-turret/sling-charge-1.png",
+   "entities/sling-turret/sling-charge-2.png",
+   "entities/sling-turret/sling-charge-3.png",
+   "entities/sling-turret/sling-charge-4.png",
+   "entities/sling-turret/sling-charge-5.png",
+   "entities/sling-rock/sling-rock.png",
+   "projectiles/ballista-rock.png"
 ];
 
 // Add item textures
@@ -175,6 +208,7 @@ for (const clientItemInfo of Object.values(CLIENT_ITEM_INFO_RECORD)) {
    }
 }
 
+export const ENTITY_TEXTURE_ATLAS_LENGTH = TEXTURE_SOURCES.length;
 
 export let ENTITY_TEXTURE_ATLAS: WebGLTexture;
 let ENTITY_TEXTURE_WIDTHS: ReadonlyArray<number>;
