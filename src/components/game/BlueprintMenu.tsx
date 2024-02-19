@@ -3,16 +3,14 @@ import { deselectSelectedEntity, getSelectedEntityID } from "../../entity-select
 import Board from "../../Board";
 import Camera from "../../Camera";
 import Client from "../../client/Client";
-import { EntityType, StructureShapeType } from "webgl-test-shared";
-import { playSound } from "../../sound";
-import Player from "../../entities/Player";
+import { BlueprintBuildingType, BuildingShapeType, EntityType } from "webgl-test-shared";
 import { addKeyListener } from "../../keyboard-input";
 
 let showStructureShapingMenu: (x: number, y: number) => void;
 let hideStructureShapingMenu: () => void = () => {};
 
 let hoveredShapeType = -1;
-export function getHoveredShapeType(): StructureShapeType | -1 {
+export function getHoveredShapeType(): BuildingShapeType | -1 {
    return hoveredShapeType;
 }
 
@@ -21,7 +19,7 @@ export function isHoveringInBlueprintMenu(): boolean {
    return isHovering;
 }
 
-const TYPES: ReadonlyArray<StructureShapeType> = [StructureShapeType.door, StructureShapeType.embrasure];
+const TYPES: ReadonlyArray<BuildingShapeType> = [BlueprintBuildingType.door, BlueprintBuildingType.embrasure];
 const NAMES: ReadonlyArray<string> = ["DOOR", "EMBRASURE"]
 const IMAGE_SOURCES: ReadonlyArray<string> = [require("../../images/entities/wooden-door/wooden-door.png"), require("../../images/entities/wooden-embrasure/wooden-embrasure.png")];
 const IMAGE_WIDTHS = [64, 64];
@@ -36,14 +34,11 @@ const BlueprintMenu = () => {
    const [isVisible, setIsVisible] = useState(false);
    const hasLoaded = useRef(false);
 
-   const shapeStructure = (type: StructureShapeType): void => {
+   const shapeStructure = (type: BuildingShapeType): void => {
       const selectedStructureID = getSelectedEntityID();
       Client.sendShapeStructure(selectedStructureID, type);
 
       deselectSelectedEntity();
-
-      // @Incomplete
-      playSound("blueprint-place.mp3", 0.4, 1, Player.instance!.position.x, Player.instance!.position.y);
    }
 
    useEffect(() => {
@@ -76,7 +71,7 @@ const BlueprintMenu = () => {
       }
    }, []);
    
-   const hoverOption = (type: StructureShapeType): void => {
+   const hoverOption = (type: BuildingShapeType): void => {
       hoveredShapeType = type;
    }
 

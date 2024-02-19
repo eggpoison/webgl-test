@@ -16,10 +16,14 @@ class WoodenFloorSpikes extends Entity {
             0
          )
       );
+
+      if (ageTicks === 0) {
+         playSound("spike-place.mp3", 0.5, 1, this.position.x, this.position.y);
+      }
    }
 
    protected onHit(): void {
-      playSound("wooden-spikes-hit.mp3", 0.4, 1, this.position.x, this.position.y);
+      playSound("wooden-spikes-hit.mp3", 0.2, 1, this.position.x, this.position.y);
    }
 
    public onDie(): void {

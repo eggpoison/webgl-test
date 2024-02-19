@@ -28,20 +28,29 @@ const calculateRenderDepthFromLayer = (renderLayer: RenderLayer): number => {
    return randFloat(min, max);
 }
 
-export function calculateEntityRenderDepth(entityType: EntityType): number {
-   let renderLayer: RenderLayer;
-   if (entityType === EntityType.tree || entityType === EntityType.cactus || entityType === EntityType.berryBush) {
-      renderLayer = RenderLayer.highEntities;
-   } else {
-      renderLayer = RenderLayer.lowEntities;
+const getEntityRenderLayer = (entityType: EntityType): RenderLayer => {
+   switch (entityType) {
+      // Item entities
+      case EntityType.itemEntity: {
+         return RenderLayer.droppedItems;
+      }
+      // High entities
+      case EntityType.cactus:
+      case EntityType.berryBush:
+      case EntityType.tree: {
+         return RenderLayer.highEntities;
+      }
+      // Projectiles
+      case EntityType.woodenArrowProjectile: {
+         return RenderLayer.projectiles;
+      }
+      // Low entities (default)
+      default: {
+         return RenderLayer.lowEntities;
+      }
    }
-   return calculateRenderDepthFromLayer(renderLayer);
 }
 
-export function calculateDroppedItemRenderDepth(): number {
-   return calculateRenderDepthFromLayer(RenderLayer.droppedItems);
-}
-
-export function calculateProjectileRenderDepth(): number {
-   return calculateRenderDepthFromLayer(RenderLayer.projectiles);
+export function calculateEntityRenderDepth(entityType: EntityType): number {
+   return calculateRenderDepthFromLayer(getEntityRenderLayer(entityType));
 }

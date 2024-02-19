@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TribeData, InventoryData, TribeMemberAction, TechID, Inventory, TRIBE_INFO_RECORD, StructureShapeType, randInt, StatusEffect, STRUCTURE_TYPES } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TribeData, InventoryData, TribeMemberAction, TechID, Inventory, TRIBE_INFO_RECORD, BuildingShapeType, randInt, StatusEffect, STRUCTURE_TYPES } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -21,7 +21,7 @@ import Board from "../Board";
 import { definiteGameState, latencyGameState } from "../game-state/game-states";
 import { BackpackInventoryMenu_update } from "../components/game/inventories/BackpackInventory";
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
-import { calculateDroppedItemRenderDepth, calculateEntityRenderDepth } from "../render-layers";
+import { calculateEntityRenderDepth } from "../render-layers";
 import GameObject from "../GameObject";
 import { createDamageNumber } from "../text-canvas";
 import { playSound } from "../sound";
@@ -35,6 +35,22 @@ export type GameData = {
    readonly gameTicks: number;
    readonly tiles: Array<Array<Tile>>;
    readonly playerID: number;
+}
+
+const shouldShowDamageNumber = (attackerID: number): boolean => {
+   if (Player.instance !== null && attackerID === Player.instance.id) {
+      return true;
+   }
+
+   // Show friendly turrets' damage numbers
+   if (Board.entityRecord.hasOwnProperty(attackerID)) {
+      const entity = Board.entityRecord[attackerID];
+      if ((entity.type === EntityType.slingTurret || entity.type === EntityType.ballista) && (entity as any).tribeID === Game.tribe.id) {
+         return true;
+      }
+   }
+
+   return false;
 }
 
 abstract class Client {
@@ -209,8 +225,7 @@ abstract class Client {
                entity.registerHit(hitData);
             }
 
-            // Show damage numbers on player hits
-            if (hitData.attackerID === Player.instance.id) {
+            if (shouldShowDamageNumber(hitData.attackerID)) {
                if (Board.entityRecord.hasOwnProperty(hitData.hitEntityID)) {
                   const entity = Board.entityRecord[hitData.hitEntityID];
                   createDamageNumber(entity.position.x, entity.position.y, hitData.damage);
@@ -414,7 +429,7 @@ abstract class Client {
    private static createEntityFromData(entityData: EntityData): void {
       const position = Point.unpackage(entityData.position); 
 
-      const renderDepth = calculateDroppedItemRenderDepth();
+      const renderDepth = calculateEntityRenderDepth(entityData.type);
 
       // Create the entity
       const entityConstructor = ENTITY_CLASS_RECORD[entityData.type]() as EntityClassType<EntityType>;
@@ -669,9 +684,9 @@ abstract class Client {
       }
    }
 
-   public static sendShapeStructure(structureID: number, type: StructureShapeType): void {
+   public static sendShapeStructure(structureID: number, shapeType: BuildingShapeType): void {
       if (Game.isRunning && this.socket !== null) {
-         this.socket.emit("shape_structure", structureID, type);
+         this.socket.emit("shape_structure", structureID, shapeType);
       }
    }
 

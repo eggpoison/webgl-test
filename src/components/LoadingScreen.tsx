@@ -94,7 +94,7 @@ const LoadingScreen = ({ username, tribeType, initialStatus }: LoadingScreenProp
             (async () => {
                const initialGameDataPacket = initialGameDataPacketRef.current!;
 
-               Game.tribe = new Tribe(tribeType, initialGameDataPacket.tribeData.numHuts);
+               Game.tribe = new Tribe(initialGameDataPacket.tribeData.id, tribeType, initialGameDataPacket.tribeData.numHuts);
 
                const tiles = Client.parseServerTileDataArray(initialGameDataPacket.tiles);
                await Game.initialise(tiles, initialGameDataPacket.waterRocks, initialGameDataPacket.riverSteppingStones, initialGameDataPacket.riverFlowDirections, initialGameDataPacket.edgeTiles, initialGameDataPacket.edgeRiverFlowDirections, initialGameDataPacket.edgeRiverSteppingStones, initialGameDataPacket.grassInfo, initialGameDataPacket.decorations);

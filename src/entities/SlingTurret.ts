@@ -7,15 +7,18 @@ import { playSound } from "../sound";
 const CHARGE_TEXTURE_SOURCES = ["entities/sling-turret/sling-turret-sling.png", "entities/sling-turret/sling-charge-1.png", "entities/sling-turret/sling-charge-2.png", "entities/sling-turret/sling-charge-3.png", "entities/sling-turret/sling-charge-4.png", "entities/sling-turret/sling-charge-5.png"];
 
 class SlingTurret extends Entity {
+   public readonly tribeID: number | null;
+   
    private chargeProgress: number;
    
    private readonly plateRenderPart: RenderPart;
    private slingRenderPart: RenderPart;
    private rockRenderPart: RenderPart | null = null;
    
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, aimDirection: number, chargeProgress: number, reloadProgress: number) {
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, tribeID: number | null, aimDirection: number, chargeProgress: number, reloadProgress: number) {
       super(position, id, EntityType.slingTurret, ageTicks, renderDepth);
 
+      this.tribeID = tribeID;
       this.chargeProgress = chargeProgress;
 
       // Base
@@ -67,7 +70,7 @@ class SlingTurret extends Entity {
          if (this.rockRenderPart === null) {
             this.rockRenderPart = new RenderPart(
                this,
-               getEntityTextureArrayIndex("entities/sling-rock/sling-rock.png"),
+               getEntityTextureArrayIndex("projectiles/sling-rock.png"),
                1.5,
                0
             );
@@ -93,15 +96,15 @@ class SlingTurret extends Entity {
    public updateFromData(data: EntityData<EntityType.slingTurret>): void {
       super.updateFromData(data);
 
-      const aimDirection = data.clientArgs[0];
+      const aimDirection = data.clientArgs[1];
       this.updateAimDirection(aimDirection);
 
-      const chargeProgress = data.clientArgs[1];
+      const chargeProgress = data.clientArgs[2];
       if (chargeProgress < this.chargeProgress) {
          playSound("sling-turret-fire.mp3", 0.2, 1, this.position.x, this.position.y);
       }
 
-      const reloadProgress = data.clientArgs[2];
+      const reloadProgress = data.clientArgs[3];
       
       this.updateSlingChargeProgress(aimDirection, chargeProgress, reloadProgress);
       this.chargeProgress = chargeProgress;

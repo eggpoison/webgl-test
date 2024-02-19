@@ -28,6 +28,7 @@ class RenderPart extends RenderObject {
    
    public textureArrayIndex: number;
 
+   // @Speed: Reduce polymorphism
    public getRotation?: () => number;
 
    /** Whether or not the render part will inherit its parents' rotation */

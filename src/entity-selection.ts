@@ -140,6 +140,7 @@ export function updateHighlightedEntity(): void {
       const selectedEntity = getSelectedEntity();
       const distance = Player.instance.position.calculateDistanceBetween(selectedEntity.position);
       if (distance <= HIGHLIGHT_DISTANCE) {
+         hoveredEntityID = getEntityID(false);
          return;
       }
    }

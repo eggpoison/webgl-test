@@ -24,11 +24,13 @@ interface TurretRangeRenderingInfo {
 
 const TURRET_RANGE_INFO_RECORD: Partial<Record<ItemType, TurretRangeInfo>> = {
    [ItemType.ballista]: {
-      range: 500,
-      arc: Math.PI / 2
+      range: 550,
+      // @Temporary
+      // arc: 2 * Math.PI
+      arc: Math.PI / 2.3
    },
    [ItemType.sling_turret]: {
-      range: 300,
+      range: 400,
       arc: 2 * Math.PI
    }
 };
@@ -80,17 +82,18 @@ export function createTurretRangeShaders(): void {
    }
    
    void main() {
-      float time_offset = u_time / 60.0;
+      float x = roundPixel(v_position.x);
+      float y = roundPixel(v_position.y);
 
-      float x = roundPixel(v_position.x - time_offset);
-      float y = roundPixel(v_position.y - time_offset);
+      float time_offset = u_time / 40.0;
 
-      float remainder = fract((x + y) / INTERVAL);
+      float dist = distance(vec2(x, y), u_placePos) - time_offset;
 
+      float remainder = fract(dist / INTERVAL);
       if (remainder > 0.5) {
          float distPercentage = distance(v_position, u_placePos) / u_range;
          distPercentage = smoothstep(0.0, 1.0, distPercentage);
-         outputColour = vec4(0.1, 0.15, 0.95, mix(0.3, 0.5, distPercentage));
+         outputColour = vec4(0.1, 0.15, 0.95, mix(0.3, 0.45, distPercentage));
       } else {
          outputColour = vec4(0.1, 0.15, 0.95, 0.3);
       }

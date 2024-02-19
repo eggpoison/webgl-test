@@ -152,8 +152,8 @@ export const PLACEABLE_ENTITY_INFO_RECORD: Record<PlaceableItemType, PlaceableEn
    [ItemType.ballista]: {
       entityType: EntityType.ballista,
       wallEntityType: EntityType.ballista,
-      width: 88,
-      height: 88,
+      width: 100,
+      height: 100,
       hitboxType: PlaceableItemHitboxType.rectangular
    },
    [ItemType.sling_turret]: {

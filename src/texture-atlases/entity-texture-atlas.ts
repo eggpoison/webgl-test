@@ -1,4 +1,5 @@
 import CLIENT_ITEM_INFO_RECORD from "../client-item-info";
+import { BLUEPRINT_PROGRESS_TEXTURE_SOURCES } from "../entities/BlueprintEntity";
 import { ATLAS_SLOT_SIZE, stitchTextureAtlas } from "./texture-atlas-stitching";
 
 const TEXTURE_SOURCES: Array<string> = [
@@ -175,6 +176,7 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/floor-punji-sticks/floor-punji-sticks.png",
    "entities/ballista/base.png",
    "entities/ballista/shaft.png",
+   "entities/ballista/crossbow.png", // @Incomplete: just for blueprints
    "entities/ballista/crossbow-1.png",
    "entities/ballista/crossbow-2.png",
    "entities/ballista/crossbow-3.png",
@@ -184,8 +186,11 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/ballista/crossbow-7.png",
    "entities/ballista/crossbow-8.png",
    "entities/ballista/crossbow-9.png",
+   "entities/ballista/crossbow-10.png",
+   "entities/ballista/crossbow-11.png",
    "entities/ballista/gear.png",
    "entities/ballista/ammo-box.png",
+   "entities/ballista/plate.png",
    "entities/sling-turret/sling-turret-base.png",
    "entities/sling-turret/sling-turret-plate.png",
    "entities/sling-turret/sling-turret-sling.png",
@@ -194,17 +199,42 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/sling-turret/sling-charge-3.png",
    "entities/sling-turret/sling-charge-4.png",
    "entities/sling-turret/sling-charge-5.png",
-   "entities/sling-rock/sling-rock.png",
-   "projectiles/ballista-rock.png"
+   "entities/sling-turret/base-blueprint-1.png",
+   "entities/sling-turret/base-blueprint-2.png",
+   "entities/sling-turret/base-blueprint-3.png",
+   "entities/sling-turret/base-blueprint-4.png",
+   "entities/sling-turret/plate-blueprint-1.png",
+   "entities/sling-turret/plate-blueprint-2.png",
+   "entities/sling-turret/sling-blueprint-1.png",
+   "entities/sling-turret/sling-blueprint-2.png",
+   "projectiles/sling-rock.png",
+   "projectiles/ballista-rock.png",
+   "projectiles/ballista-slimeball.png",
+   "projectiles/ballista-frostcicle.png"
 ];
+
+const addTextureSource = (textureSource: string): void => {
+   if (!TEXTURE_SOURCES.includes(textureSource)) {
+      TEXTURE_SOURCES.push(textureSource);
+   }
+}
 
 // Add item textures
 for (const clientItemInfo of Object.values(CLIENT_ITEM_INFO_RECORD)) {
-   TEXTURE_SOURCES.push(clientItemInfo.entityTextureSource);
+   addTextureSource(clientItemInfo.entityTextureSource);
 
    // Add tool item textures
    if (clientItemInfo.toolTextureSource !== "") {
-      TEXTURE_SOURCES.push(clientItemInfo.toolTextureSource);
+      addTextureSource(clientItemInfo.toolTextureSource);
+   }
+}
+
+// Add partial blueprint textures
+for (const progressTextureInfoArray of Object.values(BLUEPRINT_PROGRESS_TEXTURE_SOURCES)) {
+   for (const progressTextureInfo of progressTextureInfoArray) {
+      for (const textureSource of progressTextureInfo.progressTextureSources) {
+         addTextureSource(textureSource);
+      }
    }
 }
 

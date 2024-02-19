@@ -6,21 +6,29 @@ import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../
 import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import GameObject from "../GameObject";
 import { playSound } from "../sound";
+import { createRockParticle, createRockSpeckParticle } from "../particles";
 
 const ARROW_TEXTURE_SOURCES: Record<GenericArrowType, string> = {
    [GenericArrowType.woodenArrow]: "projectiles/wooden-arrow.png",
    [GenericArrowType.woodenBolt]: "projectiles/wooden-bolt.png",
-   [GenericArrowType.ballistaRock]: "projectiles/ballista-rock.png"
+   [GenericArrowType.ballistaRock]: "projectiles/ballista-rock.png",
+   [GenericArrowType.ballistaSlimeball]: "projectiles/ballista-slimeball.png",
+   [GenericArrowType.ballistaFrostcicle]: "projectiles/ballista-frostcicle.png",
+   [GenericArrowType.slingRock]: "projectiles/sling-rock.png"
 };
 
 class WoodenArrowProjectile extends GameObject {
    private static readonly DESTROY_PARTICLE_GRAY_COLOUR = [0.6, 0.6, 0.6];
    private static readonly DESTROY_PARTICLE_BROWN_COLOUR = [135/255, 75/255, 28/255];
    private static readonly DESTROY_PARTICLE_ADD_VELOCITY = 80;
+
+   private readonly arrowType: GenericArrowType;
    
    constructor(position: Point, id: number, ageTicks: number, renderDepth: number, arrowType: GenericArrowType) {
       super(position, id, EntityType.woodenArrowProjectile, ageTicks, renderDepth);
 
+      this.arrowType = arrowType;
+      
       const textureArrayIndex = getEntityTextureArrayIndex(ARROW_TEXTURE_SOURCES[arrowType]);
       this.attachRenderPart(
          new RenderPart(
@@ -97,7 +105,33 @@ class WoodenArrowProjectile extends GameObject {
    }
 
    public onDie(): void {
-      playSound("arrow-hit.mp3", 0.4, 1, this.position.x, this.position.y);
+      switch (this.arrowType) {
+         case GenericArrowType.ballistaFrostcicle: {
+            playSound("ice-break.mp3", 0.4, 1, this.position.x, this.position.y);
+            break;
+         }
+         default: {
+            playSound("arrow-hit.mp3", 0.4, 1, this.position.x, this.position.y);
+         }
+      }
+      
+      switch (this.arrowType) {
+         case GenericArrowType.slingRock: {
+            for (let i = 0; i < 3; i++) {
+               const spawnOffsetMagnitude = 16 * Math.random();
+               const spawnOffsetDirection = 2 * Math.PI * Math.random();
+               const spawnPositionX = this.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
+               const spawnPositionY = this.position.y + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
+
+               createRockParticle(spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(60, 100));
+            }
+
+            for (let i = 0; i < 5; i++) {
+               createRockSpeckParticle(this.position.x, this.position.y, 16, 0, 0);
+            }
+            break;
+         }
+      }
    }
 }
 

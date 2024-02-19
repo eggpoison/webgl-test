@@ -1,4 +1,4 @@
-import { EntityType, PlaceableItemType, Point, StructureShapeType, rotateXAroundOrigin, rotateXAroundPoint, rotateYAroundOrigin, rotateYAroundPoint } from "webgl-test-shared";
+import { EntityType, PlaceableItemType, Point, BlueprintBuildingType, rotateXAroundOrigin, rotateXAroundPoint, rotateYAroundOrigin, rotateYAroundPoint, BuildingShapeType } from "webgl-test-shared";
 import Player, { getPlayerSelectedItem } from "../entities/Player";
 import { gl, createWebGLProgram, CAMERA_UNIFORM_BUFFER_BINDING_INDEX } from "../webgl";
 import { PLACEABLE_ENTITY_INFO_RECORD, calculatePlacePosition, calculatePlaceRotation, calculateSnapInfo, canPlaceItem } from "../player-input";
@@ -216,12 +216,6 @@ const TEXTURE_INFO_RECORD: Partial<Record<EntityType, ReadonlyArray<TextureInfo>
    ]
 };
 
-// @Cleanup: This seems like a kinda awkward place for this to be
-export const SHAPE_TYPE_TEXTURE_SOURCES: Record<StructureShapeType, string> = {
-   [StructureShapeType.door]: "entities/wooden-door/wooden-door.png",
-   [StructureShapeType.embrasure]: "entities/wooden-embrasure/wooden-embrasure.png"
-}
-
 let program: WebGLProgram;
 
 let tintUniformLocation: WebGLUniformLocation;
@@ -354,12 +348,12 @@ const calculateVertices = (placePosition: Point, placeRotation: number, entityTy
    return vertices;
 }
 
-const getStructureShapePosition = (existingStructure: GameObject, shapeType: StructureShapeType, blueprintRotation: number): Point => {
+const getStructureShapePosition = (existingStructure: GameObject, shapeType: BuildingShapeType, blueprintRotation: number): Point => {
    switch (shapeType) {
-      case StructureShapeType.door: {
+      case BlueprintBuildingType.door: {
          return existingStructure.position.copy();
       }
-      case StructureShapeType.embrasure: {
+      case BlueprintBuildingType.embrasure: {
          const position = existingStructure.position.copy();
          position.x += 22 * Math.sin(blueprintRotation);
          position.y += 22 * Math.cos(blueprintRotation);

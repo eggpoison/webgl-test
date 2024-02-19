@@ -48,7 +48,6 @@ import WallPunjiSticks from "./entities/WallPunjiSticks";
 import BlueprintEntity from "./entities/BlueprintEntity";
 import Ballista from "./entities/Ballista";
 import SlingTurret from "./entities/SlingTurret";
-import SlingRock from "./entities/SlingRock";
 
 export type EntityClassType<T extends EntityType> = new (position: Point, id: number, ageTicks: number, renderDepth: number, ...clientParams: Parameters<typeof EntityInfoClientArgs[T]>) => GameObject;
 
@@ -101,8 +100,7 @@ const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
    [EntityType.wallPunjiSticks]: () => WallPunjiSticks,
    [EntityType.blueprintEntity]: () => BlueprintEntity,
    [EntityType.ballista]: () => Ballista,
-   [EntityType.slingTurret]: () => SlingTurret,
-   [EntityType.slingRock]: () => SlingRock
+   [EntityType.slingTurret]: () => SlingTurret
 };
 
 export default ENTITY_CLASS_RECORD;
