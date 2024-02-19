@@ -94,6 +94,13 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       name: "Stone Pickaxe",
       description: ""
    },
+   [ItemType.stone_hammer]: {
+      entityTextureSource: "items/small/stone-hammer.png",
+      textureSource: "items/large/stone-hammer.png",
+      toolTextureSource: "items/large/stone-hammer.png",
+      name: "Stone Hammer",
+      description: ""
+   },
    [ItemType.leather]: {
       entityTextureSource: "items/small/leather.png",
       textureSource: "items/large/leather.png",
