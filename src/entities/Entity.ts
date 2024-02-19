@@ -1,54 +1,14 @@
-import { EntityType, SETTINGS, StatusEffectData, StatusEffect, lerp, randFloat, randItem, customTickIntervalHasPassed, TileType, randInt } from "webgl-test-shared";
+import { EntityType, SETTINGS, StatusEffect, lerp, randFloat, randItem, customTickIntervalHasPassed, TileType, randInt } from "webgl-test-shared";
 import GameObject from "../GameObject";
 import Particle from "../Particle";
 import Board, { Light } from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
-import { BloodParticleSize, createBloodParticle, createPoisonBubble } from "../generic-particles";
+import { BloodParticleSize, createBloodParticle, createPoisonBubble } from "../particles";
 import { AudioFilePath, playSound } from "../sound";
-
-// Use prime numbers / 100 to ensure a decent distribution of different types of particles
-const HEALING_PARTICLE_AMOUNTS = [0.05, 0.37, 1.01];
-const HEALING_PARTICLE_TEXTURE_INDEXES = [3 * 8 + 1, 3 * 8 + 2, 3 * 8 + 3];
 
 /** Amount of seconds that the hit flash occurs for */
 const ATTACK_HIT_FLASH_DURATION = 0.4;
 const MAX_REDNESS = 0.85;
-
-const createHealingParticle = (originX: number, originY: number, size: number): void => {
-   const offsetMagnitude = 40 * Math.random();
-   const offsetDirection = 2 * Math.PI * Math.random();
-   const spawnPositionX = originX + offsetMagnitude * Math.sin(offsetDirection);
-   const spawnPositionY = originY + offsetMagnitude * Math.cos(offsetDirection);
-
-   const moveSpeed = randFloat(20, 30);
-   const moveDirection = 2 * Math.PI * Math.random();
-   const velocityX = moveSpeed * Math.sin(moveDirection);
-   const velocityY = moveSpeed * Math.cos(moveDirection);
-   
-   const lifetime = randFloat(0.8, 1.2);
-   
-   const particle = new Particle(lifetime);
-   particle.getOpacity = () => {
-      return 1 - particle.age / lifetime;
-   }
-
-   addTexturedParticleToBufferContainer(
-      particle,
-      ParticleRenderLayer.high,
-      64, 64,
-      spawnPositionX, spawnPositionY,
-      velocityX, velocityY,
-      0, 0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      HEALING_PARTICLE_TEXTURE_INDEXES[size],
-      0, 0, 0
-   );
-   Board.highTexturedParticles.push(particle);
-}
 
 abstract class Entity extends GameObject {
    public static readonly BURNING_PARTICLE_COLOURS: ReadonlyArray<ParticleColour> = [
@@ -58,8 +18,6 @@ abstract class Entity extends GameObject {
 
    private static readonly BURNING_SMOKE_PARTICLE_FADEIN_TIME = 0.15;
    
-   public abstract readonly type: EntityType;
-
    public secondsSinceLastHit = 99999;
 
    private burningLight: Light | null = null;
@@ -114,7 +72,7 @@ abstract class Entity extends GameObject {
          );
          Board.lowTexturedParticles.push(particle);
 
-         playSound(("water-splash-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.25, this.position.x, this.position.y);
+         playSound(("water-splash-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.25, 1, this.position.x, this.position.y);
       }
       
       const poisonStatusEffect = this.getStatusEffect(StatusEffect.poisoned);
@@ -167,8 +125,12 @@ abstract class Entity extends GameObject {
          if (this.burningLight === null) {
             this.burningLight = {
                position: this.position,
+               intensity: 1,
                strength: 2.5,
-               radius: 0.3
+               radius: 0.3,
+               r: 0,
+               g: 0,
+               b: 0
             };
             Board.lights.push(this.burningLight);
          }
@@ -281,37 +243,6 @@ abstract class Entity extends GameObject {
       }
    }
 
-   public hasStatusEffect(type: StatusEffect): boolean {
-      for (const statusEffect of this.statusEffects) {
-         if (statusEffect.type === type) {
-            return true;
-         }
-      }
-      return false;
-   }
-
-   private getStatusEffect(type: StatusEffect): StatusEffectData | null {
-      for (const statusEffect of this.statusEffects) {
-         if (statusEffect.type === type) {
-            return statusEffect;
-         }
-      }
-      return null;
-   }
-
-   public createHealingParticles(amountHealed: number): void {
-      // Create healing particles depending on the amount the entity was healed
-      let remainingHealing = amountHealed;
-      for (let size = 2; size >= 0;) {
-         if (remainingHealing >= HEALING_PARTICLE_AMOUNTS[size]) {
-            createHealingParticle(this.position.x, this.position.y, size);
-            remainingHealing -= HEALING_PARTICLE_AMOUNTS[size];
-         } else {
-            size--;
-         }
-      }
-   }
-
    public onRemove(): void {
       if (this.burningLight !== null) {
          const idx = Board.lights.indexOf(this.burningLight);
@@ -324,24 +255,24 @@ abstract class Entity extends GameObject {
    protected createFootstepSound(): void {
       switch (this.tile.type) {
          case TileType.grass: {
-            playSound(("grass-walk-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.04, this.position.x, this.position.y);
+            playSound(("grass-walk-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.04, 1, this.position.x, this.position.y);
             break;
          }
          case TileType.sand: {
-            playSound(("sand-walk-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.02, this.position.x, this.position.y);
+            playSound(("sand-walk-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.02, 1, this.position.x, this.position.y);
             break;
          }
          case TileType.snow: {
-            playSound(("snow-walk-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.07, this.position.x, this.position.y);
+            playSound(("snow-walk-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.07, 1, this.position.x, this.position.y);
             break;
          }
          case TileType.rock: {
-            playSound(("rock-walk-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.08, this.position.x, this.position.y);
+            playSound(("rock-walk-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.08, 1, this.position.x, this.position.y);
             break;
          }
          case TileType.water: {
             if (!this.isInRiver()) {
-               playSound(("rock-walk-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.08, this.position.x, this.position.y);
+               playSound(("rock-walk-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.08, 1, this.position.x, this.position.y);
             }
             break;
          }

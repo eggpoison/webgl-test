@@ -1,23 +1,12 @@
-import { EntityType } from "webgl-test-shared";
 import Barrel from "../../../entities/Barrel";
-import Entity from "../../../entities/Entity"
 import InventoryContainer from "./InventoryContainer";
+import { getSelectedEntity } from "../../../entity-selection";
 
-interface BarrelInventoryProps {
-   readonly entity: Entity;
-}
-
-function assertEntityIsBarrel(entity: Entity): asserts entity is Barrel {
-   if (entity.type !== EntityType.barrel) {
-      throw new Error("Entity passed into BarrelInventory wasn't a barrel.");
-   }
-}
-
-const BarrelInventory = (props: BarrelInventoryProps) => {
-   assertEntityIsBarrel(props.entity);
+const BarrelInventory = () => {
+   const barrel = getSelectedEntity() as Barrel;
    
    return <div id="barrel-inventory" className="inventory">
-      <InventoryContainer entityID={props.entity.id} inventory={props.entity.inventory} />
+      <InventoryContainer entityID={barrel.id} inventory={barrel.inventory} />
    </div>;
 }
 

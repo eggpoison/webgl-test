@@ -1,12 +1,12 @@
 import Client from "./client/Client";
 import { inventoryIsOpen } from "./components/game/menus/CraftingMenu";
 import { setHeldItemVisualPosition } from "./components/game/HeldItem";
-import { interactInventoryIsOpen } from "./components/game/inventories/InteractInventory";
 import { definiteGameState } from "./game-state/game-states";
-import { Inventory, InventoryData, Item, ItemSlots } from "webgl-test-shared";
+import { Inventory, InventoryData, Item, ItemData, ItemSlots } from "webgl-test-shared";
+import { InventorySelector_inventoryIsOpen } from "./components/game/inventories/InventorySelector";
 
 const canInteractWithItemSlots = (): boolean => {
-   return inventoryIsOpen() || interactInventoryIsOpen();
+   return inventoryIsOpen() || InventorySelector_inventoryIsOpen();
 }
 
 export function leftClickItemSlot(e: MouseEvent, entityID: number, inventory: Inventory, itemSlot: number): void {
@@ -42,6 +42,8 @@ export function leftClickItemSlot(e: MouseEvent, entityID: number, inventory: In
 export function rightClickItemSlot(e: MouseEvent, entityID: number, inventory: Inventory, itemSlot: number): void {
    // Item slots can only be interacted with while the crafting menu is open
    if (!canInteractWithItemSlots()) return;
+
+   e.preventDefault();
 
    if (inventory.itemSlots.hasOwnProperty(itemSlot)) {
       const clickedItem = inventory.itemSlots[itemSlot];
@@ -123,4 +125,21 @@ export function createInventoryFromData(inventoryData: InventoryData): Inventory
       height: inventoryData.height,
       inventoryName: inventoryData.inventoryName
    };
+}
+
+export function serialiseItem(item: Item): ItemData {
+   return {
+      type: item.type,
+      count: item.count,
+      id: item.id
+   };
+}
+
+export function inventoryHasItems(inventory: Inventory): boolean {
+   for (let itemSlot = 1; itemSlot <= inventory.width * inventory.height; itemSlot++) {
+      if (inventory.itemSlots.hasOwnProperty(itemSlot)) {
+         return true;
+      }
+   }
+   return false;
 }

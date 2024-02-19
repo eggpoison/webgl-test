@@ -1,18 +1,13 @@
-import { Point, TribeTotemBanner, EntityData, TribeType, EntityType, HitData } from "webgl-test-shared";
+import { Point, TribeTotemBanner, EntityData, TribeType, EntityType } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { playBuildingHitSound, playSound } from "../sound";
 
 class TribeTotem extends Entity {
    public static readonly SIZE = 120;
 
-   private static readonly BANNER_WIDTH = 40;
-   private static readonly BANNER_HEIGHT = 16;
-
    private static readonly BANNER_LAYER_DISTANCES = [34, 52, 65];
-   
-   public type = EntityType.tribeTotem;
 
    public tribeID: number;
    private tribeType: TribeType;
@@ -20,14 +15,12 @@ class TribeTotem extends Entity {
    private readonly banners: Record<number, TribeTotemBanner> = {};
    private readonly bannerRenderParts: Record<number, RenderPart> = {};
 
-   constructor(position: Point, id: number, renderDepth: number, tribeID: number, tribeType: TribeType, banners: Array<TribeTotemBanner>) {
-      super(position, id, EntityType.tribeTotem, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, tribeID: number, tribeType: TribeType, banners: Array<TribeTotemBanner>) {
+      super(position, id, EntityType.tribeTotem, ageTicks, renderDepth);
 
       const renderPart = new RenderPart(
          this,
-         TribeTotem.SIZE,
-         TribeTotem.SIZE,
-         getGameObjectTextureArrayIndex(`entities/tribe-totem/tribe-totem.png`),
+         getEntityTextureArrayIndex(`entities/tribe-totem/tribe-totem.png`),
          1,
          0
       );
@@ -61,9 +54,7 @@ class TribeTotem extends Entity {
 
       const renderPart = new RenderPart(
          this,
-         TribeTotem.BANNER_WIDTH,
-         TribeTotem.BANNER_HEIGHT,
-         getGameObjectTextureArrayIndex(`entities/tribe-totem/${totemTextureSourceID}`),
+         getEntityTextureArrayIndex(`entities/tribe-totem/${totemTextureSourceID}`),
          2,
          banner.direction
       );
@@ -103,12 +94,12 @@ class TribeTotem extends Entity {
       this.updateBanners(entityData.clientArgs[2]);
    }
 
-   protected onHit(hitData: HitData): void {
+   protected onHit(): void {
       playBuildingHitSound(this.position.x, this.position.y);
    }
 
    public onDie(): void {
-      playSound("building-destroy-1.mp3", 0.4, this.position.x, this.position.y);
+      playSound("building-destroy-1.mp3", 0.4, 1, this.position.x, this.position.y);
    }
 }
 

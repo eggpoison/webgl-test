@@ -4,7 +4,7 @@ import CircularHitbox from "../hitboxes/CircularHitbox";
 import Board from "../Board";
 import { ParticleRenderLayer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
 import Particle from "../Particle";
-import { createPoisonBubble } from "../generic-particles";
+import { createPoisonBubble } from "../particles";
 import { Sound, playSound } from "../sound";
 
 const createParticle = (spawnPositionX: number, spawnPositionY: number): void => {
@@ -42,10 +42,10 @@ class SpitPoison extends GameObject {
    private readonly trackSource: AudioBufferSourceNode;
    private readonly sound: Sound;
    
-   constructor(position: Point, id: number, renderDepth: number) {
-      super(position, id, EntityType.spitPoison, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
+      super(position, id, EntityType.spitPoison, ageTicks, renderDepth);
 
-      const audioInfo = playSound("acid-burn.mp3", 0.25, this.position.x, this.position.y);
+      const audioInfo = playSound("acid-burn.mp3", 0.25, 1, this.position.x, this.position.y);
       this.trackSource = audioInfo.trackSource;
       this.sound = audioInfo.sound;
 
@@ -53,8 +53,7 @@ class SpitPoison extends GameObject {
    }
 
    public tick(): void {
-      // @Speed
-      const hitbox = Array.from(this.hitboxes)[0] as CircularHitbox;
+      const hitbox = this.hitboxes[0] as CircularHitbox;
       const range = hitbox.radius;
 
       this.sound.volume = lerp(0.25, 0, 1 - range / SpitPoison.MAX_RANGE);

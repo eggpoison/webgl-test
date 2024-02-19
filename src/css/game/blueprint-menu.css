@@ -1,0 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Patua+One&display=swap');
+
+#blueprint-menu {
+   border: 4px solid #d6d6d6;
+   background-color: rgba(53, 53, 53, 0.3);
+   padding: 0.8rem 0 0 0;
+   position: absolute;
+   left: calc(1px * var(--x));
+   bottom: calc(1px * var(--y));
+   transform: translate(-50%, -50%);
+   z-index: 2;
+   display: flex;
+}
+
+#blueprint-menu .title {
+   color: #fff;
+   font-size: 2rem;
+   font-family: "Bebas Neue";
+   font-weight: normal;
+   position: absolute;
+   top: 0;
+   left: 50%;
+   transform: translate(-50%, -120%);
+   text-shadow: 0 0 2px #000, 0 0 3px #000;
+}
+
+#blueprint-menu .structure-shaping-option {
+   width: 80px;
+   height: 80px;
+   border: 4px solid #e9e9e9;
+   margin: 0.5rem;
+   background-color: #3543a1;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   position: relative;
+   box-shadow: 0 0 15px 3px rgba(0, 0, 0, 0.5) inset;
+}
+
+#blueprint-menu .blueprint-name {
+   color: #fff;
+   font-size: 1.1rem;
+   font-family: "Bebas Neue";
+   position: absolute;
+   top: 0;
+   left: 0;
+   transform: translateY(-100%);
+}
+
+#blueprint-menu .structure-shaping-option img {
+   width: calc(1px * var(--width));
+   height: calc(1px * var(--height));
+   image-rendering: pixelated;
+}
+
+#blueprint-menu .hotkey-label {
+   text-align: center;
+   width: 1.4rem;
+   color: #000;
+   font-size: 1.4rem;
+   font-family: "Patua One";
+   background-color: #e4e4e4;
+   position: absolute;
+   bottom: 0;
+   right: 0;
+   transform: translate(25%, 25%);
+}

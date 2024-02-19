@@ -17,8 +17,8 @@ class RectangularHitbox extends Hitbox {
 
    public sideAxes = [new Point(0, 0), new Point(0, 0)] as const;
 
-   constructor(width: number, height: number) {
-      super();
+   constructor(mass: number, width: number, height: number, localID: number) {
+      super(mass, localID);
       
       this.width = width;
       this.height = height;
@@ -46,27 +46,27 @@ class RectangularHitbox extends Hitbox {
       // Top right
       this.vertexPositions[1].x = rotateXAroundPoint(x2, y2, this.position.x, this.position.y, this.rotation + offsetRotation);
       this.vertexPositions[1].y = rotateYAroundPoint(x2, y2, this.position.x, this.position.y, this.rotation + offsetRotation);
-      // Bottom left
-      this.vertexPositions[2].x = rotateXAroundPoint(x1, y1, this.position.x, this.position.y, this.rotation + offsetRotation);
-      this.vertexPositions[2].y = rotateYAroundPoint(x1, y1, this.position.x, this.position.y, this.rotation + offsetRotation);
       // Bottom right
-      this.vertexPositions[3].x = rotateXAroundPoint(x2, y1, this.position.x, this.position.y, this.rotation + offsetRotation);
-      this.vertexPositions[3].y = rotateYAroundPoint(x2, y1, this.position.x, this.position.y, this.rotation + offsetRotation);
+      this.vertexPositions[2].x = rotateXAroundPoint(x2, y1, this.position.x, this.position.y, this.rotation + offsetRotation);
+      this.vertexPositions[2].y = rotateYAroundPoint(x2, y1, this.position.x, this.position.y, this.rotation + offsetRotation);
+      // Bottom left
+      this.vertexPositions[3].x = rotateXAroundPoint(x1, y1, this.position.x, this.position.y, this.rotation + offsetRotation);
+      this.vertexPositions[3].y = rotateYAroundPoint(x1, y1, this.position.x, this.position.y, this.rotation + offsetRotation);
    }
 
-   public computeSideAxes(): void {
-      const angle1 = this.vertexPositions[0].calculateAngleBetween(this.vertexPositions[1]);
+   public computeSideAxes(offsetRotation: number): void {
+      const angle1 = this.rotation + offsetRotation + Math.PI/2;
       this.sideAxes[0].x = Math.sin(angle1);
       this.sideAxes[0].y = Math.cos(angle1);
       
-      const angle2 = this.vertexPositions[2].calculateAngleBetween(this.vertexPositions[3]);
+      const angle2 = angle1 + Math.PI/2;
       this.sideAxes[1].x = Math.sin(angle2);
       this.sideAxes[1].y = Math.cos(angle2);
    }
 
    public updateHitboxBounds(offsetRotation: number): void {
       this.computeVertexPositions(offsetRotation);
-      this.computeSideAxes();
+      this.computeSideAxes(offsetRotation);
 
       this.bounds[0] = Math.min(this.vertexPositions[0].x, this.vertexPositions[1].x, this.vertexPositions[2].x, this.vertexPositions[3].x);
       this.bounds[1] = Math.max(this.vertexPositions[0].x, this.vertexPositions[1].x, this.vertexPositions[2].x, this.vertexPositions[3].x);
@@ -77,7 +77,7 @@ class RectangularHitbox extends Hitbox {
    public isColliding(otherHitbox: CircularHitbox | RectangularHitbox): boolean {
       if (otherHitbox.hasOwnProperty("radius")) {
          // Circular
-         return circleAndRectangleDoIntersect(otherHitbox.position, (otherHitbox as CircularHitbox).radius, this.position, this.width, this.height, this.rotation + this.externalRotation);
+         return circleAndRectangleDoIntersect(otherHitbox.position.x, otherHitbox.position.y, (otherHitbox as CircularHitbox).radius, this.position.x, this.position.y, this.width, this.height, this.rotation + this.externalRotation);
       } else {
          // Rectangular
 
@@ -87,7 +87,7 @@ class RectangularHitbox extends Hitbox {
             return false;
          }
          
-         return rectanglePointsDoIntersect(this.vertexPositions, (otherHitbox as RectangularHitbox).vertexPositions, this.sideAxes, (otherHitbox as RectangularHitbox).sideAxes);
+         return rectanglePointsDoIntersect(this.vertexPositions, (otherHitbox as RectangularHitbox).vertexPositions, 0, 0, 0, 0, this.sideAxes, (otherHitbox as RectangularHitbox).sideAxes);
       }
    }
 }

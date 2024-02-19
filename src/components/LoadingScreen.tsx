@@ -94,7 +94,7 @@ const LoadingScreen = ({ username, tribeType, initialStatus }: LoadingScreenProp
             (async () => {
                const initialGameDataPacket = initialGameDataPacketRef.current!;
 
-               Game.tribe = new Tribe(tribeType, initialGameDataPacket.tribeData.numHuts);
+               Game.tribe = new Tribe(initialGameDataPacket.tribeData.id, tribeType, initialGameDataPacket.tribeData.numHuts);
 
                const tiles = Client.parseServerTileDataArray(initialGameDataPacket.tiles);
                await Game.initialise(tiles, initialGameDataPacket.waterRocks, initialGameDataPacket.riverSteppingStones, initialGameDataPacket.riverFlowDirections, initialGameDataPacket.edgeTiles, initialGameDataPacket.edgeRiverFlowDirections, initialGameDataPacket.edgeRiverSteppingStones, initialGameDataPacket.grassInfo, initialGameDataPacket.decorations);
@@ -103,12 +103,13 @@ const LoadingScreen = ({ username, tribeType, initialStatus }: LoadingScreenProp
                definiteGameState.playerUsername = username;
                const playerSpawnPosition = new Point(spawnPositionRef.current!.x, spawnPositionRef.current!.y);
                const renderDepth = calculateEntityRenderDepth(EntityType.player);
-               const player = new Player(playerSpawnPosition, initialGameDataPacket.playerID, renderDepth, null, tribeType, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, null, TribeMemberAction.none, -1, -99999, false, tribeType === TribeType.goblins ? randInt(1, 5) : -1, username);
+               // @Cleanup: Copy and paste from Client
+               const player = new Player(playerSpawnPosition, initialGameDataPacket.playerID, 0, renderDepth, null, tribeType, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, -1, null, TribeMemberAction.none, -1, -99999, -1, false, tribeType === TribeType.goblins ? randInt(1, 5) : -1, username);
                player.addCircularHitbox(Player.createNewPlayerHitbox());
                Player.setInstancePlayer(player);
                Board.addEntity(player);
 
-               Client.unloadGameDataPacket(initialGameDataPacket);
+               Client.processGameDataPacket(initialGameDataPacket);
 
                Game.start();
 

@@ -2,7 +2,7 @@ import { rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 import Board from "../Board";
 import { ATLAS_SLOT_SIZE } from "../texture-atlases/texture-atlas-stitching";
-import { GAME_OBJECT_TEXTURE_ATLAS, GAME_OBJECT_TEXTURE_ATLAS_SIZE } from "../texture-atlases/entity-texture-atlas";
+import { ENTITY_TEXTURE_ATLAS, ENTITY_TEXTURE_ATLAS_LENGTH, ENTITY_TEXTURE_ATLAS_SIZE, ENTITY_TEXTURE_SLOT_INDEXES, getTextureHeight, getTextureWidth } from "../texture-atlases/entity-texture-atlas";
 
 let program: WebGLProgram;
 let vao: WebGLVertexArrayObject;
@@ -22,14 +22,12 @@ export function createEntityShaders(): void {
    layout(location = 0) in vec2 a_position;
    layout(location = 1) in float a_depth;
    layout(location = 2) in vec2 a_texCoord;
-   layout(location = 3) in float a_textureIndex;
-   layout(location = 4) in vec2 a_textureSize;
-   layout(location = 5) in vec3 a_tint;
-   layout(location = 6) in float a_opacity;
+   layout(location = 3) in float a_textureArrayIndex;
+   layout(location = 4) in vec3 a_tint;
+   layout(location = 5) in float a_opacity;
    
    out vec2 v_texCoord;
-   out float v_textureIndex;
-   out vec2 v_textureSize;
+   out float v_textureArrayIndex;
    out vec3 v_tint;
    out float v_opacity;
     
@@ -39,8 +37,7 @@ export function createEntityShaders(): void {
       gl_Position = vec4(clipSpacePos, a_depth, 1.0);
    
       v_texCoord = a_texCoord;
-      v_textureIndex = a_textureIndex;
-      v_textureSize = a_textureSize;
+      v_textureArrayIndex = a_textureArrayIndex;
       v_tint = a_tint;
       v_opacity = a_opacity;
    }
@@ -48,27 +45,32 @@ export function createEntityShaders(): void {
    
    const fragmentShaderText = `#version 300 es
    precision highp float;
-   
+
    uniform sampler2D u_textureAtlas;
    uniform float u_atlasPixelSize;
    uniform float u_atlasSlotSize;
+   uniform float u_textureSlotIndexes[${ENTITY_TEXTURE_ATLAS_LENGTH}];
+   uniform vec2 u_textureSizes[${ENTITY_TEXTURE_ATLAS_LENGTH}];
    
    in vec2 v_texCoord;
-   in float v_textureIndex;
-   in vec2 v_textureSize;
+   in float v_textureArrayIndex;
    in vec3 v_tint;
    in float v_opacity;
    
    out vec4 outputColour;
    
-   void main() { 
+   void main() {
+      int textureArrayIndex = int(v_textureArrayIndex);
+      float textureIndex = u_textureSlotIndexes[textureArrayIndex];
+      vec2 textureSize = u_textureSizes[textureArrayIndex];
+      
       // Calculate the coordinates of the top left corner of the texture
-      float textureX = mod(v_textureIndex * u_atlasSlotSize, u_atlasPixelSize);
-      float textureY = floor(v_textureIndex * u_atlasSlotSize / u_atlasPixelSize) * u_atlasSlotSize;
+      float textureX = mod(textureIndex * u_atlasSlotSize, u_atlasPixelSize);
+      float textureY = floor(textureIndex * u_atlasSlotSize / u_atlasPixelSize) * u_atlasSlotSize;
       
       // @Incomplete: This is very hacky, the - 0.2 and + 0.1 shenanigans are to prevent texture bleeding but it causes tiny bits of the edge of the textures to get cut off.
-      float u = (textureX + v_texCoord.x * (v_textureSize.x - 0.2) + 0.1) / u_atlasPixelSize;
-      float v = 1.0 - ((textureY + (1.0 - v_texCoord.y) * (v_textureSize.y - 0.2) + 0.1) / u_atlasPixelSize);
+      float u = (textureX + v_texCoord.x * (textureSize.x - 0.2) + 0.1) / u_atlasPixelSize;
+      float v = 1.0 - ((textureY + (1.0 - v_texCoord.y) * (textureSize.y - 0.2) + 0.1) / u_atlasPixelSize);
       outputColour = texture(u_textureAtlas, vec2(u, v));
       
       if (v_tint.r > 0.0) {
@@ -99,11 +101,26 @@ export function createEntityShaders(): void {
    const textureUniformLocation = gl.getUniformLocation(program, "u_textureAtlas")!;
    const atlasPixelSizeUniformLocation = gl.getUniformLocation(program, "u_atlasPixelSize")!;
    const atlasSlotSizeUniformLocation = gl.getUniformLocation(program, "u_atlasSlotSize")!;
+   const textureSlotIndexesUniformLocation = gl.getUniformLocation(program, "u_textureSlotIndexes")!;
+   const textureSizesUniformLocation = gl.getUniformLocation(program, "u_textureSizes")!;
+
+   const textureSlotIndexes = new Float32Array(ENTITY_TEXTURE_ATLAS_LENGTH);
+   for (let textureArrayIndex = 0; textureArrayIndex < ENTITY_TEXTURE_ATLAS_LENGTH; textureArrayIndex++) {
+      textureSlotIndexes[textureArrayIndex] = ENTITY_TEXTURE_SLOT_INDEXES[textureArrayIndex];
+   }
+
+   const textureSizes = new Float32Array(ENTITY_TEXTURE_ATLAS_LENGTH * 2);
+   for (let textureArrayIndex = 0; textureArrayIndex < ENTITY_TEXTURE_ATLAS_LENGTH; textureArrayIndex++) {
+      textureSizes[textureArrayIndex * 2] = getTextureWidth(textureArrayIndex);
+      textureSizes[textureArrayIndex * 2 + 1] = getTextureHeight(textureArrayIndex);
+   }
 
    gl.useProgram(program);
    gl.uniform1i(textureUniformLocation, 0);
-   gl.uniform1f(atlasPixelSizeUniformLocation, GAME_OBJECT_TEXTURE_ATLAS_SIZE);
+   gl.uniform1f(atlasPixelSizeUniformLocation, ENTITY_TEXTURE_ATLAS_SIZE);
    gl.uniform1f(atlasSlotSizeUniformLocation, ATLAS_SLOT_SIZE);
+   gl.uniform1fv(textureSlotIndexesUniformLocation, textureSlotIndexes);
+   gl.uniform2fv(textureSizesUniformLocation, textureSizes);
 
    // 
    // Create VAO
@@ -115,13 +132,12 @@ export function createEntityShaders(): void {
    buffer = gl.createBuffer()!;
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 
-   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 0);
-   gl.vertexAttribPointer(1, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(2, 2, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 3 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(3, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(4, 2, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(5, 3, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 8 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(6, 1, gl.FLOAT, false, 12 * Float32Array.BYTES_PER_ELEMENT, 11 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 10 * Float32Array.BYTES_PER_ELEMENT, 0);
+   gl.vertexAttribPointer(1, 1, gl.FLOAT, false, 10 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(2, 2, gl.FLOAT, false, 10 * Float32Array.BYTES_PER_ELEMENT, 3 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(3, 1, gl.FLOAT, false, 10 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(4, 3, gl.FLOAT, false, 10 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(5, 1, gl.FLOAT, false, 10 * Float32Array.BYTES_PER_ELEMENT, 9 * Float32Array.BYTES_PER_ELEMENT);
    
    gl.enableVertexAttribArray(0);
    gl.enableVertexAttribArray(1);
@@ -129,7 +145,6 @@ export function createEntityShaders(): void {
    gl.enableVertexAttribArray(3);
    gl.enableVertexAttribArray(4);
    gl.enableVertexAttribArray(5);
-   gl.enableVertexAttribArray(6);
 
    indexBuffer = gl.createBuffer()!;
    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
@@ -142,7 +157,7 @@ export function renderGameObjects(): void {
 
    const numRenderParts = Board.numVisibleRenderParts - Board.fish.length;
    
-   const vertexData = new Float32Array(numRenderParts * 4 * 12);
+   const vertexData = new Float32Array(numRenderParts * 4 * 10);
    const indicesData = new Uint16Array(numRenderParts * 6);
    
    let i = 0;
@@ -157,10 +172,13 @@ export function renderGameObjects(): void {
          const u0 = renderPart.flipX ? 1 : 0;
          const u1 = 1 - u0;
 
-         const x1 = renderPart.renderPosition.x - renderPart.width / 2 * renderPart.scale;
-         const x2 = renderPart.renderPosition.x + renderPart.width / 2 * renderPart.scale;
-         const y1 = renderPart.renderPosition.y - renderPart.height / 2 * renderPart.scale;
-         const y2 = renderPart.renderPosition.y + renderPart.height / 2 * renderPart.scale;
+         const width = getTextureWidth(renderPart.textureArrayIndex) * 4;
+         const height = getTextureHeight(renderPart.textureArrayIndex) * 4;
+
+         const x1 = renderPart.renderPosition.x - width / 2 * renderPart.scale;
+         const x2 = renderPart.renderPosition.x + width / 2 * renderPart.scale;
+         const y1 = renderPart.renderPosition.y - height / 2 * renderPart.scale;
+         const y2 = renderPart.renderPosition.y + height / 2 * renderPart.scale;
 
          // Rotate the render part to match its rotation
          // @Speed: hopefully remove the need for this with instanced rendering
@@ -173,59 +191,55 @@ export function renderGameObjects(): void {
          const bottomRightX = rotateXAroundPoint(x2, y1, renderPart.renderPosition.x, renderPart.renderPosition.y, renderPart.totalRotation + renderPart.rotation);
          const bottomRightY = rotateYAroundPoint(x2, y1, renderPart.renderPosition.x, renderPart.renderPosition.y, renderPart.totalRotation + renderPart.rotation);
 
-         const vertexDataOffset = i * 4 * 12;
+         const vertexDataOffset = i * 4 * 10;
+
+         const tintR = gameObject.tintR + renderPart.tintR;
+         const tintG = gameObject.tintG + renderPart.tintG;
+         const tintB = gameObject.tintB + renderPart.tintB;
 
          vertexData[vertexDataOffset] = bottomLeftX;
          vertexData[vertexDataOffset + 1] = bottomLeftY;
          vertexData[vertexDataOffset + 2] = depth;
          vertexData[vertexDataOffset + 3] = u0;
          vertexData[vertexDataOffset + 4] = 0;
-         vertexData[vertexDataOffset + 5] = renderPart.textureSlotIndex;
-         vertexData[vertexDataOffset + 6] = renderPart.textureWidth;
-         vertexData[vertexDataOffset + 7] = renderPart.textureHeight;
-         vertexData[vertexDataOffset + 8] = gameObject.tintR;
-         vertexData[vertexDataOffset + 9] = gameObject.tintG;
-         vertexData[vertexDataOffset + 10] = gameObject.tintB;
-         vertexData[vertexDataOffset + 11] = renderPart.opacity;
+         vertexData[vertexDataOffset + 5] = renderPart.textureArrayIndex;
+         vertexData[vertexDataOffset + 6] = tintR;
+         vertexData[vertexDataOffset + 7] = tintG;
+         vertexData[vertexDataOffset + 8] = tintB;
+         vertexData[vertexDataOffset + 9] = renderPart.opacity;
 
-         vertexData[vertexDataOffset + 12] = bottomRightX;
-         vertexData[vertexDataOffset + 13] = bottomRightY;
-         vertexData[vertexDataOffset + 14] = depth;
-         vertexData[vertexDataOffset + 15] = u1;
-         vertexData[vertexDataOffset + 16] = 0;
-         vertexData[vertexDataOffset + 17] = renderPart.textureSlotIndex;
-         vertexData[vertexDataOffset + 18] = renderPart.textureWidth;
-         vertexData[vertexDataOffset + 19] = renderPart.textureHeight;
-         vertexData[vertexDataOffset + 20] = gameObject.tintR;
-         vertexData[vertexDataOffset + 21] = gameObject.tintG;
-         vertexData[vertexDataOffset + 22] = gameObject.tintB;
-         vertexData[vertexDataOffset + 23] = renderPart.opacity;
+         vertexData[vertexDataOffset + 10] = bottomRightX;
+         vertexData[vertexDataOffset + 11] = bottomRightY;
+         vertexData[vertexDataOffset + 12] = depth;
+         vertexData[vertexDataOffset + 13] = u1;
+         vertexData[vertexDataOffset + 14] = 0;
+         vertexData[vertexDataOffset + 15] = renderPart.textureArrayIndex;
+         vertexData[vertexDataOffset + 16] = tintR;
+         vertexData[vertexDataOffset + 17] = tintG;
+         vertexData[vertexDataOffset + 18] = tintB;
+         vertexData[vertexDataOffset + 19] = renderPart.opacity;
 
-         vertexData[vertexDataOffset + 24] = topLeftX;
-         vertexData[vertexDataOffset + 25] = topLeftY;
-         vertexData[vertexDataOffset + 26] = depth;
-         vertexData[vertexDataOffset + 27] = u0;
-         vertexData[vertexDataOffset + 28] = 1;
-         vertexData[vertexDataOffset + 29] = renderPart.textureSlotIndex;
-         vertexData[vertexDataOffset + 30] = renderPart.textureWidth;
-         vertexData[vertexDataOffset + 31] = renderPart.textureHeight;
-         vertexData[vertexDataOffset + 32] = gameObject.tintR;
-         vertexData[vertexDataOffset + 33] = gameObject.tintG;
-         vertexData[vertexDataOffset + 34] = gameObject.tintB;
-         vertexData[vertexDataOffset + 35] = renderPart.opacity;
+         vertexData[vertexDataOffset + 20] = topLeftX;
+         vertexData[vertexDataOffset + 21] = topLeftY;
+         vertexData[vertexDataOffset + 22] = depth;
+         vertexData[vertexDataOffset + 23] = u0;
+         vertexData[vertexDataOffset + 24] = 1;
+         vertexData[vertexDataOffset + 25] = renderPart.textureArrayIndex;
+         vertexData[vertexDataOffset + 26] = tintR;
+         vertexData[vertexDataOffset + 27] = tintG;
+         vertexData[vertexDataOffset + 28] = tintB;
+         vertexData[vertexDataOffset + 29] = renderPart.opacity;
 
-         vertexData[vertexDataOffset + 36] = topRightX;
-         vertexData[vertexDataOffset + 37] = topRightY;
-         vertexData[vertexDataOffset + 38] = depth;
-         vertexData[vertexDataOffset + 39] = u1;
-         vertexData[vertexDataOffset + 40] = 1;
-         vertexData[vertexDataOffset + 41] = renderPart.textureSlotIndex;
-         vertexData[vertexDataOffset + 42] = renderPart.textureWidth;
-         vertexData[vertexDataOffset + 43] = renderPart.textureHeight;
-         vertexData[vertexDataOffset + 44] = gameObject.tintR;
-         vertexData[vertexDataOffset + 45] = gameObject.tintG;
-         vertexData[vertexDataOffset + 46] = gameObject.tintB;
-         vertexData[vertexDataOffset + 47] = renderPart.opacity;
+         vertexData[vertexDataOffset + 30] = topRightX;
+         vertexData[vertexDataOffset + 31] = topRightY;
+         vertexData[vertexDataOffset + 32] = depth;
+         vertexData[vertexDataOffset + 33] = u1;
+         vertexData[vertexDataOffset + 34] = 1;
+         vertexData[vertexDataOffset + 35] = renderPart.textureArrayIndex;
+         vertexData[vertexDataOffset + 36] = tintR;
+         vertexData[vertexDataOffset + 37] = tintG;
+         vertexData[vertexDataOffset + 38] = tintB;
+         vertexData[vertexDataOffset + 39] = renderPart.opacity;
 
          const indicesDataOffset = i * 6;
 
@@ -253,7 +267,7 @@ export function renderGameObjects(): void {
 
    // Bind texture atlas
    gl.activeTexture(gl.TEXTURE0);
-   gl.bindTexture(gl.TEXTURE_2D, GAME_OBJECT_TEXTURE_ATLAS);
+   gl.bindTexture(gl.TEXTURE_2D, ENTITY_TEXTURE_ATLAS);
 
    gl.bindVertexArray(vao);
 

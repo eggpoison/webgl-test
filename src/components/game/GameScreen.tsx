@@ -8,11 +8,10 @@ import CraftingMenu from "./menus/CraftingMenu";
 import HeldItem from "./HeldItem";
 import DeathScreen from "./DeathScreen";
 import BackpackInventoryMenu from "./inventories/BackpackInventory";
-import InteractInventory from "./inventories/InteractInventory";
-import ChargeMeter from "./ChargeMeter";
 import TechTree from "./TechTree";
-import ResearchBenchCaption from "./ResearchBenchCaption";
-import StructureShapingMenu from "./StructureShapingMenu";
+import BlueprintMenu from "./BlueprintMenu";
+import TechInfocard from "./TechInfocard";
+import InventorySelector from "./inventories/InventorySelector";
 
 export let showPauseScreen: () => void = () => {};
 export let hidePauseScreen: () => void = () => {};
@@ -75,10 +74,8 @@ const GameScreen = () => {
       {/* Note: BackpackInventoryMenu must be exactly before CraftingMenu because of CSS hijinks */}
       <BackpackInventoryMenu />
       <CraftingMenu />
-      <InteractInventory />
 
       <HeldItem />
-      <ChargeMeter />
 
       {isDead ? (
          <DeathScreen />
@@ -89,9 +86,11 @@ const GameScreen = () => {
       {isPaused && !isDead ? <PauseScreen /> : null}
 
       <TechTree />
-      <ResearchBenchCaption />
+      <TechInfocard />
 
-      <StructureShapingMenu />
+      <BlueprintMenu />
+
+      <InventorySelector />
    </>;
 }
 

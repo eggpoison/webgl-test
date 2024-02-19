@@ -3,7 +3,7 @@ import Board from "./Board";
 import Camera from "./Camera";
 import { halfWindowHeight, halfWindowWidth, windowHeight, windowWidth } from "./webgl";
 
-const DAMAGE_NUMBER_LIFETIME = 1.5;
+const DAMAGE_NUMBER_LIFETIME = 1.75;
 const RESEARCH_NUMBER_LIFETIME = 1.5;
 
 const damageColours: ReadonlyArray<string> = ["#ddd", "#fbff2b", "#ffc130", "#ff6430"];

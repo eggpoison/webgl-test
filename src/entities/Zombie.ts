@@ -1,9 +1,9 @@
 import { BowItemInfo, EntityData, EntityType, HitData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, ItemType, Point, SETTINGS, ToolItemInfo, TribeMemberAction, lerp, randFloat, randInt } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle } from "../generic-particles";
+import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle } from "../particles";
 import Board from "../Board";
-import { GAME_OBJECT_TEXTURE_SLOT_INDEXES, getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex, getTextureWidth } from "../texture-atlases/entity-texture-atlas";
 import { AudioFilePath, playSound } from "../sound";
 import { getFrameProgress } from "../GameObject";
 import CLIENT_ITEM_INFO_RECORD from "../client-item-info";
@@ -50,8 +50,6 @@ class Zombie extends Entity {
    private static readonly LUNGE_ANIMATION_TIME = 0.4;
    private static readonly HAND_LUNGE_DIRECTION = Math.PI / 5;
 
-   public readonly type = EntityType.zombie;
-
    private numFootstepsTaken = 0;
    private distanceTracker = 0;
 
@@ -74,8 +72,8 @@ class Zombie extends Entity {
    public action: TribeMemberAction;
    private lastActionTicks: number;
    
-   constructor(position: Point, id: number, renderDepth: number, zombieType: number, activeItemType: ItemType | null, lastActionTicks: number, action: TribeMemberAction) {
-      super(position, id, EntityType.zombie, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, zombieType: number, activeItemType: ItemType | null, lastActionTicks: number, action: TribeMemberAction) {
+      super(position, id, EntityType.zombie, ageTicks, renderDepth);
 
       this.activeItemType = activeItemType;
       this.lastActionTicks = lastActionTicks;
@@ -85,9 +83,7 @@ class Zombie extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            Zombie.RADIUS * 2,
-            Zombie.RADIUS * 2,
-            getGameObjectTextureArrayIndex(ZOMBIE_TEXTURE_SOURCES[zombieType]),
+            getEntityTextureArrayIndex(ZOMBIE_TEXTURE_SOURCES[zombieType]),
             2,
             0
          )
@@ -97,9 +93,7 @@ class Zombie extends Entity {
       for (let i = 0; i < 2; i++) {
          const renderPart = new RenderPart(
             this,
-            20,
-            20,
-            getGameObjectTextureArrayIndex(ZOMBIE_HAND_TEXTURE_SOURCES[zombieType]),
+            getEntityTextureArrayIndex(ZOMBIE_HAND_TEXTURE_SOURCES[zombieType]),
             1,
             0
          );
@@ -116,9 +110,7 @@ class Zombie extends Entity {
 
       this.activeItemRenderPart = new RenderPart(
          this,
-         Zombie.TOOL_ACTIVE_ITEM_SIZE,
-         Zombie.TOOL_ACTIVE_ITEM_SIZE,
-         activeItemType !== null ? getGameObjectTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItemType].entityTextureSource) : -1,
+         activeItemType !== null ? getEntityTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItemType].entityTextureSource) : -1,
          0,
          0
       );
@@ -149,7 +141,7 @@ class Zombie extends Entity {
       }
 
       if (Math.random() < 0.1 / SETTINGS.TPS) {
-         playSound(("zombie-ambient-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, this.position.x, this.position.y);
+         playSound(("zombie-ambient-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, 1, this.position.x, this.position.y);
       }
    }
 
@@ -168,14 +160,14 @@ class Zombie extends Entity {
          }
       }
 
-      playSound(("zombie-hurt-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, this.position.x, this.position.y);
+      playSound(("zombie-hurt-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, 1, this.position.x, this.position.y);
    }
 
    public onDie(): void {
       createBloodPoolParticle(this.position.x, this.position.y, 20);
       createBloodParticleFountain(this, Zombie.BLOOD_FOUNTAIN_INTERVAL, 1);
 
-      playSound("zombie-die-1.mp3", 0.4, this.position.x, this.position.y);
+      playSound("zombie-die-1.mp3", 0.4, 1, this.position.x, this.position.y);
    }
 
    public getSecondsSinceLastAction(): number {
@@ -242,7 +234,7 @@ class Zombie extends Entity {
       if (typeof this.activeItemRenderPart === "undefined") {
          itemSize = this.getActiveItemSize(this.activeItemType!);
       } else {
-         itemSize = this.activeItemRenderPart.width;
+         itemSize = getTextureWidth(this.activeItemRenderPart.textureArrayIndex) * 4;
       }
 
       const secondsSinceLastAction = this.getSecondsSinceLastAction();
@@ -317,17 +309,10 @@ class Zombie extends Entity {
          this.attachRenderPart(this.activeItemRenderPart);
          
          if (this.showLargeItemTexture(activeItemType)) {
-            this.activeItemRenderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItemType].textureSource)];
-            this.activeItemRenderPart.textureWidth = 16;
-            this.activeItemRenderPart.textureHeight = 16;
+            this.activeItemRenderPart.switchTextureSource(CLIENT_ITEM_INFO_RECORD[activeItemType].textureSource);
          } else {
-            this.activeItemRenderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItemType].entityTextureSource)];
-            this.activeItemRenderPart.textureWidth = 8;
-            this.activeItemRenderPart.textureHeight = 8;
+            this.activeItemRenderPart.switchTextureSource(CLIENT_ITEM_INFO_RECORD[activeItemType].entityTextureSource);
          }
-         const renderPartSize = this.getActiveItemSize(activeItemType);
-         this.activeItemRenderPart.width = renderPartSize;
-         this.activeItemRenderPart.height = renderPartSize;
       }
    }
 
@@ -343,7 +328,7 @@ class Zombie extends Entity {
          if (textureIdx >= Zombie.BOW_CHARGE_TEXTURE_SOURCES.length) {
             textureIdx = Zombie.BOW_CHARGE_TEXTURE_SOURCES.length - 1;
          }
-         this.activeItemRenderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureArrayIndex(Zombie.BOW_CHARGE_TEXTURE_SOURCES[textureIdx])];
+         this.activeItemRenderPart.switchTextureSource(Zombie.BOW_CHARGE_TEXTURE_SOURCES[textureIdx]);
       }
    }
 

@@ -2,6 +2,7 @@ import { TRIBE_INFO_RECORD, TechID, TechTreeUnlockProgress, TribeType } from "we
 
 /** Stores information about the player's tribe */
 class Tribe {
+   public readonly id: number;
    public readonly tribeType: TribeType;
    
    public hasTotem = false;
@@ -13,7 +14,8 @@ class Tribe {
    public unlockedTechs: ReadonlyArray<TechID> = new Array<TechID>();
    public techTreeUnlockProgress: TechTreeUnlockProgress = {};
 
-   constructor(tribeType: TribeType, numHuts: number) {
+   constructor(id: number, tribeType: TribeType, numHuts: number) {
+      this.id = id;
       this.tribeType = tribeType;
       
       const tribeInfo = TRIBE_INFO_RECORD[tribeType];

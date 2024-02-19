@@ -4,7 +4,6 @@
    bottom: 0.5rem;
    z-index: 2;
    display: flex;
-   /* justify-content: center; */
 }
 
 #hotbar .flex-container {
@@ -25,4 +24,9 @@
 
 #hotbar .inventory .item-slot {
    display: inline-block;
+}
+
+#hotbar .inventory .item-slot.dark img {
+   filter: brightness(0.5);
+   opacity: 0.8;
 }

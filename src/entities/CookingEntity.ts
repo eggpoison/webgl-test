@@ -12,8 +12,8 @@ abstract class CookingEntity extends Entity {
 
    private readonly light: Light;
 
-   constructor(position: Point, id: number, entityType: EntityType, renderDepth: number, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData, heatingProgress: number, isCooking: boolean) {
-      super(position, id, entityType, renderDepth);
+   constructor(position: Point, id: number, entityType: EntityType, ageTicks: number, renderDepth: number, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData, heatingProgress: number, isCooking: boolean) {
+      super(position, id, entityType, ageTicks, renderDepth);
 
       this.fuelInventory = createInventoryFromData(fuelInventory);
       this.ingredientInventory = createInventoryFromData(ingredientInventory);
@@ -23,8 +23,12 @@ abstract class CookingEntity extends Entity {
 
       this.light = {
          position: this.position,
+         intensity: 1,
          strength: 3.5,
-         radius: 40
+         radius: 40,
+         r: 0,
+         g: 0,
+         b: 0
       };
       Board.lights.push(this.light);
    }

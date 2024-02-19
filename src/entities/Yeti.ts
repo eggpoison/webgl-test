@@ -1,14 +1,12 @@
 import { Point, EntityData, lerp, HitData, randFloat, EntityType, SETTINGS } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle, createSnowParticle, createWhiteSmokeParticle } from "../generic-particles";
+import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle, createSnowParticle, createWhiteSmokeParticle } from "../particles";
 import Board from "../Board";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 
 class Yeti extends Entity {
    private static readonly SIZE = 128;
-
-   private static readonly PAW_SIZE = 28;
 
    private static readonly PAW_START_ANGLE = Math.PI/3;
    private static readonly PAW_END_ANGLE = Math.PI/6;
@@ -18,23 +16,19 @@ class Yeti extends Entity {
    private static readonly BLOOD_POOL_SIZE = 30;
    private static readonly BLOOD_FOUNTAIN_INTERVAL = 0.15;
 
-   public type = EntityType.yeti;
-
    private numFootstepsTaken = 0;
    private distanceTracker = 0;
 
    private lastAttackProgress = 1;
    private attackProgress = 1;
 
-   constructor(position: Point, id: number, renderDepth: number, attackProgress: number) {
-      super(position, id, EntityType.yeti, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, attackProgress: number) {
+      super(position, id, EntityType.yeti, ageTicks, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(
             this,
-            Yeti.SIZE,
-            Yeti.SIZE,
-            getGameObjectTextureArrayIndex("entities/yeti/yeti.png"),
+            getEntityTextureArrayIndex("entities/yeti/yeti.png"),
             1,
             0
          )
@@ -50,9 +44,7 @@ class Yeti extends Entity {
    private createPaw(i: number): void {
       const paw = new RenderPart(
          this,
-         Yeti.PAW_SIZE,
-         Yeti.PAW_SIZE,
-         getGameObjectTextureArrayIndex("entities/yeti/yeti-paw.png"),
+         getEntityTextureArrayIndex("entities/yeti/yeti-paw.png"),
          0,
          0
       );

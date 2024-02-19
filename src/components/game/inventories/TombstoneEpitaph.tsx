@@ -1,6 +1,6 @@
-import { EntityType, PlayerCauseOfDeath, veryBadHash } from "webgl-test-shared";
-import Entity from "../../../entities/Entity"
+import { PlayerCauseOfDeath, veryBadHash } from "webgl-test-shared";
 import Tombstone from "../../../entities/Tombstone";
+import { getSelectedEntity } from "../../../entity-selection";
 
 // __NAME__'s brain exploded.
 
@@ -30,28 +30,18 @@ const TOMBSTONE_DEATH_MESSAGES: Record<PlayerCauseOfDeath, string> = {
    [PlayerCauseOfDeath.spear]: ""
 };
 
-interface TombstoneInventoryProps {
-   readonly entity: Entity;
-}
+const TombstoneEpitaph = () => {
+   const tombstone = getSelectedEntity() as Tombstone;
 
-function assertEntityIsTombstone(entity: Entity): asserts entity is Tombstone {
-   if (entity.type !== EntityType.tombstone) {
-      throw new Error("Entity passed into TombstoneEpitaph wasn't a tombstone.");
-   }
-}
-
-const TombstoneEpitaph = (props: TombstoneInventoryProps) => {
-   assertEntityIsTombstone(props.entity);
-
-   const causeOfDeath = TOMBSTONE_DEATH_MESSAGES[props.entity.deathInfo!.causeOfDeath];
+   const causeOfDeath = TOMBSTONE_DEATH_MESSAGES[tombstone.deathInfo!.causeOfDeath];
 
    // Choose a random life message based off the entity's id
-   const hash = veryBadHash(props.entity.id.toString());
+   const hash = veryBadHash(tombstone.id.toString());
    const lifeMessage = LIFE_MESSAGES[hash % LIFE_MESSAGES.length];
 
    return <div id="tombstone-epitaph">
       <div className="content">
-         <h1 className="name">{props.entity.deathInfo!.username}</h1>
+         <h1 className="name">{tombstone.deathInfo!.username}</h1>
 
          <p className="life-message">{lifeMessage}</p>
 

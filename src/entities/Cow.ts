@@ -1,31 +1,26 @@
 import { CowSpecies, EntityData, EntityType, HitData, Point, SETTINGS, randFloat, randInt } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createDirtParticle, createFootprintParticle } from "../generic-particles";
+import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createDirtParticle, createFootprintParticle } from "../particles";
 import Board from "../Board";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { AudioFilePath, playSound } from "../sound";
 
 class Cow extends Entity {
    private static readonly HEAD_SIZE = 64;
-   private static readonly HEAD_IMAGE_WIDTH = 18 * 4;
-   private static readonly HEAD_IMAGE_HEIGHT = 16 * 4;
    /** How far the head overlaps the body */
    private static readonly HEAD_OVERLAP = 24;
-   private static readonly BODY_WIDTH = 64;
    private static readonly BODY_HEIGHT = 96;
 
    private static readonly BLOOD_FOUNTAIN_INTERVAL = 0.1;
-
-   public readonly type = EntityType.cow;
 
    private grazeProgress: number;
 
    private numFootstepsTaken = 0;
    private distanceTracker = 0;
 
-   constructor(position: Point, id: number, renderDepth: number, species: CowSpecies, grazeProgress: number) {
-      super(position, id, EntityType.cow, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, species: CowSpecies, grazeProgress: number) {
+      super(position, id, EntityType.cow, ageTicks, renderDepth);
 
       this.grazeProgress = grazeProgress;
 
@@ -34,9 +29,7 @@ class Cow extends Entity {
       // Body
       const bodyRenderPart = new RenderPart(
          this,
-         Cow.BODY_WIDTH,
-         Cow.BODY_HEIGHT,
-         getGameObjectTextureArrayIndex(`entities/cow/cow-body-${cowNum}.png`),
+         getEntityTextureArrayIndex(`entities/cow/cow-body-${cowNum}.png`),
          0,
          0
       );
@@ -46,9 +39,7 @@ class Cow extends Entity {
       // Head
       const headRenderPart = new RenderPart(
          this,
-         Cow.HEAD_IMAGE_WIDTH,
-         Cow.HEAD_IMAGE_HEIGHT,
-         getGameObjectTextureArrayIndex(`entities/cow/cow-head-${cowNum}.png`),
+         getEntityTextureArrayIndex(`entities/cow/cow-head-${cowNum}.png`),
          1,
          0
       );
@@ -79,7 +70,7 @@ class Cow extends Entity {
       }
 
       if (Math.random() < 0.1 / SETTINGS.TPS) {
-         playSound(("cow-ambient-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, this.position.x, this.position.y);
+         playSound(("cow-ambient-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.2, 1, this.position.x, this.position.y);
       }
    }
 
@@ -99,7 +90,7 @@ class Cow extends Entity {
          }
       }
 
-      playSound(("cow-hurt-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, this.position.x, this.position.y);
+      playSound(("cow-hurt-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, 1, this.position.x, this.position.y);
    }
 
    public onDie(): void {
@@ -109,7 +100,7 @@ class Cow extends Entity {
 
       createBloodParticleFountain(this, Cow.BLOOD_FOUNTAIN_INTERVAL, 1.1);
 
-      playSound("cow-die-1.mp3", 0.2, this.position.x, this.position.y);
+      playSound("cow-die-1.mp3", 0.2, 1, this.position.x, this.position.y);
    }
 
    public updateFromData(entityData: EntityData<EntityType.cow>): void {

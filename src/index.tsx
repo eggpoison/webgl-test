@@ -18,6 +18,7 @@ import "./css/game/inventories/tribesman-inventory.css";
 import "./css/game/inventories/barrel-inventory.css";
 import "./css/game/inventories/backpack-inventory.css";
 import "./css/game/inventories/tombstone-epitaph.css";
+import "./css/game/inventories/ammo-box-inventory.css";
 import "./css/game/charge-meter.css";
 import "./css/game/menus/crafting-menu.css";
 import "./css/game/nerd-vision/nerd-vision.css";
@@ -28,8 +29,9 @@ import "./css/game/nerd-vision/terminal.css";
 import "./css/game/nerd-vision/debug-info.css";
 import "./css/game/nerd-vision/frame-graph.css";
 import "./css/game/tech-tree.css";
+import "./css/game/tech-infocard.css";
 import "./css/game/research-bench-caption.css";
-import "./css/game/structure-shaping-menu.css";
+import "./css/game/blueprint-menu.css";
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement

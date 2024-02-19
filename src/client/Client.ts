@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TribeData, InventoryData, TribeMemberAction, TechID, Inventory, TRIBE_INFO_RECORD, StructureShapeType } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TribeData, InventoryData, TribeMemberAction, TechID, Inventory, TRIBE_INFO_RECORD, BuildingShapeType, randInt, StatusEffect, STRUCTURE_TYPES } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -8,8 +8,8 @@ import CircularHitbox from "../hitboxes/CircularHitbox";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { Tile } from "../Tile";
 import { gameScreenSetIsDead } from "../components/game/GameScreen";
-import { getInteractEntityID, removeSelectedItem, selectItem, updateInventoryIsOpen } from "../player-input";
-import { Hotbar_update } from "../components/game/inventories/Hotbar";
+import { removeSelectedItem, selectItem, updateInventoryIsOpen } from "../player-input";
+import { Hotbar_setHotbarSelectedItemSlot, Hotbar_update, Hotbar_updateLeftThrownBattleaxeItemID, Hotbar_updateRightThrownBattleaxeItemID } from "../components/game/inventories/Hotbar";
 import { setHeldItemVisual } from "../components/game/HeldItem";
 import { CraftingMenu_setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
 import { HealthBar_setHasFrostShield, updateHealthBar } from "../components/game/HealthBar";
@@ -21,11 +21,13 @@ import Board from "../Board";
 import { definiteGameState, latencyGameState } from "../game-state/game-states";
 import { BackpackInventoryMenu_update } from "../components/game/inventories/BackpackInventory";
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
-import { calculateDroppedItemRenderDepth, calculateEntityRenderDepth } from "../render-layers";
+import { calculateEntityRenderDepth } from "../render-layers";
 import GameObject from "../GameObject";
 import { createDamageNumber } from "../text-canvas";
 import { playSound } from "../sound";
-import { updateTechTree } from "../components/game/TechTree";
+import { closeTechTree, updateTechTree } from "../components/game/TechTree";
+import { TechInfocard_setSelectedTech } from "../components/game/TechInfocard";
+import { getSelectedEntityID } from "../entity-selection";
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -33,6 +35,22 @@ export type GameData = {
    readonly gameTicks: number;
    readonly tiles: Array<Array<Tile>>;
    readonly playerID: number;
+}
+
+const shouldShowDamageNumber = (attackerID: number): boolean => {
+   if (Player.instance !== null && attackerID === Player.instance.id) {
+      return true;
+   }
+
+   // Show friendly turrets' damage numbers
+   if (Board.entityRecord.hasOwnProperty(attackerID)) {
+      const entity = Board.entityRecord[attackerID];
+      if ((entity.type === EntityType.slingTurret || entity.type === EntityType.ballista) && (entity as any).tribeID === Game.tribe.id) {
+         return true;
+      }
+   }
+
+   return false;
 }
 
 abstract class Client {
@@ -176,7 +194,7 @@ abstract class Client {
       return tiles;
    }
 
-   public static unloadGameDataPacket(gameDataPacket: GameDataPacket): void {
+   public static processGameDataPacket(gameDataPacket: GameDataPacket): void {
       Board.ticks = gameDataPacket.serverTicks;
       updateDebugScreenTicks(gameDataPacket.serverTicks);
       Board.time = gameDataPacket.serverTime;
@@ -204,13 +222,11 @@ abstract class Client {
          for (const hitData of gameDataPacket.hitsTaken) {
             // Register hit
             if (Board.entityRecord.hasOwnProperty(hitData.hitEntityID)) {
-               // @Incomplete
                const entity = Board.entityRecord[hitData.hitEntityID];
                entity.registerHit(hitData);
             }
 
-            // Show damage numbers on player hits
-            if (hitData.attackerID === Player.instance.id) {
+            if (shouldShowDamageNumber(hitData.attackerID)) {
                if (Board.entityRecord.hasOwnProperty(hitData.hitEntityID)) {
                   const entity = Board.entityRecord[hitData.hitEntityID];
                   createDamageNumber(entity.position.x, entity.position.y, hitData.damage);
@@ -222,8 +238,10 @@ abstract class Client {
       }
 
       if (gameDataPacket.pickedUpItem) {
-         playSound("item-pickup.mp3", 0.3, Camera.position.x, Camera.position.y);
+         playSound("item-pickup.mp3", 0.3, 1, Camera.position.x, Camera.position.y);
       }
+
+      definiteGameState.hotbarCrossbowLoadProgressRecord = gameDataPacket.hotbarCrossbowLoadProgressRecord;
    }
 
    private static updateTribe(tribeData: TribeData): void {
@@ -238,6 +256,7 @@ abstract class Client {
       Game.tribe.techTreeUnlockProgress = tribeData.techTreeUnlockProgress;
 
       updateTechTree();
+      TechInfocard_setSelectedTech(Game.tribe.selectedTechID);
    }
 
    /**
@@ -258,14 +277,42 @@ abstract class Client {
             if (Board.entityRecord[entityData.id] !== Player.instance) {
                Board.entityRecord[entityData.id].updateFromData(entityData);
             } else {
-               (Board.entityRecord[entityData.id] as Player).genericUpdateFromData(entityData as unknown as EntityData<EntityType.player> | EntityData<EntityType.tribeWorker> | EntityData<EntityType.tribeWarrior>);
-            }
-            // @Incomplete
-            // if (entityData.amountHealed > 0) {
-            //    Board.entityRecord[entityData.id].createHealingParticles(entityData.amountHealed);
-            // }
+               const player = (Board.entityRecord[entityData.id] as Player);
 
-            Board.entityRecord[entityData.id].statusEffects = entityData.statusEffects;
+               player.genericUpdateFromData(entityData as unknown as EntityData<EntityType.player>);
+
+               // @Cleanup @Hack
+               const rightThrownBattleaxeItemID = entityData.clientArgs[9];
+               player.rightThrownBattleaxeItemID = rightThrownBattleaxeItemID;
+               Hotbar_updateRightThrownBattleaxeItemID(rightThrownBattleaxeItemID);
+               const leftThrownBattleaxeItemID = entityData.clientArgs[14] as number;
+               player.leftThrownBattleaxeItemID = leftThrownBattleaxeItemID;
+               Hotbar_updateLeftThrownBattleaxeItemID(leftThrownBattleaxeItemID);
+            }
+
+            const entity = Board.entityRecord[entityData.id];
+            
+            if (entityData.amountHealed > 0) {
+               entity.createHealingParticles(entityData.amountHealed);
+
+               // @Hack @Incomplete: This will trigger the repair sound effect even if a hammer isn't the one healing the structure
+               if (STRUCTURE_TYPES.includes(entity.type as any)) { // @Cleanup
+                  playSound("repair.mp3", 0.4, 1, entity.position.x, entity.position.y);
+               }
+            }
+
+            for (const statusEffectData of entityData.statusEffects) {
+               if (!entity.hasStatusEffect(statusEffectData.type)) {
+                  switch (statusEffectData.type) {
+                     case StatusEffect.freezing: {
+                        playSound("freezing.mp3", 0.4, 1, entity.position.x, entity.position.y)
+                        break;
+                     }
+                  }
+               }
+            }
+            
+            entity.statusEffects = entityData.statusEffects;
          } else {
             this.createEntityFromData(entityData);
          }
@@ -276,22 +323,7 @@ abstract class Client {
       // All known entity ids which haven't been removed are ones which are dead
       for (const id of knownEntityIDs) {
          const entity = Board.entityRecord[id];
-
-         if (entity.isVisible()) {
-            if (typeof entity.onDie !== "undefined") {
-               entity.onDie();
-            }
-         }
-
-         if (entity.type === EntityType.player) {
-            const idx = Board.players.indexOf(entity as Player);
-            if (idx !== -1) {
-               Board.players.splice(idx, 1);
-            }
-         }
-
          Board.removeGameObject(entity);
-         delete Board.entityRecord[id];
       }
    }
 
@@ -335,6 +367,10 @@ abstract class Client {
       const armourSlotHasChanged = this.inventoryHasChanged(definiteGameState.armourSlot, playerInventoryData.armourSlot);
       updateInventoryFromData(definiteGameState.armourSlot, playerInventoryData.armourSlot);
 
+      // Glove slot
+      const gloveSlotHasChanged = this.inventoryHasChanged(definiteGameState.gloveSlot, playerInventoryData.gloveSlot);
+      updateInventoryFromData(definiteGameState.gloveSlot, playerInventoryData.gloveSlot);
+
       // Offhand
       const offhandHasChanged = this.inventoryHasChanged(definiteGameState.offhandInventory, playerInventoryData.offhand);
       updateInventoryFromData(definiteGameState.offhandInventory, playerInventoryData.offhand);
@@ -343,7 +379,7 @@ abstract class Client {
          updateInventoryFromData(Player.instance.armourSlotInventory, playerInventoryData.armourSlot);
       }
 
-      if (hotbarHasChanged || backpackSlotHasChanged || armourSlotHasChanged || offhandHasChanged) {
+      if (hotbarHasChanged || backpackSlotHasChanged || armourSlotHasChanged || offhandHasChanged || gloveSlotHasChanged) {
          Hotbar_update();
       }
       if (backpackHasChanged || backpackSlotHasChanged) {
@@ -394,16 +430,14 @@ abstract class Client {
    private static createEntityFromData(entityData: EntityData): void {
       const position = Point.unpackage(entityData.position); 
 
-      const renderDepth = calculateDroppedItemRenderDepth();
+      const renderDepth = calculateEntityRenderDepth(entityData.type);
 
       // Create the entity
       const entityConstructor = ENTITY_CLASS_RECORD[entityData.type]() as EntityClassType<EntityType>;
-      const entity = new entityConstructor(position, entityData.id, renderDepth, ...entityData.clientArgs);
+      const entity = new entityConstructor(position, entityData.id, entityData.ageTicks, renderDepth, ...entityData.clientArgs);
 
       entity.velocity = Point.unpackage(entityData.velocity);
       entity.rotation = entityData.rotation;
-      entity.mass = entityData.mass;
-      entity.ageTicks = entityData.ageTicks;
 
       this.addHitboxesToGameObject(entity, entityData);
 
@@ -430,7 +464,7 @@ abstract class Client {
       for (let i = 0; i < data.circularHitboxes.length; i++) {
          const hitboxData = data.circularHitboxes[i];
 
-         const hitbox = new CircularHitbox(hitboxData.radius);
+         const hitbox = new CircularHitbox(hitboxData.mass, hitboxData.radius, hitboxData.localID);
          hitbox.offset.x = hitboxData.offsetX;
          hitbox.offset.y = hitboxData.offsetY;
 
@@ -440,9 +474,10 @@ abstract class Client {
       for (let i = 0; i < data.rectangularHitboxes.length; i++) {
          const hitboxData = data.rectangularHitboxes[i];
 
-         const hitbox = new RectangularHitbox(hitboxData.width, hitboxData.height);
+         const hitbox = new RectangularHitbox(hitboxData.mass, hitboxData.width, hitboxData.height, hitboxData.localID);
          hitbox.offset.x = hitboxData.offsetX;
          hitbox.offset.y = hitboxData.offsetY;
+         hitbox.rotation = hitboxData.rotation;
 
          gameObject.addRectangularHitbox(hitbox);
       }
@@ -468,13 +503,16 @@ abstract class Client {
    }
 
    private static respawnPlayer(respawnDataPacket: RespawnDataPacket): void {
+      latencyGameState.selectedHotbarItemSlot = 1;
+      Hotbar_setHotbarSelectedItemSlot(1);
+      
       const maxHealth = TRIBE_INFO_RECORD[Game.tribe.tribeType].maxHealthPlayer;
       definiteGameState.setPlayerHealth(maxHealth);
       updateHealthBar(maxHealth);
       
       const spawnPosition = Point.unpackage(respawnDataPacket.spawnPosition);
       const renderDepth = calculateEntityRenderDepth(EntityType.player);
-      const player = new Player(spawnPosition, respawnDataPacket.playerID, renderDepth, null, TribeType.plainspeople, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, null, TribeMemberAction.none, -1, -99999, false, -1, definiteGameState.playerUsername);
+      const player = new Player(spawnPosition, respawnDataPacket.playerID, 0, renderDepth, null, Game.tribe.tribeType, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, -1, null, TribeMemberAction.none, -1, -99999, -1, false, Game.tribe.tribeType === TribeType.goblins ? randInt(1, 5) : -1, definiteGameState.playerUsername);
       player.addCircularHitbox(Player.createNewPlayerHitbox());
       Player.setInstancePlayer(player);
       Board.addEntity(player);
@@ -512,6 +550,15 @@ abstract class Client {
 
    public static sendPlayerDataPacket(): void {
       if (Game.isRunning && this.socket !== null && Player.instance !== null) {
+         let interactingEntityID = -1;
+         const selectedEntityID = getSelectedEntityID();
+         if (Board.entityRecord.hasOwnProperty(selectedEntityID)) {
+            const entity = Board.entityRecord[selectedEntityID];
+            if (entity.type === EntityType.tribeWorker || entity.type === EntityType.tribeWarrior) {
+               interactingEntityID = entity.id;
+            }
+         }
+         
          const packet: PlayerDataPacket = {
             position: Player.instance.position.package(),
             velocity: Player.instance.velocity.package() || null,
@@ -521,7 +568,7 @@ abstract class Client {
             selectedItemSlot: latencyGameState.selectedHotbarItemSlot,
             mainAction: latencyGameState.mainAction,
             offhandAction: latencyGameState.offhandAction,
-            interactingEntityID: getInteractEntityID()
+            interactingEntityID: interactingEntityID
          };
 
          this.socket.emit("player_data_packet", packet);
@@ -604,7 +651,6 @@ abstract class Client {
    private static killPlayer(): void {
       // Remove the player from the game
       Board.removeGameObject(Player.instance!);
-      delete Board.entityRecord[Player.instance!.id];
       Player.instance = null;
 
       latencyGameState.resetFlags();
@@ -612,6 +658,7 @@ abstract class Client {
 
       gameScreenSetIsDead(true);
       updateInventoryIsOpen(false);
+      closeTechTree();
    }
 
    public static sendSelectTech(techID: TechID): void {
@@ -626,15 +673,21 @@ abstract class Client {
       }
    }
 
+   public static sendForceUnlockTech(techID: TechID): void {
+      if (Game.isRunning && this.socket !== null) {
+         this.socket.emit("force_unlock_tech", techID);
+      }
+   }
+
    public static sendStudyTech(studyAmount: number): void {
       if (Game.isRunning && this.socket !== null) {
          this.socket.emit("study_tech", studyAmount);
       }
    }
 
-   public static sendShapeStructure(structureID: number, type: StructureShapeType): void {
+   public static sendShapeStructure(structureID: number, shapeType: BuildingShapeType): void {
       if (Game.isRunning && this.socket !== null) {
-         this.socket.emit("shape_structure", structureID, type);
+         this.socket.emit("shape_structure", structureID, shapeType);
       }
    }
 

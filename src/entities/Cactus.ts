@@ -4,30 +4,25 @@ import Entity from "./Entity";
 import Particle from "../Particle";
 import Board from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 
 class Cactus extends Entity {
    private static readonly CACTUS_SPINE_PARTICLE_COLOUR: ParticleColour = [0, 0, 0];
 
+   // @Incomplete
    private static readonly FLOWER_PARTICLE_FADE_TIME = 1;
    
    private static readonly RADIUS = 40;
 
-   private static readonly LIMB_SIZE = 36;
-
-   public type = EntityType.cactus;
-
    private readonly flowerData: ReadonlyArray<CactusBodyFlowerData>;
    private readonly limbData: ReadonlyArray<CactusLimbData>;
 
-   constructor(position: Point, id: number, renderDepth: number, flowers: ReadonlyArray<CactusBodyFlowerData>, limbs: ReadonlyArray<CactusLimbData>) {
-      super(position, id, EntityType.cactus, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, flowers: ReadonlyArray<CactusBodyFlowerData>, limbs: ReadonlyArray<CactusLimbData>) {
+      super(position, id, EntityType.cactus, ageTicks, renderDepth);
 
       const baseRenderPart = new RenderPart(
          this,
-         Cactus.RADIUS * 2,
-         Cactus.RADIUS * 2,
-         getGameObjectTextureArrayIndex("entities/cactus/cactus.png"),
+         getEntityTextureArrayIndex("entities/cactus/cactus.png"),
          2,
          0
       );
@@ -40,13 +35,9 @@ class Cactus extends Entity {
       for (let i = 0; i < flowers.length; i++) {
          const flowerInfo = flowers[i];
 
-         const flowerSize = (flowerInfo.type === 4 || flowerInfo.size === CactusFlowerSize.large) ? 20 : 16;
-
          const renderPart = new RenderPart(
             this,
-            flowerSize,
-            flowerSize,
-            getGameObjectTextureArrayIndex(this.getFlowerTextureSource(flowerInfo.type, flowerInfo.size)),
+            getEntityTextureArrayIndex(this.getFlowerTextureSource(flowerInfo.type, flowerInfo.size)),
             3 + Math.random(),
             flowerInfo.rotation
          );
@@ -61,28 +52,24 @@ class Cactus extends Entity {
 
          const limbRenderPart = new RenderPart(
             baseRenderPart,
-            Cactus.LIMB_SIZE,
-            Cactus.LIMB_SIZE,
-            getGameObjectTextureArrayIndex("entities/cactus/cactus-limb.png"),
+            getEntityTextureArrayIndex("entities/cactus/cactus-limb.png"),
             Math.random(),
             2 * Math.PI * Math.random()
          )
          limbRenderPart.offset = Point.fromVectorForm(Cactus.RADIUS, limbInfo.direction);
-         baseRenderPart.attachRenderPart(limbRenderPart);
+         this.attachRenderPart(limbRenderPart);
          
          if (typeof limbInfo.flower !== "undefined") {
             const flowerInfo = limbInfo.flower;
 
             const flowerRenderPart = new RenderPart(
                limbRenderPart,
-               16,
-               16,
-               getGameObjectTextureArrayIndex(this.getFlowerTextureSource(flowerInfo.type, CactusFlowerSize.small)),
+               getEntityTextureArrayIndex(this.getFlowerTextureSource(flowerInfo.type, CactusFlowerSize.small)),
                1 + Math.random(),
                flowerInfo.rotation
             )
             flowerRenderPart.offset = Point.fromVectorForm(flowerInfo.height, flowerInfo.direction);
-            limbRenderPart.attachRenderPart(flowerRenderPart);
+            this.attachRenderPart(flowerRenderPart);
          }
       }
    }

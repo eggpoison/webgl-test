@@ -3,8 +3,7 @@ import { Tile } from "../Tile";
 import Camera from "../Camera";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 import Board from "../Board";
-import { RenderChunkAmbientOcclusionInfo, RENDER_CHUNK_SIZE, getRenderChunk } from "./render-chunks";
-import { NEIGHBOUR_OFFSETS } from "../utils";
+import { RenderChunkAmbientOcclusionInfo, getRenderChunkAmbientOcclusionInfo, getRenderChunkMaxTileX, getRenderChunkMaxTileY, getRenderChunkMinTileX, getRenderChunkMinTileY } from "./render-chunks";
 
 let program: WebGLProgram;
 
@@ -120,36 +119,27 @@ export function createAmbientOcclusionShaders(): void {
 }
 
 const tileIsWallInt = (tileX: number, tileY: number): number => {
-   const tile = Board.getEdgeTile(tileX, tileY);
-   return (tile !== null && tile.isWall) ? 1 : 0;
+   if (Board.tileIsWithinEdge(tileX, tileY)) {
+      const tile = Board.getTile(tileX, tileY);
+      return tile.isWall ? 1 : 0;
+   }
+
+   return 0;
 }
 
 export function calculateAmbientOcclusionInfo(renderChunkX: number, renderChunkY: number): RenderChunkAmbientOcclusionInfo | null {
-   const minTileX = renderChunkX * RENDER_CHUNK_SIZE;
-   const maxTileX = (renderChunkX + 1) * RENDER_CHUNK_SIZE - 1;
-   const minTileY = renderChunkY * RENDER_CHUNK_SIZE;
-   const maxTileY = (renderChunkY + 1) * RENDER_CHUNK_SIZE - 1;
+   const minTileX = getRenderChunkMinTileX(renderChunkX);
+   const maxTileX = getRenderChunkMaxTileX(renderChunkX);
+   const minTileY = getRenderChunkMinTileY(renderChunkY);
+   const maxTileY = getRenderChunkMaxTileY(renderChunkY);
 
    // Find all tiles bordering a wall in the render chunk
    const edgeTiles = new Array<Tile>();
    for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
       for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
-         const tile = Board.getEdgeTile(tileX, tileY);
-         if (tile === null || tile.isWall) {
-            continue;
-         }
-
-         // Check for neighbouring wall tiles
-         for (const offset of NEIGHBOUR_OFFSETS) {
-            const neighbourTileX = tile.x + offset[0];
-            const neighbourTileY = tile.y + offset[1];
-
-            // If the tile is bordering a wall, add it and move on to the next tile
-            const neighbourTile = Board.getEdgeTile(neighbourTileX, neighbourTileY);
-            if (neighbourTile !== null && neighbourTile.isWall) {
-               edgeTiles.push(tile);
-               break;
-            }
+         const tile = Board.getTile(tileX, tileY);
+         if (!tile.isWall && tile.bordersWall) {
+            edgeTiles.push(tile);
          }
       }
    }
@@ -303,14 +293,14 @@ export function renderAmbientOcclusion(): void {
 
    for (let renderChunkX = Camera.minVisibleRenderChunkX; renderChunkX <= Camera.maxVisibleRenderChunkX; renderChunkX++) {
       for (let renderChunkY = Camera.minVisibleRenderChunkY; renderChunkY <= Camera.maxVisibleRenderChunkY; renderChunkY++) {
-         const renderInfo = getRenderChunk(renderChunkX, renderChunkY).ambientOcclusionInfo;
-         if (renderInfo === null) {
+         const ambientOcclusionInfo = getRenderChunkAmbientOcclusionInfo(renderChunkX, renderChunkY);
+         if (ambientOcclusionInfo === null) {
             continue;
          }
 
-         gl.bindVertexArray(renderInfo.vao);
+         gl.bindVertexArray(ambientOcclusionInfo.vao);
 
-         gl.drawArrays(gl.TRIANGLES, 0, renderInfo.vertexCount);
+         gl.drawArrays(gl.TRIANGLES, 0, ambientOcclusionInfo.vertexCount);
       }
    }
 

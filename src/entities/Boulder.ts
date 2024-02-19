@@ -1,29 +1,25 @@
 import { EntityType, Point, randFloat, randItem } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import { createRockParticle, createRockSpeckParticle } from "../generic-particles";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { createRockParticle, createRockSpeckParticle } from "../particles";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { ROCK_DESTROY_SOUNDS, ROCK_HIT_SOUNDS, playSound } from "../sound";
 
 class Boulder extends Entity {
    private static readonly RADIUS = 40;
-
-   public type = EntityType.boulder;
 
    private static readonly TEXTURE_SOURCES = [
       "entities/boulder/boulder1.png",
       "entities/boulder/boulder2.png"
    ];
 
-   constructor(position: Point, id: number, renderDepth: number, boulderType: number) {
-      super(position, id, EntityType.boulder, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, boulderType: number) {
+      super(position, id, EntityType.boulder, ageTicks, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(
             this,
-            Boulder.RADIUS * 2,
-            Boulder.RADIUS * 2,
-            getGameObjectTextureArrayIndex(Boulder.TEXTURE_SOURCES[boulderType]),
+            getEntityTextureArrayIndex(Boulder.TEXTURE_SOURCES[boulderType]),
             0,
             0
          )
@@ -43,10 +39,10 @@ class Boulder extends Entity {
       }
 
       for (let i = 0; i < 5; i++) {
-         createRockSpeckParticle(this.position.x, this.position.y, Boulder.RADIUS);
+         createRockSpeckParticle(this.position.x, this.position.y, Boulder.RADIUS, 0, 0);
       }
 
-      playSound(randItem(ROCK_HIT_SOUNDS), 0.3, this.position.x, this.position.y);
+      playSound(randItem(ROCK_HIT_SOUNDS), 0.3, 1, this.position.x, this.position.y);
    }
 
    public onDie(): void {
@@ -60,10 +56,10 @@ class Boulder extends Entity {
       }
 
       for (let i = 0; i < 5; i++) {
-         createRockSpeckParticle(this.position.x, this.position.y, Boulder.RADIUS);
+         createRockSpeckParticle(this.position.x, this.position.y, Boulder.RADIUS, 0, 0);
       }
 
-      playSound(randItem(ROCK_DESTROY_SOUNDS), 0.4, this.position.x, this.position.y);
+      playSound(randItem(ROCK_DESTROY_SOUNDS), 0.4, 1, this.position.x, this.position.y);
    }
 }
 

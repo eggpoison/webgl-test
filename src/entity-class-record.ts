@@ -21,7 +21,7 @@ import Snowball from "./entities/Snowball";
 import Krumblid from "./entities/Krumblid";
 import FrozenYeti from "./entities/FrozenYeti";
 import Fish from "./entities/Fish";
-import DroppedItem from "./items/DroppedItem";
+import ItemEntity from "./items/DroppedItem";
 import GameObject from "./GameObject";
 import WoodenArrowProjectile from "./projectiles/WoodenArrowProjectile";
 import IceShardsProjectile from "./projectiles/IceShardsProjectile";
@@ -35,9 +35,23 @@ import WoodenWall from "./entities/WoodenWall";
 import SlimeSpit from "./projectiles/SlimeSpit";
 import SpitPoison from "./projectiles/SpitPoison";
 import WoodenDoor from "./entities/WoodenDoor";
+import BattleaxeProjectile from "./projectiles/BattleaxeProjectile";
+import Golem from "./entities/Golem";
+import PlanterBox from "./entities/PlanterBox";
+import IceArrow from "./projectiles/IceArrow";
+import Pebblum from "./entities/Pebblum";
+import WoodenEmbrasure from "./entities/WoodenEmbrasure";
+import WoodenFloorSpikes from "./entities/WoodenFloorSpikes";
+import WoodenWallSpikes from "./entities/WoodenWallSpikes";
+import FloorPunjiSticks from "./entities/FloorPunjiSticks";
+import WallPunjiSticks from "./entities/WallPunjiSticks";
+import BlueprintEntity from "./entities/BlueprintEntity";
+import Ballista from "./entities/Ballista";
+import SlingTurret from "./entities/SlingTurret";
 
-export type EntityClassType<T extends EntityType> = new (position: Point, id: number, renderDepth: number, ...clientParams: Parameters<typeof EntityInfoClientArgs[T]>) => GameObject;
+export type EntityClassType<T extends EntityType> = new (position: Point, id: number, ageTicks: number, renderDepth: number, ...clientParams: Parameters<typeof EntityInfoClientArgs[T]>) => GameObject;
 
+// @Incomplete: Move to server-like system
 const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
    [EntityType.cow]: () => Cow,
    [EntityType.zombie]: () => Zombie,
@@ -64,7 +78,7 @@ const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
    [EntityType.krumblid]: () => Krumblid,
    [EntityType.frozenYeti]: () => FrozenYeti,
    [EntityType.fish]: () => Fish,
-   [EntityType.itemEntity]: () => DroppedItem,
+   [EntityType.itemEntity]: () => ItemEntity,
    [EntityType.woodenArrowProjectile]: () => WoodenArrowProjectile,
    [EntityType.iceShardProjectile]: () => IceShardsProjectile,
    [EntityType.rockSpikeProjectile]: () => RockSpikeProjectile,
@@ -73,7 +87,20 @@ const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
    [EntityType.woodenWall]: () => WoodenWall,
    [EntityType.slimeSpit]: () => SlimeSpit,
    [EntityType.spitPoison]: () => SpitPoison,
-   [EntityType.woodenDoor]: () => WoodenDoor
+   [EntityType.woodenDoor]: () => WoodenDoor,
+   [EntityType.battleaxeProjectile]: () => BattleaxeProjectile,
+   [EntityType.golem]: () => Golem,
+   [EntityType.planterBox]: () => PlanterBox,
+   [EntityType.iceArrow]: () => IceArrow,
+   [EntityType.pebblum]: () => Pebblum,
+   [EntityType.woodenEmbrasure]: () => WoodenEmbrasure,
+   [EntityType.woodenFloorSpikes]: () => WoodenFloorSpikes,
+   [EntityType.woodenWallSpikes]: () => WoodenWallSpikes,
+   [EntityType.floorPunjiSticks]: () => FloorPunjiSticks,
+   [EntityType.wallPunjiSticks]: () => WallPunjiSticks,
+   [EntityType.blueprintEntity]: () => BlueprintEntity,
+   [EntityType.ballista]: () => Ballista,
+   [EntityType.slingTurret]: () => SlingTurret
 };
 
 export default ENTITY_CLASS_RECORD;

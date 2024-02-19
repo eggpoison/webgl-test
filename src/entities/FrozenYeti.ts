@@ -5,8 +5,8 @@ import Player from "./Player";
 import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
 import Board from "../Board";
-import { BloodParticleSize, createRockParticle, createSnowParticle, createWhiteSmokeParticle } from "../generic-particles";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { BloodParticleSize, createRockParticle, createSnowParticle, createWhiteSmokeParticle } from "../particles";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 
 const createBiteParticle = (spawnPositionX: number, spawnPositionY: number): void => {
    const lifetime = 0.4;
@@ -125,7 +125,6 @@ class FrozenYeti extends Entity {
    private static readonly HEAD_SIZE = 80;
    private static readonly HEAD_DISTANCE = 60;
 
-   private static readonly PAW_SIZE = 32;
    private static readonly PAW_OFFSET = 80;
    private static readonly PAW_RESTING_ANGLE = Math.PI / 3.5;
    private static readonly PAW_HIGH_ANGLE = Math.PI / 6;
@@ -133,8 +132,6 @@ class FrozenYeti extends Entity {
    private static readonly ROAR_ARC = Math.PI / 6;
    private static readonly ROAR_REACH = 450;
    private static readonly SNOWBALL_THROW_OFFSET = 150;
-
-   public readonly type = EntityType.frozenYeti;
 
    private readonly headRenderPart: RenderPart;
    /** Index 0: left paw, index 1: right paw */
@@ -144,8 +141,8 @@ class FrozenYeti extends Entity {
    private attackStage: number;
    private stageProgress: number;
    
-   constructor(position: Point, id: number, renderDepth: number, attackType: FrozenYetiAttackType, attackStage: number, stageProgress: number) {
-      super(position, id, EntityType.frozenYeti, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, attackType: FrozenYetiAttackType, attackStage: number, stageProgress: number) {
+      super(position, id, EntityType.frozenYeti, ageTicks, renderDepth);
 
       this.attackType = attackType;
       this.attackStage = attackStage;
@@ -153,18 +150,14 @@ class FrozenYeti extends Entity {
 
       this.attachRenderPart(new RenderPart(
          this,
-         FrozenYeti.SIZE,
-         FrozenYeti.SIZE,
-         getGameObjectTextureArrayIndex("entities/frozen-yeti/frozen-yeti.png"),
+         getEntityTextureArrayIndex("entities/frozen-yeti/frozen-yeti.png"),
          1,
          0
       ));
 
       this.headRenderPart = new RenderPart(
          this,
-         FrozenYeti.HEAD_SIZE,
-         FrozenYeti.HEAD_SIZE,
-         getGameObjectTextureArrayIndex("entities/frozen-yeti/frozen-yeti-head.png"),
+         getEntityTextureArrayIndex("entities/frozen-yeti/frozen-yeti-head.png"),
          2,
          0
       );
@@ -175,9 +168,7 @@ class FrozenYeti extends Entity {
       for (let i = 0; i < 2; i++) {
          const paw = new RenderPart(
             this,
-            FrozenYeti.PAW_SIZE,
-            FrozenYeti.PAW_SIZE,
-            getGameObjectTextureArrayIndex("entities/frozen-yeti/frozen-yeti-paw.png"),
+            getEntityTextureArrayIndex("entities/frozen-yeti/frozen-yeti-paw.png"),
             0,
             0
          );

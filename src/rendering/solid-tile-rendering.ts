@@ -2,7 +2,7 @@ import { SETTINGS, TileType } from "webgl-test-shared";
 import Camera from "../Camera";
 import { TEXTURE_IMAGE_RECORD } from "../textures";
 import { gl, createWebGLProgram, CAMERA_UNIFORM_BUFFER_BINDING_INDEX } from "../webgl";
-import { RENDER_CHUNK_SIZE, RenderChunkSolidTileInfo, getRenderChunk } from "./render-chunks";
+import { RenderChunkSolidTileInfo, getRenderChunkMaxTileX, getRenderChunkMaxTileY, getRenderChunkMinTileX, getRenderChunkMinTileY, getRenderChunkSolidTileInfo } from "./render-chunks";
 import Board from "../Board";
 import { TILE_TYPE_TEXTURE_SOURCES } from "../tile-type-texture-sources";
 
@@ -151,16 +151,16 @@ export function createSolidTileShaders(): void {
 }
 
 const updateVertexData = (data: Float32Array, renderChunkX: number, renderChunkY: number): void => {
-   const tileMinX = renderChunkX * RENDER_CHUNK_SIZE;
-   const tileMaxX = (renderChunkX + 1) * RENDER_CHUNK_SIZE - 1;
-   const tileMinY = renderChunkY * RENDER_CHUNK_SIZE;
-   const tileMaxY = (renderChunkY + 1) * RENDER_CHUNK_SIZE - 1;
+   const minTileX = getRenderChunkMinTileX(renderChunkX);
+   const maxTileX = getRenderChunkMaxTileX(renderChunkX);
+   const minTileY = getRenderChunkMinTileY(renderChunkY);
+   const maxTileY = getRenderChunkMaxTileY(renderChunkY);
    
    let i = 0;
-   for (let tileX = tileMinX; tileX <= tileMaxX; tileX++) {
-      for (let tileY = tileMinY; tileY <= tileMaxY; tileY++) {
-         const tile = Board.getEdgeTile(tileX, tileY);
-         if (tile === null || tile.type === TileType.water) {
+   for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
+      for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
+         const tile = Board.getTile(tileX, tileY);
+         if (tile.type === TileType.water) {
             continue;
          }
 
@@ -235,16 +235,16 @@ const updateVertexData = (data: Float32Array, renderChunkX: number, renderChunkY
 // @Cleanup A lot of the webgl calls in create and update render data are the same
 
 export function createSolidTileRenderChunkData(renderChunkX: number, renderChunkY: number): RenderChunkSolidTileInfo {
-   const tileMinX = renderChunkX * RENDER_CHUNK_SIZE;
-   const tileMaxX = (renderChunkX + 1) * RENDER_CHUNK_SIZE - 1;
-   const tileMinY = renderChunkY * RENDER_CHUNK_SIZE;
-   const tileMaxY = (renderChunkY + 1) * RENDER_CHUNK_SIZE - 1;
+   const minTileX = getRenderChunkMinTileX(renderChunkX);
+   const maxTileX = getRenderChunkMaxTileX(renderChunkX);
+   const minTileY = getRenderChunkMinTileY(renderChunkY);
+   const maxTileY = getRenderChunkMaxTileY(renderChunkY);
 
    let numTiles = 0;
-   for (let tileX = tileMinX; tileX <= tileMaxX; tileX++) {
-      for (let tileY = tileMinY; tileY <= tileMaxY; tileY++) {
-         const tile = Board.getEdgeTile(tileX, tileY);
-         if (tile !== null && tile.type !== TileType.water) {
+   for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
+      for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
+         const tile = Board.getTile(tileX, tileY);
+         if (tile.type !== TileType.water) {
             numTiles++;
          }
       }
@@ -282,7 +282,7 @@ export function createSolidTileRenderChunkData(renderChunkX: number, renderChunk
 }
 
 export function recalculateSolidTileRenderChunkData(renderChunkX: number, renderChunkY: number): void {
-   const info = getRenderChunk(renderChunkX, renderChunkY).solidTileInfo;
+   const info = getRenderChunkSolidTileInfo(renderChunkX, renderChunkY);
    
    const vertexData = new Float32Array(info.vertexCount);
    updateVertexData(vertexData, renderChunkX, renderChunkY);
@@ -315,9 +315,9 @@ export function renderSolidTiles(): void {
    
    for (let renderChunkX = Camera.minVisibleRenderChunkX; renderChunkX <= Camera.maxVisibleRenderChunkX; renderChunkX++) {
       for (let renderChunkY = Camera.minVisibleRenderChunkY; renderChunkY <= Camera.maxVisibleRenderChunkY; renderChunkY++) {
-         const renderChunkInfo = getRenderChunk(renderChunkX, renderChunkY).solidTileInfo;
-         gl.bindVertexArray(renderChunkInfo.vao);
-         gl.drawArrays(gl.TRIANGLES, 0, renderChunkInfo.vertexCount);
+         const solidTileInfo = getRenderChunkSolidTileInfo(renderChunkX, renderChunkY);
+         gl.bindVertexArray(solidTileInfo.vao);
+         gl.drawArrays(gl.TRIANGLES, 0, solidTileInfo.vertexCount);
       }
    }
 

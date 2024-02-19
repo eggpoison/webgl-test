@@ -1,4 +1,4 @@
-import { BowItemInfo, ITEM_INFO_RECORD, SETTINGS, TribeMemberAction } from "webgl-test-shared";
+import { SETTINGS } from "webgl-test-shared";
 import { halfWindowHeight, halfWindowWidth } from "./webgl";
 import CLIENT_SETTINGS from "./client-settings";
 import { updateCursorTooltip } from "./components/game/dev/CursorTooltip";
@@ -9,9 +9,6 @@ import { updateDebugInfoEntity, updateDebugInfoTile } from "./components/game/de
 import { isDev } from "./utils";
 import Board from "./Board";
 import { Tile } from "./Tile";
-import { definiteGameState, latencyGameState } from "./game-state/game-states";
-import { hideChargeMeter, showChargeMeter, updateChargeMeterProgress } from "./components/game/ChargeMeter";
-import Player from "./entities/Player";
 
 export let cursorX: number | null = null;
 export let cursorY: number | null = null;
@@ -59,6 +56,7 @@ export function getMouseTargetTile(): Tile | null {
 /**
  * Finds the entity the user is hovering over.
  */
+// @Cleanup: Use the highlighted entity system instead of having this custom function
 export function getMouseTargetEntity(): Entity | null {
    if (Game.cursorPositionX === null || Game.cursorPositionY === null) return null;
    
@@ -122,24 +120,4 @@ export function renderCursorTooltip(): void {
    if (debugData === null || targetEntity.id === debugData.gameObjectID) {
       updateCursorTooltip(debugData, entityScreenPositionX, entityScreenPositionY);
    }
-}
-
-export function updateChargeMeter(): void {
-   if (latencyGameState.mainAction !== TribeMemberAction.chargeBow || Player.instance === null) {
-      hideChargeMeter();
-      return;
-   }
-
-   showChargeMeter();
-
-   const selectedItem = definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot];
-   const bowInfo = ITEM_INFO_RECORD[selectedItem.type] as BowItemInfo;
-
-   const secondsSinceLastAction = Player.instance.getSecondsSinceLastAction(Player.instance.rightLastActionTicks);
-   let chargeProgress = secondsSinceLastAction / (bowInfo.shotCooldownTicks / SETTINGS.TPS);
-   if (chargeProgress > 1) {
-      chargeProgress = 1;
-   }
-
-   updateChargeMeterProgress(chargeProgress);
 }

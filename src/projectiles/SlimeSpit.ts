@@ -1,6 +1,6 @@
 import { EntityType, Point, SETTINGS, lerp, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import GameObject from "../GameObject";
 import Board from "../Board";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
@@ -12,16 +12,14 @@ const POISON_COLOUR_HIGH = [77/255, 173/255, 38/255];
 
 class SlimeSpit extends GameObject {
    private readonly renderParts: ReadonlyArray<RenderPart>;
-   constructor(position: Point, id: number, renderDepth: number, size: number) {
-      super(position, id, EntityType.slimeSpit, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, size: number) {
+      super(position, id, EntityType.slimeSpit, ageTicks, renderDepth);
 
       const renderParts = new Array<RenderPart>();
 
       const renderPart1 = new RenderPart(
          this,
-         6 * 4,
-         6 * 4,
-         getGameObjectTextureArrayIndex("projectiles/slime-spit-medium.png"),
+         getEntityTextureArrayIndex("projectiles/slime-spit-medium.png"),
          1,
          0
       );
@@ -31,9 +29,7 @@ class SlimeSpit extends GameObject {
 
       const renderPart2 = new RenderPart(
          this,
-         6 * 4,
-         6 * 4,
-         getGameObjectTextureArrayIndex("projectiles/slime-spit-medium.png"),
+         getEntityTextureArrayIndex("projectiles/slime-spit-medium.png"),
          0,
          Math.PI/4
       );
@@ -43,7 +39,7 @@ class SlimeSpit extends GameObject {
 
       this.renderParts = renderParts;
 
-      playSound("slime-spit.mp3", 0.5, this.position.x, this.position.y);
+      playSound("slime-spit.mp3", 0.5, 1, this.position.x, this.position.y);
    }
 
    public tick(): void {

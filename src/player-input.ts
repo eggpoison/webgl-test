@@ -1,18 +1,13 @@
-import { AttackPacket, EntityType, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, Inventory, Item, ItemType, PlaceableItemType, Point, SETTINGS, SNAP_OFFSETS, STATUS_EFFECT_MODIFIERS, StructureType, TRIBE_INFO_RECORD, ToolItemInfo, TribeMemberAction, TribeType, distance } from "webgl-test-shared";
+import { AttackPacket, EntityType, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, Inventory, Item, ItemType, PlaceableItemType, Point, SETTINGS, SNAP_OFFSETS, STATUS_EFFECT_MODIFIERS, STRUCTURE_TYPES, StructureType, TRIBE_INFO_RECORD, ToolItemInfo, TribeMemberAction, TribeType, distance } from "webgl-test-shared";
 import { addKeyListener, clearPressedKeys, keyIsPressed } from "./keyboard-input";
 import { CraftingMenu_setIsVisible } from "./components/game/menus/CraftingMenu";
 import Player from "./entities/Player";
 import Client from "./client/Client";
-import { Hotbar_setHotbarSelectedItemSlot } from "./components/game/inventories/Hotbar";
-import { InteractInventoryType, InteractInventory_clearInventory, InteractInventory_forceUpdate, InteractInventory_setInventory } from "./components/game/inventories/InteractInventory";
+import { Hotbar_setHotbarSelectedItemSlot, Hotbar_updateLeftThrownBattleaxeItemID, Hotbar_updateRightThrownBattleaxeItemID } from "./components/game/inventories/Hotbar";
 import { BackpackInventoryMenu_setIsVisible } from "./components/game/inventories/BackpackInventory";
-import Entity from "./entities/Entity";
-import Tribesman from "./entities/Tribesman";
-import Tombstone from "./entities/Tombstone";
 import Board from "./Board";
 import { definiteGameState, latencyGameState } from "./game-state/game-states";
 import Game from "./Game";
-import { showChargeMeter } from "./components/game/ChargeMeter";
 import Barrel from "./entities/Barrel";
 import Campfire from "./entities/Campfire";
 import Furnace from "./entities/Furnace";
@@ -25,7 +20,11 @@ import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import { closeTechTree, techTreeIsOpen } from "./components/game/TechTree";
 import WarriorHut from "./entities/WarriorHut";
 import GameObject from "./GameObject";
-import { attemptStructureSelect } from "./structure-selection";
+import { attemptStructureSelect, deselectSelectedEntity, getSelectedEntityID } from "./entity-selection";
+import { serialiseItem } from "./inventory-manipulation";
+import { playSound } from "./sound";
+import { InventoryMenuType, InventorySelector_inventoryIsOpen, InventorySelector_setInventoryMenuType } from "./components/game/inventories/InventorySelector";
+import { attemptToCompleteNode } from "./research";
 
 /** Acceleration of the player while moving without any modifiers. */
 const PLAYER_ACCELERATION = 700;
@@ -35,10 +34,10 @@ const PLAYER_LIGHTSPEED_ACCELERATION = 15000;
 /** Acceleration of the player while slowed. */
 const PLAYER_SLOW_ACCELERATION = 400;
 
-const PLAYER_INTERACT_RANGE = 125;
-
 export let rightMouseButtonIsPressed = false;
 export let leftMouseButtonIsPressed = false;
+
+// Cleanup: All this item placing logic should be moved to another file
 
 enum PlaceableItemHitboxType {
    circular,
@@ -46,10 +45,10 @@ enum PlaceableItemHitboxType {
 }
 
 export interface PlaceableEntityInfo {
-   readonly textureSource: string;
+   readonly entityType: EntityType;
+   readonly wallEntityType: EntityType;
    readonly width: number;
    readonly height: number;
-   readonly placeOffset: number;
    readonly hitboxType: PlaceableItemHitboxType;
    /** Optionally defines extra criteria for being placed */
    canPlace?(): boolean;
@@ -57,17 +56,17 @@ export interface PlaceableEntityInfo {
 
 export const PLACEABLE_ENTITY_INFO_RECORD: Record<PlaceableItemType, PlaceableEntityInfo> = {
    [ItemType.workbench]: {
-      textureSource: "workbench/workbench.png",
+      entityType: EntityType.workbench,
+      wallEntityType: EntityType.workbench,
       width: Workbench.SIZE,
       height: Workbench.SIZE,
-      placeOffset: Workbench.SIZE / 2,
       hitboxType: PlaceableItemHitboxType.rectangular
    },
    [ItemType.tribe_totem]: {
-      textureSource: "tribe-totem/tribe-totem.png",
+      entityType: EntityType.tribeTotem,
+      wallEntityType: EntityType.tribeTotem,
       width: TribeTotem.SIZE,
       height: TribeTotem.SIZE,
-      placeOffset: TribeTotem.SIZE / 2,
       canPlace: (): boolean => {
          // The player can only place one tribe totem
          return !Game.tribe.hasTotem;
@@ -75,64 +74,109 @@ export const PLACEABLE_ENTITY_INFO_RECORD: Record<PlaceableItemType, PlaceableEn
       hitboxType: PlaceableItemHitboxType.circular
    },
    [ItemType.worker_hut]: {
-      textureSource: "worker-hut/worker-hut.png",
+      entityType: EntityType.workerHut,
+      wallEntityType: EntityType.workerHut,
       width: WorkerHut.SIZE,
       height: WorkerHut.SIZE,
-      placeOffset: WorkerHut.SIZE / 2,
       canPlace: (): boolean => {
          return Game.tribe.hasTotem && Game.tribe.numHuts < Game.tribe.tribesmanCap;
       },
       hitboxType: PlaceableItemHitboxType.rectangular
    },
    [ItemType.warrior_hut]: {
-      textureSource: "warrior-hut/warrior-hut.png",
+      entityType: EntityType.warriorHut,
+      wallEntityType: EntityType.warriorHut,
       width: WarriorHut.SIZE,
       height: WarriorHut.SIZE,
-      placeOffset: WarriorHut.SIZE / 2,
       canPlace: (): boolean => {
          return Game.tribe.hasTotem && Game.tribe.numHuts < Game.tribe.tribesmanCap;
       },
       hitboxType: PlaceableItemHitboxType.rectangular
    },
    [ItemType.barrel]: {
-      textureSource: "barrel/barrel.png",
+      entityType: EntityType.barrel,
+      wallEntityType: EntityType.barrel,
       width: Barrel.SIZE,
       height: Barrel.SIZE,
-      placeOffset: Barrel.SIZE / 2,
       hitboxType: PlaceableItemHitboxType.circular
    },
    [ItemType.campfire]: {
-      textureSource: "campfire/campfire.png",
+      entityType: EntityType.campfire,
+      wallEntityType: EntityType.campfire,
       width: Campfire.SIZE,
       height: Campfire.SIZE,
-      placeOffset: Campfire.SIZE / 2,
       hitboxType: PlaceableItemHitboxType.circular
    },
    [ItemType.furnace]: {
-      textureSource: "furnace/furnace.png",
+      entityType: EntityType.furnace,
+      wallEntityType: EntityType.furnace,
       width: Furnace.SIZE,
       height: Furnace.SIZE,
-      placeOffset: Furnace.SIZE / 2,
       hitboxType: PlaceableItemHitboxType.rectangular
    },
    [ItemType.research_bench]: {
-      textureSource: "research-bench/research-bench.png",
+      entityType: EntityType.researchBench,
+      wallEntityType: EntityType.researchBench,
       width: 32 * 4,
       height: 20 * 4,
-      placeOffset: 50,
       hitboxType: PlaceableItemHitboxType.rectangular
    },
    [ItemType.wooden_wall]: {
-      textureSource: "wooden-wall/wooden-wall.png",
+      entityType: EntityType.woodenWall,
+      wallEntityType: EntityType.woodenWall,
       width: 64,
       height: 64,
-      placeOffset: 32,
       hitboxType: PlaceableItemHitboxType.rectangular
+   },
+   [ItemType.planter_box]: {
+      entityType: EntityType.planterBox,
+      wallEntityType: EntityType.planterBox,
+      width: 80,
+      height: 80,
+      hitboxType: PlaceableItemHitboxType.rectangular
+   },
+   [ItemType.wooden_spikes]: {
+      entityType: EntityType.woodenFloorSpikes,
+      wallEntityType: EntityType.woodenWallSpikes,
+      width: 40,
+      height: 40,
+      hitboxType: PlaceableItemHitboxType.rectangular
+   },
+   [ItemType.punji_sticks]: {
+      entityType: EntityType.floorPunjiSticks,
+      wallEntityType: EntityType.wallPunjiSticks,
+      width: 40,
+      height: 40,
+      hitboxType: PlaceableItemHitboxType.rectangular
+   },
+   [ItemType.ballista]: {
+      entityType: EntityType.ballista,
+      wallEntityType: EntityType.ballista,
+      width: 100,
+      height: 100,
+      hitboxType: PlaceableItemHitboxType.rectangular
+   },
+   [ItemType.sling_turret]: {
+      entityType: EntityType.slingTurret,
+      wallEntityType: EntityType.slingTurret,
+      width: 72,
+      height: 72,
+      hitboxType: PlaceableItemHitboxType.circular
    }
 };
 
-const testRectangularHitbox = new RectangularHitbox(-1, -1);
-const testCircularHitbox = new CircularHitbox(-1);
+const PLACEABLE_WALL_ENTITY_WIDTHS: Partial<Record<EntityType, number>> = {
+   [EntityType.woodenWallSpikes]: 68,
+   [EntityType.wallPunjiSticks]: 68
+};
+
+const PLACEABLE_WALL_ENTITY_HEIGHTS: Partial<Record<EntityType, number>> = {
+   [EntityType.woodenWallSpikes]: 28,
+   [EntityType.wallPunjiSticks]: 28
+};
+
+const testRectangularHitbox = new RectangularHitbox(1, -1, -1, 0);
+const testCircularHitbox = new CircularHitbox(1, -1, 0);
 
 const hotbarItemAttackCooldowns: Record<number, number> = {};
 const offhandItemAttackCooldowns: Record<number, number> = {};
@@ -140,12 +184,12 @@ const offhandItemAttackCooldowns: Record<number, number> = {};
 /** Whether the inventory is open or not. */
 let _inventoryIsOpen = false;
 
-let _interactInventoryIsOpen = false;
-let interactInventoryEntity: Entity | null = null;
+// let _interactInventoryIsOpen = false;
+// let interactInventoryEntity: Entity | null = null;
 
-export function getInteractEntityID(): number | null {
-   return interactInventoryEntity !== null ? interactInventoryEntity.id : null;
-}
+// export function getInteractEntityID(): number | null {
+//    return interactInventoryEntity !== null ? interactInventoryEntity.id : null;
+// }
 
 const updateAttackCooldowns = (inventory: Inventory, attackCooldowns: Record<number, number>): void => {
    for (let itemSlot = 1; itemSlot <= inventory.width; itemSlot++) {
@@ -159,29 +203,29 @@ const updateAttackCooldowns = (inventory: Inventory, attackCooldowns: Record<num
 }
 
 export function updatePlayerItems(): void {
-   if (definiteGameState.hotbar === null) {
+   if (definiteGameState.hotbar === null || Player.instance === null) {
       return;
    }
 
    // @Cleanup: destroy this.
-   if (Player.instance !== null) {
-      if (definiteGameState.hotbar.itemSlots.hasOwnProperty(latencyGameState.selectedHotbarItemSlot)) {
-         Player.instance.updateActiveItem(0, definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot].type);
-         Player.instance.updateBowChargeTexture();
-      } else {
-         Player.instance.updateActiveItem(0, null);
-      }
-      if (definiteGameState.offhandInventory.itemSlots.hasOwnProperty(1)) {
-         Player.instance.updateActiveItem(1, definiteGameState.offhandInventory.itemSlots[1].type);
-      } else {
-         Player.instance.updateActiveItem(1, null);
-      }
-      Player.instance.updateHands();
 
-      Player.instance.updateArmourRenderPart(definiteGameState.armourSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.armourSlot.itemSlots[1].type : null);
-
-      Player.instance!.updateBowChargeTexture();
+   if (definiteGameState.hotbar.itemSlots.hasOwnProperty(latencyGameState.selectedHotbarItemSlot)) {
+      Player.instance.rightActiveItem = serialiseItem(definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot]);
+      Player.instance.updateBowChargeTexture();
+   } else {
+      Player.instance.rightActiveItem = null;
    }
+   if (definiteGameState.offhandInventory.itemSlots.hasOwnProperty(1)) {
+      Player.instance.leftActiveItem = serialiseItem(definiteGameState.offhandInventory.itemSlots[1]);
+   } else {
+      Player.instance.leftActiveItem = null;
+   }
+   Player.instance.updateHands();
+
+   Player.instance.updateArmourRenderPart(definiteGameState.armourSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.armourSlot.itemSlots[1].type : null);
+   Player.instance.updateGloveRenderPart(definiteGameState.gloveSlot.itemSlots.hasOwnProperty(1) ? definiteGameState.gloveSlot.itemSlots[1].type : null);
+
+   Player.instance!.updateBowChargeTexture();
 
    updateAttackCooldowns(definiteGameState.hotbar, hotbarItemAttackCooldowns);
    updateAttackCooldowns(definiteGameState.offhandInventory, offhandItemAttackCooldowns);
@@ -202,9 +246,9 @@ const attack = (isOffhand: boolean): void => {
    // Update bow charge cooldown
    if (latencyGameState.mainAction !== TribeMemberAction.chargeBow) {
       if (isOffhand) {
-         Player.instance!.rightLastActionTicks = Board.ticks;
-      } else {
          Player.instance!.leftLastActionTicks = Board.ticks;
+      } else {
+         Player.instance!.rightLastActionTicks = Board.ticks;
       }
    }
 }
@@ -213,6 +257,13 @@ const attemptInventoryAttack = (inventory: Inventory): boolean => {
    const isOffhand = inventory.inventoryName !== "hotbar";
    const attackCooldowns = isOffhand ? offhandItemAttackCooldowns : hotbarItemAttackCooldowns;
    const selectedItemSlot = isOffhand ? 1 : latencyGameState.selectedHotbarItemSlot;
+
+   // Don't attack if the hand is busy waiting for a battleaxe to return
+   const thrownBattleaxeItemID = isOffhand ? Player.instance!.leftThrownBattleaxeItemID : Player.instance!.rightThrownBattleaxeItemID;
+   const selectedItem = inventory.itemSlots[selectedItemSlot];
+   if (thrownBattleaxeItemID !== -1 && thrownBattleaxeItemID === selectedItem.id) {
+      return false;
+   }
    
    if (inventory.itemSlots.hasOwnProperty(selectedItemSlot)) {
       // Attack with item
@@ -220,9 +271,8 @@ const attemptInventoryAttack = (inventory: Inventory): boolean => {
          attack(isOffhand);
          
          // Reset the attack cooldown of the weapon
-         const selectedItem = inventory.itemSlots[selectedItemSlot];
          const itemTypeInfo = ITEM_TYPE_RECORD[selectedItem.type];
-         if (itemTypeInfo === "axe" || itemTypeInfo === "pickaxe" || itemTypeInfo === "sword" || itemTypeInfo === "spear" || itemTypeInfo === "hammer") {
+         if (itemTypeInfo === "axe" || itemTypeInfo === "pickaxe" || itemTypeInfo === "sword" || itemTypeInfo === "spear" || itemTypeInfo === "hammer" || itemTypeInfo === "battleaxe" || itemTypeInfo === "crossbow") {
             const itemInfo = ITEM_INFO_RECORD[selectedItem.type];
             attackCooldowns[selectedItemSlot] = (itemInfo as ToolItemInfo).attackCooldown;
          } else {
@@ -255,6 +305,7 @@ const attemptAttack = (): void => {
 
 interface SelectedItemInfo {
    readonly item: Item;
+   readonly itemSlot: number;
    readonly isOffhand: boolean;
 }
 
@@ -263,6 +314,7 @@ const getSelectedItemInfo = (): SelectedItemInfo | null => {
       const item = definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot];
       return {
          item: item,
+         itemSlot: latencyGameState.selectedHotbarItemSlot,
          isOffhand: false
       };
    }
@@ -271,6 +323,7 @@ const getSelectedItemInfo = (): SelectedItemInfo | null => {
       const item = definiteGameState.offhandInventory.itemSlots[1];
       return {
          item: item,
+         itemSlot: 1,
          isOffhand: true
       };
    }
@@ -295,10 +348,11 @@ const createItemUseListeners = (): void => {
 
          const selectedItemInfo = getSelectedItemInfo();
          if (selectedItemInfo !== null) {
-            itemRightClickDown(selectedItemInfo.item, selectedItemInfo.isOffhand);
+            itemRightClickDown(selectedItemInfo.item, selectedItemInfo.isOffhand, selectedItemInfo.itemSlot);
          }
          
          attemptStructureSelect();
+         attemptToCompleteNode();
       }
    });
 
@@ -345,6 +399,13 @@ const createHotbarKeyListeners = (): void => {
    for (let itemSlot = 1; itemSlot <= SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE; itemSlot++) {
       addKeyListener(itemSlot.toString(), () => selectItemSlot(itemSlot));
    }
+   addKeyListener("!", () => selectItemSlot(1));
+   addKeyListener("@", () => selectItemSlot(2));
+   addKeyListener("#", () => selectItemSlot(3));
+   addKeyListener("$", () => selectItemSlot(4));
+   addKeyListener("%", () => selectItemSlot(5));
+   addKeyListener("^", () => selectItemSlot(6));
+   addKeyListener("&", () => selectItemSlot(7));
 }
 
 const throwHeldItem = (): void => {
@@ -365,120 +426,122 @@ export function updateInventoryIsOpen(inventoryIsOpen: boolean): void {
    }
 }
 
-const getInteractEntity = (): Entity | null => {
-   if (Player.instance === null) return null;
+// const getInteractEntity = (): Entity | null => {
+//    if (Player.instance === null) return null;
 
-   const minChunkX = Math.max(Math.min(Math.floor((Player.instance.position.x - PLAYER_INTERACT_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
-   const maxChunkX = Math.max(Math.min(Math.floor((Player.instance.position.x + PLAYER_INTERACT_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
-   const minChunkY = Math.max(Math.min(Math.floor((Player.instance.position.y - PLAYER_INTERACT_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
-   const maxChunkY = Math.max(Math.min(Math.floor((Player.instance.position.y + PLAYER_INTERACT_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
+//    const minChunkX = Math.max(Math.min(Math.floor((Player.instance.position.x - PLAYER_INTERACT_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
+//    const maxChunkX = Math.max(Math.min(Math.floor((Player.instance.position.x + PLAYER_INTERACT_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
+//    const minChunkY = Math.max(Math.min(Math.floor((Player.instance.position.y - PLAYER_INTERACT_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
+//    const maxChunkY = Math.max(Math.min(Math.floor((Player.instance.position.y + PLAYER_INTERACT_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
    
-   let minInteractionDistance = PLAYER_INTERACT_RANGE + Number.EPSILON;
-   let closestInteractableEntity: Entity | null = null;
-   for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
-      for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
-         const chunk = Board.getChunk(chunkX, chunkY);
-         for (const entity of chunk.getEntities()) {
-            if (entity.type === EntityType.barrel) {
-               const distance = Player.instance.position.calculateDistanceBetween(entity.position);
-               if (distance < minInteractionDistance) {
-                  closestInteractableEntity = entity;
-                  minInteractionDistance = distance;
-               }
-            } else if (entity.type === EntityType.tribeWorker || entity.type === EntityType.tribeWarrior) {
-               // Only interact with tribesman inventories if the player is of the same tribe
-               if ((entity as Tribesman).tribeID === null || ((entity as Tribesman).tribeID) !== Player.instance.tribeID) {
-                  continue;
-               }
+//    let minInteractionDistance = PLAYER_INTERACT_RANGE + Number.EPSILON;
+//    let closestInteractableEntity: Entity | null = null;
+//    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+//       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
+//          const chunk = Board.getChunk(chunkX, chunkY);
+//          for (const entity of chunk.getEntities()) {
+//             if (entity.type === EntityType.barrel) {
+//                const distance = Player.instance.position.calculateDistanceBetween(entity.position);
+//                if (distance < minInteractionDistance) {
+//                   closestInteractableEntity = entity;
+//                   minInteractionDistance = distance;
+//                }
+//             } else if (entity.type === EntityType.tribeWorker || entity.type === EntityType.tribeWarrior) {
+//                // Only interact with tribesman inventories if the player is of the same tribe
+//                if ((entity as Tribesman).tribeID === null || ((entity as Tribesman).tribeID) !== Player.instance.tribeID) {
+//                   continue;
+//                }
                
-               const distance = Player.instance.position.calculateDistanceBetween(entity.position);
-               if (distance < minInteractionDistance) {
-                  closestInteractableEntity = entity;
-                  minInteractionDistance = distance;
-               }
-            } else if (entity.type === EntityType.campfire) {
-               const distance = Player.instance.position.calculateDistanceBetween(entity.position);
-               if (distance < minInteractionDistance) {
-                  closestInteractableEntity = entity;
-                  minInteractionDistance = distance;
-               }
-            } else if (entity.type === EntityType.furnace) {
-               const distance = Player.instance.position.calculateDistanceBetween(entity.position);
-               if (distance < minInteractionDistance) {
-                  closestInteractableEntity = entity;
-                  minInteractionDistance = distance;
-               }
-            } else if (entity.type === EntityType.tombstone) {
-               if ((entity as Tombstone).deathInfo === null) {
-                  continue;
-               }
+//                const distance = Player.instance.position.calculateDistanceBetween(entity.position);
+//                if (distance < minInteractionDistance) {
+//                   closestInteractableEntity = entity;
+//                   minInteractionDistance = distance;
+//                }
+//             } else if (entity.type === EntityType.campfire) {
+//                const distance = Player.instance.position.calculateDistanceBetween(entity.position);
+//                if (distance < minInteractionDistance) {
+//                   closestInteractableEntity = entity;
+//                   minInteractionDistance = distance;
+//                }
+//             } else if (entity.type === EntityType.furnace) {
+//                const distance = Player.instance.position.calculateDistanceBetween(entity.position);
+//                if (distance < minInteractionDistance) {
+//                   closestInteractableEntity = entity;
+//                   minInteractionDistance = distance;
+//                }
+//             } else if (entity.type === EntityType.tombstone) {
+//                if ((entity as Tombstone).deathInfo === null) {
+//                   continue;
+//                }
 
-               const distance = Player.instance.position.calculateDistanceBetween(entity.position);
-               if (distance < minInteractionDistance) {
-                  closestInteractableEntity = entity;
-                  minInteractionDistance = distance;
-               }
-            }
-         }
-      }
-   }
+//                const distance = Player.instance.position.calculateDistanceBetween(entity.position);
+//                if (distance < minInteractionDistance) {
+//                   closestInteractableEntity = entity;
+//                   minInteractionDistance = distance;
+//                }
+//             }
+//          }
+//       }
+//    }
 
-   return closestInteractableEntity;
-}
+//    return closestInteractableEntity;
+// }
 
-const getInteractInventoryType = (entity: Entity): InteractInventoryType => {
-   switch (entity.type) {
-      case EntityType.barrel: {
-         return InteractInventoryType.barrel;
-      }
-      case EntityType.tribeWarrior:
-      case EntityType.tribeWorker: {
-         return InteractInventoryType.tribesman;
-      }
-      case EntityType.campfire: {
-         return InteractInventoryType.campfire;
-      }
-      case EntityType.furnace: {
-         return InteractInventoryType.furnace;
-      }
-      case EntityType.tombstone: {
-         return InteractInventoryType.tombstoneEpitaph;
-      }
-      default: {
-         throw new Error(`Can't find appropriate interact inventory type for entity type'${entity.type}'.`);
-      }
-   }
-}
+// const getInteractInventoryType = (entity: Entity): InteractInventoryType => {
+//    switch (entity.type) {
+//       case EntityType.barrel: {
+//          return InteractInventoryType.barrel;
+//       }
+//       case EntityType.tribeWarrior:
+//       case EntityType.tribeWorker: {
+//          return InteractInventoryType.tribesman;
+//       }
+//       case EntityType.campfire: {
+//          return InteractInventoryType.campfire;
+//       }
+//       case EntityType.furnace: {
+//          return InteractInventoryType.furnace;
+//       }
+//       case EntityType.tombstone: {
+//          return InteractInventoryType.tombstoneEpitaph;
+//       }
+//       default: {
+//          throw new Error(`Can't find appropriate interact inventory type for entity type'${entity.type}'.`);
+//       }
+//    }
+// }
 
-export function hideInteractInventory(): void {
-   _interactInventoryIsOpen = false;
-   interactInventoryEntity = null;
+      // @Incomplete
 
-   InteractInventory_clearInventory();
-}
+// export function hideInteractInventory(): void {
+//    _interactInventoryIsOpen = false;
+//    interactInventoryEntity = null;
 
-export function updateInteractInventory(): void {
-   if (Player.instance === null) return;
+//    InteractInventory_clearInventory();
+// }
+
+// export function updateInteractInventory(): void {
+//    if (Player.instance === null) return;
    
-   if (_interactInventoryIsOpen) {
-      if (interactInventoryEntity === null) {
-         throw new Error("Interactable entity was null.");
-      }
+//    if (_interactInventoryIsOpen) {
+//       if (interactInventoryEntity === null) {
+//          throw new Error("Interactable entity was null.");
+//       }
 
-      // If the interactable entity was removed, hide the interact inventory
-      if (!Board.entities.has(interactInventoryEntity)) {
-         hideInteractInventory();
-         return;
-      }
+//       // If the interactable entity was removed, hide the interact inventory
+//       if (!Board.entities.has(interactInventoryEntity)) {
+//          hideInteractInventory();
+//          return;
+//       }
 
-      const distanceToInteractEntity = Player.instance.position.calculateDistanceBetween(interactInventoryEntity.position);
-      if (distanceToInteractEntity <= PLAYER_INTERACT_RANGE) {
-         InteractInventory_forceUpdate();
-      } else {
-         hideInteractInventory();
-      }
-   }
-}
+//       const distanceToInteractEntity = Player.instance.position.calculateDistanceBetween(interactInventoryEntity.position);
+//       if (distanceToInteractEntity <= PLAYER_INTERACT_RANGE) {
+//          InteractInventory_forceUpdate();
+//       } else {
+//          hideInteractInventory();
+//       }
+//    }
+// }
 
 /** Creates the key listener to toggle the inventory on and off. */
 const createInventoryToggleListeners = (): void => {
@@ -486,9 +549,9 @@ const createInventoryToggleListeners = (): void => {
       if (!Game.isRunning) {
          return;
       }
-      
-      if (_interactInventoryIsOpen) {
-         hideInteractInventory();
+
+      if (InventorySelector_inventoryIsOpen()) {
+         InventorySelector_setInventoryMenuType(InventoryMenuType.none);
          return;
       }
 
@@ -501,17 +564,18 @@ const createInventoryToggleListeners = (): void => {
          return;
       }
       
-      if (_interactInventoryIsOpen) {
-         hideInteractInventory();
-      } else {
-         const interactEntity = getInteractEntity();
-         if (interactEntity !== null) {
-            interactInventoryEntity = interactEntity;
-            const interactInventoryType = getInteractInventoryType(interactInventoryEntity);
-            _interactInventoryIsOpen = true;
-            InteractInventory_setInventory(interactInventoryType, interactInventoryEntity);
-         }
-      }
+      // @Incomplete
+      // if (_interactInventoryIsOpen) {
+      //    hideInteractInventory();
+      // } else {
+      //    const interactEntity = getInteractEntity();
+      //    if (interactEntity !== null) {
+      //       interactInventoryEntity = interactEntity;
+      //       const interactInventoryType = getInteractInventoryType(interactInventoryEntity);
+      //       _interactInventoryIsOpen = true;
+      //       InteractInventory_setInventory(interactInventoryType, interactInventoryEntity);
+      //    }
+      // }
    });
    addKeyListener("escape", () => {
       if (techTreeIsOpen()) {
@@ -521,7 +585,12 @@ const createInventoryToggleListeners = (): void => {
 
       if (_inventoryIsOpen) {
          updateInventoryIsOpen(false);
-      };
+         return;
+      }
+
+      if (getSelectedEntityID() !== -1) {
+         deselectSelectedEntity();
+      }
    });
 }
 
@@ -600,7 +669,7 @@ export function updatePlayerMovement(): void {
       let acceleration: number;
       if (keyIsPressed("l")) {
          acceleration = PLAYER_LIGHTSPEED_ACCELERATION;
-      } else if (latencyGameState.mainAction === TribeMemberAction.eat || latencyGameState.mainAction === TribeMemberAction.chargeBow || latencyGameState.playerIsPlacingEntity) {
+      } else if (latencyGameState.mainAction === TribeMemberAction.eat || latencyGameState.mainAction === TribeMemberAction.chargeBow || latencyGameState.mainAction === TribeMemberAction.loadCrossbow || latencyGameState.playerIsPlacingEntity) {
          acceleration = PLAYER_SLOW_ACCELERATION * getPlayerMoveSpeedMultiplier();
       } else {
          acceleration = PLAYER_ACCELERATION * getPlayerMoveSpeedMultiplier();
@@ -617,6 +686,7 @@ const deselectItem = (item: Item, isOffhand: boolean): void => {
    const itemCategory = ITEM_TYPE_RECORD[item.type];
    switch (itemCategory) {
       case "spear":
+      case "battleaxe":
       case "bow": {
          if (isOffhand) {
             latencyGameState.offhandAction = TribeMemberAction.none;
@@ -645,8 +715,9 @@ export function selectItem(item: Item): void {
 }
 
 const calculateRegularPlacePosition = (placeableEntityInfo: PlaceableEntityInfo): Point => {
-   const placePositionX = Player.instance!.position.x + (SETTINGS.ITEM_PLACE_DISTANCE + placeableEntityInfo.placeOffset) * Math.sin(Player.instance!.rotation);
-   const placePositionY = Player.instance!.position.y + (SETTINGS.ITEM_PLACE_DISTANCE + placeableEntityInfo.placeOffset) * Math.cos(Player.instance!.rotation);
+   const placeOffset = placeableEntityInfo.height / 2;
+   const placePositionX = Player.instance!.position.x + (SETTINGS.ITEM_PLACE_DISTANCE + placeOffset) * Math.sin(Player.instance!.rotation);
+   const placePositionY = Player.instance!.position.y + (SETTINGS.ITEM_PLACE_DISTANCE + placeOffset) * Math.cos(Player.instance!.rotation);
    return new Point(placePositionX, placePositionY);
 }
 
@@ -654,9 +725,10 @@ interface BuildingSnapInfo {
    /** -1 if no snap was found */
    readonly x: number;
    readonly y: number;
-   readonly direction: number;
+   readonly rotation: number;
+   readonly entityType: EntityType;
 }
-export function calculateSnapID(placeableEntityInfo: PlaceableEntityInfo): BuildingSnapInfo {
+export function calculateSnapInfo(placeableEntityInfo: PlaceableEntityInfo): BuildingSnapInfo | null {
    const regularPlacePosition = calculateRegularPlacePosition(placeableEntityInfo);
 
    const minChunkX = Math.max(Math.floor((regularPlacePosition.x - SETTINGS.STRUCTURE_SNAP_RANGE) / SETTINGS.CHUNK_UNITS), 0);
@@ -674,67 +746,99 @@ export function calculateSnapID(placeableEntityInfo: PlaceableEntityInfo): Build
                continue;
             }
             
-            if (entity.type === EntityType.woodenWall) {
+            if (STRUCTURE_TYPES.includes(entity.type as StructureType)) {
                snappableEntities.push(entity);
             }
          }
       }
    }
 
-   for (const entity of snappableEntities) {
-      const snapOffset = SNAP_OFFSETS[entity.type as StructureType];
+   for (const snapEntity of snappableEntities) {
+      let snapOrigin: Point;
+      switch (snapEntity.type as StructureType) {
+         case EntityType.woodenWall:
+         case EntityType.woodenDoor:
+         case EntityType.woodenFloorSpikes:
+         case EntityType.woodenWallSpikes:
+         case EntityType.floorPunjiSticks:
+         case EntityType.wallPunjiSticks:
+         case EntityType.slingTurret:
+         case EntityType.ballista: {
+            snapOrigin = snapEntity.position;
+            break;
+         }
+         case EntityType.woodenEmbrasure: {
+            const x = snapEntity.position.x - 22 * Math.sin(snapEntity.rotation);
+            const y = snapEntity.position.y - 22 * Math.cos(snapEntity.rotation);
+            snapOrigin = new Point(x, y);
+         }
+      }
+      
+      const placingEntityType = snapEntity.type === EntityType.woodenWall ? placeableEntityInfo.wallEntityType : placeableEntityInfo.entityType;
+      const snapOffset = SNAP_OFFSETS[snapEntity.type as StructureType] / 2 + SNAP_OFFSETS[placingEntityType as StructureType] / 2;
+
       // Check the 4 potential snap positions for matches
       for (let i = 0; i < 4; i++) {
          const direction = i * Math.PI / 2;
-         const placeDirection = (entity.rotation + direction + Math.PI) % (Math.PI * 2) - Math.PI;
-         const x = entity.position.x + snapOffset * Math.sin(placeDirection);
-         const y = entity.position.y + snapOffset * Math.cos(placeDirection);
+         const placeDirection = (snapEntity.rotation + direction + Math.PI) % (Math.PI * 2) - Math.PI;
+         const x = snapOrigin.x + snapOffset * Math.sin(placeDirection);
+         const y = snapOrigin.y + snapOffset * Math.cos(placeDirection);
          
          if (distance(regularPlacePosition.x, regularPlacePosition.y, x, y) > SETTINGS.STRUCTURE_POSITION_SNAP) {
             continue;
          }
 
-         const playerRotation = (Player.instance!.rotation + Math.PI) % (Math.PI * 2) - Math.PI;
-         for (let i = 0; i < 4; i++) {
-            const direction = i * Math.PI / 2;
-            const placeDirection = (entity.rotation + direction + Math.PI) % (Math.PI * 2) - Math.PI;
-            let angleDiff = playerRotation - placeDirection;
-            angleDiff = (angleDiff + Math.PI) % (Math.PI * 2) - Math.PI;
-            if (Math.abs(angleDiff) <= SETTINGS.STRUCTURE_ROTATION_SNAP) {
-               return {
-                  x: x,
-                  y: y,
-                  direction: placeDirection
-               };
+         let placeRotation = -999;
+         if (placingEntityType === placeableEntityInfo.entityType) {
+            // If not placing on wall, check all 4 rotations to see if they match the player's rotation
+            // @Speed: Might only need to check 1 direction
+            const playerRotation = (Player.instance!.rotation + Math.PI) % (Math.PI * 2) - Math.PI;
+            for (let i = 0; i < 4; i++) {
+               const direction = i * Math.PI / 2;
+               const placeDirection = (snapEntity.rotation + direction + Math.PI) % (Math.PI * 2) - Math.PI;
+               let angleDiff = playerRotation - placeDirection;
+               angleDiff = (angleDiff + Math.PI) % (Math.PI * 2) - Math.PI;
+               if (Math.abs(angleDiff) <= SETTINGS.STRUCTURE_ROTATION_SNAP) {
+                  placeRotation = placeDirection;
+               }
             }
+         } else {
+            // If placing on wall, always face away from the wall
+            // @Speed: Garbage collection
+            placeRotation = snapEntity.position.calculateAngleBetween(new Point(x, y));
+         }
+         
+         if (placeRotation !== -999) {
+            return {
+               x: x,
+               y: y,
+               rotation: placeRotation,
+               entityType: placingEntityType
+            };
          }
       }
    }
    
-   return {
-      x: -1,
-      y: -1,
-      direction: -1
-   };
+   return null;
 }
 
-export function calculatePlacePosition(placeableEntityInfo: PlaceableEntityInfo, snapInfo: BuildingSnapInfo): Point {
-   if (snapInfo.x === -1) {
+export function calculatePlacePosition(placeableEntityInfo: PlaceableEntityInfo, snapInfo: BuildingSnapInfo | null): Point {
+   if (snapInfo === null) {
       return calculateRegularPlacePosition(placeableEntityInfo);
    }
 
    return new Point(snapInfo.x, snapInfo.y);
 }
 
-export function calculatePlaceRotation(snapInfo: BuildingSnapInfo): number {
-   if (snapInfo.x === -1) {
+export function calculatePlaceRotation(snapInfo: BuildingSnapInfo | null): number {
+   if (snapInfo === null) {
       return Player.instance!.rotation;
    }
 
-   return snapInfo.direction;
+   return snapInfo.rotation;
 }
 
-export function canPlaceItem(placePosition: Point, placeRotation: number, item: Item): boolean {
+export function canPlaceItem(placePosition: Point, placeRotation: number, item: Item, placingEntityType: EntityType): boolean {
    if (!PLACEABLE_ENTITY_INFO_RECORD.hasOwnProperty(item.type)) {
       throw new Error(`Item type '${item.type}' is not placeable.`);
    }
@@ -745,15 +849,18 @@ export function canPlaceItem(placePosition: Point, placeRotation: number, item: 
       return false;
    }
 
+   const width = PLACEABLE_WALL_ENTITY_WIDTHS.hasOwnProperty(placingEntityType) ? PLACEABLE_WALL_ENTITY_WIDTHS[placingEntityType]! : placeableInfo.width;
+   const height = PLACEABLE_WALL_ENTITY_HEIGHTS.hasOwnProperty(placingEntityType) ? PLACEABLE_WALL_ENTITY_HEIGHTS[placingEntityType]! : placeableInfo.height;
+
    let placeTestHitbox: Hitbox;
    if (placeableInfo.hitboxType === PlaceableItemHitboxType.circular) {
-      testCircularHitbox.radius = placeableInfo.width / 2; // For a circular hitbox, width and height will be the same
+      testCircularHitbox.radius = width / 2; // For a circular hitbox, width and height will be the same
       placeTestHitbox = testCircularHitbox;
    } else {
-      testRectangularHitbox.width = placeableInfo.width;
-      testRectangularHitbox.height = placeableInfo.height;
+      testRectangularHitbox.width = width;
+      testRectangularHitbox.height = height;
       testRectangularHitbox.recalculateHalfDiagonalLength();
-      testRectangularHitbox.rotation = placeRotation + Math.PI * 3/2;
+      testRectangularHitbox.rotation = placeRotation;
       testRectangularHitbox.externalRotation = 0;
       placeTestHitbox = testRectangularHitbox;
    }
@@ -778,20 +885,14 @@ export function canPlaceItem(placePosition: Point, placeRotation: number, item: 
    const minChunkY = Math.floor(placeTestHitbox.bounds[2] / SETTINGS.CHUNK_UNITS);
    const maxChunkY = Math.floor(placeTestHitbox.bounds[3] / SETTINGS.CHUNK_UNITS);
    
-   const previouslyCheckedEntityIDs = new Set<number>();
-
    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
          const chunk = Board.getChunk(chunkX, chunkY);
          for (const entity of chunk.getEntities()) {
-            if (!previouslyCheckedEntityIDs.has(entity.id)) {
-               for (const hitbox of entity.hitboxes) {   
-                  if (placeTestHitbox.isColliding(hitbox)) {
-                     return false;
-                  }
+            for (const hitbox of entity.hitboxes) {   
+               if (placeTestHitbox.isColliding(hitbox)) {
+                  return false;
                }
-               
-               previouslyCheckedEntityIDs.add(entity.id);
             }
          }
       }
@@ -802,7 +903,7 @@ export function canPlaceItem(placePosition: Point, placeRotation: number, item: 
    // 
 
    // @Speed: Garbage collection
-   const tileHitbox = new RectangularHitbox(SETTINGS.TILE_SIZE, SETTINGS.TILE_SIZE);
+   const tileHitbox = new RectangularHitbox(1, SETTINGS.TILE_SIZE, SETTINGS.TILE_SIZE, 0);
 
    const minTileX = Math.floor(placeTestHitbox.bounds[0] / SETTINGS.TILE_SIZE);
    const maxTileX = Math.floor(placeTestHitbox.bounds[1] / SETTINGS.TILE_SIZE);
@@ -829,7 +930,7 @@ export function canPlaceItem(placePosition: Point, placeRotation: number, item: 
    return true;
 }
 
-const itemRightClickDown = (item: Item, isOffhand: boolean): void => {
+const itemRightClickDown = (item: Item, isOffhand: boolean, itemSlot: number): void => {
    const itemCategory = ITEM_TYPE_RECORD[item.type];
    switch (itemCategory) {
       case "food": {
@@ -850,6 +951,26 @@ const itemRightClickDown = (item: Item, isOffhand: boolean): void => {
 
          break;
       }
+      case "crossbow": {
+         if (!definiteGameState.hotbarCrossbowLoadProgressRecord.hasOwnProperty(itemSlot) || definiteGameState.hotbarCrossbowLoadProgressRecord[itemSlot] < 1) {
+            // Start loading crossbow
+            if (isOffhand) {
+               latencyGameState.offhandAction = TribeMemberAction.loadCrossbow;
+               Player.instance!.leftAction = TribeMemberAction.loadCrossbow;
+               Player.instance!.leftLastActionTicks = Board.ticks;
+            } else {
+               latencyGameState.mainAction = TribeMemberAction.loadCrossbow;
+               Player.instance!.rightAction = TribeMemberAction.loadCrossbow;
+               Player.instance!.rightLastActionTicks = Board.ticks;
+            }
+            playSound("crossbow-load.mp3", 0.4, 1, Player.instance!.position.x, Player.instance!.position.y);
+         } else {
+            // Fire crossbow
+            Client.sendItemUsePacket();
+            playSound("crossbow-fire.mp3", 0.4, 1, Player.instance!.position.x, Player.instance!.position.y);
+         }
+         break;
+      }
       case "bow": {
          if (isOffhand) {
             latencyGameState.offhandAction = TribeMemberAction.chargeBow;
@@ -861,7 +982,7 @@ const itemRightClickDown = (item: Item, isOffhand: boolean): void => {
             Player.instance!.rightLastActionTicks = Board.ticks;
          }
          
-         showChargeMeter();
+         playSound("bow-charge.mp3", 0.4, 1, Player.instance!.position.x, Player.instance!.position.y);
 
          break;
       }
@@ -877,20 +998,48 @@ const itemRightClickDown = (item: Item, isOffhand: boolean): void => {
          }
          break;
       }
+      case "battleaxe": {
+         if (isOffhand) {
+            // If an axe is already thrown, don't throw another
+            if (Player.instance!.leftThrownBattleaxeItemID !== -1) {
+               break;
+            }
+            latencyGameState.offhandAction = TribeMemberAction.chargeBattleaxe;
+            Player.instance!.leftAction = TribeMemberAction.chargeBattleaxe;
+            Player.instance!.leftLastActionTicks = Board.ticks;
+         } else {
+            // If an axe is already thrown, don't throw another
+            if (Player.instance!.rightThrownBattleaxeItemID !== -1) {
+               break;
+            }
+            latencyGameState.mainAction = TribeMemberAction.chargeBattleaxe;
+            Player.instance!.rightAction = TribeMemberAction.chargeBattleaxe;
+            Player.instance!.rightLastActionTicks = Board.ticks;
+         }
+         break;
+      }
+      case "glove":
       case "armour": {
          Client.sendItemUsePacket();
-
          break;
       }
       case "placeable": {
          const placeableEntityInfo = PLACEABLE_ENTITY_INFO_RECORD[item.type as PlaceableItemType]!;
-         const snapID = calculateSnapID(placeableEntityInfo);
-         const placePosition = calculatePlacePosition(placeableEntityInfo, snapID);
-         const placeRotation = calculatePlaceRotation(snapID);
-         if (canPlaceItem(placePosition, placeRotation, item)) {
-            Client.sendItemUsePacket();
+         const snapInfo = calculateSnapInfo(placeableEntityInfo);
+         const placePosition = calculatePlacePosition(placeableEntityInfo, snapInfo);
+         const placeRotation = calculatePlaceRotation(snapInfo);
+         if (!canPlaceItem(placePosition, placeRotation, item, snapInfo !== null ? snapInfo.entityType : placeableEntityInfo.entityType)) {
+            return;
          }
-         
+
+         Client.sendItemUsePacket();
+
+         if (isOffhand) {
+            Player.instance!.leftLastActionTicks = Board.ticks;
+         } else {
+            Player.instance!.rightLastActionTicks = Board.ticks;
+         }
+
          break;
       }
    }
@@ -912,8 +1061,27 @@ const itemRightClickUp = (item: Item, isOffhand: boolean): void => {
 
          break;
       }
+      case "battleaxe":
       case "spear":
       case "bow": {
+         if (itemCategory === "battleaxe") {
+            if (isOffhand) {
+               // If an axe is already thrown, don't throw another
+               if (Player.instance!.leftThrownBattleaxeItemID !== -1 || Player.instance!.leftAction !== TribeMemberAction.chargeBattleaxe) {
+                  break;
+               }
+               Player.instance!.leftThrownBattleaxeItemID = item.id;
+               Hotbar_updateLeftThrownBattleaxeItemID(item.id);
+            } else {
+               // If an axe is already thrown, don't throw another
+               if (Player.instance!.rightThrownBattleaxeItemID !== -1 || Player.instance!.rightAction !== TribeMemberAction.chargeBattleaxe) {
+                  break;
+               }
+               Player.instance!.rightThrownBattleaxeItemID = item.id;
+               Hotbar_updateRightThrownBattleaxeItemID(item.id);
+            }
+         }
+
          Client.sendItemUsePacket();
          if (isOffhand) {
             latencyGameState.offhandAction = TribeMemberAction.none;
@@ -923,6 +1091,31 @@ const itemRightClickUp = (item: Item, isOffhand: boolean): void => {
             Player.instance!.rightAction = TribeMemberAction.none;
          }
 
+         switch (item.type) {
+            case ItemType.wooden_bow: {
+               playSound("bow-fire.mp3", 0.4, 1, Player.instance!.position.x, Player.instance!.position.y);
+               break;
+            }
+            case ItemType.reinforced_bow: {
+               playSound("reinforced-bow-fire.mp3", 0.2, 1, Player.instance!.position.x, Player.instance!.position.y);
+               break;
+            }
+            case ItemType.ice_bow: {
+               playSound("ice-bow-fire.mp3", 0.4, 1, Player.instance!.position.x, Player.instance!.position.y);
+               break;
+            }
+         }
+
+         break;
+      }
+      case "crossbow": {
+         if (isOffhand) {
+            latencyGameState.offhandAction = TribeMemberAction.none;
+            Player.instance!.leftAction = TribeMemberAction.none;
+         } else {
+            latencyGameState.mainAction = TribeMemberAction.none;
+            Player.instance!.rightAction = TribeMemberAction.none;
+         }
          break;
       }
    }
@@ -940,7 +1133,7 @@ const selectItemSlot = (itemSlot: number): void => {
    if (definiteGameState.hotbar.itemSlots.hasOwnProperty(itemSlot)) {
       selectItem(definiteGameState.hotbar.itemSlots[itemSlot]);
       if (rightMouseButtonIsPressed && ITEM_TYPE_RECORD[definiteGameState.hotbar.itemSlots[itemSlot].type] === "bow") {
-         itemRightClickDown(definiteGameState.hotbar.itemSlots[itemSlot], false);
+         itemRightClickDown(definiteGameState.hotbar.itemSlots[itemSlot], false, itemSlot);
       }
    }
 
@@ -948,19 +1141,21 @@ const selectItemSlot = (itemSlot: number): void => {
       
    Hotbar_setHotbarSelectedItemSlot(itemSlot);
 
-   // @Cleanup: Copy and paste, and Shouldn't be here
+   // @Cleanup: Copy and paste, and shouldn't be here
    if (Player.instance !== null) {
       if (definiteGameState.hotbar.itemSlots.hasOwnProperty(latencyGameState.selectedHotbarItemSlot)) {
-         Player.instance.updateActiveItem(0, definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot].type);
+         Player.instance.rightActiveItem = serialiseItem(definiteGameState.hotbar.itemSlots[latencyGameState.selectedHotbarItemSlot]);
          Player.instance.updateBowChargeTexture();
       } else {
-         Player.instance.updateActiveItem(0, null);
+         Player.instance.rightActiveItem = null;
       }
       if (definiteGameState.offhandInventory.itemSlots.hasOwnProperty(1)) {
-         Player.instance.updateActiveItem(1, definiteGameState.offhandInventory.itemSlots[1].type);
+         Player.instance.leftActiveItem = serialiseItem(definiteGameState.offhandInventory.itemSlots[1]);
       } else {
-         Player.instance.updateActiveItem(1, null);
+         Player.instance.leftActiveItem = null;
       }
+      // @Incomplete?? might want to call updateHands
+      Player.instance!.updateHands();
    }
 }
 

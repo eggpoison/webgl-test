@@ -7,7 +7,7 @@ import { updateSpamFilter } from "./components/game/ChatBox";
 import { DecorationInfo, GameDataPacket, GameObjectDebugData, GrassTileInfo, RiverSteppingStoneData, SETTINGS, ServerTileData, WaterRockData } from "webgl-test-shared";
 import { createEntityShaders, renderGameObjects } from "./rendering/game-object-rendering";
 import Client from "./client/Client";
-import { calculateCursorWorldPositionX, calculateCursorWorldPositionY, cursorX, cursorY, getMouseTargetEntity, handleMouseMovement, renderCursorTooltip, updateChargeMeter } from "./mouse";
+import { calculateCursorWorldPositionX, calculateCursorWorldPositionY, cursorX, cursorY, getMouseTargetEntity, handleMouseMovement, renderCursorTooltip } from "./mouse";
 import { refreshDebugInfo, setDebugInfoDebugData } from "./components/game/dev/DebugInfo";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, TIME_UNIFORM_BUFFER_BINDING_INDEX, createWebGLContext, gl, halfWindowHeight, halfWindowWidth, resizeCanvas } from "./webgl";
 import { loadTextures } from "./textures";
@@ -15,7 +15,7 @@ import { hidePauseScreen, showPauseScreen, toggleSettingsMenu } from "./componen
 import { getGameState } from "./components/App";
 import { clearPressedKeys } from "./keyboard-input";
 import { createHitboxShaders, renderEntityHitboxes } from "./rendering/hitbox-rendering";
-import { updateInteractInventory, updatePlayerItems, updatePlayerMovement } from "./player-input";
+import { updatePlayerItems, updatePlayerMovement } from "./player-input";
 import { clearServerTicks, updateDebugScreenFPS, updateDebugScreenRenderTime } from "./components/game/dev/GameInfoDisplay";
 import { createWorldBorderShaders, renderWorldBorder } from "./rendering/world-border-rendering";
 import { createSolidTileShaders, renderSolidTiles } from "./rendering/solid-tile-rendering";
@@ -34,18 +34,20 @@ import { registerFrame, updateFrameGraph } from "./components/game/dev/FrameGrap
 import { createNightShaders, renderNight } from "./rendering/night-rendering";
 import { createPlaceableItemProgram, renderGhostPlaceableItem } from "./rendering/placeable-item-rendering";
 import { setupFrameGraph } from "./rendering/frame-graph-rendering";
-import { createGameObjectTextureAtlas } from "./texture-atlases/entity-texture-atlas";
+import { createEntityTextureAtlas } from "./texture-atlases/entity-texture-atlas";
 import { createFishShaders } from "./rendering/fish-rendering";
 import { Tile } from "./Tile";
 import { createForcefieldShaders, renderForcefield } from "./rendering/world-border-forcefield-rendering";
 import { createDecorationShaders, renderDecorations } from "./rendering/decoration-rendering";
 import { playRiverSounds, setupAudio, updateSoundEffectVolume } from "./sound";
 import { createTechTreeShaders, renderTechTree } from "./rendering/tech-tree-rendering";
-import { createResearchNodeShaders, renderResearchNode } from "./rendering/research-node-rendering";
-import { attemptToResearch, updateActiveResearchBench } from "./research";
-import { updateHighlightedStructure, updateSelectedStructure } from "./structure-selection";
-import { createStructureHighlightShaders, renderStructureHighlights } from "./rendering/structure-highlight-rendering";
-import { updateStructureShapingMenu } from "./components/game/StructureShapingMenu";
+import { createResearchOrbShaders, renderResearchOrb } from "./rendering/research-orb-rendering";
+import { attemptToResearch, updateActiveResearchBench, updateResearchOrb } from "./research";
+import { updateHighlightedEntity, updateSelectedStructure } from "./entity-selection";
+import { createStructureHighlightShaders, renderStructureHighlights } from "./rendering/entity-highlight-rendering";
+import { updateBlueprintMenu } from "./components/game/BlueprintMenu";
+import { InventorySelector_forceUpdate } from "./components/game/inventories/InventorySelector";
+import { createTurretRangeShaders, renderTurretRange } from "./rendering/turret-range-rendering";
 
 let listenersHaveBeenCreated = false;
 
@@ -82,6 +84,7 @@ abstract class Game {
    private static isPaused: boolean = false;
 
    /** If the game has recevied up-to-date game data from the server. Set to false when paused */
+   // @Cleanup: We might be able to remove this whole system by just always sending player data
    public static isSynced: boolean = true;
 
    public static hasInitialised = false;
@@ -174,7 +177,8 @@ abstract class Game {
             createWebGLContext();
             createTextCanvasContext();
 
-            Board.initialise(tiles, waterRocks, riverSteppingStones, riverFlowDirections, edgeTiles, edgeRiverFlowDirections, edgeRiverSteppingStones, grassInfo, decorations);
+            Board.initialise(tiles, riverFlowDirections, edgeTiles, edgeRiverFlowDirections, grassInfo);
+            Board.addRiverSteppingStonesToChunks(riverSteppingStones);
          
             createRiverSteppingStoneData(riverSteppingStones);
 
@@ -190,7 +194,7 @@ abstract class Game {
             
             // We load the textures before we create the shaders because some shader initialisations stitch textures together
             await loadTextures();
-            await createGameObjectTextureAtlas();
+            await createEntityTextureAtlas();
             
             // Create shaders
             createSolidTileShaders();
@@ -209,8 +213,9 @@ abstract class Game {
             createForcefieldShaders();
             createDecorationShaders();
             createTechTreeShaders();
-            createResearchNodeShaders();
+            createResearchOrbShaders();
             createStructureHighlightShaders();
+            createTurretRangeShaders();
 
             await setupAudio();
 
@@ -218,14 +223,17 @@ abstract class Game {
                setupFrameGraph();
             }
 
-            createRenderChunks();
+            createRenderChunks(decorations, waterRocks, edgeRiverSteppingStones);
 
             this.hasInitialised = true;
    
             resolve();
          });
       } else {
-         createRenderChunks();
+         Board.initialise(tiles, riverFlowDirections, edgeTiles, edgeRiverFlowDirections, grassInfo);
+         Board.addRiverSteppingStonesToChunks(riverSteppingStones);
+
+         createRenderChunks(decorations, waterRocks, edgeRiverSteppingStones);
       }
    }
 
@@ -244,11 +252,11 @@ abstract class Game {
                if (this.numSkippablePackets === 0 && this.queuedPackets.length >= 2) {
                   // Unload all the packets so that things like hits taken aren't skipped
                   for (let i = 0; i < this.queuedPackets.length; i++) {
-                     Client.unloadGameDataPacket(this.queuedPackets[i]);
+                     Client.processGameDataPacket(this.queuedPackets[i]);
                   }
                   this.queuedPackets.splice(0, this.queuedPackets.length);
                } else {
-                  Client.unloadGameDataPacket(this.queuedPackets[0]);
+                  Client.processGameDataPacket(this.queuedPackets[0]);
                   this.queuedPackets.splice(0, 1);
                   this.numSkippablePackets--;
                   
@@ -301,14 +309,20 @@ abstract class Game {
       
       updatePlayerItems();
       updateActiveResearchBench();
+      updateResearchOrb();
       attemptToResearch();
 
-      updateHighlightedStructure();
+      updateHighlightedEntity();
       updateSelectedStructure();
-      updateStructureShapingMenu();
+      updateBlueprintMenu();
+      InventorySelector_forceUpdate();
 
       updateSoundEffectVolume();
       playRiverSounds();
+
+      this.cursorPositionX = calculateCursorWorldPositionX();
+      this.cursorPositionY = calculateCursorWorldPositionY();
+      renderCursorTooltip();
 
       if (isDev()) refreshDebugInfo();
    }
@@ -376,6 +390,7 @@ abstract class Game {
       renderSolidTiles();
       renderRivers();
       renderDecorations();
+      renderTurretRange();
       renderAmbientOcclusion();
       renderWallBorders();
       if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Board.hasEntityID(this.gameObjectDebugData.gameObjectID)) {
@@ -396,6 +411,9 @@ abstract class Game {
       }
 
       renderGameObjects();
+
+      renderStructureHighlights();
+      renderResearchOrb();
       
       if (OPTIONS.showParticles) {
          renderMonocolourParticles(ParticleRenderLayer.high);
@@ -418,21 +436,9 @@ abstract class Game {
          }
       }
 
-      renderStructureHighlights();
-      renderResearchNode();
       renderGhostPlaceableItem();
-
-      this.cursorPositionX = calculateCursorWorldPositionX();
-      this.cursorPositionY = calculateCursorWorldPositionY();
-      renderCursorTooltip();
       
-      updateChargeMeter();
-
-      if (!OPTIONS.nightVisionIsEnabled) {
-         renderNight();
-      }
-
-      updateInteractInventory();
+      renderNight();
 
       updateDebugScreenFPS();
       

@@ -1,8 +1,8 @@
 import { EntityData, EntityType, Point, randFloat, randInt } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
-import { LeafParticleSize, createLeafParticle, createLeafSpeckParticle } from "../generic-particles";
-import { GAME_OBJECT_TEXTURE_SLOT_INDEXES, getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { LeafParticleSize, createLeafParticle, createLeafSpeckParticle } from "../particles";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { AudioFilePath, playSound } from "../sound";
 
 class BerryBush extends Entity {
@@ -10,8 +10,6 @@ class BerryBush extends Entity {
 
    private static readonly LEAF_SPECK_COLOUR_LOW = [63/255, 204/255, 91/255] as const;
    private static readonly LEAF_SPECK_COLOUR_HIGH = [35/255, 158/255, 88/255] as const;
-
-   public readonly type = EntityType.berryBush;
 
    private static readonly TEXTURE_SOURCES = [
       "entities/berry-bush1.png",
@@ -24,14 +22,12 @@ class BerryBush extends Entity {
 
    private readonly renderPart: RenderPart;
 
-   constructor(position: Point, id: number, renderDepth: number, numBerries: number) {
-      super(position, id, EntityType.berryBush, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, numBerries: number) {
+      super(position, id, EntityType.berryBush, ageTicks, renderDepth);
 
       this.renderPart = new RenderPart(
          this,
-         BerryBush.RADIUS * 2,
-         BerryBush.RADIUS * 2,
-         getGameObjectTextureArrayIndex(BerryBush.TEXTURE_SOURCES[numBerries]),
+         getEntityTextureArrayIndex(BerryBush.TEXTURE_SOURCES[numBerries]),
          0,
          0
       );
@@ -42,7 +38,7 @@ class BerryBush extends Entity {
       super.updateFromData(entityData);
 
       const numBerries = entityData.clientArgs[0];
-      this.renderPart.textureSlotIndex = GAME_OBJECT_TEXTURE_SLOT_INDEXES[getGameObjectTextureArrayIndex(BerryBush.TEXTURE_SOURCES[numBerries])];
+      this.renderPart.switchTextureSource(BerryBush.TEXTURE_SOURCES[numBerries]);
    }
 
    protected onHit(): void {
@@ -58,7 +54,7 @@ class BerryBush extends Entity {
          createLeafSpeckParticle(this.position.x, this.position.y, BerryBush.RADIUS, BerryBush.LEAF_SPECK_COLOUR_LOW, BerryBush.LEAF_SPECK_COLOUR_HIGH);
       }
 
-      playSound(("berry-bush-hit-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, this.position.x, this.position.y);
+      playSound(("berry-bush-hit-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, 1, this.position.x, this.position.y);
    }
 
    public onDie(): void {
@@ -76,7 +72,7 @@ class BerryBush extends Entity {
          createLeafSpeckParticle(this.position.x, this.position.y, BerryBush.RADIUS * Math.random(), BerryBush.LEAF_SPECK_COLOUR_LOW, BerryBush.LEAF_SPECK_COLOUR_HIGH);
       }
 
-      playSound("berry-bush-destroy-1.mp3", 0.4, this.position.x, this.position.y);
+      playSound("berry-bush-destroy-1.mp3", 0.4, 1, this.position.x, this.position.y);
    }
 }
 

@@ -1,30 +1,26 @@
 import { DeathInfo, EntityData, EntityType, Point, SETTINGS, randFloat, randInt, randItem } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import { createDirtParticle, createRockParticle, createRockSpeckParticle } from "../generic-particles";
-import { getGameObjectTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { createDirtParticle, createRockParticle, createRockSpeckParticle } from "../particles";
+import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { AudioFilePath, playSound, ROCK_DESTROY_SOUNDS, ROCK_HIT_SOUNDS } from "../sound";
 
 class Tombstone extends Entity {
    private static readonly HITBOX_WIDTH = 48;
    private static readonly HITBOX_HEIGHT = 88;
 
-   public readonly type = EntityType.tombstone;
-   
    private zombieSpawnProgress: number;
    private zombieSpawnX: number;
    private zombieSpawnY: number;
    public readonly deathInfo: DeathInfo | null;
    
-   constructor(position: Point, id: number, renderDepth: number, tombstoneType: number, zombieSpawnProgress: number, zombieSpawnX: number, zombieSpawnY: number, deathInfo: DeathInfo | null) {
-      super(position, id, EntityType.tombstone, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, tombstoneType: number, zombieSpawnProgress: number, zombieSpawnX: number, zombieSpawnY: number, deathInfo: DeathInfo | null) {
+      super(position, id, EntityType.tombstone, ageTicks, renderDepth);
 
       this.attachRenderPart(
          new RenderPart(
             this,
-            64,
-            96,
-            getGameObjectTextureArrayIndex(`entities/tombstone/tombstone${tombstoneType + 1}.png`),
+            getEntityTextureArrayIndex(`entities/tombstone/tombstone${tombstoneType + 1}.png`),
             0,
             0
          )
@@ -51,7 +47,7 @@ class Tombstone extends Entity {
             }
          }
          if (this.ageTicks % 6 === 0) {
-            playSound(("zombie-dig-" + randInt(1, 5) + ".mp3") as AudioFilePath, 0.15, this.zombieSpawnX, this.zombieSpawnY);
+            playSound(("zombie-dig-" + randInt(1, 5) + ".mp3") as AudioFilePath, 0.15, 1, this.zombieSpawnX, this.zombieSpawnY);
          }
       }
    }
@@ -71,10 +67,10 @@ class Tombstone extends Entity {
          const spawnPositionX = this.position.x + randFloat(-Tombstone.HITBOX_WIDTH/2, Tombstone.HITBOX_WIDTH/2);
          const spawnPositionY = this.position.y + randFloat(-Tombstone.HITBOX_HEIGHT/2, Tombstone.HITBOX_HEIGHT/2);
 
-         createRockSpeckParticle(spawnPositionX, spawnPositionY, 0);
+         createRockSpeckParticle(spawnPositionX, spawnPositionY, 0, 0, 0);
       }
 
-      playSound(randItem(ROCK_HIT_SOUNDS), 0.3, this.position.x, this.position.y);
+      playSound(randItem(ROCK_HIT_SOUNDS), 0.3, 1, this.position.x, this.position.y);
    }
 
    public onDie(): void {
@@ -89,10 +85,10 @@ class Tombstone extends Entity {
          const spawnPositionX = this.position.x + randFloat(-Tombstone.HITBOX_WIDTH/2, Tombstone.HITBOX_WIDTH/2);
          const spawnPositionY = this.position.y + randFloat(-Tombstone.HITBOX_HEIGHT/2, Tombstone.HITBOX_HEIGHT/2);
 
-         createRockSpeckParticle(spawnPositionX, spawnPositionY, 0);
+         createRockSpeckParticle(spawnPositionX, spawnPositionY, 0, 0, 0);
       }
 
-      playSound(randItem(ROCK_DESTROY_SOUNDS), 0.4, this.position.x, this.position.y);
+      playSound(randItem(ROCK_DESTROY_SOUNDS), 0.4, 1, this.position.x, this.position.y);
    }
 
    public updateFromData(entityData: EntityData<EntityType.tombstone>): void {

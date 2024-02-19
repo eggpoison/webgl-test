@@ -81,7 +81,7 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       description: ""
    },
    [ItemType.stone_axe]: {
-      entityTextureSource: "items/small/stone-sword.png",
+      entityTextureSource: "items/small/stone-axe.png",
       textureSource: "items/large/stone-axe.png",
       toolTextureSource: "items/large/stone-axe.png",
       name: "Stone Axe",
@@ -206,6 +206,27 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       name: "Wooden Bow",
       description: ""
    },
+   [ItemType.reinforced_bow]: {
+      entityTextureSource: "items/small/reinforced-bow.png",
+      textureSource: "items/large/reinforced-bow.png",
+      toolTextureSource: "items/large/reinforced-bow.png",
+      name: "Reinforced Bow",
+      description: ""
+   },
+   [ItemType.ice_bow]: {
+      entityTextureSource: "items/small/ice-bow.png",
+      textureSource: "items/large/ice-bow.png",
+      toolTextureSource: "items/large/ice-bow.png",
+      name: "Ice Bow",
+      description: ""
+   },
+   [ItemType.crossbow]: {
+      entityTextureSource: "items/small/crossbow.png",
+      textureSource: "items/large/crossbow.png",
+      toolTextureSource: "items/large/crossbow.png",
+      name: "Crossbow",
+      description: ""
+   },
    [ItemType.meat_suit]: {
       entityTextureSource: "items/small/meat-suit.png",
       textureSource: "items/large/meat-suit.png",
@@ -272,9 +293,9 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
    // @Incomplete
    [ItemType.gathering_gloves]: {
       entityTextureSource: "items/small/fishlord-suit.png",
-      textureSource: "items/large/fishlord-suit.png",
+      textureSource: "items/large/gathering-gloves.png",
       toolTextureSource: "",
-      name: "Fish Suit",
+      name: "Gathering Gloves",
       description: ""
    },
    // @Incomplete
@@ -282,7 +303,7 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       entityTextureSource: "items/small/fishlord-suit.png",
       textureSource: "items/large/fishlord-suit.png",
       toolTextureSource: "items/large/fishlord-suit.png",
-      name: "Fish Suit",
+      name: "The Throngler",
       description: ""
    },
    // @Incomplete
@@ -328,6 +349,63 @@ const CLIENT_ITEM_INFO_RECORD: Record<ItemType, ClientItemInfo> = {
       name: "Wooden Hammer",
       description: ""
    },
+   [ItemType.stone_battleaxe]: {
+      entityTextureSource: "items/small/stone-battleaxe.png",
+      textureSource: "items/large/stone-battleaxe.png",
+      toolTextureSource: "items/large/stone-battleaxe.png",
+      name: "Stone Battleaxe",
+      description: ""
+   },
+   [ItemType.living_rock]: {
+      entityTextureSource: "items/small/living-rock.png",
+      textureSource: "items/large/living-rock.png",
+      toolTextureSource: "",
+      name: "Living Rock",
+      description: ""
+   },
+   [ItemType.planter_box]: {
+      entityTextureSource: "items/small/planter-box.png",
+      textureSource: "items/large/planter-box.png",
+      toolTextureSource: "",
+      name: "Planter Box",
+      description: ""
+   },
+   [ItemType.poop]: {
+      entityTextureSource: "items/small/poop.png",
+      textureSource: "items/large/poop.png",
+      toolTextureSource: "",
+      name: "Poop",
+      description: ""
+   },
+   [ItemType.wooden_spikes]: {
+      entityTextureSource: "items/small/wooden-spikes.png",
+      textureSource: "items/large/wooden-spikes.png",
+      toolTextureSource: "",
+      name: "Wooden Spikes",
+      description: ""
+   },
+   [ItemType.punji_sticks]: {
+      entityTextureSource: "items/small/punji-sticks.png",
+      textureSource: "items/large/punji-sticks.png",
+      toolTextureSource: "",
+      name: "Punji Sticks",
+      description: "Slightly weaker than wooden spikes, but inflicts additional poison damage."
+   },
+   [ItemType.ballista]: {
+      entityTextureSource: "items/small/ballista.png",
+      textureSource: "items/large/ballista.png",
+      toolTextureSource: "",
+      name: "Ballista",
+      description: "An automatic crossbow turret. Requires ammo to function."
+   },
+   [ItemType.sling_turret]: {
+      // @Incomplete
+      entityTextureSource: "items/small/ballista.png",
+      textureSource: "items/large/sling-turret.png",
+      toolTextureSource: "",
+      name: "Sling Turret",
+      description: ""
+   }
 };
 
 export function getItemTypeImage(itemType: ItemType): any {

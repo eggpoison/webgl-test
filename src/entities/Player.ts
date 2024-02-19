@@ -1,17 +1,18 @@
-import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitData, Point, SETTINGS, clampToBoardDimensions, TribeType, ItemType, InventoryData, TribeMemberAction, TileType, EntityType, ItemSlot, Item, TRIBE_INFO_RECORD } from "webgl-test-shared";
+import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitData, Point, SETTINGS, clampToBoardDimensions, TribeType, ItemType, InventoryData, TribeMemberAction, TileType, EntityType, ItemSlot, Item, TRIBE_INFO_RECORD, ItemData, rotateXAroundPoint, rotateYAroundPoint, DoorToggleType } from "webgl-test-shared";
 import Camera from "../Camera";
 import { setCraftingMenuAvailableRecipes, setCraftingMenuAvailableCraftingStations } from "../components/game/menus/CraftingMenu";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import { halfWindowHeight, halfWindowWidth } from "../webgl";
 import GameObject from "../GameObject";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import DroppedItem from "../items/DroppedItem";
-import { Tile } from "../Tile";
+import ItemEntity from "../items/DroppedItem";
 import TribeMember from "./TribeMember";
 import Board from "../Board";
 import { definiteGameState, latencyGameState } from "../game-state/game-states";
-import { createFootprintParticle } from "../generic-particles";
+import { createFootprintParticle } from "../particles";
 import { keyIsPressed } from "../keyboard-input";
+import Hitbox from "../hitboxes/Hitbox";
+import WoodenDoor from "./WoodenDoor";
 
 /** Maximum distance from a crafting station which will allow its recipes to be crafted. */
 const MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION = 250;
@@ -103,26 +104,26 @@ export function getPlayerSelectedItem(): ItemSlot {
    return item || null;
 }
 
-enum TileCollisionAxis {
-   none = 0,
-   x = 1,
-   y = 2,
-   diagonal = 3
+const entityHasHardCollision = (entity: GameObject): boolean => {
+   // Doors have hard collision when closing/closed
+   if (entity.type === EntityType.woodenDoor) {
+      return (entity as WoodenDoor).toggleType === DoorToggleType.close || (entity as WoodenDoor).openProgress === 0;
+   }
+   
+   return entity.type === EntityType.woodenWall || entity.type === EntityType.woodenEmbrasure;
 }
 
 class Player extends TribeMember {
    /** The player entity associated with the current player. */
    public static instance: Player | null = null;
 
-   public readonly type = EntityType.player;
-   
    private numFootstepsTaken = 0;
    private distanceTracker = 0;
    
    public readonly username: string;
 
-   constructor(position: Point, id: number, renderDepth: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, rightActiveItemType: ItemType | null, rightAction: TribeMemberAction, rightFoodEatingType: ItemType | -1, rightLastActionTicks: number, leftActiveItemType: ItemType | null, leftAction: TribeMemberAction, leftFoodEatingType: ItemType | -1, leftLastActionTicks: number, hasFrostShield: boolean, warPaintType: number, username: string) {
-      super(position, id, EntityType.player, renderDepth, tribeID, tribeType, armourSlotInventory, backpackSlotInventory, backpackInventory, rightActiveItemType, rightAction, rightFoodEatingType, rightLastActionTicks, leftActiveItemType, leftAction, leftFoodEatingType, leftLastActionTicks, hasFrostShield, warPaintType);
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, rightActiveItem: ItemData | null, rightAction: TribeMemberAction, rightFoodEatingType: ItemType | -1, rightLastActionTicks: number, rightThrownBattleaxeItemID: number, leftActiveItem: ItemData | null, leftAction: TribeMemberAction, leftFoodEatingType: ItemType | -1, leftLastActionTicks: number, leftThrownBattleaxeItemID: number, hasFrostShield: boolean, warPaintType: number, username: string) {
+      super(position, id, EntityType.player, ageTicks, renderDepth, tribeID, tribeType, armourSlotInventory, backpackSlotInventory, backpackInventory, rightActiveItem, rightAction, rightFoodEatingType, rightLastActionTicks, rightThrownBattleaxeItemID, leftActiveItem, leftAction, leftFoodEatingType, leftLastActionTicks, leftThrownBattleaxeItemID, hasFrostShield, warPaintType);
 
       this.username = username;
    }
@@ -189,65 +190,94 @@ class Player extends TribeMember {
       Player.instance!.resolveBorderCollisions();
    }
 
-   private static checkForTileCollision(tile: Tile): TileCollisionAxis {
-      // Get the distance between the player's position and the center of the tile
-      const xDist = Math.abs(Player.instance!.position.x - (tile.x + 0.5) * SETTINGS.TILE_SIZE);
-      const yDist = Math.abs(Player.instance!.position.y - (tile.y + 0.5) * SETTINGS.TILE_SIZE);
-
-      if (xDist <= Player.RADIUS) {
-         return TileCollisionAxis.y;
-      }
-      if (yDist <= Player.RADIUS) {
-         return TileCollisionAxis.x;
-      }
-
-      const cornerDistance = Math.sqrt(Math.pow(xDist, 2) + Math.pow(yDist, 2));
-
-      if (cornerDistance <= Math.sqrt(Math.pow(SETTINGS.TILE_SIZE, 2) / 2) + Player.RADIUS) {
-         return TileCollisionAxis.diagonal;
-      }
-
-      return TileCollisionAxis.none;
-   }
-
-   private static resolveXAxisTileCollision(tile: Tile): void {
-      const xDist = Player.instance!.position.x - tile.x * SETTINGS.TILE_SIZE;
-      const xDir = xDist >= 0 ? 1 : -1;
-      Player.instance!.position.x = tile.x * SETTINGS.TILE_SIZE + (0.5 + 0.5 * xDir) * SETTINGS.TILE_SIZE + Player.RADIUS * xDir;
-      Player.instance!.velocity.x = 0;
-   }
-
-   private static resolveYAxisTileCollision(tile: Tile): void {
-      const yDist = Player.instance!.position.y - tile.y * SETTINGS.TILE_SIZE;
-      const yDir = yDist >= 0 ? 1 : -1;
-      Player.instance!.position.y = tile.y * SETTINGS.TILE_SIZE + (0.5 + 0.5 * yDir) * SETTINGS.TILE_SIZE + Player.RADIUS * yDir;
-      Player.instance!.velocity.y = 0;
-   }
-
-   private static resolveDiagonalTileCollision(tile: Tile, hitbox: CircularHitbox): void {
-      const xDir = Player.instance!.position.x >= (tile.x + 0.5) * SETTINGS.TILE_SIZE ? 1 : -1;
-      const yDir = Player.instance!.position.y >= (tile.y + 0.5) * SETTINGS.TILE_SIZE ? 1 : -1;
-
-      const tileVertexX = xDir === 1 ? tile.x + 1 : tile.x;
-      const tileVertexY = yDir === 1 ? tile.y + 1 : tile.y;
+   private static resolveCircleRectangleCollision(circleHitbox: CircularHitbox, rectangularHitbox: RectangularHitbox): void {
+      const rectRotation = rectangularHitbox.rotation + rectangularHitbox.externalRotation;
       
-      const xDistFromTileEdge = Player.instance!.position.x - tileVertexX * SETTINGS.TILE_SIZE;
-      const yDistFromTileEdge = Player.instance!.position.y - tileVertexY * SETTINGS.TILE_SIZE;
+      const circlePosX = rotateXAroundPoint(circleHitbox.position.x, circleHitbox.position.y, rectangularHitbox.position.x, rectangularHitbox.position.y, -rectRotation);
+      const circlePosY = rotateYAroundPoint(circleHitbox.position.x, circleHitbox.position.y, rectangularHitbox.position.x, rectangularHitbox.position.y, -rectRotation);
       
-      const xDistFromCenter = Math.abs(Player.instance!.position.x - (tile.x + 0.5) * SETTINGS.TILE_SIZE);
-      const yDistFromCenter = Math.abs(Player.instance!.position.y - (tile.y + 0.5) * SETTINGS.TILE_SIZE);
+      const distanceX = circlePosX - rectangularHitbox.position.x;
+      const distanceY = circlePosY - rectangularHitbox.position.y;
 
-      const moveAxis: "x" | "y" = xDistFromCenter >= yDistFromCenter ? "x" : "y";
-      if (moveAxis === "x") {
-         const collisionXDist = Math.sqrt(Math.pow(hitbox.radius, 2) - Math.pow(tileVertexY * SETTINGS.TILE_SIZE - Player.instance!.position.y, 2));
-         const amountInside = collisionXDist - Math.abs(xDistFromTileEdge);
-         Player.instance!.position.x += amountInside * xDir;
-         Player.instance!.velocity.x = 0;
-      } else {
-         const collisionYDist = Math.sqrt(Math.pow(hitbox.radius, 2) - Math.pow(tileVertexX * SETTINGS.TILE_SIZE - Player.instance!.position.x, 2));
-         const amountInside = collisionYDist - Math.abs(yDistFromTileEdge);
-         Player.instance!.position.y += amountInside * yDir;
-         Player.instance!.velocity.y = 0;
+      const absDistanceX = Math.abs(distanceX);
+      const absDistanceY = Math.abs(distanceY);
+
+      // Top and bottom collisions
+      if (absDistanceX <= (rectangularHitbox.width/2)) {
+         const amountIn = absDistanceY - rectangularHitbox.height/2 - circleHitbox.radius;
+         const offsetMagnitude = -amountIn * Math.sign(distanceY);
+
+         Player.instance!.position.x += offsetMagnitude * Math.sin(rectRotation);
+         Player.instance!.position.y += offsetMagnitude * Math.cos(rectRotation);
+
+         const direction = rectRotation + Math.PI/2;
+         const bx = Math.sin(direction);
+         const by = Math.cos(direction);
+         const projectionCoeff = (Player.instance!.velocity.x * bx + Player.instance!.velocity.y * by) / (bx * bx + by * by);
+         Player.instance!.velocity.x = bx * projectionCoeff;
+         Player.instance!.velocity.y = by * projectionCoeff;
+         return;
+      }
+
+      // Left and right collisions
+      if (absDistanceY <= (rectangularHitbox.height/2)) {
+         const amountIn = absDistanceX - rectangularHitbox.width/2 - circleHitbox.radius;
+         const offsetMagnitude = -amountIn * Math.sign(distanceX);
+
+         Player.instance!.position.x += offsetMagnitude * Math.sin(rectRotation + Math.PI/2);
+         Player.instance!.position.y += offsetMagnitude * Math.cos(rectRotation + Math.PI/2);
+
+         const bx = Math.sin(rectRotation);
+         const by = Math.cos(rectRotation);
+         const projectionCoeff = (Player.instance!.velocity.x * bx + Player.instance!.velocity.y * by) / (bx * bx + by * by);
+         Player.instance!.velocity.x = bx * projectionCoeff;
+         Player.instance!.velocity.y = by * projectionCoeff;
+         return;
+      }
+
+      const cornerDistanceSquared = Math.pow(absDistanceX - rectangularHitbox.width/2, 2) + Math.pow(absDistanceY - rectangularHitbox.height/2, 2);
+      if (cornerDistanceSquared <= circleHitbox.radius * circleHitbox.radius) {
+         // @Cleanup: Whole lot of copy and paste
+         const amountInX = absDistanceX - rectangularHitbox.width/2 - circleHitbox.radius;
+         const amountInY = absDistanceY - rectangularHitbox.height/2 - circleHitbox.radius;
+         if (Math.abs(amountInY) < Math.abs(amountInX)) {
+            const closestRectBorderY = circlePosY < rectangularHitbox.position.y ? rectangularHitbox.position.y - rectangularHitbox.height/2 : rectangularHitbox.position.y + rectangularHitbox.height/2;
+            
+            const closestRectBorderX = circlePosX < rectangularHitbox.position.x ? rectangularHitbox.position.x - rectangularHitbox.width/2 : rectangularHitbox.position.x + rectangularHitbox.width/2;
+            const xDistanceFromRectBorder = Math.abs(closestRectBorderX - circlePosX);
+            const len = Math.sqrt(circleHitbox.radius * circleHitbox.radius - xDistanceFromRectBorder * xDistanceFromRectBorder);
+
+            const amountIn = Math.abs(closestRectBorderY - (circlePosY - len * Math.sign(distanceY)));
+            const offsetMagnitude = amountIn * Math.sign(distanceY);
+   
+            Player.instance!.position.x += offsetMagnitude * Math.sin(rectRotation);
+            Player.instance!.position.y += offsetMagnitude * Math.cos(rectRotation);
+   
+            const direction = rectRotation + Math.PI/2;
+            const bx = Math.sin(direction);
+            const by = Math.cos(direction);
+            const projectionCoeff = (Player.instance!.velocity.x * bx + Player.instance!.velocity.y * by) / (bx * bx + by * by);
+            Player.instance!.velocity.x = bx * projectionCoeff;
+            Player.instance!.velocity.y = by * projectionCoeff;
+         } else {
+            const closestRectBorderX = circlePosX < rectangularHitbox.position.x ? rectangularHitbox.position.x - rectangularHitbox.width/2 : rectangularHitbox.position.x + rectangularHitbox.width/2;
+            
+            const closestRectBorderY = circlePosY < rectangularHitbox.position.y ? rectangularHitbox.position.y - rectangularHitbox.height/2 : rectangularHitbox.position.y + rectangularHitbox.height/2;
+            const yDistanceFromRectBorder = Math.abs(closestRectBorderY - circlePosY);
+            const len = Math.sqrt(circleHitbox.radius * circleHitbox.radius - yDistanceFromRectBorder * yDistanceFromRectBorder);
+
+            const amountIn = Math.abs(closestRectBorderX - (circlePosX - len * Math.sign(distanceX)));
+            const offsetMagnitude = amountIn * Math.sign(distanceX);
+   
+            Player.instance!.position.x += offsetMagnitude * Math.sin(rectRotation + Math.PI/2);
+            Player.instance!.position.y += offsetMagnitude * Math.cos(rectRotation + Math.PI/2);
+   
+            const bx = Math.sin(rectRotation);
+            const by = Math.cos(rectRotation);
+            const projectionCoeff = (Player.instance!.velocity.x * bx + Player.instance!.velocity.y * by) / (bx * bx + by * by);
+            Player.instance!.velocity.x = bx * projectionCoeff;
+            Player.instance!.velocity.y = by * projectionCoeff;
+         }
       }
    }
 
@@ -263,21 +293,12 @@ class Player extends TribeMember {
          for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
             const tile = Board.getTile(tileX, tileY);
             if (tile.isWall) {
-               const collisionAxis = this.checkForTileCollision(tile);
-               switch (collisionAxis) {
-                  case TileCollisionAxis.x: {
-                     this.resolveXAxisTileCollision(tile);
-                     break;
-                  }
-                  case TileCollisionAxis.y: {
-                     this.resolveYAxisTileCollision(tile);
-                     break;
-                  }
-                  case TileCollisionAxis.diagonal: {
-                     this.resolveDiagonalTileCollision(tile, Array.from(Player.instance.hitboxes)[0] as CircularHitbox);
-                     break;
-                  }
-               }
+               const tileHitbox = new RectangularHitbox(1, SETTINGS.TILE_SIZE, SETTINGS.TILE_SIZE, 0);
+               tileHitbox.position.x = (tile.x + 0.5) * SETTINGS.TILE_SIZE;
+               tileHitbox.position.y = (tile.y + 0.5) * SETTINGS.TILE_SIZE;
+               tileHitbox.updateHitboxBounds(0);
+
+               this.resolveCollisionHard(Player.instance.hitboxes[0] as CircularHitbox, tileHitbox);
             }
          }
       }
@@ -309,58 +330,77 @@ class Player extends TribeMember {
          }
       }
    }
+
+   private static resolveCollisionSoft(playerHitbox: Hitbox, collidingEntity: GameObject, collidingHitbox: Hitbox): void {
+      // Calculate the force of the push
+      // Force gets greater the closer together the entities are
+      const distanceBetweenEntities = Player.instance!.position.calculateDistanceBetween(collidingHitbox.position);
+      const maxDistanceBetweenEntities = this.calculateMaxDistanceFromGameObject(collidingEntity);
+      const dist = Math.max(distanceBetweenEntities / maxDistanceBetweenEntities, 0.1);
+      let forceMultiplier = 1 / dist;
+
+      // Push away
+      const force = SETTINGS.ENTITY_PUSH_FORCE / SETTINGS.TPS * forceMultiplier * collidingHitbox.mass / playerHitbox.mass;
+      const angle = Player.instance!.position.calculateAngleBetween(collidingHitbox.position) + Math.PI;
+
+      // No need to apply force to other object as they will do it themselves
+      Player.instance!.velocity.x += force * Math.sin(angle);
+      Player.instance!.velocity.y += force * Math.cos(angle);
+   }
+
+   private static resolveCollisionHard(playerHitbox: CircularHitbox, collidingHitbox: Hitbox): void {
+      if (collidingHitbox.hasOwnProperty("radius")) {
+         return;
+      }
+      
+      this.resolveCircleRectangleCollision(playerHitbox, collidingHitbox as RectangularHitbox);
+   }
    
    private static resolveGameObjectCollisions(): void {
       if (Player.instance === null) throw new Error();
       
-      const collidingEntities = this.getCollidingGameObjects();
+      const potentialCollidingEntities = this.getPotentialCollidingEntities();
+      mainLoop:
+      for (let i = 0; i < potentialCollidingEntities.length; i++) {
+         const entity = potentialCollidingEntities[i];
 
-      for (const gameObject of collidingEntities) {
-         if (gameObject instanceof DroppedItem) {
+         if (entity instanceof ItemEntity) {
             continue;
          }
-         
+      
          // If the two entities are exactly on top of each other, don't do anything
-         if (gameObject.position.x === Player.instance.position.x && gameObject.position.y === Player.instance.position.y) {
+         if (entity.position.x === Player.instance!.position.x && entity.position.y === Player.instance!.position.y) {
             continue;
          }
 
-         // Calculate the force of the push
-         // Force gets greater the closer together the entities are
-         const distanceBetweenEntities = Player.instance.position.calculateDistanceBetween(gameObject.position);
-         const maxDistanceBetweenEntities = this.calculateMaxDistanceFromGameObject(gameObject);
-         const dist = Math.max(distanceBetweenEntities / maxDistanceBetweenEntities, 0.1);
-         let forceMultiplier = 1 / dist;
-
-         // Push both entities away from each other
-         const force = SETTINGS.ENTITY_PUSH_FORCE / SETTINGS.TPS * forceMultiplier * gameObject.mass / Player.instance.mass;
-         const angle = Player.instance.position.calculateAngleBetween(gameObject.position) + Math.PI;
-
-         // No need to apply force to other object as they will do it themselves
-         Player.instance.velocity.x += force * Math.sin(angle);
-         Player.instance.velocity.y += force * Math.cos(angle);
-      }
-   }
-
-   private static getCollidingGameObjects(): ReadonlyArray<GameObject> {
-      const collidingGameObjects = new Array<GameObject>();
-
-      for (const chunk of Player.instance!.chunks) {
-         gameObjectLoop: for (const gameObject of chunk.getGameObjects()) {
-            if (gameObject === Player.instance) continue;
-
-            for (const hitbox of Player.instance!.hitboxes) {
-               for (const otherHitbox of gameObject.hitboxes) {
-                  if (hitbox.isColliding(otherHitbox)) {
-                     collidingGameObjects.push(gameObject);
-                     continue gameObjectLoop;
+         for (const hitbox of Player.instance!.hitboxes) {
+            for (const otherHitbox of entity.hitboxes) {
+               if (hitbox.isColliding(otherHitbox)) {
+                  // Collide
+                  if (entityHasHardCollision(entity)) {
+                     this.resolveCollisionHard(hitbox as CircularHitbox, otherHitbox);
+                  } else {
+                     this.resolveCollisionSoft(hitbox, entity, otherHitbox);
                   }
+                  continue mainLoop;
                }
             }
          }
       }
+   }
 
-      return collidingGameObjects;
+   private static getPotentialCollidingEntities(): ReadonlyArray<GameObject> {
+      const entities = new Array<GameObject>();
+
+      for (const chunk of Player.instance!.chunks) {
+         for (const entity of chunk.getGameObjects()) {
+            if (entity !== Player.instance) {
+               entities.push(entity);
+            }
+         }
+      }
+
+      return entities;
    }
 
    private static calculateMaxDistanceFromGameObject(gameObject: GameObject): number {
@@ -392,7 +432,7 @@ class Player extends TribeMember {
    }
 
    public static createNewPlayerHitbox(): CircularHitbox {
-      const hitbox = new CircularHitbox(Player.RADIUS);
+      const hitbox = new CircularHitbox(1, Player.RADIUS, 0);
       return hitbox;
    }
 }

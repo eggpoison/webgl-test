@@ -11,10 +11,15 @@ export let Hotbar_update: () => void = () => {};
 
 export let Hotbar_setHotbarSelectedItemSlot: (itemSlot: number) => void = () => {};
 
+export let Hotbar_updateRightThrownBattleaxeItemID: (rightThrownBattleaxeItemID: number) => void = () => {};
+export let Hotbar_updateLeftThrownBattleaxeItemID: (leftThrownBattleaxeItemID: number) => void = () => {};
+
 export const backpackItemTypes: ReadonlyArray<ItemType> = [ItemType.leather_backpack, ItemType.raw_beef];
 
 const Hotbar = () => {
    const [selectedItemSlot, setSelectedItemSlot] = useState(1);
+   const [rightThrownBattleaxeItemID, setRightThrownBattleaxeItemID] = useState(-1);
+   const [leftThrownBattleaxeItemID, setLeftThrownBattleaxeItemID] = useState(-1);
    const [, update] = useReducer(x => x + 1, 0);
 
    // @Cleanup: Copy and paste
@@ -36,6 +41,15 @@ const Hotbar = () => {
       leftClickItemSlot(e, Player.instance!.id, definiteGameState.armourSlot, 1);
    }, []);
 
+   const clickGloveItemSlot = useCallback((e: MouseEvent): void => {
+      // Don't click it the player is holding a non-armour item
+      if (definiteGameState.heldItemSlot.itemSlots.hasOwnProperty(1) && ITEM_TYPE_RECORD[definiteGameState.heldItemSlot.itemSlots[1].type] !== "glove") {
+         return;
+      }
+
+      leftClickItemSlot(e, Player.instance!.id, definiteGameState.gloveSlot, 1);
+   }, []);
+
    const clickOffhandItemSlot = useCallback((e: MouseEvent): void => {
       leftClickItemSlot(e, Player.instance!.id, definiteGameState.offhandInventory, 1);
    }, []);
@@ -48,6 +62,14 @@ const Hotbar = () => {
       Hotbar_setHotbarSelectedItemSlot = (itemSlot: number): void => {
          setSelectedItemSlot(itemSlot);
       }
+
+      Hotbar_updateRightThrownBattleaxeItemID = (rightThrownBattleaxeItemID: number): void => {
+         setRightThrownBattleaxeItemID(rightThrownBattleaxeItemID);
+      }
+
+      Hotbar_updateLeftThrownBattleaxeItemID = (leftThrownBattleaxeItemID: number): void => {
+         setLeftThrownBattleaxeItemID(leftThrownBattleaxeItemID);
+      }
    }, []);
 
    // Create the item slots
@@ -58,7 +80,7 @@ const Hotbar = () => {
       if (typeof item !== "undefined") {
          const imageSrc = getItemTypeImage(item.type);
          hotbarItemSlots.push(
-            <ItemSlot onClick={e => leftClickItemSlot(e, Player.instance!.id, definiteGameState.hotbar, itemSlot)} onContextMenu={e => rightClickItemSlot(e, Player.instance!.id, definiteGameState.hotbar, itemSlot)} isSelected={itemSlot === selectedItemSlot} picturedItemImageSrc={imageSrc} itemCount={item.count} key={itemSlot} />
+            <ItemSlot className={rightThrownBattleaxeItemID === item.id ? "dark" : undefined} onClick={e => leftClickItemSlot(e, Player.instance!.id, definiteGameState.hotbar, itemSlot)} onContextMenu={e => rightClickItemSlot(e, Player.instance!.id, definiteGameState.hotbar, itemSlot)} isSelected={itemSlot === selectedItemSlot} picturedItemImageSrc={imageSrc} itemCount={item.count} key={itemSlot} />
          );
       } else {
          hotbarItemSlots.push(
@@ -69,8 +91,9 @@ const Hotbar = () => {
 
    let offhandSlotElement: JSX.Element;
    if (definiteGameState.offhandInventory.itemSlots.hasOwnProperty(1)) {
-      const image = getItemTypeImage(definiteGameState.offhandInventory.itemSlots[1].type);
-      offhandSlotElement = <ItemSlot onClick={clickOffhandItemSlot} isSelected={false} picturedItemImageSrc={image} />
+      const item = definiteGameState.offhandInventory.itemSlots[1];
+      const image = getItemTypeImage(item.type);
+      offhandSlotElement = <ItemSlot className={leftThrownBattleaxeItemID === item.id ? "dark" : undefined} onClick={clickOffhandItemSlot} isSelected={false} picturedItemImageSrc={image} />
    } else {
       const imageSrc = require("../../../images/miscellaneous/offhand-wireframe.png");
       offhandSlotElement = <ItemSlot onClick={clickOffhandItemSlot} isSelected={false} picturedItemImageSrc={imageSrc} />
@@ -94,6 +117,15 @@ const Hotbar = () => {
       armourItemSlotElement = <ItemSlot onClick={clickArmourItemSlot} isSelected={false} picturedItemImageSrc={imageSrc} />
    }
 
+   let gloveItemSlotElement: JSX.Element;
+   if (definiteGameState.gloveSlot.itemSlots.hasOwnProperty(1)) {
+      const image = getItemTypeImage(definiteGameState.gloveSlot.itemSlots[1].type);
+      gloveItemSlotElement = <ItemSlot onClick={clickGloveItemSlot} isSelected={false} picturedItemImageSrc={image} itemCount={definiteGameState.gloveSlot.itemSlots[1].count} />
+   } else {
+      const imageSrc = require("../../../images/miscellaneous/glove-wireframe.png");
+      gloveItemSlotElement = <ItemSlot onClick={clickGloveItemSlot} isSelected={false} picturedItemImageSrc={imageSrc} />
+   }
+
    return <div id="hotbar">
       <div className="flex-container">
          <div className={"inventory" + (Game.tribe.tribeType !== TribeType.barbarians ? " hidden" : "")}>
@@ -109,6 +141,7 @@ const Hotbar = () => {
          <div className="inventory">
             {backpackSlotElement}
             {armourItemSlotElement}
+            {gloveItemSlotElement}
          </div>
       </div>
    </div>;
