@@ -10,19 +10,19 @@ const LIFE_MESSAGES: ReadonlyArray<string> = [
 
 // @Incomplete
 const TOMBSTONE_DEATH_MESSAGES: Record<PlayerCauseOfDeath, string> = {
-   [PlayerCauseOfDeath.zombie]: "Ripped to pieces",
+   [PlayerCauseOfDeath.zombie]: "Ripped to pieces by a zombie",
    [PlayerCauseOfDeath.yeti]: "Tried to hug a yeti",
    [PlayerCauseOfDeath.god]: "Struck down by divine judgement",
-   [PlayerCauseOfDeath.fire]: "Was unhealthily flammable",
+   [PlayerCauseOfDeath.fire]: "Couldn't handle the smoke",
    [PlayerCauseOfDeath.poison]: "Poisoned",
-   [PlayerCauseOfDeath.tribe_member]: "Died to a tribe member",
-   [PlayerCauseOfDeath.arrow]: "Impaled by an arrow",
-   [PlayerCauseOfDeath.ice_spikes]: "Died to ice spikes",
-   [PlayerCauseOfDeath.ice_shards]: "Impaled by an ice shard",
-   [PlayerCauseOfDeath.cactus]: "Impaled by an arrow",
-   [PlayerCauseOfDeath.snowball]: "Crushed by a snowball",
-   [PlayerCauseOfDeath.slime]: "Absorbed by a slime",
-   [PlayerCauseOfDeath.frozen_yeti]: "Thought the 'F' in Frozen Yeti meant friend",
+   [PlayerCauseOfDeath.tribe_member]: "Died to a tribe member", // @Incomplete
+   [PlayerCauseOfDeath.arrow]: "Impaled by an arrow", // @Incomplete
+   [PlayerCauseOfDeath.ice_spikes]: "Died to ice spikes", // @Incomplete
+   [PlayerCauseOfDeath.ice_shards]: "Impaled by an ice shard", // @Incomplete
+   [PlayerCauseOfDeath.cactus]: "Impaled by an arrow", // @Incomplete
+   [PlayerCauseOfDeath.snowball]: "Crushed by a snowball", // @Incomplete
+   [PlayerCauseOfDeath.slime]: "Absorbed by a slime", // @Incomplete
+   [PlayerCauseOfDeath.frozen_yeti]: "Thought the 'F' in Frozen Yeti meant friend", // @Incomplete
    [PlayerCauseOfDeath.bloodloss]: "Ran out of blood",
    [PlayerCauseOfDeath.rock_spike]: "Impaled from hole to hole",
    [PlayerCauseOfDeath.lack_of_oxygen]: "Ran out of oxygen",
