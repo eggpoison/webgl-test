@@ -1091,6 +1091,7 @@ const itemRightClickUp = (item: Item, isOffhand: boolean): void => {
             Player.instance!.rightAction = TribeMemberAction.none;
          }
 
+         // @Incomplete: Don't play if bow didn't actually fire an arrow
          switch (item.type) {
             case ItemType.wooden_bow: {
                playSound("bow-fire.mp3", 0.4, 1, Player.instance!.position.x, Player.instance!.position.y);

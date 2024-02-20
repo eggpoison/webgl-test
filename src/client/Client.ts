@@ -157,8 +157,7 @@ abstract class Client {
 
    /** Creates the socket used to connect to the server */
    private static createSocket(): ISocket {
-      // return io(`ws://localhost:${SETTINGS.SERVER_PORT}`, {
-      return io(`ws://172.17.80.155:${SETTINGS.SERVER_PORT}`, {
+      return io(`ws://localhost:${SETTINGS.SERVER_PORT}`, {
          transports: ["websocket", "polling", "flashsocket"],
          autoConnect: false,
          reconnection: false

@@ -136,7 +136,7 @@ const GameInfoDisplay = () => {
       <ul>
          <li>
             <label>
-               <input ref={rangeInputRef} type="range" name="zoom-input" defaultValue={1.75} min={1} max={2.25} step={0.25} onChange={changeZoom} />
+               <input ref={rangeInputRef} type="range" name="zoom-input" defaultValue={Camera.zoom} min={1} max={2.25} step={0.25} onChange={changeZoom} />
                <br></br>Zoom ({zoom})
             </label>
          </li>
