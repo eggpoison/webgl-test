@@ -1,9 +1,9 @@
-import { BallistaAmmoType, EntityData, EntityType, Inventory, InventoryData, ItemType, Point, lerp, rotateXAroundOrigin, rotateYAroundOrigin } from "webgl-test-shared";
+import { BallistaAmmoType, EntityData, EntityType, Inventory, InventoryData, ItemType, Point, lerp, randItem } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
-import { playSound } from "../sound";
+import { ROCK_DESTROY_SOUNDS, ROCK_HIT_SOUNDS, playSound } from "../sound";
 
 export const BALLISTA_GEAR_X = -12;
 export const BALLISTA_GEAR_Y = 30;
@@ -83,20 +83,6 @@ class Ballista extends Entity {
          )
       );
 
-      // Gears
-      const gearRenderParts = new Array<RenderPart>();
-      for (let i = 0; i < 2; i++) {
-         const renderPart = new RenderPart(
-            this,
-            getEntityTextureArrayIndex("entities/ballista/gear.png"),
-            2.5 + i * 0.1,
-            0
-         );
-         this.attachRenderPart(renderPart);
-         gearRenderParts.push(renderPart);
-      }
-      this.gearRenderParts = gearRenderParts;
-
       // Ammo box
       const ammoBoxRenderPart = new RenderPart(
          this,
@@ -126,9 +112,24 @@ class Ballista extends Entity {
       this.shaftRenderPart = shaftRenderPart;
       this.attachRenderPart(shaftRenderPart);
 
+      // Gears
+      const gearRenderParts = new Array<RenderPart>();
+      for (let i = 0; i < 2; i++) {
+         const renderPart = new RenderPart(
+            this.shaftRenderPart,
+            getEntityTextureArrayIndex("entities/ballista/gear.png"),
+            2.5 + i * 0.1,
+            0
+         );
+         renderPart.offset = new Point(i === 0 ? BALLISTA_GEAR_X : -BALLISTA_GEAR_X, BALLISTA_GEAR_Y)
+         this.attachRenderPart(renderPart);
+         gearRenderParts.push(renderPart);
+      }
+      this.gearRenderParts = gearRenderParts;
+
       // Crossbow
       const crossbowRenderPart = new RenderPart(
-         this,
+         this.shaftRenderPart,
          getEntityTextureArrayIndex(getBallistaCrossbarTextureSource(chargeProgress)),
          5,
          0
@@ -150,21 +151,9 @@ class Ballista extends Entity {
 
    private updateAimDirection(aimDirection: number, chargeProgress: number): void {
       this.shaftRenderPart.rotation = aimDirection;
-      this.crossbowRenderPart.rotation = aimDirection;
 
       for (let i = 0; i < 2; i++) {
          const gearRenderPart = this.gearRenderParts[i];
-
-         gearRenderPart.rotation = aimDirection;
-
-         const x = i === 0 ? BALLISTA_GEAR_X : -BALLISTA_GEAR_X;
-         const y = BALLISTA_GEAR_Y;
-
-         const offsetX = rotateXAroundOrigin(x, y, aimDirection);
-         const offsetY = rotateYAroundOrigin(x, y, aimDirection);
-         // @Speed: garbage collection
-         gearRenderPart.offset = new Point(offsetX, offsetY);
-
          gearRenderPart.rotation = lerp(0, Math.PI * 2, chargeProgress) * (i === 0 ? 1 : -1);
       }
    }
@@ -179,11 +168,6 @@ class Ballista extends Entity {
       const textureSource = ammoInfo.projectileTextureSource;
       this.projectileRenderPart.switchTextureSource(textureSource);
 
-      if (ammoType === ItemType.rock || ammoType === ItemType.slimeball) {
-         this.projectileRenderPart.rotation = 2 * Math.PI * Math.random();
-      } else {
-         this.projectileRenderPart.rotation = 0;
-      }
       this.ammoType = ammoType;
    }
 
@@ -197,7 +181,12 @@ class Ballista extends Entity {
 
       // @Cleanup: Do we need this?
       if (reloadProgress === 0 && chargeProgress === 0) {
-         this.switchAmmo(this.ammoType);
+         // Update rotation for projectiles which have a random rotation each load
+         if (this.ammoType === ItemType.rock || this.ammoType === ItemType.slimeball) {
+            this.projectileRenderPart.rotation = 2 * Math.PI * Math.random();
+         } else {
+            this.projectileRenderPart.rotation = 0;
+         }
       }
       
       const ammoInfo = AMMO_INFO_RECORD[this.ammoType];
@@ -244,6 +233,16 @@ class Ballista extends Entity {
       
       this.updateAimDirection(aimDirection, chargeProgress);
       this.updateProjectileRenderPart(chargeProgress, reloadProgress);
+   }
+
+   protected onHit(): void {
+      // @Temporary
+      playSound(randItem(ROCK_HIT_SOUNDS), 0.3, 1, this.position.x, this.position.y);
+   }
+
+   public onDie(): void {
+      // @Temporary
+      playSound(randItem(ROCK_DESTROY_SOUNDS), 0.4, 1, this.position.x, this.position.y);
    }
 }
 

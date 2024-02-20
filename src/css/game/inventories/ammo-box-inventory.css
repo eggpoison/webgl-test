@@ -1,5 +1,9 @@
 /* @Cleanup: Narrow these to the ammo box */
 
+#ammo-box-menu {
+   width: 22rem;
+}
+
 .ammo-slider-container {
    width: 5rem;
    height: 1.1rem;
@@ -13,11 +17,39 @@
    height: 1.1rem;
 }
 .ammo-slider-container .label {
-   font-weight: 1.05rem;
+   font-family: "Noto Sans";
+   font-size: 1.05rem;
+   font-weight: bold;
    color: #fff;
    position: absolute;
    top: 50%;
    left: 50%;
    transform: translate(-50%, -50%);
    text-shadow: 0 0 1px #000;
+}
+
+#ammo-guide {
+   left: calc(50% + 13rem);
+   transform: translateY(-50%);
+}
+
+#ammo-guide .area {
+   position: relative;
+}
+
+#ammo-guide img {
+   width: 32px;
+   height: 32px;
+   image-rendering: pixelated;
+   position: absolute;
+   top: 4px;
+   right: 4px;
+}
+
+#ammo-guide p {
+   color: #ddd;
+}
+#ammo-guide p span {
+   font-weight: bold;
+   color: #fff;
 }
