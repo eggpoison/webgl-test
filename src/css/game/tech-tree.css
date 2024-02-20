@@ -36,7 +36,7 @@
    border: var(--border-thickness) solid #000;
    border-radius: 100%;
    position: absolute;
-   transform: translate(-50%, -50%) scale(var(--zoom));
+   transform: translate(-50%, -50%) scale(var(--tech-tree-zoom));
    z-index: 1;
    white-space: pre;
    user-select: none;

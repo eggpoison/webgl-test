@@ -297,7 +297,7 @@ const TechTree = () => {
       return null;
    }
    
-   return <div id="tech-tree" style={{"--zoom": zoom} as React.CSSProperties} onMouseDown={e => onMouseDown(e.nativeEvent)} onMouseMove={e => onMouseMove(e.nativeEvent)} onMouseUp={() => onMouseUp()}>
+   return <div id="tech-tree" style={{"--tech-tree-zoom": zoom} as React.CSSProperties} onMouseDown={e => onMouseDown(e.nativeEvent)} onMouseMove={e => onMouseMove(e.nativeEvent)} onMouseUp={() => onMouseUp()}>
       <h1>Tech Tree</h1>
       
       {TECHS.filter(tech => OPTIONS.showAllTechs || techIsDirectlyAccessible(tech)).map((techInfo, i) => {
