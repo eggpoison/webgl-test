@@ -136,7 +136,7 @@ export function updateHighlightedEntity(): void {
    }
 
    // If the player is interacting with an inventory, only consider the distance from the player not the cursor
-   if (selectedEntityID !== -1 && (isHoveringInBlueprintMenu() || InventorySelector_inventoryIsOpen())) {
+   if (selectedEntityID !== -1 && Board.entityRecord.hasOwnProperty(selectedEntityID) && (isHoveringInBlueprintMenu() || InventorySelector_inventoryIsOpen())) {
       const selectedEntity = getSelectedEntity();
       const distance = Player.instance.position.calculateDistanceBetween(selectedEntity.position);
       if (distance <= HIGHLIGHT_DISTANCE) {

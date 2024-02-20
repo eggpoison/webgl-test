@@ -1,7 +1,7 @@
 import Board from "./Board";
 import Player, { updateAvailableCraftingRecipes, updatePlayerRotation } from "./entities/Player";
 import { isDev } from "./utils";
-import { renderPlayerNames, createTextCanvasContext, clearTextCanvas, renderDamageNumbers, updateTextNumbers, renderResearchNumbers } from "./text-canvas";
+import { createTextCanvasContext, updateTextNumbers, renderText } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/game/ChatBox";
 import { DecorationInfo, GameDataPacket, GameObjectDebugData, GrassTileInfo, RiverSteppingStoneData, SETTINGS, ServerTileData, WaterRockData } from "webgl-test-shared";
@@ -381,11 +381,7 @@ abstract class Game {
       this.timeData[0] = performance.now();
       gl.bufferSubData(gl.UNIFORM_BUFFER, 0, this.timeData);
 
-      // @Cleanup: Call all these functions in the text-canvas file from one renderTextCanvas function
-      clearTextCanvas();
-      renderPlayerNames();
-      renderDamageNumbers();
-      renderResearchNumbers();
+      renderText();
 
       renderSolidTiles();
       renderRivers();

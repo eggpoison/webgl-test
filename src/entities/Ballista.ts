@@ -2,7 +2,7 @@ import { BallistaAmmoType, EntityData, EntityType, Inventory, InventoryData, Ite
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
-import { createInventoryFromData, inventoryHasItems, updateInventoryFromData } from "../inventory-manipulation";
+import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
 import { playSound } from "../sound";
 
 export const BALLISTA_GEAR_X = -12;
@@ -59,15 +59,19 @@ class Ballista extends Entity {
 
    private chargeProgress: number;
 
-   private ammoType: BallistaAmmoType | null = null;
+   public ammoType: BallistaAmmoType | null;
+   public ammoRemaining: number;
    
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, tribeID: number | null, aimDirection: number, chargeProgress: number, reloadProgress: number, ammoBoxInventoryData: InventoryData) {
+   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, tribeID: number | null, aimDirection: number, chargeProgress: number, reloadProgress: number, ammoBoxInventoryData: InventoryData, ammoType: BallistaAmmoType, ammoRemaining: number) {
       super(position, id, EntityType.ballista, ageTicks, renderDepth);
 
       this.tribeID = tribeID;
       this.chargeProgress = chargeProgress;
       
       this.ammoBoxInventory = createInventoryFromData(ammoBoxInventoryData);
+
+      this.ammoType = ammoRemaining > 0 ? ammoType : null;
+      this.ammoRemaining = ammoRemaining;
 
       // Base
       this.attachRenderPart(
@@ -165,23 +169,12 @@ class Ballista extends Entity {
       }
    }
 
-   private hasAmmo(): boolean {
-      return inventoryHasItems(this.ammoBoxInventory);
-   }
-
-   private getAmmoType(): BallistaAmmoType | null {
-      for (let itemSlot = 1; itemSlot <= this.ammoBoxInventory.width * this.ammoBoxInventory.height; itemSlot++) {
-         if (!this.ammoBoxInventory.itemSlots.hasOwnProperty(itemSlot)) {
-            continue;
-         }
-
-         return this.ammoBoxInventory.itemSlots[itemSlot].type as BallistaAmmoType;
+   private switchAmmo(ammoType: BallistaAmmoType | null): void {
+      if (ammoType === null) {
+         this.ammoType = null;
+         return;
       }
-
-      return null;
-   }
-
-   private switchAmmo(ammoType: BallistaAmmoType): void {
+      
       const ammoInfo = AMMO_INFO_RECORD[ammoType];
       const textureSource = ammoInfo.projectileTextureSource;
       this.projectileRenderPart.switchTextureSource(textureSource);
@@ -197,18 +190,17 @@ class Ballista extends Entity {
    private updateProjectileRenderPart(chargeProgress: number, reloadProgress: number): void {
       // If the ballista has no ammo, then don't show the render part
       // @Speed: Would be easier on render part rendering if we remove the render part instead of setting its opacity to 0
-      if (!this.hasAmmo()) {
+      if (this.ammoType === null) {
          this.projectileRenderPart.opacity = 0;
          return;
       }
 
-      const ammoType = this.getAmmoType()!;
-
+      // @Cleanup: Do we need this?
       if (reloadProgress === 0 && chargeProgress === 0) {
-         this.switchAmmo(ammoType);
+         this.switchAmmo(this.ammoType);
       }
       
-      const ammoInfo = AMMO_INFO_RECORD[ammoType];
+      const ammoInfo = AMMO_INFO_RECORD[this.ammoType];
       if (chargeProgress > 0) {
          const pullbackOffset = lerp(48, 0, chargeProgress) + ammoInfo.drawOffset;
          this.projectileRenderPart.offset = Point.fromVectorForm(pullbackOffset, 0);
@@ -242,8 +234,11 @@ class Ballista extends Entity {
       const ammoBoxInventoryData = data.clientArgs[4];
       updateInventoryFromData(this.ammoBoxInventory, ammoBoxInventoryData);
 
-      const ammoType = this.getAmmoType();
-      if (ammoType !== null && ammoType !== this.ammoType) {
+      const ammoType = data.clientArgs[5];
+      this.ammoRemaining = data.clientArgs[6];
+      if (this.ammoRemaining === 0) {
+         this.switchAmmo(null);
+      } else {
          this.switchAmmo(ammoType);
       }
       

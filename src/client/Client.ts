@@ -23,7 +23,7 @@ import { BackpackInventoryMenu_update } from "../components/game/inventories/Bac
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
 import { calculateEntityRenderDepth } from "../render-layers";
 import GameObject from "../GameObject";
-import { createDamageNumber } from "../text-canvas";
+import { createDamageNumber, createHealNumber } from "../text-canvas";
 import { playSound } from "../sound";
 import { closeTechTree, updateTechTree } from "../components/game/TechTree";
 import { TechInfocard_setSelectedTech } from "../components/game/TechInfocard";
@@ -217,21 +217,41 @@ abstract class Client {
 
       HealthBar_setHasFrostShield(gameDataPacket.hasFrostShield);
 
-      if (Player.instance !== null) {
-         for (const hitData of gameDataPacket.hitsTaken) {
-            // Register hit
+      // Register hits
+      for (const hitData of gameDataPacket.hits) {
+         // Register hit
+         if (Board.entityRecord.hasOwnProperty(hitData.hitEntityID)) {
+            const entity = Board.entityRecord[hitData.hitEntityID];
+            entity.registerHit(hitData);
+         }
+
+         if (shouldShowDamageNumber(hitData.attackerID)) {
             if (Board.entityRecord.hasOwnProperty(hitData.hitEntityID)) {
                const entity = Board.entityRecord[hitData.hitEntityID];
-               entity.registerHit(hitData);
+               createDamageNumber(entity.position.x, entity.position.y, hitData.damage);
+            } else {
+               createDamageNumber(hitData.entityPositionX, hitData.entityPositionY, hitData.damage);
             }
+         }
+      }
 
-            if (shouldShowDamageNumber(hitData.attackerID)) {
-               if (Board.entityRecord.hasOwnProperty(hitData.hitEntityID)) {
-                  const entity = Board.entityRecord[hitData.hitEntityID];
-                  createDamageNumber(entity.position.x, entity.position.y, hitData.damage);
-               } else {
-                  createDamageNumber(hitData.entityPositionX, hitData.entityPositionY, hitData.damage);
-               }
+      // Register heals
+      for (const healData of gameDataPacket.heals) {
+         if (healData.healAmount === 0) {
+            continue;
+         }
+
+         if (Player.instance !== null && healData.healerID === Player.instance.id) {
+            createHealNumber(healData.healedID, healData.entityPositionX, healData.entityPositionY, healData.healAmount);
+         }
+
+         if (Board.entityRecord.hasOwnProperty(healData.healedID)) {
+            const healedEntity = Board.entityRecord[healData.healedID];
+            healedEntity.createHealingParticles(healData.healAmount);
+
+            // @Hack @Incomplete: This will trigger the repair sound effect even if a hammer isn't the one healing the structure
+            if (STRUCTURE_TYPES.includes(healedEntity.type as any)) { // @Cleanup
+               playSound("repair.mp3", 0.4, 1, healData.entityPositionX, healData.entityPositionY);
             }
          }
       }
@@ -290,15 +310,6 @@ abstract class Client {
             }
 
             const entity = Board.entityRecord[entityData.id];
-            
-            if (entityData.amountHealed > 0) {
-               entity.createHealingParticles(entityData.amountHealed);
-
-               // @Hack @Incomplete: This will trigger the repair sound effect even if a hammer isn't the one healing the structure
-               if (STRUCTURE_TYPES.includes(entity.type as any)) { // @Cleanup
-                  playSound("repair.mp3", 0.4, 1, entity.position.x, entity.position.y);
-               }
-            }
 
             for (const statusEffectData of entityData.statusEffects) {
                if (!entity.hasStatusEffect(statusEffectData.type)) {

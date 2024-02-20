@@ -3,13 +3,32 @@ import Board from "./Board";
 import Camera from "./Camera";
 import { halfWindowHeight, halfWindowWidth, windowHeight, windowWidth } from "./webgl";
 
+// @Cleanup: The logic for damage, research and heal numbers is extremely similar, can probably be combined
+
+interface ResearchNumber {
+   positionX: number;
+   positionY: number;
+   readonly amount: number;
+   age: number;
+}
+
+interface HealNumber {
+   readonly healedEntityID: number;
+   positionX: number;
+   positionY: number;
+   amount: number;
+   age: number;
+}
+
 const DAMAGE_NUMBER_LIFETIME = 1.75;
 const RESEARCH_NUMBER_LIFETIME = 1.5;
+const HEAL_NUMBER_LIFETIME = 1.75;
 
 const damageColours: ReadonlyArray<string> = ["#ddd", "#fbff2b", "#ffc130", "#ff6430"];
 const damageColourThresholds: ReadonlyArray<number> = [0, 3, 5, 7];
 
 const researchNumbers = new Array<ResearchNumber>();
+const healNumbers = new Array<HealNumber>();
 
 let ctx: CanvasRenderingContext2D;
 
@@ -18,13 +37,6 @@ let accumulatedDamage = 0;
 let damageTime = 0;
 let damageNumberX = -1;
 let damageNumberY = -1;
-
-interface ResearchNumber {
-   positionX: number;
-   positionY: number;
-   readonly amount: number;
-   age: number;
-}
 
 export function createTextCanvasContext(): void {
    const textCanvas = document.getElementById("text-canvas") as HTMLCanvasElement;
@@ -39,7 +51,7 @@ const getYPosInCamera = (y: number): number => {
    return (-y + Camera.position.y) * Camera.zoom + halfWindowHeight;
 }
 
-export function clearTextCanvas(): void {
+const clearTextCanvas = (): void => {
    // Clear the canvas
    ctx.fillStyle = "transparent";
    ctx.clearRect(0, 0, windowWidth, windowHeight);
@@ -54,6 +66,38 @@ export function createDamageNumber(originX: number, originY: number, damage: num
 
    accumulatedDamage += damage;
    damageTime = DAMAGE_NUMBER_LIFETIME;
+}
+
+export function createResearchNumber(positionX: number, positionY: number, amount: number): void {
+   researchNumbers.push({
+      positionX: positionX,
+      positionY: positionY,
+      amount: amount,
+      age: 0
+   });
+}
+
+export function createHealNumber(healedEntityID: number, positionX: number, positionY: number, healAmount: number): void {
+   // If there is an existing heal number for that entity, update it
+   for (let i = 0; i < healNumbers.length; i++) {
+      const healNumber = healNumbers[i];
+      if (healNumber.healedEntityID === healedEntityID) {
+         healNumber.amount += healAmount;;
+         healNumber.positionX = positionX;
+         healNumber.positionY = positionY;
+         healNumber.age = 0;
+         return;
+      }
+   }
+   
+   // Otherwise make a new one
+   healNumbers.push({
+      healedEntityID: healedEntityID,
+      positionX: positionX,
+      positionY: positionY,
+      amount: healAmount,
+      age: 0
+   });
 }
 
 export function updateTextNumbers(): void {
@@ -76,15 +120,20 @@ export function updateTextNumbers(): void {
 
       researchNumber.positionY += 8 / SETTINGS.TPS;
    }
-}
 
-export function createResearchNumber(positionX: number, positionY: number, amount: number): void {
-   researchNumbers.push({
-      positionX: positionX,
-      positionY: positionY,
-      amount: amount,
-      age: 0
-   });
+   // Update heal numbers
+   for (let i = 0; i < healNumbers.length; i++) {
+      const healNumber = healNumbers[i];
+
+      healNumber.age += 1 / SETTINGS.TPS;
+      if (healNumber.age >= HEAL_NUMBER_LIFETIME) {
+         healNumbers.splice(i, 1);
+         i--;
+         continue;
+      }
+
+      healNumber.positionY += 11 / SETTINGS.TPS;
+   }
 }
 
 const getDamageNumberColour = (damage: number): string => {
@@ -100,7 +149,7 @@ const getDamageNumberColour = (damage: number): string => {
    return colour;
 }
 
-export function renderDamageNumbers(): void {
+const renderDamageNumbers = (): void => {
    ctx.lineWidth = 0;
 
    // Calculate position in camera
@@ -129,7 +178,7 @@ export function renderDamageNumbers(): void {
    ctx.globalAlpha = 1;
 }
 
-export function renderResearchNumbers(): void {
+const renderResearchNumbers = (): void => {
    for (const researchNumber of researchNumbers) {
       ctx.lineWidth = 0;
    
@@ -145,7 +194,7 @@ export function renderResearchNumbers(): void {
       ctx.globalAlpha = 1 - Math.pow(deathProgress, 3);
    
       const textString = "+" + researchNumber.amount.toString();
-      const width = ctx.measureText(textString).width;
+      const width = ctx.measureText(textString).width; // @Speed
    
       // Draw text outline
       const SHADOW_OFFSET = 3;
@@ -160,7 +209,38 @@ export function renderResearchNumbers(): void {
    }
 }
 
-export function renderPlayerNames(): void {
+const renderHealNumbers = (): void => {
+   for (const healNumber of healNumbers) {
+      ctx.lineWidth = 0;
+   
+      // Calculate position in camera
+      const cameraX = getXPosInCamera(healNumber.positionX);
+      const cameraY = getYPosInCamera(healNumber.positionY);
+   
+      ctx.font = "bold 35px sans-serif";
+      ctx.lineJoin = "round";
+      ctx.miterLimit = 2;
+   
+      const deathProgress = healNumber.age / HEAL_NUMBER_LIFETIME;
+      ctx.globalAlpha = 1 - Math.pow(deathProgress, 3);
+   
+      const textString = "+" + healNumber.amount.toString();
+      const width = ctx.measureText(textString).width; // @Speed
+   
+      // Draw text outline
+      const SHADOW_OFFSET = 3;
+      ctx.fillStyle = "#000";
+      ctx.fillText(textString, cameraX - width / 2 + SHADOW_OFFSET, cameraY + SHADOW_OFFSET);
+      
+      // Draw text
+      ctx.fillStyle = "#14f200";
+      ctx.fillText(textString, cameraX - width / 2, cameraY);
+   
+      ctx.globalAlpha = 1;
+   }
+}
+
+const renderPlayerNames = (): void => {
    for (const player of Board.players) {
       // Calculate position in camera
       const cameraX = getXPosInCamera(player.renderPosition.x);
@@ -171,7 +251,7 @@ export function renderPlayerNames(): void {
       ctx.lineJoin = "round";
       ctx.miterLimit = 2;
 
-      const width = ctx.measureText(player.username).width;
+      const width = ctx.measureText(player.username).width; // @Speed
 
       // Draw text outline
       ctx.lineWidth = 6;
@@ -182,4 +262,12 @@ export function renderPlayerNames(): void {
       ctx.fillStyle = "#fff";
       ctx.fillText(player.username, cameraX - width / 2, cameraY);
    }
+}
+
+export function renderText(): void {
+   clearTextCanvas();
+   renderPlayerNames();
+   renderDamageNumbers();
+   renderResearchNumbers();
+   renderHealNumbers();
 }

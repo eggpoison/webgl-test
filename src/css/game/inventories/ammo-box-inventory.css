@@ -1,8 +1,23 @@
-#ammo-box-inventory {
-   padding: 0.25rem;
-   position: absolute;
-   bottom: 20rem;
-   left: 50%;
+/* @Cleanup: Narrow these to the ammo box */
+
+.ammo-slider-container {
+   width: 5rem;
+   height: 1.1rem;
+   background-color: #222;
+   margin-left: 50%;
+   border: 3px solid #444;
    transform: translateX(-50%);
-   z-index: 2;
+   position: relative;
+}
+.ammo-slider {
+   height: 1.1rem;
+}
+.ammo-slider-container .label {
+   font-weight: 1.05rem;
+   color: #fff;
+   position: absolute;
+   top: 50%;
+   left: 50%;
+   transform: translate(-50%, -50%);
+   text-shadow: 0 0 1px #000;
 }

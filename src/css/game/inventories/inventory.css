@@ -11,9 +11,29 @@
    z-index: 2;
 }
 
+.menu .area-row {
+   display: flex;
+   justify-content: space-between;
+}
+
+.menu .area {
+   background-color: #666;
+   margin: 0.3rem;
+   padding: 0.2rem;
+   display: inline-block;
+}
+
+.menu .area :is(p, label) {
+   color: #fff;
+}
+
+.menu .area p {
+   margin: 0;
+}
+
 .menu .menu-title {
    /* @Incomplete: font */
-   font-size: 1.4rem;
+   font-size: 1.3rem;
    color: #fff;
    margin: 0 0 0.25rem;
 }

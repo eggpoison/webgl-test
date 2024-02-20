@@ -21,7 +21,9 @@ interface Options {
 }
 
 const OPTIONS: Options = {
-   uiZoom: 1.75,
+   // @Temporary
+   // uiZoom: 1.75,
+   uiZoom: 1.1,
    nightVisionIsEnabled: false,
    showHitboxes: false,
    showChunkBorders: false,
