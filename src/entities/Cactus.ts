@@ -5,6 +5,7 @@ import Particle from "../Particle";
 import Board from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
 import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { playSound } from "../sound";
 
 class Cactus extends Entity {
    private static readonly CACTUS_SPINE_PARTICLE_COLOUR: ParticleColour = [0, 0, 0];
@@ -88,8 +89,11 @@ class Cactus extends Entity {
       for (let i = 0; i < numSpines; i++) {
          this.createCactusSpineParticle(2 * Math.PI * Math.random());
       }
+
+      playSound("cactus-hit.mp3", 0.4, 1, this.position.x, this.position.y);
    }
 
+   // @Cleanup: Move to particles file
    private createCactusSpineParticle(flyDirection: number): void {
       const spawnPosition = Point.fromVectorForm(Cactus.RADIUS - 5, flyDirection);
       spawnPosition.add(this.position);
@@ -137,6 +141,8 @@ class Cactus extends Entity {
             this.createFlowerParticle(spawnPositionX, spawnPositionY, limb.flower.type, CactusFlowerSize.small, limb.flower.rotation);
          }
       }
+
+      playSound("cactus-destroy.mp3", 0.4, 1, this.position.x, this.position.y);
    }
 
    private createFlowerParticle(spawnPositionX: number, spawnPositionY: number, flowerType: number, size: CactusFlowerSize, rotation: number): void {
