@@ -1,7 +1,7 @@
 #hotbar {
    width: 100%;
    position: absolute;
-   bottom: 0.5rem;
+   bottom: calc(1rem * var(--zoom));
    z-index: 2;
    display: flex;
    transform: scale(var(--zoom));

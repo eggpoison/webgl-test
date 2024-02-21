@@ -11,7 +11,7 @@
    border: 3.5px solid #000;
    position: absolute;
    left: 50%;
-   bottom: calc(5.25rem * var(--zoom) + 0.5rem);
+   bottom: calc(7rem * var(--zoom));
    transform: translateX(-50%) scale(var(--zoom));
    z-index: 2;
    box-shadow: 0 0 7px 0 rgba(0, 0, 0, 0.7) inset;
@@ -102,7 +102,7 @@
    --offset-y: 0.25rem;
    color: #fff;
    font-family: "Inconsolata";
-   font-size: 1.85rem;
+   font-size: 1.3rem;
    font-weight: 700;
    text-shadow: 3px 3px 1px #000;
    position: absolute;

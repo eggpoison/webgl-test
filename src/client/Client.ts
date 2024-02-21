@@ -23,7 +23,7 @@ import { BackpackInventoryMenu_update } from "../components/game/inventories/Bac
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
 import { calculateEntityRenderDepth } from "../render-layers";
 import GameObject from "../GameObject";
-import { createDamageNumber, createHealNumber } from "../text-canvas";
+import { createDamageNumber, createHealNumber, createResearchNumber } from "../text-canvas";
 import { playSound } from "../sound";
 import { closeTechTree, updateTechTree } from "../components/game/TechTree";
 import { TechInfocard_setSelectedTech } from "../components/game/TechInfocard";
@@ -254,6 +254,11 @@ abstract class Client {
                playSound("repair.mp3", 0.4, 1, healData.entityPositionX, healData.entityPositionY);
             }
          }
+      }
+
+      // Register orb completes
+      for (const orbCompleteData of gameDataPacket.orbCompletes) {
+         createResearchNumber(orbCompleteData.x, orbCompleteData.y, orbCompleteData.amount);
       }
 
       if (gameDataPacket.pickedUpItem) {

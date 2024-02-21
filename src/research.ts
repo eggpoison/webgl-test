@@ -3,7 +3,6 @@ import Player from "./entities/Player";
 import Board from "./Board";
 import Game from "./Game";
 import Client from "./client/Client";
-import { createResearchNumber } from "./text-canvas";
 import { getSelectedEntityID } from "./entity-selection";
 import { playSound } from "./sound";
 import { createMagicParticle, createStarParticle } from "./particles";
@@ -87,7 +86,6 @@ export function updateResearchOrb(): void {
 
 const completeOrb = (): void => {
    const studyAmount = RESEARCH_ORB_AMOUNTS[currentResearchOrb!.size];
-   createResearchNumber(Player.instance!.position.x, Player.instance!.position.y, studyAmount);
    Client.sendStudyTech(studyAmount);
 
    for (let i = 0; i < ORB_NUM_PARTICLES[currentResearchOrb!.size]; i++) {

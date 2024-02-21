@@ -4,6 +4,8 @@ import CookingInventory from "./CookingInventory";
 import TombstoneEpitaph from "./TombstoneEpitaph";
 import TribesmanInventory from "./TribesmanInventory";
 import AmmoBoxInventory from "./AmmoBoxInventory";
+import { getSelectedEntityID } from "../../../entity-selection";
+import Board from "../../../Board";
 
 export enum InventoryMenuType {
    none,
@@ -39,6 +41,11 @@ const InventorySelector = () => {
          return inventoryMenuType !== InventoryMenuType.none;
       }
    }, [inventoryMenuType]);
+
+   const selectedEntityID = getSelectedEntityID();
+   if (!Board.entityRecord.hasOwnProperty(selectedEntityID)) {
+      return null;
+   }
 
    switch (inventoryMenuType) {
       case InventoryMenuType.barrel: {

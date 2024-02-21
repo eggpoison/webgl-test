@@ -62,7 +62,6 @@
    background-image: url("../../../images/miscellaneous/item-slot.png");
    background-size: 100%;
    image-rendering: pixelated;
-   margin: 0.05rem;
    position: relative;
    user-select: none;
 }

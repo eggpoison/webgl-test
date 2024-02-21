@@ -11,8 +11,8 @@ body {
 }
 
 :root {
-   --item-slot-size: 4rem;
-   --item-image-size: 3rem;
+   --item-slot-size: 5rem;
+   --item-image-size: 3.75rem;
 }
 
 #canvas-wrapper > canvas {

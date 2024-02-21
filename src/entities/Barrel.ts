@@ -15,6 +15,9 @@ class Barrel extends Entity {
    constructor(position: Point, id: number, ageTicks: number, renderDepth: number, tribeID: number | null, inventoryData: InventoryData) {
       super(position, id, EntityType.barrel, ageTicks, renderDepth);
 
+      this.inventory = createInventoryFromData(inventoryData);
+      this.tribeID = tribeID;
+
       this.attachRenderPart(
          new RenderPart(
             this,
@@ -24,9 +27,9 @@ class Barrel extends Entity {
          )
       );
 
-      this.inventory = createInventoryFromData(inventoryData);
-
-      this.tribeID = tribeID;
+      if (ageTicks === 0) {
+         playSound("barrel-place.mp3", 0.4, 1, this.position.x, this.position.y);
+      }
    }
 
    public updateFromData(entityData: EntityData<EntityType.barrel>): void {

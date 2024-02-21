@@ -29,8 +29,8 @@
 }
 
 #ammo-guide {
-   left: calc(50% + 13rem);
-   transform: translateY(-50%);
+   left: calc(50% + (13rem * var(--zoom)));
+   transform: translateY(-50%) scale(var(--zoom));
 }
 
 #ammo-guide .area {
