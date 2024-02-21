@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TribeData, InventoryData, TribeMemberAction, TechID, Inventory, TRIBE_INFO_RECORD, BuildingShapeType, randInt, StatusEffect, STRUCTURE_TYPES } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, SETTINGS, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TribeData, InventoryData, TribeMemberAction, TechID, Inventory, TRIBE_INFO_RECORD, BuildingShapeType, randInt, StatusEffect, STRUCTURE_TYPES, COLLISION_BITS, DEFAULT_COLLISION_MASK } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -448,6 +448,8 @@ abstract class Client {
 
       entity.velocity = Point.unpackage(entityData.velocity);
       entity.rotation = entityData.rotation;
+      entity.collisionBit = entityData.collisionBit;
+      entity.collisionMask = entityData.collisionMask;
 
       this.addHitboxesToGameObject(entity, entityData);
 
@@ -524,6 +526,8 @@ abstract class Client {
       const renderDepth = calculateEntityRenderDepth(EntityType.player);
       const player = new Player(spawnPosition, respawnDataPacket.playerID, 0, renderDepth, null, Game.tribe.tribeType, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, -1, null, TribeMemberAction.none, -1, -99999, -1, false, Game.tribe.tribeType === TribeType.goblins ? randInt(1, 5) : -1, definiteGameState.playerUsername);
       player.addCircularHitbox(Player.createNewPlayerHitbox());
+      player.collisionBit = COLLISION_BITS.default;
+      player.collisionMask = DEFAULT_COLLISION_MASK;
       Player.setInstancePlayer(player);
       Board.addEntity(player);
 
@@ -704,6 +708,12 @@ abstract class Client {
    public static sendStructureInteract(structureID: number): void {
       if (Game.isRunning && this.socket !== null) {
          this.socket.emit("structure_interact", structureID);
+      }
+   }
+
+   public static sendStructureUninteract(structureID: number): void {
+      if (Game.isRunning && this.socket !== null) {
+         this.socket.emit("structure_uninteract", structureID);
       }
    }
 }

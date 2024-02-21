@@ -66,7 +66,15 @@ const AmmoBoxInventory = () => {
             const itemType: ItemType = Number(itemTypeString);
             const clientItemInfo = CLIENT_ITEM_INFO_RECORD[itemType];
             
-            return <div key={i} className="area">
+            let classname = "area";
+            if (ballista.ammoRemaining > 0) {
+               if (itemType === ballista.ammoType) {
+                  classname += " selected";
+               } else {
+                  classname += " deselected";
+               }
+            }
+            return <div key={i} className={classname}>
                <h3><img src={getItemTypeImage(itemType)} alt="" />{clientItemInfo.name}</h3>
                <p><span>{ammoInfo.damage}</span> damage</p>
                <p><span>{ammoInfo.ammoMultiplier}x</span> ammo multiplier</p>

@@ -852,3 +852,36 @@ export function createSnowflakeParticle(x: number, y: number): void {
    );
    Board.highTexturedParticles.push(particle);
 }
+
+export function createPaperParticle(x: number, y: number): void {
+   const moveSpeed = randFloat(20, 30);
+   const moveDirection = 2 * Math.PI * Math.random();
+   const velocityX = moveSpeed * Math.sin(moveDirection);
+   const velocityY = moveSpeed * Math.cos(moveDirection);
+   
+   const lifetime = randFloat(1.5, 1.9);
+   
+   const particle = new Particle(lifetime);
+   particle.getOpacity = () => {
+      return 1 - Math.pow(particle.age / lifetime, 3);
+   }
+
+   const angularFrictionMagnitude = randFloat(2, 3.5);
+
+   addTexturedParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.high,
+      64, 64,
+      x, y,
+      velocityX, velocityY,
+      0, 0,
+      moveSpeed / lifetime * 1.1,
+      2 * Math.PI * Math.random(),
+      angularFrictionMagnitude * randSign(),
+      0,
+      angularFrictionMagnitude / lifetime * 1.1,
+      3 * 8 + randInt(5, 6),
+      0, 0, 0
+   );
+   Board.highTexturedParticles.push(particle);
+}

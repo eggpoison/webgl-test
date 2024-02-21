@@ -7,7 +7,7 @@
    position: absolute;
    top: 50%;
    left: 50%;
-   transform: translate(-50%, -50%);
+   transform: translate(-50%, -50%) scale(var(--zoom));
    z-index: 2;
    box-shadow: -4px -4px 0 0 #303030 inset, 4px 4px 0 0 #444 inset;
 }
@@ -15,7 +15,7 @@
 .menu .area-row {
    display: flex;
    justify-content: space-between;
-   align-items: center;
+   /* align-items: center; */
 }
 
 .menu .area {
@@ -27,9 +27,9 @@
 
 .menu .menu-title {
    font-family: "Noto Sans";
-   color: #eee;
+   color: #ddd;
    text-align: center;
-   font-size: 1.15rem;
+   font-size: 1.1rem;
    margin: 0;
 }
 
@@ -41,8 +41,10 @@
 
 .inventory-container {
    background-color: #666;
-   padding: 0.3rem;
+   padding: 0.15rem;
    display: inline-block;
+   margin-left: 50%;
+   transform: translateX(-50%);
 }
 
 .inventory {
@@ -55,8 +57,8 @@
 }
 
 .item-slot {
-   width: calc(var(--item-slot-size) * var(--zoom));
-   height: calc(var(--item-slot-size) * var(--zoom));
+   width: var(--item-slot-size);
+   height: var(--item-slot-size);
    background-image: url("../../../images/miscellaneous/item-slot.png");
    background-size: 100%;
    image-rendering: pixelated;
@@ -80,8 +82,8 @@
 }
 
 .item-slot img {
-   width: calc(var(--item-image-size) * var(--zoom));
-   height: calc(var(--item-image-size) * var(--zoom));
+   width: var(--item-image-size);
+   height: var(--item-image-size);
    image-rendering: pixelated;
    position: absolute;
    top: 50%;
@@ -93,7 +95,7 @@
 .item-slot .item-count, #held-item .held-item-count {
    color: #fff;
    font-family: "Inconsolata";
-   font-size: calc(1.3rem * var(--zoom));
+   font-size: 1.3rem;
    font-weight: bold;
    text-shadow: 0 0 1px #000, 0 0 2px #000, 0 0 3px #000, 0 0 4px #000;
    text-align: right;

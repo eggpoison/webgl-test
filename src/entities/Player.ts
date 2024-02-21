@@ -360,6 +360,8 @@ class Player extends TribeMember {
       if (Player.instance === null) throw new Error();
       
       const potentialCollidingEntities = this.getPotentialCollidingEntities();
+
+      // @Cleanup: Remove this tag system
       mainLoop:
       for (let i = 0; i < potentialCollidingEntities.length; i++) {
          const entity = potentialCollidingEntities[i];
@@ -370,6 +372,10 @@ class Player extends TribeMember {
       
          // If the two entities are exactly on top of each other, don't do anything
          if (entity.position.x === Player.instance!.position.x && entity.position.y === Player.instance!.position.y) {
+            continue;
+         }
+
+         if ((entity.collisionMask & Player.instance.collisionBit) === 0 || (Player.instance.collisionMask & entity.collisionBit) === 0) {
             continue;
          }
 

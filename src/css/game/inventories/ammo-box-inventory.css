@@ -1,8 +1,8 @@
 /* @Cleanup: Narrow these to the ammo box */
 
-#ammo-box-menu {
+/* #ammo-box-menu {
    width: 22rem;
-}
+} */
 
 .ammo-slider-container {
    width: 5rem;
@@ -35,6 +35,24 @@
 
 #ammo-guide .area {
    position: relative;
+}
+
+#ammo-guide .area h3 {
+   margin-left: 0.5rem;
+}
+
+#ammo-guide .area.selected {
+   box-shadow: 0 0 0 3px #aaa inset;
+}
+
+#ammo-guide .area.deselected h3 {
+   color: #aaa;
+}
+#ammo-guide .area.deselected span {
+   color: #ddd;
+}
+#ammo-guide .area.deselected img {
+   filter: grayscale(1);
 }
 
 #ammo-guide img {

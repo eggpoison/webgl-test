@@ -51,8 +51,21 @@ export function getSelectedEntity(): GameObject {
 }
 
 export function deselectSelectedEntity(): void {
+   if (Board.entityRecord.hasOwnProperty(selectedEntityID)) {
+      const previouslySelectedEntity = Board.entityRecord[selectedEntityID];
+      Client.sendStructureUninteract(previouslySelectedEntity.id);
+   }
+
    selectedEntityID = -1;
    InventorySelector_setInventoryMenuType(InventoryMenuType.none);
+}
+
+export function deselectHighlightedEntity(): void {
+   if (selectedEntityID === highlightedEntityID) {
+      deselectSelectedEntity();
+   }
+
+   highlightedEntityID = -1;
 }
 
 const entityCanBeSelected = (entity: GameObject): boolean => {
@@ -131,7 +144,7 @@ export function updateHighlightedEntity(): void {
    }
 
    if (latencyGameState.playerIsPlacingEntity) {
-      highlightedEntityID = -1;
+      deselectHighlightedEntity();
       return;
    }
 
@@ -146,20 +159,27 @@ export function updateHighlightedEntity(): void {
    }
 
    hoveredEntityID = getEntityID(false);
-   highlightedEntityID = getEntityID(true);
+
+   const newHighlightedEntityID = getEntityID(true);
+   if (newHighlightedEntityID !== highlightedEntityID) {
+      deselectHighlightedEntity();
+      highlightedEntityID = newHighlightedEntityID;
+   }
 }
 
 export function attemptStructureSelect(): void {
+   if (selectedEntityID !== -1) {
+      deselectSelectedEntity();
+   }
    selectedEntityID = highlightedEntityID;
 
    if (Board.entityRecord.hasOwnProperty(selectedEntityID)) {
       const entity = Board.entityRecord[selectedEntityID];
 
-      if (entity.type === EntityType.woodenDoor) {
+      if (entity.type === EntityType.woodenDoor || entity.type === EntityType.researchBench) {
          Client.sendStructureInteract(selectedEntityID);
       }
 
-      // @Cleanup: remove ts-ignores
       switch (entity.type) {
          case EntityType.barrel: {
             InventorySelector_setInventoryMenuType(InventoryMenuType.barrel);

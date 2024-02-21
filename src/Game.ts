@@ -409,12 +409,13 @@ abstract class Game {
       renderGameObjects();
 
       renderStructureHighlights();
-      renderResearchOrb();
       
       if (OPTIONS.showParticles) {
          renderMonocolourParticles(ParticleRenderLayer.high);
          renderTexturedParticles(ParticleRenderLayer.high);
       }
+      
+      renderResearchOrb();
 
       if (nerdVisionIsVisible() && OPTIONS.showHitboxes) {
          renderEntityHitboxes();

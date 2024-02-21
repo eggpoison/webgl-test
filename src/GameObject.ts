@@ -74,7 +74,10 @@ abstract class GameObject extends RenderObject {
 
    public secondsSinceLastHit = 99999;
 
-   public statusEffects = new Array<StatusEffectData>();
+   public statusEffects = new Array<StatusEffectData>()
+
+   public collisionBit = 0;
+   public collisionMask = 0;
 
    constructor(position: Point, id: number, type: EntityType, ageTicks: number, renderDepth: number) {
       super();

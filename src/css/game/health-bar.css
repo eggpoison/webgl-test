@@ -4,15 +4,15 @@
    --max-health: 20;
    --current-health: 20;
    --previous-health: 20;
-   --width: calc(14rem * var(--zoom));
-   --height: calc(1.5rem * var(--zoom));
-   --health-bar-width: calc(109px * 3.5 * var(--zoom));
-   --health-bar-height: calc(8px * 3.5 * var(--zoom));
-   border: calc(3.5px * var(--zoom)) solid #000;
+   --width: 14rem;
+   --height: 1.5rem;
+   --health-bar-width: calc(109px * 3.5);
+   --health-bar-height: calc(8px * 3.5);
+   border: 3.5px solid #000;
    position: absolute;
    left: 50%;
-   bottom: calc(5.25rem * var(--zoom));
-   transform: translateX(-50%);
+   bottom: calc(5.25rem * var(--zoom) + 0.5rem);
+   transform: translateX(-50%) scale(var(--zoom));
    z-index: 2;
    box-shadow: 0 0 7px 0 rgba(0, 0, 0, 0.7) inset;
 }
@@ -71,8 +71,8 @@
 }
 
 #health-bar .health-icon {
-   --health-icon-width: calc(10px * 1.5 * var(--zoom));
-   --health-icon-height: calc(9px * 1.5 * var(--zoom));
+   --health-icon-width: calc(10px * 1.5);
+   --health-icon-height: calc(9px * 1.5);
    width: var(--health-icon-width);
    height: var(--health-icon-height);
    position: absolute;

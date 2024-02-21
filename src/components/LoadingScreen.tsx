@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { EntityType, InitialGameDataPacket, Point, TribeMemberAction, TribeType, randInt } from "webgl-test-shared";
+import { COLLISION_BITS, DEFAULT_COLLISION_MASK, EntityType, InitialGameDataPacket, Point, TribeMemberAction, TribeType, randInt } from "webgl-test-shared";
 import Board from "../Board";
 import Client from "../client/Client";
 import Player from "../entities/Player";
@@ -106,6 +106,8 @@ const LoadingScreen = ({ username, tribeType, initialStatus }: LoadingScreenProp
                // @Cleanup: Copy and paste from Client
                const player = new Player(playerSpawnPosition, initialGameDataPacket.playerID, 0, renderDepth, null, tribeType, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, -1, null, TribeMemberAction.none, -1, -99999, -1, false, tribeType === TribeType.goblins ? randInt(1, 5) : -1, username);
                player.addCircularHitbox(Player.createNewPlayerHitbox());
+               player.collisionBit = COLLISION_BITS.default;
+               player.collisionMask = DEFAULT_COLLISION_MASK;
                Player.setInstancePlayer(player);
                Board.addEntity(player);
 

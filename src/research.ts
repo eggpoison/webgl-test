@@ -1,4 +1,4 @@
-import { EntityType, SETTINGS, distance, randFloat, rotateXAroundOrigin, rotateYAroundOrigin } from "webgl-test-shared";
+import { EntityType, RESEARCH_ORB_AMOUNTS, RESEARCH_ORB_COMPLETE_TIME, SETTINGS, distance, getRandomResearchOrbSize, randFloat, rotateXAroundOrigin, rotateYAroundOrigin } from "webgl-test-shared";
 import Player from "./entities/Player";
 import Board from "./Board";
 import Game from "./Game";
@@ -7,14 +7,7 @@ import { createResearchNumber } from "./text-canvas";
 import { getSelectedEntityID } from "./entity-selection";
 import { playSound } from "./sound";
 import { createMagicParticle, createStarParticle } from "./particles";
-
-const ORB_COMPLETE_TIME = 1.25;
-
-enum ResearchOrbSize {
-   small,
-   medium,
-   large
-}
+import ResearchBench from "./entities/ResearchBench";
 
 export interface ResearchOrb {
    /* X position of the node in the world */
@@ -30,7 +23,6 @@ let currentResearchOrb: ResearchOrb | null = null;
 let orbCompleteProgress = 0;
 
 export const RESEARCH_ORB_SIZES = [20, 30, 40];
-const RESEARCH_ORB_AMOUNTS = [1, 3, 5];
 const ORB_NUM_PARTICLES = [2, 4, 7];
 const ORB_COMPLETE_SOUND_PITCHES = [1, 0.85, 0.7];
 const ORB_PARTICLES_PER_SECOND = [2, 3.5, 6];
@@ -38,22 +30,17 @@ const ORB_PARTICLES_PER_SECOND = [2, 3.5, 6];
 const generateResearchOrb = (): ResearchOrb => {
    const researchBench = Board.entityRecord[currentBenchID];
 
-   const xInBench = randFloat(-32 * 2, 32 * 2);
-   const yInBench = randFloat(-20 * 2, 20 * 2);
+   const xInBench = randFloat(-ResearchBench.WIDTH * 0.5, ResearchBench.WIDTH * 0.5) * 0.8;
+   const yInBench = randFloat(-ResearchBench.HEIGHT * 0.5, ResearchBench.HEIGHT * 0.5) * 0.8;
    
    const x = researchBench.position.x + rotateXAroundOrigin(xInBench, yInBench, researchBench.rotation);
    const y = researchBench.position.y + rotateYAroundOrigin(xInBench, yInBench, researchBench.rotation);
 
-   let size: ResearchOrbSize = 0;
-   while (Math.random() < 0.5 && size < ResearchOrbSize.large) {
-      size++;
-   }
-   
    return {
       positionX: x,
       positionY: y,
       rotation: 2 * Math.PI * Math.random(),
-      size: size
+      size: getRandomResearchOrbSize()
    };
 }
 
@@ -62,7 +49,7 @@ export function getResearchOrb(): ResearchOrb | null {
 }
 
 export function getResearchOrbCompleteProgress(): number {
-   return orbCompleteProgress / ORB_COMPLETE_TIME;
+   return orbCompleteProgress / RESEARCH_ORB_COMPLETE_TIME;
 }
 
 export function updateActiveResearchBench(): void {
@@ -130,8 +117,8 @@ export function attemptToResearch(): void {
    const distFromOrb = distance(Game.cursorPositionX, Game.cursorPositionY, currentResearchOrb.positionX, currentResearchOrb.positionY);
    if (distFromOrb < nodeSize / 2) {
       orbCompleteProgress += 1 / SETTINGS.TPS;
-      if (orbCompleteProgress > ORB_COMPLETE_TIME) {
-         orbCompleteProgress = ORB_COMPLETE_TIME;
+      if (orbCompleteProgress > RESEARCH_ORB_COMPLETE_TIME) {
+         orbCompleteProgress = RESEARCH_ORB_COMPLETE_TIME;
       }
    } else {
       orbCompleteProgress = 0;
@@ -139,7 +126,7 @@ export function attemptToResearch(): void {
 }
 
 export function attemptToCompleteNode(): void {
-   if (orbCompleteProgress >= ORB_COMPLETE_TIME) {
+   if (orbCompleteProgress >= RESEARCH_ORB_COMPLETE_TIME) {
       completeOrb();
    }
 }
