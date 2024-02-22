@@ -4,15 +4,13 @@
    --max-health: 20;
    --current-health: 20;
    --previous-health: 20;
-   --width: 14rem;
-   --height: 1.5rem;
-   --health-bar-width: calc(109px * 3.5);
-   --health-bar-height: calc(8px * 3.5);
+   --health-bar-width: calc(109px * 4.4);
+   --health-bar-height: calc(8px * 4.4);
    border: 3.5px solid #000;
    position: absolute;
    left: 50%;
-   bottom: calc(7rem * var(--zoom));
-   transform: translateX(-50%) scale(var(--zoom));
+   bottom: calc(7.8rem * var(--zoom));
+   transform: translateX(-50%) translateY(50%) scale(var(--zoom));
    z-index: 2;
    box-shadow: 0 0 7px 0 rgba(0, 0, 0, 0.7) inset;
 }
@@ -71,8 +69,8 @@
 }
 
 #health-bar .health-icon {
-   --health-icon-width: calc(10px * 1.5);
-   --health-icon-height: calc(9px * 1.5);
+   --health-icon-width: calc(10px * 2);
+   --health-icon-height: calc(9px * 2);
    width: var(--health-icon-width);
    height: var(--health-icon-height);
    position: absolute;

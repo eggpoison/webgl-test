@@ -1,6 +1,6 @@
 import { EntityType, Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import Entity from "./Entity";
 import { playSound } from "../sound";
 
@@ -11,7 +11,7 @@ class WoodenWallSpikes extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            getEntityTextureArrayIndex("entities/wooden-wall-spikes/wooden-wall-spikes.png"),
+            getTextureArrayIndex("entities/wooden-wall-spikes/wooden-wall-spikes.png"),
             0,
             0
          )

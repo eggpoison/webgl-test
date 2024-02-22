@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { ITEM_TYPE_RECORD, Item, ItemType, TribeType } from "webgl-test-shared";
 import { getItemTypeImage } from "../../../client-item-info";
 import { leftClickItemSlot, rightClickItemSlot } from "../../../inventory-manipulation";
@@ -128,11 +128,13 @@ const Hotbar = () => {
 
    return <div id="hotbar">
       <div className="flex-container">
+         <ItemSlot className="hidden" />
+         <ItemSlot className="hidden" />
          <div className={"inventory" + (Game.tribe.tribeType !== TribeType.barbarians ? " hidden" : "")}>
-            {Game.tribe.tribeType === TribeType.barbarians ? offhandSlotElement : null}
+            {Game.tribe.tribeType === TribeType.barbarians ? offhandSlotElement : <ItemSlot />}
          </div>
       </div>
-      <div className="flex-container">
+      <div className="flex-container middle">
          <div className="inventory">
             {hotbarItemSlots}
          </div>

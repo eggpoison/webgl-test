@@ -1,7 +1,7 @@
 import { Point, TribeTotemBanner, EntityData, TribeType, EntityType } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { playBuildingHitSound, playSound } from "../sound";
 
 class TribeTotem extends Entity {
@@ -20,7 +20,7 @@ class TribeTotem extends Entity {
 
       const renderPart = new RenderPart(
          this,
-         getEntityTextureArrayIndex(`entities/tribe-totem/tribe-totem.png`),
+         getTextureArrayIndex(`entities/tribe-totem/tribe-totem.png`),
          1,
          0
       );
@@ -54,7 +54,7 @@ class TribeTotem extends Entity {
 
       const renderPart = new RenderPart(
          this,
-         getEntityTextureArrayIndex(`entities/tribe-totem/${totemTextureSourceID}`),
+         getTextureArrayIndex(`entities/tribe-totem/${totemTextureSourceID}`),
          2,
          banner.direction
       );

@@ -1,9 +1,10 @@
 import { BallistaAmmoType, EntityData, EntityType, Inventory, InventoryData, ItemType, Point, lerp, randItem } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
 import { ROCK_DESTROY_SOUNDS, ROCK_HIT_SOUNDS, playSound } from "../sound";
+import Board from "../Board";
 
 export const BALLISTA_GEAR_X = -12;
 export const BALLISTA_GEAR_Y = 30;
@@ -61,6 +62,8 @@ class Ballista extends Entity {
 
    public ammoType: BallistaAmmoType | null;
    public ammoRemaining: number;
+
+   private ammoWarningRenderPart: RenderPart | null = null;
    
    constructor(position: Point, id: number, ageTicks: number, renderDepth: number, tribeID: number | null, aimDirection: number, chargeProgress: number, reloadProgress: number, ammoBoxInventoryData: InventoryData, ammoType: BallistaAmmoType, ammoRemaining: number) {
       super(position, id, EntityType.ballista, ageTicks, renderDepth);
@@ -77,7 +80,7 @@ class Ballista extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            getEntityTextureArrayIndex("entities/ballista/base.png"),
+            getTextureArrayIndex("entities/ballista/base.png"),
             0,
             0
          )
@@ -86,7 +89,7 @@ class Ballista extends Entity {
       // Ammo box
       const ammoBoxRenderPart = new RenderPart(
          this,
-         getEntityTextureArrayIndex("entities/ballista/ammo-box.png"),
+         getTextureArrayIndex("entities/ballista/ammo-box.png"),
          1,
          Math.PI / 2
       );
@@ -96,7 +99,7 @@ class Ballista extends Entity {
       // Plate
       this.plateRenderPart = new RenderPart(
          this,
-         getEntityTextureArrayIndex("entities/ballista/plate.png"),
+         getTextureArrayIndex("entities/ballista/plate.png"),
          2,
          0
       );
@@ -105,7 +108,7 @@ class Ballista extends Entity {
       // Shaft
       const shaftRenderPart = new RenderPart(
          this,
-         getEntityTextureArrayIndex("entities/ballista/shaft.png"),
+         getTextureArrayIndex("entities/ballista/shaft.png"),
          3,
          0
       );
@@ -117,7 +120,7 @@ class Ballista extends Entity {
       for (let i = 0; i < 2; i++) {
          const renderPart = new RenderPart(
             this.shaftRenderPart,
-            getEntityTextureArrayIndex("entities/ballista/gear.png"),
+            getTextureArrayIndex("entities/ballista/gear.png"),
             2.5 + i * 0.1,
             0
          );
@@ -130,7 +133,7 @@ class Ballista extends Entity {
       // Crossbow
       const crossbowRenderPart = new RenderPart(
          this.shaftRenderPart,
-         getEntityTextureArrayIndex(getBallistaCrossbarTextureSource(chargeProgress)),
+         getTextureArrayIndex(getBallistaCrossbarTextureSource(chargeProgress)),
          5,
          0
       );
@@ -139,7 +142,7 @@ class Ballista extends Entity {
 
       this.projectileRenderPart = new RenderPart(
          this.shaftRenderPart,
-         getEntityTextureArrayIndex("projectiles/wooden-bolt.png"),
+         getTextureArrayIndex("projectiles/wooden-bolt.png"),
          4,
          0
       );
@@ -158,10 +161,30 @@ class Ballista extends Entity {
       }
    }
 
-   private switchAmmo(ammoType: BallistaAmmoType | null): void {
+   private updateAmmoType(ammoType: BallistaAmmoType | null): void {
       if (ammoType === null) {
          this.ammoType = null;
+
+         if (this.ammoWarningRenderPart === null) {
+            this.ammoWarningRenderPart = new RenderPart(
+               this,
+               getTextureArrayIndex("entities/ballista/ammo-warning.png"),
+               999,
+               0
+            );
+            this.ammoWarningRenderPart.offset = new Point(BALLISTA_AMMO_BOX_OFFSET_X, BALLISTA_AMMO_BOX_OFFSET_Y);
+            this.ammoWarningRenderPart.inheritParentRotation = false;
+            this.attachRenderPart(this.ammoWarningRenderPart);
+         }
+
+         this.ammoWarningRenderPart.opacity = (Math.sin(Board.ticks / 15) * 0.5 + 0.5) * 0.4 + 0.4;
+         
          return;
+      }
+
+      if (this.ammoWarningRenderPart !== null) {
+         this.removeRenderPart(this.ammoWarningRenderPart);
+         this.ammoWarningRenderPart = null;
       }
       
       const ammoInfo = AMMO_INFO_RECORD[ammoType];
@@ -226,9 +249,9 @@ class Ballista extends Entity {
       const ammoType = data.clientArgs[5];
       this.ammoRemaining = data.clientArgs[6];
       if (this.ammoRemaining === 0) {
-         this.switchAmmo(null);
+         this.updateAmmoType(null);
       } else {
-         this.switchAmmo(ammoType);
+         this.updateAmmoType(ammoType);
       }
       
       this.updateAimDirection(aimDirection, chargeProgress);

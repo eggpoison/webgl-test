@@ -2,7 +2,7 @@ import { EntityType, Point, TileType } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { createSlimePoolParticle, createSlimeSpeckParticle } from "../particles";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 
 class Slimewisp extends Entity {
    private static readonly RADIUS = 16;
@@ -12,7 +12,7 @@ class Slimewisp extends Entity {
 
       const renderPart = new RenderPart(
          this,
-         getEntityTextureArrayIndex(`entities/slimewisp/slimewisp.png`),
+         getTextureArrayIndex(`entities/slimewisp/slimewisp.png`),
          0,
          0
       );

@@ -1,7 +1,7 @@
 import { EntityData, EntityType, Point, SETTINGS, lerp } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { playBuildingHitSound, playSound } from "../sound";
 import Board from "../Board";
 
@@ -43,7 +43,7 @@ class WorkerHut extends Entity {
       // Hut
       const hutRenderPart = new RenderPart(
          this,
-         getEntityTextureArrayIndex("entities/worker-hut/worker-hut.png"),
+         getTextureArrayIndex("entities/worker-hut/worker-hut.png"),
          2,
          0
       );
@@ -52,7 +52,7 @@ class WorkerHut extends Entity {
       // Door
       const doorRenderPart = new RenderPart(
          this,
-         getEntityTextureArrayIndex("entities/worker-hut/worker-hut-door.png"),
+         getTextureArrayIndex("entities/worker-hut/worker-hut-door.png"),
          1,
          0
       );

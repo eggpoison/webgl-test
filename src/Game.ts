@@ -43,7 +43,7 @@ import { playRiverSounds, setupAudio, updateSoundEffectVolume } from "./sound";
 import { createTechTreeShaders, renderTechTree } from "./rendering/tech-tree-rendering";
 import { createResearchOrbShaders, renderResearchOrb } from "./rendering/research-orb-rendering";
 import { attemptToResearch, updateActiveResearchBench, updateResearchOrb } from "./research";
-import { updateHighlightedEntity, updateSelectedStructure } from "./entity-selection";
+import { updateHighlightedAndHoveredEntities, updateSelectedStructure } from "./entity-selection";
 import { createStructureHighlightShaders, renderStructureHighlights } from "./rendering/entity-highlight-rendering";
 import { updateBlueprintMenu } from "./components/game/BlueprintMenu";
 import { InventorySelector_forceUpdate } from "./components/game/inventories/InventorySelector";
@@ -80,12 +80,12 @@ abstract class Game {
    
    public static queuedPackets = new Array<GameDataPacket>();
    
-   public static isRunning: boolean = false;
-   private static isPaused: boolean = false;
+   public static isRunning = false;
+   private static isPaused = false;
 
    /** If the game has recevied up-to-date game data from the server. Set to false when paused */
-   // @Cleanup: We might be able to remove this whole system by just always sending player data
-   public static isSynced: boolean = true;
+   // @Cleanup: We might be able to remove this whole system by just always sending player data. But do we want to do that???
+   public static isSynced = true;
 
    public static hasInitialised = false;
 
@@ -312,7 +312,7 @@ abstract class Game {
       updateResearchOrb();
       attemptToResearch();
 
-      updateHighlightedEntity();
+      updateHighlightedAndHoveredEntities();
       updateSelectedStructure();
       updateBlueprintMenu();
       InventorySelector_forceUpdate();
@@ -329,10 +329,10 @@ abstract class Game {
 
    private static updatePlayer(): void {
       if (Player.instance !== null) {
-         Player.instance.applyPhysics();
-         Player.instance.updateCurrentTile();
-         Player.instance.updateHitboxes();
-         Player.instance.updateContainingChunks();
+         Player.instance.tick();
+         Player.instance.update();
+         
+         // @Cleanup: Should be done in the game object update function
          Player.resolveCollisions();
       }
    }
@@ -414,7 +414,7 @@ abstract class Game {
          renderMonocolourParticles(ParticleRenderLayer.high);
          renderTexturedParticles(ParticleRenderLayer.high);
       }
-      
+
       renderResearchOrb();
 
       if (nerdVisionIsVisible() && OPTIONS.showHitboxes) {

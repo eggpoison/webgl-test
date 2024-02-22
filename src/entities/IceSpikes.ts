@@ -4,7 +4,7 @@ import Entity from "./Entity";
 import Particle from "../Particle";
 import Board from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { AudioFilePath, playSound } from "../sound";
 
 class IceSpikes extends Entity {
@@ -18,7 +18,7 @@ class IceSpikes extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            getEntityTextureArrayIndex(`entities/ice-spikes/ice-spikes.png`),
+            getTextureArrayIndex(`entities/ice-spikes/ice-spikes.png`),
             0,
             0
          )

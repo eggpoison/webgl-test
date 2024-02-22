@@ -1,6 +1,6 @@
 import { EntityType, Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import Entity from "./Entity";
 import { playSound } from "../sound";
 
@@ -11,7 +11,7 @@ class WallPunjiSticks extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            getEntityTextureArrayIndex("entities/wall-punji-sticks/wall-punji-sticks.png"),
+            getTextureArrayIndex("entities/wall-punji-sticks/wall-punji-sticks.png"),
             0,
             0
          )

@@ -326,17 +326,8 @@ abstract class Board {
 
    public static updateGameObjects(): void {
       for (const gameObject of this.entities) {
-         gameObject.applyPhysics();
-         gameObject.updateCurrentTile();
          gameObject.tick();
-
-         // Calculate the entity's new info
-         for (const hitbox of gameObject.hitboxes) {
-            hitbox.updateFromGameObject(gameObject);
-            hitbox.updateHitboxBounds(gameObject.rotation);
-         }
-
-         gameObject.updateContainingChunks();
+         gameObject.update();
       }
    }
 

@@ -1,6 +1,6 @@
 import { DoorToggleType, EntityData, EntityType, HitData, Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import Entity from "./Entity";
 import { playSound } from "../sound";
 import { createLightWoodSpeckParticle, createWoodShardParticle } from "./WoodenWall";
@@ -20,7 +20,7 @@ class WoodenDoor extends Entity {
 
       this.doorRenderPart = new RenderPart(
          this,
-         getEntityTextureArrayIndex("entities/wooden-door/wooden-door.png"),
+         getTextureArrayIndex("entities/wooden-door/wooden-door.png"),
          0,
          0
       );

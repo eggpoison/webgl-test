@@ -3,7 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle } from "../particles";
 import Board from "../Board";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 
 class Krumblid extends Entity {
    private static readonly BLOOD_FOUNTAIN_INTERVAL = 0.1;
@@ -17,7 +17,7 @@ class Krumblid extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            getEntityTextureArrayIndex("entities/krumblid/krumblid.png"),
+            getTextureArrayIndex("entities/krumblid/krumblid.png"),
             0,
             0
          )

@@ -2,7 +2,7 @@ import { EntityData, EntityType, Inventory, InventoryData, Point } from "webgl-t
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { playBuildingHitSound, playSound } from "../sound";
 
 class Barrel extends Entity {
@@ -21,7 +21,7 @@ class Barrel extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            getEntityTextureArrayIndex("entities/barrel/barrel.png"),
+            getTextureArrayIndex("entities/barrel/barrel.png"),
             0,
             0
          )

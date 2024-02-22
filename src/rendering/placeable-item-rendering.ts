@@ -2,7 +2,7 @@ import { EntityType, PlaceableItemType, Point, BlueprintBuildingType, rotateXAro
 import Player, { getPlayerSelectedItem } from "../entities/Player";
 import { gl, createWebGLProgram, CAMERA_UNIFORM_BUFFER_BINDING_INDEX } from "../webgl";
 import { PLACEABLE_ENTITY_INFO_RECORD, calculatePlacePosition, calculatePlaceRotation, calculateSnapInfo, canPlaceItem } from "../player-input";
-import { ENTITY_TEXTURE_ATLAS, ENTITY_TEXTURE_ATLAS_SIZE, ENTITY_TEXTURE_SLOT_INDEXES, getEntityTextureArrayIndex, getTextureHeight, getTextureWidth } from "../texture-atlases/entity-texture-atlas";
+import { ENTITY_TEXTURE_ATLAS, ENTITY_TEXTURE_ATLAS_SIZE, ENTITY_TEXTURE_SLOT_INDEXES, getTextureArrayIndex, getTextureHeight, getTextureWidth } from "../texture-atlases/entity-texture-atlas";
 import { getHoveredShapeType } from "../components/game/BlueprintMenu";
 import Board from "../Board";
 import { getSelectedEntityID } from "../entity-selection";
@@ -310,7 +310,7 @@ const calculateVertices = (placePosition: Point, placeRotation: number, entityTy
       const textureInfo = textureInfoArray[i];
    
       // Find texture size
-      const textureArrayIndex = getEntityTextureArrayIndex(textureInfo.textureSource);
+      const textureArrayIndex = getTextureArrayIndex(textureInfo.textureSource);
       const textureWidth = getTextureWidth(textureArrayIndex);
       const textureHeight = getTextureHeight(textureArrayIndex);
       const width = textureWidth * 4;

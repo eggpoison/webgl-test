@@ -1,7 +1,7 @@
 import { EntityType, Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 
 class PlanterBox extends Entity {
    constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
@@ -10,7 +10,7 @@ class PlanterBox extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            getEntityTextureArrayIndex("entities/planter-box/planter-box.png"),
+            getTextureArrayIndex("entities/planter-box/planter-box.png"),
             0,
             0
          )

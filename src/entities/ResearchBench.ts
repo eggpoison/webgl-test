@@ -1,7 +1,7 @@
 import { EntityData, EntityType, Point, customTickIntervalHasPassed, randFloat, rotateXAroundOrigin, rotateYAroundOrigin } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { createPaperParticle } from "../particles";
 
 class ResearchBench extends Entity {
@@ -18,7 +18,7 @@ class ResearchBench extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            getEntityTextureArrayIndex("entities/research-bench/research-bench.png"),
+            getTextureArrayIndex("entities/research-bench/research-bench.png"),
             0,
             0
          )

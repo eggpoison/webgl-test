@@ -1,7 +1,7 @@
 import { EntityType, InventoryData, Point, angle, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import CookingEntity from "./CookingEntity";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { createEmberParticle, createRockParticle, createRockSpeckParticle, createSmokeParticle } from "../particles";
 import Board from "../Board";
 
@@ -14,7 +14,7 @@ class Furnace extends CookingEntity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            getEntityTextureArrayIndex("entities/furnace/furnace.png"),
+            getTextureArrayIndex("entities/furnace/furnace.png"),
             0,
             0
          )

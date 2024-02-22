@@ -3,7 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import Board from "../Board";
 import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import GameObject from "../GameObject";
 import { playSound } from "../sound";
 import { createSnowflakeParticle } from "../particles";
@@ -15,7 +15,7 @@ class IceArrow extends GameObject {
       this.attachRenderPart(
          new RenderPart(
             this,
-            getEntityTextureArrayIndex("projectiles/ice-arrow.png"),
+            getTextureArrayIndex("projectiles/ice-arrow.png"),
             0,
             0
          )

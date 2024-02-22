@@ -3,7 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle } from "../particles";
 import Board from "../Board";
-import { getEntityTextureArrayIndex, getTextureWidth } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex, getTextureWidth } from "../texture-atlases/entity-texture-atlas";
 import { AudioFilePath, playSound } from "../sound";
 import { getFrameProgress } from "../GameObject";
 import CLIENT_ITEM_INFO_RECORD from "../client-item-info";
@@ -83,7 +83,7 @@ class Zombie extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            getEntityTextureArrayIndex(ZOMBIE_TEXTURE_SOURCES[zombieType]),
+            getTextureArrayIndex(ZOMBIE_TEXTURE_SOURCES[zombieType]),
             2,
             0
          )
@@ -93,7 +93,7 @@ class Zombie extends Entity {
       for (let i = 0; i < 2; i++) {
          const renderPart = new RenderPart(
             this,
-            getEntityTextureArrayIndex(ZOMBIE_HAND_TEXTURE_SOURCES[zombieType]),
+            getTextureArrayIndex(ZOMBIE_HAND_TEXTURE_SOURCES[zombieType]),
             1,
             0
          );
@@ -110,7 +110,7 @@ class Zombie extends Entity {
 
       this.activeItemRenderPart = new RenderPart(
          this,
-         activeItemType !== null ? getEntityTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItemType].entityTextureSource) : -1,
+         activeItemType !== null ? getTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItemType].entityTextureSource) : -1,
          0,
          0
       );

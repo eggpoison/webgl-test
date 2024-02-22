@@ -191,6 +191,7 @@ const TEXTURE_SOURCES: Array<string> = [
    "entities/ballista/gear.png",
    "entities/ballista/ammo-box.png",
    "entities/ballista/plate.png",
+   "entities/ballista/ammo-warning.png",
    "entities/sling-turret/sling-turret-base.png",
    "entities/sling-turret/sling-turret-plate.png",
    "entities/sling-turret/sling-turret-sling.png",
@@ -255,7 +256,7 @@ export async function createEntityTextureAtlas(): Promise<void> {
    ENTITY_TEXTURE_SLOT_INDEXES = atlasInfo.textureSlotIndexes;
 }
 
-export function getEntityTextureArrayIndex(textureSource: string): number {
+export function getTextureArrayIndex(textureSource: string): number {
    const textureIndex = TEXTURE_SOURCES.indexOf(textureSource);
    if (textureIndex === -1) {
       throw new Error(`Unknown texture source '${textureSource}'.`);

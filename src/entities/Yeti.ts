@@ -3,7 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle, createSnowParticle, createWhiteSmokeParticle } from "../particles";
 import Board from "../Board";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 
 class Yeti extends Entity {
    private static readonly SIZE = 128;
@@ -28,7 +28,7 @@ class Yeti extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            getEntityTextureArrayIndex("entities/yeti/yeti.png"),
+            getTextureArrayIndex("entities/yeti/yeti.png"),
             1,
             0
          )
@@ -44,7 +44,7 @@ class Yeti extends Entity {
    private createPaw(i: number): void {
       const paw = new RenderPart(
          this,
-         getEntityTextureArrayIndex("entities/yeti/yeti-paw.png"),
+         getTextureArrayIndex("entities/yeti/yeti-paw.png"),
          0,
          0
       );

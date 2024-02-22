@@ -1,7 +1,7 @@
 import { DecorationInfo, DecorationType, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import Camera from "../Camera";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
-import { ENTITY_TEXTURE_ATLAS, ENTITY_TEXTURE_ATLAS_SIZE, ENTITY_TEXTURE_SLOT_INDEXES, getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { ENTITY_TEXTURE_ATLAS, ENTITY_TEXTURE_ATLAS_SIZE, ENTITY_TEXTURE_SLOT_INDEXES, getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { ATLAS_SLOT_SIZE } from "../texture-atlases/texture-atlas-stitching";
 import { getRenderChunkDecorationInfo } from "./render-chunks";
 
@@ -183,7 +183,7 @@ export function renderDecorations(): void {
       const bottomRightX = rotateXAroundPoint(x2, y1, decoration.positionX, decoration.positionY, decoration.rotation);
       const bottomRightY = rotateYAroundPoint(x2, y1, decoration.positionX, decoration.positionY, decoration.rotation);
 
-      const textureSlotIndex = ENTITY_TEXTURE_SLOT_INDEXES[getEntityTextureArrayIndex(renderInfo.textureSources[decoration.variant])];
+      const textureSlotIndex = ENTITY_TEXTURE_SLOT_INDEXES[getTextureArrayIndex(renderInfo.textureSources[decoration.variant])];
 
       const dataOffset = i * 42;
 

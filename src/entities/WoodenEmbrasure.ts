@@ -1,6 +1,6 @@
 import { EntityType, HitData, Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import Entity from "./Entity";
 import { playSound } from "../sound";
 import { createLightWoodSpeckParticle, createWoodShardParticle } from "./WoodenWall";
@@ -12,7 +12,7 @@ class WoodenEmbrasure extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            getEntityTextureArrayIndex("entities/wooden-embrasure/wooden-embrasure.png"),
+            getTextureArrayIndex("entities/wooden-embrasure/wooden-embrasure.png"),
             0,
             0
          )

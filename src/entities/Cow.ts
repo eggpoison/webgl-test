@@ -3,7 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createDirtParticle, createFootprintParticle } from "../particles";
 import Board from "../Board";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { AudioFilePath, playSound } from "../sound";
 
 class Cow extends Entity {
@@ -29,7 +29,7 @@ class Cow extends Entity {
       // Body
       const bodyRenderPart = new RenderPart(
          this,
-         getEntityTextureArrayIndex(`entities/cow/cow-body-${cowNum}.png`),
+         getTextureArrayIndex(`entities/cow/cow-body-${cowNum}.png`),
          0,
          0
       );
@@ -39,7 +39,7 @@ class Cow extends Entity {
       // Head
       const headRenderPart = new RenderPart(
          this,
-         getEntityTextureArrayIndex(`entities/cow/cow-head-${cowNum}.png`),
+         getTextureArrayIndex(`entities/cow/cow-head-${cowNum}.png`),
          1,
          0
       );

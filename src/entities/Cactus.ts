@@ -4,7 +4,7 @@ import Entity from "./Entity";
 import Particle from "../Particle";
 import Board from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { playSound } from "../sound";
 
 class Cactus extends Entity {
@@ -23,7 +23,7 @@ class Cactus extends Entity {
 
       const baseRenderPart = new RenderPart(
          this,
-         getEntityTextureArrayIndex("entities/cactus/cactus.png"),
+         getTextureArrayIndex("entities/cactus/cactus.png"),
          2,
          0
       );
@@ -38,7 +38,7 @@ class Cactus extends Entity {
 
          const renderPart = new RenderPart(
             this,
-            getEntityTextureArrayIndex(this.getFlowerTextureSource(flowerInfo.type, flowerInfo.size)),
+            getTextureArrayIndex(this.getFlowerTextureSource(flowerInfo.type, flowerInfo.size)),
             3 + Math.random(),
             flowerInfo.rotation
          );
@@ -53,7 +53,7 @@ class Cactus extends Entity {
 
          const limbRenderPart = new RenderPart(
             baseRenderPart,
-            getEntityTextureArrayIndex("entities/cactus/cactus-limb.png"),
+            getTextureArrayIndex("entities/cactus/cactus-limb.png"),
             Math.random(),
             2 * Math.PI * Math.random()
          )
@@ -65,7 +65,7 @@ class Cactus extends Entity {
 
             const flowerRenderPart = new RenderPart(
                limbRenderPart,
-               getEntityTextureArrayIndex(this.getFlowerTextureSource(flowerInfo.type, CactusFlowerSize.small)),
+               getTextureArrayIndex(this.getFlowerTextureSource(flowerInfo.type, CactusFlowerSize.small)),
                1 + Math.random(),
                flowerInfo.rotation
             )

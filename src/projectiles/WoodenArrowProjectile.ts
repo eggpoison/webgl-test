@@ -3,7 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import Board from "../Board";
 import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import GameObject from "../GameObject";
 import { playSound } from "../sound";
 import { createRockParticle, createRockSpeckParticle } from "../particles";
@@ -29,7 +29,7 @@ class WoodenArrowProjectile extends GameObject {
 
       this.arrowType = arrowType;
       
-      const textureArrayIndex = getEntityTextureArrayIndex(ARROW_TEXTURE_SOURCES[arrowType]);
+      const textureArrayIndex = getTextureArrayIndex(ARROW_TEXTURE_SOURCES[arrowType]);
       this.attachRenderPart(
          new RenderPart(
             this,

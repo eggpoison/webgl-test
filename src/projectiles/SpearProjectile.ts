@@ -1,6 +1,6 @@
 import { EntityType, Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import GameObject from "../GameObject";
 import { playSound } from "../sound";
 
@@ -11,7 +11,7 @@ class SpearProjectile extends GameObject {
       this.attachRenderPart(
          new RenderPart(
             this,
-            getEntityTextureArrayIndex("items/misc/spear.png"),
+            getTextureArrayIndex("items/misc/spear.png"),
             0,
             0
          )

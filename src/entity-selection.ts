@@ -138,13 +138,17 @@ const getEntityID = (doPlayerProximityCheck: boolean): number => {
    return entityID;
 }
 
-export function updateHighlightedEntity(): void {
+export function updateHighlightedAndHoveredEntities(): void {
    if (Player.instance === null || Game.cursorPositionX === null || Game.cursorPositionY === null) {
       return;
    }
 
+   // @Cleanup: This is a pretty messy function: has 3 different scenarios, only separated by guards. Maybe refactor?
+
    if (latencyGameState.playerIsPlacingEntity) {
+      // When the player is placing an entity, we don't want them to be able to select entities.
       deselectHighlightedEntity();
+      hoveredEntityID = getEntityID(false);
       return;
    }
 

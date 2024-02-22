@@ -1,5 +1,5 @@
 import { Point, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 
 /** A thing which is able to hold render parts */
 export abstract class RenderObject {
@@ -96,7 +96,7 @@ class RenderPart extends RenderObject {
    }
 
    public switchTextureSource(newTextureSource: string): void {
-      this.textureArrayIndex = getEntityTextureArrayIndex(newTextureSource);
+      this.textureArrayIndex = getTextureArrayIndex(newTextureSource);
    }
 }
 

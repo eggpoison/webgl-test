@@ -2,7 +2,7 @@ import { EntityData, EntityType, Point, SETTINGS, SlimeSize, TileType, lerp, ran
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { createSlimePoolParticle, createSlimeSpeckParticle } from "../particles";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 
 /** Information about an orb inside a slime */
 interface SlimeOrbInfo {
@@ -59,7 +59,7 @@ class Slime extends Entity {
       // Body
       this.bodyRenderPart = new RenderPart(
          this,
-         getEntityTextureArrayIndex(`entities/slime/slime-${sizeString}-body.png`),
+         getTextureArrayIndex(`entities/slime/slime-${sizeString}-body.png`),
          2,
          0
       );
@@ -69,7 +69,7 @@ class Slime extends Entity {
       // Eye
       this.eyeRenderPart = new RenderPart(
          this,
-         getEntityTextureArrayIndex(`entities/slime/slime-${sizeString}-eye.png`),
+         getTextureArrayIndex(`entities/slime/slime-${sizeString}-eye.png`),
          3,
          eyeRotation
       );
@@ -80,7 +80,7 @@ class Slime extends Entity {
       // Shading
       this.attachRenderPart(new RenderPart(
          this,
-         getEntityTextureArrayIndex(`entities/slime/slime-${sizeString}-shading.png`),
+         getTextureArrayIndex(`entities/slime/slime-${sizeString}-shading.png`),
          0,
          0
       ));
@@ -132,7 +132,7 @@ class Slime extends Entity {
 
       const renderPart = new RenderPart(
          this,
-         getEntityTextureArrayIndex(`entities/slime/slime-orb-${sizeString}.png`),
+         getTextureArrayIndex(`entities/slime/slime-orb-${sizeString}.png`),
          1,
          orbInfo.rotation
       );

@@ -2,7 +2,7 @@ import { EntityData, EntityType, Point, randFloat, randInt } from "webgl-test-sh
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 import { LeafParticleSize, createLeafParticle, createLeafSpeckParticle } from "../particles";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { AudioFilePath, playSound } from "../sound";
 
 class BerryBush extends Entity {
@@ -27,7 +27,7 @@ class BerryBush extends Entity {
 
       this.renderPart = new RenderPart(
          this,
-         getEntityTextureArrayIndex(BerryBush.TEXTURE_SOURCES[numBerries]),
+         getTextureArrayIndex(BerryBush.TEXTURE_SOURCES[numBerries]),
          0,
          0
       );

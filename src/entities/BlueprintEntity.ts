@@ -1,6 +1,6 @@
 import { EntityData, EntityType, Point, BlueprintBuildingType, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import Entity from "./Entity";
 import Board from "../Board";
 import Particle from "../Particle";
@@ -203,7 +203,7 @@ class BlueprintEntity extends Entity {
 
          const renderPart = new RenderPart(
             this,
-            getEntityTextureArrayIndex(progressTextureInfo.completedTextureSource),
+            getTextureArrayIndex(progressTextureInfo.completedTextureSource),
             progressTextureInfo.zIndex,
             progressTextureInfo.rotation
          );
@@ -289,7 +289,7 @@ class BlueprintEntity extends Entity {
             // New render part
             const renderPart = new RenderPart(
                this,
-               getEntityTextureArrayIndex(textureSource),
+               getTextureArrayIndex(textureSource),
                progressTextureInfo.zIndex + 0.01,
                progressTextureInfo.rotation
             );

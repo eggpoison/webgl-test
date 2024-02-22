@@ -1,7 +1,7 @@
 import { EntityData, EntityType, Point, lerp } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { playSound } from "../sound";
 
 const CHARGE_TEXTURE_SOURCES = ["entities/sling-turret/sling-turret-sling.png", "entities/sling-turret/sling-charge-1.png", "entities/sling-turret/sling-charge-2.png", "entities/sling-turret/sling-charge-3.png", "entities/sling-turret/sling-charge-4.png", "entities/sling-turret/sling-charge-5.png"];
@@ -25,7 +25,7 @@ class SlingTurret extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            getEntityTextureArrayIndex("entities/sling-turret/sling-turret-base.png"),
+            getTextureArrayIndex("entities/sling-turret/sling-turret-base.png"),
             0,
             0
          )
@@ -34,7 +34,7 @@ class SlingTurret extends Entity {
       // Plate
       this.plateRenderPart = new RenderPart(
          this,
-         getEntityTextureArrayIndex("entities/sling-turret/sling-turret-plate.png"),
+         getTextureArrayIndex("entities/sling-turret/sling-turret-plate.png"),
          1,
          0
       );
@@ -43,7 +43,7 @@ class SlingTurret extends Entity {
       // Sling
       this.slingRenderPart = new RenderPart(
          this.plateRenderPart,
-         getEntityTextureArrayIndex("entities/sling-turret/sling-turret-sling.png"),
+         getTextureArrayIndex("entities/sling-turret/sling-turret-sling.png"),
          2,
          0
       );
@@ -70,7 +70,7 @@ class SlingTurret extends Entity {
          if (this.rockRenderPart === null) {
             this.rockRenderPart = new RenderPart(
                this,
-               getEntityTextureArrayIndex("projectiles/sling-rock.png"),
+               getTextureArrayIndex("projectiles/sling-rock.png"),
                1.5,
                0
             );

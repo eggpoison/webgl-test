@@ -1,6 +1,6 @@
 import { EntityData, EntityType, HitData, Point, lerp, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import Entity from "./Entity";
 import { playSound } from "../sound";
 import Board from "../Board";
@@ -113,7 +113,7 @@ class WoodenWall extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            getEntityTextureArrayIndex("entities/wooden-wall/wooden-wall.png"),
+            getTextureArrayIndex("entities/wooden-wall/wooden-wall.png"),
             0,
             0
          )
@@ -141,7 +141,7 @@ class WoodenWall extends Entity {
       if (this.damageRenderPart === null) {
          this.damageRenderPart = new RenderPart(
             this,
-            getEntityTextureArrayIndex(textureSource),
+            getTextureArrayIndex(textureSource),
             1,
             0
          );

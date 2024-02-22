@@ -175,6 +175,14 @@ abstract class GameObject extends RenderObject {
       }
    };
 
+   public update(): void {
+      this.applyPhysics();
+      this.resolveBorderCollisions();
+      this.updateCurrentTile();
+      this.updateHitboxes();
+      this.updateContainingChunks();
+   }
+
    protected isInRiver(): boolean {
       if (this.tile.type !== TileType.water) {
          return false;
@@ -195,7 +203,7 @@ abstract class GameObject extends RenderObject {
       return true;
    }
 
-   public applyPhysics(): void {
+   private applyPhysics(): void {
       // Apply acceleration
       if (this.acceleration.x !== 0 || this.acceleration.y !== 0) {
          let tileMoveSpeedMultiplier = TILE_MOVE_SPEED_MULTIPLIERS[this.tile.type];
@@ -237,14 +245,12 @@ abstract class GameObject extends RenderObject {
          this.position.y += this.velocity.y * I_TPS;
       }
 
-      // @Cleanup: This may be incorrect to be done here
-      this.resolveBorderCollisions();
-
       if (isNaN(this.position.x)) {
          throw new Error("Position was NaN.");
       }
    }
 
+   // @Cleanup: Should this be protected?
    protected resolveBorderCollisions(): void {
       if (this.position.x < 0) {
          this.position.x = 0;
@@ -258,14 +264,14 @@ abstract class GameObject extends RenderObject {
       }
    }
 
-   public updateCurrentTile(): void {
+   private updateCurrentTile(): void {
       const tileX = Math.floor(this.position.x / SETTINGS.TILE_SIZE);
       const tileY = Math.floor(this.position.y / SETTINGS.TILE_SIZE);
       this.tile = Board.getTile(tileX, tileY);
    }
 
    /** Recalculates which chunks the game object is contained in */
-   public updateContainingChunks(): void {
+   private updateContainingChunks(): void {
       const containingChunks = new Set<Chunk>();
       
       // Find containing chunks
@@ -312,7 +318,7 @@ abstract class GameObject extends RenderObject {
       }
    }
 
-   public updateHitboxes(): void {
+   private updateHitboxes(): void {
       for (const hitbox of this.hitboxes) {
          hitbox.updateFromGameObject(this);
          hitbox.updateHitboxBounds(this.rotation);

@@ -68,7 +68,7 @@ export function updateAvailableCraftingRecipes(): void {
    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
          const chunk = Board.getChunk(chunkX, chunkY);
-         for (const entity of chunk.getEntities()) {
+         for (const entity of chunk.getGameObjects()) {
             const distance = Player.instance!.position.calculateDistanceBetween(entity.position);
             if (distance <= MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION) {
                switch (entity.type) {

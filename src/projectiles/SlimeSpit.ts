@@ -1,6 +1,6 @@
 import { EntityType, Point, SETTINGS, lerp, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import GameObject from "../GameObject";
 import Board from "../Board";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
@@ -19,7 +19,7 @@ class SlimeSpit extends GameObject {
 
       const renderPart1 = new RenderPart(
          this,
-         getEntityTextureArrayIndex("projectiles/slime-spit-medium.png"),
+         getTextureArrayIndex("projectiles/slime-spit-medium.png"),
          1,
          0
       );
@@ -29,7 +29,7 @@ class SlimeSpit extends GameObject {
 
       const renderPart2 = new RenderPart(
          this,
-         getEntityTextureArrayIndex("projectiles/slime-spit-medium.png"),
+         getTextureArrayIndex("projectiles/slime-spit-medium.png"),
          0,
          Math.PI/4
       );

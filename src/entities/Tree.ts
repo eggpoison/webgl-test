@@ -2,7 +2,7 @@ import { EntityType, HitData, Point, TreeSize, randFloat, randInt, randItem } fr
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { LeafParticleSize, createLeafParticle, createLeafSpeckParticle, createWoodSpeckParticle } from "../particles";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { AudioFilePath, playSound } from "../sound";
 
 const treeTextures: { [T in TreeSize]: string } = {
@@ -29,7 +29,7 @@ class Tree extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            getEntityTextureArrayIndex(treeTextures[treeSize]),
+            getTextureArrayIndex(treeTextures[treeSize]),
             0,
             0
          )

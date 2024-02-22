@@ -2,7 +2,7 @@ import { EntityType, Point, randFloat, randItem } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { createRockParticle, createRockSpeckParticle } from "../particles";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { ROCK_DESTROY_SOUNDS, ROCK_HIT_SOUNDS, playSound } from "../sound";
 
 class Boulder extends Entity {
@@ -19,7 +19,7 @@ class Boulder extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            getEntityTextureArrayIndex(Boulder.TEXTURE_SOURCES[boulderType]),
+            getTextureArrayIndex(Boulder.TEXTURE_SOURCES[boulderType]),
             0,
             0
          )

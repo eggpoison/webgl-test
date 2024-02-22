@@ -1,7 +1,7 @@
 import { EntityType, Point, SETTINGS } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { createFootprintParticle } from "../particles";
 import Board from "../Board";
 
@@ -15,7 +15,7 @@ class Pebblum extends Entity {
       // Nose
       const nose = new RenderPart(
          this,
-         getEntityTextureArrayIndex("entities/pebblum/pebblum-nose.png"),
+         getTextureArrayIndex("entities/pebblum/pebblum-nose.png"),
          0,
          2 * Math.PI * Math.random()
       )
@@ -25,7 +25,7 @@ class Pebblum extends Entity {
       // Body
       const body = new RenderPart(
          this,
-         getEntityTextureArrayIndex("entities/pebblum/pebblum-body.png"),
+         getTextureArrayIndex("entities/pebblum/pebblum-body.png"),
          1,
          2 * Math.PI * Math.random()
       )

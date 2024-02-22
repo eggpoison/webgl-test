@@ -1,7 +1,7 @@
 import { EntityType, FishColour, HitData, Point, TileType, randFloat, randInt, randItem } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import Board from "../Board";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createWaterSplashParticle } from "../particles";
 import { AudioFilePath, playSound } from "../sound";
@@ -26,7 +26,7 @@ class Fish extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            getEntityTextureArrayIndex(textureSource),
+            getTextureArrayIndex(textureSource),
             0,
             0
          )

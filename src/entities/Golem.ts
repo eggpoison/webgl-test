@@ -2,7 +2,7 @@ import { EntityData, EntityType, Point, SETTINGS } from "webgl-test-shared";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RenderPart from "../render-parts/RenderPart";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { createFootprintParticle, createRockSpeckParticle } from "../particles";
 import Board, { Light } from "../Board";
 
@@ -92,7 +92,7 @@ class Golem extends Entity {
 
       const renderPart = new RenderPart(
          this,
-         getEntityTextureArrayIndex(getTextureSource(size)),
+         getTextureArrayIndex(getTextureSource(size)),
          getZIndex(size),
          2 * Math.PI * Math.random()
       );
@@ -104,7 +104,7 @@ class Golem extends Entity {
          for (let i = 0; i < 2; i++) {
             const eyeRenderPart = new RenderPart(
                renderPart,
-               getEntityTextureArrayIndex("entities/golem/eye.png"),
+               getTextureArrayIndex("entities/golem/eye.png"),
                6,
                0
             );

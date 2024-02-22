@@ -8,7 +8,7 @@ import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, cr
 import Board from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
-import { getEntityTextureArrayIndex, getTextureWidth } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex, getTextureWidth } from "../texture-atlases/entity-texture-atlas";
 import { createDeepFrostHeartBloodParticles } from "../items/DroppedItem";
 import { AudioFilePath, playSound } from "../sound";
 import { definiteGameState, latencyGameState } from "../game-state/game-states";
@@ -353,7 +353,7 @@ abstract class TribeMember extends Entity {
       
       this.attachRenderPart(new RenderPart(
          this,
-         getEntityTextureArrayIndex(bodyTextureSource),
+         getTextureArrayIndex(bodyTextureSource),
          2,
          0
       ));
@@ -363,7 +363,7 @@ abstract class TribeMember extends Entity {
          this.attachRenderPart(
             new RenderPart(
                this,
-               getEntityTextureArrayIndex(`entities/goblins/goblin-warpaint-${warPaintType}.png`),
+               getTextureArrayIndex(`entities/goblins/goblin-warpaint-${warPaintType}.png`),
                4,
                0
             )
@@ -372,7 +372,7 @@ abstract class TribeMember extends Entity {
          // Left ear
          const leftEarRenderPart = new RenderPart(
             this,
-            getEntityTextureArrayIndex("entities/goblins/goblin-ear.png"),
+            getTextureArrayIndex("entities/goblins/goblin-ear.png"),
             3,
             Math.PI/2 - TribeMember.GOBLIN_EAR_ANGLE,
          );
@@ -383,7 +383,7 @@ abstract class TribeMember extends Entity {
          // Right ear
          const rightEarRenderPart = new RenderPart(
             this,
-            getEntityTextureArrayIndex("entities/goblins/goblin-ear.png"),
+            getTextureArrayIndex("entities/goblins/goblin-ear.png"),
             3,
             -Math.PI/2 + TribeMember.GOBLIN_EAR_ANGLE,
          );
@@ -396,7 +396,7 @@ abstract class TribeMember extends Entity {
       for (let i = 0; i < 2; i++) {
          const renderPart = new RenderPart(
             this,
-            getEntityTextureArrayIndex(fistTextureSource),
+            getTextureArrayIndex(fistTextureSource),
             1,
             0
          );
@@ -419,7 +419,7 @@ abstract class TribeMember extends Entity {
          
          const renderPart = new RenderPart(
             this,
-            activeItem !== null ? getEntityTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItem.type].entityTextureSource) : -1,
+            activeItem !== null ? getTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[activeItem.type].entityTextureSource) : -1,
             i === 0 ? 0.5 : 0,
             0
          );
@@ -464,7 +464,7 @@ abstract class TribeMember extends Entity {
 
                   this.inactiveCrossbowArrowRenderPart = new RenderPart(
                      this.activeItemRenderParts[0],
-                     getEntityTextureArrayIndex(arrowTextureSource),
+                     getTextureArrayIndex(arrowTextureSource),
                      this.activeItemRenderParts[0].zIndex + 0.1,
                      Math.PI/4
                   );
@@ -823,7 +823,7 @@ abstract class TribeMember extends Entity {
          if (this.armourRenderPart === null) {
             this.armourRenderPart = new RenderPart(
                this,
-               getEntityTextureArrayIndex(getArmourTextureSource(armourType)),
+               getTextureArrayIndex(getArmourTextureSource(armourType)),
                3,
                0
             );
@@ -843,7 +843,7 @@ abstract class TribeMember extends Entity {
          if (this.gloveRenderPart === null) {
             this.gloveRenderPart = new RenderPart(
                this.handRenderParts[0],
-               getEntityTextureArrayIndex(getGloveTextureSource(gloveType)),
+               getTextureArrayIndex(getGloveTextureSource(gloveType)),
                1.1,
                0
             );
@@ -952,7 +952,7 @@ abstract class TribeMember extends Entity {
          if (this.arrowRenderPart === null) {
             this.arrowRenderPart = new RenderPart(
                this.activeItemRenderParts[0],
-               getEntityTextureArrayIndex(arrowTextureSource),
+               getTextureArrayIndex(arrowTextureSource),
                this.activeItemRenderParts[0].zIndex + 0.1,
                Math.PI/4
             );

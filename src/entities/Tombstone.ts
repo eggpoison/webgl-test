@@ -2,7 +2,7 @@ import { DeathInfo, EntityData, EntityType, Point, SETTINGS, randFloat, randInt,
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { createDirtParticle, createRockParticle, createRockSpeckParticle } from "../particles";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { AudioFilePath, playSound, ROCK_DESTROY_SOUNDS, ROCK_HIT_SOUNDS } from "../sound";
 
 class Tombstone extends Entity {
@@ -20,7 +20,7 @@ class Tombstone extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            getEntityTextureArrayIndex(`entities/tombstone/tombstone${tombstoneType + 1}.png`),
+            getTextureArrayIndex(`entities/tombstone/tombstone${tombstoneType + 1}.png`),
             0,
             0
          )

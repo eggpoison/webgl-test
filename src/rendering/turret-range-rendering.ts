@@ -160,12 +160,6 @@ const getRenderingInfo = (): TurretRangeRenderingInfo | null => {
 
    const hoveredEntityID = getHoveredEntityID();
    if (hoveredEntityID !== -1) {
-      // @Temporary: shouldn't happen, find root cause
-      if (!Board.entityRecord.hasOwnProperty(hoveredEntityID)) {
-         console.warn("NO HOVERED ENTITY!");
-         return null;
-      }
-      
       const hoveredEntity = Board.entityRecord[hoveredEntityID];
 
       if (hoveredEntity.type === EntityType.ballista || hoveredEntity.type === EntityType.slingTurret) {

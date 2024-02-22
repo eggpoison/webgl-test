@@ -1,6 +1,6 @@
 import { EntityType, Point, SETTINGS, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import { getEntityTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import Entity from "./Entity";
 import { playSound } from "../sound";
 import { createFlyParticle } from "../particles";
@@ -15,7 +15,7 @@ class FloorPunjiSticks extends Entity {
       this.attachRenderPart(
          new RenderPart(
             this,
-            getEntityTextureArrayIndex("entities/floor-punji-sticks/floor-punji-sticks.png"),
+            getTextureArrayIndex("entities/floor-punji-sticks/floor-punji-sticks.png"),
             0,
             0
          )

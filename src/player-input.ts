@@ -563,19 +563,6 @@ const createInventoryToggleListeners = (): void => {
          updateInventoryIsOpen(false);
          return;
       }
-      
-      // @Incomplete
-      // if (_interactInventoryIsOpen) {
-      //    hideInteractInventory();
-      // } else {
-      //    const interactEntity = getInteractEntity();
-      //    if (interactEntity !== null) {
-      //       interactInventoryEntity = interactEntity;
-      //       const interactInventoryType = getInteractInventoryType(interactInventoryEntity);
-      //       _interactInventoryIsOpen = true;
-      //       InteractInventory_setInventory(interactInventoryType, interactInventoryEntity);
-      //    }
-      // }
    });
    addKeyListener("escape", () => {
       if (techTreeIsOpen()) {
@@ -888,7 +875,7 @@ export function canPlaceItem(placePosition: Point, placeRotation: number, item: 
    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
          const chunk = Board.getChunk(chunkX, chunkY);
-         for (const entity of chunk.getEntities()) {
+         for (const entity of chunk.getGameObjects()) {
             for (const hitbox of entity.hitboxes) {   
                if (placeTestHitbox.isColliding(hitbox)) {
                   return false;
@@ -1155,7 +1142,6 @@ const selectItemSlot = (itemSlot: number): void => {
       } else {
          Player.instance.leftActiveItem = null;
       }
-      // @Incomplete?? might want to call updateHands
       Player.instance!.updateHands();
    }
 }
