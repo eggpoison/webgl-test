@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useState } from "react";
 import { ITEM_TYPE_RECORD, Item, ItemType, TribeType } from "webgl-test-shared";
 import { getItemTypeImage } from "../../../client-item-info";
 import { leftClickItemSlot, rightClickItemSlot } from "../../../inventory-manipulation";
@@ -88,6 +88,8 @@ const Hotbar = () => {
          );
       }
    }
+   
+   // @Cleanup: Copy and paste
 
    let offhandSlotElement: JSX.Element;
    if (definiteGameState.offhandInventory.itemSlots.hasOwnProperty(1)) {

@@ -94,7 +94,7 @@
 .item-slot .item-count, #held-item .held-item-count {
    color: #fff;
    font-family: "Inconsolata";
-   font-size: 1.3rem;
+   font-size: 1.5rem;
    font-weight: bold;
    text-shadow: 0 0 1px #000, 0 0 2px #000, 0 0 3px #000, 0 0 4px #000;
    text-align: right;
