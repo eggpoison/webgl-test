@@ -1,4 +1,4 @@
-import { AttackPacket, EntityType, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, Inventory, Item, ItemType, PlaceableItemType, Point, SETTINGS, SNAP_OFFSETS, STATUS_EFFECT_MODIFIERS, STRUCTURE_TYPES, StructureType, TRIBE_INFO_RECORD, ToolItemInfo, TribeMemberAction, TribeType, distance } from "webgl-test-shared";
+import { AttackPacket, EntityType, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, Inventory, Item, ItemType, PlaceableItemType, Point, SettingsConst, SNAP_OFFSETS, STATUS_EFFECT_MODIFIERS, STRUCTURE_TYPES, StructureType, TRIBE_INFO_RECORD, ToolItemInfo, TribeMemberAction, TribeType, distance } from "webgl-test-shared";
 import { addKeyListener, clearPressedKeys, keyIsPressed } from "./keyboard-input";
 import { CraftingMenu_setIsVisible } from "./components/game/menus/CraftingMenu";
 import Player from "./entities/Player";
@@ -194,7 +194,7 @@ let _inventoryIsOpen = false;
 const updateAttackCooldowns = (inventory: Inventory, attackCooldowns: Record<number, number>): void => {
    for (let itemSlot = 1; itemSlot <= inventory.width; itemSlot++) {
       if (attackCooldowns.hasOwnProperty(itemSlot)) {
-         attackCooldowns[itemSlot] -= 1 / SETTINGS.TPS;
+         attackCooldowns[itemSlot] -= 1 / SettingsConst.TPS;
          if (attackCooldowns[itemSlot] < 0) {
             delete attackCooldowns[itemSlot];
          }
@@ -276,7 +276,7 @@ const attemptInventoryAttack = (inventory: Inventory): boolean => {
             const itemInfo = ITEM_INFO_RECORD[selectedItem.type];
             attackCooldowns[selectedItemSlot] = (itemInfo as ToolItemInfo).attackCooldown;
          } else {
-            attackCooldowns[selectedItemSlot] = SETTINGS.DEFAULT_ATTACK_COOLDOWN;
+            attackCooldowns[selectedItemSlot] = SettingsConst.DEFAULT_ATTACK_COOLDOWN;
          }
 
          return true;
@@ -285,7 +285,7 @@ const attemptInventoryAttack = (inventory: Inventory): boolean => {
       // Attack without item
       if (!attackCooldowns.hasOwnProperty(selectedItemSlot)) {
          attack(isOffhand);
-         attackCooldowns[selectedItemSlot] = SETTINGS.DEFAULT_ATTACK_COOLDOWN;
+         attackCooldowns[selectedItemSlot] = SettingsConst.DEFAULT_ATTACK_COOLDOWN;
 
          return true;
       }
@@ -396,7 +396,7 @@ const createItemUseListeners = (): void => {
 }
 
 const createHotbarKeyListeners = (): void => {
-   for (let itemSlot = 1; itemSlot <= SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE; itemSlot++) {
+   for (let itemSlot = 1; itemSlot <= SettingsConst.INITIAL_PLAYER_HOTBAR_SIZE; itemSlot++) {
       addKeyListener(itemSlot.toString(), () => selectItemSlot(itemSlot));
    }
    addKeyListener("!", () => selectItemSlot(1));
@@ -429,10 +429,10 @@ export function updateInventoryIsOpen(inventoryIsOpen: boolean): void {
 // const getInteractEntity = (): Entity | null => {
 //    if (Player.instance === null) return null;
 
-//    const minChunkX = Math.max(Math.min(Math.floor((Player.instance.position.x - PLAYER_INTERACT_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
-//    const maxChunkX = Math.max(Math.min(Math.floor((Player.instance.position.x + PLAYER_INTERACT_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
-//    const minChunkY = Math.max(Math.min(Math.floor((Player.instance.position.y - PLAYER_INTERACT_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
-//    const maxChunkY = Math.max(Math.min(Math.floor((Player.instance.position.y + PLAYER_INTERACT_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
+//    const minChunkX = Math.max(Math.min(Math.floor((Player.instance.position.x - PLAYER_INTERACT_RANGE) / SettingsConst.CHUNK_UNITS), SettingsConst.BOARD_SIZE - 1), 0);
+//    const maxChunkX = Math.max(Math.min(Math.floor((Player.instance.position.x + PLAYER_INTERACT_RANGE) / SettingsConst.CHUNK_UNITS), SettingsConst.BOARD_SIZE - 1), 0);
+//    const minChunkY = Math.max(Math.min(Math.floor((Player.instance.position.y - PLAYER_INTERACT_RANGE) / SettingsConst.CHUNK_UNITS), SettingsConst.BOARD_SIZE - 1), 0);
+//    const maxChunkY = Math.max(Math.min(Math.floor((Player.instance.position.y + PLAYER_INTERACT_RANGE) / SettingsConst.CHUNK_UNITS), SettingsConst.BOARD_SIZE - 1), 0);
    
 //    let minInteractionDistance = PLAYER_INTERACT_RANGE + Number.EPSILON;
 //    let closestInteractableEntity: Entity | null = null;
@@ -591,9 +591,9 @@ export function createPlayerInputListeners(): void {
       const scrollDirection = Math.sign(e.deltaY);
       let newSlot = latencyGameState.selectedHotbarItemSlot + scrollDirection;
       if (newSlot <= 0) {
-         newSlot += SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE;
-      } else if (newSlot > SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE) {
-         newSlot -= SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE;
+         newSlot += SettingsConst.INITIAL_PLAYER_HOTBAR_SIZE;
+      } else if (newSlot > SettingsConst.INITIAL_PLAYER_HOTBAR_SIZE) {
+         newSlot -= SettingsConst.INITIAL_PLAYER_HOTBAR_SIZE;
       }
       selectItemSlot(newSlot);
    });
@@ -703,8 +703,8 @@ export function selectItem(item: Item): void {
 
 const calculateRegularPlacePosition = (placeableEntityInfo: PlaceableEntityInfo): Point => {
    const placeOffset = placeableEntityInfo.height / 2;
-   const placePositionX = Player.instance!.position.x + (SETTINGS.ITEM_PLACE_DISTANCE + placeOffset) * Math.sin(Player.instance!.rotation);
-   const placePositionY = Player.instance!.position.y + (SETTINGS.ITEM_PLACE_DISTANCE + placeOffset) * Math.cos(Player.instance!.rotation);
+   const placePositionX = Player.instance!.position.x + (SettingsConst.ITEM_PLACE_DISTANCE + placeOffset) * Math.sin(Player.instance!.rotation);
+   const placePositionY = Player.instance!.position.y + (SettingsConst.ITEM_PLACE_DISTANCE + placeOffset) * Math.cos(Player.instance!.rotation);
    return new Point(placePositionX, placePositionY);
 }
 
@@ -718,10 +718,10 @@ interface BuildingSnapInfo {
 export function calculateSnapInfo(placeableEntityInfo: PlaceableEntityInfo): BuildingSnapInfo | null {
    const regularPlacePosition = calculateRegularPlacePosition(placeableEntityInfo);
 
-   const minChunkX = Math.max(Math.floor((regularPlacePosition.x - SETTINGS.STRUCTURE_SNAP_RANGE) / SETTINGS.CHUNK_UNITS), 0);
-   const maxChunkX = Math.min(Math.floor((regularPlacePosition.x + SETTINGS.STRUCTURE_SNAP_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1);
-   const minChunkY = Math.max(Math.floor((regularPlacePosition.y - SETTINGS.STRUCTURE_SNAP_RANGE) / SETTINGS.CHUNK_UNITS), 0);
-   const maxChunkY = Math.min(Math.floor((regularPlacePosition.y + SETTINGS.STRUCTURE_SNAP_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1);
+   const minChunkX = Math.max(Math.floor((regularPlacePosition.x - SettingsConst.STRUCTURE_SNAP_RANGE) / SettingsConst.CHUNK_UNITS), 0);
+   const maxChunkX = Math.min(Math.floor((regularPlacePosition.x + SettingsConst.STRUCTURE_SNAP_RANGE) / SettingsConst.CHUNK_UNITS), SettingsConst.BOARD_SIZE - 1);
+   const minChunkY = Math.max(Math.floor((regularPlacePosition.y - SettingsConst.STRUCTURE_SNAP_RANGE) / SettingsConst.CHUNK_UNITS), 0);
+   const maxChunkY = Math.min(Math.floor((regularPlacePosition.y + SettingsConst.STRUCTURE_SNAP_RANGE) / SettingsConst.CHUNK_UNITS), SettingsConst.BOARD_SIZE - 1);
    
    const snappableEntities = new Array<GameObject>();
    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
@@ -729,7 +729,7 @@ export function calculateSnapInfo(placeableEntityInfo: PlaceableEntityInfo): Bui
          const chunk = Board.getChunk(chunkX, chunkY);
          for (const entity of chunk.getGameObjects()) {
             const distance = regularPlacePosition.calculateDistanceBetween(entity.position);
-            if (distance > SETTINGS.STRUCTURE_SNAP_RANGE) {
+            if (distance > SettingsConst.STRUCTURE_SNAP_RANGE) {
                continue;
             }
             
@@ -771,7 +771,7 @@ export function calculateSnapInfo(placeableEntityInfo: PlaceableEntityInfo): Bui
          const x = snapOrigin.x + snapOffset * Math.sin(placeDirection);
          const y = snapOrigin.y + snapOffset * Math.cos(placeDirection);
          
-         if (distance(regularPlacePosition.x, regularPlacePosition.y, x, y) > SETTINGS.STRUCTURE_POSITION_SNAP) {
+         if (distance(regularPlacePosition.x, regularPlacePosition.y, x, y) > SettingsConst.STRUCTURE_POSITION_SNAP) {
             continue;
          }
 
@@ -785,7 +785,7 @@ export function calculateSnapInfo(placeableEntityInfo: PlaceableEntityInfo): Bui
                const placeDirection = (snapEntity.rotation + direction + Math.PI) % (Math.PI * 2) - Math.PI;
                let angleDiff = playerRotation - placeDirection;
                angleDiff = (angleDiff + Math.PI) % (Math.PI * 2) - Math.PI;
-               if (Math.abs(angleDiff) <= SETTINGS.STRUCTURE_ROTATION_SNAP) {
+               if (Math.abs(angleDiff) <= SettingsConst.STRUCTURE_ROTATION_SNAP) {
                   placeRotation = placeDirection;
                }
             }
@@ -859,7 +859,7 @@ export function canPlaceItem(placePosition: Point, placeRotation: number, item: 
    placeTestHitbox.updateHitboxBounds(0);
 
    // Don't allow placing buildings in borders
-   if (placeTestHitbox.bounds[0] < 0 || placeTestHitbox.bounds[1] >= SETTINGS.BOARD_UNITS || placeTestHitbox.bounds[2] < 0 || placeTestHitbox.bounds[3] >= SETTINGS.BOARD_UNITS) {
+   if (placeTestHitbox.bounds[0] < 0 || placeTestHitbox.bounds[1] >= SettingsConst.BOARD_UNITS || placeTestHitbox.bounds[2] < 0 || placeTestHitbox.bounds[3] >= SettingsConst.BOARD_UNITS) {
       return false;
    }
 
@@ -867,10 +867,10 @@ export function canPlaceItem(placePosition: Point, placeRotation: number, item: 
    // Check for entity collisions
    // 
 
-   const minChunkX = Math.floor(placeTestHitbox.bounds[0] / SETTINGS.CHUNK_UNITS);
-   const maxChunkX = Math.floor(placeTestHitbox.bounds[1] / SETTINGS.CHUNK_UNITS);
-   const minChunkY = Math.floor(placeTestHitbox.bounds[2] / SETTINGS.CHUNK_UNITS);
-   const maxChunkY = Math.floor(placeTestHitbox.bounds[3] / SETTINGS.CHUNK_UNITS);
+   const minChunkX = Math.floor(placeTestHitbox.bounds[0] / SettingsConst.CHUNK_UNITS);
+   const maxChunkX = Math.floor(placeTestHitbox.bounds[1] / SettingsConst.CHUNK_UNITS);
+   const minChunkY = Math.floor(placeTestHitbox.bounds[2] / SettingsConst.CHUNK_UNITS);
+   const maxChunkY = Math.floor(placeTestHitbox.bounds[3] / SettingsConst.CHUNK_UNITS);
    
    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
@@ -890,12 +890,12 @@ export function canPlaceItem(placePosition: Point, placeRotation: number, item: 
    // 
 
    // @Speed: Garbage collection
-   const tileHitbox = new RectangularHitbox(1, SETTINGS.TILE_SIZE, SETTINGS.TILE_SIZE, 0);
+   const tileHitbox = new RectangularHitbox(1, SettingsConst.TILE_SIZE, SettingsConst.TILE_SIZE, 0);
 
-   const minTileX = Math.floor(placeTestHitbox.bounds[0] / SETTINGS.TILE_SIZE);
-   const maxTileX = Math.floor(placeTestHitbox.bounds[1] / SETTINGS.TILE_SIZE);
-   const minTileY = Math.floor(placeTestHitbox.bounds[2] / SETTINGS.TILE_SIZE);
-   const maxTileY = Math.floor(placeTestHitbox.bounds[3] / SETTINGS.TILE_SIZE);
+   const minTileX = Math.floor(placeTestHitbox.bounds[0] / SettingsConst.TILE_SIZE);
+   const maxTileX = Math.floor(placeTestHitbox.bounds[1] / SettingsConst.TILE_SIZE);
+   const minTileY = Math.floor(placeTestHitbox.bounds[2] / SettingsConst.TILE_SIZE);
+   const maxTileY = Math.floor(placeTestHitbox.bounds[3] / SettingsConst.TILE_SIZE);
 
    for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
       for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
@@ -904,8 +904,8 @@ export function canPlaceItem(placePosition: Point, placeRotation: number, item: 
             continue;
          }
 
-         tileHitbox.position.x = (tileX + 0.5) * SETTINGS.TILE_SIZE;
-         tileHitbox.position.y = (tileY + 0.5) * SETTINGS.TILE_SIZE;
+         tileHitbox.position.x = (tileX + 0.5) * SettingsConst.TILE_SIZE;
+         tileHitbox.position.y = (tileY + 0.5) * SettingsConst.TILE_SIZE;
          tileHitbox.updateHitboxBounds(0);
 
          if (placeTestHitbox.isColliding(tileHitbox)) {

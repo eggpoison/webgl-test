@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useRef, useState } from "react";
-import { GameObjectDebugData, SETTINGS, TileType, roundNum } from "webgl-test-shared";
+import { GameObjectDebugData, SettingsConst, TileType, roundNum } from "webgl-test-shared";
 import Entity from "../../../entities/Entity";
 import { Tile } from "../../../Tile";
 import Board from "../../../Board";
@@ -16,8 +16,8 @@ interface TileDebugInfoProps {
    readonly tile: Tile;
 }
 const TileDebugInfo = ({ tile }: TileDebugInfoProps) => {
-   const chunkX = Math.floor(tile.x / SETTINGS.CHUNK_SIZE);
-   const chunkY = Math.floor(tile.y / SETTINGS.CHUNK_SIZE);
+   const chunkX = Math.floor(tile.x / SettingsConst.CHUNK_SIZE);
+   const chunkY = Math.floor(tile.y / SettingsConst.CHUNK_SIZE);
 
    return <>
       <div className="title"><span className="highlight">{tile.type}</span> tile</div>

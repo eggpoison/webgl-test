@@ -1,4 +1,4 @@
-import { SETTINGS, TileType } from "webgl-test-shared";
+import { SettingsConst, TileType } from "webgl-test-shared";
 import Camera from "../Camera";
 import { TEXTURE_IMAGE_RECORD } from "../textures";
 import { gl, createWebGLProgram, CAMERA_UNIFORM_BUFFER_BINDING_INDEX } from "../webgl";
@@ -166,10 +166,10 @@ const updateVertexData = (data: Float32Array, renderChunkX: number, renderChunkY
 
          const textureIndex = tile.type as number;
 
-         const x1 = tile.x * SETTINGS.TILE_SIZE;
-         const x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
-         const y1 = tile.y * SETTINGS.TILE_SIZE;
-         const y2 = (tile.y + 1) * SETTINGS.TILE_SIZE;
+         const x1 = tile.x * SettingsConst.TILE_SIZE;
+         const x2 = (tile.x + 1) * SettingsConst.TILE_SIZE;
+         const y1 = tile.y * SettingsConst.TILE_SIZE;
+         const y2 = (tile.y + 1) * SettingsConst.TILE_SIZE;
 
          let temperature = -1;
          let humidity = -1;

@@ -1,4 +1,4 @@
-import { SETTINGS } from "webgl-test-shared";
+import { SettingsConst } from "webgl-test-shared";
 import Camera from "../Camera";
 import { Tile } from "../Tile";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
@@ -94,10 +94,10 @@ export function calculateWallBorderInfo(renderChunkX: number, renderChunkY: numb
       const leftOvershoot = Board.tileIsInBoard(tile.x - 1, tile.y) && Board.getTile(tile.x - 1, tile.y).isWall ? BORDER_THICKNESS : 0;
       const rightOvershoot = Board.tileIsInBoard(tile.x + 1, tile.y) && Board.getTile(tile.x + 1, tile.y).isWall ? BORDER_THICKNESS : 0;
 
-      const x1 = tile.x * SETTINGS.TILE_SIZE - leftOvershoot;
-      const x2 = (tile.x + 1) * SETTINGS.TILE_SIZE + rightOvershoot;
-      const y1 = (tile.y + 1) * SETTINGS.TILE_SIZE - BORDER_THICKNESS;
-      const y2 = (tile.y + 1) * SETTINGS.TILE_SIZE;
+      const x1 = tile.x * SettingsConst.TILE_SIZE - leftOvershoot;
+      const x2 = (tile.x + 1) * SettingsConst.TILE_SIZE + rightOvershoot;
+      const y1 = (tile.y + 1) * SettingsConst.TILE_SIZE - BORDER_THICKNESS;
+      const y2 = (tile.y + 1) * SettingsConst.TILE_SIZE;
 
       const dataOffset = i * 2 * 6;
       vertexData[dataOffset] = x1;
@@ -121,10 +121,10 @@ export function calculateWallBorderInfo(renderChunkX: number, renderChunkY: numb
       const topOvershoot = Board.tileIsWithinEdge(tile.x, tile.y + 1) && Board.getTile(tile.x, tile.y + 1)?.isWall ? BORDER_THICKNESS : 0;
       const bottomOvershoot = Board.tileIsWithinEdge(tile.x, tile.y - 1) && Board.getTile(tile.x, tile.y - 1)?.isWall ? BORDER_THICKNESS : 0;
 
-      const x1 = (tile.x + 1) * SETTINGS.TILE_SIZE - BORDER_THICKNESS;
-      const x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
-      const y1 = tile.y * SETTINGS.TILE_SIZE - bottomOvershoot;
-      const y2 = (tile.y + 1) * SETTINGS.TILE_SIZE + topOvershoot;
+      const x1 = (tile.x + 1) * SettingsConst.TILE_SIZE - BORDER_THICKNESS;
+      const x2 = (tile.x + 1) * SettingsConst.TILE_SIZE;
+      const y1 = tile.y * SettingsConst.TILE_SIZE - bottomOvershoot;
+      const y2 = (tile.y + 1) * SettingsConst.TILE_SIZE + topOvershoot;
 
       const dataOffset = i * 2 * 6;
       vertexData[dataOffset] = x1;
@@ -148,10 +148,10 @@ export function calculateWallBorderInfo(renderChunkX: number, renderChunkY: numb
       const leftOvershoot = Board.tileIsWithinEdge(tile.x - 1, tile.y) && Board.getTile(tile.x - 1, tile.y)?.isWall ? BORDER_THICKNESS : 0;
       const rightOvershoot = Board.tileIsWithinEdge(tile.x + 1, tile.y) && Board.getTile(tile.x + 1, tile.y)?.isWall ? BORDER_THICKNESS : 0;
 
-      const x1 = tile.x * SETTINGS.TILE_SIZE - leftOvershoot;
-      const x2 = (tile.x + 1) * SETTINGS.TILE_SIZE + rightOvershoot;
-      const y1 = tile.y * SETTINGS.TILE_SIZE;
-      const y2 = tile.y * SETTINGS.TILE_SIZE + BORDER_THICKNESS;
+      const x1 = tile.x * SettingsConst.TILE_SIZE - leftOvershoot;
+      const x2 = (tile.x + 1) * SettingsConst.TILE_SIZE + rightOvershoot;
+      const y1 = tile.y * SettingsConst.TILE_SIZE;
+      const y2 = tile.y * SettingsConst.TILE_SIZE + BORDER_THICKNESS;
 
       const dataOffset = i * 2 * 6;
       vertexData[dataOffset] = x1;
@@ -175,10 +175,10 @@ export function calculateWallBorderInfo(renderChunkX: number, renderChunkY: numb
       const topOvershoot = Board.tileIsInBoard(tile.x, tile.y + 1) && Board.getTile(tile.x, tile.y + 1).isWall ? BORDER_THICKNESS : 0;
       const bottomOvershoot = Board.tileIsInBoard(tile.x, tile.y - 1) && Board.getTile(tile.x, tile.y - 1).isWall ? BORDER_THICKNESS : 0;
 
-      const x1 = tile.x * SETTINGS.TILE_SIZE;
-      const x2 = tile.x * SETTINGS.TILE_SIZE + BORDER_THICKNESS;
-      const y1 = tile.y * SETTINGS.TILE_SIZE - bottomOvershoot;
-      const y2 = (tile.y + 1) * SETTINGS.TILE_SIZE + topOvershoot;
+      const x1 = tile.x * SettingsConst.TILE_SIZE;
+      const x2 = tile.x * SettingsConst.TILE_SIZE + BORDER_THICKNESS;
+      const y1 = tile.y * SettingsConst.TILE_SIZE - bottomOvershoot;
+      const y2 = (tile.y + 1) * SettingsConst.TILE_SIZE + topOvershoot;
 
       const dataOffset = i * 2 * 6;
       vertexData[dataOffset] = x1;

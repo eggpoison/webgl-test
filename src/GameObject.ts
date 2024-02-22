@@ -1,4 +1,4 @@
-import { EntityData, EntityType, HitData, HitFlags, Point, RIVER_STEPPING_STONE_SIZES, I_TPS, SETTINGS, StatusEffectData, TILE_FRICTIONS, TILE_MOVE_SPEED_MULTIPLIERS, TileType, distance, StatusEffect, randFloat, randInt, rotateXAroundOrigin, rotateYAroundOrigin } from "webgl-test-shared";
+import { EntityData, EntityType, HitData, HitFlags, Point, RIVER_STEPPING_STONE_SIZES, SettingsConst, StatusEffectData, TILE_FRICTIONS, TILE_MOVE_SPEED_MULTIPLIERS, TileType, distance, StatusEffect, randFloat, randInt, rotateXAroundOrigin, rotateYAroundOrigin } from "webgl-test-shared";
 import RenderPart, { RenderObject } from "./render-parts/RenderPart";
 import Chunk from "./Chunk";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
@@ -213,16 +213,16 @@ abstract class GameObject extends RenderObject {
 
          const friction = TILE_FRICTIONS[this.tile.type];
          
-         this.velocity.x += this.acceleration.x * friction * tileMoveSpeedMultiplier * I_TPS;
-         this.velocity.y += this.acceleration.y * friction * tileMoveSpeedMultiplier * I_TPS;
+         this.velocity.x += this.acceleration.x * friction * tileMoveSpeedMultiplier * SettingsConst.I_TPS;
+         this.velocity.y += this.acceleration.y * friction * tileMoveSpeedMultiplier * SettingsConst.I_TPS;
       }
 
       // If the game object is in a river, push them in the flow direction of the river
       const moveSpeedIsOverridden = typeof this.overrideTileMoveSpeedMultiplier !== "undefined" && this.overrideTileMoveSpeedMultiplier() !== null;
       if (this.isInRiver() && !moveSpeedIsOverridden) {
          const flowDirection = Board.getRiverFlowDirection(this.tile.x, this.tile.y);
-         this.velocity.x += 240 / SETTINGS.TPS * Math.sin(flowDirection);
-         this.velocity.y += 240 / SETTINGS.TPS * Math.cos(flowDirection);
+         this.velocity.x += 240 / SettingsConst.TPS * Math.sin(flowDirection);
+         this.velocity.y += 240 / SettingsConst.TPS * Math.cos(flowDirection);
       }
 
       // Apply velocity
@@ -230,8 +230,8 @@ abstract class GameObject extends RenderObject {
          const friction = TILE_FRICTIONS[this.tile.type];
 
          // Apply a friction based on the tile type to simulate air resistance (???)
-         this.velocity.x *= 1 - friction * I_TPS * 2;
-         this.velocity.y *= 1 - friction * I_TPS * 2;
+         this.velocity.x *= 1 - friction * SettingsConst.I_TPS * 2;
+         this.velocity.y *= 1 - friction * SettingsConst.I_TPS * 2;
 
          // Apply a constant friction based on the tile type to simulate ground friction
          const velocityMagnitude = this.velocity.length();
@@ -241,8 +241,8 @@ abstract class GameObject extends RenderObject {
             this.velocity.y -= groundFriction * this.velocity.y / velocityMagnitude;
          }
          
-         this.position.x += this.velocity.x * I_TPS;
-         this.position.y += this.velocity.y * I_TPS;
+         this.position.x += this.velocity.x * SettingsConst.I_TPS;
+         this.position.y += this.velocity.y * SettingsConst.I_TPS;
       }
 
       if (isNaN(this.position.x)) {
@@ -254,19 +254,19 @@ abstract class GameObject extends RenderObject {
    protected resolveBorderCollisions(): void {
       if (this.position.x < 0) {
          this.position.x = 0;
-      } else if (this.position.x >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
-         this.position.x = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE - 1;
+      } else if (this.position.x >= SettingsConst.BOARD_DIMENSIONS * SettingsConst.TILE_SIZE) {
+         this.position.x = SettingsConst.BOARD_DIMENSIONS * SettingsConst.TILE_SIZE - 1;
       }
       if (this.position.y < 0) {
          this.position.y = 0;
-      } else if (this.position.y >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
-         this.position.y = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE - 1;
+      } else if (this.position.y >= SettingsConst.BOARD_DIMENSIONS * SettingsConst.TILE_SIZE) {
+         this.position.y = SettingsConst.BOARD_DIMENSIONS * SettingsConst.TILE_SIZE - 1;
       }
    }
 
    private updateCurrentTile(): void {
-      const tileX = Math.floor(this.position.x / SETTINGS.TILE_SIZE);
-      const tileY = Math.floor(this.position.y / SETTINGS.TILE_SIZE);
+      const tileX = Math.floor(this.position.x / SettingsConst.TILE_SIZE);
+      const tileY = Math.floor(this.position.y / SettingsConst.TILE_SIZE);
       this.tile = Board.getTile(tileX, tileY);
    }
 
@@ -276,10 +276,10 @@ abstract class GameObject extends RenderObject {
       
       // Find containing chunks
       for (const hitbox of this.hitboxes) {
-         const minChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[0] / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
-         const maxChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[1] / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
-         const minChunkY = Math.max(Math.min(Math.floor(hitbox.bounds[2] / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
-         const maxChunkY = Math.max(Math.min(Math.floor(hitbox.bounds[3] / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
+         const minChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[0] / SettingsConst.CHUNK_UNITS), SettingsConst.BOARD_SIZE - 1), 0);
+         const maxChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[1] / SettingsConst.CHUNK_UNITS), SettingsConst.BOARD_SIZE - 1), 0);
+         const minChunkY = Math.max(Math.min(Math.floor(hitbox.bounds[2] / SettingsConst.CHUNK_UNITS), SettingsConst.BOARD_SIZE - 1), 0);
+         const maxChunkY = Math.max(Math.min(Math.floor(hitbox.bounds[3] / SettingsConst.CHUNK_UNITS), SettingsConst.BOARD_SIZE - 1), 0);
          
          for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
             for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
@@ -307,8 +307,8 @@ abstract class GameObject extends RenderObject {
    }
 
    public updateRenderPosition(): void {
-      this.renderPosition.x = this.position.x + this.velocity.x * frameProgress / SETTINGS.TPS;
-      this.renderPosition.y = this.position.y + this.velocity.y * frameProgress / SETTINGS.TPS;
+      this.renderPosition.x = this.position.x + this.velocity.x * frameProgress / SettingsConst.TPS;
+      this.renderPosition.y = this.position.y + this.velocity.y * frameProgress / SettingsConst.TPS;
 
       // Shake
       if (this.shakeAmount > 0) {
@@ -366,10 +366,10 @@ abstract class GameObject extends RenderObject {
          }
 
          // Recalculate the game object's containing chunks based on the new hitbox bounds
-         const minChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[0] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-         const maxChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[1] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-         const minChunkY = Math.max(Math.min(Math.floor(hitbox.bounds[2] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-         const maxChunkY = Math.max(Math.min(Math.floor(hitbox.bounds[3] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+         const minChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[0] / SettingsConst.TILE_SIZE / SettingsConst.CHUNK_SIZE), SettingsConst.BOARD_SIZE - 1), 0);
+         const maxChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[1] / SettingsConst.TILE_SIZE / SettingsConst.CHUNK_SIZE), SettingsConst.BOARD_SIZE - 1), 0);
+         const minChunkY = Math.max(Math.min(Math.floor(hitbox.bounds[2] / SettingsConst.TILE_SIZE / SettingsConst.CHUNK_SIZE), SettingsConst.BOARD_SIZE - 1), 0);
+         const maxChunkY = Math.max(Math.min(Math.floor(hitbox.bounds[3] / SettingsConst.TILE_SIZE / SettingsConst.CHUNK_SIZE), SettingsConst.BOARD_SIZE - 1), 0);
          
          for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
             for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
@@ -406,10 +406,10 @@ abstract class GameObject extends RenderObject {
          }
 
          // Recalculate the game object's containing chunks based on the new hitbox bounds
-         const minChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[0] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-         const maxChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[1] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-         const minChunkY = Math.max(Math.min(Math.floor(hitbox.bounds[2] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-         const maxChunkY = Math.max(Math.min(Math.floor(hitbox.bounds[3] / SETTINGS.TILE_SIZE / SETTINGS.CHUNK_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+         const minChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[0] / SettingsConst.TILE_SIZE / SettingsConst.CHUNK_SIZE), SettingsConst.BOARD_SIZE - 1), 0);
+         const maxChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[1] / SettingsConst.TILE_SIZE / SettingsConst.CHUNK_SIZE), SettingsConst.BOARD_SIZE - 1), 0);
+         const minChunkY = Math.max(Math.min(Math.floor(hitbox.bounds[2] / SettingsConst.TILE_SIZE / SettingsConst.CHUNK_SIZE), SettingsConst.BOARD_SIZE - 1), 0);
+         const maxChunkY = Math.max(Math.min(Math.floor(hitbox.bounds[3] / SettingsConst.TILE_SIZE / SettingsConst.CHUNK_SIZE), SettingsConst.BOARD_SIZE - 1), 0);
          
          for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
             for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {

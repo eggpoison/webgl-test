@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { SETTINGS } from "webgl-test-shared";
+import { SettingsConst } from "webgl-test-shared";
 import Client from "../../client/Client";
 import Player from "../../entities/Player";
 
@@ -18,7 +18,7 @@ const SPAM_FILTER: SpamFilter = {
 export function updateSpamFilter(): void {
    for (let idx = spamFilterHistory.length - 1; idx >= 0; idx--) {
       const spamFilterMessage = spamFilterHistory[idx];
-      spamFilterMessage[1] -= 1 / SETTINGS.TPS;
+      spamFilterMessage[1] -= 1 / SettingsConst.TPS;
       if (spamFilterMessage[1] <= 0) {
          spamFilterHistory.splice(idx, 1);
       }

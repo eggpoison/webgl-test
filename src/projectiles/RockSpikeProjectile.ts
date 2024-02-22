@@ -1,4 +1,4 @@
-import { EntityType, Point, SETTINGS, lerp, randFloat, randInt } from "webgl-test-shared";
+import { EntityType, Point, SettingsConst, lerp, randFloat, randInt } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import Particle from "../Particle";
@@ -118,7 +118,7 @@ class RockSpikeProjectile extends GameObject {
    public tick(): void {
       super.tick();
 
-      const ageSeconds = this.ageTicks / SETTINGS.TPS;
+      const ageSeconds = this.ageTicks / SettingsConst.TPS;
       if (ageSeconds < RockSpikeProjectile.ENTRANCE_SHAKE_DURATION) {
          // Entrance
          const entranceProgress = ageSeconds / RockSpikeProjectile.ENTRANCE_SHAKE_DURATION;

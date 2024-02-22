@@ -1,4 +1,4 @@
-import { EntityData, EntityType, FrozenYetiAttackType, HitData, Point, SETTINGS, lerp, randFloat, randInt } from "webgl-test-shared";
+import { EntityData, EntityType, FrozenYetiAttackType, HitData, Point, SettingsConst, lerp, randFloat, randInt } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 import Player from "./Player";
@@ -485,7 +485,7 @@ class FrozenYeti extends Entity {
       this.stageProgress = data.clientArgs[2];
 
       for (const positionData of data.clientArgs[3]) {
-         if (Math.random() < 5 / SETTINGS.TPS) {
+         if (Math.random() < 5 / SettingsConst.TPS) {
             if (Math.random() < 0.5) {
                const spawnOffsetMagnitude = randFloat(0, 5);
                const spawnOffsetDirection = 2 * Math.PI * Math.random();

@@ -1,4 +1,4 @@
-import { SETTINGS, lerp } from "webgl-test-shared";
+import { SettingsConst, lerp } from "webgl-test-shared";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 import Board from "../Board";
 import OPTIONS from "../options";
@@ -39,7 +39,7 @@ export function createNightShaders(): void {
    precision mediump float;
    
    #define MAX_LIGHTS 128
-   #define TILE_SIZE ${SETTINGS.TILE_SIZE.toFixed(1)}
+   #define TILE_SIZE ${SettingsConst.TILE_SIZE.toFixed(1)}
    
    uniform int u_numLights;
    uniform vec2 u_lightPositions[MAX_LIGHTS];
@@ -104,7 +104,7 @@ export function createNightShaders(): void {
    precision mediump float;
    
    #define MAX_LIGHTS 128
-   #define TILE_SIZE ${SETTINGS.TILE_SIZE.toFixed(1)}
+   #define TILE_SIZE ${SettingsConst.TILE_SIZE.toFixed(1)}
    
    uniform int u_numLights;
    uniform vec2 u_lightPositions[MAX_LIGHTS];

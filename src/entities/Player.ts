@@ -1,4 +1,4 @@
-import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitData, Point, SETTINGS, clampToBoardDimensions, TribeType, ItemType, InventoryData, TribeMemberAction, TileType, EntityType, ItemSlot, Item, TRIBE_INFO_RECORD, ItemData, rotateXAroundPoint, rotateYAroundPoint, DoorToggleType } from "webgl-test-shared";
+import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitData, Point, SettingsConst, clampToBoardDimensions, TribeType, ItemType, InventoryData, TribeMemberAction, TileType, EntityType, ItemSlot, Item, TRIBE_INFO_RECORD, ItemData, rotateXAroundPoint, rotateYAroundPoint, DoorToggleType } from "webgl-test-shared";
 import Camera from "../Camera";
 import { setCraftingMenuAvailableRecipes, setCraftingMenuAvailableCraftingStations } from "../components/game/menus/CraftingMenu";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -60,10 +60,10 @@ export function updateAvailableCraftingRecipes(): void {
       availableCraftingStations.add(CraftingStation.water);
    }
    
-   const minChunkX = Math.max(Math.min(Math.floor((Player.instance!.position.x - MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-   const maxChunkX = Math.max(Math.min(Math.floor((Player.instance!.position.x + MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-   const minChunkY = Math.max(Math.min(Math.floor((Player.instance!.position.y - MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-   const maxChunkY = Math.max(Math.min(Math.floor((Player.instance!.position.y + MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+   const minChunkX = Math.max(Math.min(Math.floor((Player.instance!.position.x - MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION) / SettingsConst.CHUNK_SIZE / SettingsConst.TILE_SIZE), SettingsConst.BOARD_SIZE - 1), 0);
+   const maxChunkX = Math.max(Math.min(Math.floor((Player.instance!.position.x + MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION) / SettingsConst.CHUNK_SIZE / SettingsConst.TILE_SIZE), SettingsConst.BOARD_SIZE - 1), 0);
+   const minChunkY = Math.max(Math.min(Math.floor((Player.instance!.position.y - MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION) / SettingsConst.CHUNK_SIZE / SettingsConst.TILE_SIZE), SettingsConst.BOARD_SIZE - 1), 0);
+   const maxChunkY = Math.max(Math.min(Math.floor((Player.instance!.position.y + MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION) / SettingsConst.CHUNK_SIZE / SettingsConst.TILE_SIZE), SettingsConst.BOARD_SIZE - 1), 0);
 
    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
@@ -141,7 +141,7 @@ class Player extends TribeMember {
       definiteGameState.setPlayerHealth(maxHealth);
       definiteGameState.hotbar = {
          itemSlots: {},
-         width: SETTINGS.INITIAL_PLAYER_HOTBAR_SIZE,
+         width: SettingsConst.INITIAL_PLAYER_HOTBAR_SIZE,
          height: 1,
          inventoryName: "hotbar"
       };
@@ -157,7 +157,7 @@ class Player extends TribeMember {
             this.numFootstepsTaken++;
          }
       }
-      this.distanceTracker += this.velocity.length() / SETTINGS.TPS;
+      this.distanceTracker += this.velocity.length() / SettingsConst.TPS;
       if (this.distanceTracker > 64) {
          this.distanceTracker -= 64;
          this.createFootstepSound();
@@ -284,18 +284,18 @@ class Player extends TribeMember {
    private static resolveWallTileCollisions(): void {
       if (Player.instance === null) return;
       
-      const minTileX = clampToBoardDimensions(Math.floor((Player.instance.position.x - Player.RADIUS) / SETTINGS.TILE_SIZE));
-      const maxTileX = clampToBoardDimensions(Math.floor((Player.instance.position.x + Player.RADIUS) / SETTINGS.TILE_SIZE));
-      const minTileY = clampToBoardDimensions(Math.floor((Player.instance.position.y - Player.RADIUS) / SETTINGS.TILE_SIZE));
-      const maxTileY = clampToBoardDimensions(Math.floor((Player.instance.position.y + Player.RADIUS) / SETTINGS.TILE_SIZE));
+      const minTileX = clampToBoardDimensions(Math.floor((Player.instance.position.x - Player.RADIUS) / SettingsConst.TILE_SIZE));
+      const maxTileX = clampToBoardDimensions(Math.floor((Player.instance.position.x + Player.RADIUS) / SettingsConst.TILE_SIZE));
+      const minTileY = clampToBoardDimensions(Math.floor((Player.instance.position.y - Player.RADIUS) / SettingsConst.TILE_SIZE));
+      const maxTileY = clampToBoardDimensions(Math.floor((Player.instance.position.y + Player.RADIUS) / SettingsConst.TILE_SIZE));
 
       for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
          for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
             const tile = Board.getTile(tileX, tileY);
             if (tile.isWall) {
-               const tileHitbox = new RectangularHitbox(1, SETTINGS.TILE_SIZE, SETTINGS.TILE_SIZE, 0);
-               tileHitbox.position.x = (tile.x + 0.5) * SETTINGS.TILE_SIZE;
-               tileHitbox.position.y = (tile.y + 0.5) * SETTINGS.TILE_SIZE;
+               const tileHitbox = new RectangularHitbox(1, SettingsConst.TILE_SIZE, SettingsConst.TILE_SIZE, 0);
+               tileHitbox.position.x = (tile.x + 0.5) * SettingsConst.TILE_SIZE;
+               tileHitbox.position.y = (tile.y + 0.5) * SettingsConst.TILE_SIZE;
                tileHitbox.updateHitboxBounds(0);
 
                this.resolveCollisionHard(Player.instance.hitboxes[0] as CircularHitbox, tileHitbox);
@@ -306,7 +306,7 @@ class Player extends TribeMember {
    
    // @Cleanup: rename, too similar to wall tiles
    private static resolveWallCollisions(): void {
-      const boardUnits = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE;
+      const boardUnits = SettingsConst.BOARD_DIMENSIONS * SettingsConst.TILE_SIZE;
 
       for (const hitbox of Player.instance!.hitboxes) {
          // Left wall
@@ -340,7 +340,7 @@ class Player extends TribeMember {
       let forceMultiplier = 1 / dist;
 
       // Push away
-      const force = SETTINGS.ENTITY_PUSH_FORCE / SETTINGS.TPS * forceMultiplier * collidingHitbox.mass / playerHitbox.mass;
+      const force = SettingsConst.ENTITY_PUSH_FORCE / SettingsConst.TPS * forceMultiplier * collidingHitbox.mass / playerHitbox.mass;
       const angle = Player.instance!.position.calculateAngleBetween(collidingHitbox.position) + Math.PI;
 
       // No need to apply force to other object as they will do it themselves

@@ -2,7 +2,7 @@ import Ballista from "../../../entities/Ballista";
 import { getSelectedEntity } from "../../../entity-selection";
 import InventoryContainer from "./InventoryContainer";
 import CLIENT_ITEM_INFO_RECORD, { getItemTypeImage } from "../../../client-item-info";
-import { AMMO_INFO_RECORD, BallistaAmmoType, ItemType, SETTINGS } from "webgl-test-shared";
+import { AMMO_INFO_RECORD, BallistaAmmoType, ItemType, SettingsConst } from "webgl-test-shared";
 import { CLIENT_STATUS_EFFECT_INFO_RECORD } from "../../../status-effects";
 
 const getAmmoSlot = (ballista: Ballista): number => {
@@ -78,9 +78,9 @@ const AmmoBoxInventory = () => {
                <h3><img src={getItemTypeImage(itemType)} alt="" />{clientItemInfo.name}</h3>
                <p><span>{ammoInfo.damage}</span> damage</p>
                <p><span>{ammoInfo.ammoMultiplier}x</span> ammo multiplier</p>
-               <p><span>{(ammoInfo.shotCooldownTicks + ammoInfo.reloadTimeTicks) / SETTINGS.TPS}s</span> reload time</p>
+               <p><span>{(ammoInfo.shotCooldownTicks + ammoInfo.reloadTimeTicks) / SettingsConst.TPS}s</span> reload time</p>
                {ammoInfo.statusEffect !== null ? (
-                  <p><i>Inflicts <span>{ammoInfo.statusEffect.durationTicks / SETTINGS.TPS}s</span> of <span style={{"color": CLIENT_STATUS_EFFECT_INFO_RECORD[ammoInfo.statusEffect.type].colour}}>{CLIENT_STATUS_EFFECT_INFO_RECORD[ammoInfo.statusEffect.type].name}</span>.</i></p>
+                  <p><i>Inflicts <span>{ammoInfo.statusEffect.durationTicks / SettingsConst.TPS}s</span> of <span style={{"color": CLIENT_STATUS_EFFECT_INFO_RECORD[ammoInfo.statusEffect.type].colour}}>{CLIENT_STATUS_EFFECT_INFO_RECORD[ammoInfo.statusEffect.type].name}</span>.</i></p>
                ) : undefined}
             </div>
          })}

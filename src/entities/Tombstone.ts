@@ -1,4 +1,4 @@
-import { DeathInfo, EntityData, EntityType, Point, SETTINGS, randFloat, randInt, randItem } from "webgl-test-shared";
+import { DeathInfo, EntityData, EntityType, Point, SettingsConst, randFloat, randInt, randItem } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { createDirtParticle, createRockParticle, createRockSpeckParticle } from "../particles";
@@ -38,11 +38,11 @@ class Tombstone extends Entity {
       if (this.zombieSpawnProgress !== -1) {
          // Create zombie digging particles
          if (this.zombieSpawnProgress < 0.8) {
-            if (Math.random() < 7.5 / SETTINGS.TPS) {
+            if (Math.random() < 7.5 / SettingsConst.TPS) {
                createDirtParticle(this.zombieSpawnX, this.zombieSpawnY);
             }
          } else {
-            if (Math.random() < 20 / SETTINGS.TPS) {
+            if (Math.random() < 20 / SettingsConst.TPS) {
                createDirtParticle(this.zombieSpawnX, this.zombieSpawnY);
             }
          }

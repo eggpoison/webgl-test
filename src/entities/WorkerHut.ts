@@ -1,4 +1,4 @@
-import { EntityData, EntityType, Point, SETTINGS, lerp } from "webgl-test-shared";
+import { EntityData, EntityType, Point, SettingsConst, lerp } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
@@ -7,9 +7,9 @@ import Board from "../Board";
 
 // @Cleanup: Copy and paste from WarriorHut
 
-const DOOR_OPEN_TICKS = Math.floor(0.15 * SETTINGS.TPS);
-const DOOR_REMAIN_TICKS = Math.floor(0.175 * SETTINGS.TPS);
-const DOOR_CLOSE_TICKS = Math.floor(0.175 * SETTINGS.TPS);
+const DOOR_OPEN_TICKS = Math.floor(0.15 * SettingsConst.TPS);
+const DOOR_REMAIN_TICKS = Math.floor(0.175 * SettingsConst.TPS);
+const DOOR_CLOSE_TICKS = Math.floor(0.175 * SettingsConst.TPS);
 
 const calculateDoorSwingAmount = (lastDoorSwingTicks: number): number => {
    const ticksSinceLastSwing = Board.ticks - lastDoorSwingTicks;

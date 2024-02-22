@@ -1,4 +1,4 @@
-import { EntityData, EntityType, Point, SETTINGS, SlimeSize, TileType, lerp, randFloat } from "webgl-test-shared";
+import { EntityData, EntityType, Point, SettingsConst, SlimeSize, TileType, lerp, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { createSlimePoolParticle, createSlimeSpeckParticle } from "../particles";
@@ -93,12 +93,12 @@ class Slime extends Entity {
          const orb = this.orbs[i];
 
          // Randomly move around the orbs
-         if (Math.random() < 0.3 / SETTINGS.TPS) {
+         if (Math.random() < 0.3 / SettingsConst.TPS) {
             orb.angularVelocity = randFloat(-3, 3);
          }
 
          // Update orb angular velocity & rotation
-         orb.rotation += orb.angularVelocity / SETTINGS.TPS;
+         orb.rotation += orb.angularVelocity / SettingsConst.TPS;
 
          // Update the orb's rotation
          if (orb.angularVelocity !== 0) {
@@ -108,7 +108,7 @@ class Slime extends Entity {
             (this.orbRenderParts[i].offset as Point).y = offsetMagnitude * Math.cos(orb.rotation);
          }
 
-         orb.angularVelocity -= 3 / SETTINGS.TPS;
+         orb.angularVelocity -= 3 / SettingsConst.TPS;
          if (orb.angularVelocity < 0) {
             orb.angularVelocity = 0;
          }

@@ -1,4 +1,4 @@
-import { EntityType, Point, SETTINGS } from "webgl-test-shared";
+import { EntityType, Point, SettingsConst } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
@@ -41,7 +41,7 @@ class Pebblum extends Entity {
          createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 5);
          this.numFootstepsTaken++;
       }
-      this.distanceTracker += this.velocity.length() / SETTINGS.TPS;
+      this.distanceTracker += this.velocity.length() / SettingsConst.TPS;
       if (this.distanceTracker > 40) {
          this.distanceTracker -= 40;
          this.createFootstepSound();

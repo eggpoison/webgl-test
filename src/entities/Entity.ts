@@ -1,4 +1,4 @@
-import { EntityType, SETTINGS, StatusEffect, lerp, randFloat, randItem, customTickIntervalHasPassed, TileType, randInt } from "webgl-test-shared";
+import { EntityType, SettingsConst, StatusEffect, lerp, randFloat, randItem, customTickIntervalHasPassed, TileType, randInt } from "webgl-test-shared";
 import GameObject from "../GameObject";
 import Particle from "../Particle";
 import Board, { Light } from "../Board";
@@ -41,7 +41,7 @@ abstract class Entity extends GameObject {
       this.tintG = lerp(this.tintG, -1, redness);
       this.tintB = lerp(this.tintB, -1, redness);
 
-      this.secondsSinceLastHit += 1 / SETTINGS.TPS;
+      this.secondsSinceLastHit += 1 / SettingsConst.TPS;
 
       // Water splash particles
       if (this.isInRiver() && Board.tickIntervalHasPassed(0.15) && this.acceleration !== null && this.type !== EntityType.fish) {

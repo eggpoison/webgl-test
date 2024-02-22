@@ -1,4 +1,4 @@
-import { ArmourItemType, BowItemInfo, EntityData, EntityType, GloveItemType, HitData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, Inventory, InventoryData, ItemData, ItemType, Point, SETTINGS, TileType, ToolItemInfo, TribeMemberAction, TribeType, lerp, randFloat, randInt, randItem } from "webgl-test-shared";
+import { ArmourItemType, BowItemInfo, EntityData, EntityType, GloveItemType, HitData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, Inventory, InventoryData, ItemData, ItemType, Point, SettingsConst, TileType, ToolItemInfo, TribeMemberAction, TribeType, lerp, randFloat, randInt, randItem } from "webgl-test-shared";
 import Entity from "./Entity";
 import RenderPart from "../render-parts/RenderPart";
 import CLIENT_ITEM_INFO_RECORD from "../client-item-info";
@@ -144,10 +144,10 @@ const GOBLIN_DIE_SOUNDS: ReadonlyArray<AudioFilePath> = ["goblin-die-1.mp3", "go
 
 export function getSecondsSinceLastAction(lastActionTicks: number): number {
    const ticksSinceLastAction = Board.ticks - lastActionTicks;
-   let secondsSinceLastAction = ticksSinceLastAction / SETTINGS.TPS;
+   let secondsSinceLastAction = ticksSinceLastAction / SettingsConst.TPS;
 
    // Account for frame progress
-   secondsSinceLastAction += getFrameProgress() / SETTINGS.TPS;
+   secondsSinceLastAction += getFrameProgress() / SettingsConst.TPS;
 
    return secondsSinceLastAction;
 }
@@ -686,7 +686,7 @@ abstract class TribeMember extends Entity {
       if (activeItemType !== null && (ITEM_TYPE_RECORD[activeItemType] === "sword" || ITEM_TYPE_RECORD[activeItemType] === "axe" || ITEM_TYPE_RECORD[activeItemType] === "pickaxe" || ITEM_TYPE_RECORD[activeItemType] === "spear" || ITEM_TYPE_RECORD[activeItemType] === "hammer" || ITEM_TYPE_RECORD[activeItemType] === "battleaxe")) {
          attackDuration = (ITEM_INFO_RECORD[activeItemType] as ToolItemInfo).attackCooldown;
       } else {
-         attackDuration = SETTINGS.DEFAULT_ATTACK_COOLDOWN;
+         attackDuration = SettingsConst.DEFAULT_ATTACK_COOLDOWN;
       }
 
       let attackProgress = secondsSinceLastAttack / attackDuration;
@@ -919,7 +919,7 @@ abstract class TribeMember extends Entity {
          const bowInfo = ITEM_INFO_RECORD[this.rightActiveItem.type] as BowItemInfo;
          
          const secondsSinceLastAction = getSecondsSinceLastAction(this.rightLastActionTicks);
-         const chargeProgress = secondsSinceLastAction / (bowInfo.shotCooldownTicks / SETTINGS.TPS);
+         const chargeProgress = secondsSinceLastAction / (bowInfo.shotCooldownTicks / SettingsConst.TPS);
 
          let textureSourceArray: ReadonlyArray<string>;
          let arrowTextureSource: string;

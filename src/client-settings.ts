@@ -5,9 +5,9 @@ type ClientSettings = {
    readonly CURSOR_TOOLTIP_HOVER_RANGE: number;
 }
 
-const CLIENT_SETTINGS: ClientSettings = {
+const CLIENT_SettingsConst: ClientSettings = {
    CIRCLE_DETAIL: 25,
    CURSOR_TOOLTIP_HOVER_RANGE: 64
 };
 
-export default CLIENT_SETTINGS;
+export default CLIENT_SettingsConst;

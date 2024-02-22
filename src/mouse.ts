@@ -1,6 +1,6 @@
-import { SETTINGS } from "webgl-test-shared";
+import { SettingsConst } from "webgl-test-shared";
 import { halfWindowHeight, halfWindowWidth } from "./webgl";
-import CLIENT_SETTINGS from "./client-settings";
+import CLIENT_SettingsConst from "./client-settings";
 import { updateCursorTooltip } from "./components/game/dev/CursorTooltip";
 import Entity from "./entities/Entity";
 import Game from "./Game";
@@ -17,7 +17,7 @@ export function calculateCursorWorldPositionX(): number | null {
    if (Game.getIsPaused() || cursorX === null) return null;
    
    const worldX = (cursorX - halfWindowWidth) / Camera.zoom + Camera.position.x;
-   if (worldX < 0 || worldX >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
+   if (worldX < 0 || worldX >= SettingsConst.BOARD_DIMENSIONS * SettingsConst.TILE_SIZE) {
       return null;
    }
    return worldX;
@@ -27,7 +27,7 @@ export function calculateCursorWorldPositionY(): number | null {
    if (Game.getIsPaused() || cursorY === null) return null;
    
    const worldY = (-cursorY + halfWindowHeight) / Camera.zoom + Camera.position.y;
-   if (worldY < 0 || worldY >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
+   if (worldY < 0 || worldY >= SettingsConst.BOARD_DIMENSIONS * SettingsConst.TILE_SIZE) {
       return null;
    }
    return worldY;
@@ -44,8 +44,8 @@ export function handleMouseMovement(e: MouseEvent): void {
 export function getMouseTargetTile(): Tile | null {
    if (Game.cursorPositionX === null || Game.cursorPositionY === null) return null;
 
-   const tileX = Math.floor(Game.cursorPositionX / SETTINGS.TILE_SIZE);
-   const tileY = Math.floor(Game.cursorPositionY / SETTINGS.TILE_SIZE);
+   const tileX = Math.floor(Game.cursorPositionX / SettingsConst.TILE_SIZE);
+   const tileY = Math.floor(Game.cursorPositionY / SettingsConst.TILE_SIZE);
 
    if (Board.tileIsInBoard(tileX, tileY)) {
       return Board.getTile(tileX, tileY);
@@ -60,10 +60,10 @@ export function getMouseTargetTile(): Tile | null {
 export function getMouseTargetEntity(): Entity | null {
    if (Game.cursorPositionX === null || Game.cursorPositionY === null) return null;
    
-   const minChunkX = Math.max(Math.min(Math.floor((Game.cursorPositionX - CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-   const maxChunkX = Math.max(Math.min(Math.floor((Game.cursorPositionX + CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-   const minChunkY = Math.max(Math.min(Math.floor((Game.cursorPositionY - CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-   const maxChunkY = Math.max(Math.min(Math.floor((Game.cursorPositionY + CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+   const minChunkX = Math.max(Math.min(Math.floor((Game.cursorPositionX - CLIENT_SettingsConst.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / SettingsConst.CHUNK_SIZE / SettingsConst.TILE_SIZE), SettingsConst.BOARD_SIZE - 1), 0);
+   const maxChunkX = Math.max(Math.min(Math.floor((Game.cursorPositionX + CLIENT_SettingsConst.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / SettingsConst.CHUNK_SIZE / SettingsConst.TILE_SIZE), SettingsConst.BOARD_SIZE - 1), 0);
+   const minChunkY = Math.max(Math.min(Math.floor((Game.cursorPositionY - CLIENT_SettingsConst.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / SettingsConst.CHUNK_SIZE / SettingsConst.TILE_SIZE), SettingsConst.BOARD_SIZE - 1), 0);
+   const maxChunkY = Math.max(Math.min(Math.floor((Game.cursorPositionY + CLIENT_SettingsConst.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / SettingsConst.CHUNK_SIZE / SettingsConst.TILE_SIZE), SettingsConst.BOARD_SIZE - 1), 0);
 
    let closestEntity: Entity | null = null;
    let minDistance = Number.MAX_SAFE_INTEGER;
@@ -73,7 +73,7 @@ export function getMouseTargetEntity(): Entity | null {
          for (const gameObject of chunk.getGameObjects()) {
             if (gameObject instanceof Entity) {
                const distance = Math.sqrt(Math.pow(Game.cursorPositionX - gameObject.renderPosition.x, 2) + Math.pow(Game.cursorPositionY - gameObject.renderPosition.y, 2))
-               if (distance <= CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE && distance < minDistance) {
+               if (distance <= CLIENT_SettingsConst.CURSOR_TOOLTIP_HOVER_RANGE && distance < minDistance) {
                   closestEntity = gameObject;
                   minDistance = distance;
                }

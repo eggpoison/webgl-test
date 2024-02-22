@@ -1,4 +1,4 @@
-import { SETTINGS } from "webgl-test-shared";
+import { SettingsConst } from "webgl-test-shared";
 import { Tile } from "../Tile";
 import Camera from "../Camera";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
@@ -152,10 +152,10 @@ export function calculateAmbientOcclusionInfo(renderChunkX: number, renderChunkY
    for (let i = 0; i < edgeTiles.length; i++) {
       const tile = edgeTiles[i];
 
-      let x1 = tile.x * SETTINGS.TILE_SIZE;
-      let x2 = (tile.x + 1) * SETTINGS.TILE_SIZE;
-      let y1 = tile.y * SETTINGS.TILE_SIZE;
-      let y2 = (tile.y + 1) * SETTINGS.TILE_SIZE;
+      let x1 = tile.x * SettingsConst.TILE_SIZE;
+      let x2 = (tile.x + 1) * SettingsConst.TILE_SIZE;
+      let y1 = tile.y * SettingsConst.TILE_SIZE;
+      let y2 = (tile.y + 1) * SettingsConst.TILE_SIZE;
 
       const bottomLeftWallDistance = tileIsWallInt(tile.x - 1, tile.y - 1);
       const bottomRightWallDistance = tileIsWallInt(tile.x + 1, tile.y - 1);

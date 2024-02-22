@@ -1,4 +1,4 @@
-import { EntityData, EntityType, Inventory, InventoryData, ItemData, ItemType, Point, SETTINGS, TribeMemberAction, TribeType, TribesmanState, randInt, randItem } from "webgl-test-shared";
+import { EntityData, EntityType, Inventory, InventoryData, ItemData, ItemType, Point, SettingsConst, TribeMemberAction, TribeType, TribesmanState, randInt, randItem } from "webgl-test-shared";
 import TribeMember from "./TribeMember";
 import { createFootprintParticle } from "../particles";
 import Board from "../Board";
@@ -36,7 +36,7 @@ abstract class Tribesman extends TribeMember {
          createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 4);
          this.numFootstepsTaken++;
       }
-      this.distanceTracker += this.velocity.length() / SETTINGS.TPS;
+      this.distanceTracker += this.velocity.length() / SettingsConst.TPS;
       if (this.distanceTracker > 50) {
          this.distanceTracker -= 50;
          this.createFootstepSound();
@@ -45,7 +45,7 @@ abstract class Tribesman extends TribeMember {
       // Sounds
       switch (this.state) {
          case TribesmanState.chasing: {
-            if (Math.random() < 0.2 / SETTINGS.TPS) {
+            if (Math.random() < 0.2 / SettingsConst.TPS) {
                switch (this.tribeType) {
                   case TribeType.goblins: {
                      playSound(randItem(GOBLIN_ANGRY_SOUNDS), 0.4, 1, this.position.x, this.position.y);
@@ -60,7 +60,7 @@ abstract class Tribesman extends TribeMember {
             break;
          }
          case TribesmanState.escaping: {
-            if (Math.random() < 0.2 / SETTINGS.TPS) {
+            if (Math.random() < 0.2 / SettingsConst.TPS) {
                switch (this.tribeType) {
                   case TribeType.goblins: {
                      playSound(randItem(GOBLIN_ESCAPE_SOUNDS), 0.4, 1, this.position.x, this.position.y);
@@ -71,7 +71,7 @@ abstract class Tribesman extends TribeMember {
             break;
          }
          case TribesmanState.normal: {
-            if (Math.random() < 0.2 / SETTINGS.TPS) {
+            if (Math.random() < 0.2 / SettingsConst.TPS) {
                switch (this.tribeType) {
                   case TribeType.goblins: {
                      playSound(randItem(GOBLIN_AMBIENT_SOUNDS), 0.4, 1, this.position.x, this.position.y);

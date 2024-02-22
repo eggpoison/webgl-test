@@ -1,4 +1,4 @@
-import { EntityData, EntityType, Point, SETTINGS } from "webgl-test-shared";
+import { EntityData, EntityType, Point, SettingsConst } from "webgl-test-shared";
 import Entity from "./Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import RenderPart from "../render-parts/RenderPart";
@@ -138,7 +138,7 @@ class Golem extends Entity {
          createFootprintParticle(this, this.numFootstepsTaken, 20, 96, 5);
          this.numFootstepsTaken++;
       }
-      this.distanceTracker += this.velocity.length() / SETTINGS.TPS;
+      this.distanceTracker += this.velocity.length() / SettingsConst.TPS;
       if (this.distanceTracker > 50) {
          this.distanceTracker -= 50;
          this.createFootstepSound();
@@ -155,7 +155,7 @@ class Golem extends Entity {
          }
       } else if (this.wakeProgress === 1) {
          for (let i = 0; i < this.hitboxes.length; i++) {
-            if (Math.random() >= 6 / SETTINGS.TPS) {
+            if (Math.random() >= 6 / SettingsConst.TPS) {
                continue;
             }
 

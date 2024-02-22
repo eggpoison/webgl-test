@@ -1,4 +1,4 @@
-import { EntityType, ITEM_TYPE_RECORD, Point, SETTINGS, circleAndRectangleDoIntersect, circlesDoIntersect, getTechByID } from "webgl-test-shared";
+import { EntityType, ITEM_TYPE_RECORD, Point, SettingsConst, circleAndRectangleDoIntersect, circlesDoIntersect, getTechByID } from "webgl-test-shared";
 import Player, { getPlayerSelectedItem } from "./entities/Player";
 import Game from "./Game";
 import Board from "./Board";
@@ -96,10 +96,10 @@ const entityCanBeSelected = (entity: GameObject): boolean => {
 
 // @Cleanup: name
 const getEntityID = (doPlayerProximityCheck: boolean): number => {
-   const minChunkX = Math.max(Math.floor((Game.cursorPositionX! - HIGHLIGHT_RANGE) / SETTINGS.CHUNK_UNITS), 0);
-   const maxChunkX = Math.min(Math.floor((Game.cursorPositionX! + HIGHLIGHT_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1);
-   const minChunkY = Math.max(Math.floor((Game.cursorPositionY! - HIGHLIGHT_RANGE) / SETTINGS.CHUNK_UNITS), 0);
-   const maxChunkY = Math.min(Math.floor((Game.cursorPositionY! + HIGHLIGHT_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1);
+   const minChunkX = Math.max(Math.floor((Game.cursorPositionX! - HIGHLIGHT_RANGE) / SettingsConst.CHUNK_UNITS), 0);
+   const maxChunkX = Math.min(Math.floor((Game.cursorPositionX! + HIGHLIGHT_RANGE) / SettingsConst.CHUNK_UNITS), SettingsConst.BOARD_SIZE - 1);
+   const minChunkY = Math.max(Math.floor((Game.cursorPositionY! - HIGHLIGHT_RANGE) / SettingsConst.CHUNK_UNITS), 0);
+   const maxChunkY = Math.min(Math.floor((Game.cursorPositionY! + HIGHLIGHT_RANGE) / SettingsConst.CHUNK_UNITS), SettingsConst.BOARD_SIZE - 1);
 
    const origin = new Point(Game.cursorPositionX!, Game.cursorPositionY!);
 

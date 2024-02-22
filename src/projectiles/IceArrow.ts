@@ -1,4 +1,4 @@
-import { EntityType, Point, SETTINGS, randFloat } from "webgl-test-shared";
+import { EntityType, Point, SettingsConst, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Board from "../Board";
 import Particle from "../Particle";
@@ -25,11 +25,11 @@ class IceArrow extends GameObject {
    public tick(): void {
       super.tick();
 
-      if (Math.random() < 30 / SETTINGS.TPS) {
+      if (Math.random() < 30 / SettingsConst.TPS) {
          createSnowflakeParticle(this.position.x, this.position.y);
       }
 
-      if (Math.random() < 30 / SETTINGS.TPS) {
+      if (Math.random() < 30 / SettingsConst.TPS) {
          // @Incomplete: These types of particles don't fit
          this.createIceSpeckProjectile();
       }

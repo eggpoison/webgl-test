@@ -1,4 +1,4 @@
-import { EntityType, Point, SETTINGS, lerp, randFloat } from "webgl-test-shared";
+import { EntityType, Point, SettingsConst, lerp, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import GameObject from "../GameObject";
@@ -45,8 +45,8 @@ class SlimeSpit extends GameObject {
    public tick(): void {
       super.tick();
 
-      this.renderParts[0].rotation += 1.5 * Math.PI / SETTINGS.TPS;
-      this.renderParts[1].rotation -= 1.5 * Math.PI / SETTINGS.TPS;
+      this.renderParts[0].rotation += 1.5 * Math.PI / SettingsConst.TPS;
+      this.renderParts[1].rotation -= 1.5 * Math.PI / SettingsConst.TPS;
 
       if (Board.tickIntervalHasPassed(0.2)) {
          for (let i = 0; i < 5; i++) {
