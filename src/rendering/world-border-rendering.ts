@@ -1,4 +1,4 @@
-import { SettingsConst } from "webgl-test-shared";
+import { Settings } from "webgl-test-shared";
 import Camera from "../Camera";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 
@@ -78,15 +78,15 @@ export function createWorldBorderShaders(): void {
 export function renderWorldBorder(): void {
    const BORDER_WIDTH = 16;
 
-   const minChunkXPos = Camera.minVisibleChunkX * SettingsConst.CHUNK_UNITS;
-   const maxChunkXPos = (Camera.maxVisibleChunkX + 1) * SettingsConst.CHUNK_UNITS;
-   const minChunkYPos = Camera.minVisibleChunkY * SettingsConst.CHUNK_UNITS;
-   const maxChunkYPos = (Camera.maxVisibleChunkY + 1) * SettingsConst.CHUNK_UNITS;
+   const minChunkXPos = Camera.minVisibleChunkX * Settings.CHUNK_UNITS;
+   const maxChunkXPos = (Camera.maxVisibleChunkX + 1) * Settings.CHUNK_UNITS;
+   const minChunkYPos = Camera.minVisibleChunkY * Settings.CHUNK_UNITS;
+   const maxChunkYPos = (Camera.maxVisibleChunkY + 1) * Settings.CHUNK_UNITS;
 
    const leftBorderIsVisible = Camera.minVisibleChunkX === 0;
-   const rightBorderIsVisible = Camera.maxVisibleChunkX === SettingsConst.BOARD_SIZE - 1;
+   const rightBorderIsVisible = Camera.maxVisibleChunkX === Settings.BOARD_SIZE - 1;
    const bottomBorderIsVisible = Camera.minVisibleChunkY === 0;
-   const topBorderIsVisible = Camera.maxVisibleChunkY === SettingsConst.BOARD_SIZE - 1;
+   const topBorderIsVisible = Camera.maxVisibleChunkY === Settings.BOARD_SIZE - 1;
 
    let numVisibleBorders = 0;
    if (leftBorderIsVisible) {

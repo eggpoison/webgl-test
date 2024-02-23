@@ -1,4 +1,4 @@
-import { CowSpecies, EntityData, EntityType, HitData, Point, SettingsConst, randFloat, randInt } from "webgl-test-shared";
+import { CowSpecies, EntityData, EntityType, HitData, Point, Settings, randFloat, randInt } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createDirtParticle, createFootprintParticle } from "../particles";
@@ -55,7 +55,7 @@ class Cow extends Entity {
          createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 5);
          this.numFootstepsTaken++;
       }
-      this.distanceTracker += this.velocity.length() / SettingsConst.TPS;
+      this.distanceTracker += this.velocity.length() / Settings.TPS;
       if (this.distanceTracker > 40) {
          this.distanceTracker -= 40;
          this.createFootstepSound();
@@ -69,7 +69,7 @@ class Cow extends Entity {
          createDirtParticle(spawnPositionX, spawnPositionY);
       }
 
-      if (Math.random() < 0.1 / SettingsConst.TPS) {
+      if (Math.random() < 0.1 / Settings.TPS) {
          playSound(("cow-ambient-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.2, 1, this.position.x, this.position.y);
       }
    }
@@ -109,8 +109,8 @@ class Cow extends Entity {
       // When the cow has finished grazing, create a bunch of dirt particles
       if (entityData.clientArgs[1] < this.grazeProgress) {
          for (let i = 0; i < 15; i++) {
-            const x = (this.tile.x + Math.random()) * SettingsConst.TILE_SIZE;
-            const y = (this.tile.y + Math.random()) * SettingsConst.TILE_SIZE;
+            const x = (this.tile.x + Math.random()) * Settings.TILE_SIZE;
+            const y = (this.tile.y + Math.random()) * Settings.TILE_SIZE;
             createDirtParticle(x, y);
          }
       }

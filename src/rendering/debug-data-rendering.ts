@@ -1,4 +1,4 @@
-import { GameObjectDebugData, Point, SettingsConst } from "webgl-test-shared";
+import { GameObjectDebugData, Point, Settings } from "webgl-test-shared";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, generateLine, generateThickCircleWireframeVertices, gl } from "../webgl";
 import GameObject from "../GameObject";
 import Board from "../Board";
@@ -132,11 +132,11 @@ export function renderLineDebugData(debugData: GameObjectDebugData): void {
 
 const addTileHighlightVertices = (vertices: Array<number>, debugData: GameObjectDebugData): void => {
    for (const tileHighlight of debugData.tileHighlights) {
-      const x1 = tileHighlight.tilePosition[0] * SettingsConst.TILE_SIZE;
-      const x2 = (tileHighlight.tilePosition[0] + 1) * SettingsConst.TILE_SIZE;
+      const x1 = tileHighlight.tilePosition[0] * Settings.TILE_SIZE;
+      const x2 = (tileHighlight.tilePosition[0] + 1) * Settings.TILE_SIZE;
 
-      const y1 = tileHighlight.tilePosition[1] * SettingsConst.TILE_SIZE;
-      const y2 = (tileHighlight.tilePosition[1] + 1) * SettingsConst.TILE_SIZE;
+      const y1 = tileHighlight.tilePosition[1] * Settings.TILE_SIZE;
+      const y2 = (tileHighlight.tilePosition[1] + 1) * Settings.TILE_SIZE;
 
       vertices.push(
          x1, y1, tileHighlight.colour[0], tileHighlight.colour[1], tileHighlight.colour[2],

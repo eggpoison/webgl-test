@@ -1,4 +1,4 @@
-import { Point, EntityData, lerp, HitData, randFloat, EntityType, SettingsConst } from "webgl-test-shared";
+import { Point, EntityData, lerp, HitData, randFloat, EntityType, Settings } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle, createSnowParticle, createWhiteSmokeParticle } from "../particles";
@@ -66,7 +66,7 @@ class Yeti extends Entity {
          createFootprintParticle(this, this.numFootstepsTaken, 40, 96, 8);
          this.numFootstepsTaken++;
       }
-      this.distanceTracker += this.velocity.length() / SettingsConst.TPS;
+      this.distanceTracker += this.velocity.length() / Settings.TPS;
       if (this.distanceTracker > 64) {
          this.distanceTracker -= 64;
          this.createFootstepSound();

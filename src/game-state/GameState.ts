@@ -1,4 +1,4 @@
-import { Inventory, SettingsConst, TribeMemberAction } from "webgl-test-shared";
+import { Inventory, Settings, TribeMemberAction } from "webgl-test-shared";
 
 /** Information about the game and player. */
 abstract class GameState {
@@ -12,7 +12,7 @@ abstract class GameState {
    public selectedHotbarItemSlot = 1;
 
    /** Items in the player's hotbar. */
-   public hotbar: Inventory = { itemSlots: {}, width: SettingsConst.INITIAL_PLAYER_HOTBAR_SIZE, height: 1, inventoryName: "hotbar" };
+   public hotbar: Inventory = { itemSlots: {}, width: Settings.INITIAL_PLAYER_HOTBAR_SIZE, height: 1, inventoryName: "hotbar" };
 
    /** Items in the player's backpack. */
    public backpack: Inventory | null = null;

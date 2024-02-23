@@ -1,4 +1,4 @@
-import { DecorationInfo, RIVER_STEPPING_STONE_SIZES, RiverSteppingStoneData, SettingsConst, ServerTileUpdateData, WaterRockData } from "webgl-test-shared";
+import { DecorationInfo, RIVER_STEPPING_STONE_SIZES, RiverSteppingStoneData, Settings, ServerTileUpdateData, WaterRockData } from "webgl-test-shared";
 import { createSolidTileRenderChunkData, recalculateSolidTileRenderChunkData } from "./solid-tile-rendering";
 import { calculateRiverRenderChunkData } from "./river-rendering";
 import { calculateAmbientOcclusionInfo } from "./ambient-occlusion-rendering";
@@ -6,11 +6,11 @@ import { calculateWallBorderInfo } from "./wall-border-rendering";
 
 /** Width and height of a render chunk in tiles */
 export const RENDER_CHUNK_SIZE = 8;
-export const RENDER_CHUNK_UNITS = RENDER_CHUNK_SIZE * SettingsConst.TILE_SIZE;
+export const RENDER_CHUNK_UNITS = RENDER_CHUNK_SIZE * Settings.TILE_SIZE;
 
-export const WORLD_RENDER_CHUNK_SIZE = SettingsConst.BOARD_DIMENSIONS / RENDER_CHUNK_SIZE;
+export const WORLD_RENDER_CHUNK_SIZE = Settings.BOARD_DIMENSIONS / RENDER_CHUNK_SIZE;
 
-export const RENDER_CHUNK_EDGE_GENERATION = Math.ceil(SettingsConst.EDGE_GENERATION_DISTANCE / RENDER_CHUNK_SIZE);
+export const RENDER_CHUNK_EDGE_GENERATION = Math.ceil(Settings.EDGE_GENERATION_DISTANCE / RENDER_CHUNK_SIZE);
 
 export interface RenderChunkSolidTileInfo {
    readonly buffer: WebGLBuffer;
@@ -182,8 +182,8 @@ export function createRenderChunks(decorations: ReadonlyArray<DecorationInfo>, w
 }
 
 export function updateRenderChunkFromTileUpdate(tileUpdate: ServerTileUpdateData): void {
-   const tileX = tileUpdate.tileIndex % SettingsConst.BOARD_DIMENSIONS;
-   const tileY = Math.floor(tileUpdate.tileIndex / SettingsConst.BOARD_DIMENSIONS);
+   const tileX = tileUpdate.tileIndex % Settings.BOARD_DIMENSIONS;
+   const tileY = Math.floor(tileUpdate.tileIndex / Settings.BOARD_DIMENSIONS);
    
    const renderChunkX = Math.floor(tileX / RENDER_CHUNK_SIZE);
    const renderChunkY = Math.floor(tileY / RENDER_CHUNK_SIZE);
@@ -193,32 +193,32 @@ export function updateRenderChunkFromTileUpdate(tileUpdate: ServerTileUpdateData
 
 export function getRenderChunkMinTileX(renderChunkX: number): number {
    let tileMinX = renderChunkX * RENDER_CHUNK_SIZE;
-   if (tileMinX < -SettingsConst.EDGE_GENERATION_DISTANCE) {
-      tileMinX = SettingsConst.EDGE_GENERATION_DISTANCE;
+   if (tileMinX < -Settings.EDGE_GENERATION_DISTANCE) {
+      tileMinX = Settings.EDGE_GENERATION_DISTANCE;
    }
    return tileMinX;
 }
 
 export function getRenderChunkMaxTileX(renderChunkX: number): number {
    let tileMaxX = (renderChunkX + 1) * RENDER_CHUNK_SIZE - 1;
-   if (tileMaxX > SettingsConst.BOARD_DIMENSIONS + SettingsConst.EDGE_GENERATION_DISTANCE) {
-      tileMaxX = SettingsConst.BOARD_DIMENSIONS + SettingsConst.EDGE_GENERATION_DISTANCE;
+   if (tileMaxX > Settings.BOARD_DIMENSIONS + Settings.EDGE_GENERATION_DISTANCE) {
+      tileMaxX = Settings.BOARD_DIMENSIONS + Settings.EDGE_GENERATION_DISTANCE;
    }
    return tileMaxX;
 }
 
 export function getRenderChunkMinTileY(renderChunkY: number): number {
    let tileMinY = renderChunkY * RENDER_CHUNK_SIZE;
-   if (tileMinY < -SettingsConst.EDGE_GENERATION_DISTANCE) {
-      tileMinY = SettingsConst.EDGE_GENERATION_DISTANCE;
+   if (tileMinY < -Settings.EDGE_GENERATION_DISTANCE) {
+      tileMinY = Settings.EDGE_GENERATION_DISTANCE;
    }
    return tileMinY;
 }
 
 export function getRenderChunkMaxTileY(renderChunkY: number): number {
    let tileMaxY = (renderChunkY + 1) * RENDER_CHUNK_SIZE - 1;
-   if (tileMaxY > SettingsConst.BOARD_DIMENSIONS + SettingsConst.EDGE_GENERATION_DISTANCE) {
-      tileMaxY = SettingsConst.BOARD_DIMENSIONS + SettingsConst.EDGE_GENERATION_DISTANCE;
+   if (tileMaxY > Settings.BOARD_DIMENSIONS + Settings.EDGE_GENERATION_DISTANCE) {
+      tileMaxY = Settings.BOARD_DIMENSIONS + Settings.EDGE_GENERATION_DISTANCE;
    }
    return tileMaxY;
 }

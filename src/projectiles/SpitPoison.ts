@@ -1,4 +1,4 @@
-import { EntityType, Point, SettingsConst, lerp, randFloat } from "webgl-test-shared";
+import { EntityType, Point, Settings, lerp, randFloat } from "webgl-test-shared";
 import GameObject from "../GameObject";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import Board from "../Board";
@@ -68,7 +68,7 @@ class SpitPoison extends GameObject {
          createPoisonBubble(spawnPositionX, spawnPositionY, 1);
       }
 
-      if (Math.random() >= range * range / SettingsConst.TPS / 5) {
+      if (Math.random() >= range * range / Settings.TPS / 5) {
          return;
       }
 

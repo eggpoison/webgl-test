@@ -1,13 +1,13 @@
-import { EntityData, EntityType, Point, SettingsConst, lerp } from "webgl-test-shared";
+import { EntityData, EntityType, Point, Settings, lerp } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { playBuildingHitSound, playSound } from "../sound";
 import Board from "../Board";
 
-const DOOR_OPEN_TICKS = Math.floor(0.15 * SettingsConst.TPS);
-const DOOR_REMAIN_TICKS = Math.floor(0.175 * SettingsConst.TPS);
-const DOOR_CLOSE_TICKS = Math.floor(0.175 * SettingsConst.TPS);
+const DOOR_OPEN_TICKS = Math.floor(0.15 * Settings.TPS);
+const DOOR_REMAIN_TICKS = Math.floor(0.175 * Settings.TPS);
+const DOOR_CLOSE_TICKS = Math.floor(0.175 * Settings.TPS);
 
 const calculateDoorSwingAmount = (lastDoorSwingTicks: number): number => {
    const ticksSinceLastSwing = Board.ticks - lastDoorSwingTicks;

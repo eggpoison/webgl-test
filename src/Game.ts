@@ -4,7 +4,7 @@ import { isDev } from "./utils";
 import { createTextCanvasContext, updateTextNumbers, renderText } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/game/ChatBox";
-import { DecorationInfo, GameDataPacket, GameObjectDebugData, GrassTileInfo, RiverSteppingStoneData, SettingsConst, ServerTileData, WaterRockData } from "webgl-test-shared";
+import { DecorationInfo, GameDataPacket, GameObjectDebugData, GrassTileInfo, RiverSteppingStoneData, Settings, ServerTileData, WaterRockData } from "webgl-test-shared";
 import { createEntityShaders, renderGameObjects } from "./rendering/game-object-rendering";
 import Client from "./client/Client";
 import { calculateCursorWorldPositionX, calculateCursorWorldPositionY, cursorX, cursorY, getMouseTargetEntity, handleMouseMovement, renderCursorTooltip } from "./mouse";
@@ -243,7 +243,7 @@ abstract class Game {
          Game.lastTime = currentTime;
       
          this.lag += deltaTime;
-         while (this.lag >= 1000 / SettingsConst.TPS) {
+         while (this.lag >= 1000 / Settings.TPS) {
             if (this.queuedPackets.length > 0) {
                // Done before so that server data can override particles
                Board.updateParticles();
@@ -280,12 +280,12 @@ abstract class Game {
                this.update();
             }
             Client.sendPlayerDataPacket();
-            this.lag -= 1000 / SettingsConst.TPS;
+            this.lag -= 1000 / Settings.TPS;
          }
 
          const renderStartTime = performance.now();
 
-         const frameProgress = this.lag / 1000 * SettingsConst.TPS;
+         const frameProgress = this.lag / 1000 * Settings.TPS;
          this.render(frameProgress);
 
          const renderEndTime = performance.now();
@@ -395,7 +395,7 @@ abstract class Game {
       renderForcefield();
       renderWorldBorder();
       if (nerdVisionIsVisible() && OPTIONS.showChunkBorders) {
-         renderChunkBorders(Camera.minVisibleChunkX, Camera.maxVisibleChunkX, Camera.minVisibleChunkY, Camera.maxVisibleChunkY, SettingsConst.CHUNK_SIZE, 1);
+         renderChunkBorders(Camera.minVisibleChunkX, Camera.maxVisibleChunkX, Camera.minVisibleChunkY, Camera.maxVisibleChunkY, Settings.CHUNK_SIZE, 1);
       }
       if (nerdVisionIsVisible() && OPTIONS.showRenderChunkBorders) {
          renderChunkBorders(Camera.minVisibleRenderChunkX, Camera.maxVisibleRenderChunkX, Camera.minVisibleRenderChunkY, Camera.maxVisibleRenderChunkY, RENDER_CHUNK_SIZE, 2);

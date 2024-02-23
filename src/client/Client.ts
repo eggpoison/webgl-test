@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, SettingsConst, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TribeData, InventoryData, TribeMemberAction, TechID, Inventory, TRIBE_INFO_RECORD, BuildingShapeType, randInt, StatusEffect, STRUCTURE_TYPES, COLLISION_BITS, DEFAULT_COLLISION_MASK } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, Settings, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TribeData, InventoryData, TribeMemberAction, TechID, Inventory, TRIBE_INFO_RECORD, BuildingShapeType, randInt, StatusEffect, STRUCTURE_TYPES, COLLISION_BITS, DEFAULT_COLLISION_MASK } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -157,7 +157,7 @@ abstract class Client {
 
    /** Creates the socket used to connect to the server */
    private static createSocket(): ISocket {
-      return io(`ws://localhost:${SettingsConst.SERVER_PORT}`, {
+      return io(`ws://localhost:${Settings.SERVER_PORT}`, {
          transports: ["websocket", "polling", "flashsocket"],
          autoConnect: false,
          reconnection: false
@@ -177,11 +177,11 @@ abstract class Client {
    public static parseServerTileDataArray(serverTileDataArray: ReadonlyArray<ServerTileData>): Array<Array<Tile>> {
       const tiles = new Array<Array<Tile>>();
    
-      for (let tileIndex = 0; tileIndex < SettingsConst.BOARD_DIMENSIONS * SettingsConst.BOARD_DIMENSIONS; tileIndex++) {
+      for (let tileIndex = 0; tileIndex < Settings.BOARD_DIMENSIONS * Settings.BOARD_DIMENSIONS; tileIndex++) {
          const serverTileData = serverTileDataArray[tileIndex];
          
-         const x = tileIndex % SettingsConst.BOARD_DIMENSIONS;
-         const y = Math.floor(tileIndex / SettingsConst.BOARD_DIMENSIONS);
+         const x = tileIndex % Settings.BOARD_DIMENSIONS;
+         const y = Math.floor(tileIndex / Settings.BOARD_DIMENSIONS);
          if (typeof tiles[x] === "undefined") {
             tiles.push([]);
          }
@@ -467,8 +467,8 @@ abstract class Client {
    
    private static registerTileUpdates(tileUpdates: ReadonlyArray<ServerTileUpdateData>): void {
       for (const tileUpdate of tileUpdates) {
-         const tileX = tileUpdate.tileIndex % SettingsConst.BOARD_DIMENSIONS;
-         const tileY = Math.floor(tileUpdate.tileIndex / SettingsConst.BOARD_DIMENSIONS);
+         const tileX = tileUpdate.tileIndex % Settings.BOARD_DIMENSIONS;
+         const tileY = Math.floor(tileUpdate.tileIndex / Settings.BOARD_DIMENSIONS);
          const tile = Board.getTile(tileX, tileY);
          tile.type = tileUpdate.type;
          tile.isWall = tileUpdate.isWall;

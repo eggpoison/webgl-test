@@ -1,4 +1,4 @@
-import { Point, RIVER_STEPPING_STONE_SIZES, RiverSteppingStoneData, RiverSteppingStoneSize, SettingsConst, TileType, WaterRockData, WaterRockSize, lerp, randFloat, rotatePoint, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
+import { Point, RIVER_STEPPING_STONE_SIZES, RiverSteppingStoneData, RiverSteppingStoneSize, Settings, TileType, WaterRockData, WaterRockSize, lerp, randFloat, rotatePoint, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, TIME_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 import { getTexture } from "../textures";
 import Camera from "../Camera";
@@ -927,10 +927,10 @@ const calculateBaseVertexData = (waterTiles: ReadonlyArray<Tile>): Float32Array 
 
    for (let i = 0; i < waterTiles.length; i++) {
       const tile = waterTiles[i];
-      let x1 = tile.x * SettingsConst.TILE_SIZE;
-      let x2 = (tile.x + 1) * SettingsConst.TILE_SIZE;
-      let y1 = tile.y * SettingsConst.TILE_SIZE;
-      let y2 = (tile.y + 1) * SettingsConst.TILE_SIZE;
+      let x1 = tile.x * Settings.TILE_SIZE;
+      let x2 = (tile.x + 1) * Settings.TILE_SIZE;
+      let y1 = tile.y * Settings.TILE_SIZE;
+      let y2 = (tile.y + 1) * Settings.TILE_SIZE;
 
       const topIsWater = 1 - tileIsWaterInt(tile.x, tile.y + 1);
       const topRightIsWater = 1 - tileIsWaterInt(tile.x + 1, tile.y + 1);
@@ -1033,8 +1033,8 @@ const calculateFoamVertexData = (steppingStones: ReadonlyArray<RiverSteppingSton
       bottomRight = rotatePoint(bottomRight, pos, steppingStone.rotation);
       bottomLeft = rotatePoint(bottomLeft, pos, steppingStone.rotation);
 
-      const tileX = Math.floor(steppingStone.positionX / SettingsConst.TILE_SIZE);
-      const tileY = Math.floor(steppingStone.positionY / SettingsConst.TILE_SIZE);
+      const tileX = Math.floor(steppingStone.positionX / Settings.TILE_SIZE);
+      const tileY = Math.floor(steppingStone.positionY / Settings.TILE_SIZE);
       const flowDirection = Board.getRiverFlowDirection(tileX, tileY);
 
       const offsetX = FOAM_OFFSET * Math.sin(flowDirection);
@@ -1417,10 +1417,10 @@ const calculateNoiseVertexData = (waterTiles: ReadonlyArray<Tile>): Float32Array
       const tile = waterTiles[i];
       const flowDirection = Board.getEdgeRiverFlowDirection(tile.x, tile.y);
       
-      const x1 = (tile.x - 0.5) * SettingsConst.TILE_SIZE;
-      const x2 = (tile.x + 1.5) * SettingsConst.TILE_SIZE;
-      const y1 = (tile.y - 0.5) * SettingsConst.TILE_SIZE;
-      const y2 = (tile.y + 1.5) * SettingsConst.TILE_SIZE;
+      const x1 = (tile.x - 0.5) * Settings.TILE_SIZE;
+      const x2 = (tile.x + 1.5) * Settings.TILE_SIZE;
+      const y1 = (tile.y - 0.5) * Settings.TILE_SIZE;
+      const y2 = (tile.y + 1.5) * Settings.TILE_SIZE;
 
       const animationOffset = Math.random();
       const animationSpeed = randFloat(1, 1.67);
@@ -1560,10 +1560,10 @@ const calculateHighlightsVertexData = (waterTiles: ReadonlyArray<Tile>): Float32
    
    for (let i = 0; i < waterTiles.length; i++) {
       const tile = waterTiles[i];
-      const x1 = tile.x * SettingsConst.TILE_SIZE;
-      const x2 = (tile.x + 1) * SettingsConst.TILE_SIZE;
-      const y1 = tile.y * SettingsConst.TILE_SIZE;
-      const y2 = (tile.y + 1) * SettingsConst.TILE_SIZE;
+      const x1 = tile.x * Settings.TILE_SIZE;
+      const x2 = (tile.x + 1) * Settings.TILE_SIZE;
+      const y1 = tile.y * Settings.TILE_SIZE;
+      const y2 = (tile.y + 1) * Settings.TILE_SIZE;
 
       const fadeOffset = Math.random() * 3;
 

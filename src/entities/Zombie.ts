@@ -1,4 +1,4 @@
-import { BowItemInfo, EntityData, EntityType, HitData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, ItemType, Point, SettingsConst, ToolItemInfo, TribeMemberAction, lerp, randFloat, randInt } from "webgl-test-shared";
+import { BowItemInfo, EntityData, EntityType, HitData, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, ItemType, Point, Settings, ToolItemInfo, TribeMemberAction, lerp, randFloat, randInt } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "./Entity";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle } from "../particles";
@@ -25,7 +25,7 @@ class Zombie extends Entity {
    private static readonly HAND_RESTING_OFFSET = 32;
    
    private static readonly TOOL_ACTIVE_ITEM_SIZE = 48;
-   private static readonly DEFAULT_ACTIVE_ITEM_SIZE = SettingsConst.ITEM_SIZE * 1.75;
+   private static readonly DEFAULT_ACTIVE_ITEM_SIZE = Settings.ITEM_SIZE * 1.75;
    
    private static readonly ITEM_RESTING_OFFSET = 30;
    private static readonly ITEM_RESTING_ROTATION = 0;
@@ -134,13 +134,13 @@ class Zombie extends Entity {
          createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 4);
          this.numFootstepsTaken++;
       }
-      this.distanceTracker += this.velocity.length() / SettingsConst.TPS;
+      this.distanceTracker += this.velocity.length() / Settings.TPS;
       if (this.distanceTracker > 45) {
          this.distanceTracker -= 45;
          this.createFootstepSound();
       }
 
-      if (Math.random() < 0.1 / SettingsConst.TPS) {
+      if (Math.random() < 0.1 / Settings.TPS) {
          playSound(("zombie-ambient-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.4, 1, this.position.x, this.position.y);
       }
    }
@@ -172,10 +172,10 @@ class Zombie extends Entity {
 
    public getSecondsSinceLastAction(): number {
       const ticksSinceLastAction = Board.ticks - this.lastActionTicks;
-      let secondsSinceLastAction = ticksSinceLastAction / SettingsConst.TPS;
+      let secondsSinceLastAction = ticksSinceLastAction / Settings.TPS;
 
       // Account for frame progress
-      secondsSinceLastAction += getFrameProgress() / SettingsConst.TPS;
+      secondsSinceLastAction += getFrameProgress() / Settings.TPS;
 
       return secondsSinceLastAction;
    }
@@ -193,7 +193,7 @@ class Zombie extends Entity {
       if (this.activeItemType !== null && (ITEM_TYPE_RECORD[this.activeItemType] === "sword" || ITEM_TYPE_RECORD[this.activeItemType] === "axe" || ITEM_TYPE_RECORD[this.activeItemType] === "pickaxe")) {
          attackDuration = (ITEM_INFO_RECORD[this.activeItemType] as ToolItemInfo).attackCooldown;
       } else {
-         attackDuration = SettingsConst.DEFAULT_ATTACK_COOLDOWN;
+         attackDuration = Settings.DEFAULT_ATTACK_COOLDOWN;
       }
 
       let attackProgress = secondsSinceLastAttack / attackDuration;
@@ -322,7 +322,7 @@ class Zombie extends Entity {
          const bowInfo = ITEM_INFO_RECORD[this.activeItemType] as BowItemInfo;
          
          const secondsSinceLastAction = this.getSecondsSinceLastAction();
-         const chargeProgress = secondsSinceLastAction / (bowInfo.shotCooldownTicks / SettingsConst.TPS);
+         const chargeProgress = secondsSinceLastAction / (bowInfo.shotCooldownTicks / Settings.TPS);
 
          let textureIdx = Math.floor(chargeProgress * Zombie.BOW_CHARGE_TEXTURE_SOURCES.length);
          if (textureIdx >= Zombie.BOW_CHARGE_TEXTURE_SOURCES.length) {

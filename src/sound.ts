@@ -1,4 +1,4 @@
-import { SettingsConst, TileType, distance, randInt } from "webgl-test-shared";
+import { Settings, TileType, distance, randInt } from "webgl-test-shared";
 import Camera from "./Camera";
 import Board from "./Board";
 import GameObject from "./GameObject";
@@ -271,10 +271,10 @@ export function playBuildingHitSound(sourceX: number, sourceY: number): void {
 }
 
 export function playRiverSounds(): void {
-   const minTileX = Camera.minVisibleChunkX * SettingsConst.CHUNK_SIZE;
-   const maxTileX = (Camera.maxVisibleChunkX + 1) * SettingsConst.CHUNK_SIZE - 1;
-   const minTileY = Camera.minVisibleChunkY * SettingsConst.CHUNK_SIZE;
-   const maxTileY = (Camera.maxVisibleChunkY + 1) * SettingsConst.CHUNK_SIZE - 1;
+   const minTileX = Camera.minVisibleChunkX * Settings.CHUNK_SIZE;
+   const maxTileX = (Camera.maxVisibleChunkX + 1) * Settings.CHUNK_SIZE - 1;
+   const minTileY = Camera.minVisibleChunkY * Settings.CHUNK_SIZE;
+   const maxTileY = (Camera.maxVisibleChunkY + 1) * Settings.CHUNK_SIZE - 1;
 
    for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
       for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
@@ -283,9 +283,9 @@ export function playRiverSounds(): void {
             continue;
          }
 
-         if (tile.type === TileType.water && Math.random() < 0.1 / SettingsConst.TPS) {
-            const x = (tileX + Math.random()) * SettingsConst.TILE_SIZE;
-            const y = (tileY + Math.random()) * SettingsConst.TILE_SIZE;
+         if (tile.type === TileType.water && Math.random() < 0.1 / Settings.TPS) {
+            const x = (tileX + Math.random()) * Settings.TILE_SIZE;
+            const y = (tileY + Math.random()) * Settings.TILE_SIZE;
             playSound(("water-flowing-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.2, 1, x, y);
          }
       }

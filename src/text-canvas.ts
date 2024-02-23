@@ -1,4 +1,4 @@
-import { SettingsConst, randFloat } from "webgl-test-shared";
+import { Settings, randFloat } from "webgl-test-shared";
 import Board from "./Board";
 import Camera from "./Camera";
 import { halfWindowHeight, halfWindowWidth, windowHeight, windowWidth } from "./webgl";
@@ -101,7 +101,7 @@ export function createHealNumber(healedEntityID: number, positionX: number, posi
 }
 
 export function updateTextNumbers(): void {
-   damageTime -= 1 / SettingsConst.TPS;
+   damageTime -= 1 / Settings.TPS;
    if (damageTime < 0) {
       damageTime = 0;
       accumulatedDamage = 0;
@@ -111,28 +111,28 @@ export function updateTextNumbers(): void {
    for (let i = 0; i < researchNumbers.length; i++) {
       const researchNumber = researchNumbers[i];
 
-      researchNumber.age += 1 / SettingsConst.TPS;
+      researchNumber.age += 1 / Settings.TPS;
       if (researchNumber.age >= RESEARCH_NUMBER_LIFETIME) {
          researchNumbers.splice(i, 1);
          i--;
          continue;
       }
 
-      researchNumber.positionY += 8 / SettingsConst.TPS;
+      researchNumber.positionY += 8 / Settings.TPS;
    }
 
    // Update heal numbers
    for (let i = 0; i < healNumbers.length; i++) {
       const healNumber = healNumbers[i];
 
-      healNumber.age += 1 / SettingsConst.TPS;
+      healNumber.age += 1 / Settings.TPS;
       if (healNumber.age >= HEAL_NUMBER_LIFETIME) {
          healNumbers.splice(i, 1);
          i--;
          continue;
       }
 
-      healNumber.positionY += 11 / SettingsConst.TPS;
+      healNumber.positionY += 11 / Settings.TPS;
    }
 }
 

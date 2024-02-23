@@ -1,4 +1,4 @@
-import { EntityType, Point, SettingsConst, randFloat } from "webgl-test-shared";
+import { EntityType, Point, Settings, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import Entity from "./Entity";
@@ -30,8 +30,8 @@ class FloorPunjiSticks extends Entity {
       super.tick();
 
       this.ticksSinceLastFly++;
-      const flyChance = ((this.ticksSinceLastFly / SettingsConst.TPS) - 0.25) * 0.2;
-      if (Math.random() / SettingsConst.TPS < flyChance) {
+      const flyChance = ((this.ticksSinceLastFly / Settings.TPS) - 0.25) * 0.2;
+      if (Math.random() / Settings.TPS < flyChance) {
          const offsetMagnitude = 32 * Math.random();
          const offsetDirection = 2 * Math.PI * Math.random();
          const x = this.position.x + offsetMagnitude * Math.sin(offsetDirection);
@@ -41,8 +41,8 @@ class FloorPunjiSticks extends Entity {
       }
 
       this.ticksSinceLastFlySound++;
-      const soundChance = ((this.ticksSinceLastFlySound / SettingsConst.TPS) - 0.3) * 2;
-      if (Math.random() < soundChance / SettingsConst.TPS) {
+      const soundChance = ((this.ticksSinceLastFlySound / Settings.TPS) - 0.3) * 2;
+      if (Math.random() < soundChance / Settings.TPS) {
          playSound("flies.mp3", 0.15, randFloat(0.9, 1.1), this.position.x, this.position.y);
          this.ticksSinceLastFlySound = 0;
       }
