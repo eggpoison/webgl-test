@@ -175,8 +175,8 @@ const PLACEABLE_WALL_ENTITY_HEIGHTS: Partial<Record<EntityType, number>> = {
    [EntityType.wallPunjiSticks]: 28
 };
 
-const testRectangularHitbox = new RectangularHitbox(1, -1, -1, 0);
-const testCircularHitbox = new CircularHitbox(1, -1, 0);
+const testRectangularHitbox = new RectangularHitbox(1, -1, -1);
+const testCircularHitbox = new CircularHitbox(1, -1);
 
 const hotbarItemAttackCooldowns: Record<number, number> = {};
 const offhandItemAttackCooldowns: Record<number, number> = {};
@@ -890,7 +890,7 @@ export function canPlaceItem(placePosition: Point, placeRotation: number, item: 
    // 
 
    // @Speed: Garbage collection
-   const tileHitbox = new RectangularHitbox(1, Settings.TILE_SIZE, Settings.TILE_SIZE, 0);
+   const tileHitbox = new RectangularHitbox(1, Settings.TILE_SIZE, Settings.TILE_SIZE);
 
    const minTileX = Math.floor(placeTestHitbox.bounds[0] / Settings.TILE_SIZE);
    const maxTileX = Math.floor(placeTestHitbox.bounds[1] / Settings.TILE_SIZE);

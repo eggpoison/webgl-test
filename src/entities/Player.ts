@@ -293,7 +293,7 @@ class Player extends TribeMember {
          for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
             const tile = Board.getTile(tileX, tileY);
             if (tile.isWall) {
-               const tileHitbox = new RectangularHitbox(1, Settings.TILE_SIZE, Settings.TILE_SIZE, 0);
+               const tileHitbox = new RectangularHitbox(1, Settings.TILE_SIZE, Settings.TILE_SIZE);
                tileHitbox.position.x = (tile.x + 0.5) * Settings.TILE_SIZE;
                tileHitbox.position.y = (tile.y + 0.5) * Settings.TILE_SIZE;
                tileHitbox.updateHitboxBounds(0);
@@ -438,7 +438,7 @@ class Player extends TribeMember {
    }
 
    public static createNewPlayerHitbox(): CircularHitbox {
-      const hitbox = new CircularHitbox(1, Player.RADIUS, 0);
+      const hitbox = new CircularHitbox(1, Player.RADIUS);
       return hitbox;
    }
 }

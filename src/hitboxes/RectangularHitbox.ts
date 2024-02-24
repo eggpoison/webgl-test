@@ -17,8 +17,8 @@ class RectangularHitbox extends Hitbox {
 
    public sideAxes = [new Point(0, 0), new Point(0, 0)] as const;
 
-   constructor(mass: number, width: number, height: number, localID: number) {
-      super(mass, localID);
+   constructor(mass: number, width: number, height: number) {
+      super(mass);
       
       this.width = width;
       this.height = height;
@@ -87,7 +87,7 @@ class RectangularHitbox extends Hitbox {
             return false;
          }
          
-         return rectanglePointsDoIntersect(this.vertexPositions, (otherHitbox as RectangularHitbox).vertexPositions, 0, 0, 0, 0, this.sideAxes, (otherHitbox as RectangularHitbox).sideAxes);
+         return rectanglePointsDoIntersect(this.vertexPositions, (otherHitbox as RectangularHitbox).vertexPositions, 0, 0, 0, 0, this.sideAxes[0].x, this.sideAxes[0].y, (otherHitbox as RectangularHitbox).sideAxes[0].x, (otherHitbox as RectangularHitbox).sideAxes[0].y);
       }
    }
 }

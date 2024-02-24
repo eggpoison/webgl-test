@@ -69,7 +69,7 @@ const getZIndex = (size: GolemRockSize): number => {
 }
 
 class Golem extends Entity {
-   private readonly rockRenderParts = new Array<RenderPart>();
+   private rockRenderParts = new Array<RenderPart>();
    private readonly eyeRenderParts = new Array<RenderPart>();
 
    private readonly eyeLights = new Array<Light>();
@@ -83,51 +83,6 @@ class Golem extends Entity {
       super(position, id, EntityType.golem, ageTicks, renderDepth);
 
       this.wakeProgress = wakeProgress;
-   }
-
-   public addCircularHitbox(hitbox: CircularHitbox): void {
-      super.addCircularHitbox(hitbox);
-
-      const size = getHitboxSize(hitbox);
-
-      const renderPart = new RenderPart(
-         this,
-         getTextureArrayIndex(getTextureSource(size)),
-         getZIndex(size),
-         2 * Math.PI * Math.random()
-      );
-      renderPart.offset = new Point(hitbox.offset.x, hitbox.offset.y);
-      this.attachRenderPart(renderPart);
-      this.rockRenderParts.push(renderPart);
-
-      if (size === GolemRockSize.large) {
-         for (let i = 0; i < 2; i++) {
-            const eyeRenderPart = new RenderPart(
-               renderPart,
-               getTextureArrayIndex("entities/golem/eye.png"),
-               6,
-               0
-            );
-            eyeRenderPart.opacity = 0;
-            eyeRenderPart.inheritParentRotation = false;
-            eyeRenderPart.offset = new Point(20 * (i === 0 ? -1 : 1), 17);
-            this.attachRenderPart(eyeRenderPart);
-            this.eyeRenderParts.push(eyeRenderPart);
-
-            // Create eye light
-            const light: Light = {
-               position: new Point(this.position.x + (eyeRenderPart.offset as Point).x, this.position.y + (eyeRenderPart.offset as Point).y),
-               intensity: 0,
-               strength: 0.5,
-               radius: 0.15,
-               r: 0.75,
-               g: 0,
-               b: 0
-            };
-            Board.lights.push(light);
-            this.eyeLights.push(light);
-         }
-      }
    }
 
    public tick(): void {
@@ -168,7 +123,7 @@ class Golem extends Entity {
          }
       }
 
-      for (let i = 0; i < 2; i++) {
+      for (let i = 0; i < this.eyeRenderParts.length; i++) {
          const eyeRenderPart = this.eyeRenderParts[i];
          const light = this.eyeLights[i];
          light.position.x = eyeRenderPart.renderPosition.x;
@@ -181,11 +136,50 @@ class Golem extends Entity {
 
       this.wakeProgress = data.clientArgs[0];
 
-      for (let i = 0; i < 2; i++) {
-         this.eyeRenderParts[i].opacity = this.wakeProgress;
-         this.eyeLights[i].intensity = this.wakeProgress;
+      // Add new rocks
+      for (let i = this.rockRenderParts.length; i < this.hitboxes.length; i++) {
+         const hitbox = this.hitboxes[i] as CircularHitbox;
+         const size = getHitboxSize(hitbox);
+   
+         const renderPart = new RenderPart(
+            this,
+            getTextureArrayIndex(getTextureSource(size)),
+            getZIndex(size),
+            2 * Math.PI * Math.random()
+         );
+         renderPart.offset = new Point(hitbox.offset.x, hitbox.offset.y);
+         this.attachRenderPart(renderPart);
+         this.rockRenderParts.push(renderPart);
+   
+         if (size === GolemRockSize.large) {
+            for (let i = 0; i < 2; i++) {
+               const eyeRenderPart = new RenderPart(
+                  renderPart,
+                  getTextureArrayIndex("entities/golem/eye.png"),
+                  6,
+                  0
+               );
+               eyeRenderPart.opacity = 0;
+               eyeRenderPart.inheritParentRotation = false;
+               eyeRenderPart.offset = new Point(20 * (i === 0 ? -1 : 1), 17);
+               this.attachRenderPart(eyeRenderPart);
+               this.eyeRenderParts.push(eyeRenderPart);
+   
+               // Create eye light
+               const light: Light = {
+                  position: new Point(this.position.x + (eyeRenderPart.offset as Point).x, this.position.y + (eyeRenderPart.offset as Point).y),
+                  intensity: 0,
+                  strength: 0.5,
+                  radius: 0.15,
+                  r: 0.75,
+                  g: 0,
+                  b: 0
+               };
+               Board.lights.push(light);
+               this.eyeLights.push(light);
+            }
+         }
       }
-      
       const shakeAmount = this.wakeProgress > 0 && this.wakeProgress < 1 ? 1 : 0;
       for (let i = 0; i < this.hitboxes.length; i++) {
          const hitbox = this.hitboxes[i];
@@ -194,6 +188,11 @@ class Golem extends Entity {
          (renderPart.offset as Point).x = hitbox.offset.x;
          (renderPart.offset as Point).y = hitbox.offset.y;
          renderPart.shakeAmount = shakeAmount;
+      }
+
+      for (let i = 0; i < 2; i++) {
+         this.eyeRenderParts[i].opacity = this.wakeProgress;
+         this.eyeLights[i].intensity = this.wakeProgress;
       }
    }
 
