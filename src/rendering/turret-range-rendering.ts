@@ -26,8 +26,8 @@ const TURRET_RANGE_INFO_RECORD: Partial<Record<ItemType, TurretRangeInfo>> = {
    [ItemType.ballista]: {
       range: 550,
       // @Temporary
-      // arc: 2 * Math.PI
-      arc: Math.PI / 2.3
+      arc: 2 * Math.PI
+      // arc: Math.PI / 2.3
    },
    [ItemType.sling_turret]: {
       range: 300,
