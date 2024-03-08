@@ -4,9 +4,9 @@ import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { playBuildingHitSound, playSound } from "../sound";
 import TribeComponent from "../entity-components/TribeComponent";
 import HutComponent from "../entity-components/HutComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
-class WorkerHut extends GameObject {
+class WorkerHut extends Entity {
    public static readonly SIZE = 88;
 
    constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.workerHut>) {

@@ -5,10 +5,10 @@ import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 import Board from "../Board";
 import { createRockParticle } from "../particles";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import RockSpikeComponent from "../entity-components/RockSpikeComponent";
 
-class RockSpikeProjectile extends GameObject {
+class RockSpikeProjectile extends Entity {
    private static readonly SIZES = [12 * 4, 16 * 4, 20 * 4];
    private static readonly SPRITE_TEXTURE_SOURCES = [
       "projectiles/rock-spike-small.png",

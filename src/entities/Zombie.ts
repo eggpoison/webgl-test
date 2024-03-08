@@ -3,7 +3,7 @@ import RenderPart from "../render-parts/RenderPart";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle } from "../particles";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { AudioFilePath, playSound } from "../sound";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import ZombieComponent from "../entity-components/ZombieComponent";
 import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 import HealthComponent from "../entity-components/HealthComponent";
@@ -19,7 +19,7 @@ const ZOMBIE_TEXTURE_SOURCES: ReadonlyArray<string> = ["entities/zombie/zombie1.
 // @Cleanup: So much copy and paste from TribeMember
 // @Cleanup: So much copy and paste from TribeMember
 
-class Zombie extends GameObject {
+class Zombie extends Entity {
    private static readonly RADIUS = 32;
    
    private static readonly BLOOD_FOUNTAIN_INTERVAL = 0.1;

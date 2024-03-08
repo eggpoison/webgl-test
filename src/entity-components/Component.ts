@@ -1,9 +1,9 @@
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
 abstract class Component {
-   protected readonly entity: GameObject;
+   protected readonly entity: Entity;
 
-   constructor(entity: GameObject) {
+   constructor(entity: Entity) {
       this.entity = entity;
    }
 

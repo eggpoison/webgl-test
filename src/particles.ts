@@ -2,7 +2,7 @@ import { CactusFlowerSize, Point, angle, lerp, randFloat, randInt, randItem, ran
 import Particle from "./Particle";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "./rendering/particle-rendering";
 import Board from "./Board";
-import GameObject, { getRandomPointInEntity } from "./GameObject";
+import Entity, { getRandomPointInEntity } from "./Entity";
 
 const BLOOD_COLOUR_LOW: Readonly<ParticleColour> = [150, 0, 0];
 const BLOOD_COLOUR_HIGH: Readonly<ParticleColour> = [212, 0, 0];
@@ -56,7 +56,7 @@ export function createBloodParticle(size: BloodParticleSize, spawnPositionX: num
 
 const BLOOD_FOUNTAIN_RAY_COUNT = 5;
 
-export function createBloodParticleFountain(entity: GameObject, interval: number, speedMultiplier: number): void {
+export function createBloodParticleFountain(entity: Entity, interval: number, speedMultiplier: number): void {
    const offset = 2 * Math.PI * Math.random();
 
    for (let i = 0; i < 4; i++) {
@@ -113,7 +113,7 @@ export function createLeafParticle(spawnPositionX: number, spawnPositionY: numbe
    Board.lowTexturedParticles.push(particle);
 }
 
-export function createFootprintParticle(entity: GameObject, numFootstepsTaken: number, footstepOffset: number, size: number, lifetime: number): void {
+export function createFootprintParticle(entity: Entity, numFootstepsTaken: number, footstepOffset: number, size: number, lifetime: number): void {
    const footstepAngleOffset = numFootstepsTaken % 2 === 0 ? Math.PI : 0;
 
    const velocityDirection = angle(entity.velocity.x, entity.velocity.y);
@@ -793,7 +793,7 @@ export function createMagicParticle(x: number, y: number): void {
 
 const HEALING_PARTICLE_TEXTURE_INDEXES = [3 * 8 + 1, 3 * 8 + 2, 3 * 8 + 3];
 
-export function createHealingParticle(entity: GameObject, size: number): void {
+export function createHealingParticle(entity: Entity, size: number): void {
    const position = getRandomPointInEntity(entity);
 
    const moveSpeed = randFloat(20, 30);
@@ -964,7 +964,7 @@ export function createFlowerParticle(spawnPositionX: number, spawnPositionY: num
    Board.lowTexturedParticles.push(particle);
 }
 
-export function createCactusSpineParticle(cactus: GameObject, offset: number, flyDirection: number): void {
+export function createCactusSpineParticle(cactus: Entity, offset: number, flyDirection: number): void {
    // @Speed: Garbage collection
    const spawnPosition = Point.fromVectorForm(offset, flyDirection);
    spawnPosition.add(cactus.position);
@@ -1232,7 +1232,7 @@ export function createBlueBloodParticle(size: BloodParticleSize, spawnPositionX:
 
 const BLUE_BLOOD_FOUNTAIN_RAY_COUNT = 7;
 
-export function createBlueBloodParticleFountain(entity: GameObject, interval: number, speedMultiplier: number): void {
+export function createBlueBloodParticleFountain(entity: Entity, interval: number, speedMultiplier: number): void {
    const offset = 2 * Math.PI * Math.random();
 
    for (let i = 0; i < 6; i++) {

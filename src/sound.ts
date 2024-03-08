@@ -1,7 +1,7 @@
 import { Settings, TileType, distance, randInt } from "webgl-test-shared";
 import Camera from "./Camera";
 import Board from "./Board";
-import GameObject from "./GameObject";
+import Entity from "./Entity";
 
 const AUDIO_FILE_PATHS = [
    "item-pickup.mp3",
@@ -164,7 +164,7 @@ export interface Sound {
 
 interface SoundAttachInfo {
    readonly sound: Sound;
-   readonly entity: GameObject;
+   readonly entity: Entity;
 }
 
 const activeSounds = new Array<Sound>();
@@ -245,7 +245,7 @@ export function playSound(filePath: AudioFilePath, volume: number, pitchMultipli
    };
 }
 
-export function attachSoundToEntity(sound: Sound, entity: GameObject): void {
+export function attachSoundToEntity(sound: Sound, entity: Entity): void {
    entityAttachedSounds.push({
       sound: sound,
       entity: entity

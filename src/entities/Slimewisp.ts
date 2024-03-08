@@ -5,9 +5,9 @@ import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import PhysicsComponent from "../entity-components/PhysicsComponent";
 import HealthComponent from "../entity-components/HealthComponent";
 import StatusEffectComponent from "../entity-components/StatusEffectComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
-class Slimewisp extends GameObject {
+class Slimewisp extends Entity {
    private static readonly RADIUS = 16;
 
    constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.slimewisp>) {

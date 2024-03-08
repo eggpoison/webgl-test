@@ -3,7 +3,7 @@ import { getPlayerSelectedItem } from "../entities/Player";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, TIME_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 import { PLACEABLE_ENTITY_INFO_RECORD, calculatePlacePosition, calculatePlaceRotation, calculateSnapInfo } from "../player-input";
 import Board from "../Board";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import { getHoveredEntityID } from "../entity-selection";
 
 const CIRCLE_DETAIL = 300;
@@ -132,7 +132,7 @@ const calculateVertices = (renderingInfo: TurretRangeRenderingInfo): ReadonlyArr
    return vertices;
 }
 
-const getTurretItemType = (turret: GameObject): ItemType => {
+const getTurretItemType = (turret: Entity): ItemType => {
    switch (turret.type) {
       case EntityType.ballista: return ItemType.ballista;
       case EntityType.slingTurret: return ItemType.sling_turret;

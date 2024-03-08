@@ -1,6 +1,6 @@
 import { EntityType, HitData, ItemType, ServerComponentType, Settings, TileType, TribeMemberComponentData, TribeType, randFloat, randInt, randItem } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import GameObject, { getFrameProgress } from "../GameObject";
+import Entity, { getFrameProgress } from "../Entity";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle } from "../particles";
 import Board from "../Board";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
@@ -22,7 +22,7 @@ export function getSecondsSinceLastAction(lastActionTicks: number): number {
    return secondsSinceLastAction;
 }
 
-export function addTribeMemberRenderParts(entity: GameObject, tribeMemberComponentData: TribeMemberComponentData): void {
+export function addTribeMemberRenderParts(entity: Entity, tribeMemberComponentData: TribeMemberComponentData): void {
    const tribeComponent = entity.getServerComponent(ServerComponentType.tribe);
 
    let bodyTextureSource: string;
@@ -110,7 +110,7 @@ export function addTribeMemberRenderParts(entity: GameObject, tribeMemberCompone
    }
 }
 
-abstract class TribeMember extends GameObject {
+abstract class TribeMember extends Entity {
    private static readonly BLOOD_FOUNTAIN_INTERVAL = 0.1;
    
    protected onHit(hitData: HitData): void {

@@ -1,12 +1,12 @@
 import { ServerComponentType, Inventory, InventoryComponentData } from "webgl-test-shared";
 import ServerComponent from "./ServerComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import { updateInventoryFromData } from "../inventory-manipulation";
 
 class InventoryComponent extends ServerComponent<ServerComponentType.inventory> {
    private readonly inventories: Record<string, Inventory> = {};
 
-   constructor(entity: GameObject, data: InventoryComponentData) {
+   constructor(entity: Entity, data: InventoryComponentData) {
       super(entity);
 
       this.updateFromData(data);

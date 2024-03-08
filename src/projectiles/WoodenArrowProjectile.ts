@@ -1,7 +1,7 @@
-import { EntityComponentsData, EntityType, GenericArrowType, Point, ServerComponentType, randFloat, randInt } from "webgl-test-shared";
+import { EntityComponentsData, EntityType, GenericArrowType, Point, ServerComponentType, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import { playSound } from "../sound";
 import { createArrowDestroyParticle, createRockParticle, createRockSpeckParticle } from "../particles";
 import ArrowComponent from "../entity-components/ArrowComponent";
@@ -17,7 +17,7 @@ const ARROW_TEXTURE_SOURCES: Record<GenericArrowType, string> = {
    [GenericArrowType.slingRock]: "projectiles/sling-rock.png"
 };
 
-class WoodenArrowProjectile extends GameObject {
+class WoodenArrowProjectile extends Entity {
 
    constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.woodenArrowProjectile>) {
       super(position, id, EntityType.woodenArrowProjectile, ageTicks);

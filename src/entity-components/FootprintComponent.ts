@@ -3,7 +3,7 @@ import Component from "./Component";
 import { playSound, AudioFilePath } from "../sound";
 import Board from "../Board";
 import { createFootprintParticle } from "../particles";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
 export class FootprintComponent extends Component {
    private readonly footstepParticleIntervalSeconds: number;
@@ -12,7 +12,7 @@ export class FootprintComponent extends Component {
    private readonly footstepLifetime: number;
    private readonly footstepSoundIntervalDist: number;
 
-   constructor(entity: GameObject, footstepParticleIntervalSeconds: number, footstepOffset: number, footstepSize: number, footstepLifetime: number, footstepSoundIntervalDist: number) {
+   constructor(entity: Entity, footstepParticleIntervalSeconds: number, footstepOffset: number, footstepSize: number, footstepLifetime: number, footstepSoundIntervalDist: number) {
       super(entity);
       
       this.footstepParticleIntervalSeconds = footstepParticleIntervalSeconds;

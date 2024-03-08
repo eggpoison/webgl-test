@@ -1,5 +1,5 @@
 import { ServerComponentType, CowComponentData, Settings, randInt } from "webgl-test-shared";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import ServerComponent from "./ServerComponent";
 import Board from "../Board";
 import { createDirtParticle } from "../particles";
@@ -8,7 +8,7 @@ import { AudioFilePath, playSound } from "../sound";
 class CowComponent extends ServerComponent<ServerComponentType.cow> {
    private grazeProgress: number;
 
-   constructor(entity: GameObject, data: CowComponentData) {
+   constructor(entity: Entity, data: CowComponentData) {
       super(entity);
 
       this.grazeProgress = data.grazeProgress;

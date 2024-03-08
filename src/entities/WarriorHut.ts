@@ -3,9 +3,9 @@ import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { playBuildingHitSound, playSound } from "../sound";
 import HutComponent from "../entity-components/HutComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
-class WarriorHut extends GameObject {
+class WarriorHut extends Entity {
    public static readonly SIZE = 104;
 
    constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.warriorHut>) {

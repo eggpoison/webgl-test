@@ -1,12 +1,12 @@
 import { RockSpikeProjectileComponentData, ServerComponentType } from "webgl-test-shared";
 import ServerComponent from "./ServerComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
 class RockSpikeComponent extends ServerComponent<ServerComponentType.rockSpike> {
    public readonly size: number;
    public readonly lifetime: number;
 
-   constructor(entity: GameObject, data: RockSpikeProjectileComponentData) {
+   constructor(entity: Entity, data: RockSpikeProjectileComponentData) {
       super(entity);
 
       this.size = data.size;

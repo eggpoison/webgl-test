@@ -4,11 +4,11 @@ import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, cr
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { ClientComponentType } from "../entity-components/components";
 import FootprintComponent from "../entity-components/FootprintComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 import HealthComponent from "../entity-components/HealthComponent";
 
-class Krumblid extends GameObject {
+class Krumblid extends Entity {
    private static readonly BLOOD_FOUNTAIN_INTERVAL = 0.1;
 
    constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.krumblid>) {

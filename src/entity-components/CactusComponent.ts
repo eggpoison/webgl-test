@@ -1,6 +1,6 @@
 import { CactusBodyFlowerData, CactusComponentData, CactusFlowerSize, CactusLimbData, ServerComponentType } from "webgl-test-shared";
 import ServerComponent from "./ServerComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import Cactus from "../entities/Cactus";
@@ -18,7 +18,7 @@ class CactusComponent extends ServerComponent<ServerComponentType.cactus> {
    private readonly flowerData: ReadonlyArray<CactusBodyFlowerData>;
    private readonly limbData: ReadonlyArray<CactusLimbData>;
 
-   constructor(entity: GameObject, data: CactusComponentData) {
+   constructor(entity: Entity, data: CactusComponentData) {
       super(entity);
 
       this.flowerData = data.flowers;

@@ -1,9 +1,9 @@
 import { PhysicsComponentData, ServerComponentType } from "webgl-test-shared";
 import ServerComponent from "./ServerComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
 class PhysicsComponent extends ServerComponent<ServerComponentType.physics> {
-   constructor(entity: GameObject, _data: PhysicsComponentData) {
+   constructor(entity: Entity, _data: PhysicsComponentData) {
       super(entity);
    }
 

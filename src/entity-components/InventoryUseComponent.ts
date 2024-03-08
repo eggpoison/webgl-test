@@ -1,6 +1,6 @@
 import { BowItemInfo, ServerComponentType, EntityType, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, InventoryUseComponentData, InventoryUseInfoData, Item, ItemType, Settings, ToolItemInfo, TribeMemberAction, TribeType, lerp, randFloat, randItem } from "webgl-test-shared";
 import ServerComponent from "./ServerComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import Board from "../Board";
@@ -115,7 +115,7 @@ const FOOD_EATING_COLOURS: { [T in ItemType as Exclude<T, FilterFoodItemTypes<T>
 
 type InventoryUseEntityType = EntityType.player | EntityType.tribeWorker | EntityType.tribeWarrior | EntityType.zombie;
 
-const createLimb = (entity: GameObject, limbIdx: number): RenderPart => {
+const createLimb = (entity: Entity, limbIdx: number): RenderPart => {
    switch (entity.type as InventoryUseEntityType) {
       case EntityType.player:
       case EntityType.tribeWorker:
@@ -224,7 +224,7 @@ class InventoryUseComponent extends ServerComponent<ServerComponentType.inventor
    private readonly inactiveCrossbowArrowRenderParts: Record<number, RenderPart> = {};
    private readonly arrowRenderParts: Record<number, RenderPart> = {};
    
-   constructor(entity: GameObject, data: InventoryUseComponentData) {
+   constructor(entity: Entity, data: InventoryUseComponentData) {
       super(entity);
       
       this.useInfos = data.inventoryUseInfos;

@@ -1,11 +1,11 @@
 import { FishComponentData, ServerComponentType } from "webgl-test-shared";
 import ServerComponent from "./ServerComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
 class FishComponent extends ServerComponent<ServerComponentType.fish> {
    public readonly waterOpacityMultiplier: number;
    
-   constructor(entity: GameObject, waterOpacityMultiplier: number) {
+   constructor(entity: Entity, waterOpacityMultiplier: number) {
       super(entity);
 
       this.waterOpacityMultiplier = waterOpacityMultiplier;

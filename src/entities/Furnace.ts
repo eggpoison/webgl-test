@@ -3,10 +3,10 @@ import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { createEmberParticle, createRockParticle, createRockSpeckParticle, createSmokeParticle } from "../particles";
 import Board from "../Board";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import CookingComponent from "../entity-components/CookingComponent";
 
-class Furnace extends GameObject {
+class Furnace extends Entity {
    public static readonly SIZE = 80;
 
    constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.furnace>) {

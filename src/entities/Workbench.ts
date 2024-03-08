@@ -1,9 +1,9 @@
 import { EntityType, Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
-class Workbench extends GameObject {
+class Workbench extends Entity {
    public static readonly SIZE = 80;
    
    constructor(position: Point, id: number, ageTicks: number) {

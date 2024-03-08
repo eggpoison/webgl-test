@@ -1,11 +1,11 @@
 import { PlayerComponentData, ServerComponentType } from "webgl-test-shared";
 import ServerComponent from "./ServerComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
 class PlayerComponent extends ServerComponent<ServerComponentType.player> {
    public readonly username: string;
    
-   constructor(entity: GameObject, data: PlayerComponentData) {
+   constructor(entity: Entity, data: PlayerComponentData) {
       super(entity);
 
       this.username = data.username;

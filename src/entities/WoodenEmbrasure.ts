@@ -3,9 +3,9 @@ import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { playSound } from "../sound";
 import { createLightWoodSpeckParticle, createWoodShardParticle } from "./WoodenWall";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
-class WoodenEmbrasure extends GameObject {
+class WoodenEmbrasure extends Entity {
    constructor(position: Point, id: number, ageTicks: number) {
       super(position, id, EntityType.woodenEmbrasure, ageTicks);
 

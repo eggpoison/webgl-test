@@ -26,7 +26,7 @@ export function getFrameProgress(): number {
    return frameProgress;
 }
 
-export function getRandomPointInEntity(entity: GameObject): Point {
+export function getRandomPointInEntity(entity: Entity): Point {
    const hitbox = entity.hitboxes[randInt(0, entity.hitboxes.length - 1)];
 
    if (hitbox.hasOwnProperty("radius")) {
@@ -54,7 +54,7 @@ type ClientComponentsType = Partial<{
    [T in keyof typeof ClientComponents]: ClientComponentClass<T>;
 }>;
 
-abstract class GameObject extends RenderObject {
+abstract class Entity extends RenderObject {
    public readonly id: number;
 
    public readonly type: EntityType;
@@ -176,13 +176,13 @@ abstract class GameObject extends RenderObject {
 
    public addCircularHitbox(hitbox: CircularHitbox): void {
       this.hitboxes.push(hitbox);
-      hitbox.updateFromGameObject(this);
+      hitbox.updateFromEntity(this);
       hitbox.updateHitboxBounds();
    }
 
    public addRectangularHitbox(hitbox: RectangularHitbox): void {
       this.hitboxes.push(hitbox);
-      hitbox.updateFromGameObject(this);
+      hitbox.updateFromEntity(this);
       hitbox.updateHitboxBounds(this.rotation);
    }
 
@@ -380,7 +380,7 @@ abstract class GameObject extends RenderObject {
       // Find all chunks which aren't present in the new chunks and remove them
       for (const chunk of this.chunks) {
          if (!containingChunks.has(chunk)) {
-            chunk.removeGameObject(this as unknown as GameObject);
+            chunk.removeEntity(this as unknown as Entity);
             this.chunks.delete(chunk);
          }
       }
@@ -388,7 +388,7 @@ abstract class GameObject extends RenderObject {
       // Add all new chunks
       for (const chunk of containingChunks) {
          if (!this.chunks.has(chunk)) {
-            chunk.addGameObject(this as unknown as GameObject);
+            chunk.addEntity(this as unknown as Entity);
             this.chunks.add(chunk);
          }
       }
@@ -408,7 +408,7 @@ abstract class GameObject extends RenderObject {
 
    private updateHitboxes(): void {
       for (const hitbox of this.hitboxes) {
-         hitbox.updateFromGameObject(this);
+         hitbox.updateFromEntity(this);
          hitbox.updateHitboxBounds(this.rotation);
       }
    }
@@ -448,7 +448,7 @@ abstract class GameObject extends RenderObject {
             for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
                const chunk = Board.getChunk(chunkX, chunkY);
                // if (!this.chunks.has(chunk)) {
-               //    chunk.addGameObject(this as unknown as GameObject);
+               //    chunk.addEntity(this as unknown as Entity);
                //    this.chunks.add(chunk);
                // }
                containingChunks.add(chunk);
@@ -472,7 +472,7 @@ abstract class GameObject extends RenderObject {
             for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
                const chunk = Board.getChunk(chunkX, chunkY);
                // if (!this.chunks.has(chunk)) {
-               //    chunk.addGameObject(this as unknown as GameObject);
+               //    chunk.addEntity(this as unknown as Entity);
                //    this.chunks.add(chunk);
                // }
                containingChunks.add(chunk);
@@ -483,7 +483,7 @@ abstract class GameObject extends RenderObject {
       // Find all chunks which aren't present in the new chunks and remove them
       for (const chunk of this.chunks) {
          if (!containingChunks.has(chunk)) {
-            chunk.removeGameObject(this as unknown as GameObject);
+            chunk.removeEntity(this as unknown as Entity);
             this.chunks.delete(chunk);
          }
       }
@@ -491,7 +491,7 @@ abstract class GameObject extends RenderObject {
       // Add all new chunks
       for (const chunk of containingChunks) {
          if (!this.chunks.has(chunk)) {
-            chunk.addGameObject(this as unknown as GameObject);
+            chunk.addEntity(this as unknown as Entity);
             this.chunks.add(chunk);
          }
       }
@@ -581,4 +581,4 @@ abstract class GameObject extends RenderObject {
    }
 }
 
-export default GameObject;
+export default Entity;

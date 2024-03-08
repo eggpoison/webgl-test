@@ -1,12 +1,12 @@
 import { ItemComponentData, ItemType, ServerComponentType } from "webgl-test-shared";
 import ServerComponent from "./ServerComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import { createDeepFrostHeartBloodParticles } from "../items/ItemEntity";
 
 class ItemComponent extends ServerComponent<ServerComponentType.item> {
    public readonly itemType: ItemType;
    
-   constructor(entity: GameObject, data: ItemComponentData) {
+   constructor(entity: Entity, data: ItemComponentData) {
       super(entity);
 
       this.itemType = data.itemType;

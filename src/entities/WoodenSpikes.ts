@@ -2,15 +2,15 @@ import { EntityType, Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { playSound } from "../sound";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 
-export function spikesAreAttachedToWall(entity: GameObject): boolean {
+export function spikesAreAttachedToWall(entity: Entity): boolean {
    const hitbox = entity.hitboxes[0] as RectangularHitbox;
    return Math.abs(hitbox.height - (28 - 0.05)) < 0.01;
 }
 
-class WoodenSpikes extends GameObject {
+class WoodenSpikes extends Entity {
    constructor(position: Point, id: number, ageTicks: number) {
       super(position, id, EntityType.woodenSpikes, ageTicks);
 

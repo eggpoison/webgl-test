@@ -4,9 +4,9 @@ import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { playSound } from "../sound";
 import { createLightWoodSpeckParticle, createWoodShardParticle } from "./WoodenWall";
 import DoorComponent from "../entity-components/DoorComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
-class WoodenDoor extends GameObject {
+class WoodenDoor extends Entity {
    constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.woodenDoor>) {
       super(position, id, EntityType.woodenDoor, ageTicks);
 

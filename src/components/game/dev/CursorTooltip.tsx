@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { GameObjectDebugData } from "webgl-test-shared";
+import { EntityDebugData } from "webgl-test-shared";
 
-export let updateCursorTooltip: (debugData: GameObjectDebugData | null, screenPositionX: number, screenPositionY: number) => void = () => {};
+export let updateCursorTooltip: (debugData: EntityDebugData | null, screenPositionX: number, screenPositionY: number) => void = () => {};
 
 const CursorTooltip = () => {
-   const [debugData, setDebugData] = useState<GameObjectDebugData | null>(null);
+   const [debugData, setDebugData] = useState<EntityDebugData | null>(null);
    const cursorTooltipRef = useRef<HTMLDivElement | null>(null);
 
    useEffect(() => {
-      updateCursorTooltip = (debugData: GameObjectDebugData | null, screenPositionX: number, screenPositionY: number): void => {
+      updateCursorTooltip = (debugData: EntityDebugData | null, screenPositionX: number, screenPositionY: number): void => {
          setDebugData(debugData);
 
          if (cursorTooltipRef.current !== null) {

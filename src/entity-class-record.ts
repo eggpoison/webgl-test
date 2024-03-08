@@ -22,7 +22,7 @@ import Krumblid from "./entities/Krumblid";
 import FrozenYeti from "./entities/FrozenYeti";
 import Fish from "./entities/Fish";
 import ItemEntity from "./items/ItemEntity";
-import GameObject from "./GameObject";
+import Entity from "./Entity";
 import WoodenArrowProjectile from "./projectiles/WoodenArrowProjectile";
 import IceShardsProjectile from "./projectiles/IceShardsProjectile";
 import RockSpikeProjectile from "./projectiles/RockSpikeProjectile";
@@ -48,7 +48,7 @@ import Ballista from "./entities/Ballista";
 import SlingTurret from "./entities/SlingTurret";
 import WoodenTunnel from "./entities/WoodenTunnel";
 
-export type EntityClassType<T extends EntityType> = new (position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<T>) => GameObject;
+export type EntityClassType<T extends EntityType> = new (position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<T>) => Entity;
 
 // @Incomplete: Move to server-like system
 const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {

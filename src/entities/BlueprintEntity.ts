@@ -6,7 +6,8 @@ import { createLightWoodSpeckParticle } from "./WoodenWall";
 import { BALLISTA_AMMO_BOX_OFFSET_X, BALLISTA_AMMO_BOX_OFFSET_Y, BALLISTA_GEAR_X, BALLISTA_GEAR_Y } from "./Ballista";
 import { createSawdustCloud } from "../particles";
 import BlueprintComponent from "../entity-components/BlueprintComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
+import HealthComponent from "../entity-components/HealthComponent";
 
 interface ProgressTextureInfo {
    readonly progressTextureSources: ReadonlyArray<string>;
@@ -158,7 +159,7 @@ const countProgressTextures = (buildingType: BlueprintBuildingType): number => {
    return numTextures;
 }
 
-class BlueprintEntity extends GameObject {
+class BlueprintEntity extends Entity {
    constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.blueprintEntity>) {
       super(position, id, EntityType.blueprintEntity, ageTicks);
 
@@ -184,6 +185,7 @@ class BlueprintEntity extends GameObject {
          this.attachRenderPart(renderPart);
       }
 
+      this.addServerComponent(ServerComponentType.health, new HealthComponent(this, componentsData[0]));
       this.addServerComponent(ServerComponentType.blueprint, new BlueprintComponent(this, blueprintComponentData));
 
       this.updatePartialTexture();

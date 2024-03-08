@@ -1,6 +1,6 @@
 import { GolemComponentData, Point, ServerComponentType, Settings } from "webgl-test-shared";
 import ServerComponent from "./ServerComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import { createRockSpeckParticle } from "../particles";
 import RenderPart from "../render-parts/RenderPart";
@@ -76,7 +76,7 @@ class GolemComponent extends ServerComponent<ServerComponentType.golem> {
 
    private wakeProgress: number;
    
-   constructor(entity: GameObject, data: GolemComponentData) {
+   constructor(entity: Entity, data: GolemComponentData) {
       super(entity);
 
       this.wakeProgress = data.wakeProgress;

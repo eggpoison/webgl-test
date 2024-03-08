@@ -1,7 +1,7 @@
 import { BlueprintBuildingType, BlueprintComponentData, ServerComponentType, randFloat } from "webgl-test-shared";
 import ServerComponent from "./ServerComponent";
 import RenderPart from "../render-parts/RenderPart";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import { createWoodShardParticle, createLightWoodSpeckParticle } from "../entities/WoodenWall";
 import { playSound } from "../sound";
 import { createSawdustCloud } from "../particles";
@@ -12,7 +12,7 @@ class BlueprintComponent extends ServerComponent<ServerComponentType.blueprint> 
    public readonly buildingType: BlueprintBuildingType;
    public lastBlueprintProgress: number;
 
-   constructor(entity: GameObject, data: BlueprintComponentData) {
+   constructor(entity: Entity, data: BlueprintComponentData) {
       super(entity);
 
       this.buildingType = data.buildingType;

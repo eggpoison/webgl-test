@@ -3,11 +3,11 @@ import RenderPart from "../render-parts/RenderPart";
 import { createRockParticle, createRockSpeckParticle } from "../particles";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { ROCK_DESTROY_SOUNDS, ROCK_HIT_SOUNDS, playSound } from "../sound";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import HealthComponent from "../entity-components/HealthComponent";
 import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 
-class Boulder extends GameObject {
+class Boulder extends Entity {
    private static readonly RADIUS = 40;
 
    private static readonly TEXTURE_SOURCES = [

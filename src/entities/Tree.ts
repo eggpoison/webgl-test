@@ -6,7 +6,7 @@ import { AudioFilePath, playSound } from "../sound";
 import TreeComponent from "../entity-components/TreeComponent";
 import HealthComponent from "../entity-components/HealthComponent";
 import StatusEffectComponent from "../entity-components/StatusEffectComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
 const treeTextures: { [T in TreeSize]: string } = {
    [TreeSize.small]: "entities/tree/tree-small.png",
@@ -20,7 +20,7 @@ const getRadius = (treeSize: TreeSize): number => {
    return 40 + treeSize * 10;;
 }
 
-class Tree extends GameObject {
+class Tree extends Entity {
    private static readonly LEAF_SPECK_COLOUR_LOW = [63/255, 204/255, 91/255] as const;
    private static readonly LEAF_SPECK_COLOUR_HIGH = [35/255, 158/255, 88/255] as const;
    

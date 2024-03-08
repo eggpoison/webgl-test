@@ -7,11 +7,11 @@ import CowComponent from "../entity-components/CowComponent";
 import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 import HealthComponent from "../entity-components/HealthComponent";
 import PhysicsComponent from "../entity-components/PhysicsComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import { ClientComponentType } from "../entity-components/components";
 import FootprintComponent from "../entity-components/FootprintComponent";
 
-class Cow extends GameObject {
+class Cow extends Entity {
    private static readonly HEAD_SIZE = 64;
    /** How far the head overlaps the body */
    private static readonly HEAD_OVERLAP = 24;

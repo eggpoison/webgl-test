@@ -1,7 +1,7 @@
 import { EntityComponentsData, EntityType, Point, Settings, lerp, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import Board from "../Board";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 import Particle from "../Particle";
@@ -10,7 +10,7 @@ import { playSound } from "../sound";
 const POISON_COLOUR_LOW = [34/255, 12/255, 0];
 const POISON_COLOUR_HIGH = [77/255, 173/255, 38/255];
 
-class SlimeSpit extends GameObject {
+class SlimeSpit extends Entity {
    private readonly renderParts: ReadonlyArray<RenderPart>;
    constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.slimeSpit>) {
       super(position, id, EntityType.slimeSpit, ageTicks);

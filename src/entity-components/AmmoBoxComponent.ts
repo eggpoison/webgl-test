@@ -1,6 +1,6 @@
 import { AmmoBoxComponentData, BallistaAmmoType, ServerComponentType, rotateXAroundOrigin, rotateYAroundOrigin } from "webgl-test-shared";
 import ServerComponent from "./ServerComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { BALLISTA_AMMO_BOX_OFFSET_X, BALLISTA_AMMO_BOX_OFFSET_Y } from "../entities/Ballista";
@@ -12,7 +12,7 @@ class AmmoBoxComponent extends ServerComponent<ServerComponentType.ammoBox> {
 
    private ammoWarningRenderPart: RenderPart | null = null;
    
-   constructor(entity: GameObject, data: AmmoBoxComponentData) {
+   constructor(entity: Entity, data: AmmoBoxComponentData) {
       super(entity);
 
       this.ammoType = data.ammoRemaining > 0 ? data.ammoType : null;

@@ -1,11 +1,11 @@
 import { ServerComponentType, SnowballComponentData, SnowballSize } from "webgl-test-shared";
 import ServerComponent from "./ServerComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
 class SnowballComponent extends ServerComponent<ServerComponentType.snowball> {
    public readonly size: SnowballSize;
    
-   constructor(entity: GameObject, data: SnowballComponentData) {
+   constructor(entity: Entity, data: SnowballComponentData) {
       super(entity);
 
       this.size = data.size;

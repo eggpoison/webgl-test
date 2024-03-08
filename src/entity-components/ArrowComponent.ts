@@ -1,11 +1,11 @@
 import { ArrowComponentData, GenericArrowType, ServerComponentType } from "webgl-test-shared";
 import ServerComponent from "./ServerComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
 class ArrowComponent extends ServerComponent<ServerComponentType.arrow> {
    public readonly arrowType: GenericArrowType;
 
-   constructor(entity: GameObject, data: ArrowComponentData) {
+   constructor(entity: Entity, data: ArrowComponentData) {
       super(entity);
 
       this.arrowType = data.arrowType;

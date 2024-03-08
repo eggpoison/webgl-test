@@ -5,11 +5,11 @@ import Board from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { AudioFilePath, playSound } from "../sound";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import HealthComponent from "../entity-components/HealthComponent";
 import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 
-class IceSpikes extends GameObject {
+class IceSpikes extends Entity {
    private static readonly ICE_SPECK_COLOUR: ParticleColour = [140/255, 143/255, 207/255];
 
    private static readonly SIZE = 80;

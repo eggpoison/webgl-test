@@ -1,13 +1,13 @@
 import { ResearchBenchComponentData, ServerComponentType, customTickIntervalHasPassed, randFloat, rotateXAroundOrigin, rotateYAroundOrigin } from "webgl-test-shared";
 import ServerComponent from "./ServerComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import ResearchBench from "../entities/ResearchBench";
 import { createPaperParticle } from "../particles";
 
 class ResearchBenchComponent extends ServerComponent<ServerComponentType.researchBench> {
    public isOccupied: boolean;
 
-   constructor(entity: GameObject, data: ResearchBenchComponentData) {
+   constructor(entity: Entity, data: ResearchBenchComponentData) {
       super(entity);
       
       this.isOccupied = data.isOccupied;

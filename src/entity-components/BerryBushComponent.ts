@@ -1,13 +1,13 @@
 import { BerryBushComponentData, ServerComponentType } from "webgl-test-shared";
 import ServerComponent from "./ServerComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import RenderPart from "../render-parts/RenderPart";
 import BerryBush from "../entities/BerryBush";
 
 class BerryBushComponent extends ServerComponent<ServerComponentType.berryBush> {
    private readonly renderPart: RenderPart;
    
-   constructor(entity: GameObject, data: BerryBushComponentData, renderPart: RenderPart) {
+   constructor(entity: Entity, data: BerryBushComponentData, renderPart: RenderPart) {
       super(entity);
 
       this.renderPart = renderPart;

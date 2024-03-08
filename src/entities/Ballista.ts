@@ -8,7 +8,7 @@ import InventoryComponent from "../entity-components/InventoryComponent";
 import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 import HealthComponent from "../entity-components/HealthComponent";
 import AmmoBoxComponent from "../entity-components/AmmoBoxComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
 export const BALLISTA_GEAR_X = -12;
 export const BALLISTA_GEAR_Y = 30;
@@ -16,7 +16,7 @@ export const BALLISTA_GEAR_Y = 30;
 export const BALLISTA_AMMO_BOX_OFFSET_X = 35;
 export const BALLISTA_AMMO_BOX_OFFSET_Y = -20;
 
-class Ballista extends GameObject {
+class Ballista extends Entity {
    constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.ballista>) {
       super(position, id, EntityType.ballista, ageTicks);
 

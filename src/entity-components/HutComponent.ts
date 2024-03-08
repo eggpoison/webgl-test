@@ -1,12 +1,10 @@
 import { EntityType, HutComponentData, Point, ServerComponentType, Settings, lerp } from "webgl-test-shared";
 import ServerComponent from "./ServerComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import Board from "../Board";
 import RenderPart from "../render-parts/RenderPart";
 import WorkerHut from "../entities/WorkerHut";
 import WarriorHut from "../entities/WarriorHut";
-
-const DOOR_HEIGHT = 48;
 
 const DOOR_OPEN_TICKS = Math.floor(0.15 * Settings.TPS);
 const DOOR_REMAIN_TICKS = Math.floor(0.175 * Settings.TPS);
@@ -55,7 +53,7 @@ class HutComponent extends ServerComponent<ServerComponentType.hut> {
    /** Amount the door should swing outwards from 0 to 1 */
    private doorSwingAmount: number;
 
-   constructor(entity: GameObject, data: HutComponentData, doorRenderParts: ReadonlyArray<RenderPart>) {
+   constructor(entity: Entity, data: HutComponentData, doorRenderParts: ReadonlyArray<RenderPart>) {
       super(entity);
       
       this.doorSwingAmount = calculateDoorSwingAmount(data.lastDoorSwingTicks);

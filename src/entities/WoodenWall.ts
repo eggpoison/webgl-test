@@ -6,7 +6,7 @@ import Board from "../Board";
 import Particle from "../Particle";
 import { addMonocolourParticleToBufferContainer, ParticleRenderLayer } from "../rendering/particle-rendering";
 import HealthComponent from "../entity-components/HealthComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
 export function createWoodShardParticle(originX: number, originY: number, offset: number): void {
    const spawnOffsetDirection = 2 * Math.PI * Math.random();
@@ -101,7 +101,7 @@ export function createWoodenWallSpawnParticles(originX: number, originY: number)
    }
 }
 
-class WoodenWall extends GameObject {
+class WoodenWall extends Entity {
    private static readonly NUM_DAMAGE_STAGES = 7;
    private static readonly MAX_HEALTH = 25;
 
@@ -181,7 +181,7 @@ class WoodenWall extends GameObject {
       // @Speed @Hack
       // Don't play death effects if the wall was replaced by a blueprint
       for (const chunk of this.chunks) {
-         for (const entity of chunk.getGameObjects()) {
+         for (const entity of chunk.entities) {
             if (entity.type !== EntityType.blueprintEntity) {
                continue;
             }

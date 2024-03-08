@@ -7,11 +7,11 @@ import Board from "../Board";
 import { BloodParticleSize, createBlueBloodParticle, createBlueBloodParticleFountain, createBlueBloodPoolParticle, createSnowParticle } from "../particles";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import FrozenYetiComponent from "../entity-components/FrozenYetiComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import HealthComponent from "../entity-components/HealthComponent";
 import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 
-class FrozenYeti extends GameObject {
+class FrozenYeti extends Entity {
    private static readonly SIZE = 152;
    private static readonly HEAD_SIZE = 80;
    private static readonly HEAD_DISTANCE = 60;

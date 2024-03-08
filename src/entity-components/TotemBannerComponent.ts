@@ -2,7 +2,7 @@ import { ServerComponentType, TotemBannerComponentData, TribeTotemBanner, TribeT
 import ServerComponent from "./ServerComponent";
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
 const BANNER_LAYER_DISTANCES = [34, 52, 65];
 
@@ -10,7 +10,7 @@ class TotemBannerComponent extends ServerComponent<ServerComponentType.totemBann
    private readonly banners: Record<number, TribeTotemBanner> = {};
    private readonly bannerRenderParts: Record<number, RenderPart> = {};
 
-   constructor(entity: GameObject, data: TotemBannerComponentData) {
+   constructor(entity: Entity, data: TotemBannerComponentData) {
       super(entity);
 
       this.updateBanners(data.banners);

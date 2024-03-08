@@ -1,7 +1,7 @@
 import { CookingComponentData, ServerComponentType, randFloat } from "webgl-test-shared";
 import ServerComponent from "./ServerComponent";
 import Board, { Light } from "../Board";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
 class CookingComponent extends ServerComponent<ServerComponentType.cooking> {
    public heatingProgress: number;
@@ -10,7 +10,7 @@ class CookingComponent extends ServerComponent<ServerComponentType.cooking> {
    // @Cleanup: Instead of doing this, just attach the light to the entity (and make the attach system destroy the light when the entity is removed)
    private readonly light: Light;
 
-   constructor(entity: GameObject, data: CookingComponentData) {
+   constructor(entity: Entity, data: CookingComponentData) {
       super(entity);
 
       this.heatingProgress = data.heatingProgress;

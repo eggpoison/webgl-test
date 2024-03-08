@@ -5,9 +5,9 @@ import ResearchBenchComponent from "../entity-components/ResearchBenchComponent"
 import TribeComponent from "../entity-components/TribeComponent";
 import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 import HealthComponent from "../entity-components/HealthComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
-class ResearchBench extends GameObject {
+class ResearchBench extends Entity {
    public static readonly WIDTH = 32 * 4;
    public static readonly HEIGHT = 20 * 4;
 

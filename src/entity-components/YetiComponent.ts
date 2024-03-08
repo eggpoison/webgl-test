@@ -1,6 +1,6 @@
 import { ServerComponentType, YetiComponentData } from "webgl-test-shared";
 import ServerComponent from "./ServerComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import RenderPart from "../render-parts/RenderPart";
 
 class YetiComponent extends ServerComponent<ServerComponentType.yeti> {
@@ -9,7 +9,7 @@ class YetiComponent extends ServerComponent<ServerComponentType.yeti> {
    public lastAttackProgress: number;
    public attackProgress: number;
 
-   constructor(entity: GameObject, data: YetiComponentData) {
+   constructor(entity: Entity, data: YetiComponentData) {
       super(entity);
 
       this.lastAttackProgress = data.attackProgress;

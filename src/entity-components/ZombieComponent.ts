@@ -1,11 +1,11 @@
 import { ServerComponentType, ZombieComponentData } from "webgl-test-shared";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import ServerComponent from "./ServerComponent";
 
 class ZombieComponent extends ServerComponent<ServerComponentType.zombie> {
    public readonly zombieType: number;
    
-   constructor(entity: GameObject, data: ZombieComponentData) {
+   constructor(entity: Entity, data: ZombieComponentData) {
       super(entity);
 
       this.zombieType = data.zombieType;

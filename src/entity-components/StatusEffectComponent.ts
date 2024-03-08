@@ -1,6 +1,6 @@
 import { ServerComponentType, StatusEffect, StatusEffectComponentData, StatusEffectData, customTickIntervalHasPassed, lerp, randFloat, randItem } from "webgl-test-shared";
 import ServerComponent from "./ServerComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import { playSound } from "../sound";
 import Board, { Light } from "../Board";
 import Particle from "../Particle";
@@ -19,7 +19,7 @@ class StatusEffectComponent extends ServerComponent<ServerComponentType.statusEf
    
    public statusEffects = new Array<StatusEffectData>()
 
-   constructor(entity: GameObject, data: StatusEffectComponentData) {
+   constructor(entity: Entity, data: StatusEffectComponentData) {
       super(entity);
 
       this.updateFromData(data);

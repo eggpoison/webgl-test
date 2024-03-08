@@ -6,9 +6,9 @@ import HealthComponent from "../entity-components/HealthComponent";
 import InventoryComponent from "../entity-components/InventoryComponent";
 import TribeComponent from "../entity-components/TribeComponent";
 import StatusEffectComponent from "../entity-components/StatusEffectComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
-class Barrel extends GameObject {
+class Barrel extends Entity {
    public static readonly SIZE = 80;
 
    constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.barrel>) {

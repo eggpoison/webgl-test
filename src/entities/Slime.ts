@@ -4,9 +4,9 @@ import SlimeComponent from "../entity-components/SlimeComponent";
 import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 import HealthComponent from "../entity-components/HealthComponent";
 import PhysicsComponent from "../entity-components/PhysicsComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
-class Slime extends GameObject {
+class Slime extends Entity {
    public static readonly SIZES: ReadonlyArray<number> = [
       64, // small
       88, // medium

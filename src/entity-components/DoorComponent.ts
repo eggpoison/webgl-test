@@ -1,13 +1,13 @@
 import { DoorComponentData, DoorToggleType, ServerComponentType } from "webgl-test-shared";
 import ServerComponent from "./ServerComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import { playSound } from "../sound";
 
 class DoorComponent extends ServerComponent<ServerComponentType.door> {
    public toggleType: DoorToggleType;
    public openProgress: number;
 
-   constructor(entity: GameObject, data: DoorComponentData) {
+   constructor(entity: Entity, data: DoorComponentData) {
       super(entity);
 
       this.toggleType = data.toggleType;

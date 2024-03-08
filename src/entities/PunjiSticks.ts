@@ -3,15 +3,15 @@ import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { playSound } from "../sound";
 import { createFlyParticle } from "../particles";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 
-export function punjiSticksAreAttachedToWall(entity: GameObject): boolean {
+export function punjiSticksAreAttachedToWall(entity: Entity): boolean {
    const hitbox = entity.hitboxes[0] as RectangularHitbox;
    return Math.abs(hitbox.height - (32 - 0.05)) < 0.01;
 }
 
-class FloorPunjiSticks extends GameObject {
+class FloorPunjiSticks extends Entity {
    private ticksSinceLastFly = 0;
    private ticksSinceLastFlySound = 0;
 

@@ -3,10 +3,10 @@ import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import Board from "../Board";
 import { createEmberParticle, createSmokeParticle } from "../particles";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import CookingComponent from "../entity-components/CookingComponent";
 
-class Campfire extends GameObject {
+class Campfire extends Entity {
    public static readonly SIZE = 104;
 
    constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.campfire>) {

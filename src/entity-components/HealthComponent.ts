@@ -1,6 +1,6 @@
 import { ServerComponentType, HealthComponentData, lerp, Settings } from "webgl-test-shared";
 import ServerComponent from "./ServerComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
 /** Amount of seconds that the hit flash occurs for */
 const ATTACK_HIT_FLASH_DURATION = 0.4;
@@ -12,7 +12,7 @@ class HealthComponent extends ServerComponent<ServerComponentType.health> {
 
    public secondsSinceLastHit = 99999;
    
-   constructor(entity: GameObject, data: HealthComponentData) {
+   constructor(entity: Entity, data: HealthComponentData) {
       super(entity);
 
       this.health = data.health;

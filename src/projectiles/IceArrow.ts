@@ -4,11 +4,11 @@ import Board from "../Board";
 import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import { playSound } from "../sound";
 import { createSnowflakeParticle } from "../particles";
 
-class IceArrow extends GameObject {
+class IceArrow extends Entity {
    constructor(position: Point, id: number, ageTicks: number) {
       super(position, id, EntityType.iceArrow, ageTicks);
 

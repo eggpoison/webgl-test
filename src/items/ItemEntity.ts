@@ -1,5 +1,5 @@
-import { EntityComponentsData, EntityType, ItemType, Point, ServerComponentType, randFloat } from "webgl-test-shared";
-import GameObject from "../GameObject";
+import { EntityComponentsData, EntityType, Point, ServerComponentType, randFloat } from "webgl-test-shared";
+import Entity from "../Entity";
 import RenderPart from "../render-parts/RenderPart";
 import CLIENT_ITEM_INFO_RECORD from "../client-item-info";
 import Board from "../Board";
@@ -62,7 +62,7 @@ export function createDeepFrostHeartBloodParticles(originX: number, originY: num
    }
 }
 
-class ItemEntity extends GameObject {
+class ItemEntity extends Entity {
    constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.itemEntity>) {
       super(position, id, EntityType.itemEntity, ageTicks);
       

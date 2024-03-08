@@ -6,7 +6,7 @@ import { ENTITY_TEXTURE_ATLAS, ENTITY_TEXTURE_ATLAS_SIZE, ENTITY_TEXTURE_SLOT_IN
 import { getHoveredShapeType } from "../components/game/BlueprintMenu";
 import Board from "../Board";
 import { getSelectedEntityID } from "../entity-selection";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import { ATLAS_SLOT_SIZE } from "../texture-atlases/texture-atlas-stitching";
 import { BALLISTA_AMMO_BOX_OFFSET_X, BALLISTA_AMMO_BOX_OFFSET_Y, BALLISTA_GEAR_X, BALLISTA_GEAR_Y } from "../entities/Ballista";
 
@@ -363,7 +363,7 @@ const calculateVertices = (placePosition: Point, placeRotation: number, entityTy
    return vertices;
 }
 
-const getStructureShapePosition = (existingStructure: GameObject, shapeType: BuildingShapeType, blueprintRotation: number): Point => {
+const getStructureShapePosition = (existingStructure: Entity, shapeType: BuildingShapeType, blueprintRotation: number): Point => {
    switch (shapeType) {
       case BlueprintBuildingType.door:
       case BlueprintBuildingType.tunnel: {
@@ -386,7 +386,7 @@ interface GhostInfo {
    readonly tint: [number, number, number];
 }
 
-const snapRotationToPlayer = (structure: GameObject, rotation: number): number => {
+const snapRotationToPlayer = (structure: Entity, rotation: number): number => {
    const playerDirection = Player.instance!.position.calculateAngleBetween(structure.position);
    let snapRotation = playerDirection - rotation;
 

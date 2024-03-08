@@ -3,13 +3,13 @@ import RenderPart from "../render-parts/RenderPart";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createSnowParticle, createWhiteSmokeParticle } from "../particles";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import YetiComponent from "../entity-components/YetiComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import { ClientComponentType } from "../entity-components/components";
 import FootprintComponent from "../entity-components/FootprintComponent";
 import HealthComponent from "../entity-components/HealthComponent";
 import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 
-class Yeti extends GameObject {
+class Yeti extends Entity {
    private static readonly SIZE = 128;
 
    private static readonly PAW_START_ANGLE = Math.PI/3;

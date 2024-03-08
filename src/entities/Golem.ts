@@ -5,9 +5,9 @@ import HealthComponent from "../entity-components/HealthComponent";
 import PhysicsComponent from "../entity-components/PhysicsComponent";
 import { ClientComponentType } from "../entity-components/components";
 import FootprintComponent from "../entity-components/FootprintComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
-class Golem extends GameObject {
+class Golem extends Entity {
    constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.golem>) {
       super(position, id, EntityType.golem, ageTicks);
 

@@ -6,9 +6,9 @@ import TribeComponent from "../entity-components/TribeComponent";
 import HealthComponent from "../entity-components/HealthComponent";
 import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 import TotemBannerComponent from "../entity-components/TotemBannerComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
-class TribeTotem extends GameObject {
+class TribeTotem extends Entity {
    public static readonly SIZE = 120;
 
    constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.tribeTotem>) {

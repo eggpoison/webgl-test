@@ -6,9 +6,9 @@ import CactusComponent from "../entity-components/CactusComponent";
 import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 import { createCactusSpineParticle } from "../particles";
 import HealthComponent from "../entity-components/HealthComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
-class Cactus extends GameObject {
+class Cactus extends Entity {
    public static readonly RADIUS = 40;
 
    constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.cactus>) {

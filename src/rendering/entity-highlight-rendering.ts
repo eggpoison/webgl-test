@@ -2,7 +2,7 @@ import { EntityType, Point, rotateXAroundOrigin, rotateXAroundPoint, rotateYArou
 import Board from "../Board";
 import { getHighlightedEntityID, getSelectedEntityID } from "../entity-selection";
 import { createWebGLProgram, gl, CAMERA_UNIFORM_BUFFER_BINDING_INDEX, TIME_UNIFORM_BUFFER_BINDING_INDEX, CIRCLE_VERTEX_COUNT } from "../webgl";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import { BALLISTA_AMMO_BOX_OFFSET_X, BALLISTA_AMMO_BOX_OFFSET_Y } from "../entities/Ballista";
 
 const THICKNESS = 4;
@@ -173,7 +173,7 @@ const addSideVertices = (vertices: Array<number>, centerX: number, centerY: numb
    );
 }
 
-const calculateRectVertices = (entity: GameObject): ReadonlyArray<number> => {
+const calculateRectVertices = (entity: Entity): ReadonlyArray<number> => {
    const vertices = new Array<number>();
 
    const halfWidth = HIGHLIGHTABLE_STRUCTURE_WIDTHS[entity.type]! / 2;
@@ -199,7 +199,7 @@ const calculateRectVertices = (entity: GameObject): ReadonlyArray<number> => {
    return vertices;
 }
 
-const calculateCircleVertices = (entity: GameObject): ReadonlyArray<number> => {
+const calculateCircleVertices = (entity: Entity): ReadonlyArray<number> => {
    const radius = HIGHLIGHTABLE_STRUCTURE_WIDTHS[entity.type]! / 2;
 
    const vertices = new Array<number>();

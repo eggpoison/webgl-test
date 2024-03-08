@@ -5,7 +5,7 @@ import Board from "./Board";
 import Hitbox from "./hitboxes/Hitbox";
 import CircularHitbox from "./hitboxes/CircularHitbox";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
-import GameObject from "./GameObject";
+import Entity from "./Entity";
 import Client from "./client/Client";
 import { latencyGameState } from "./game-state/game-states";
 import { isHoveringInBlueprintMenu } from "./components/game/BlueprintMenu";
@@ -40,7 +40,7 @@ export function getSelectedEntityID(): number {
    return selectedEntityID;
 }
 
-export function getSelectedEntity(): GameObject {
+export function getSelectedEntity(): Entity {
    if (!Board.entityRecord.hasOwnProperty(selectedEntityID)) {
       throw new Error("Can't select: Entity with ID " + selectedEntityID + " doesn't exist");
    }
@@ -66,7 +66,7 @@ export function deselectHighlightedEntity(): void {
    highlightedEntityID = -1;
 }
 
-const entityCanBeSelected = (entity: GameObject): boolean => {
+const entityCanBeSelected = (entity: Entity): boolean => {
    if (entity.type === EntityType.woodenWall) {
       // Walls can be selected if the player is holding a hammer
       const selectedItem = getPlayerSelectedItem();
@@ -106,7 +106,7 @@ const getEntityID = (doPlayerProximityCheck: boolean): number => {
    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
          const chunk = Board.getChunk(chunkX, chunkY);
-         for (const entity of chunk.getGameObjects()) {
+         for (const entity of chunk.entities) {
             if (!entityCanBeSelected(entity)) {
                continue;
             }

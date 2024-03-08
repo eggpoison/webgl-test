@@ -19,7 +19,7 @@ import Hitbox from "./hitboxes/Hitbox";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import { closeTechTree, techTreeIsOpen } from "./components/game/TechTree";
 import WarriorHut from "./entities/WarriorHut";
-import GameObject from "./GameObject";
+import Entity from "./Entity";
 import { attemptStructureSelect, deselectSelectedEntity, getSelectedEntityID } from "./entity-selection";
 import { playSound } from "./sound";
 import { InventoryMenuType, InventorySelector_inventoryIsOpen, InventorySelector_setInventoryMenuType } from "./components/game/inventories/InventorySelector";
@@ -590,7 +590,7 @@ const calculateRegularPlacePosition = (placeableEntityInfo: PlaceableEntityInfo)
    return new Point(placePositionX, placePositionY);
 }
 
-const entityIsPlacedOnWall = (entity: GameObject): boolean => {
+const entityIsPlacedOnWall = (entity: Entity): boolean => {
    if (entity.type === EntityType.woodenSpikes) {
       return spikesAreAttachedToWall(entity);
    } else if (entity.type === EntityType.punjiSticks) {
@@ -599,7 +599,7 @@ const entityIsPlacedOnWall = (entity: GameObject): boolean => {
    return false;
 }
 
-const calculateStructureSnapPositions = (snapOrigin: Point, snapEntity: GameObject, placeRotation: number, isPlacedOnWall: boolean, placeableEntityInfo: PlaceableEntityInfo): ReadonlyArray<Point> => {
+const calculateStructureSnapPositions = (snapOrigin: Point, snapEntity: Entity, placeRotation: number, isPlacedOnWall: boolean, placeableEntityInfo: PlaceableEntityInfo): ReadonlyArray<Point> => {
    const snapPositions = new Array<Point>();
    for (let i = 0; i < 4; i++) {
       const direction = i * Math.PI / 2 + snapEntity.rotation;
@@ -672,11 +672,11 @@ export function calculateSnapInfo(placeableEntityInfo: PlaceableEntityInfo): Bui
    const minChunkY = Math.max(Math.floor((regularPlacePosition.y - Settings.STRUCTURE_SNAP_RANGE) / Settings.CHUNK_UNITS), 0);
    const maxChunkY = Math.min(Math.floor((regularPlacePosition.y + Settings.STRUCTURE_SNAP_RANGE) / Settings.CHUNK_UNITS), Settings.BOARD_SIZE - 1);
    
-   const snappableEntities = new Array<GameObject>();
+   const snappableEntities = new Array<Entity>();
    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
          const chunk = Board.getChunk(chunkX, chunkY);
-         for (const entity of chunk.getGameObjects()) {
+         for (const entity of chunk.entities) {
             const distance = regularPlacePosition.calculateDistanceBetween(entity.position);
             if (distance > Settings.STRUCTURE_SNAP_RANGE) {
                continue;
@@ -814,7 +814,7 @@ export function canPlaceItem(placePosition: Point, placeRotation: number, item: 
    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
          const chunk = Board.getChunk(chunkX, chunkY);
-         for (const entity of chunk.getGameObjects()) {
+         for (const entity of chunk.entities) {
             for (const hitbox of entity.hitboxes) {   
                if (placeTestHitbox.isColliding(hitbox)) {
                   return false;

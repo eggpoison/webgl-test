@@ -1,5 +1,5 @@
 import { ArmourItemType, GloveItemType, ItemType, ServerComponentType } from "webgl-test-shared";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import RenderPart from "../render-parts/RenderPart";
 import Component from "./Component";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
@@ -79,7 +79,7 @@ class EquipmentComponent extends Component {
    // @Incomplete
    public hasFrostShield: boolean;
 
-   constructor(entity: GameObject) {
+   constructor(entity: Entity) {
       super(entity);
 
       this.hasFrostShield = false;

@@ -1,5 +1,5 @@
 import { BallistaAmmoType, EntityType, ItemType, ServerComponentType, TurretComponentData, lerp } from "webgl-test-shared";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import ServerComponent from "./ServerComponent";
 import { playSound } from "../sound";
 import RenderPart from "../render-parts/RenderPart";
@@ -60,7 +60,7 @@ const getChargeTextureSource = (entityType: TurretType, chargeProgress: number):
    }
 }
 
-const getProjectilePullbackAmount = (entity: GameObject, chargeProgress: number): number => {
+const getProjectilePullbackAmount = (entity: Entity, chargeProgress: number): number => {
    switch (entity.type as TurretType) {
       case EntityType.slingTurret: {
          return lerp(0, -21, chargeProgress);
@@ -73,7 +73,7 @@ const getProjectilePullbackAmount = (entity: GameObject, chargeProgress: number)
    }
 }
 
-const playFireSound = (entity: GameObject): void => {
+const playFireSound = (entity: Entity): void => {
    switch (entity.type as TurretType) {
       case EntityType.slingTurret: {
          playSound("sling-turret-fire.mp3", 0.2, 1, entity.position.x, entity.position.y);
@@ -86,7 +86,7 @@ const playFireSound = (entity: GameObject): void => {
    }
 }
 
-const getProjectileTextureSource = (entity: GameObject): string => {
+const getProjectileTextureSource = (entity: Entity): string => {
    switch (entity.type as TurretType) {
       case EntityType.slingTurret: {
          return "projectiles/sling-rock.png";
@@ -117,7 +117,7 @@ export class TurretComponent extends ServerComponent<ServerComponentType.turret>
    // @Cleanup: Do we need to store this?
    private chargeProgress: number;
    
-   constructor(entity: GameObject, data: TurretComponentData, aimingRenderPart: RenderPart, pivotingRenderPart: RenderPart, gearRenderParts: ReadonlyArray<RenderPart>) {
+   constructor(entity: Entity, data: TurretComponentData, aimingRenderPart: RenderPart, pivotingRenderPart: RenderPart, gearRenderParts: ReadonlyArray<RenderPart>) {
       super(entity);
 
       this.chargeProgress = data.chargeProgress;

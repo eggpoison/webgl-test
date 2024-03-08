@@ -5,9 +5,9 @@ import { TurretComponent } from "../entity-components/TurretComponent";
 import TribeComponent from "../entity-components/TribeComponent";
 import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 import HealthComponent from "../entity-components/HealthComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
-class SlingTurret extends GameObject {
+class SlingTurret extends Entity {
    constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.slingTurret>) {
       super(position, id, EntityType.slingTurret, ageTicks);
 

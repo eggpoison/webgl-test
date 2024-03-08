@@ -2,10 +2,10 @@ import { EntityComponentsData, EntityType, Point, ServerComponentType } from "we
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import HealthComponent from "../entity-components/HealthComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 
-class WoodenTunnel extends GameObject {
+class WoodenTunnel extends Entity {
    constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.woodenTunnel>) {
       super(position, id, EntityType.woodenTunnel, ageTicks);
 

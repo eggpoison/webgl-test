@@ -1,7 +1,7 @@
 import { FrozenYetiAttackType, FrozenYetiComponentData, ServerComponentType, Settings, randFloat, randInt } from "webgl-test-shared";
 import ServerComponent from "./ServerComponent";
 import RenderPart from "../render-parts/RenderPart";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import FrozenYeti from "../entities/FrozenYeti";
 import { createBiteParticle, createRockParticle, createSnowParticle, createWhiteSmokeParticle } from "../particles";
 import Board from "../Board";
@@ -17,7 +17,7 @@ class FrozenYetiComponent extends ServerComponent<ServerComponentType.frozenYeti
    public attackStage: number;
    public stageProgress: number;
 
-   constructor(entity: GameObject, data: FrozenYetiComponentData, headRenderPart: RenderPart, pawRenderParts: ReadonlyArray<RenderPart>) {
+   constructor(entity: Entity, data: FrozenYetiComponentData, headRenderPart: RenderPart, pawRenderParts: ReadonlyArray<RenderPart>) {
       super(entity);
 
       this.attackType = data.attackType;

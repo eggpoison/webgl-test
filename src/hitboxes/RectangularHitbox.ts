@@ -1,7 +1,7 @@
 import { circleAndRectangleDoIntersect, HitboxVertexPositions, Point, rectanglePointsDoIntersect, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import Hitbox from "./Hitbox";
 import CircularHitbox from "./CircularHitbox";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
 class RectangularHitbox extends Hitbox {
    public width: number;
@@ -29,8 +29,8 @@ class RectangularHitbox extends Hitbox {
       this.halfDiagonalLength = Math.sqrt(Math.pow(this.width / 2, 2) + Math.pow(this.height / 2, 2));
    }
 
-   public updateFromGameObject(gameObject: GameObject): void {
-      super.updateFromGameObject(gameObject);
+   public updateFromEntity(gameObject: Entity): void {
+      super.updateFromEntity(gameObject);
       this.externalRotation = gameObject.rotation;
    }
 

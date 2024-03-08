@@ -3,9 +3,9 @@ import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { ClientComponentType } from "../entity-components/components";
 import FootprintComponent from "../entity-components/FootprintComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
-class Pebblum extends GameObject {
+class Pebblum extends Entity {
    constructor(position: Point, id: number, ageTicks: number) {
       super(position, id, EntityType.pebblum, ageTicks);
 

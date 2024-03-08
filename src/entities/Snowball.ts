@@ -6,7 +6,7 @@ import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import SnowballComponent from "../entity-components/SnowballComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
 const getTextureSource = (size: SnowballSize): string => {
    switch (size) {
@@ -19,7 +19,7 @@ const getTextureSource = (size: SnowballSize): string => {
    }
 }
 
-class Snowball extends GameObject {
+class Snowball extends Entity {
    constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.snowball>) {
       super(position, id, EntityType.snowball, ageTicks);
 

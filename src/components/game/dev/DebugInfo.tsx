@@ -1,14 +1,14 @@
 import { useEffect, useReducer, useRef, useState } from "react";
-import { GameObjectDebugData, Settings, TileType, roundNum } from "webgl-test-shared";
+import { EntityDebugData, Settings, TileType, roundNum } from "webgl-test-shared";
 import { Tile } from "../../../Tile";
 import Board from "../../../Board";
-import GameObject from "../../../GameObject";
+import Entity from "../../../Entity";
 
 export let updateDebugInfoTile: (tile: Tile | null) => void = () => {};
 
-export let updateDebugInfoEntity: (entity: GameObject | null) => void = () => {};
+export let updateDebugInfoEntity: (entity: Entity | null) => void = () => {};
 
-export let setDebugInfoDebugData: (debugData: GameObjectDebugData | null) => void = () => {};
+export let setDebugInfoDebugData: (debugData: EntityDebugData | null) => void = () => {};
 
 export let refreshDebugInfo: () => void = () => {};
 
@@ -42,8 +42,8 @@ const TileDebugInfo = ({ tile }: TileDebugInfoProps) => {
 }
 
 interface EntityDebugInfoProps {
-   readonly entity: GameObject;
-   readonly debugData: GameObjectDebugData | null;
+   readonly entity: Entity;
+   readonly debugData: EntityDebugData | null;
 }
 const EntityDebugInfo = ({ entity, debugData }: EntityDebugInfoProps) => {
    const displayX = roundNum(entity.position.x, 0);
@@ -90,8 +90,8 @@ const EntityDebugInfo = ({ entity, debugData }: EntityDebugInfoProps) => {
 
 const DebugInfo = () => {
    const [tile, setTile] = useState<Tile | null>(null);
-   const [entity, setEntity] = useState<GameObject | null>(null);
-   const debugData = useRef<GameObjectDebugData | null>(null);
+   const [entity, setEntity] = useState<Entity | null>(null);
+   const debugData = useRef<EntityDebugData | null>(null);
    const [, forceUpdate] = useReducer(x => x + 1, 0);
 
    useEffect(() => {
@@ -99,7 +99,7 @@ const DebugInfo = () => {
          setTile(tile);
       }
       
-      updateDebugInfoEntity = (entity: GameObject | null): void => {
+      updateDebugInfoEntity = (entity: Entity | null): void => {
          setEntity(entity);
       }
 
@@ -107,7 +107,7 @@ const DebugInfo = () => {
          forceUpdate();
       }
 
-      setDebugInfoDebugData = (newDebugData: GameObjectDebugData | null): void => {
+      setDebugInfoDebugData = (newDebugData: EntityDebugData | null): void => {
          debugData.current = newDebugData;
       }
    }, []);

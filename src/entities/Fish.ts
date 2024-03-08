@@ -5,7 +5,7 @@ import Board from "../Board";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createWaterSplashParticle } from "../particles";
 import { AudioFilePath, playSound } from "../sound";
 import FishComponent from "../entity-components/FishComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import HealthComponent from "../entity-components/HealthComponent";
 import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 
@@ -16,7 +16,7 @@ const TEXTURE_SOURCES: Record<FishColour, string> = {
    [FishColour.lime]: "entities/fish/fish-lime.png"
 };
 
-class Fish extends GameObject {
+class Fish extends Entity {
    constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.fish>) {
       super(position, id, EntityType.fish, ageTicks);
 

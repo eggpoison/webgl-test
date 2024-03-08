@@ -1,6 +1,6 @@
 import { DeathInfo, ServerComponentType, Settings, TombstoneComponentData, randInt } from "webgl-test-shared";
 import ServerComponent from "./ServerComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import { createDirtParticle } from "../particles";
 import { playSound, AudioFilePath } from "../sound";
 
@@ -10,7 +10,7 @@ class TombstoneComponent extends ServerComponent<ServerComponentType.tombstone> 
    private zombieSpawnY: number;
    public readonly deathInfo: DeathInfo | null;
 
-   constructor(entity: GameObject, data: TombstoneComponentData) {
+   constructor(entity: Entity, data: TombstoneComponentData) {
       super(entity);
 
       this.zombieSpawnProgress = data.zombieSpawnProgress;

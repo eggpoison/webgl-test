@@ -1,6 +1,6 @@
 import { ServerComponentType, Settings, SlimeComponentData, SlimeSize, lerp, randFloat } from "webgl-test-shared";
 import ServerComponent from "./ServerComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import RenderPart from "../render-parts/RenderPart";
 import Slime from "../entities/Slime";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
@@ -35,7 +35,7 @@ class SlimeComponent extends ServerComponent<ServerComponentType.slime> {
 
    private internalTickCounter = 0;
 
-   constructor(entity: GameObject, data: SlimeComponentData) {
+   constructor(entity: Entity, data: SlimeComponentData) {
       super(entity);
 
       this.size = data.size;

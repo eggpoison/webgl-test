@@ -1,5 +1,5 @@
 import { EntityType, Point, Settings, lerp, randFloat } from "webgl-test-shared";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import Board from "../Board";
 import { ParticleRenderLayer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
@@ -36,7 +36,7 @@ const createParticle = (spawnPositionX: number, spawnPositionY: number): void =>
    Board.lowTexturedParticles.push(particle);
 }
 
-class SpitPoison extends GameObject {
+class SpitPoison extends Entity {
    private static readonly MAX_RANGE = 55;
 
    private readonly trackSource: AudioBufferSourceNode;

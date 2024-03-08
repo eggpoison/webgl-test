@@ -1,11 +1,11 @@
 import { RiverSteppingStoneData } from "webgl-test-shared";
-import GameObject from "./GameObject";
+import Entity from "./Entity";
 
 class Chunk {
    public readonly x: number;
    public readonly y: number;
 
-   private readonly gameObjects = new Array<GameObject>();
+   public readonly entities = new Array<Entity>();
 
    public readonly riverSteppingStones = new Array<RiverSteppingStoneData>();
 
@@ -14,17 +14,13 @@ class Chunk {
       this.y = y;
    }
 
-   public addGameObject(gameObject: GameObject): void {
-      this.gameObjects.push(gameObject);
+   public addEntity(entity: Entity): void {
+      this.entities.push(entity);
    }
 
-   public removeGameObject(gameObject: GameObject): void {
-      const idx = this.gameObjects.indexOf(gameObject);
-      this.gameObjects.splice(idx, 1);
-   }
-
-   public getGameObjects(): Array<GameObject> {
-      return this.gameObjects;
+   public removeEntity(entity: Entity): void {
+      const idx = this.entities.indexOf(entity);
+      this.entities.splice(idx, 1);
    }
 }
 

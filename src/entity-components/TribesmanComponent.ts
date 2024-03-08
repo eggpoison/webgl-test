@@ -1,6 +1,6 @@
 import { ServerComponentType, Settings, TribeType, TribesmanAIType, TribesmanComponentData, randInt, randItem } from "webgl-test-shared";
 import ServerComponent from "./ServerComponent";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import { AudioFilePath, playSound } from "../sound";
 
 const GOBLIN_ANGRY_SOUNDS: ReadonlyArray<AudioFilePath> = ["goblin-angry-1.mp3", "goblin-angry-2.mp3", "goblin-angry-3.mp3", "goblin-angry-4.mp3"];
@@ -10,7 +10,7 @@ const GOBLIN_AMBIENT_SOUNDS: ReadonlyArray<AudioFilePath> = ["goblin-ambient-1.m
 class TribesmanComponent extends ServerComponent<ServerComponentType.tribesman> {
    private aiType: TribesmanAIType;
 
-   constructor(entity: GameObject, data: TribesmanComponentData) {
+   constructor(entity: Entity, data: TribesmanComponentData) {
       super(entity);
 
       this.aiType = data.aiType;

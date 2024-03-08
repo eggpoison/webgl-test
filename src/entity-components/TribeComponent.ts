@@ -1,5 +1,5 @@
 import { ServerComponentType, EnemyTribeData, TribeComponentData, TribeType } from "webgl-test-shared";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import ServerComponent from "./ServerComponent";
 import Game from "../Game";
 
@@ -7,7 +7,7 @@ class TribeComponent extends ServerComponent<ServerComponentType.tribe> {
    public readonly tribeID: number;
    public readonly tribeType: TribeType;
 
-   constructor(entity: GameObject, data: TribeComponentData) {
+   constructor(entity: Entity, data: TribeComponentData) {
       super(entity);
       
       this.tribeID = data.tribeID;
