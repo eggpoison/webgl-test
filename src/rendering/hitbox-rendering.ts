@@ -61,6 +61,10 @@ export function renderEntityHitboxes(): void {
    const gameObjects = calculateVisibleGameObjects();
    if (gameObjects.length === 0) return;
 
+   // @Speed
+   // @Speed
+   // @Speed
+
    // Calculate vertices
    const vertices = new Array<number>();
    for (const gameObject of gameObjects) {

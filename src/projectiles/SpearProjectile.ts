@@ -5,8 +5,8 @@ import GameObject from "../GameObject";
 import { playSound } from "../sound";
 
 class SpearProjectile extends GameObject {
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
-      super(position, id, EntityType.spearProjectile, ageTicks, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number) {
+      super(position, id, EntityType.spearProjectile, ageTicks);
 
       this.attachRenderPart(
          new RenderPart(

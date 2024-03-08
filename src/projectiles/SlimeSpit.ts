@@ -1,4 +1,4 @@
-import { EntityType, Point, Settings, lerp, randFloat } from "webgl-test-shared";
+import { EntityComponentsData, EntityType, Point, Settings, lerp, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import GameObject from "../GameObject";
@@ -12,10 +12,12 @@ const POISON_COLOUR_HIGH = [77/255, 173/255, 38/255];
 
 class SlimeSpit extends GameObject {
    private readonly renderParts: ReadonlyArray<RenderPart>;
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, size: number) {
-      super(position, id, EntityType.slimeSpit, ageTicks, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.slimeSpit>) {
+      super(position, id, EntityType.slimeSpit, ageTicks);
 
       const renderParts = new Array<RenderPart>();
+
+      // @Incomplete: SIZE DOESN'T ACTUALLY AFFECT ANYTHING
 
       const renderPart1 = new RenderPart(
          this,

@@ -1,4 +1,4 @@
-import { EntityType, ITEM_TYPE_RECORD, Point, Settings, circleAndRectangleDoIntersect, circlesDoIntersect, getTechByID } from "webgl-test-shared";
+import { ServerComponentType, EntityType, ITEM_TYPE_RECORD, Point, Settings, circleAndRectangleDoIntersect, circlesDoIntersect, getTechByID } from "webgl-test-shared";
 import Player, { getPlayerSelectedItem } from "./entities/Player";
 import Game from "./Game";
 import Board from "./Board";
@@ -9,8 +9,6 @@ import GameObject from "./GameObject";
 import Client from "./client/Client";
 import { latencyGameState } from "./game-state/game-states";
 import { isHoveringInBlueprintMenu } from "./components/game/BlueprintMenu";
-import Tribesman from "./entities/Tribesman";
-import Tombstone from "./entities/Tombstone";
 import { InventoryMenuType, InventorySelector_inventoryIsOpen, InventorySelector_setInventoryMenuType } from "./components/game/inventories/InventorySelector";
 
 const HIGHLIGHT_RANGE = 75;
@@ -191,8 +189,10 @@ export function attemptStructureSelect(): void {
          }
          case EntityType.tribeWorker:
          case EntityType.tribeWarrior: {
+            const entityTribeComponent = entity.getServerComponent(ServerComponentType.tribe);
+            const playerTribeComponent = Player.instance!.getServerComponent(ServerComponentType.tribe);
             // Only interact with tribesman inventories if the player is of the same tribe
-            if ((entity as Tribesman).tribeID !== null && ((entity as Tribesman).tribeID) === Player.instance!.tribeID) {
+            if (entityTribeComponent.tribeID === playerTribeComponent.tribeID) {
                InventorySelector_setInventoryMenuType(InventoryMenuType.tribesman);
             } else {
                InventorySelector_setInventoryMenuType(InventoryMenuType.none);
@@ -208,7 +208,8 @@ export function attemptStructureSelect(): void {
             break;
          }
          case EntityType.tombstone: {
-            if ((entity as Tombstone).deathInfo !== null) {
+            const tombstoneComponent = entity.getServerComponent(ServerComponentType.tombstone);
+            if (tombstoneComponent.deathInfo !== null) {
                InventorySelector_setInventoryMenuType(InventoryMenuType.tombstone);
             } else {
                InventorySelector_setInventoryMenuType(InventoryMenuType.none);

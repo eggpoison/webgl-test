@@ -1,18 +1,26 @@
-import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitData, Point, Settings, clampToBoardDimensions, TribeType, ItemType, InventoryData, TribeMemberAction, TileType, EntityType, ItemSlot, Item, TRIBE_INFO_RECORD, ItemData, rotateXAroundPoint, rotateYAroundPoint, DoorToggleType } from "webgl-test-shared";
+import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitData, Point, Settings, clampToBoardDimensions, TileType, EntityType, ItemSlot, Item, TRIBE_INFO_RECORD, rotateXAroundPoint, rotateYAroundPoint, DoorToggleType, EntityComponentsData, ServerComponentType, COLLISION_BITS, DEFAULT_COLLISION_MASK, randInt, InventoryUseInfoData, TribeMemberAction } from "webgl-test-shared";
 import Camera from "../Camera";
 import { setCraftingMenuAvailableRecipes, setCraftingMenuAvailableCraftingStations } from "../components/game/menus/CraftingMenu";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import { halfWindowHeight, halfWindowWidth } from "../webgl";
 import GameObject from "../GameObject";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
-import ItemEntity from "../items/DroppedItem";
-import TribeMember from "./TribeMember";
+import ItemEntity from "../items/ItemEntity";
+import TribeMember, { addTribeMemberRenderParts } from "./TribeMember";
 import Board from "../Board";
 import { definiteGameState, latencyGameState } from "../game-state/game-states";
-import { createFootprintParticle } from "../particles";
 import { keyIsPressed } from "../keyboard-input";
 import Hitbox from "../hitboxes/Hitbox";
-import WoodenDoor from "./WoodenDoor";
+import PlayerComponent from "../entity-components/PlayerComponent";
+import Game from "../Game";
+import { ClientComponentType } from "../entity-components/components";
+import FootprintComponent from "../entity-components/FootprintComponent";
+import InventoryComponent from "../entity-components/InventoryComponent";
+import InventoryUseComponent from "../entity-components/InventoryUseComponent";
+import HealthComponent from "../entity-components/HealthComponent";
+import StatusEffectComponent from "../entity-components/StatusEffectComponent";
+import TribeComponent from "../entity-components/TribeComponent";
+import EquipmentComponent from "../entity-components/EquipmentComponent";
 
 /** Maximum distance from a crafting station which will allow its recipes to be crafted. */
 const MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION = 250;
@@ -104,64 +112,175 @@ export function getPlayerSelectedItem(): ItemSlot {
    return item || null;
 }
 
-const entityHasHardCollision = (entity: GameObject): boolean => {
+const entityHasHardCollision = (entity: GameObject, collidingEntity: GameObject): boolean => {
    // Doors have hard collision when closing/closed
    if (entity.type === EntityType.woodenDoor) {
-      return (entity as WoodenDoor).toggleType === DoorToggleType.close || (entity as WoodenDoor).openProgress === 0;
+      const doorComponent = entity.getServerComponent(ServerComponentType.door);
+      return doorComponent.toggleType === DoorToggleType.close || doorComponent.openProgress === 0;
+   }
+
+   // Tunnels have hard collision outside and soft inside
+   if (entity.type === EntityType.woodenTunnel) {
+      const projX = Math.sin(entity.rotation + Math.PI / 2);
+      const projY = Math.cos(entity.rotation + Math.PI / 2);
+
+      const o = 8 - 0.05;
+      // const minX = entity.position.x + o * Math.sin(entity.rotation + Math.PI * 3/2);
+      // const minY = entity.position.y + o * Math.cos(entity.rotation + Math.PI * 3/2);
+      // const maxX = entity.position.x + o * Math.sin(entity.rotation + Math.PI / 2);
+      // const maxY = entity.position.y + o * Math.cos(entity.rotation + Math.PI / 2);
+      const minX = entity.position.x - o * projX;
+      const minY = entity.position.y - o * projY;
+      const maxX = entity.position.x + o * projX;
+      const maxY = entity.position.y + o * projY;
+
+      const minProj = minX * projX + minY * projY;
+      const maxProj = maxX * projX + maxY * projY;
+
+      const centerProj = collidingEntity.position.x * projX + collidingEntity.position.y * projY;
+      // console.log(centerProj);
+      if (centerProj <= minProj || centerProj >= maxProj) {
+         // console.log(minProj, centerProj, maxProj);
+         console.warn(Math.random());
+      }
+      return centerProj <= minProj || centerProj >= maxProj;
    }
    
    return entity.type === EntityType.woodenWall || entity.type === EntityType.woodenEmbrasure;
 }
 
+const createInitialInventoryUseInfo = (inventoryName: string): InventoryUseInfoData => {
+   return {
+      selectedItemSlot: 1,
+      inventoryName: inventoryName,
+      bowCooldownTicks: 0,
+      itemAttackCooldowns: {},
+      spearWindupCooldowns: {},
+      crossbowLoadProgressRecord: {},
+      foodEatingTimer: 0,
+      currentAction: TribeMemberAction.none,
+      lastAttackTicks: 0,
+      lastEatTicks: 0,
+      lastBowChargeTicks: 0,
+      lastSpearChargeTicks: 0,
+      lastBattleaxeChargeTicks: 0,
+      lastCrossbowLoadTicks: 0,
+      thrownBattleaxeItemID: -1
+   }
+}
+
 class Player extends TribeMember {
    /** The player entity associated with the current player. */
    public static instance: Player | null = null;
-
-   private numFootstepsTaken = 0;
-   private distanceTracker = 0;
    
-   public readonly username: string;
+   constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.player>) {
+      super(position, id, EntityType.player, ageTicks);
 
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, tribeID: number | null, tribeType: TribeType, armourSlotInventory: InventoryData, backpackSlotInventory: InventoryData, backpackInventory: InventoryData, rightActiveItem: ItemData | null, rightAction: TribeMemberAction, rightFoodEatingType: ItemType | -1, rightLastActionTicks: number, rightThrownBattleaxeItemID: number, leftActiveItem: ItemData | null, leftAction: TribeMemberAction, leftFoodEatingType: ItemType | -1, leftLastActionTicks: number, leftThrownBattleaxeItemID: number, hasFrostShield: boolean, warPaintType: number, username: string) {
-      super(position, id, EntityType.player, ageTicks, renderDepth, tribeID, tribeType, armourSlotInventory, backpackSlotInventory, backpackInventory, rightActiveItem, rightAction, rightFoodEatingType, rightLastActionTicks, rightThrownBattleaxeItemID, leftActiveItem, leftAction, leftFoodEatingType, leftLastActionTicks, leftThrownBattleaxeItemID, hasFrostShield, warPaintType);
-
-      this.username = username;
+      this.addServerComponent(ServerComponentType.health, new HealthComponent(this, componentsData[1]));
+      this.addServerComponent(ServerComponentType.statusEffect, new StatusEffectComponent(this, componentsData[2]));
+      this.addServerComponent(ServerComponentType.tribe, new TribeComponent(this, componentsData[3]));
+      this.addServerComponent(ServerComponentType.inventory, new InventoryComponent(this, componentsData[5]));
+      this.addServerComponent(ServerComponentType.inventoryUse, new InventoryUseComponent(this, componentsData[6]));
+      this.addServerComponent(ServerComponentType.player, new PlayerComponent(this, componentsData[7]));
+      this.addClientComponent(ClientComponentType.footprint, new FootprintComponent(this, 0.2, 20, 64, 4, 64));
+      this.addClientComponent(ClientComponentType.equipment, new EquipmentComponent(this));
+      
+      addTribeMemberRenderParts(this, componentsData[4]);
    }
 
-   public static setInstancePlayer(player: Player): void {
+   public static createInstancePlayer(position: Point, playerID: number): void {
       if (Player.instance !== null) {
          throw new Error("Tried to create a new player main instance when one already existed!");
       }
+
+      const maxHealth = TRIBE_INFO_RECORD[Game.tribe.tribeType].maxHealthPlayer;
+
+      const componentsData: EntityComponentsData<EntityType.player> = [
+         {},
+         {
+            health: maxHealth,
+            maxHealth: maxHealth
+         },
+         {
+            statusEffects: []
+         },
+         {
+            tribeID: Game.tribe.id
+         },
+         {
+            // @Incomplete: Shouldn't be random, should be sent by the server
+            warPaintType: randInt(1, 5)
+         },
+         {
+            inventories: {
+               hotbar: {
+                  width: Settings.INITIAL_PLAYER_HOTBAR_SIZE,
+                  height: 1,
+                  itemSlots: {},
+                  name: "hotbar"
+               },
+               armourSlot: {
+                  width: 1,
+                  height: 1,
+                  itemSlots: {},
+                  name: "armourSlot"
+               },
+               gloveSlot: {
+                  width: 1,
+                  height: 1,
+                  itemSlots: {},
+                  name: "gloveSlot"
+               },
+               backpackSlot: {
+                  width: 1,
+                  height: 1,
+                  itemSlots: {},
+                  name: "backpackSlot"
+               },
+               backpack: {
+                  width: 1,
+                  height: 1,
+                  itemSlots: {},
+                  name: "backpack"
+               },
+               offhand: {
+                  width: 1,
+                  height: 1,
+                  itemSlots: {},
+                  name: "offhand"
+               },
+            }
+         },
+         {
+            inventoryUseInfos: [
+               createInitialInventoryUseInfo("hotbar"),
+               createInitialInventoryUseInfo("offhand")
+            ]
+         },
+         {
+            username: definiteGameState.playerUsername
+         }
+      ];
+      
+      const player = new Player(position, playerID, 0, componentsData);
+      // const player = new Player(position, playerID, 0, null, tribeType, null, TribeMemberAction.none, -1, -99999, -1, null, TribeMemberAction.none, -1, -99999, -1, false, tribeType === TribeType.goblins ? randInt(1, 5) : -1, username);
+      player.addCircularHitbox(new CircularHitbox(1, 32));
+      player.collisionBit = COLLISION_BITS.default;
+      player.collisionMask = DEFAULT_COLLISION_MASK;
+      Board.addEntity(player);
 
       Player.instance = player;
 
       Camera.position = player.position;
 
-      const maxHealth = TRIBE_INFO_RECORD[player.tribeType].maxHealthPlayer;
+      // @Cleanup: Shouldn't be in this function
       definiteGameState.setPlayerHealth(maxHealth);
       definiteGameState.hotbar = {
          itemSlots: {},
          width: Settings.INITIAL_PLAYER_HOTBAR_SIZE,
          height: 1,
-         inventoryName: "hotbar"
+         name: "hotbar"
       };
-   }
-
-   public tick(): void {
-      super.tick();
-
-      // Footsteps
-      if (this.velocity.lengthSquared() >= 2500 && !this.isInRiver()) {
-         if (Board.tickIntervalHasPassed(0.2)) {
-            createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 4);
-            this.numFootstepsTaken++;
-         }
-      }
-      this.distanceTracker += this.velocity.length() / Settings.TPS;
-      if (this.distanceTracker > 64) {
-         this.distanceTracker -= 64;
-         this.createFootstepSound();
-      }
    }
 
    protected onHit(hitData: HitData): void {
@@ -284,10 +403,10 @@ class Player extends TribeMember {
    private static resolveWallTileCollisions(): void {
       if (Player.instance === null) return;
       
-      const minTileX = clampToBoardDimensions(Math.floor((Player.instance.position.x - Player.RADIUS) / Settings.TILE_SIZE));
-      const maxTileX = clampToBoardDimensions(Math.floor((Player.instance.position.x + Player.RADIUS) / Settings.TILE_SIZE));
-      const minTileY = clampToBoardDimensions(Math.floor((Player.instance.position.y - Player.RADIUS) / Settings.TILE_SIZE));
-      const maxTileY = clampToBoardDimensions(Math.floor((Player.instance.position.y + Player.RADIUS) / Settings.TILE_SIZE));
+      const minTileX = clampToBoardDimensions(Math.floor((Player.instance.position.x - 32) / Settings.TILE_SIZE));
+      const maxTileX = clampToBoardDimensions(Math.floor((Player.instance.position.x + 32) / Settings.TILE_SIZE));
+      const minTileY = clampToBoardDimensions(Math.floor((Player.instance.position.y - 32) / Settings.TILE_SIZE));
+      const maxTileY = clampToBoardDimensions(Math.floor((Player.instance.position.y + 32) / Settings.TILE_SIZE));
 
       for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
          for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
@@ -383,7 +502,7 @@ class Player extends TribeMember {
             for (const otherHitbox of entity.hitboxes) {
                if (hitbox.isColliding(otherHitbox)) {
                   // Collide
-                  if (entityHasHardCollision(entity)) {
+                  if (entityHasHardCollision(entity, Player.instance)) {
                      this.resolveCollisionHard(hitbox as CircularHitbox, otherHitbox);
                   } else {
                      this.resolveCollisionSoft(hitbox, entity, otherHitbox);
@@ -435,11 +554,6 @@ class Player extends TribeMember {
       }
       
       return maxDist;
-   }
-
-   public static createNewPlayerHitbox(): CircularHitbox {
-      const hitbox = new CircularHitbox(1, Player.RADIUS);
-      return hitbox;
    }
 }
 

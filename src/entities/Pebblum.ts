@@ -1,16 +1,13 @@
-import { EntityType, Point, Settings } from "webgl-test-shared";
+import { EntityType, Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import Entity from "./Entity";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
-import { createFootprintParticle } from "../particles";
-import Board from "../Board";
+import { ClientComponentType } from "../entity-components/components";
+import FootprintComponent from "../entity-components/FootprintComponent";
+import GameObject from "../GameObject";
 
-class Pebblum extends Entity {
-   private numFootstepsTaken = 0;
-   private distanceTracker = 0;
-
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
-      super(position, id, EntityType.pebblum, ageTicks, renderDepth);
+class Pebblum extends GameObject {
+   constructor(position: Point, id: number, ageTicks: number) {
+      super(position, id, EntityType.pebblum, ageTicks);
 
       // Nose
       const nose = new RenderPart(
@@ -19,7 +16,7 @@ class Pebblum extends Entity {
          0,
          2 * Math.PI * Math.random()
       )
-      nose.offset = new Point(0, 12);
+      nose.offset.y = 12;
       this.attachRenderPart(nose);
 
       // Body
@@ -29,23 +26,10 @@ class Pebblum extends Entity {
          1,
          2 * Math.PI * Math.random()
       )
-      body.offset = new Point(0, -8);
+      body.offset.y = -8;
       this.attachRenderPart(body);
-   }
 
-   public tick(): void {
-      super.tick();
-
-      // Create footsteps
-      if (this.velocity.lengthSquared() >= 2500 && !this.isInRiver() && Board.tickIntervalHasPassed(0.3)) {
-         createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 5);
-         this.numFootstepsTaken++;
-      }
-      this.distanceTracker += this.velocity.length() / Settings.TPS;
-      if (this.distanceTracker > 40) {
-         this.distanceTracker -= 40;
-         this.createFootstepSound();
-      }
+      this.addClientComponent(ClientComponentType.footprint, new FootprintComponent(this, 0.3, 20, 64, 5, 40));
    }
 }
 

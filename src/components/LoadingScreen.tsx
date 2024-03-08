@@ -1,13 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { COLLISION_BITS, DEFAULT_COLLISION_MASK, EntityType, InitialGameDataPacket, Point, TribeMemberAction, TribeType, randInt } from "webgl-test-shared";
-import Board from "../Board";
+import { InitialGameDataPacket, Point, TribeType } from "webgl-test-shared";
 import Client from "../client/Client";
 import Player from "../entities/Player";
 import Game from "../Game";
 import { setGameState, setLoadingScreenInitialStatus } from "./App";
 import Camera from "../Camera";
 import { definiteGameState } from "../game-state/game-states";
-import { calculateEntityRenderDepth } from "../render-layers";
 import Tribe from "../Tribe";
 
 // @Cleanup: This file does too much logic on its own. It should really only have UI/loading state
@@ -94,24 +92,17 @@ const LoadingScreen = ({ username, tribeType, initialStatus }: LoadingScreenProp
             (async () => {
                const initialGameDataPacket = initialGameDataPacketRef.current!;
 
-               Game.tribe = new Tribe(initialGameDataPacket.tribeData.id, tribeType, initialGameDataPacket.tribeData.numHuts);
+               Game.tribe = new Tribe(initialGameDataPacket.playerTribeData.id, tribeType, initialGameDataPacket.playerTribeData.numHuts);
 
                const tiles = Client.parseServerTileDataArray(initialGameDataPacket.tiles);
                await Game.initialise(tiles, initialGameDataPacket.waterRocks, initialGameDataPacket.riverSteppingStones, initialGameDataPacket.riverFlowDirections, initialGameDataPacket.edgeTiles, initialGameDataPacket.edgeRiverFlowDirections, initialGameDataPacket.edgeRiverSteppingStones, initialGameDataPacket.grassInfo, initialGameDataPacket.decorations);
 
-               // Spawn the player
                definiteGameState.playerUsername = username;
                const playerSpawnPosition = new Point(spawnPositionRef.current!.x, spawnPositionRef.current!.y);
-               const renderDepth = calculateEntityRenderDepth(EntityType.player);
-               // @Cleanup: Copy and paste from Client
-               const player = new Player(playerSpawnPosition, initialGameDataPacket.playerID, 0, renderDepth, null, tribeType, {itemSlots: {}, width: 1, height: 1, inventoryName: "armourSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpackSlot"}, {itemSlots: {}, width: 1, height: 1, inventoryName: "backpack"}, null, TribeMemberAction.none, -1, -99999, -1, null, TribeMemberAction.none, -1, -99999, -1, false, tribeType === TribeType.goblins ? randInt(1, 5) : -1, username);
-               player.addCircularHitbox(Player.createNewPlayerHitbox());
-               player.collisionBit = COLLISION_BITS.default;
-               player.collisionMask = DEFAULT_COLLISION_MASK;
-               Player.setInstancePlayer(player);
-               Board.addEntity(player);
 
                Client.processGameDataPacket(initialGameDataPacket);
+               
+               Player.createInstancePlayer(playerSpawnPosition, initialGameDataPacket.playerID);
 
                Game.start();
 

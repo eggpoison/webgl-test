@@ -1,45 +1,12 @@
-import { EntityData, EntityType, Point, BlueprintBuildingType, randFloat } from "webgl-test-shared";
+import { EntityData, EntityType, Point, BlueprintBuildingType, randFloat, ServerComponentType, EntityComponentsData } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
-import Entity from "./Entity";
-import Board from "../Board";
-import Particle from "../Particle";
-import { addTexturedParticleToBufferContainer, ParticleRenderLayer } from "../rendering/particle-rendering";
 import { playSound } from "../sound";
-import { createLightWoodSpeckParticle, createWoodShardParticle } from "./WoodenWall";
+import { createLightWoodSpeckParticle } from "./WoodenWall";
 import { BALLISTA_AMMO_BOX_OFFSET_X, BALLISTA_AMMO_BOX_OFFSET_Y, BALLISTA_GEAR_X, BALLISTA_GEAR_Y } from "./Ballista";
-
-const createSawdustCloud = (x: number, y: number): void => {
-   const lifetime = randFloat(0.4, 0.7);
-   
-   const moveSpeed = randFloat(75, 150);
-   const moveDirection = 2 * Math.PI * Math.random();
-   const velocityX = moveSpeed * Math.sin(moveDirection);
-   const velocityY = moveSpeed * Math.cos(moveDirection);
-
-   const opacity = randFloat(0.7, 1);
-   const particle = new Particle(lifetime);
-   particle.getOpacity = (): number => {
-      return (1 - particle.age / lifetime) * opacity;
-   };
-   
-   addTexturedParticleToBufferContainer(
-      particle,
-      ParticleRenderLayer.high,
-      64, 64,
-      x, y,
-      velocityX, velocityY,
-      0, 0,
-      0,
-      2 * Math.PI * Math.random(),
-      randFloat(-1, 1) * Math.PI * 2,
-      0,
-      0,
-      6 * 8,
-      0, 0, 0
-   );
-   Board.highTexturedParticles.push(particle);
-}
+import { createSawdustCloud } from "../particles";
+import BlueprintComponent from "../entity-components/BlueprintComponent";
+import GameObject from "../GameObject";
 
 interface ProgressTextureInfo {
    readonly progressTextureSources: ReadonlyArray<string>;
@@ -67,6 +34,18 @@ export const BLUEPRINT_PROGRESS_TEXTURE_SOURCES: Record<BlueprintBuildingType, R
       {
          progressTextureSources: ["entities/wooden-embrasure/wooden-embrasure-blueprint-1.png", "entities/wooden-embrasure/wooden-embrasure-blueprint-2.png", "entities/wooden-embrasure/wooden-embrasure-blueprint-3.png"],
          completedTextureSource: "entities/wooden-embrasure/wooden-embrasure.png",
+         offsetX: 0,
+         offsetY: 0,
+         rotation: 0,
+         zIndex: 0
+      }
+   ],
+   [BlueprintBuildingType.tunnel]: [
+      {
+         // @Incomplete
+         progressTextureSources: ["entities/wooden-tunnel/wooden-tunnel.png", "entities/wooden-tunnel/wooden-tunnel.png"],
+         // progressTextureSources: ["entities/wooden-tunnel/tunnel-blueprint-1.png", "entities/wooden-tunnel/tunnel-embrasure-blueprint-2.png"],
+         completedTextureSource: "entities/wooden-tunnel/wooden-tunnel.png",
          offsetX: 0,
          offsetY: 0,
          rotation: 0,
@@ -179,25 +158,14 @@ const countProgressTextures = (buildingType: BlueprintBuildingType): number => {
    return numTextures;
 }
 
-/*
-10 work:
-base: 5
-plate: 3
-sling: 2
-*/
+class BlueprintEntity extends GameObject {
+   constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.blueprintEntity>) {
+      super(position, id, EntityType.blueprintEntity, ageTicks);
 
-class BlueprintEntity extends Entity {
-   private readonly partialRenderParts = new Array<RenderPart>();
-
-   private lastBlueprintProgress: number;
-   
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, buildingType: BlueprintBuildingType, blueprintProgress: number) {
-      super(position, id, EntityType.woodenFloorSpikes, ageTicks, renderDepth);
-
-      this.lastBlueprintProgress = blueprintProgress;
+      const blueprintComponentData = componentsData[1];
       
       // Create completed render parts
-      const progressTextureInfoArray = BLUEPRINT_PROGRESS_TEXTURE_SOURCES[buildingType];
+      const progressTextureInfoArray = BLUEPRINT_PROGRESS_TEXTURE_SOURCES[blueprintComponentData.buildingType];
       for (let i = 0; i < progressTextureInfoArray.length; i++) {
          const progressTextureInfo = progressTextureInfoArray[i];
 
@@ -207,7 +175,8 @@ class BlueprintEntity extends Entity {
             progressTextureInfo.zIndex,
             progressTextureInfo.rotation
          );
-         renderPart.offset = new Point(progressTextureInfo.offsetX, progressTextureInfo.offsetY);
+         renderPart.offset.x = progressTextureInfo.offsetX;
+         renderPart.offset.y = progressTextureInfo.offsetY;
          renderPart.opacity = 0.5;
          renderPart.tintR = 0.2;
          renderPart.tintG = 0.1;
@@ -215,7 +184,9 @@ class BlueprintEntity extends Entity {
          this.attachRenderPart(renderPart);
       }
 
-      this.updatePartialTexture(buildingType, blueprintProgress);
+      this.addServerComponent(ServerComponentType.blueprint, new BlueprintComponent(this, blueprintComponentData));
+
+      this.updatePartialTexture();
 
       if (ageTicks === 0) {
          playSound("blueprint-place.mp3", 0.4, 1, this.position.x, this.position.y);
@@ -240,32 +211,14 @@ class BlueprintEntity extends Entity {
    public updateFromData(data: EntityData<EntityType.blueprintEntity>): void {
       super.updateFromData(data);
 
-      const shapeType = data.clientArgs[0];
-      const blueprintProgress = data.clientArgs[1];
-
-      this.updatePartialTexture(shapeType, blueprintProgress);
-
-      if (blueprintProgress !== this.lastBlueprintProgress) {
-         playSound("blueprint-work.mp3", 0.4, randFloat(0.9, 1.1), this.position.x, this.position.y);
-         
-         for (let i = 0; i < 2; i++) {
-            createWoodShardParticle(this.position.x, this.position.y, 24);
-         }
-
-         for (let i = 0; i < 3; i++) {
-            createLightWoodSpeckParticle(this.position.x, this.position.y, 24 * Math.random());
-         }
-
-         for (let i = 0; i < 2; i++) {
-            const x = this.position.x + randFloat(-24, 24);
-            const y = this.position.y + randFloat(-24, 24);
-            createSawdustCloud(x, y);
-         }
-      }
-      this.lastBlueprintProgress = blueprintProgress;
+      this.updatePartialTexture();
    }
 
-   private updatePartialTexture(buildingType: BlueprintBuildingType, blueprintProgress: number): void {
+   private updatePartialTexture(): void {
+      const blueprintComponent = this.getServerComponent(ServerComponentType.blueprint);
+      const buildingType = blueprintComponent.buildingType;
+      const blueprintProgress = blueprintComponent.lastBlueprintProgress;
+      
       const numTextures = countProgressTextures(buildingType);
       const stage = Math.floor(blueprintProgress * (numTextures + 1));
       if (stage === 0) {
@@ -285,7 +238,7 @@ class BlueprintEntity extends Entity {
          }
 
          const textureSource = progressTextureInfo.progressTextureSources[localTextureIndex];
-         if (this.partialRenderParts.length <= i) {
+         if (blueprintComponent.partialRenderParts.length <= i) {
             // New render part
             const renderPart = new RenderPart(
                this,
@@ -293,12 +246,13 @@ class BlueprintEntity extends Entity {
                progressTextureInfo.zIndex + 0.01,
                progressTextureInfo.rotation
             );
-            renderPart.offset = new Point(progressTextureInfo.offsetX, progressTextureInfo.offsetY);
+            renderPart.offset.x = progressTextureInfo.offsetX
+            renderPart.offset.y = progressTextureInfo.offsetY;
             this.attachRenderPart(renderPart);
-            this.partialRenderParts.push(renderPart);
+            blueprintComponent.partialRenderParts.push(renderPart);
          } else {
             // Existing render part
-            this.partialRenderParts[i].switchTextureSource(textureSource);
+            blueprintComponent.partialRenderParts[i].switchTextureSource(textureSource);
          }
 
          currentIndexStart += progressTextureInfo.progressTextureSources.length;

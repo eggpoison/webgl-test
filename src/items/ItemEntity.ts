@@ -1,4 +1,4 @@
-import { EntityType, ItemType, Point, randFloat } from "webgl-test-shared";
+import { EntityComponentsData, EntityType, ItemType, Point, ServerComponentType, randFloat } from "webgl-test-shared";
 import GameObject from "../GameObject";
 import RenderPart from "../render-parts/RenderPart";
 import CLIENT_ITEM_INFO_RECORD from "../client-item-info";
@@ -7,6 +7,8 @@ import { BloodParticleSize } from "../particles";
 import Particle from "../Particle";
 import { addMonocolourParticleToBufferContainer, ParticleRenderLayer } from "../rendering/particle-rendering";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import ItemComponent from "../entity-components/ItemComponent";
+import PhysicsComponent from "../entity-components/PhysicsComponent";
 
 const createFrozenYetiBloodParticle = (size: BloodParticleSize, spawnPositionX: number, spawnPositionY: number, moveDirection: number, moveSpeed: number, hasDrag: boolean, extraVelocityX: number, extraVelocityY: number): void => {
    const lifetime = randFloat(0.3, 0.4);
@@ -61,30 +63,22 @@ export function createDeepFrostHeartBloodParticles(originX: number, originY: num
 }
 
 class ItemEntity extends GameObject {
-   public readonly itemType: ItemType;
-
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, itemType: ItemType) {
-      super(position, id, EntityType.itemEntity, ageTicks, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.itemEntity>) {
+      super(position, id, EntityType.itemEntity, ageTicks);
       
-      this.itemType = itemType;
-
+      const itemComponentData = componentsData[1];
+      
       this.attachRenderPart(
          new RenderPart(
             this,
-            getTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[itemType].entityTextureSource),
+            getTextureArrayIndex(CLIENT_ITEM_INFO_RECORD[itemComponentData.itemType].entityTextureSource),
             0,
             0
          )
       );
-   }
 
-   public tick(): void {
-      super.tick();
-
-      // Make the deep frost heart item spew blue blood particles
-      if (this.itemType === ItemType.deepfrost_heart) {
-         createDeepFrostHeartBloodParticles(this.position.x, this.position.y, 0, 0);
-      }
+      this.addServerComponent(ServerComponentType.physics, new PhysicsComponent(this, componentsData[0]));
+      this.addServerComponent(ServerComponentType.item, new ItemComponent(this, itemComponentData));
    }
 }
 

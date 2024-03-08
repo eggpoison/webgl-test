@@ -3,6 +3,7 @@ import HealthIcon from "../../images/miscellaneous/health.png";
 import FrozenHealthIcon from "../../images/miscellaneous/health-frozen.png";
 import { TRIBE_INFO_RECORD } from "webgl-test-shared";
 import Player from "../../entities/Player";
+import Game from "../../Game";
 
 export let updateHealthBar: (newHealth: number) => void;
 
@@ -10,12 +11,12 @@ export let HealthBar_setHasFrostShield: (hasFrostShield: boolean) => void = () =
 
 const HealthBar = () => {
    const healthBarRef = useRef<HTMLDivElement | null>(null);
-   const [health, setHealth] = useState(Player.instance !== null ? TRIBE_INFO_RECORD[Player.instance.tribeType].maxHealthPlayer : 0);
+   const [health, setHealth] = useState(Player.instance !== null ? TRIBE_INFO_RECORD[Game.tribe.tribeType].maxHealthPlayer : 0);
    const [hasFrostShield, setHasFrostShield] = useState(false);
 
    useEffect(() => {
       if (healthBarRef.current !== null) {
-         healthBarRef.current.style.setProperty("--max-health", Player.instance !== null ? TRIBE_INFO_RECORD[Player.instance.tribeType].maxHealthPlayer.toString() : "0");
+         healthBarRef.current.style.setProperty("--max-health", Player.instance !== null ? TRIBE_INFO_RECORD[Game.tribe.tribeType].maxHealthPlayer.toString() : "0");
       }
    }, []);
    

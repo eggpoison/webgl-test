@@ -1,19 +1,21 @@
-import { EntityType, Point, randFloat, randInt } from "webgl-test-shared";
+import { EntityComponentsData, EntityType, Point, ServerComponentType, randFloat, randInt } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import Entity from "./Entity";
 import Particle from "../Particle";
 import Board from "../Board";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { AudioFilePath, playSound } from "../sound";
+import GameObject from "../GameObject";
+import HealthComponent from "../entity-components/HealthComponent";
+import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 
-class IceSpikes extends Entity {
+class IceSpikes extends GameObject {
    private static readonly ICE_SPECK_COLOUR: ParticleColour = [140/255, 143/255, 207/255];
 
    private static readonly SIZE = 80;
 
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
-      super(position, id, EntityType.iceSpikes, ageTicks, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.iceSpikes>) {
+      super(position, id, EntityType.iceSpikes, ageTicks);
 
       this.attachRenderPart(
          new RenderPart(
@@ -23,6 +25,9 @@ class IceSpikes extends Entity {
             0
          )
       );
+
+      this.addServerComponent(ServerComponentType.health, new HealthComponent(this, componentsData[0]));
+      this.addServerComponent(ServerComponentType.statusEffect, new StatusEffectComponent(this, componentsData[1]));
    }
 
    protected onHit(): void {

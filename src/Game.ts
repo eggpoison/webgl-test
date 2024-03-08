@@ -4,7 +4,7 @@ import { isDev } from "./utils";
 import { createTextCanvasContext, updateTextNumbers, renderText } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/game/ChatBox";
-import { DecorationInfo, GameDataPacket, GameObjectDebugData, GrassTileInfo, RiverSteppingStoneData, Settings, ServerTileData, WaterRockData } from "webgl-test-shared";
+import { DecorationInfo, GameDataPacket, GameObjectDebugData, GrassTileInfo, RiverSteppingStoneData, Settings, ServerTileData, WaterRockData, EnemyTribeData } from "webgl-test-shared";
 import { createEntityShaders, renderGameObjects } from "./rendering/game-object-rendering";
 import Client from "./client/Client";
 import { calculateCursorWorldPositionX, calculateCursorWorldPositionY, cursorX, cursorY, getMouseTargetEntity, handleMouseMovement, renderCursorTooltip } from "./mouse";
@@ -99,6 +99,7 @@ abstract class Game {
    private static gameObjectDebugData: GameObjectDebugData | null = null;
 
    public static tribe: Tribe;
+   public static enemyTribes: ReadonlyArray<EnemyTribeData>;
    
    private static cameraData = new Float32Array(8);
    private static cameraBuffer: WebGLBuffer;
@@ -329,7 +330,6 @@ abstract class Game {
 
    private static updatePlayer(): void {
       if (Player.instance !== null) {
-         Player.instance.tick();
          Player.instance.update();
 
          // @Cleanup: Should be done in the game object update function

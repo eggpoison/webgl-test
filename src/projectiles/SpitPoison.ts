@@ -42,8 +42,8 @@ class SpitPoison extends GameObject {
    private readonly trackSource: AudioBufferSourceNode;
    private readonly sound: Sound;
    
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
-      super(position, id, EntityType.spitPoison, ageTicks, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number) {
+      super(position, id, EntityType.spitPoison, ageTicks);
 
       const audioInfo = playSound("acid-burn.mp3", 0.25, 1, this.position.x, this.position.y);
       this.trackSource = audioInfo.trackSource;

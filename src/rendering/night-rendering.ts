@@ -193,6 +193,7 @@ export function renderNight(): void {
       ambientLight = NIGHT_LIGHT;
    }
 
+   // @Speed
    const lightPositions = new Array<number>();
    const lightIntensities = new Array<number>();
    const lightStrengths = new Array<number>();

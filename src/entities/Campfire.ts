@@ -1,15 +1,16 @@
-import { EntityType, InventoryData, Point, randFloat } from "webgl-test-shared";
+import { EntityComponentsData, EntityType, Point, ServerComponentType, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import CookingEntity from "./CookingEntity";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import Board from "../Board";
 import { createEmberParticle, createSmokeParticle } from "../particles";
+import GameObject from "../GameObject";
+import CookingComponent from "../entity-components/CookingComponent";
 
-class Campfire extends CookingEntity {
+class Campfire extends GameObject {
    public static readonly SIZE = 104;
 
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData, heatingProgress: number, isCooking: boolean) {
-      super(position, id, EntityType.campfire, ageTicks, renderDepth, fuelInventory, ingredientInventory, outputInventory, heatingProgress, isCooking);
+   constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.campfire>) {
+      super(position, id, EntityType.campfire, ageTicks);
 
       this.attachRenderPart(
          new RenderPart(
@@ -19,6 +20,8 @@ class Campfire extends CookingEntity {
             0
          )
       );
+
+      this.addServerComponent(ServerComponentType.cooking, new CookingComponent(this, componentsData[3]));
    }
 
    public tick(): void {

@@ -5,8 +5,6 @@ import { createWebGLProgram, gl, CAMERA_UNIFORM_BUFFER_BINDING_INDEX, TIME_UNIFO
 import GameObject from "../GameObject";
 import { BALLISTA_AMMO_BOX_OFFSET_X, BALLISTA_AMMO_BOX_OFFSET_Y } from "../entities/Ballista";
 
-// @Incomplete: render circular instead of rectangular for barrels and tribesmen
-
 const THICKNESS = 4;
 
 const HIGHLIGHTABLE_STRUCTURE_WIDTHS: Partial<Record<EntityType, number>> = {

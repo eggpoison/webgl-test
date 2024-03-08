@@ -1,4 +1,4 @@
-import { EntityType, Point, EntityInfoClientArgs } from "webgl-test-shared";
+import { EntityType, Point, EntityComponentsData } from "webgl-test-shared";
 import Boulder from "./entities/Boulder";
 import Cow from "./entities/Cow";
 import Player from "./entities/Player";
@@ -21,7 +21,7 @@ import Snowball from "./entities/Snowball";
 import Krumblid from "./entities/Krumblid";
 import FrozenYeti from "./entities/FrozenYeti";
 import Fish from "./entities/Fish";
-import ItemEntity from "./items/DroppedItem";
+import ItemEntity from "./items/ItemEntity";
 import GameObject from "./GameObject";
 import WoodenArrowProjectile from "./projectiles/WoodenArrowProjectile";
 import IceShardsProjectile from "./projectiles/IceShardsProjectile";
@@ -41,15 +41,14 @@ import PlanterBox from "./entities/PlanterBox";
 import IceArrow from "./projectiles/IceArrow";
 import Pebblum from "./entities/Pebblum";
 import WoodenEmbrasure from "./entities/WoodenEmbrasure";
-import WoodenFloorSpikes from "./entities/WoodenFloorSpikes";
-import WoodenWallSpikes from "./entities/WoodenWallSpikes";
-import FloorPunjiSticks from "./entities/FloorPunjiSticks";
-import WallPunjiSticks from "./entities/WallPunjiSticks";
+import WoodenSpikes from "./entities/WoodenSpikes";
+import FloorPunjiSticks from "./entities/PunjiSticks";
 import BlueprintEntity from "./entities/BlueprintEntity";
 import Ballista from "./entities/Ballista";
 import SlingTurret from "./entities/SlingTurret";
+import WoodenTunnel from "./entities/WoodenTunnel";
 
-export type EntityClassType<T extends EntityType> = new (position: Point, id: number, ageTicks: number, renderDepth: number, ...clientParams: Parameters<typeof EntityInfoClientArgs[T]>) => GameObject;
+export type EntityClassType<T extends EntityType> = new (position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<T>) => GameObject;
 
 // @Incomplete: Move to server-like system
 const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
@@ -94,13 +93,12 @@ const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
    [EntityType.iceArrow]: () => IceArrow,
    [EntityType.pebblum]: () => Pebblum,
    [EntityType.woodenEmbrasure]: () => WoodenEmbrasure,
-   [EntityType.woodenFloorSpikes]: () => WoodenFloorSpikes,
-   [EntityType.woodenWallSpikes]: () => WoodenWallSpikes,
-   [EntityType.floorPunjiSticks]: () => FloorPunjiSticks,
-   [EntityType.wallPunjiSticks]: () => WallPunjiSticks,
+   [EntityType.woodenSpikes]: () => WoodenSpikes,
+   [EntityType.punjiSticks]: () => FloorPunjiSticks,
    [EntityType.blueprintEntity]: () => BlueprintEntity,
    [EntityType.ballista]: () => Ballista,
-   [EntityType.slingTurret]: () => SlingTurret
+   [EntityType.slingTurret]: () => SlingTurret,
+   [EntityType.woodenTunnel]: () => WoodenTunnel
 };
 
 export default ENTITY_CLASS_RECORD;

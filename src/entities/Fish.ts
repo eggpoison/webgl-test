@@ -1,36 +1,39 @@
-import { EntityType, FishColour, HitData, Point, TileType, randFloat, randInt, randItem } from "webgl-test-shared";
-import Entity from "./Entity";
+import { EntityComponentsData, EntityType, FishColour, HitData, Point, ServerComponentType, TileType, randFloat, randInt } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import Board from "../Board";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createWaterSplashParticle } from "../particles";
 import { AudioFilePath, playSound } from "../sound";
+import FishComponent from "../entity-components/FishComponent";
+import GameObject from "../GameObject";
+import HealthComponent from "../entity-components/HealthComponent";
+import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 
-class Fish extends Entity {
-   private static readonly SPRITE_WIDTH = 9 * 4;
-   private static readonly SPRITE_HEIGHT = 16 * 4;
-   
-   public readonly waterOpacityMultiplier = randFloat(0.6, 1);
+const TEXTURE_SOURCES: Record<FishColour, string> = {
+   [FishColour.blue]: "entities/fish/fish-blue.png",
+   [FishColour.gold]: "entities/fish/fish-gold.png",
+   [FishColour.red]: "entities/fish/fish-red.png",
+   [FishColour.lime]: "entities/fish/fish-lime.png"
+};
 
-   private static readonly TEXTURE_SOURCES: ReadonlyArray<string> = [
-      "entities/fish/fish-blue.png",
-      "entities/fish/fish-gold.png",
-      "entities/fish/fish-red.png",
-      "entities/fish/fish-lime.png"
-   ];
-   
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, colour: FishColour) {
-      super(position, id, EntityType.fish, ageTicks, renderDepth);
+class Fish extends GameObject {
+   constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.fish>) {
+      super(position, id, EntityType.fish, ageTicks);
 
-      const textureSource = randItem(Fish.TEXTURE_SOURCES);
+      const fishComponentData = componentsData[6];
+
       this.attachRenderPart(
          new RenderPart(
             this,
-            getTextureArrayIndex(textureSource),
+            getTextureArrayIndex(TEXTURE_SOURCES[fishComponentData.colour]),
             0,
             0
          )
       );
+
+      this.addServerComponent(ServerComponentType.health, new HealthComponent(this, componentsData[1]))
+      this.addServerComponent(ServerComponentType.statusEffect, new StatusEffectComponent(this, componentsData[2]))
+      this.addServerComponent(ServerComponentType.fish, new FishComponent(this, randFloat(0.6, 1)))
    }
 
    public tick(): void {

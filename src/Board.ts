@@ -213,9 +213,10 @@ abstract class Board {
 
       delete Board.entityRecord[entity.id];
 
-      if (typeof entity.onDie !== "undefined" && entityIsVisible(entity)) {
-         entity.onDie();
+      if (entityIsVisible(entity)) {
+         entity.die();
       }
+      entity.remove();
 
       if (entity.type === EntityType.player) {
          const idx = Board.players.indexOf(entity as Player);
@@ -228,10 +229,6 @@ abstract class Board {
          chunk.removeGameObject(entity);
       }
    
-      if (typeof entity.onRemove !== "undefined") {
-         entity.onRemove();
-      }
-
       this.entities.delete(entity);
       if (entity.type === EntityType.fish) {
          const idx = this.fish.indexOf(entity as Fish);

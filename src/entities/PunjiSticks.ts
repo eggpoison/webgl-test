@@ -1,29 +1,47 @@
 import { EntityType, Point, Settings, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
-import Entity from "./Entity";
 import { playSound } from "../sound";
 import { createFlyParticle } from "../particles";
+import GameObject from "../GameObject";
+import RectangularHitbox from "../hitboxes/RectangularHitbox";
 
-class FloorPunjiSticks extends Entity {
+export function punjiSticksAreAttachedToWall(entity: GameObject): boolean {
+   const hitbox = entity.hitboxes[0] as RectangularHitbox;
+   return Math.abs(hitbox.height - (32 - 0.05)) < 0.01;
+}
+
+class FloorPunjiSticks extends GameObject {
    private ticksSinceLastFly = 0;
    private ticksSinceLastFlySound = 0;
 
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
-      super(position, id, EntityType.floorPunjiSticks, ageTicks, renderDepth);
-
-      this.attachRenderPart(
-         new RenderPart(
-            this,
-            getTextureArrayIndex("entities/floor-punji-sticks/floor-punji-sticks.png"),
-            0,
-            0
-         )
-      );
+   constructor(position: Point, id: number, ageTicks: number) {
+      super(position, id, EntityType.punjiSticks, ageTicks);
 
       if (ageTicks === 0) {
          playSound("spike-place.mp3", 0.5, 1, this.position.x, this.position.y);
       }
+   }
+
+   // @Hack
+   public addRectangularHitbox(hitbox: RectangularHitbox): void {
+      super.addRectangularHitbox(hitbox);
+
+      let textureArrayIndex: number;
+      if (punjiSticksAreAttachedToWall(this)) {
+         textureArrayIndex = getTextureArrayIndex("entities/wall-punji-sticks/wall-punji-sticks.png");
+      } else {
+         textureArrayIndex = getTextureArrayIndex("entities/floor-punji-sticks/floor-punji-sticks.png");
+      }
+
+      this.attachRenderPart(
+         new RenderPart(
+            this,
+            textureArrayIndex,
+            0,
+            0
+         )
+      );
    }
 
    public tick(): void {

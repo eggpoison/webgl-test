@@ -1,14 +1,15 @@
-import Barrel from "../../../entities/Barrel";
 import InventoryContainer from "./InventoryContainer";
 import { getSelectedEntity } from "../../../entity-selection";
+import { ServerComponentType } from "webgl-test-shared";
 
 const BarrelInventory = () => {
-   const barrel = getSelectedEntity() as Barrel;
+   const barrel = getSelectedEntity();
+   const inventoryComponent = barrel.getServerComponent(ServerComponentType.inventory);
    
    return <>
       <div id="barrel-inventory" className="menu">
          <h2 className="menu-title">Barrel</h2>
-         <InventoryContainer entityID={barrel.id} inventory={barrel.inventory} />
+         <InventoryContainer entityID={barrel.id} inventory={inventoryComponent.getInventory("inventory")} />
       </div>
       {/* @Incomplete */}
       <div className="menu">

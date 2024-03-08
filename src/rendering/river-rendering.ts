@@ -738,7 +738,7 @@ const calculateTransitionVertexData = (renderChunkX: number, renderChunkY: numbe
    for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
       for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
          const tile = Board.getTile(tileX, tileY);
-         if (tile.type !== TileType.water && tile.bordersWater) {
+         if (tile.type !== TileType.water && tile.type !== TileType.ice && tile.bordersWater) {
             edgeTiles.push(tile);
          }
       }
@@ -1296,9 +1296,9 @@ const renderChunkHasBorderingWaterTiles = (renderChunkX: number, renderChunkY: n
    const topTileY = getRenderChunkMaxTileY(renderChunkY);
 
    // Left border tiles
-   for (let tileY = bottomTileY; tileY <= topTileY; tileY++) {
-      if (Board.tileIsWithinEdge(leftTileX, tileY)) {
-         const tile = Board.getTile(leftTileX, tileY);
+   for (let tileY = bottomTileY - 1; tileY <= topTileY + 1; tileY++) {
+      if (Board.tileIsWithinEdge(leftTileX - 1, tileY)) {
+         const tile = Board.getTile(leftTileX - 1, tileY);
          if (tile.type === TileType.water) {
             return true;
          }
@@ -1306,9 +1306,9 @@ const renderChunkHasBorderingWaterTiles = (renderChunkX: number, renderChunkY: n
    }
    
    // Right border tiles
-   for (let tileY = bottomTileY; tileY <= topTileY; tileY++) {
-      if (Board.tileIsWithinEdge(rightTileX, tileY)) {
-         const tile = Board.getTile(rightTileX, tileY);
+   for (let tileY = bottomTileY - 1; tileY <= topTileY + 1; tileY++) {
+      if (Board.tileIsWithinEdge(rightTileX + 1, tileY)) {
+         const tile = Board.getTile(rightTileX + 1, tileY);
          if (tile.type === TileType.water) {
             return true;
          }
@@ -1317,8 +1317,8 @@ const renderChunkHasBorderingWaterTiles = (renderChunkX: number, renderChunkY: n
 
    // Top border tiles
    for (let tileX = leftTileX; tileX <= rightTileX; tileX++) {
-      if (Board.tileIsWithinEdge(tileX, topTileY)) {
-         const tile = Board.getTile(tileX, topTileY);
+      if (Board.tileIsWithinEdge(tileX, topTileY + 1)) {
+         const tile = Board.getTile(tileX, topTileY + 1);
          if (tile.type === TileType.water) {
             return true;
          }
@@ -1327,8 +1327,8 @@ const renderChunkHasBorderingWaterTiles = (renderChunkX: number, renderChunkY: n
 
    // Bottom border tiles
    for (let tileX = leftTileX; tileX <= rightTileX; tileX++) {
-      if (Board.tileIsWithinEdge(tileX, bottomTileY)) {
-         const tile = Board.getTile(tileX, bottomTileY);
+      if (Board.tileIsWithinEdge(tileX, bottomTileY - 1)) {
+         const tile = Board.getTile(tileX, bottomTileY - 1);
          if (tile.type === TileType.water) {
             return true;
          }

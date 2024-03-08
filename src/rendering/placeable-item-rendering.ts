@@ -8,7 +8,7 @@ import Board from "../Board";
 import { getSelectedEntityID } from "../entity-selection";
 import GameObject from "../GameObject";
 import { ATLAS_SLOT_SIZE } from "../texture-atlases/texture-atlas-stitching";
-import { BALLISTA_AMMO_BOX_OFFSET_X, BALLISTA_AMMO_BOX_OFFSET_Y, BALLISTA_GEAR_X, BALLISTA_GEAR_Y, getBallistaCrossbarTextureSource } from "../entities/Ballista";
+import { BALLISTA_AMMO_BOX_OFFSET_X, BALLISTA_AMMO_BOX_OFFSET_Y, BALLISTA_GEAR_X, BALLISTA_GEAR_Y } from "../entities/Ballista";
 
 interface TextureInfo {
    readonly textureSource: string;
@@ -91,7 +91,7 @@ const TEXTURE_INFO_RECORD: Partial<Record<EntityType, ReadonlyArray<TextureInfo>
          rotation: 0
       }
    ],
-   [EntityType.woodenFloorSpikes]: [
+   [EntityType.woodenSpikes]: [
       {
          textureSource: "entities/wooden-floor-spikes/wooden-floor-spikes.png",
          offsetX: 0,
@@ -99,25 +99,9 @@ const TEXTURE_INFO_RECORD: Partial<Record<EntityType, ReadonlyArray<TextureInfo>
          rotation: 0
       }
    ],
-   [EntityType.woodenWallSpikes]: [
-      {
-         textureSource: "entities/wooden-wall-spikes/wooden-wall-spikes.png",
-         offsetX: 0,
-         offsetY: 0,
-         rotation: 0
-      }
-   ],
-   [EntityType.floorPunjiSticks]: [
+   [EntityType.punjiSticks]: [
       {
          textureSource: "entities/floor-punji-sticks/floor-punji-sticks.png",
-         offsetX: 0,
-         offsetY: 0,
-         rotation: 0
-      }
-   ],
-   [EntityType.wallPunjiSticks]: [
-      {
-         textureSource: "entities/wall-punji-sticks/wall-punji-sticks.png",
          offsetX: 0,
          offsetY: 0,
          rotation: 0
@@ -142,6 +126,14 @@ const TEXTURE_INFO_RECORD: Partial<Record<EntityType, ReadonlyArray<TextureInfo>
    [EntityType.woodenWall]: [
       {
          textureSource: "entities/wooden-wall/wooden-wall.png",
+         offsetX: 0,
+         offsetY: 0,
+         rotation: 0
+      }
+   ],
+   [EntityType.woodenTunnel]: [
+      {
+         textureSource: "entities/wooden-tunnel/wooden-tunnel.png",
          offsetX: 0,
          offsetY: 0,
          rotation: 0
@@ -185,7 +177,7 @@ const TEXTURE_INFO_RECORD: Partial<Record<EntityType, ReadonlyArray<TextureInfo>
       },
       // Crossbow
       {
-         textureSource: getBallistaCrossbarTextureSource(0),
+         textureSource: "entities/ballista/crossbow-1.png",
          offsetX: 0,
          offsetY: 0,
          rotation: 0
@@ -214,6 +206,12 @@ const TEXTURE_INFO_RECORD: Partial<Record<EntityType, ReadonlyArray<TextureInfo>
          rotation: 0
       },
    ]
+};
+
+const SHAPE_ENTITY_TYPES: Record<BuildingShapeType, EntityType> = {
+   [BlueprintBuildingType.door]: EntityType.woodenDoor,
+   [BlueprintBuildingType.embrasure]: EntityType.woodenEmbrasure,
+   [BlueprintBuildingType.tunnel]: EntityType.woodenTunnel,
 };
 
 let program: WebGLProgram;
@@ -297,7 +295,7 @@ export function createPlaceableItemProgram(): void {
    tintUniformLocation = gl.getUniformLocation(program, "u_tint")!;
 }
 
-const calculateVertices = (placePosition: Point, placeRotation: number, entityType: EntityType): ReadonlyArray<number> => {
+const calculateVertices = (placePosition: Point, placeRotation: number, entityType: EntityType, isAttachedToWall: boolean): ReadonlyArray<number> => {
    const vertices = new Array<number>();
    
    // @Temporary
@@ -308,9 +306,26 @@ const calculateVertices = (placePosition: Point, placeRotation: number, entityTy
    const textureInfoArray = TEXTURE_INFO_RECORD[entityType]!;
    for (let i = 0; i < textureInfoArray.length; i++) {
       const textureInfo = textureInfoArray[i];
+
+      let textureSource: string;
+      if (entityType === EntityType.woodenSpikes) {
+         if (isAttachedToWall) {
+            textureSource = "entities/wooden-wall-spikes/wooden-wall-spikes.png";
+         } else {
+            textureSource = "entities/wooden-floor-spikes/wooden-floor-spikes.png";
+         }
+      } else if (entityType === EntityType.punjiSticks) {
+         if (isAttachedToWall) {
+            textureSource = "entities/wall-punji-sticks/wall-punji-sticks.png";
+         } else {
+            textureSource = "entities/floor-punji-sticks/floor-punji-sticks.png";
+         }
+      } else {
+         textureSource = textureInfo.textureSource;
+      }
    
       // Find texture size
-      const textureArrayIndex = getTextureArrayIndex(textureInfo.textureSource);
+      const textureArrayIndex = getTextureArrayIndex(textureSource);
       const textureWidth = getTextureWidth(textureArrayIndex);
       const textureHeight = getTextureHeight(textureArrayIndex);
       const width = textureWidth * 4;
@@ -350,7 +365,8 @@ const calculateVertices = (placePosition: Point, placeRotation: number, entityTy
 
 const getStructureShapePosition = (existingStructure: GameObject, shapeType: BuildingShapeType, blueprintRotation: number): Point => {
    switch (shapeType) {
-      case BlueprintBuildingType.door: {
+      case BlueprintBuildingType.door:
+      case BlueprintBuildingType.tunnel: {
          return existingStructure.position.copy();
       }
       case BlueprintBuildingType.embrasure: {
@@ -366,6 +382,7 @@ interface GhostInfo {
    readonly position: Point;
    readonly rotation: number;
    readonly entityType: EntityType;
+   readonly isAttachedToWall: boolean;
    readonly tint: [number, number, number];
 }
 
@@ -390,13 +407,15 @@ const getGhostInfo = (): GhostInfo | null => {
       const placePosition = calculatePlacePosition(placeableEntityInfo, snapInfo);
       const placeRotation = calculatePlaceRotation(snapInfo);
 
-      const canPlace = canPlaceItem(placePosition, placeRotation, playerSelectedItem, snapInfo !== null ? snapInfo.entityType : placeableEntityInfo.entityType);
+      const isPlacedOnWall = snapInfo !== null && Board.entityRecord[snapInfo.snappedEntityID].type === EntityType.woodenWall;
+      const canPlace = canPlaceItem(placePosition, placeRotation, playerSelectedItem, snapInfo !== null ? snapInfo.entityType : placeableEntityInfo.entityType, isPlacedOnWall);
 
       return {
          position: placePosition,
          rotation: placeRotation,
          entityType: placeableEntityInfo.entityType,
-         tint: canPlace ? [1, 1, 1] : [1.5, 0.5, 0.5]
+         tint: canPlace ? [1, 1, 1] : [1.5, 0.5, 0.5],
+         isAttachedToWall: snapInfo !== null ? Board.entityRecord[snapInfo.snappedEntityID].type === EntityType.woodenWall : false
       };
    }
 
@@ -411,7 +430,8 @@ const getGhostInfo = (): GhostInfo | null => {
       return {
          position: getStructureShapePosition(selectedStructure, hoveredShapeType, blueprintRotation),
          rotation: blueprintRotation,
-         entityType: selectedStructure.type,
+         entityType: SHAPE_ENTITY_TYPES[hoveredShapeType],
+         isAttachedToWall: false,
          tint: [1, 1, 1]
       };
    }
@@ -428,8 +448,8 @@ export function renderGhostPlaceableItem(): void {
    if (ghostInfo === null) {
       return;
    }
-
-   const vertices = calculateVertices(ghostInfo.position, ghostInfo.rotation, ghostInfo.entityType);
+   
+   const vertices = calculateVertices(ghostInfo.position, ghostInfo.rotation, ghostInfo.entityType, ghostInfo.isAttachedToWall);
 
    gl.useProgram(program);
 

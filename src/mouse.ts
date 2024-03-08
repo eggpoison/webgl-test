@@ -2,13 +2,13 @@ import { Settings } from "webgl-test-shared";
 import { halfWindowHeight, halfWindowWidth } from "./webgl";
 import CLIENT_Settings from "./client-settings";
 import { updateCursorTooltip } from "./components/game/dev/CursorTooltip";
-import Entity from "./entities/Entity";
 import Game from "./Game";
 import Camera from "./Camera";
 import { updateDebugInfoEntity, updateDebugInfoTile } from "./components/game/dev/DebugInfo";
 import { isDev } from "./utils";
 import Board from "./Board";
 import { Tile } from "./Tile";
+import GameObject from "./GameObject";
 
 export let cursorX: number | null = null;
 export let cursorY: number | null = null;
@@ -57,7 +57,7 @@ export function getMouseTargetTile(): Tile | null {
  * Finds the entity the user is hovering over.
  */
 // @Cleanup: Use the highlighted entity system instead of having this custom function
-export function getMouseTargetEntity(): Entity | null {
+export function getMouseTargetEntity(): GameObject | null {
    if (Game.cursorPositionX === null || Game.cursorPositionY === null) return null;
    
    const minChunkX = Math.max(Math.min(Math.floor((Game.cursorPositionX - CLIENT_Settings.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / Settings.CHUNK_SIZE / Settings.TILE_SIZE), Settings.BOARD_SIZE - 1), 0);
@@ -65,18 +65,16 @@ export function getMouseTargetEntity(): Entity | null {
    const minChunkY = Math.max(Math.min(Math.floor((Game.cursorPositionY - CLIENT_Settings.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / Settings.CHUNK_SIZE / Settings.TILE_SIZE), Settings.BOARD_SIZE - 1), 0);
    const maxChunkY = Math.max(Math.min(Math.floor((Game.cursorPositionY + CLIENT_Settings.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / Settings.CHUNK_SIZE / Settings.TILE_SIZE), Settings.BOARD_SIZE - 1), 0);
 
-   let closestEntity: Entity | null = null;
+   let closestEntity: GameObject | null = null;
    let minDistance = Number.MAX_SAFE_INTEGER;
    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
          const chunk = Board.getChunk(chunkX, chunkY);
          for (const gameObject of chunk.getGameObjects()) {
-            if (gameObject instanceof Entity) {
-               const distance = Math.sqrt(Math.pow(Game.cursorPositionX - gameObject.renderPosition.x, 2) + Math.pow(Game.cursorPositionY - gameObject.renderPosition.y, 2))
-               if (distance <= CLIENT_Settings.CURSOR_TOOLTIP_HOVER_RANGE && distance < minDistance) {
-                  closestEntity = gameObject;
-                  minDistance = distance;
-               }
+            const distance = Math.sqrt(Math.pow(Game.cursorPositionX - gameObject.renderPosition.x, 2) + Math.pow(Game.cursorPositionY - gameObject.renderPosition.y, 2))
+            if (distance <= CLIENT_Settings.CURSOR_TOOLTIP_HOVER_RANGE && distance < minDistance) {
+               closestEntity = gameObject;
+               minDistance = distance;
             }
          }
       }

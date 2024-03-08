@@ -211,7 +211,8 @@ const TEXTURE_SOURCES: Array<string> = [
    "projectiles/sling-rock.png",
    "projectiles/ballista-rock.png",
    "projectiles/ballista-slimeball.png",
-   "projectiles/ballista-frostcicle.png"
+   "projectiles/ballista-frostcicle.png",
+   "entities/wooden-tunnel/wooden-tunnel.png"
 ];
 
 const addTextureSource = (textureSource: string): void => {
@@ -259,7 +260,7 @@ export async function createEntityTextureAtlas(): Promise<void> {
 export function getTextureArrayIndex(textureSource: string): number {
    const textureIndex = TEXTURE_SOURCES.indexOf(textureSource);
    if (textureIndex === -1) {
-      throw new Error(`Unknown texture source '${textureSource}'.`);
+      throw new Error(`Texture source '${textureSource}' does not exist in the TEXTURE_SOURCES array.`);
    }
    return textureIndex;
 }

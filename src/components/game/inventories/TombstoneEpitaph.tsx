@@ -1,4 +1,4 @@
-import { PlayerCauseOfDeath, veryBadHash } from "webgl-test-shared";
+import { PlayerCauseOfDeath, ServerComponentType, veryBadHash } from "webgl-test-shared";
 import Tombstone from "../../../entities/Tombstone";
 import { getSelectedEntity } from "../../../entity-selection";
 
@@ -33,7 +33,8 @@ const TOMBSTONE_DEATH_MESSAGES: Record<PlayerCauseOfDeath, string> = {
 const TombstoneEpitaph = () => {
    const tombstone = getSelectedEntity() as Tombstone;
 
-   const causeOfDeath = TOMBSTONE_DEATH_MESSAGES[tombstone.deathInfo!.causeOfDeath];
+   const tombstoneComponent = tombstone.getServerComponent(ServerComponentType.tombstone);
+   const causeOfDeath = TOMBSTONE_DEATH_MESSAGES[tombstoneComponent.deathInfo!.causeOfDeath];
 
    // Choose a random life message based off the entity's id
    const hash = veryBadHash(tombstone.id.toString());
@@ -41,7 +42,7 @@ const TombstoneEpitaph = () => {
 
    return <div id="tombstone-epitaph">
       <div className="content">
-         <h1 className="name">{tombstone.deathInfo!.username}</h1>
+         <h1 className="name">{tombstoneComponent.deathInfo!.username}</h1>
 
          <p className="life-message">{lifeMessage}</p>
 

@@ -19,11 +19,11 @@ export function isHoveringInBlueprintMenu(): boolean {
    return isHovering;
 }
 
-const TYPES: ReadonlyArray<BuildingShapeType> = [BlueprintBuildingType.door, BlueprintBuildingType.embrasure];
-const NAMES: ReadonlyArray<string> = ["DOOR", "EMBRASURE"]
-const IMAGE_SOURCES: ReadonlyArray<string> = [require("../../images/entities/wooden-door/wooden-door.png"), require("../../images/entities/wooden-embrasure/wooden-embrasure.png")];
-const IMAGE_WIDTHS = [64, 64];
-const IMAGE_HEIGHTS = [24, 20];
+const TYPES: ReadonlyArray<BuildingShapeType> = [BlueprintBuildingType.door, BlueprintBuildingType.embrasure, BlueprintBuildingType.tunnel];
+const NAMES: ReadonlyArray<string> = ["DOOR", "EMBRASURE", "TUNNEL"]
+const IMAGE_SOURCES: ReadonlyArray<string> = [require("../../images/entities/wooden-door/wooden-door.png"), require("../../images/entities/wooden-embrasure/wooden-embrasure.png"), require("../../images/entities/wooden-tunnel/wooden-tunnel.png")];
+const IMAGE_WIDTHS = [64, 64, 64];
+const IMAGE_HEIGHTS = [24, 20, 64];
 
 // @Cleanup @Hack
 let _isVisible = false;
@@ -60,7 +60,7 @@ const BlueprintMenu = () => {
          _isVisible = true;
          setIsVisible(true);
          setX(x);
-         setY(y + 27);
+         setY(y + 13);
       }
 
       hideStructureShapingMenu = (): void => {

@@ -1,11 +1,13 @@
-import { EntityType, Point, randFloat, randItem } from "webgl-test-shared";
+import { EntityComponentsData, EntityType, Point, ServerComponentType, randFloat, randItem } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import Entity from "./Entity";
 import { createRockParticle, createRockSpeckParticle } from "../particles";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { ROCK_DESTROY_SOUNDS, ROCK_HIT_SOUNDS, playSound } from "../sound";
+import GameObject from "../GameObject";
+import HealthComponent from "../entity-components/HealthComponent";
+import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 
-class Boulder extends Entity {
+class Boulder extends GameObject {
    private static readonly RADIUS = 40;
 
    private static readonly TEXTURE_SOURCES = [
@@ -13,17 +15,22 @@ class Boulder extends Entity {
       "entities/boulder/boulder2.png"
    ];
 
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, boulderType: number) {
-      super(position, id, EntityType.boulder, ageTicks, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.boulder>) {
+      super(position, id, EntityType.boulder, ageTicks);
+
+      const boulderComponentData = componentsData[2];
 
       this.attachRenderPart(
          new RenderPart(
             this,
-            getTextureArrayIndex(Boulder.TEXTURE_SOURCES[boulderType]),
+            getTextureArrayIndex(Boulder.TEXTURE_SOURCES[boulderComponentData.boulderType]),
             0,
             0
          )
       );
+
+      this.addServerComponent(ServerComponentType.health, new HealthComponent(this, componentsData[0]));
+      this.addServerComponent(ServerComponentType.statusEffect, new StatusEffectComponent(this, componentsData[1]));
    }
 
    protected onHit(): void {

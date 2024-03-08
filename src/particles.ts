@@ -1,12 +1,16 @@
-import { angle, lerp, randFloat, randInt, randItem, randSign } from "webgl-test-shared";
+import { CactusFlowerSize, Point, angle, lerp, randFloat, randInt, randItem, randSign } from "webgl-test-shared";
 import Particle from "./Particle";
 import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "./rendering/particle-rendering";
 import Board from "./Board";
-import Entity from "./entities/Entity";
 import GameObject, { getRandomPointInEntity } from "./GameObject";
 
 const BLOOD_COLOUR_LOW: Readonly<ParticleColour> = [150, 0, 0];
 const BLOOD_COLOUR_HIGH: Readonly<ParticleColour> = [212, 0, 0];
+
+const BURNING_PARTICLE_COLOURS: ReadonlyArray<ParticleColour> = [
+   [255/255, 102/255, 0],
+   [255/255, 184/255, 61/255]
+];
 
 export enum BloodParticleSize {
    small,
@@ -52,7 +56,7 @@ export function createBloodParticle(size: BloodParticleSize, spawnPositionX: num
 
 const BLOOD_FOUNTAIN_RAY_COUNT = 5;
 
-export function createBloodParticleFountain(entity: Entity, interval: number, speedMultiplier: number): void {
+export function createBloodParticleFountain(entity: GameObject, interval: number, speedMultiplier: number): void {
    const offset = 2 * Math.PI * Math.random();
 
    for (let i = 0; i < 4; i++) {
@@ -109,7 +113,7 @@ export function createLeafParticle(spawnPositionX: number, spawnPositionY: numbe
    Board.lowTexturedParticles.push(particle);
 }
 
-export function createFootprintParticle(entity: Entity, numFootstepsTaken: number, footstepOffset: number, size: number, lifetime: number): void {
+export function createFootprintParticle(entity: GameObject, numFootstepsTaken: number, footstepOffset: number, size: number, lifetime: number): void {
    const footstepAngleOffset = numFootstepsTaken % 2 === 0 ? Math.PI : 0;
 
    const velocityDirection = angle(entity.velocity.x, entity.velocity.y);
@@ -611,7 +615,7 @@ export function createEmberParticle(spawnPositionX: number, spawnPositionY: numb
       return Math.pow(opacity, 0.3);
    }
 
-   const colour = randItem(Entity.BURNING_PARTICLE_COLOURS);
+   const colour = randItem(BURNING_PARTICLE_COLOURS);
 
    addMonocolourParticleToBufferContainer(
       particle,
@@ -884,4 +888,361 @@ export function createPaperParticle(x: number, y: number): void {
       0, 0, 0
    );
    Board.highTexturedParticles.push(particle);
+}
+
+const getFlowerTextureIndex = (flowerType: number, size: CactusFlowerSize): number => {
+   switch (flowerType) {
+      case 0: {
+         if (size === CactusFlowerSize.small) {
+            return 8 * 2;
+         } else {
+            return 8 * 2 + 4;
+         }
+      }
+      case 1: {
+         if (size === CactusFlowerSize.small) {
+            return 8 * 2 + 1;
+         } else {
+            return 8 * 2 + 5;
+         }
+      }
+      case 2: {
+         if (size === CactusFlowerSize.small) {
+            return 8 * 2 + 2;
+         } else {
+            return 8 * 2 + 6;
+         }
+      }
+      case 3: {
+         if (size === CactusFlowerSize.small) {
+            return 8 * 2 + 3;
+         } else {
+            return 8 * 2 + 7;
+         }
+      }
+      case 4: {
+         return 8 * 3;
+      }
+      default: {
+         throw new Error(`Unknown flower type '${flowerType}'.`);
+      }
+   }
+}
+
+export function createFlowerParticle(spawnPositionX: number, spawnPositionY: number, flowerType: number, size: CactusFlowerSize, rotation: number): void {
+   const velocityMagnitude = randFloat(30, 50);
+   const velocityDirection = 2 * Math.PI * Math.random();
+   const velocityX = velocityMagnitude * Math.sin(velocityDirection);
+   const velocityY = velocityMagnitude * Math.cos(velocityDirection);
+   
+   const lifetime = randFloat(3, 5);
+
+   // @Incomplete
+   const FLOWER_PARTICLE_FADE_TIME = 1;
+   
+   const particle = new Particle(lifetime);
+   particle.getOpacity = () => {
+      return 1 - Math.pow(particle.age / lifetime, 3);
+   }
+   
+   const textureIndex = getFlowerTextureIndex(flowerType, size);
+   addTexturedParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.low,
+      64, 64,
+      spawnPositionX, spawnPositionY,
+      velocityX, velocityY,
+      0, 0,
+      75,
+      rotation,
+      Math.PI * randFloat(-1, 1),
+      0,
+      1.5 * Math.PI,
+      textureIndex,
+      0, 0, 0
+   );
+   Board.lowTexturedParticles.push(particle);
+}
+
+export function createCactusSpineParticle(cactus: GameObject, offset: number, flyDirection: number): void {
+   // @Speed: Garbage collection
+   const spawnPosition = Point.fromVectorForm(offset, flyDirection);
+   spawnPosition.add(cactus.position);
+   
+   const lifetime = randFloat(0.2, 0.3);
+
+   const velocity = Point.fromVectorForm(randFloat(150, 200), flyDirection);
+
+   const particle = new Particle(lifetime);
+   particle.getOpacity = () => {
+      return 1 - particle.age / lifetime;
+   };
+
+   addMonocolourParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.high,
+      4, 16,
+      spawnPosition.x, spawnPosition.y,
+      velocity.x, velocity.y,
+      0, 0,
+      0,
+      flyDirection,
+      0,
+      0,
+      0,
+      0, 0, 0
+   );
+   Board.highMonocolourParticles.push(particle);
+}
+
+const FROST_PARTICLE_LOW: ParticleColour = [102/255, 165/255, 205/255];
+const FROST_PARTICLE_HIGH: ParticleColour = [202/255, 239/255, 255/255];
+export function createFrostShieldBreakParticle(positionX: number, positionY: number): void {
+   const offsetDirection = 2 * Math.PI * Math.random();
+   positionX += 32 * Math.sin(offsetDirection);
+   positionY += 32 * Math.cos(offsetDirection);
+
+   const lifetime = randFloat(0.2, 0.3);
+   
+   const moveSpeed = randFloat(200, 280);
+   const moveDirection = offsetDirection + randFloat(-0.5, 0.5);
+   const velocityX = moveSpeed * Math.sin(moveDirection);
+   const velocityY = moveSpeed * Math.cos(moveDirection);
+
+   const particle = new Particle(lifetime);
+   particle.getOpacity = (): number => {
+      return 1 - Math.pow(particle.age / lifetime, 2);
+   };
+
+   const colourLerp = Math.random();
+   const r = lerp(FROST_PARTICLE_LOW[0], FROST_PARTICLE_HIGH[0], colourLerp);
+   const g = lerp(FROST_PARTICLE_LOW[1], FROST_PARTICLE_HIGH[1], colourLerp);
+   const b = lerp(FROST_PARTICLE_LOW[2], FROST_PARTICLE_HIGH[2], colourLerp);
+
+   const size = randInt(7, 10);
+
+   addMonocolourParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.high,
+      size / 2, size,
+      positionX, positionY,
+      velocityX, velocityY,
+      0, 0,
+      0,
+      moveDirection,
+      0,
+      0,
+      0,
+      r, g, b
+   );
+   Board.highMonocolourParticles.push(particle);
+}
+
+export function createSawdustCloud(x: number, y: number): void {
+   const lifetime = randFloat(0.4, 0.7);
+   
+   const moveSpeed = randFloat(75, 150);
+   const moveDirection = 2 * Math.PI * Math.random();
+   const velocityX = moveSpeed * Math.sin(moveDirection);
+   const velocityY = moveSpeed * Math.cos(moveDirection);
+
+   const opacity = randFloat(0.7, 1);
+   const particle = new Particle(lifetime);
+   particle.getOpacity = (): number => {
+      return (1 - particle.age / lifetime) * opacity;
+   };
+   
+   addTexturedParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.high,
+      64, 64,
+      x, y,
+      velocityX, velocityY,
+      0, 0,
+      0,
+      2 * Math.PI * Math.random(),
+      randFloat(-1, 1) * Math.PI * 2,
+      0,
+      0,
+      6 * 8,
+      0, 0, 0
+   );
+   Board.highTexturedParticles.push(particle);
+}
+      
+const ARROW_DESTROY_PARTICLE_GRAY_COLOUR = [0.6, 0.6, 0.6];
+const ARROW_DESTROY_PARTICLE_BROWN_COLOUR = [135/255, 75/255, 28/255];
+const ARROW_DESTROY_PARTICLE_ADD_VELOCITY = 80;
+
+export function createArrowDestroyParticle(originX: number, originY: number, velocityX: number, velocityY: number): void {
+   // Offset weighted further out
+   const spawnOffsetMagnitude = Math.pow(Math.random(), 0.5) * 40;
+   const spawnOffsetDirection = 2 * Math.PI * Math.random();
+   const spawnPositionX = originX + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
+   const spawnPositionY = originY + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
+
+   let velocityMagnitude = randFloat(60, 80);
+   const velocityDirection = spawnOffsetDirection + randFloat(1, -1);
+   let particleVelocityX = velocityMagnitude * Math.sin(velocityDirection);
+   let particleVelocityY = velocityMagnitude * Math.cos(velocityDirection);
+   
+   // Add the destroy velocity
+   const arrowVelocityLength = Math.sqrt(velocityX * velocityX + velocityY + velocityY);
+   const velocityAddMagnitude = ARROW_DESTROY_PARTICLE_ADD_VELOCITY * Math.random();
+   particleVelocityX += velocityAddMagnitude * velocityX / arrowVelocityLength;
+   particleVelocityY += velocityAddMagnitude * velocityY / arrowVelocityLength;
+   
+   const lifetime = randFloat(0.3, 0.5);
+   
+   const angularVelocity = randFloat(-Math.PI, Math.PI) * 2;
+   
+   const particle = new Particle(lifetime);
+   particle.getOpacity = () => {
+      return 1 - Math.pow(particle.age / lifetime, 2);
+   }
+   
+   let r: number;
+   let g: number;
+   let b: number;
+   if (Math.random() < 0.5) {
+      // Gray colour
+      r = ARROW_DESTROY_PARTICLE_GRAY_COLOUR[0];
+      g = ARROW_DESTROY_PARTICLE_GRAY_COLOUR[1];
+      b = ARROW_DESTROY_PARTICLE_GRAY_COLOUR[2];
+   } else {
+      // Brown colour
+      r = ARROW_DESTROY_PARTICLE_BROWN_COLOUR[0];
+      g = ARROW_DESTROY_PARTICLE_BROWN_COLOUR[1];
+      b = ARROW_DESTROY_PARTICLE_BROWN_COLOUR[2];
+   }
+   
+   const size = randInt(4, 6);
+   
+   addMonocolourParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.low,
+      size, size,
+      spawnPositionX, spawnPositionY,
+      particleVelocityX, particleVelocityY,
+      0, 0,
+      velocityMagnitude / lifetime / 1.5,
+      2 * Math.PI * Math.random(),
+      angularVelocity,
+      0,
+      Math.abs(angularVelocity) / lifetime / 1.5,
+      r, g, b
+   )
+   Board.lowMonocolourParticles.push(particle);
+}
+
+export function createBiteParticle(spawnPositionX: number, spawnPositionY: number): void {
+   const lifetime = 0.4;
+
+   const particle = new Particle(lifetime);
+   particle.getOpacity = () => {
+      return 1 - Math.pow(particle.age / lifetime, 1.5);
+   }
+
+   addTexturedParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.high,
+      64, 64,
+      spawnPositionX, spawnPositionY,
+      0, 0,
+      0, 0,
+      0,
+      Math.PI,
+      0,
+      0,
+      0,
+      8 * 3 + 4,
+      0, 0, 0
+   );
+
+   Board.highTexturedParticles.push(particle);
+}
+
+export function createBlueBloodPoolParticle(originX: number, originY: number, spawnRange: number): void {
+   const lifetime = 11;
+
+   const offsetMagnitude = spawnRange * Math.random();
+   const offsetDirection = 2 * Math.PI * Math.random();
+   const spawnPositionX = originX + offsetMagnitude * Math.sin(offsetDirection);
+   const spawnPositionY = originY + offsetMagnitude * Math.cos(offsetDirection);
+
+   const particle = new Particle(lifetime);
+   particle.getOpacity = () => {
+      return 1 - particle.age / lifetime;
+   };
+
+   const textureIndex = randInt(0, 2);
+   addTexturedParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.low,
+      64, 64,
+      spawnPositionX, spawnPositionY,
+      0, 0,
+      0, 0,
+      0,
+      2 * Math.PI * Math.random(),
+      0,
+      0,
+      0,
+      textureIndex,
+      randFloat(-1, -0.7), randFloat(0.3, 0.5), 1
+   );
+   Board.lowTexturedParticles.push(particle);
+}
+
+export function createBlueBloodParticle(size: BloodParticleSize, spawnPositionX: number, spawnPositionY: number, moveDirection: number, moveSpeed: number, hasDrag: boolean): void {
+   const lifetime = randFloat(0.3, 0.4);
+   
+   const pixelSize = size === BloodParticleSize.large ? 8 : 4;
+
+   const velocityX = moveSpeed * Math.sin(moveDirection);
+   const velocityY = moveSpeed * Math.cos(moveDirection);
+
+   const friction = hasDrag ? moveSpeed / lifetime / 1.2 : 0;
+
+   const particle = new Particle(lifetime);
+   particle.getOpacity = (): number => {
+      return 1 - particle.age / lifetime;
+   };
+
+   const r = randFloat(0, 0.35);
+   const g = randFloat(0.5, 0.65);
+   const b = randFloat(0.75, 0.9);
+
+   addMonocolourParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.high,
+      pixelSize, pixelSize,
+      spawnPositionX, spawnPositionY,
+      velocityX, velocityY,
+      0, 0,
+      friction,
+      2 * Math.PI * Math.random(),
+      0,
+      0,
+      0,
+      r, g, b
+   );
+   Board.highMonocolourParticles.push(particle);
+}
+
+const BLUE_BLOOD_FOUNTAIN_RAY_COUNT = 7;
+
+export function createBlueBloodParticleFountain(entity: GameObject, interval: number, speedMultiplier: number): void {
+   const offset = 2 * Math.PI * Math.random();
+
+   for (let i = 0; i < 6; i++) {
+      Board.addTickCallback(interval * (i + 1), () => {
+         for (let j = 0; j < BLUE_BLOOD_FOUNTAIN_RAY_COUNT; j++) {
+            let moveDirection = 2 * Math.PI / BLOOD_FOUNTAIN_RAY_COUNT * j + offset;
+            moveDirection += randFloat(-0.3, 0.3);
+
+            createBlueBloodParticle(BloodParticleSize.large, entity.position.x, entity.position.y, moveDirection, randFloat(100, 200) * speedMultiplier, false);
+         }
+      });
+   }
 }

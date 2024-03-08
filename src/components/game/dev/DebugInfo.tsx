@@ -1,12 +1,12 @@
 import { useEffect, useReducer, useRef, useState } from "react";
 import { GameObjectDebugData, Settings, TileType, roundNum } from "webgl-test-shared";
-import Entity from "../../../entities/Entity";
 import { Tile } from "../../../Tile";
 import Board from "../../../Board";
+import GameObject from "../../../GameObject";
 
 export let updateDebugInfoTile: (tile: Tile | null) => void = () => {};
 
-export let updateDebugInfoEntity: (entity: Entity | null) => void = () => {};
+export let updateDebugInfoEntity: (entity: GameObject | null) => void = () => {};
 
 export let setDebugInfoDebugData: (debugData: GameObjectDebugData | null) => void = () => {};
 
@@ -42,7 +42,7 @@ const TileDebugInfo = ({ tile }: TileDebugInfoProps) => {
 }
 
 interface EntityDebugInfoProps {
-   readonly entity: Entity;
+   readonly entity: GameObject;
    readonly debugData: GameObjectDebugData | null;
 }
 const EntityDebugInfo = ({ entity, debugData }: EntityDebugInfoProps) => {
@@ -90,7 +90,7 @@ const EntityDebugInfo = ({ entity, debugData }: EntityDebugInfoProps) => {
 
 const DebugInfo = () => {
    const [tile, setTile] = useState<Tile | null>(null);
-   const [entity, setEntity] = useState<Entity | null>(null);
+   const [entity, setEntity] = useState<GameObject | null>(null);
    const debugData = useRef<GameObjectDebugData | null>(null);
    const [, forceUpdate] = useReducer(x => x + 1, 0);
 
@@ -99,7 +99,7 @@ const DebugInfo = () => {
          setTile(tile);
       }
       
-      updateDebugInfoEntity = (entity: Entity | null): void => {
+      updateDebugInfoEntity = (entity: GameObject | null): void => {
          setEntity(entity);
       }
 

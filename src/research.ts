@@ -1,4 +1,4 @@
-import { EntityType, RESEARCH_ORB_AMOUNTS, RESEARCH_ORB_COMPLETE_TIME, Settings, distance, getRandomResearchOrbSize, randFloat, rotateXAroundOrigin, rotateYAroundOrigin } from "webgl-test-shared";
+import { EntityType, RESEARCH_ORB_AMOUNTS, RESEARCH_ORB_COMPLETE_TIME, ServerComponentType, Settings, distance, getRandomResearchOrbSize, randFloat, rotateXAroundOrigin, rotateYAroundOrigin } from "webgl-test-shared";
 import Player from "./entities/Player";
 import Board from "./Board";
 import Game from "./Game";
@@ -99,7 +99,9 @@ const completeOrb = (): void => {
    playSound("orb-complete.mp3", 0.3, ORB_COMPLETE_SOUND_PITCHES[currentResearchOrb!.size], Player.instance!.position.x, Player.instance!.position.y);
 
    // Make the player smack to the bench
-   Player.instance!.rightLastActionTicks = Board.ticks;
+   const inventoryUseComponent = Player.instance!.getServerComponent(ServerComponentType.inventoryUse);
+   const useInfo = inventoryUseComponent.useInfos[0];
+   useInfo.lastAttackTicks = Board.ticks;
    
    currentResearchOrb = generateResearchOrb();
    orbCompleteProgress = 0;

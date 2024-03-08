@@ -9,8 +9,8 @@ import { playSound } from "../sound";
 import { createSnowflakeParticle } from "../particles";
 
 class IceArrow extends GameObject {
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
-      super(position, id, EntityType.iceArrow, ageTicks, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number) {
+      super(position, id, EntityType.iceArrow, ageTicks);
 
       this.attachRenderPart(
          new RenderPart(

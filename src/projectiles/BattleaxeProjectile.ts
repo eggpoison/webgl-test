@@ -6,8 +6,8 @@ import Board from "../Board";
 import { attachSoundToEntity, playSound } from "../sound";
 
 class BattleaxeProjectile extends GameObject {
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
-      super(position, id, EntityType.battleaxeProjectile, ageTicks, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number) {
+      super(position, id, EntityType.battleaxeProjectile, ageTicks);
 
       this.attachRenderPart(
          new RenderPart(

@@ -2,12 +2,12 @@ import Ballista from "../../../entities/Ballista";
 import { getSelectedEntity } from "../../../entity-selection";
 import InventoryContainer from "./InventoryContainer";
 import CLIENT_ITEM_INFO_RECORD, { getItemTypeImage } from "../../../client-item-info";
-import { AMMO_INFO_RECORD, BallistaAmmoType, ItemType, Settings } from "webgl-test-shared";
+import { AMMO_INFO_RECORD, BallistaAmmoType, Inventory, ItemType, ServerComponentType, Settings } from "webgl-test-shared";
 import { CLIENT_STATUS_EFFECT_INFO_RECORD } from "../../../status-effects";
 
-const getAmmoSlot = (ballista: Ballista): number => {
-   for (let itemSlot = 1; itemSlot <= ballista.ammoBoxInventory.width * ballista.ammoBoxInventory.height; itemSlot++) {
-      if (ballista.ammoBoxInventory.itemSlots.hasOwnProperty(itemSlot)) {
+const getAmmoSlot = (ammoBoxInventory: Inventory): number => {
+   for (let itemSlot = 1; itemSlot <= ammoBoxInventory.width * ammoBoxInventory.height; itemSlot++) {
+      if (ammoBoxInventory.itemSlots.hasOwnProperty(itemSlot)) {
          return itemSlot;
       }
    }
@@ -41,15 +41,20 @@ const RemainingAmmoSlider = (props: RemainingAmmoSliderProps) => {
 
 const AmmoBoxInventory = () => {
    const ballista = getSelectedEntity() as Ballista;
-   const nextAmmoSlot = getAmmoSlot(ballista);
+   
+   const inventoryComponent = ballista.getServerComponent(ServerComponentType.inventory);
+   const inventory = inventoryComponent.getInventory("ammoBoxInventory");
+   
+   const nextAmmoSlot = getAmmoSlot(inventory);
+   const ammoBoxComponent = ballista.getServerComponent(ServerComponentType.ammoBox);
    
    return <>
       <div id="ammo-box-menu" className="menu" onContextMenu={(e) => e.nativeEvent.preventDefault()}>
          <h2 className="menu-title">Ammo Box</h2>
          <div className="area-row">
             <div className="area">
-               <p>Bolt type: {ballista.ammoRemaining > 0 ? CLIENT_ITEM_INFO_RECORD[ballista.ammoType!].name : "None"}</p>
-               <RemainingAmmoSlider ammoType={ballista.ammoType} ammoRemaining={ballista.ammoRemaining} />
+               <p>Bolt type: {ammoBoxComponent.ammoRemaining > 0 ? CLIENT_ITEM_INFO_RECORD[ammoBoxComponent.ammoType!].name : "None"}</p>
+               <RemainingAmmoSlider ammoType={ammoBoxComponent.ammoType} ammoRemaining={ammoBoxComponent.ammoRemaining} />
             </div>
             <div className="area">
                <label>
@@ -58,7 +63,7 @@ const AmmoBoxInventory = () => {
                </label>
             </div>
          </div>
-         <InventoryContainer entityID={ballista.id} inventory={ballista.ammoBoxInventory} selectedItemSlot={nextAmmoSlot !== -1 ? nextAmmoSlot : undefined} />
+         <InventoryContainer entityID={ballista.id} inventory={inventory} selectedItemSlot={nextAmmoSlot !== -1 ? nextAmmoSlot : undefined} />
       </div>
       <div id="ammo-guide" className="menu">
          <h2 className="menu-title">Ammo Guide</h2>
@@ -67,8 +72,8 @@ const AmmoBoxInventory = () => {
             const clientItemInfo = CLIENT_ITEM_INFO_RECORD[itemType];
             
             let classname = "area";
-            if (ballista.ammoRemaining > 0) {
-               if (itemType === ballista.ammoType) {
+            if (ammoBoxComponent.ammoRemaining > 0) {
+               if (itemType === ammoBoxComponent.ammoType) {
                   classname += " selected";
                } else {
                   classname += " deselected";

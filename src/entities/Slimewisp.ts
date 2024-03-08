@@ -1,14 +1,17 @@
-import { EntityType, Point, TileType } from "webgl-test-shared";
+import { EntityComponentsData, EntityType, Point, ServerComponentType, TileType } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import Entity from "./Entity";
 import { createSlimePoolParticle, createSlimeSpeckParticle } from "../particles";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import PhysicsComponent from "../entity-components/PhysicsComponent";
+import HealthComponent from "../entity-components/HealthComponent";
+import StatusEffectComponent from "../entity-components/StatusEffectComponent";
+import GameObject from "../GameObject";
 
-class Slimewisp extends Entity {
+class Slimewisp extends GameObject {
    private static readonly RADIUS = 16;
 
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
-      super(position, id, EntityType.slimewisp, ageTicks, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.slimewisp>) {
+      super(position, id, EntityType.slimewisp, ageTicks);
 
       const renderPart = new RenderPart(
          this,
@@ -18,6 +21,10 @@ class Slimewisp extends Entity {
       );
       renderPart.opacity = 0.8;
       this.attachRenderPart(renderPart);
+
+      this.addServerComponent(ServerComponentType.physics, new PhysicsComponent(this, componentsData[0]));
+      this.addServerComponent(ServerComponentType.health, new HealthComponent(this, componentsData[1]));
+      this.addServerComponent(ServerComponentType.statusEffect, new StatusEffectComponent(this, componentsData[2]));
    }
 
    protected overrideTileMoveSpeedMultiplier(): number | null {
