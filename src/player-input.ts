@@ -26,6 +26,7 @@ import { InventoryMenuType, InventorySelector_inventoryIsOpen, InventorySelector
 import { attemptToCompleteNode } from "./research";
 import { spikesAreAttachedToWall } from "./entities/WoodenSpikes";
 import { punjiSticksAreAttachedToWall } from "./entities/PunjiSticks";
+import { blueprintMenuIsOpen, hideBlueprintMenu } from "./components/game/BlueprintMenu";
 
 /** Acceleration of the player while moving without any modifiers. */
 const PLAYER_ACCELERATION = 700;
@@ -429,6 +430,12 @@ const createInventoryToggleListeners = (): void => {
          return;
       }
 
+      if (blueprintMenuIsOpen()) {
+         hideBlueprintMenu();
+         deselectSelectedEntity();
+         return;
+      }
+
       if (InventorySelector_inventoryIsOpen()) {
          InventorySelector_setInventoryMenuType(InventoryMenuType.none);
          return;
@@ -676,7 +683,7 @@ export function calculateSnapInfo(placeableEntityInfo: PlaceableEntityInfo): Bui
    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
          const chunk = Board.getChunk(chunkX, chunkY);
-         for (const entity of chunk.getGameObjects()) {
+         for (const entity of chunk.entities) {
             const distance = regularPlacePosition.calculateDistanceBetween(entity.position);
             if (distance > Settings.STRUCTURE_SNAP_RANGE) {
                continue;
@@ -814,7 +821,7 @@ export function canPlaceItem(placePosition: Point, placeRotation: number, item: 
    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
          const chunk = Board.getChunk(chunkX, chunkY);
-         for (const entity of chunk.getGameObjects()) {
+         for (const entity of chunk.entities) {
             for (const hitbox of entity.hitboxes) {   
                if (placeTestHitbox.isColliding(hitbox)) {
                   return false;

@@ -37,7 +37,8 @@ const getEntityRenderLayer = (entityType: EntityType): RenderLayer => {
       // High entities
       case EntityType.cactus:
       case EntityType.berryBush:
-      case EntityType.tree: {
+      case EntityType.tree:
+      case EntityType.woodenTunnel: {
          return RenderLayer.highEntities;
       }
       // Projectiles

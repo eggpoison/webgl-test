@@ -22,12 +22,12 @@ abstract class Hitbox {
 
    public abstract updateHitboxBounds(offsetRotation: number): void;
 
-   public updateFromGameObject(gameObject: Entity): void {
-      this.position.x = gameObject.position.x;
-      this.position.y = gameObject.position.y;
+   public updateFromEntity(entity: Entity): void {
+      this.position.x = entity.position.x;
+      this.position.y = entity.position.y;
 
-      this.position.x += rotateXAroundPoint(this.offset.x, this.offset.y, 0, 0, gameObject.rotation);
-      this.position.y += rotateYAroundPoint(this.offset.x, this.offset.y, 0, 0, gameObject.rotation);
+      this.position.x += rotateXAroundPoint(this.offset.x, this.offset.y, 0, 0, entity.rotation);
+      this.position.y += rotateYAroundPoint(this.offset.x, this.offset.y, 0, 0, entity.rotation);
    }
 
    public abstract isColliding(otherHitbox: CircularHitbox | RectangularHitbox): boolean;

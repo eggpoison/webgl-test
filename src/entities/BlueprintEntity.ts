@@ -7,6 +7,7 @@ import { BALLISTA_AMMO_BOX_OFFSET_X, BALLISTA_AMMO_BOX_OFFSET_Y, BALLISTA_GEAR_X
 import { createSawdustCloud } from "../particles";
 import BlueprintComponent from "../entity-components/BlueprintComponent";
 import Entity from "../Entity";
+import HealthComponent from "../entity-components/HealthComponent";
 
 interface ProgressTextureInfo {
    readonly progressTextureSources: ReadonlyArray<string>;
@@ -184,6 +185,7 @@ class BlueprintEntity extends Entity {
          this.attachRenderPart(renderPart);
       }
 
+      this.addServerComponent(ServerComponentType.health, new HealthComponent(this, componentsData[0]));
       this.addServerComponent(ServerComponentType.blueprint, new BlueprintComponent(this, blueprintComponentData));
 
       this.updatePartialTexture();

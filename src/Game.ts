@@ -7,7 +7,7 @@ import { updateSpamFilter } from "./components/game/ChatBox";
 import { DecorationInfo, GameDataPacket, EntityDebugData, GrassTileInfo, RiverSteppingStoneData, Settings, ServerTileData, WaterRockData, EnemyTribeData } from "webgl-test-shared";
 import { createEntityShaders, renderGameObjects } from "./rendering/game-object-rendering";
 import Client from "./client/Client";
-import { calculateCursorWorldPositionX, calculateCursorWorldPositionY, cursorX, cursorY, handleMouseMovement, renderCursorTooltip } from "./mouse";
+import { calculateCursorWorldPositionX, calculateCursorWorldPositionY, cursorX, cursorY, getMouseTargetEntity, handleMouseMovement, renderCursorTooltip } from "./mouse";
 import { refreshDebugInfo, setDebugInfoDebugData } from "./components/game/dev/DebugInfo";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, TIME_UNIFORM_BUFFER_BINDING_INDEX, createWebGLContext, gl, halfWindowHeight, halfWindowWidth, resizeCanvas } from "./webgl";
 import { loadTextures } from "./textures";
@@ -108,13 +108,13 @@ abstract class Game {
    private static timeData = new Float32Array(4);
    private static timeBuffer: WebGLBuffer;
 
-   public static setGameObjectDebugData(gameObjectDebugData: EntityDebugData | undefined): void {
-      if (typeof gameObjectDebugData === "undefined") {
+   public static setGameObjectDebugData(entityDebugData: EntityDebugData | undefined): void {
+      if (typeof entityDebugData === "undefined") {
          this.entityDebugData = null;
          setDebugInfoDebugData(null);
       } else {
-         this.entityDebugData = gameObjectDebugData;
-         setDebugInfoDebugData(gameObjectDebugData);
+         this.entityDebugData = entityDebugData;
+         setDebugInfoDebugData(entityDebugData);
       }
    }
 
@@ -270,7 +270,7 @@ abstract class Game {
 
                updateTextNumbers();
                Board.updateTickCallbacks();
-               Board.tickGameObjects();
+               Board.tickEntities();
                this.update();
                this.updatePlayer();
             } else {
@@ -279,7 +279,7 @@ abstract class Game {
                updateTextNumbers();
                Board.updateTickCallbacks();
                Board.updateParticles();
-               Board.updateGameObjects();
+               Board.updateEntities();
                this.update();
             }
             Client.sendPlayerDataPacket();
@@ -425,6 +425,15 @@ abstract class Game {
       }
       if (nerdVisionIsVisible() && this.entityDebugData !== null && Board.hasEntityID(this.entityDebugData.entityID)) {
          renderLineDebugData(this.entityDebugData);
+      }
+
+      if (isDev()) {
+         if (nerdVisionIsVisible()) {
+            const targettedEntity = getMouseTargetEntity();
+            Client.sendTrackEntity(targettedEntity !== null ? targettedEntity.id : null);
+         } else {
+            Client.sendTrackEntity(null);
+         }
       }
 
       renderGhostPlaceableItem();

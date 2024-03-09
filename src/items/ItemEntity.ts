@@ -1,4 +1,4 @@
-import { EntityComponentsData, EntityType, ItemType, Point, ServerComponentType, randFloat } from "webgl-test-shared";
+import { EntityComponentsData, EntityType, Point, ServerComponentType, randFloat } from "webgl-test-shared";
 import Entity from "../Entity";
 import RenderPart from "../render-parts/RenderPart";
 import CLIENT_ITEM_INFO_RECORD from "../client-item-info";

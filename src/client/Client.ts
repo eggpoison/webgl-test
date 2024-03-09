@@ -341,7 +341,7 @@ abstract class Client {
       // All known entity ids which haven't been removed are ones which are dead
       for (const id of knownEntityIDs) {
          const entity = Board.entityRecord[id];
-         Board.removeGameObject(entity);
+         Board.removeEntity(entity);
       }
    }
 
@@ -466,7 +466,7 @@ abstract class Client {
       entity.collisionBit = entityData.collisionBit;
       entity.collisionMask = entityData.collisionMask;
 
-      this.addHitboxesToGameObject(entity, entityData);
+      this.addHitboxesToEntity(entity, entityData);
 
       Board.addEntity(entity);
 
@@ -487,7 +487,7 @@ abstract class Client {
       }
    }
 
-   private static addHitboxesToGameObject(gameObject: Entity, data: EntityData): void {
+   private static addHitboxesToEntity(entity: Entity, data: EntityData): void {
       for (let i = 0; i < data.circularHitboxes.length; i++) {
          const hitboxData = data.circularHitboxes[i];
 
@@ -495,7 +495,7 @@ abstract class Client {
          hitbox.offset.x = hitboxData.offsetX;
          hitbox.offset.y = hitboxData.offsetY;
 
-         gameObject.addCircularHitbox(hitbox);
+         entity.addCircularHitbox(hitbox);
       }
 
       for (let i = 0; i < data.rectangularHitboxes.length; i++) {
@@ -506,7 +506,7 @@ abstract class Client {
          hitbox.offset.y = hitboxData.offsetY;
          hitbox.rotation = hitboxData.rotation;
 
-         gameObject.addRectangularHitbox(hitbox);
+         entity.addRectangularHitbox(hitbox);
       }
    }
 
@@ -665,7 +665,7 @@ abstract class Client {
       }
    }
 
-   public static sendTrackGameObject(id: number | null): void {
+   public static sendTrackEntity(id: number | null): void {
       if (Game.isRunning && this.socket !== null) {
          this.socket.emit("track_game_object", id);
       }
@@ -673,7 +673,7 @@ abstract class Client {
 
    private static killPlayer(): void {
       // Remove the player from the game
-      Board.removeGameObject(Player.instance!);
+      Board.removeEntity(Player.instance!);
       Player.instance = null;
 
       latencyGameState.resetFlags();

@@ -176,13 +176,13 @@ abstract class Entity extends RenderObject {
 
    public addCircularHitbox(hitbox: CircularHitbox): void {
       this.hitboxes.push(hitbox);
-      hitbox.updateFromGameObject(this);
+      hitbox.updateFromEntity(this);
       hitbox.updateHitboxBounds();
    }
 
    public addRectangularHitbox(hitbox: RectangularHitbox): void {
       this.hitboxes.push(hitbox);
-      hitbox.updateFromGameObject(this);
+      hitbox.updateFromEntity(this);
       hitbox.updateHitboxBounds(this.rotation);
    }
 
@@ -380,7 +380,7 @@ abstract class Entity extends RenderObject {
       // Find all chunks which aren't present in the new chunks and remove them
       for (const chunk of this.chunks) {
          if (!containingChunks.has(chunk)) {
-            chunk.removeGameObject(this as unknown as Entity);
+            chunk.removeEntity(this);
             this.chunks.delete(chunk);
          }
       }
@@ -388,7 +388,7 @@ abstract class Entity extends RenderObject {
       // Add all new chunks
       for (const chunk of containingChunks) {
          if (!this.chunks.has(chunk)) {
-            chunk.addGameObject(this as unknown as Entity);
+            chunk.addEntity(this);
             this.chunks.add(chunk);
          }
       }
@@ -408,7 +408,7 @@ abstract class Entity extends RenderObject {
 
    private updateHitboxes(): void {
       for (const hitbox of this.hitboxes) {
-         hitbox.updateFromGameObject(this);
+         hitbox.updateFromEntity(this);
          hitbox.updateHitboxBounds(this.rotation);
       }
    }
@@ -448,7 +448,7 @@ abstract class Entity extends RenderObject {
             for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
                const chunk = Board.getChunk(chunkX, chunkY);
                // if (!this.chunks.has(chunk)) {
-               //    chunk.addGameObject(this as unknown as GameObject);
+               //    chunk.addEntity(this as unknown as Entity);
                //    this.chunks.add(chunk);
                // }
                containingChunks.add(chunk);
@@ -472,7 +472,7 @@ abstract class Entity extends RenderObject {
             for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
                const chunk = Board.getChunk(chunkX, chunkY);
                // if (!this.chunks.has(chunk)) {
-               //    chunk.addGameObject(this as unknown as GameObject);
+               //    chunk.addEntity(this as unknown as Entity);
                //    this.chunks.add(chunk);
                // }
                containingChunks.add(chunk);
@@ -483,7 +483,7 @@ abstract class Entity extends RenderObject {
       // Find all chunks which aren't present in the new chunks and remove them
       for (const chunk of this.chunks) {
          if (!containingChunks.has(chunk)) {
-            chunk.removeGameObject(this as unknown as Entity);
+            chunk.removeEntity(this);
             this.chunks.delete(chunk);
          }
       }
@@ -491,7 +491,7 @@ abstract class Entity extends RenderObject {
       // Add all new chunks
       for (const chunk of containingChunks) {
          if (!this.chunks.has(chunk)) {
-            chunk.addGameObject(this as unknown as Entity);
+            chunk.addEntity(this);
             this.chunks.add(chunk);
          }
       }

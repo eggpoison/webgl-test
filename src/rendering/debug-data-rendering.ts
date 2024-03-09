@@ -95,11 +95,11 @@ const addCircleVertices = (vertices: Array<number>, debugData: EntityDebugData, 
    }
 }
 
-const addLineVertices = (vertices: Array<number>, debugData: EntityDebugData, gameObject: Entity): void => {
+const addLineVertices = (vertices: Array<number>, debugData: EntityDebugData, entity: Entity): void => {
    for (const line of debugData.lines) {
       const targetPosition = new Point(...line.targetPosition);
       vertices.push(
-         ...generateLine(gameObject.renderPosition, targetPosition, line.thickness, line.colour[0], line.colour[1], line.colour[2])
+         ...generateLine(entity.renderPosition, targetPosition, line.thickness, line.colour[0], line.colour[1], line.colour[2])
       );
    }
 }

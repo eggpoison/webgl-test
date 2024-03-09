@@ -29,8 +29,8 @@ class RectangularHitbox extends Hitbox {
       this.halfDiagonalLength = Math.sqrt(Math.pow(this.width / 2, 2) + Math.pow(this.height / 2, 2));
    }
 
-   public updateFromGameObject(gameObject: Entity): void {
-      super.updateFromGameObject(gameObject);
+   public updateFromEntity(gameObject: Entity): void {
+      super.updateFromEntity(gameObject);
       this.externalRotation = gameObject.rotation;
    }
 

@@ -108,7 +108,7 @@ const getEntityID = (doPlayerProximityCheck: boolean): number => {
    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
          const chunk = Board.getChunk(chunkX, chunkY);
-         for (const entity of chunk.getGameObjects()) {
+         for (const entity of chunk.entities) {
             if (!entityCanBeSelected(entity)) {
                continue;
             }
@@ -163,15 +163,6 @@ export function updateHighlightedAndHoveredEntities(): void {
    }
 
    hoveredEntityID = getEntityID(false);
-
-   // Track the hovered entity
-   if (isDev()) {
-      if (nerdVisionIsVisible()) {
-         Client.sendTrackGameObject(hoveredEntityID !== -1 ? hoveredEntityID : null);
-      } else {
-         Client.sendTrackGameObject(null);
-      }
-   }
 
    const newHighlightedEntityID = getEntityID(true);
    if (newHighlightedEntityID !== highlightedEntityID) {

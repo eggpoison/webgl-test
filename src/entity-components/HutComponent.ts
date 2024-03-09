@@ -6,8 +6,6 @@ import RenderPart from "../render-parts/RenderPart";
 import WorkerHut from "../entities/WorkerHut";
 import WarriorHut from "../entities/WarriorHut";
 
-const DOOR_HEIGHT = 48;
-
 const DOOR_OPEN_TICKS = Math.floor(0.15 * Settings.TPS);
 const DOOR_REMAIN_TICKS = Math.floor(0.175 * Settings.TPS);
 const DOOR_CLOSE_TICKS = Math.floor(0.175 * Settings.TPS);

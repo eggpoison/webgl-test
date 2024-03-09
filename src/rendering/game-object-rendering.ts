@@ -154,7 +154,7 @@ export function createEntityShaders(): void {
 }
 
 export function renderGameObjects(): void {
-   if (Board.sortedGameObjects.length === 0) return;
+   if (Board.sortedEntities.length === 0) return;
 
    const numRenderParts = Board.numVisibleRenderParts - Board.fish.length;
    
@@ -162,12 +162,12 @@ export function renderGameObjects(): void {
    const indicesData = new Uint16Array(numRenderParts * 6);
    
    let i = 0;
-   for (const gameObject of Board.sortedGameObjects) {
-      gameObject.updateRenderPosition();
+   for (const entity of Board.sortedEntities) {
+      entity.updateRenderPosition();
 
       // Calculate render info for all render parts
       const remainingRenderParts: Array<RenderPart> = [];
-      for (const child of gameObject.children) {
+      for (const child of entity.children) {
          remainingRenderParts.push(child);
       }
       while (remainingRenderParts.length > 0) {
@@ -181,8 +181,8 @@ export function renderGameObjects(): void {
          remainingRenderParts.splice(0, 1);
       }
 
-      for (const renderPart of gameObject.allRenderParts) {
-         const depth = -renderPart.zIndex * 0.0001 + gameObject.renderDepth;
+      for (const renderPart of entity.allRenderParts) {
+         const depth = -renderPart.zIndex * 0.0001 + entity.renderDepth;
    
          const u0 = renderPart.flipX ? 1 : 0;
          const u1 = 1 - u0;
@@ -208,9 +208,9 @@ export function renderGameObjects(): void {
 
          const vertexDataOffset = i * 4 * 10;
 
-         const tintR = gameObject.tintR + renderPart.tintR;
-         const tintG = gameObject.tintG + renderPart.tintG;
-         const tintB = gameObject.tintB + renderPart.tintB;
+         const tintR = entity.tintR + renderPart.tintR;
+         const tintG = entity.tintG + renderPart.tintG;
+         const tintB = entity.tintB + renderPart.tintB;
 
          vertexData[vertexDataOffset] = bottomLeftX;
          vertexData[vertexDataOffset + 1] = bottomLeftY;

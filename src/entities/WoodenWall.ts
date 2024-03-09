@@ -181,7 +181,7 @@ class WoodenWall extends Entity {
       // @Speed @Hack
       // Don't play death effects if the wall was replaced by a blueprint
       for (const chunk of this.chunks) {
-         for (const entity of chunk.getGameObjects()) {
+         for (const entity of chunk.entities) {
             if (entity.type !== EntityType.blueprintEntity) {
                continue;
             }

@@ -1,10 +1,8 @@
-import { Settings, Point, Vector, ServerTileUpdateData, rotatePoint, RiverSteppingStoneData, RIVER_STEPPING_STONE_SIZES, EntityType, ServerTileData, GrassTileInfo, TileType } from "webgl-test-shared";
+import { Settings, Point, Vector, ServerTileUpdateData, RiverSteppingStoneData, RIVER_STEPPING_STONE_SIZES, EntityType, ServerTileData, GrassTileInfo, TileType } from "webgl-test-shared";
 import Chunk from "./Chunk";
 import { Tile } from "./Tile";
 import Entity from "./Entity";
-import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import Particle from "./Particle";
-import CircularHitbox from "./hitboxes/CircularHitbox";
 import { highMonocolourBufferContainer, highTexturedBufferContainer, lowMonocolourBufferContainer, lowTexturedBufferContainer } from "./rendering/particle-rendering";
 import ObjectBufferContainer from "./rendering/ObjectBufferContainer";
 import { tempFloat32ArrayLength1 } from "./webgl";
@@ -47,7 +45,7 @@ abstract class Board {
 
    public static numVisibleRenderParts = 0;
    /** Game objects sorted in descending render weight */
-   public static readonly sortedGameObjects = new Array<Entity>();
+   public static readonly sortedEntities = new Array<Entity>();
    /** All fish in the board */
    public static readonly fish = new Array<Fish>();
 
@@ -194,21 +192,21 @@ abstract class Board {
          this.fish.push(entity as Fish);
       } else {
          // Add into the sorted array
-         let idx = this.sortedGameObjects.length;
-         for (let i = 0; i < this.sortedGameObjects.length; i++) {
-            const currentGameObject = this.sortedGameObjects[i];
-            if (entity.renderDepth > currentGameObject.renderDepth) {
+         let idx = this.sortedEntities.length;
+         for (let i = 0; i < this.sortedEntities.length; i++) {
+            const currentEntity = this.sortedEntities[i];
+            if (entity.renderDepth > currentEntity.renderDepth) {
                idx = i;
                break;
             }
          }
-         this.sortedGameObjects.splice(idx, 0, entity);
+         this.sortedEntities.splice(idx, 0, entity);
       }
    }
 
-   public static removeGameObject(entity: Entity): void {
+   public static removeEntity(entity: Entity): void {
       if (typeof entity === "undefined") {
-         throw new Error("Tried to remove an undefined game object.");
+         throw new Error("Tried to remove an undefined entity.");
       }
 
       delete Board.entityRecord[entity.id];
@@ -226,7 +224,7 @@ abstract class Board {
       }
 
       for (const chunk of entity.chunks) {
-         chunk.removeGameObject(entity);
+         chunk.removeEntity(entity);
       }
    
       this.entities.delete(entity);
@@ -236,7 +234,7 @@ abstract class Board {
             this.fish.splice(idx, 1);
          }
       } else {
-         this.sortedGameObjects.splice(this.sortedGameObjects.indexOf(entity), 1);
+         this.sortedEntities.splice(this.sortedEntities.indexOf(entity), 1);
       }
    
       this.numVisibleRenderParts -= entity.allRenderParts.length;
@@ -315,16 +313,16 @@ abstract class Board {
    }
 
    /** Ticks all game objects without updating them */
-   public static tickGameObjects(): void {
-      for (const gameObject of this.entities) {
-         gameObject.tick();
+   public static tickEntities(): void {
+      for (const entity of this.entities) {
+         entity.tick();
       }
    }
 
-   public static updateGameObjects(): void {
-      for (const gameObject of this.entities) {
-         gameObject.tick();
-         gameObject.update();
+   public static updateEntities(): void {
+      for (const entity of this.entities) {
+         entity.tick();
+         entity.update();
       }
    }
 
@@ -338,32 +336,6 @@ abstract class Board {
          tile.type = update.type;
          tile.isWall = update.isWall;
       }
-   }
-
-   public static calculateDistanceBetweenPointAndGameObject(position: Point, gameObject: Entity): number {
-      let minDist = Number.MAX_SAFE_INTEGER;
-      for (const hitbox of gameObject.hitboxes) {
-         let distance: number;
-         if (hitbox.hasOwnProperty("radius")) {
-            // Circular
-            const dist = position.calculateDistanceBetween(gameObject.position);
-            distance = dist - (hitbox as CircularHitbox).radius;
-         } else {
-            // Rectangular
-
-            // Rotate the objects to axis-align the rectangle
-            const rotatedPositon = rotatePoint(position, gameObject.position, -gameObject.rotation);
-
-            const distanceX = Math.max(Math.abs(rotatedPositon.x - gameObject.position.x) - (hitbox as RectangularHitbox).width / 2, 0);
-            const distanceY = Math.max(Math.abs(rotatedPositon.y - gameObject.position.y) - (hitbox as RectangularHitbox).height / 2, 0);
-            distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
-         }
-         if (distance < minDist) {
-            minDist = distance;
-         }
-      }
-
-      return minDist;
    }
 
    public static tileIsInBoard(tileX: number, tileY: number): boolean {

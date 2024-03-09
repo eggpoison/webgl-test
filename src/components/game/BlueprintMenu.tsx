@@ -6,8 +6,8 @@ import Client from "../../client/Client";
 import { BlueprintBuildingType, BuildingShapeType, EntityType } from "webgl-test-shared";
 import { addKeyListener } from "../../keyboard-input";
 
-let showStructureShapingMenu: (x: number, y: number) => void;
-let hideStructureShapingMenu: () => void = () => {};
+let showBlueprintMenu: (x: number, y: number) => void;
+export let hideBlueprintMenu: () => void = () => {};
 
 let hoveredShapeType = -1;
 export function getHoveredShapeType(): BuildingShapeType | -1 {
@@ -18,6 +18,8 @@ let isHovering = false;
 export function isHoveringInBlueprintMenu(): boolean {
    return isHovering;
 }
+
+export let blueprintMenuIsOpen: () => boolean;
 
 const TYPES: ReadonlyArray<BuildingShapeType> = [BlueprintBuildingType.door, BlueprintBuildingType.embrasure, BlueprintBuildingType.tunnel];
 const NAMES: ReadonlyArray<string> = ["DOOR", "EMBRASURE", "TUNNEL"]
@@ -56,20 +58,24 @@ const BlueprintMenu = () => {
          }
       }
 
-      showStructureShapingMenu = (x: number, y: number): void => {
+      showBlueprintMenu = (x: number, y: number): void => {
          _isVisible = true;
          setIsVisible(true);
          setX(x);
          setY(y + 13);
       }
 
-      hideStructureShapingMenu = (): void => {
+      hideBlueprintMenu = (): void => {
          hoveredShapeType = -1;
          isHovering = false;
          _isVisible = false;
          setIsVisible(false);
       }
    }, []);
+
+   useEffect(() => {
+      blueprintMenuIsOpen = () => isVisible;
+   }, [isVisible]);
    
    const hoverOption = (type: BuildingShapeType): void => {
       hoveredShapeType = type;
@@ -107,17 +113,17 @@ export default BlueprintMenu;
 export function updateBlueprintMenu(): void {
    const selectedStructureID = getSelectedEntityID();
    if (selectedStructureID === -1 || !Board.entityRecord.hasOwnProperty(selectedStructureID)) {
-      hideStructureShapingMenu();
+      hideBlueprintMenu();
       return;
    }
 
    const selectedStructure = Board.entityRecord[selectedStructureID];
    if (selectedStructure.type !== EntityType.woodenWall && selectedStructure.type !== EntityType.woodenEmbrasure) {
-      hideStructureShapingMenu();
+      hideBlueprintMenu();
       return;
    }
    
    const screenX = Camera.calculateXScreenPos(selectedStructure.position.x);
    const screenY = Camera.calculateYScreenPos(selectedStructure.position.y);
-   showStructureShapingMenu(screenX, screenY);
+   showBlueprintMenu(screenX, screenY);
 }

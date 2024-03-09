@@ -8,6 +8,7 @@ import { isDev } from "./utils";
 import Board from "./Board";
 import { Tile } from "./Tile";
 import Entity from "./Entity";
+import { updateCursorTooltip } from "./components/game/dev/CursorTooltip";
 
 export let cursorX: number | null = null;
 export let cursorY: number | null = null;
@@ -69,7 +70,7 @@ export function getMouseTargetEntity(): Entity | null {
    for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
          const chunk = Board.getChunk(chunkX, chunkY);
-         for (const gameObject of chunk.getGameObjects()) {
+         for (const gameObject of chunk.entities) {
             const distance = Math.sqrt(Math.pow(Game.cursorPositionX - gameObject.renderPosition.x, 2) + Math.pow(Game.cursorPositionY - gameObject.renderPosition.y, 2))
             if (distance <= CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE && distance < minDistance) {
                closestEntity = gameObject;
@@ -105,5 +106,14 @@ export function renderCursorTooltip(): void {
       return;
    } else {
       updateDebugInfoEntity(targetEntity);
+   }
+
+   // Update the cursor tooltip
+   const entityScreenPositionX = Camera.calculateXScreenPos(targetEntity.renderPosition.x);
+   const entityScreenPositionY = Camera.calculateYScreenPos(targetEntity.renderPosition.y);
+
+   const debugData = Game.getGameObjectDebugData();
+   if (debugData === null || targetEntity.id === debugData.entityID) {
+      updateCursorTooltip(debugData, entityScreenPositionX, entityScreenPositionY);
    }
 }

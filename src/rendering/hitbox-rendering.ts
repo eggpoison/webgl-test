@@ -46,20 +46,20 @@ export function createHitboxShaders(): void {
    buffer = gl.createBuffer()!;
 }
 
-const calculateVisibleGameObjects = (): Array<Entity> => {
-   const visibleGameObjects = new Array<Entity>();
+const calculateVisibleEntities = (): Array<Entity> => {
+   const visibleEntities = new Array<Entity>();
 
-   for (const gameObject of Board.entities) {
-      visibleGameObjects.push(gameObject);
+   for (const entity of Board.entities) {
+      visibleEntities.push(entity);
    }
 
-   return visibleGameObjects;
+   return visibleEntities;
 }
 
 /** Renders all hitboxes of a specified set of entities */
 export function renderEntityHitboxes(): void {
-   const gameObjects = calculateVisibleGameObjects();
-   if (gameObjects.length === 0) return;
+   const entities = calculateVisibleEntities();
+   if (entities.length === 0) return;
 
    // @Speed
    // @Speed
@@ -67,14 +67,14 @@ export function renderEntityHitboxes(): void {
 
    // Calculate vertices
    const vertices = new Array<number>();
-   for (const gameObject of gameObjects) {
-      for (const hitbox of gameObject.hitboxes) {
+   for (const entity of entities) {
+      for (const hitbox of entity.hitboxes) {
          let hitboxRenderPositionX = hitbox.position.x;
          let hitboxRenderPositionY = hitbox.position.y;
 
          // Interpolate the hitbox render position
-         hitboxRenderPositionX += gameObject.renderPosition.x - gameObject.position.x;
-         hitboxRenderPositionY += gameObject.renderPosition.y - gameObject.position.y;
+         hitboxRenderPositionX += entity.renderPosition.x - entity.position.x;
+         hitboxRenderPositionY += entity.renderPosition.y - entity.position.y;
          
          if (hitbox.hasOwnProperty("width")) {
             // Rectangular
@@ -85,14 +85,14 @@ export function renderEntityHitboxes(): void {
             const y2 = hitboxRenderPositionY + (hitbox as RectangularHitbox).height / 2;
 
             // Rotate to match the entity's rotation
-            const topLeftX = rotateXAroundPoint(x1, y2, hitboxRenderPositionX, hitboxRenderPositionY, gameObject.rotation);
-            const topLeftY = rotateYAroundPoint(x1, y2, hitboxRenderPositionX, hitboxRenderPositionY, gameObject.rotation);
-            const topRightX = rotateXAroundPoint(x2, y2, hitboxRenderPositionX, hitboxRenderPositionY, gameObject.rotation);
-            const topRightY = rotateYAroundPoint(x2, y2, hitboxRenderPositionX, hitboxRenderPositionY, gameObject.rotation);
-            const bottomRightX = rotateXAroundPoint(x2, y1, hitboxRenderPositionX, hitboxRenderPositionY, gameObject.rotation);
-            const bottomRightY = rotateYAroundPoint(x2, y1, hitboxRenderPositionX, hitboxRenderPositionY, gameObject.rotation);
-            const bottomLeftX = rotateXAroundPoint(x1, y1, hitboxRenderPositionX, hitboxRenderPositionY, gameObject.rotation);
-            const bottomLeftY = rotateYAroundPoint(x1, y1, hitboxRenderPositionX, hitboxRenderPositionY, gameObject.rotation);
+            const topLeftX = rotateXAroundPoint(x1, y2, hitboxRenderPositionX, hitboxRenderPositionY, entity.rotation);
+            const topLeftY = rotateYAroundPoint(x1, y2, hitboxRenderPositionX, hitboxRenderPositionY, entity.rotation);
+            const topRightX = rotateXAroundPoint(x2, y2, hitboxRenderPositionX, hitboxRenderPositionY, entity.rotation);
+            const topRightY = rotateYAroundPoint(x2, y2, hitboxRenderPositionX, hitboxRenderPositionY, entity.rotation);
+            const bottomRightX = rotateXAroundPoint(x2, y1, hitboxRenderPositionX, hitboxRenderPositionY, entity.rotation);
+            const bottomRightY = rotateYAroundPoint(x2, y1, hitboxRenderPositionX, hitboxRenderPositionY, entity.rotation);
+            const bottomLeftX = rotateXAroundPoint(x1, y1, hitboxRenderPositionX, hitboxRenderPositionY, entity.rotation);
+            const bottomLeftY = rotateYAroundPoint(x1, y1, hitboxRenderPositionX, hitboxRenderPositionY, entity.rotation);
 
             vertices.push(
                topLeftX, topLeftY,

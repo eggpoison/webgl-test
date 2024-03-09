@@ -1,8 +1,8 @@
 import { useEffect, useReducer, useRef, useState } from "react";
 import { EntityDebugData, Settings, TileType, roundNum } from "webgl-test-shared";
 import Entity from "../../../Entity";
-import { Tile } from "../../../Tile";
 import Board from "../../../Board";
+import { Tile } from "../../../Tile";
 
 export let updateDebugInfoTile: (tile: Tile | null) => void = () => {};
 
