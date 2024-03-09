@@ -26,6 +26,7 @@ import { InventoryMenuType, InventorySelector_inventoryIsOpen, InventorySelector
 import { attemptToCompleteNode } from "./research";
 import { spikesAreAttachedToWall } from "./entities/WoodenSpikes";
 import { punjiSticksAreAttachedToWall } from "./entities/PunjiSticks";
+import { blueprintMenuIsOpen, hideBlueprintMenu } from "./components/game/BlueprintMenu";
 
 /** Acceleration of the player while moving without any modifiers. */
 const PLAYER_ACCELERATION = 700;
@@ -426,6 +427,12 @@ export function updateInventoryIsOpen(inventoryIsOpen: boolean): void {
 const createInventoryToggleListeners = (): void => {
    addKeyListener("e", () => {
       if (!Game.isRunning) {
+         return;
+      }
+
+      if (blueprintMenuIsOpen()) {
+         hideBlueprintMenu();
+         deselectSelectedEntity();
          return;
       }
 
