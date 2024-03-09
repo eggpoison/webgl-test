@@ -1,22 +1,18 @@
-import { Point, TribeTotemBanner, EntityData, TribeType, EntityType } from "webgl-test-shared";
+import { Point, EntityType, ServerComponentType, EntityComponentsData } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import Entity from "./Entity";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { playBuildingHitSound, playSound } from "../sound";
+import TribeComponent from "../entity-components/TribeComponent";
+import HealthComponent from "../entity-components/HealthComponent";
+import StatusEffectComponent from "../entity-components/StatusEffectComponent";
+import TotemBannerComponent from "../entity-components/TotemBannerComponent";
+import Entity from "../Entity";
 
 class TribeTotem extends Entity {
    public static readonly SIZE = 120;
 
-   private static readonly BANNER_LAYER_DISTANCES = [34, 52, 65];
-
-   public tribeID: number;
-   private tribeType: TribeType;
-
-   private readonly banners: Record<number, TribeTotemBanner> = {};
-   private readonly bannerRenderParts: Record<number, RenderPart> = {};
-
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, tribeID: number, tribeType: TribeType, banners: Array<TribeTotemBanner>) {
-      super(position, id, EntityType.tribeTotem, ageTicks, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.tribeTotem>) {
+      super(position, id, EntityType.tribeTotem, ageTicks);
 
       const renderPart = new RenderPart(
          this,
@@ -26,72 +22,10 @@ class TribeTotem extends Entity {
       );
       this.attachRenderPart(renderPart);
 
-      this.tribeID = tribeID;
-      this.tribeType = tribeType;
-      this.updateBanners(banners);
-   }
-
-   private createBannerRenderPart(banner: TribeTotemBanner): void {
-      let totemTextureSourceID: string;
-      switch (this.tribeType) {
-         case TribeType.plainspeople: {
-            totemTextureSourceID = "plainspeople-banner.png";
-            break;
-         }
-         case TribeType.goblins: {
-            totemTextureSourceID = "goblin-banner.png";
-            break;
-         }
-         case TribeType.barbarians: {
-            totemTextureSourceID = "barbarian-banner.png";
-            break;
-         }
-         case TribeType.frostlings: {
-            totemTextureSourceID = "frostling-banner.png";
-            break;
-         }
-      }
-
-      const renderPart = new RenderPart(
-         this,
-         getTextureArrayIndex(`entities/tribe-totem/${totemTextureSourceID}`),
-         2,
-         banner.direction
-      );
-      renderPart.offset = Point.fromVectorForm(TribeTotem.BANNER_LAYER_DISTANCES[banner.layer], banner.direction);
-      this.attachRenderPart(renderPart);
-      this.bannerRenderParts[banner.hutNum] = renderPart;
-   }
-
-   private updateBanners(banners: ReadonlyArray<TribeTotemBanner>): void {
-      const removedBannerNums = Object.keys(this.banners).map(num => Number(num));
-      
-      // Add new banners
-      for (const banner of banners) {
-         if (!this.banners.hasOwnProperty(banner.hutNum)) {
-            this.createBannerRenderPart(banner);
-            this.banners[banner.hutNum] = banner;
-         }
-
-         const idx = removedBannerNums.indexOf(banner.hutNum);
-         if (idx !== -1) {
-            removedBannerNums.splice(idx, 1);
-         }
-      }
-      
-      // Remove banners which are no longer there
-      for (const hutNum of removedBannerNums) {
-         this.removeRenderPart(this.bannerRenderParts[hutNum]);
-         delete this.bannerRenderParts[hutNum];
-         delete this.banners[hutNum];
-      }
-   }
-
-   public updateFromData(entityData: EntityData<EntityType.tribeTotem>): void {
-      super.updateFromData(entityData);
-
-      this.tribeType = entityData.clientArgs[1];
-      this.updateBanners(entityData.clientArgs[2]);
+      this.addServerComponent(ServerComponentType.health, new HealthComponent(this, componentsData[0]))
+      this.addServerComponent(ServerComponentType.statusEffect, new StatusEffectComponent(this, componentsData[1]))
+      this.addServerComponent(ServerComponentType.tribe, new TribeComponent(this, componentsData[2]))
+      this.addServerComponent(ServerComponentType.totemBanner, new TotemBannerComponent(this, componentsData[3]));
    }
 
    protected onHit(): void {

@@ -1,10 +1,10 @@
-import { SETTINGS } from "webgl-test-shared";
+import { Settings } from "webgl-test-shared";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 
-const top = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE;
+const top = Settings.BOARD_DIMENSIONS * Settings.TILE_SIZE;
 const bottom = 0;
 const left = 0;
-const right = SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE;
+const right = Settings.BOARD_DIMENSIONS * Settings.TILE_SIZE;
 
 let program: WebGLProgram;
 let buffer: WebGLBuffer;
@@ -54,7 +54,7 @@ export function renderChunkBorders(minX: number, maxX: number, minY: number, max
 
    // Horizontal lines
    for (let chunkY = minY; chunkY <= maxY; chunkY++) {
-      const screenY = chunkY * chunkSize * SETTINGS.TILE_SIZE;
+      const screenY = chunkY * chunkSize * Settings.TILE_SIZE;
       vertices.push(
          left, screenY - halfThickness, // Bottom left
          right, screenY - halfThickness, // Bottom right
@@ -67,7 +67,7 @@ export function renderChunkBorders(minX: number, maxX: number, minY: number, max
 
    // Vertical lines
    for (let chunkX = minX; chunkX <= maxX; chunkX++) {
-      const screenX = chunkX * chunkSize * SETTINGS.TILE_SIZE;
+      const screenX = chunkX * chunkSize * Settings.TILE_SIZE;
       vertices.push(
          screenX - halfThickness, bottom, // Bottom left
          screenX + halfThickness, bottom, // Bottom right

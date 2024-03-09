@@ -1,4 +1,4 @@
-import { EntityType, RESEARCH_ORB_AMOUNTS, RESEARCH_ORB_COMPLETE_TIME, SETTINGS, distance, getRandomResearchOrbSize, randFloat, rotateXAroundOrigin, rotateYAroundOrigin } from "webgl-test-shared";
+import { EntityType, RESEARCH_ORB_AMOUNTS, RESEARCH_ORB_COMPLETE_TIME, ServerComponentType, Settings, distance, getRandomResearchOrbSize, randFloat, rotateXAroundOrigin, rotateYAroundOrigin } from "webgl-test-shared";
 import Player from "./entities/Player";
 import Board from "./Board";
 import Game from "./Game";
@@ -75,7 +75,7 @@ export function updateResearchOrb(): void {
       return;
    }
 
-   if (Math.random() < ORB_PARTICLES_PER_SECOND[currentResearchOrb.size] / SETTINGS.TPS) {
+   if (Math.random() < ORB_PARTICLES_PER_SECOND[currentResearchOrb.size] / Settings.TPS) {
       const offsetDirection = 2 * Math.PI * Math.random();
       const offsetMagnitude = RESEARCH_ORB_SIZES[currentResearchOrb.size] / 2 * 1.25 * Math.random();
       const x = currentResearchOrb.positionX + offsetMagnitude * Math.sin(offsetDirection);
@@ -99,7 +99,9 @@ const completeOrb = (): void => {
    playSound("orb-complete.mp3", 0.3, ORB_COMPLETE_SOUND_PITCHES[currentResearchOrb!.size], Player.instance!.position.x, Player.instance!.position.y);
 
    // Make the player smack to the bench
-   Player.instance!.rightLastActionTicks = Board.ticks;
+   const inventoryUseComponent = Player.instance!.getServerComponent(ServerComponentType.inventoryUse);
+   const useInfo = inventoryUseComponent.useInfos[0];
+   useInfo.lastAttackTicks = Board.ticks;
    
    currentResearchOrb = generateResearchOrb();
    orbCompleteProgress = 0;
@@ -114,7 +116,7 @@ export function attemptToResearch(): void {
 
    const distFromOrb = distance(Game.cursorPositionX, Game.cursorPositionY, currentResearchOrb.positionX, currentResearchOrb.positionY);
    if (distFromOrb < nodeSize / 2) {
-      orbCompleteProgress += 1 / SETTINGS.TPS;
+      orbCompleteProgress += 1 / Settings.TPS;
       if (orbCompleteProgress > RESEARCH_ORB_COMPLETE_TIME) {
          orbCompleteProgress = RESEARCH_ORB_COMPLETE_TIME;
       }

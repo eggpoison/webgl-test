@@ -1,13 +1,13 @@
 import { EntityType, HitData, Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
-import Entity from "./Entity";
 import { playSound } from "../sound";
 import { createLightWoodSpeckParticle, createWoodShardParticle } from "./WoodenWall";
+import Entity from "../Entity";
 
 class WoodenEmbrasure extends Entity {
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
-      super(position, id, EntityType.woodenEmbrasure, ageTicks, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number) {
+      super(position, id, EntityType.woodenEmbrasure, ageTicks);
 
       this.attachRenderPart(
          new RenderPart(

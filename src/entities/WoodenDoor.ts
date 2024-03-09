@@ -1,44 +1,25 @@
-import { DoorToggleType, EntityData, EntityType, HitData, Point } from "webgl-test-shared";
+import { EntityComponentsData, EntityType, HitData, Point, ServerComponentType } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
-import Entity from "./Entity";
 import { playSound } from "../sound";
 import { createLightWoodSpeckParticle, createWoodShardParticle } from "./WoodenWall";
+import DoorComponent from "../entity-components/DoorComponent";
+import Entity from "../Entity";
 
 class WoodenDoor extends Entity {
-   // @Temporary: Remove once reworked to not use server-side hack
-   private readonly doorRenderPart: RenderPart;
+   constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.woodenDoor>) {
+      super(position, id, EntityType.woodenDoor, ageTicks);
 
-   public toggleType: DoorToggleType;
-   public openProgress: number;
-   
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, toggleType: DoorToggleType, openProgress: number) {
-      super(position, id, EntityType.woodenDoor, ageTicks, renderDepth);
-
-      this.toggleType = toggleType;
-      this.openProgress = openProgress;
-
-      this.doorRenderPart = new RenderPart(
-         this,
-         getTextureArrayIndex("entities/wooden-door/wooden-door.png"),
-         0,
-         0
+      this.attachRenderPart(
+         new RenderPart(
+            this,
+            getTextureArrayIndex("entities/wooden-door/wooden-door.png"),
+            0,
+            0
+         )
       );
-      this.attachRenderPart(this.doorRenderPart);
-   }
 
-   public updateFromData(data: EntityData<EntityType.woodenDoor>): void {
-      super.updateFromData(data);
-
-      const toggleType = data.clientArgs[0];
-      if (toggleType === DoorToggleType.open && this.toggleType === DoorToggleType.none) {
-         playSound("door-open.mp3", 0.4, 1, this.position.x, this.position.y);
-      } else if (toggleType === DoorToggleType.close && this.toggleType === DoorToggleType.none) {
-         playSound("door-close.mp3", 0.4, 1, this.position.x, this.position.y);
-      }
-      this.toggleType = toggleType;
-
-      this.openProgress = data.clientArgs[1];
+      this.addServerComponent(ServerComponentType.door, new DoorComponent(this, componentsData[2]));
    }
 
    protected onHit(hitData: HitData): void {

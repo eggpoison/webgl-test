@@ -1,7 +1,7 @@
-import { SETTINGS, TileType, distance, randInt } from "webgl-test-shared";
+import { Settings, TileType, distance, randInt } from "webgl-test-shared";
 import Camera from "./Camera";
 import Board from "./Board";
-import GameObject from "./GameObject";
+import Entity from "./Entity";
 
 const AUDIO_FILE_PATHS = [
    "item-pickup.mp3",
@@ -164,7 +164,7 @@ export interface Sound {
 
 interface SoundAttachInfo {
    readonly sound: Sound;
-   readonly entity: GameObject;
+   readonly entity: Entity;
 }
 
 const activeSounds = new Array<Sound>();
@@ -245,7 +245,7 @@ export function playSound(filePath: AudioFilePath, volume: number, pitchMultipli
    };
 }
 
-export function attachSoundToEntity(sound: Sound, entity: GameObject): void {
+export function attachSoundToEntity(sound: Sound, entity: Entity): void {
    entityAttachedSounds.push({
       sound: sound,
       entity: entity
@@ -271,10 +271,10 @@ export function playBuildingHitSound(sourceX: number, sourceY: number): void {
 }
 
 export function playRiverSounds(): void {
-   const minTileX = Camera.minVisibleChunkX * SETTINGS.CHUNK_SIZE;
-   const maxTileX = (Camera.maxVisibleChunkX + 1) * SETTINGS.CHUNK_SIZE - 1;
-   const minTileY = Camera.minVisibleChunkY * SETTINGS.CHUNK_SIZE;
-   const maxTileY = (Camera.maxVisibleChunkY + 1) * SETTINGS.CHUNK_SIZE - 1;
+   const minTileX = Camera.minVisibleChunkX * Settings.CHUNK_SIZE;
+   const maxTileX = (Camera.maxVisibleChunkX + 1) * Settings.CHUNK_SIZE - 1;
+   const minTileY = Camera.minVisibleChunkY * Settings.CHUNK_SIZE;
+   const maxTileY = (Camera.maxVisibleChunkY + 1) * Settings.CHUNK_SIZE - 1;
 
    for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
       for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
@@ -283,9 +283,9 @@ export function playRiverSounds(): void {
             continue;
          }
 
-         if (tile.type === TileType.water && Math.random() < 0.1 / SETTINGS.TPS) {
-            const x = (tileX + Math.random()) * SETTINGS.TILE_SIZE;
-            const y = (tileY + Math.random()) * SETTINGS.TILE_SIZE;
+         if (tile.type === TileType.water && Math.random() < 0.1 / Settings.TPS) {
+            const x = (tileX + Math.random()) * Settings.TILE_SIZE;
+            const y = (tileY + Math.random()) * Settings.TILE_SIZE;
             playSound(("water-flowing-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.2, 1, x, y);
          }
       }

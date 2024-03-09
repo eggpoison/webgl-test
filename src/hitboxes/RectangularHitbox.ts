@@ -1,7 +1,7 @@
 import { circleAndRectangleDoIntersect, HitboxVertexPositions, Point, rectanglePointsDoIntersect, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import Hitbox from "./Hitbox";
 import CircularHitbox from "./CircularHitbox";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
 class RectangularHitbox extends Hitbox {
    public width: number;
@@ -17,8 +17,8 @@ class RectangularHitbox extends Hitbox {
 
    public sideAxes = [new Point(0, 0), new Point(0, 0)] as const;
 
-   constructor(mass: number, width: number, height: number, localID: number) {
-      super(mass, localID);
+   constructor(mass: number, width: number, height: number) {
+      super(mass);
       
       this.width = width;
       this.height = height;
@@ -29,7 +29,7 @@ class RectangularHitbox extends Hitbox {
       this.halfDiagonalLength = Math.sqrt(Math.pow(this.width / 2, 2) + Math.pow(this.height / 2, 2));
    }
 
-   public updateFromGameObject(gameObject: GameObject): void {
+   public updateFromGameObject(gameObject: Entity): void {
       super.updateFromGameObject(gameObject);
       this.externalRotation = gameObject.rotation;
    }
@@ -87,7 +87,7 @@ class RectangularHitbox extends Hitbox {
             return false;
          }
          
-         return rectanglePointsDoIntersect(this.vertexPositions, (otherHitbox as RectangularHitbox).vertexPositions, 0, 0, 0, 0, this.sideAxes, (otherHitbox as RectangularHitbox).sideAxes);
+         return rectanglePointsDoIntersect(this.vertexPositions, (otherHitbox as RectangularHitbox).vertexPositions, 0, 0, 0, 0, this.sideAxes[0].x, this.sideAxes[0].y, (otherHitbox as RectangularHitbox).sideAxes[0].x, (otherHitbox as RectangularHitbox).sideAxes[0].y);
       }
    }
 }

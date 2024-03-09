@@ -1,7 +1,7 @@
-import { Point, SETTINGS, VisibleChunkBounds } from "webgl-test-shared";
+import { Point, Settings, VisibleChunkBounds } from "webgl-test-shared";
 import { halfWindowHeight, halfWindowWidth } from "./webgl";
 import { RENDER_CHUNK_EDGE_GENERATION, RENDER_CHUNK_SIZE, WORLD_RENDER_CHUNK_SIZE } from "./rendering/render-chunks";
-import GameObject from "./GameObject";
+import Entity from "./Entity";
 
 export type VisiblePositionBounds = [minX: number, maxX: number, minY: number, maxY: number];
 
@@ -24,10 +24,10 @@ abstract class Camera {
    public static maxVisibleRenderChunkY = -1;
 
    public static updateVisibleChunkBounds(): void {
-      this.minVisibleChunkX = Math.max(Math.floor((this.position.x - halfWindowWidth / this.zoom) / SETTINGS.CHUNK_UNITS), 0);
-      this.maxVisibleChunkX = Math.min(Math.floor((this.position.x + halfWindowWidth / this.zoom) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1);
-      this.minVisibleChunkY = Math.max(Math.floor((this.position.y - halfWindowHeight / this.zoom) / SETTINGS.CHUNK_UNITS), 0);
-      this.maxVisibleChunkY = Math.min(Math.floor((this.position.y + halfWindowHeight / this.zoom) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1);
+      this.minVisibleChunkX = Math.max(Math.floor((this.position.x - halfWindowWidth / this.zoom) / Settings.CHUNK_UNITS), 0);
+      this.maxVisibleChunkX = Math.min(Math.floor((this.position.x + halfWindowWidth / this.zoom) / Settings.CHUNK_UNITS), Settings.BOARD_SIZE - 1);
+      this.minVisibleChunkY = Math.max(Math.floor((this.position.y - halfWindowHeight / this.zoom) / Settings.CHUNK_UNITS), 0);
+      this.maxVisibleChunkY = Math.min(Math.floor((this.position.y + halfWindowHeight / this.zoom) / Settings.CHUNK_UNITS), Settings.BOARD_SIZE - 1);
    }
 
    public static getVisibleChunkBounds(): VisibleChunkBounds {
@@ -35,7 +35,7 @@ abstract class Camera {
    }
 
    public static updateVisibleRenderChunkBounds(): void {
-      const unitsInChunk = SETTINGS.TILE_SIZE * RENDER_CHUNK_SIZE;
+      const unitsInChunk = Settings.TILE_SIZE * RENDER_CHUNK_SIZE;
       
       this.minVisibleRenderChunkX = Math.max(Math.floor((this.position.x - halfWindowWidth / this.zoom) / unitsInChunk), -RENDER_CHUNK_EDGE_GENERATION);
       this.maxVisibleRenderChunkX = Math.min(Math.floor((this.position.x + halfWindowWidth / this.zoom) / unitsInChunk), WORLD_RENDER_CHUNK_SIZE + RENDER_CHUNK_EDGE_GENERATION - 1);
@@ -66,7 +66,7 @@ abstract class Camera {
    }
 }
 
-export function entityIsVisible(entity: GameObject): boolean {
+export function entityIsVisible(entity: Entity): boolean {
    for (const chunk of entity.chunks) {
       if (chunk.x >= Camera.minVisibleChunkX && chunk.x <= Camera.maxVisibleChunkX && chunk.y >= Camera.minVisibleChunkY && chunk.y <= Camera.maxVisibleChunkY) {
          return true;

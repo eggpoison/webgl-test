@@ -1,7 +1,7 @@
-import { EntityType, Point, SETTINGS, lerp, randFloat } from "webgl-test-shared";
+import { EntityComponentsData, EntityType, Point, Settings, lerp, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import Board from "../Board";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 import Particle from "../Particle";
@@ -10,12 +10,14 @@ import { playSound } from "../sound";
 const POISON_COLOUR_LOW = [34/255, 12/255, 0];
 const POISON_COLOUR_HIGH = [77/255, 173/255, 38/255];
 
-class SlimeSpit extends GameObject {
+class SlimeSpit extends Entity {
    private readonly renderParts: ReadonlyArray<RenderPart>;
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, size: number) {
-      super(position, id, EntityType.slimeSpit, ageTicks, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.slimeSpit>) {
+      super(position, id, EntityType.slimeSpit, ageTicks);
 
       const renderParts = new Array<RenderPart>();
+
+      // @Incomplete: SIZE DOESN'T ACTUALLY AFFECT ANYTHING
 
       const renderPart1 = new RenderPart(
          this,
@@ -45,8 +47,8 @@ class SlimeSpit extends GameObject {
    public tick(): void {
       super.tick();
 
-      this.renderParts[0].rotation += 1.5 * Math.PI / SETTINGS.TPS;
-      this.renderParts[1].rotation -= 1.5 * Math.PI / SETTINGS.TPS;
+      this.renderParts[0].rotation += 1.5 * Math.PI / Settings.TPS;
+      this.renderParts[1].rotation -= 1.5 * Math.PI / Settings.TPS;
 
       if (Board.tickIntervalHasPassed(0.2)) {
          for (let i = 0; i < 5; i++) {

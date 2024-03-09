@@ -1,16 +1,16 @@
-import { EntityType, Point, SETTINGS, randFloat } from "webgl-test-shared";
+import { EntityType, Point, Settings, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Board from "../Board";
 import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import { playSound } from "../sound";
 import { createSnowflakeParticle } from "../particles";
 
-class IceArrow extends GameObject {
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
-      super(position, id, EntityType.iceArrow, ageTicks, renderDepth);
+class IceArrow extends Entity {
+   constructor(position: Point, id: number, ageTicks: number) {
+      super(position, id, EntityType.iceArrow, ageTicks);
 
       this.attachRenderPart(
          new RenderPart(
@@ -25,11 +25,11 @@ class IceArrow extends GameObject {
    public tick(): void {
       super.tick();
 
-      if (Math.random() < 30 / SETTINGS.TPS) {
+      if (Math.random() < 30 / Settings.TPS) {
          createSnowflakeParticle(this.position.x, this.position.y);
       }
 
-      if (Math.random() < 30 / SETTINGS.TPS) {
+      if (Math.random() < 30 / Settings.TPS) {
          // @Incomplete: These types of particles don't fit
          this.createIceSpeckProjectile();
       }

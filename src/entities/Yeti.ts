@@ -1,9 +1,13 @@
-import { Point, EntityData, lerp, HitData, randFloat, EntityType, SETTINGS } from "webgl-test-shared";
+import { Point, lerp, HitData, randFloat, EntityType, EntityComponentsData, ServerComponentType } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import Entity from "./Entity";
-import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createFootprintParticle, createSnowParticle, createWhiteSmokeParticle } from "../particles";
-import Board from "../Board";
+import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createSnowParticle, createWhiteSmokeParticle } from "../particles";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import YetiComponent from "../entity-components/YetiComponent";
+import Entity from "../Entity";
+import { ClientComponentType } from "../entity-components/components";
+import FootprintComponent from "../entity-components/FootprintComponent";
+import HealthComponent from "../entity-components/HealthComponent";
+import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 
 class Yeti extends Entity {
    private static readonly SIZE = 128;
@@ -16,14 +20,8 @@ class Yeti extends Entity {
    private static readonly BLOOD_POOL_SIZE = 30;
    private static readonly BLOOD_FOUNTAIN_INTERVAL = 0.15;
 
-   private numFootstepsTaken = 0;
-   private distanceTracker = 0;
-
-   private lastAttackProgress = 1;
-   private attackProgress = 1;
-
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, attackProgress: number) {
-      super(position, id, EntityType.yeti, ageTicks, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.yeti>) {
+      super(position, id, EntityType.yeti, ageTicks);
 
       this.attachRenderPart(
          new RenderPart(
@@ -34,46 +32,53 @@ class Yeti extends Entity {
          )
       );
 
-      for (let i = 0; i < 2; i++) {
-         this.createPaw(i);
-      }
+      const yetiComponent = new YetiComponent(this, componentsData[5]);
+      this.addServerComponent(ServerComponentType.health, new HealthComponent(this, componentsData[1]));
+      this.addServerComponent(ServerComponentType.statusEffect, new StatusEffectComponent(this, componentsData[2]));
+      this.addServerComponent(ServerComponentType.yeti, yetiComponent);
+      this.addClientComponent(ClientComponentType.footprint, new FootprintComponent(this, 0.55, 40, 96, 8, 64));
 
-      this.attackProgress = attackProgress;
+      for (let i = 0; i < 2; i++) {
+         const paw = this.createPaw();
+         yetiComponent.pawRenderParts.push(paw);
+      }
+      this.updatePaws();
    }
    
-   private createPaw(i: number): void {
+   private createPaw(): RenderPart {
       const paw = new RenderPart(
          this,
          getTextureArrayIndex("entities/yeti/yeti-paw.png"),
          0,
          0
       );
-      paw.offset = () => {
-         let attackProgress = this.attackProgress;
-         attackProgress = Math.pow(attackProgress, 0.75);
+      this.attachRenderPart(paw);
+      return paw;
+   }
+
+   private updatePaws(): void {
+      const yetiComponent = this.getServerComponent(ServerComponentType.yeti);
+
+      let attackProgress = yetiComponent.attackProgress;
+      attackProgress = Math.pow(attackProgress, 0.75);
+      
+      for (let i = 0; i < 2; i++) {
+         const paw = yetiComponent.pawRenderParts[i];
 
          const angle = lerp(Yeti.PAW_END_ANGLE, Yeti.PAW_START_ANGLE, attackProgress) * (i === 0 ? 1 : -1);
-         return Point.fromVectorForm(Yeti.SIZE/2, angle);
+         paw.offset.x = Yeti.SIZE/2 * Math.sin(angle);
+         paw.offset.y = Yeti.SIZE/2 * Math.cos(angle);
       }
-      this.attachRenderPart(paw);
    }
 
    public tick(): void {
       super.tick();
 
-      // Create footsteps
-      if (this.velocity.lengthSquared() >= 2500 && !this.isInRiver() && Board.tickIntervalHasPassed(0.55)) {
-         createFootprintParticle(this, this.numFootstepsTaken, 40, 96, 8);
-         this.numFootstepsTaken++;
-      }
-      this.distanceTracker += this.velocity.length() / SETTINGS.TPS;
-      if (this.distanceTracker > 64) {
-         this.distanceTracker -= 64;
-         this.createFootstepSound();
-      }
+      this.updatePaws();
 
       // Create snow impact particles when the Yeti does a throw attack
-      if (this.attackProgress === 0 && this.lastAttackProgress !== 0) {
+      const yetiComponent = this.getServerComponent(ServerComponentType.yeti);
+      if (yetiComponent.attackProgress === 0 && yetiComponent.lastAttackProgress !== 0) {
          const offsetMagnitude = Yeti.SNOW_THROW_OFFSET + 20;
          const impactPositionX = this.position.x + offsetMagnitude * Math.sin(this.rotation);
          const impactPositionY = this.position.y + offsetMagnitude * Math.cos(this.rotation);
@@ -94,13 +99,7 @@ class Yeti extends Entity {
             createWhiteSmokeParticle(spawnPositionX, spawnPositionY, 1);
          }
       }
-      this.lastAttackProgress = this.attackProgress;
-   }
-
-   public updateFromData(entityData: EntityData<EntityType.yeti>): void {
-      super.updateFromData(entityData);
-
-      this.attackProgress = entityData.clientArgs[0];
+      yetiComponent.lastAttackProgress = yetiComponent.attackProgress;
    }
 
    protected onHit(hitData: HitData): void {

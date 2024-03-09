@@ -1,13 +1,13 @@
 import { EntityType, Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import Board from "../Board";
 import { attachSoundToEntity, playSound } from "../sound";
 
-class BattleaxeProjectile extends GameObject {
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
-      super(position, id, EntityType.battleaxeProjectile, ageTicks, renderDepth);
+class BattleaxeProjectile extends Entity {
+   constructor(position: Point, id: number, ageTicks: number) {
+      super(position, id, EntityType.battleaxeProjectile, ageTicks);
 
       this.attachRenderPart(
          new RenderPart(

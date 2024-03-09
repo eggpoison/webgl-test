@@ -1,11 +1,12 @@
-import { EntityType, HitData, Point, SNOWBALL_SIZES, SnowballSize, randFloat, randInt } from "webgl-test-shared";
+import { EntityComponentsData, EntityType, HitData, Point, SNOWBALL_SIZES, ServerComponentType, SnowballSize, randFloat, randInt } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import Entity from "./Entity";
 import Board from "../Board";
 import { createSnowParticle } from "../particles";
 import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../rendering/particle-rendering";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import SnowballComponent from "../entity-components/SnowballComponent";
+import Entity from "../Entity";
 
 const getTextureSource = (size: SnowballSize): string => {
    switch (size) {
@@ -19,23 +20,21 @@ const getTextureSource = (size: SnowballSize): string => {
 }
 
 class Snowball extends Entity {
-   private readonly size: SnowballSize;
-   private readonly pixelSize: number;
+   constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.snowball>) {
+      super(position, id, EntityType.snowball, ageTicks);
 
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, size: SnowballSize) {
-      super(position, id, EntityType.snowball, ageTicks, renderDepth);
-
-      this.size = size;
-      this.pixelSize = SNOWBALL_SIZES[size];
+      const snowballComponentData = componentsData[3];
 
       this.attachRenderPart(
          new RenderPart(
             this,
-            getTextureArrayIndex(getTextureSource(size)),
+            getTextureArrayIndex(getTextureSource(snowballComponentData.size)),
             0,
             0
          )
       );
+
+      this.addServerComponent(ServerComponentType.snowball, new SnowballComponent(this, snowballComponentData));
    }
 
    public tick(): void {
@@ -49,25 +48,33 @@ class Snowball extends Entity {
    }
 
    protected onHit(hitData: HitData): void {
+      const snowballComponent = this.getServerComponent(ServerComponentType.snowball);
+      
       // Create a bunch of snow particles at the point of hit
       if (hitData.angleFromAttacker !== null) {
-         const numParticles = this.size === SnowballSize.large ? 10 : 7;
+         const numParticles = snowballComponent.size === SnowballSize.large ? 10 : 7;
          for (let i = 0; i < numParticles; i++) {
+            const pixelSize = SNOWBALL_SIZES[snowballComponent.size];
+            
             const offsetDirection = hitData.angleFromAttacker + Math.PI + 0.2 * Math.PI * (Math.random() - 0.5);
-            const spawnPositionX = this.position.x + this.pixelSize / 2 * Math.sin(offsetDirection);
-            const spawnPositionY = this.position.y + this.pixelSize / 2 * Math.cos(offsetDirection);
+            const spawnPositionX = this.position.x + pixelSize / 2 * Math.sin(offsetDirection);
+            const spawnPositionY = this.position.y + pixelSize / 2 * Math.cos(offsetDirection);
             this.createSnowSpeckParticle(spawnPositionX, spawnPositionY);
          }
       }
    }
 
    public onDie(): void {
+      const snowballComponent = this.getServerComponent(ServerComponentType.snowball);
+
       // Create a bunch of snow particles throughout the snowball
-      const numParticles = this.size === SnowballSize.large ? 25 : 15;
+      const numParticles = snowballComponent.size === SnowballSize.large ? 25 : 15;
       for (let i = 0; i < numParticles; i++) {
+         const pixelSize = SNOWBALL_SIZES[snowballComponent.size];
+         
          const offsetDirection = 2 * Math.PI * Math.random();
-         const spawnPositionX = this.position.x + this.pixelSize / 2 * Math.sin(offsetDirection);
-         const spawnPositionY = this.position.y + this.pixelSize / 2 * Math.cos(offsetDirection);
+         const spawnPositionX = this.position.x + pixelSize / 2 * Math.sin(offsetDirection);
+         const spawnPositionY = this.position.y + pixelSize / 2 * Math.cos(offsetDirection);
          this.createSnowSpeckParticle(spawnPositionX, spawnPositionY);
       }
    }

@@ -1,4 +1,4 @@
-import { SETTINGS } from "webgl-test-shared";
+import { Settings } from "webgl-test-shared";
 import Camera from "../Camera";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, TIME_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 import { WORLD_RENDER_CHUNK_SIZE } from "./render-chunks";
@@ -77,10 +77,10 @@ export function renderForcefield(): void {
 
    // Left forcefield segment
    if (Camera.minVisibleRenderChunkX < 0) {
-      const x1 = -SETTINGS.EDGE_GENERATION_DISTANCE * SETTINGS.TILE_SIZE;
+      const x1 = -Settings.EDGE_GENERATION_DISTANCE * Settings.TILE_SIZE;
       const x2 = 0;
       const y1 = 0;
-      const y2 = SETTINGS.BOARD_UNITS;
+      const y2 = Settings.BOARD_UNITS;
 
       vertices.push(
          x1, y1,
@@ -94,10 +94,10 @@ export function renderForcefield(): void {
 
    // Right forcefield segment
    if (Camera.maxVisibleRenderChunkX >= WORLD_RENDER_CHUNK_SIZE) {
-      const x1 = SETTINGS.BOARD_UNITS;
-      const x2 = SETTINGS.BOARD_UNITS + SETTINGS.EDGE_GENERATION_DISTANCE * SETTINGS.TILE_SIZE;
+      const x1 = Settings.BOARD_UNITS;
+      const x2 = Settings.BOARD_UNITS + Settings.EDGE_GENERATION_DISTANCE * Settings.TILE_SIZE;
       const y1 = 0;
-      const y2 = SETTINGS.BOARD_UNITS;
+      const y2 = Settings.BOARD_UNITS;
 
       vertices.push(
          x1, y1,
@@ -112,8 +112,8 @@ export function renderForcefield(): void {
    // Bottom forcefield segment
    if (Camera.minVisibleRenderChunkY < 0) {
       const x1 = 0;
-      const x2 = SETTINGS.BOARD_UNITS;
-      const y1 = -SETTINGS.EDGE_GENERATION_DISTANCE * SETTINGS.TILE_SIZE;
+      const x2 = Settings.BOARD_UNITS;
+      const y1 = -Settings.EDGE_GENERATION_DISTANCE * Settings.TILE_SIZE;
       const y2 = 0;
 
       vertices.push(
@@ -129,9 +129,9 @@ export function renderForcefield(): void {
    // Top forcefield segment
    if (Camera.maxVisibleRenderChunkY >= WORLD_RENDER_CHUNK_SIZE) {
       const x1 = 0;
-      const x2 = SETTINGS.BOARD_UNITS;
-      const y1 = SETTINGS.BOARD_UNITS;
-      const y2 = SETTINGS.BOARD_UNITS + SETTINGS.EDGE_GENERATION_DISTANCE * SETTINGS.TILE_SIZE;
+      const x2 = Settings.BOARD_UNITS;
+      const y1 = Settings.BOARD_UNITS;
+      const y2 = Settings.BOARD_UNITS + Settings.EDGE_GENERATION_DISTANCE * Settings.TILE_SIZE;
 
       vertices.push(
          x1, y1,
@@ -145,9 +145,9 @@ export function renderForcefield(): void {
 
    // Bottom left forcefield segment
    if (Camera.minVisibleRenderChunkY < 0 && Camera.minVisibleRenderChunkX < 0) {
-      const x1 = -SETTINGS.EDGE_GENERATION_DISTANCE * SETTINGS.TILE_SIZE;
+      const x1 = -Settings.EDGE_GENERATION_DISTANCE * Settings.TILE_SIZE;
       const x2 = 0;
-      const y1 = -SETTINGS.EDGE_GENERATION_DISTANCE * SETTINGS.TILE_SIZE;
+      const y1 = -Settings.EDGE_GENERATION_DISTANCE * Settings.TILE_SIZE;
       const y2 = 0;
 
       vertices.push(
@@ -162,10 +162,10 @@ export function renderForcefield(): void {
 
    // Top left forcefield segment
    if (Camera.maxVisibleRenderChunkY >= WORLD_RENDER_CHUNK_SIZE && Camera.minVisibleRenderChunkX < 0) {
-      const x1 = -SETTINGS.EDGE_GENERATION_DISTANCE * SETTINGS.TILE_SIZE;
+      const x1 = -Settings.EDGE_GENERATION_DISTANCE * Settings.TILE_SIZE;
       const x2 = 0;
-      const y1 = SETTINGS.BOARD_UNITS;
-      const y2 = SETTINGS.BOARD_UNITS + SETTINGS.EDGE_GENERATION_DISTANCE * SETTINGS.TILE_SIZE;
+      const y1 = Settings.BOARD_UNITS;
+      const y2 = Settings.BOARD_UNITS + Settings.EDGE_GENERATION_DISTANCE * Settings.TILE_SIZE;
 
       vertices.push(
          x1, y1,
@@ -179,9 +179,9 @@ export function renderForcefield(): void {
 
    // Bottom right forcefield segment
    if (Camera.minVisibleRenderChunkY < 0 && Camera.maxVisibleRenderChunkX >= WORLD_RENDER_CHUNK_SIZE) {
-      const x1 = SETTINGS.BOARD_UNITS;
-      const x2 = SETTINGS.BOARD_UNITS + SETTINGS.EDGE_GENERATION_DISTANCE * SETTINGS.TILE_SIZE;
-      const y1 = -SETTINGS.EDGE_GENERATION_DISTANCE * SETTINGS.TILE_SIZE;
+      const x1 = Settings.BOARD_UNITS;
+      const x2 = Settings.BOARD_UNITS + Settings.EDGE_GENERATION_DISTANCE * Settings.TILE_SIZE;
+      const y1 = -Settings.EDGE_GENERATION_DISTANCE * Settings.TILE_SIZE;
       const y2 = 0;
 
       vertices.push(
@@ -196,10 +196,10 @@ export function renderForcefield(): void {
 
    // Top right forcefield segment
    if (Camera.maxVisibleRenderChunkY >= WORLD_RENDER_CHUNK_SIZE && Camera.maxVisibleRenderChunkX >= WORLD_RENDER_CHUNK_SIZE) {
-      const x1 = SETTINGS.BOARD_UNITS;
-      const x2 = SETTINGS.BOARD_UNITS + SETTINGS.EDGE_GENERATION_DISTANCE * SETTINGS.TILE_SIZE;
-      const y1 = SETTINGS.BOARD_UNITS;
-      const y2 = SETTINGS.BOARD_UNITS + SETTINGS.EDGE_GENERATION_DISTANCE * SETTINGS.TILE_SIZE;
+      const x1 = Settings.BOARD_UNITS;
+      const x2 = Settings.BOARD_UNITS + Settings.EDGE_GENERATION_DISTANCE * Settings.TILE_SIZE;
+      const y1 = Settings.BOARD_UNITS;
+      const y2 = Settings.BOARD_UNITS + Settings.EDGE_GENERATION_DISTANCE * Settings.TILE_SIZE;
 
       vertices.push(
          x1, y1,

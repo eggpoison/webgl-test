@@ -1,16 +1,14 @@
-import { EntityType, ITEM_TYPE_RECORD, Point, SETTINGS, circleAndRectangleDoIntersect, circlesDoIntersect, getTechByID } from "webgl-test-shared";
+import { ServerComponentType, EntityType, ITEM_TYPE_RECORD, Point, Settings, circleAndRectangleDoIntersect, circlesDoIntersect, getTechByID } from "webgl-test-shared";
 import Player, { getPlayerSelectedItem } from "./entities/Player";
 import Game from "./Game";
 import Board from "./Board";
 import Hitbox from "./hitboxes/Hitbox";
 import CircularHitbox from "./hitboxes/CircularHitbox";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
-import GameObject from "./GameObject";
+import Entity from "./Entity";
 import Client from "./client/Client";
 import { latencyGameState } from "./game-state/game-states";
 import { isHoveringInBlueprintMenu } from "./components/game/BlueprintMenu";
-import Tribesman from "./entities/Tribesman";
-import Tombstone from "./entities/Tombstone";
 import { InventoryMenuType, InventorySelector_inventoryIsOpen, InventorySelector_setInventoryMenuType } from "./components/game/inventories/InventorySelector";
 import { isDev } from "./utils";
 import { nerdVisionIsVisible } from "./components/game/dev/NerdVision";
@@ -44,7 +42,7 @@ export function getSelectedEntityID(): number {
    return selectedEntityID;
 }
 
-export function getSelectedEntity(): GameObject {
+export function getSelectedEntity(): Entity {
    if (!Board.entityRecord.hasOwnProperty(selectedEntityID)) {
       throw new Error("Can't select: Entity with ID " + selectedEntityID + " doesn't exist");
    }
@@ -70,7 +68,7 @@ export function deselectHighlightedEntity(): void {
    highlightedEntityID = -1;
 }
 
-const entityCanBeSelected = (entity: GameObject): boolean => {
+const entityCanBeSelected = (entity: Entity): boolean => {
    if (entity.type === EntityType.woodenWall) {
       // Walls can be selected if the player is holding a hammer
       const selectedItem = getPlayerSelectedItem();
@@ -98,10 +96,10 @@ const entityCanBeSelected = (entity: GameObject): boolean => {
 
 // @Cleanup: name
 const getEntityID = (doPlayerProximityCheck: boolean): number => {
-   const minChunkX = Math.max(Math.floor((Game.cursorPositionX! - HIGHLIGHT_RANGE) / SETTINGS.CHUNK_UNITS), 0);
-   const maxChunkX = Math.min(Math.floor((Game.cursorPositionX! + HIGHLIGHT_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1);
-   const minChunkY = Math.max(Math.floor((Game.cursorPositionY! - HIGHLIGHT_RANGE) / SETTINGS.CHUNK_UNITS), 0);
-   const maxChunkY = Math.min(Math.floor((Game.cursorPositionY! + HIGHLIGHT_RANGE) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1);
+   const minChunkX = Math.max(Math.floor((Game.cursorPositionX! - HIGHLIGHT_RANGE) / Settings.CHUNK_UNITS), 0);
+   const maxChunkX = Math.min(Math.floor((Game.cursorPositionX! + HIGHLIGHT_RANGE) / Settings.CHUNK_UNITS), Settings.BOARD_SIZE - 1);
+   const minChunkY = Math.max(Math.floor((Game.cursorPositionY! - HIGHLIGHT_RANGE) / Settings.CHUNK_UNITS), 0);
+   const maxChunkY = Math.min(Math.floor((Game.cursorPositionY! + HIGHLIGHT_RANGE) / Settings.CHUNK_UNITS), Settings.BOARD_SIZE - 1);
 
    const origin = new Point(Game.cursorPositionX!, Game.cursorPositionY!);
 
@@ -202,8 +200,10 @@ export function attemptStructureSelect(): void {
          }
          case EntityType.tribeWorker:
          case EntityType.tribeWarrior: {
+            const entityTribeComponent = entity.getServerComponent(ServerComponentType.tribe);
+            const playerTribeComponent = Player.instance!.getServerComponent(ServerComponentType.tribe);
             // Only interact with tribesman inventories if the player is of the same tribe
-            if ((entity as Tribesman).tribeID !== null && ((entity as Tribesman).tribeID) === Player.instance!.tribeID) {
+            if (entityTribeComponent.tribeID === playerTribeComponent.tribeID) {
                InventorySelector_setInventoryMenuType(InventoryMenuType.tribesman);
             } else {
                InventorySelector_setInventoryMenuType(InventoryMenuType.none);
@@ -219,7 +219,8 @@ export function attemptStructureSelect(): void {
             break;
          }
          case EntityType.tombstone: {
-            if ((entity as Tombstone).deathInfo !== null) {
+            const tombstoneComponent = entity.getServerComponent(ServerComponentType.tombstone);
+            if (tombstoneComponent.deathInfo !== null) {
                InventorySelector_setInventoryMenuType(InventoryMenuType.tombstone);
             } else {
                InventorySelector_setInventoryMenuType(InventoryMenuType.none);

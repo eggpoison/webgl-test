@@ -1,13 +1,13 @@
-import { SETTINGS } from "webgl-test-shared";
+import { Settings } from "webgl-test-shared";
 import { halfWindowHeight, halfWindowWidth } from "./webgl";
 import CLIENT_SETTINGS from "./client-settings";
-import Entity from "./entities/Entity";
 import Game from "./Game";
 import Camera from "./Camera";
 import { updateDebugInfoEntity, updateDebugInfoTile } from "./components/game/dev/DebugInfo";
 import { isDev } from "./utils";
 import Board from "./Board";
 import { Tile } from "./Tile";
+import Entity from "./Entity";
 
 export let cursorX: number | null = null;
 export let cursorY: number | null = null;
@@ -16,7 +16,7 @@ export function calculateCursorWorldPositionX(): number | null {
    if (Game.getIsPaused() || cursorX === null) return null;
    
    const worldX = (cursorX - halfWindowWidth) / Camera.zoom + Camera.position.x;
-   if (worldX < 0 || worldX >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
+   if (worldX < 0 || worldX >= Settings.BOARD_DIMENSIONS * Settings.TILE_SIZE) {
       return null;
    }
    return worldX;
@@ -26,7 +26,7 @@ export function calculateCursorWorldPositionY(): number | null {
    if (Game.getIsPaused() || cursorY === null) return null;
    
    const worldY = (-cursorY + halfWindowHeight) / Camera.zoom + Camera.position.y;
-   if (worldY < 0 || worldY >= SETTINGS.BOARD_DIMENSIONS * SETTINGS.TILE_SIZE) {
+   if (worldY < 0 || worldY >= Settings.BOARD_DIMENSIONS * Settings.TILE_SIZE) {
       return null;
    }
    return worldY;
@@ -43,8 +43,8 @@ export function handleMouseMovement(e: MouseEvent): void {
 export function getMouseTargetTile(): Tile | null {
    if (Game.cursorPositionX === null || Game.cursorPositionY === null) return null;
 
-   const tileX = Math.floor(Game.cursorPositionX / SETTINGS.TILE_SIZE);
-   const tileY = Math.floor(Game.cursorPositionY / SETTINGS.TILE_SIZE);
+   const tileX = Math.floor(Game.cursorPositionX / Settings.TILE_SIZE);
+   const tileY = Math.floor(Game.cursorPositionY / Settings.TILE_SIZE);
 
    if (Board.tileIsInBoard(tileX, tileY)) {
       return Board.getTile(tileX, tileY);
@@ -59,10 +59,10 @@ export function getMouseTargetTile(): Tile | null {
 export function getMouseTargetEntity(): Entity | null {
    if (Game.cursorPositionX === null || Game.cursorPositionY === null) return null;
    
-   const minChunkX = Math.max(Math.min(Math.floor((Game.cursorPositionX - CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-   const maxChunkX = Math.max(Math.min(Math.floor((Game.cursorPositionX + CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-   const minChunkY = Math.max(Math.min(Math.floor((Game.cursorPositionY - CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
-   const maxChunkY = Math.max(Math.min(Math.floor((Game.cursorPositionY + CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / SETTINGS.CHUNK_SIZE / SETTINGS.TILE_SIZE), SETTINGS.BOARD_SIZE - 1), 0);
+   const minChunkX = Math.max(Math.min(Math.floor((Game.cursorPositionX - CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / Settings.CHUNK_SIZE / Settings.TILE_SIZE), Settings.BOARD_SIZE - 1), 0);
+   const maxChunkX = Math.max(Math.min(Math.floor((Game.cursorPositionX + CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / Settings.CHUNK_SIZE / Settings.TILE_SIZE), Settings.BOARD_SIZE - 1), 0);
+   const minChunkY = Math.max(Math.min(Math.floor((Game.cursorPositionY - CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / Settings.CHUNK_SIZE / Settings.TILE_SIZE), Settings.BOARD_SIZE - 1), 0);
+   const maxChunkY = Math.max(Math.min(Math.floor((Game.cursorPositionY + CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE / Camera.zoom) / Settings.CHUNK_SIZE / Settings.TILE_SIZE), Settings.BOARD_SIZE - 1), 0);
 
    let closestEntity: Entity | null = null;
    let minDistance = Number.MAX_SAFE_INTEGER;
@@ -70,12 +70,10 @@ export function getMouseTargetEntity(): Entity | null {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
          const chunk = Board.getChunk(chunkX, chunkY);
          for (const gameObject of chunk.getGameObjects()) {
-            if (gameObject instanceof Entity) {
-               const distance = Math.sqrt(Math.pow(Game.cursorPositionX - gameObject.renderPosition.x, 2) + Math.pow(Game.cursorPositionY - gameObject.renderPosition.y, 2))
-               if (distance <= CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE && distance < minDistance) {
-                  closestEntity = gameObject;
-                  minDistance = distance;
-               }
+            const distance = Math.sqrt(Math.pow(Game.cursorPositionX - gameObject.renderPosition.x, 2) + Math.pow(Game.cursorPositionY - gameObject.renderPosition.y, 2))
+            if (distance <= CLIENT_SETTINGS.CURSOR_TOOLTIP_HOVER_RANGE && distance < minDistance) {
+               closestEntity = gameObject;
+               minDistance = distance;
             }
          }
       }

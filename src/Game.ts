@@ -4,7 +4,7 @@ import { isDev } from "./utils";
 import { createTextCanvasContext, updateTextNumbers, renderText } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/game/ChatBox";
-import { DecorationInfo, GameDataPacket, EntityDebugData, GrassTileInfo, RiverSteppingStoneData, SETTINGS, ServerTileData, WaterRockData } from "webgl-test-shared";
+import { DecorationInfo, GameDataPacket, EntityDebugData, GrassTileInfo, RiverSteppingStoneData, Settings, ServerTileData, WaterRockData, EnemyTribeData } from "webgl-test-shared";
 import { createEntityShaders, renderGameObjects } from "./rendering/game-object-rendering";
 import Client from "./client/Client";
 import { calculateCursorWorldPositionX, calculateCursorWorldPositionY, cursorX, cursorY, handleMouseMovement, renderCursorTooltip } from "./mouse";
@@ -22,7 +22,7 @@ import { createSolidTileShaders, renderSolidTiles } from "./rendering/solid-tile
 import { createRiverShaders, createRiverSteppingStoneData, renderRivers } from "./rendering/river-rendering";
 import { createChunkBorderShaders, renderChunkBorders } from "./rendering/chunk-border-rendering";
 import { nerdVisionIsVisible } from "./components/game/dev/NerdVision";
-import { setFrameProgress } from "./GameObject";
+import { setFrameProgress } from "./Entity";
 import { createDebugDataShaders, renderLineDebugData, renderTriangleDebugData } from "./rendering/debug-data-rendering";
 import { createAmbientOcclusionShaders, renderAmbientOcclusion } from "./rendering/ambient-occlusion-rendering";
 import { createWallBorderShaders, renderWallBorders } from "./rendering/wall-border-rendering";
@@ -100,6 +100,7 @@ abstract class Game {
    public static entityDebugData: EntityDebugData | null = null;
 
    public static tribe: Tribe;
+   public static enemyTribes: ReadonlyArray<EnemyTribeData>;
    
    private static cameraData = new Float32Array(8);
    private static cameraBuffer: WebGLBuffer;
@@ -245,7 +246,7 @@ abstract class Game {
          Game.lastTime = currentTime;
       
          this.lag += deltaTime;
-         while (this.lag >= 1000 / SETTINGS.TPS) {
+         while (this.lag >= 1000 / Settings.TPS) {
             if (this.queuedPackets.length > 0) {
                // Done before so that server data can override particles
                Board.updateParticles();
@@ -282,12 +283,12 @@ abstract class Game {
                this.update();
             }
             Client.sendPlayerDataPacket();
-            this.lag -= 1000 / SETTINGS.TPS;
+            this.lag -= 1000 / Settings.TPS;
          }
 
          const renderStartTime = performance.now();
 
-         const frameProgress = this.lag / 1000 * SETTINGS.TPS;
+         const frameProgress = this.lag / 1000 * Settings.TPS;
          this.render(frameProgress);
 
          const renderEndTime = performance.now();
@@ -331,9 +332,8 @@ abstract class Game {
 
    private static updatePlayer(): void {
       if (Player.instance !== null) {
-         Player.instance.tick();
          Player.instance.update();
-         
+
          // @Cleanup: Should be done in the game object update function
          Player.resolveCollisions();
       }
@@ -397,7 +397,7 @@ abstract class Game {
       renderForcefield();
       renderWorldBorder();
       if (nerdVisionIsVisible() && OPTIONS.showChunkBorders) {
-         renderChunkBorders(Camera.minVisibleChunkX, Camera.maxVisibleChunkX, Camera.minVisibleChunkY, Camera.maxVisibleChunkY, SETTINGS.CHUNK_SIZE, 1);
+         renderChunkBorders(Camera.minVisibleChunkX, Camera.maxVisibleChunkX, Camera.minVisibleChunkY, Camera.maxVisibleChunkY, Settings.CHUNK_SIZE, 1);
       }
       if (nerdVisionIsVisible() && OPTIONS.showRenderChunkBorders) {
          renderChunkBorders(Camera.minVisibleRenderChunkX, Camera.maxVisibleRenderChunkX, Camera.minVisibleRenderChunkY, Camera.maxVisibleRenderChunkY, RENDER_CHUNK_SIZE, 2);

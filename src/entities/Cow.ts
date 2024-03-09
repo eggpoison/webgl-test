@@ -1,10 +1,15 @@
-import { CowSpecies, EntityData, EntityType, HitData, Point, SETTINGS, randFloat, randInt } from "webgl-test-shared";
+import { ServerComponentType, CowSpecies, EntityComponentsData, EntityType, HitData, Point, randFloat, randInt } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import Entity from "./Entity";
-import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle, createDirtParticle, createFootprintParticle } from "../particles";
-import Board from "../Board";
+import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle } from "../particles";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { AudioFilePath, playSound } from "../sound";
+import CowComponent from "../entity-components/CowComponent";
+import StatusEffectComponent from "../entity-components/StatusEffectComponent";
+import HealthComponent from "../entity-components/HealthComponent";
+import PhysicsComponent from "../entity-components/PhysicsComponent";
+import Entity from "../Entity";
+import { ClientComponentType } from "../entity-components/components";
+import FootprintComponent from "../entity-components/FootprintComponent";
 
 class Cow extends Entity {
    private static readonly HEAD_SIZE = 64;
@@ -14,17 +19,11 @@ class Cow extends Entity {
 
    private static readonly BLOOD_FOUNTAIN_INTERVAL = 0.1;
 
-   private grazeProgress: number;
+   constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.cow>) {
+      super(position, id, EntityType.cow, ageTicks);
 
-   private numFootstepsTaken = 0;
-   private distanceTracker = 0;
-
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, species: CowSpecies, grazeProgress: number) {
-      super(position, id, EntityType.cow, ageTicks, renderDepth);
-
-      this.grazeProgress = grazeProgress;
-
-      const cowNum = species === CowSpecies.brown ? 1 : 2;
+      const cowComponentData = componentsData[7];
+      const cowNum = cowComponentData.species === CowSpecies.brown ? 1 : 2;
 
       // Body
       const bodyRenderPart = new RenderPart(
@@ -33,7 +32,7 @@ class Cow extends Entity {
          0,
          0
       );
-      bodyRenderPart.offset = new Point(0, -(Cow.HEAD_SIZE - Cow.HEAD_OVERLAP) / 2);
+      bodyRenderPart.offset.y = -(Cow.HEAD_SIZE - Cow.HEAD_OVERLAP) / 2;
       this.attachRenderPart(bodyRenderPart);
 
       // Head
@@ -43,35 +42,14 @@ class Cow extends Entity {
          1,
          0
       );
-      headRenderPart.offset = new Point(0, (Cow.BODY_HEIGHT - Cow.HEAD_OVERLAP) / 2);
+      headRenderPart.offset.y = (Cow.BODY_HEIGHT - Cow.HEAD_OVERLAP) / 2;
       this.attachRenderPart(headRenderPart);
-   }
-   
-   public tick(): void {
-      super.tick();
 
-      // Create footsteps
-      if (this.velocity.lengthSquared() >= 2500 && !this.isInRiver() && Board.tickIntervalHasPassed(0.3)) {
-         createFootprintParticle(this, this.numFootstepsTaken, 20, 64, 5);
-         this.numFootstepsTaken++;
-      }
-      this.distanceTracker += this.velocity.length() / SETTINGS.TPS;
-      if (this.distanceTracker > 40) {
-         this.distanceTracker -= 40;
-         this.createFootstepSound();
-      }
-
-      if (this.grazeProgress !== -1 && Board.tickIntervalHasPassed(0.1)) {
-         const spawnOffsetMagnitude = 30 * Math.random();
-         const spawnOffsetDirection = 2 * Math.PI * Math.random();
-         const spawnPositionX = this.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
-         const spawnPositionY = this.position.y + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
-         createDirtParticle(spawnPositionX, spawnPositionY);
-      }
-
-      if (Math.random() < 0.1 / SETTINGS.TPS) {
-         playSound(("cow-ambient-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.2, 1, this.position.x, this.position.y);
-      }
+      this.addServerComponent(ServerComponentType.physics, new PhysicsComponent(this, componentsData[1]));
+      this.addServerComponent(ServerComponentType.health, new HealthComponent(this, componentsData[1]));
+      this.addServerComponent(ServerComponentType.statusEffect, new StatusEffectComponent(this, componentsData[2]));
+      this.addServerComponent(ServerComponentType.cow, new CowComponent(this, cowComponentData));
+      this.addClientComponent(ClientComponentType.footprint, new FootprintComponent(this, 0.3, 20, 64, 5, 40));
    }
 
    protected onHit(hitData: HitData): void {
@@ -101,20 +79,6 @@ class Cow extends Entity {
       createBloodParticleFountain(this, Cow.BLOOD_FOUNTAIN_INTERVAL, 1.1);
 
       playSound("cow-die-1.mp3", 0.2, 1, this.position.x, this.position.y);
-   }
-
-   public updateFromData(entityData: EntityData<EntityType.cow>): void {
-      super.updateFromData(entityData);
-
-      // When the cow has finished grazing, create a bunch of dirt particles
-      if (entityData.clientArgs[1] < this.grazeProgress) {
-         for (let i = 0; i < 15; i++) {
-            const x = (this.tile.x + Math.random()) * SETTINGS.TILE_SIZE;
-            const y = (this.tile.y + Math.random()) * SETTINGS.TILE_SIZE;
-            createDirtParticle(x, y);
-         }
-      }
-      this.grazeProgress = entityData.clientArgs[1];
    }
 }
 

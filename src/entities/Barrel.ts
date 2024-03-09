@@ -1,22 +1,18 @@
-import { EntityData, EntityType, Inventory, InventoryData, Point } from "webgl-test-shared";
+import { EntityComponentsData, EntityType, Point, ServerComponentType } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import Entity from "./Entity";
-import { createInventoryFromData, updateInventoryFromData } from "../inventory-manipulation";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { playBuildingHitSound, playSound } from "../sound";
+import HealthComponent from "../entity-components/HealthComponent";
+import InventoryComponent from "../entity-components/InventoryComponent";
+import TribeComponent from "../entity-components/TribeComponent";
+import StatusEffectComponent from "../entity-components/StatusEffectComponent";
+import Entity from "../Entity";
 
 class Barrel extends Entity {
    public static readonly SIZE = 80;
 
-   public readonly inventory: Inventory;
-
-   public tribeID: number | null;
-
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, tribeID: number | null, inventoryData: InventoryData) {
-      super(position, id, EntityType.barrel, ageTicks, renderDepth);
-
-      this.inventory = createInventoryFromData(inventoryData);
-      this.tribeID = tribeID;
+   constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.barrel>) {
+      super(position, id, EntityType.barrel, ageTicks);
 
       this.attachRenderPart(
          new RenderPart(
@@ -27,17 +23,14 @@ class Barrel extends Entity {
          )
       );
 
+      this.addServerComponent(ServerComponentType.health, new HealthComponent(this, componentsData[0]));
+      this.addServerComponent(ServerComponentType.statusEffect, new StatusEffectComponent(this, componentsData[1]));
+      this.addServerComponent(ServerComponentType.tribe, new TribeComponent(this, componentsData[2]));
+      this.addServerComponent(ServerComponentType.inventory, new InventoryComponent(this, componentsData[3]));
+
       if (ageTicks === 0) {
          playSound("barrel-place.mp3", 0.4, 1, this.position.x, this.position.y);
       }
-   }
-
-   public updateFromData(entityData: EntityData<EntityType.barrel>): void {
-      super.updateFromData(entityData);
-
-      this.tribeID = entityData.clientArgs[0];
-      
-      updateInventoryFromData(this.inventory, entityData.clientArgs[1]);
    }
 
    protected onHit(): void {

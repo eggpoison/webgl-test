@@ -1,15 +1,16 @@
-import { EntityType, InventoryData, Point, angle, randFloat } from "webgl-test-shared";
+import { EntityComponentsData, EntityType, Point, ServerComponentType, angle, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
-import CookingEntity from "./CookingEntity";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { createEmberParticle, createRockParticle, createRockSpeckParticle, createSmokeParticle } from "../particles";
 import Board from "../Board";
+import Entity from "../Entity";
+import CookingComponent from "../entity-components/CookingComponent";
 
-class Furnace extends CookingEntity {
+class Furnace extends Entity {
    public static readonly SIZE = 80;
 
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, fuelInventory: InventoryData, ingredientInventory: InventoryData, outputInventory: InventoryData, heatingProgress: number, isCooking: boolean) {
-      super(position, id, EntityType.furnace, ageTicks, renderDepth, fuelInventory, ingredientInventory, outputInventory, heatingProgress, isCooking);
+   constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.furnace>) {
+      super(position, id, EntityType.furnace, ageTicks);
 
       this.attachRenderPart(
          new RenderPart(
@@ -19,12 +20,15 @@ class Furnace extends CookingEntity {
             0
          )
       );
+
+      this.addServerComponent(ServerComponentType.cooking, new CookingComponent(this, componentsData[3]));
    }
 
    public tick(): void {
       super.tick();
 
-      if (this.isCooking) {
+      const cookingComponent = this.getServerComponent(ServerComponentType.cooking);
+      if (cookingComponent.isCooking) {
          // Smoke particles
          if (Board.tickIntervalHasPassed(0.1)) {
             const spawnOffsetMagnitude = 20 * Math.random();

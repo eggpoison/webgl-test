@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { SETTINGS } from "webgl-test-shared";
+import { ServerComponentType, Settings } from "webgl-test-shared";
 import Client from "../../client/Client";
 import Player from "../../entities/Player";
 
@@ -18,7 +18,7 @@ const SPAM_FILTER: SpamFilter = {
 export function updateSpamFilter(): void {
    for (let idx = spamFilterHistory.length - 1; idx >= 0; idx--) {
       const spamFilterMessage = spamFilterHistory[idx];
-      spamFilterMessage[1] -= 1 / SETTINGS.TPS;
+      spamFilterMessage[1] -= 1 / Settings.TPS;
       if (spamFilterMessage[1] <= 0) {
          spamFilterHistory.splice(idx, 1);
       }
@@ -117,7 +117,9 @@ const ChatBox = () => {
 
             if (chatMessage !== "") {
                Client.sendChatMessage(chatMessage);
-               addChatMessage(Player.instance!.username, chatMessage);
+
+               const playerComponent = Player.instance!.getServerComponent(ServerComponentType.player);
+               addChatMessage(playerComponent.username, chatMessage);
             }
 
             closeChatbox();

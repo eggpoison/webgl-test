@@ -1,11 +1,11 @@
 import { EntityType, Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 
-class IceShardsProjectile extends GameObject {
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
-      super(position, id, EntityType.iceShardProjectile, ageTicks, renderDepth);
+class IceShardsProjectile extends Entity {
+   constructor(position: Point, id: number, ageTicks: number) {
+      super(position, id, EntityType.iceShardProjectile, ageTicks);
 
       this.attachRenderPart(
          new RenderPart(

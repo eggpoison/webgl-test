@@ -3,6 +3,8 @@ import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 
 /** A thing which is able to hold render parts */
 export abstract class RenderObject {
+   public readonly children = new Array<RenderPart>();
+   
    /** Estimated position of the object during the current frame */
    public renderPosition = new Point(-1, -1);
 
@@ -17,8 +19,7 @@ export abstract class RenderObject {
 class RenderPart extends RenderObject {
    public readonly parent: RenderObject;
 
-   // @Speed: Reduce polymorphism
-   public offset?: Point | (() => Point);
+   public readonly offset = new Point(0, 0)
    public readonly zIndex: number;
    public rotation = 0;
 
@@ -27,9 +28,6 @@ class RenderPart extends RenderObject {
    public shakeAmount = 0;
    
    public textureArrayIndex: number;
-
-   // @Speed: Reduce polymorphism
-   public getRotation?: () => number;
 
    /** Whether or not the render part will inherit its parents' rotation */
    public inheritParentRotation = true;
@@ -49,27 +47,13 @@ class RenderPart extends RenderObject {
       this.renderPosition.x = this.parent.renderPosition.x;
       this.renderPosition.y = this.parent.renderPosition.y;
 
-      if (typeof this.offset !== "undefined") {
-         let offset: Point;
-         if (typeof this.offset === "function") {
-            offset = this.offset();
-         } else {
-            offset = this.offset;
-         }
-
-         // Rotate the offset to match the parent object's rotation
-         let rotatedOffsetX: number;
-         let rotatedOffsetY: number;
-         if (this.inheritParentRotation) {
-            rotatedOffsetX = rotateXAroundPoint(offset.x, offset.y, 0, 0, this.parent.rotation + this.parent.totalRotation);
-            rotatedOffsetY = rotateYAroundPoint(offset.x, offset.y, 0, 0, this.parent.rotation + this.parent.totalRotation);
-         } else {
-            rotatedOffsetX = rotateXAroundPoint(offset.x, offset.y, 0, 0, this.parent.totalRotation);
-            rotatedOffsetY = rotateYAroundPoint(offset.x, offset.y, 0, 0, this.parent.totalRotation);
-         }
-
-         this.renderPosition.x += rotatedOffsetX;
-         this.renderPosition.y += rotatedOffsetY;
+      // Rotate the offset to match the parent object's rotation
+      if (this.inheritParentRotation) {
+         this.renderPosition.x += rotateXAroundPoint(this.offset.x, this.offset.y, 0, 0, this.parent.rotation + this.parent.totalRotation);
+         this.renderPosition.y += rotateYAroundPoint(this.offset.x, this.offset.y, 0, 0, this.parent.rotation + this.parent.totalRotation);
+      } else {
+         this.renderPosition.x += rotateXAroundPoint(this.offset.x, this.offset.y, 0, 0, this.parent.totalRotation);
+         this.renderPosition.y += rotateYAroundPoint(this.offset.x, this.offset.y, 0, 0, this.parent.totalRotation);
       }
 
       // Shake
@@ -85,13 +69,6 @@ class RenderPart extends RenderObject {
          this.totalRotation = this.parent.rotation + this.parent.totalRotation;
       } else {
          this.totalRotation = this.parent.totalRotation;
-      }
-      if (typeof this.getRotation !== "undefined") {
-         this.rotation = this.getRotation();
-         if (isNaN(this.rotation)) {
-            console.warn(this);
-            throw new Error("Render part's rotation was NaN.");
-         }
       }
    }
 

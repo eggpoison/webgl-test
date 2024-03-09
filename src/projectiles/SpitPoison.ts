@@ -1,5 +1,5 @@
-import { EntityType, Point, SETTINGS, lerp, randFloat } from "webgl-test-shared";
-import GameObject from "../GameObject";
+import { EntityType, Point, Settings, lerp, randFloat } from "webgl-test-shared";
+import Entity from "../Entity";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import Board from "../Board";
 import { ParticleRenderLayer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
@@ -36,14 +36,14 @@ const createParticle = (spawnPositionX: number, spawnPositionY: number): void =>
    Board.lowTexturedParticles.push(particle);
 }
 
-class SpitPoison extends GameObject {
+class SpitPoison extends Entity {
    private static readonly MAX_RANGE = 55;
 
    private readonly trackSource: AudioBufferSourceNode;
    private readonly sound: Sound;
    
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
-      super(position, id, EntityType.spitPoison, ageTicks, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number) {
+      super(position, id, EntityType.spitPoison, ageTicks);
 
       const audioInfo = playSound("acid-burn.mp3", 0.25, 1, this.position.x, this.position.y);
       this.trackSource = audioInfo.trackSource;
@@ -68,7 +68,7 @@ class SpitPoison extends GameObject {
          createPoisonBubble(spawnPositionX, spawnPositionY, 1);
       }
 
-      if (Math.random() >= range * range / SETTINGS.TPS / 5) {
+      if (Math.random() >= range * range / Settings.TPS / 5) {
          return;
       }
 

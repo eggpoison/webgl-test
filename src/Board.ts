@@ -1,7 +1,7 @@
-import { SETTINGS, Point, Vector, ServerTileUpdateData, rotatePoint, RiverSteppingStoneData, RIVER_STEPPING_STONE_SIZES, EntityType, ServerTileData, GrassTileInfo, TileType } from "webgl-test-shared";
+import { Settings, Point, Vector, ServerTileUpdateData, rotatePoint, RiverSteppingStoneData, RIVER_STEPPING_STONE_SIZES, EntityType, ServerTileData, GrassTileInfo, TileType } from "webgl-test-shared";
 import Chunk from "./Chunk";
 import { Tile } from "./Tile";
-import GameObject from "./GameObject";
+import Entity from "./Entity";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import Particle from "./Particle";
 import CircularHitbox from "./hitboxes/CircularHitbox";
@@ -47,12 +47,12 @@ abstract class Board {
 
    public static numVisibleRenderParts = 0;
    /** Game objects sorted in descending render weight */
-   public static readonly sortedGameObjects = new Array<GameObject>();
+   public static readonly sortedGameObjects = new Array<Entity>();
    /** All fish in the board */
    public static readonly fish = new Array<Fish>();
 
-   public static readonly entities = new Set<GameObject>();
-   public static readonly entityRecord: Record<number, GameObject> = {};
+   public static readonly entities = new Set<Entity>();
+   public static readonly entityRecord: Record<number, Entity> = {};
 
    /** Stores all player entities in the game. Necessary for rendering their names. */
    public static readonly players = new Array<Player>();
@@ -82,9 +82,9 @@ abstract class Board {
 
       // Combine the tiles and edge tiles
       this.tiles = [];
-      for (let tileY = -SETTINGS.EDGE_GENERATION_DISTANCE; tileY < SETTINGS.BOARD_DIMENSIONS + SETTINGS.EDGE_GENERATION_DISTANCE; tileY++) {
-         for (let tileX = -SETTINGS.EDGE_GENERATION_DISTANCE; tileX < SETTINGS.BOARD_DIMENSIONS + SETTINGS.EDGE_GENERATION_DISTANCE; tileX++) {
-            if (tileX >= 0 && tileX < SETTINGS.BOARD_DIMENSIONS && tileY >= 0 && tileY < SETTINGS.BOARD_DIMENSIONS) {
+      for (let tileY = -Settings.EDGE_GENERATION_DISTANCE; tileY < Settings.BOARD_DIMENSIONS + Settings.EDGE_GENERATION_DISTANCE; tileY++) {
+         for (let tileX = -Settings.EDGE_GENERATION_DISTANCE; tileX < Settings.BOARD_DIMENSIONS + Settings.EDGE_GENERATION_DISTANCE; tileX++) {
+            if (tileX >= 0 && tileX < Settings.BOARD_DIMENSIONS && tileY >= 0 && tileY < Settings.BOARD_DIMENSIONS) {
                this.tiles.push(tiles[tileX][tileY]);
             } else {
                this.tiles.push(edgeTilesRecord[tileX][tileY]);
@@ -97,8 +97,8 @@ abstract class Board {
          const tile = this.tiles[i];
 
          if (tile.isWall) {
-            const tileX = i % (SETTINGS.BOARD_DIMENSIONS + SETTINGS.EDGE_GENERATION_DISTANCE * 2) - SETTINGS.EDGE_GENERATION_DISTANCE;
-            const tileY = Math.floor(i / (SETTINGS.BOARD_DIMENSIONS + SETTINGS.EDGE_GENERATION_DISTANCE * 2)) - SETTINGS.EDGE_GENERATION_DISTANCE;
+            const tileX = i % (Settings.BOARD_DIMENSIONS + Settings.EDGE_GENERATION_DISTANCE * 2) - Settings.EDGE_GENERATION_DISTANCE;
+            const tileY = Math.floor(i / (Settings.BOARD_DIMENSIONS + Settings.EDGE_GENERATION_DISTANCE * 2)) - Settings.EDGE_GENERATION_DISTANCE;
 
             for (let j = 0; j < NEIGHBOUR_OFFSETS.length; j++) {
                const neighbourTileX = tileX + NEIGHBOUR_OFFSETS[j][0];
@@ -112,8 +112,8 @@ abstract class Board {
          }
 
          if (tile.type === TileType.water) {
-            const tileX = i % (SETTINGS.BOARD_DIMENSIONS + SETTINGS.EDGE_GENERATION_DISTANCE * 2) - SETTINGS.EDGE_GENERATION_DISTANCE;
-            const tileY = Math.floor(i / (SETTINGS.BOARD_DIMENSIONS + SETTINGS.EDGE_GENERATION_DISTANCE * 2)) - SETTINGS.EDGE_GENERATION_DISTANCE;
+            const tileX = i % (Settings.BOARD_DIMENSIONS + Settings.EDGE_GENERATION_DISTANCE * 2) - Settings.EDGE_GENERATION_DISTANCE;
+            const tileY = Math.floor(i / (Settings.BOARD_DIMENSIONS + Settings.EDGE_GENERATION_DISTANCE * 2)) - Settings.EDGE_GENERATION_DISTANCE;
 
             for (let j = 0; j < NEIGHBOUR_OFFSETS.length; j++) {
                const neighbourTileX = tileX + NEIGHBOUR_OFFSETS[j][0];
@@ -129,9 +129,9 @@ abstract class Board {
       
       // Create the chunk array
       this.chunks = new Array<Array<Chunk>>();
-      for (let x = 0; x < SETTINGS.BOARD_SIZE; x++) {
+      for (let x = 0; x < Settings.BOARD_SIZE; x++) {
          this.chunks[x] = new Array<Chunk>();
-         for (let y = 0; y < SETTINGS.BOARD_SIZE; y++) {
+         for (let y = 0; y < Settings.BOARD_SIZE; y++) {
             this.chunks[x][y] = new Chunk(x, y);
          }
       }
@@ -146,10 +146,10 @@ abstract class Board {
       for (const steppingStone of steppingStones) {
          const size = RIVER_STEPPING_STONE_SIZES[steppingStone.size];
 
-         const minChunkX = Math.max(Math.min(Math.floor((steppingStone.positionX - size/2) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
-         const maxChunkX = Math.max(Math.min(Math.floor((steppingStone.positionX + size/2) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
-         const minChunkY = Math.max(Math.min(Math.floor((steppingStone.positionY - size/2) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
-         const maxChunkY = Math.max(Math.min(Math.floor((steppingStone.positionY + size/2) / SETTINGS.CHUNK_UNITS), SETTINGS.BOARD_SIZE - 1), 0);
+         const minChunkX = Math.max(Math.min(Math.floor((steppingStone.positionX - size/2) / Settings.CHUNK_UNITS), Settings.BOARD_SIZE - 1), 0);
+         const maxChunkX = Math.max(Math.min(Math.floor((steppingStone.positionX + size/2) / Settings.CHUNK_UNITS), Settings.BOARD_SIZE - 1), 0);
+         const minChunkY = Math.max(Math.min(Math.floor((steppingStone.positionY - size/2) / Settings.CHUNK_UNITS), Settings.BOARD_SIZE - 1), 0);
+         const maxChunkY = Math.max(Math.min(Math.floor((steppingStone.positionY + size/2) / Settings.CHUNK_UNITS), Settings.BOARD_SIZE - 1), 0);
          
          for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
             for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
@@ -170,7 +170,7 @@ abstract class Board {
    public static updateTickCallbacks(): void {
       for (let i = this.tickCallbacks.length - 1; i >= 0; i--) {
          const tickCallbackInfo = this.tickCallbacks[i];
-         tickCallbackInfo.time -= 1 / SETTINGS.TPS;
+         tickCallbackInfo.time -= 1 / Settings.TPS;
          if (tickCallbackInfo.time <= 0) {
             tickCallbackInfo.callback();
             this.tickCallbacks.splice(i, 1);
@@ -179,14 +179,14 @@ abstract class Board {
    }
 
    public static tickIntervalHasPassed(intervalSeconds: number): boolean {
-      const ticksPerInterval = intervalSeconds * SETTINGS.TPS;
+      const ticksPerInterval = intervalSeconds * Settings.TPS;
       
       const previousCheck = (Board.ticks - 1) / ticksPerInterval;
       const check = Board.ticks / ticksPerInterval;
       return Math.floor(previousCheck) !== Math.floor(check);
    }
 
-   public static addEntity(entity: GameObject): void {
+   public static addEntity(entity: Entity): void {
       this.entityRecord[entity.id] = entity;
       this.entities.add(entity);
 
@@ -206,16 +206,17 @@ abstract class Board {
       }
    }
 
-   public static removeGameObject(entity: GameObject): void {
+   public static removeGameObject(entity: Entity): void {
       if (typeof entity === "undefined") {
          throw new Error("Tried to remove an undefined game object.");
       }
 
       delete Board.entityRecord[entity.id];
 
-      if (typeof entity.onDie !== "undefined" && entityIsVisible(entity)) {
-         entity.onDie();
+      if (entityIsVisible(entity)) {
+         entity.die();
       }
+      entity.remove();
 
       if (entity.type === EntityType.player) {
          const idx = Board.players.indexOf(entity as Player);
@@ -228,10 +229,6 @@ abstract class Board {
          chunk.removeGameObject(entity);
       }
    
-      if (typeof entity.onRemove !== "undefined") {
-         entity.onRemove();
-      }
-
       this.entities.delete(entity);
       if (entity.type === EntityType.fish) {
          const idx = this.fish.indexOf(entity as Fish);
@@ -263,13 +260,13 @@ abstract class Board {
    }
 
    public static getTile(tileX: number, tileY: number): Tile {
-      const x = tileX + SETTINGS.EDGE_GENERATION_DISTANCE;
-      const y = tileY + SETTINGS.EDGE_GENERATION_DISTANCE;
-      return this.tiles[y * (SETTINGS.BOARD_DIMENSIONS + SETTINGS.EDGE_GENERATION_DISTANCE * 2) + x];
+      const x = tileX + Settings.EDGE_GENERATION_DISTANCE;
+      const y = tileY + Settings.EDGE_GENERATION_DISTANCE;
+      return this.tiles[y * (Settings.BOARD_DIMENSIONS + Settings.EDGE_GENERATION_DISTANCE * 2) + x];
    }
 
    public static tileIsWithinEdge(tileX: number, tileY: number): boolean {
-      return tileX >= -SETTINGS.EDGE_GENERATION_DISTANCE && tileX < SETTINGS.BOARD_DIMENSIONS + SETTINGS.EDGE_GENERATION_DISTANCE && tileY >= -SETTINGS.EDGE_GENERATION_DISTANCE && tileY < SETTINGS.BOARD_DIMENSIONS + SETTINGS.EDGE_GENERATION_DISTANCE;
+      return tileX >= -Settings.EDGE_GENERATION_DISTANCE && tileX < Settings.BOARD_DIMENSIONS + Settings.EDGE_GENERATION_DISTANCE && tileY >= -Settings.EDGE_GENERATION_DISTANCE && tileY < Settings.BOARD_DIMENSIONS + Settings.EDGE_GENERATION_DISTANCE;
    }
 
    public static getChunk(x: number, y: number): Chunk {
@@ -281,7 +278,7 @@ abstract class Board {
       for (let i = 0; i < particles.length; i++) {
          const particle = particles[i];
 
-         particle.age += 1 / SETTINGS.TPS;
+         particle.age += 1 / Settings.TPS;
          if (particle.age >= particle.lifetime) {
             removedParticleIndexes.push(i);
          } else {
@@ -334,8 +331,8 @@ abstract class Board {
    /** Updates the client's copy of the tiles array to match any tile updates that have occurred */
    public static loadTileUpdates(tileUpdates: ReadonlyArray<ServerTileUpdateData>): void {
       for (const update of tileUpdates) {
-         const tileX = update.tileIndex % SETTINGS.BOARD_DIMENSIONS;
-         const tileY = Math.floor(update.tileIndex / SETTINGS.BOARD_DIMENSIONS);
+         const tileX = update.tileIndex % Settings.BOARD_DIMENSIONS;
+         const tileY = Math.floor(update.tileIndex / Settings.BOARD_DIMENSIONS);
          
          let tile = this.getTile(tileX, tileY);
          tile.type = update.type;
@@ -343,7 +340,7 @@ abstract class Board {
       }
    }
 
-   public static calculateDistanceBetweenPointAndGameObject(position: Point, gameObject: GameObject): number {
+   public static calculateDistanceBetweenPointAndGameObject(position: Point, gameObject: Entity): number {
       let minDist = Number.MAX_SAFE_INTEGER;
       for (const hitbox of gameObject.hitboxes) {
          let distance: number;
@@ -370,7 +367,7 @@ abstract class Board {
    }
 
    public static tileIsInBoard(tileX: number, tileY: number): boolean {
-      return tileX >= 0 && tileX < SETTINGS.BOARD_DIMENSIONS && tileY >= 0 && tileY < SETTINGS.BOARD_DIMENSIONS;
+      return tileX >= 0 && tileX < Settings.BOARD_DIMENSIONS && tileY >= 0 && tileY < Settings.BOARD_DIMENSIONS;
    }
 
    public static hasEntityID(entityID: number): boolean {

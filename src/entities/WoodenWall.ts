@@ -1,11 +1,12 @@
-import { EntityData, EntityType, HitData, Point, lerp, randFloat } from "webgl-test-shared";
+import { EntityComponentsData, EntityData, EntityType, HitData, Point, ServerComponentType, lerp, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
-import Entity from "./Entity";
 import { playSound } from "../sound";
 import Board from "../Board";
 import Particle from "../Particle";
 import { addMonocolourParticleToBufferContainer, ParticleRenderLayer } from "../rendering/particle-rendering";
+import HealthComponent from "../entity-components/HealthComponent";
+import Entity from "../Entity";
 
 export function createWoodShardParticle(originX: number, originY: number, offset: number): void {
    const spawnOffsetDirection = 2 * Math.PI * Math.random();
@@ -103,12 +104,11 @@ export function createWoodenWallSpawnParticles(originX: number, originY: number)
 class WoodenWall extends Entity {
    private static readonly NUM_DAMAGE_STAGES = 7;
    private static readonly MAX_HEALTH = 25;
-   private static readonly SIZE = 64;
 
    private damageRenderPart: RenderPart | null = null;
 
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, health: number) {
-      super(position, id, EntityType.woodenWall, ageTicks, renderDepth);
+   constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.woodenWall>) {
+      super(position, id, EntityType.woodenWall, ageTicks);
 
       this.attachRenderPart(
          new RenderPart(
@@ -119,7 +119,11 @@ class WoodenWall extends Entity {
          )
       );
 
-      this.updateDamageRenderPart(health);
+      const healthComponentData = componentsData[0];
+
+      this.updateDamageRenderPart(healthComponentData.health);
+
+      this.addServerComponent(ServerComponentType.health, new HealthComponent(this, healthComponentData));
 
       if (this.ageTicks === 0) {
          createWoodenWallSpawnParticles(this.position.x, this.position.y);
@@ -153,8 +157,8 @@ class WoodenWall extends Entity {
    public updateFromData(data: EntityData<EntityType.woodenWall>): void {
       super.updateFromData(data);
 
-      const health = data.clientArgs[0];
-      this.updateDamageRenderPart(health);
+      const healthComponent = this.getServerComponent(ServerComponentType.health);
+      this.updateDamageRenderPart(healthComponent.health);
    }
 
    protected onHit(hitData: HitData): void {

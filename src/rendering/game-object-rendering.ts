@@ -3,6 +3,7 @@ import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../
 import Board from "../Board";
 import { ATLAS_SLOT_SIZE } from "../texture-atlases/texture-atlas-stitching";
 import { ENTITY_TEXTURE_ATLAS, ENTITY_TEXTURE_ATLAS_LENGTH, ENTITY_TEXTURE_ATLAS_SIZE, ENTITY_TEXTURE_SLOT_INDEXES, getTextureHeight, getTextureWidth } from "../texture-atlases/entity-texture-atlas";
+import RenderPart from "../render-parts/RenderPart";
 
 let program: WebGLProgram;
 let vao: WebGLVertexArrayObject;
@@ -164,9 +165,23 @@ export function renderGameObjects(): void {
    for (const gameObject of Board.sortedGameObjects) {
       gameObject.updateRenderPosition();
 
+      // Calculate render info for all render parts
+      const remainingRenderParts: Array<RenderPart> = [];
+      for (const child of gameObject.children) {
+         remainingRenderParts.push(child);
+      }
+      while (remainingRenderParts.length > 0) {
+         const renderObject = remainingRenderParts[0];
+         renderObject.update();
+
+         for (const child of renderObject.children) {
+            remainingRenderParts.push(child);
+         }
+
+         remainingRenderParts.splice(0, 1);
+      }
+
       for (const renderPart of gameObject.allRenderParts) {
-         renderPart.update();
-         
          const depth = -renderPart.zIndex * 0.0001 + gameObject.renderDepth;
    
          const u0 = renderPart.flipX ? 1 : 0;

@@ -1,6 +1,6 @@
-import { EntityDebugData, Point, SETTINGS } from "webgl-test-shared";
+import { EntityDebugData, Point, Settings } from "webgl-test-shared";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, generateLine, generateThickCircleWireframeVertices, gl } from "../webgl";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import Board from "../Board";
 
 let lineProgram: WebGLProgram;
@@ -87,7 +87,7 @@ export function createDebugDataShaders(): void {
    gl.uniformBlockBinding(triangleProgram, triangleCameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);
 }
 
-const addCircleVertices = (vertices: Array<number>, debugData: EntityDebugData, gameObject: GameObject): void => {
+const addCircleVertices = (vertices: Array<number>, debugData: EntityDebugData, gameObject: Entity): void => {
    for (const circle of debugData.circles) {
       vertices.push(
          ...generateThickCircleWireframeVertices(gameObject.renderPosition, circle.radius, circle.thickness, circle.colour[0], circle.colour[1], circle.colour[2])
@@ -95,7 +95,7 @@ const addCircleVertices = (vertices: Array<number>, debugData: EntityDebugData, 
    }
 }
 
-const addLineVertices = (vertices: Array<number>, debugData: EntityDebugData, gameObject: GameObject): void => {
+const addLineVertices = (vertices: Array<number>, debugData: EntityDebugData, gameObject: Entity): void => {
    for (const line of debugData.lines) {
       const targetPosition = new Point(...line.targetPosition);
       vertices.push(
@@ -132,11 +132,11 @@ export function renderLineDebugData(debugData: EntityDebugData): void {
 
 const addTileHighlightVertices = (vertices: Array<number>, debugData: EntityDebugData): void => {
    for (const tileHighlight of debugData.tileHighlights) {
-      const x1 = tileHighlight.tilePosition[0] * SETTINGS.TILE_SIZE;
-      const x2 = (tileHighlight.tilePosition[0] + 1) * SETTINGS.TILE_SIZE;
+      const x1 = tileHighlight.tilePosition[0] * Settings.TILE_SIZE;
+      const x2 = (tileHighlight.tilePosition[0] + 1) * Settings.TILE_SIZE;
 
-      const y1 = tileHighlight.tilePosition[1] * SETTINGS.TILE_SIZE;
-      const y2 = (tileHighlight.tilePosition[1] + 1) * SETTINGS.TILE_SIZE;
+      const y1 = tileHighlight.tilePosition[1] * Settings.TILE_SIZE;
+      const y2 = (tileHighlight.tilePosition[1] + 1) * Settings.TILE_SIZE;
 
       vertices.push(
          x1, y1, tileHighlight.colour[0], tileHighlight.colour[1], tileHighlight.colour[2],

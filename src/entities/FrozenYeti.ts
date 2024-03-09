@@ -1,124 +1,15 @@
-import { EntityData, EntityType, FrozenYetiAttackType, HitData, Point, SETTINGS, lerp, randFloat, randInt } from "webgl-test-shared";
-import Entity from "./Entity";
+import { EntityComponentsData, EntityType, FrozenYetiAttackType, HitData, Point, ServerComponentType, lerp, randFloat, randInt } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Player from "./Player";
 import Particle from "../Particle";
 import { ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
 import Board from "../Board";
-import { BloodParticleSize, createRockParticle, createSnowParticle, createWhiteSmokeParticle } from "../particles";
+import { BloodParticleSize, createBlueBloodParticle, createBlueBloodParticleFountain, createBlueBloodPoolParticle, createSnowParticle } from "../particles";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
-
-const createBiteParticle = (spawnPositionX: number, spawnPositionY: number): void => {
-   const lifetime = 0.4;
-
-   const particle = new Particle(lifetime);
-   particle.getOpacity = () => {
-      return 1 - Math.pow(particle.age / lifetime, 1.5);
-   }
-
-   addTexturedParticleToBufferContainer(
-      particle,
-      ParticleRenderLayer.high,
-      64, 64,
-      spawnPositionX, spawnPositionY,
-      0, 0,
-      0, 0,
-      0,
-      Math.PI,
-      0,
-      0,
-      0,
-      8 * 3 + 4,
-      0, 0, 0
-   );
-
-   Board.highTexturedParticles.push(particle);
-}
-
-const createBlueBloodPoolParticle = (originX: number, originY: number, spawnRange: number): void => {
-   const lifetime = 11;
-
-   const offsetMagnitude = spawnRange * Math.random();
-   const offsetDirection = 2 * Math.PI * Math.random();
-   const spawnPositionX = originX + offsetMagnitude * Math.sin(offsetDirection);
-   const spawnPositionY = originY + offsetMagnitude * Math.cos(offsetDirection);
-
-   const particle = new Particle(lifetime);
-   particle.getOpacity = () => {
-      return 1 - particle.age / lifetime;
-   };
-
-   const textureIndex = randInt(0, 2);
-   addTexturedParticleToBufferContainer(
-      particle,
-      ParticleRenderLayer.low,
-      64, 64,
-      spawnPositionX, spawnPositionY,
-      0, 0,
-      0, 0,
-      0,
-      2 * Math.PI * Math.random(),
-      0,
-      0,
-      0,
-      textureIndex,
-      randFloat(-1, -0.7), randFloat(0.3, 0.5), 1
-   );
-   Board.lowTexturedParticles.push(particle);
-}
-
-const createBlueBloodParticle = (size: BloodParticleSize, spawnPositionX: number, spawnPositionY: number, moveDirection: number, moveSpeed: number, hasDrag: boolean): void => {
-   const lifetime = randFloat(0.3, 0.4);
-   
-   const pixelSize = size === BloodParticleSize.large ? 8 : 4;
-
-   const velocityX = moveSpeed * Math.sin(moveDirection);
-   const velocityY = moveSpeed * Math.cos(moveDirection);
-
-   const friction = hasDrag ? moveSpeed / lifetime / 1.2 : 0;
-
-   const particle = new Particle(lifetime);
-   particle.getOpacity = (): number => {
-      return 1 - particle.age / lifetime;
-   };
-
-   const r = randFloat(0, 0.35);
-   const g = randFloat(0.5, 0.65);
-   const b = randFloat(0.75, 0.9);
-
-   addMonocolourParticleToBufferContainer(
-      particle,
-      ParticleRenderLayer.high,
-      pixelSize, pixelSize,
-      spawnPositionX, spawnPositionY,
-      velocityX, velocityY,
-      0, 0,
-      friction,
-      2 * Math.PI * Math.random(),
-      0,
-      0,
-      0,
-      r, g, b
-   );
-   Board.highMonocolourParticles.push(particle);
-}
-
-const BLOOD_FOUNTAIN_RAY_COUNT = 7;
-
-const createBloodParticleFountain = (entity: Entity, interval: number, speedMultiplier: number): void => {
-   const offset = 2 * Math.PI * Math.random();
-
-   for (let i = 0; i < 6; i++) {
-      Board.addTickCallback(interval * (i + 1), () => {
-         for (let j = 0; j < BLOOD_FOUNTAIN_RAY_COUNT; j++) {
-            let moveDirection = 2 * Math.PI / BLOOD_FOUNTAIN_RAY_COUNT * j + offset;
-            moveDirection += randFloat(-0.3, 0.3);
-
-            createBlueBloodParticle(BloodParticleSize.large, entity.position.x, entity.position.y, moveDirection, randFloat(100, 200) * speedMultiplier, false);
-         }
-      });
-   }
-}
+import FrozenYetiComponent from "../entity-components/FrozenYetiComponent";
+import Entity from "../Entity";
+import HealthComponent from "../entity-components/HealthComponent";
+import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 
 class FrozenYeti extends Entity {
    private static readonly SIZE = 152;
@@ -131,22 +22,10 @@ class FrozenYeti extends Entity {
 
    private static readonly ROAR_ARC = Math.PI / 6;
    private static readonly ROAR_REACH = 450;
-   private static readonly SNOWBALL_THROW_OFFSET = 150;
-
-   private readonly headRenderPart: RenderPart;
-   /** Index 0: left paw, index 1: right paw */
-   private readonly pawRenderParts = new Array<RenderPart>();
-
-   private attackType: FrozenYetiAttackType;
-   private attackStage: number;
-   private stageProgress: number;
+   public static readonly SNOWBALL_THROW_OFFSET = 150;
    
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number, attackType: FrozenYetiAttackType, attackStage: number, stageProgress: number) {
-      super(position, id, EntityType.frozenYeti, ageTicks, renderDepth);
-
-      this.attackType = attackType;
-      this.attackStage = attackStage;
-      this.stageProgress = stageProgress;
+   constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.frozenYeti>) {
+      super(position, id, EntityType.frozenYeti, ageTicks);
 
       this.attachRenderPart(new RenderPart(
          this,
@@ -155,16 +34,17 @@ class FrozenYeti extends Entity {
          0
       ));
 
-      this.headRenderPart = new RenderPart(
+      const headRenderPart = new RenderPart(
          this,
          getTextureArrayIndex("entities/frozen-yeti/frozen-yeti-head.png"),
          2,
          0
       );
-      this.headRenderPart.offset = new Point(0, FrozenYeti.HEAD_DISTANCE);
-      this.attachRenderPart(this.headRenderPart);
+      headRenderPart.offset.y = FrozenYeti.HEAD_DISTANCE;
+      this.attachRenderPart(headRenderPart);
 
       // Create paw render parts
+      const pawRenderParts = new Array<RenderPart>();
       for (let i = 0; i < 2; i++) {
          const paw = new RenderPart(
             this,
@@ -172,11 +52,17 @@ class FrozenYeti extends Entity {
             0,
             0
          );
-         paw.offset = Point.fromVectorForm(FrozenYeti.PAW_OFFSET, FrozenYeti.PAW_RESTING_ANGLE * (i === 0 ? -1 : 1));
+         const pawOffsetDirection = FrozenYeti.PAW_RESTING_ANGLE * (i === 0 ? -1 : 1);
+         paw.offset.x = FrozenYeti.PAW_OFFSET * Math.sin(pawOffsetDirection);
+         paw.offset.y = FrozenYeti.PAW_OFFSET * Math.cos(pawOffsetDirection);
 
          this.attachRenderPart(paw);
-         this.pawRenderParts.push(paw);
+         pawRenderParts.push(paw);
       }
+
+      this.addServerComponent(ServerComponentType.health, new HealthComponent(this, componentsData[1]))
+      this.addServerComponent(ServerComponentType.statusEffect, new StatusEffectComponent(this, componentsData[2]))
+      this.addServerComponent(ServerComponentType.frozenYeti, new FrozenYetiComponent(this, componentsData[4], headRenderPart, pawRenderParts))
    }
 
    public tick(): void {
@@ -186,21 +72,22 @@ class FrozenYeti extends Entity {
          return;
       }
 
-      switch (this.attackType) {
+      const frozenYetiComponent = this.getServerComponent(ServerComponentType.frozenYeti);
+      switch (frozenYetiComponent.attackType) {
          case FrozenYetiAttackType.stomp: {
-            switch (this.attackStage) {
+            switch (frozenYetiComponent.attackStage) {
                // Windup
                case 0: {
-                  this.headRenderPart.shakeAmount = lerp(1, 2, this.stageProgress);
+                  frozenYetiComponent.headRenderPart.shakeAmount = lerp(1, 2, frozenYetiComponent.stageProgress);
                   for (let i = 0; i < 2; i++) {
-                     this.pawRenderParts[i].shakeAmount = lerp(1, 2, this.stageProgress);
+                     frozenYetiComponent.pawRenderParts[i].shakeAmount = lerp(1, 2, frozenYetiComponent.stageProgress);
                   }
                   break;
                }
                case 1: {
-                  this.headRenderPart.shakeAmount = 0;
+                  frozenYetiComponent.headRenderPart.shakeAmount = 0;
                   for (let i = 0; i < 2; i++) {
-                     this.pawRenderParts[i].shakeAmount = 0;
+                     frozenYetiComponent.pawRenderParts[i].shakeAmount = 0;
                   }
                   break;
                }
@@ -209,17 +96,17 @@ class FrozenYeti extends Entity {
             break;
          }
          case FrozenYetiAttackType.snowThrow: {
-            switch (this.attackStage) {
+            switch (frozenYetiComponent.attackStage) {
                // Windup
                case 0: {
                   // Push paws forward
                   const pawOffsetMagnitude = FrozenYeti.PAW_OFFSET;
-                  const pawOffsetDirection = lerp(FrozenYeti.PAW_RESTING_ANGLE, FrozenYeti.PAW_HIGH_ANGLE, Math.pow(this.stageProgress, 1.2));
+                  const pawOffsetDirection = lerp(FrozenYeti.PAW_RESTING_ANGLE, FrozenYeti.PAW_HIGH_ANGLE, Math.pow(frozenYetiComponent.stageProgress, 1.2));
                   for (let i = 0; i < 2; i++) {
-                     const paw = this.pawRenderParts[i];
+                     const paw = frozenYetiComponent.pawRenderParts[i];
                      const direction = pawOffsetDirection * (i === 0 ? -1 : 1);
-                     (paw.offset as Point).x = pawOffsetMagnitude * Math.sin(direction);
-                     (paw.offset as Point).y = pawOffsetMagnitude * Math.cos(direction);
+                     paw.offset.x = pawOffsetMagnitude * Math.sin(direction);
+                     paw.offset.y = pawOffsetMagnitude * Math.cos(direction);
 
                      // Create snow particles near the paws
                      const offsetDirection = (pawOffsetDirection - 0.3) * (i === 0 ? -1 : 1) + this.rotation;
@@ -234,12 +121,12 @@ class FrozenYeti extends Entity {
                case 2: {
                   // Pull paws back
                   const pawOffsetMagnitude = FrozenYeti.PAW_OFFSET;
-                  const pawOffsetDirection = lerp(FrozenYeti.PAW_HIGH_ANGLE, FrozenYeti.PAW_RESTING_ANGLE, Math.pow(this.stageProgress, 0.75));
+                  const pawOffsetDirection = lerp(FrozenYeti.PAW_HIGH_ANGLE, FrozenYeti.PAW_RESTING_ANGLE, Math.pow(frozenYetiComponent.stageProgress, 0.75));
                   for (let i = 0; i < 2; i++) {
-                     const paw = this.pawRenderParts[i];
+                     const paw = frozenYetiComponent.pawRenderParts[i];
                      const direction = pawOffsetDirection * (i === 0 ? -1 : 1);
-                     (paw.offset as Point).x = pawOffsetMagnitude * Math.sin(direction);
-                     (paw.offset as Point).y = pawOffsetMagnitude * Math.cos(direction);
+                     paw.offset.x = pawOffsetMagnitude * Math.sin(direction);
+                     paw.offset.y = pawOffsetMagnitude * Math.cos(direction);
                   }
                }
             }
@@ -247,29 +134,29 @@ class FrozenYeti extends Entity {
             break;
          }
          case FrozenYetiAttackType.roar: {
-            switch (this.attackStage) {
+            switch (frozenYetiComponent.attackStage) {
                case 0: {
                   // Pull head back
-                  (this.headRenderPart.offset as Point).y = FrozenYeti.HEAD_DISTANCE - lerp(0, 20, this.stageProgress);
+                  frozenYetiComponent.headRenderPart.offset.y = FrozenYeti.HEAD_DISTANCE - lerp(0, 20, frozenYetiComponent.stageProgress);
 
-                  this.headRenderPart.shakeAmount = lerp(0, 1, this.stageProgress);
+                  frozenYetiComponent.headRenderPart.shakeAmount = lerp(0, 1, frozenYetiComponent.stageProgress);
 
                   // Pull paws back
                   const pawOffsetMagnitude = FrozenYeti.PAW_OFFSET;
-                  const pawOffsetDirection = lerp(FrozenYeti.PAW_RESTING_ANGLE, FrozenYeti.PAW_RESTING_ANGLE + Math.PI / 10, this.stageProgress);
-                  this.setPawRotationAndOffset(pawOffsetDirection, pawOffsetMagnitude);
+                  const pawOffsetDirection = lerp(FrozenYeti.PAW_RESTING_ANGLE, FrozenYeti.PAW_RESTING_ANGLE + Math.PI / 10, frozenYetiComponent.stageProgress);
+                  this.setPawRotationAndOffset(frozenYetiComponent, pawOffsetDirection, pawOffsetMagnitude);
                   break;
                }
                case 1: {
                   // Push head forwards
-                  (this.headRenderPart.offset as Point).y = FrozenYeti.HEAD_DISTANCE - lerp(20, 0, this.stageProgress);
+                  frozenYetiComponent.headRenderPart.offset.y = FrozenYeti.HEAD_DISTANCE - lerp(20, 0, frozenYetiComponent.stageProgress);
                   
-                  this.headRenderPart.shakeAmount = 2;
+                  frozenYetiComponent.headRenderPart.shakeAmount = 2;
                   
                   // Return paws to original position
                   const pawOffsetMagnitude = FrozenYeti.PAW_OFFSET;
-                  const pawOffsetDirection = lerp(FrozenYeti.PAW_RESTING_ANGLE + Math.PI / 10, FrozenYeti.PAW_RESTING_ANGLE, this.stageProgress);
-                  this.setPawRotationAndOffset(pawOffsetDirection, pawOffsetMagnitude);
+                  const pawOffsetDirection = lerp(FrozenYeti.PAW_RESTING_ANGLE + Math.PI / 10, FrozenYeti.PAW_RESTING_ANGLE, frozenYetiComponent.stageProgress);
+                  this.setPawRotationAndOffset(frozenYetiComponent, pawOffsetDirection, pawOffsetMagnitude);
                   
                   this.createRoarParticles();
 
@@ -295,33 +182,33 @@ class FrozenYeti extends Entity {
             break;
          }
          case FrozenYetiAttackType.bite: {
-            switch (this.attackStage) {
+            switch (frozenYetiComponent.attackStage) {
                // Charge
                case 0: {
                   // Pull paws back
                   const pawOffsetMagnitude = FrozenYeti.PAW_OFFSET;
-                  const pawOffsetDirection = lerp(FrozenYeti.PAW_RESTING_ANGLE, FrozenYeti.PAW_RESTING_ANGLE + Math.PI / 10, this.stageProgress);
+                  const pawOffsetDirection = lerp(FrozenYeti.PAW_RESTING_ANGLE, FrozenYeti.PAW_RESTING_ANGLE + Math.PI / 10, frozenYetiComponent.stageProgress);
                   for (let i = 0; i < 2; i++) {
-                     const paw = this.pawRenderParts[i];
+                     const paw = frozenYetiComponent.pawRenderParts[i];
                      const direction = pawOffsetDirection * (i === 0 ? -1 : 1);
-                     (paw.offset as Point).x = pawOffsetMagnitude * Math.sin(direction);
-                     (paw.offset as Point).y = pawOffsetMagnitude * Math.cos(direction);
+                     paw.offset.x = pawOffsetMagnitude * Math.sin(direction);
+                     paw.offset.y = pawOffsetMagnitude * Math.cos(direction);
                   }
                   
                   break;
                }
                // Lunge
                case 1: {
-                  const scaledProgress = Math.pow(this.stageProgress, 0.5);
+                  const scaledProgress = Math.pow(frozenYetiComponent.stageProgress, 0.5);
                   
                   // Push paws forwards
                   const pawOffsetMagnitude = FrozenYeti.PAW_OFFSET;
                   const pawOffsetDirection = lerp(FrozenYeti.PAW_RESTING_ANGLE + Math.PI / 10, FrozenYeti.PAW_RESTING_ANGLE - Math.PI / 10, scaledProgress);
                   for (let i = 0; i < 2; i++) {
-                     const paw = this.pawRenderParts[i];
+                     const paw = frozenYetiComponent.pawRenderParts[i];
                      const direction = pawOffsetDirection * (i === 0 ? -1 : 1);
-                     (paw.offset as Point).x = pawOffsetMagnitude * Math.sin(direction);
-                     (paw.offset as Point).y = pawOffsetMagnitude * Math.cos(direction);
+                     paw.offset.x = pawOffsetMagnitude * Math.sin(direction);
+                     paw.offset.y = pawOffsetMagnitude * Math.cos(direction);
                   }
 
                   break;
@@ -330,12 +217,12 @@ class FrozenYeti extends Entity {
                case 2: {
                   // Return paws to normal position
                   const pawOffsetMagnitude = FrozenYeti.PAW_OFFSET;
-                  const pawOffsetDirection = lerp(FrozenYeti.PAW_RESTING_ANGLE - Math.PI / 10, FrozenYeti.PAW_RESTING_ANGLE, this.stageProgress);
+                  const pawOffsetDirection = lerp(FrozenYeti.PAW_RESTING_ANGLE - Math.PI / 10, FrozenYeti.PAW_RESTING_ANGLE, frozenYetiComponent.stageProgress);
                   for (let i = 0; i < 2; i++) {
-                     const paw = this.pawRenderParts[i];
+                     const paw = frozenYetiComponent.pawRenderParts[i];
                      const direction = pawOffsetDirection * (i === 0 ? -1 : 1);
-                     (paw.offset as Point).x = pawOffsetMagnitude * Math.sin(direction);
-                     (paw.offset as Point).y = pawOffsetMagnitude * Math.cos(direction);
+                     paw.offset.x = pawOffsetMagnitude * Math.sin(direction);
+                     paw.offset.y = pawOffsetMagnitude * Math.cos(direction);
                   }
 
                   break;
@@ -345,9 +232,9 @@ class FrozenYeti extends Entity {
             break;
          }
          case FrozenYetiAttackType.none: {
-            this.headRenderPart.shakeAmount = 0;
+            frozenYetiComponent.headRenderPart.shakeAmount = 0;
             for (let i = 0; i < 2; i++) {
-               this.pawRenderParts[i].shakeAmount = 0;
+               frozenYetiComponent.pawRenderParts[i].shakeAmount = 0;
             }
             
             break;
@@ -355,9 +242,9 @@ class FrozenYeti extends Entity {
       }
    }
 
-   private setPawRotationAndOffset(rotation: number, offsetMagnitude: number): void {
+   private setPawRotationAndOffset(frozenYetiComponent: FrozenYetiComponent, rotation: number, offsetMagnitude: number): void {
       for (let i = 0; i < 2; i++) {
-         const paw = this.pawRenderParts[i];
+         const paw = frozenYetiComponent.pawRenderParts[i];
          const direction = rotation * (i === 0 ? -1 : 1);
          (paw.offset as Point).x = offsetMagnitude * Math.sin(direction);
          (paw.offset as Point).y = offsetMagnitude * Math.cos(direction);
@@ -447,94 +334,6 @@ class FrozenYeti extends Entity {
       }
    }
 
-   public updateFromData(data: EntityData<EntityType.frozenYeti>): void {
-      super.updateFromData(data);
-
-      // If the yeti did a bite attack, create a bite particle
-      if (this.attackType === FrozenYetiAttackType.bite && data.clientArgs[1] === 2 && this.attackStage === 1) {
-         const spawnPositionX = this.position.x + 140 * Math.sin(this.rotation);
-         const spawnPositionY = this.position.y + 140 * Math.cos(this.rotation);
-         
-         createBiteParticle(spawnPositionX, spawnPositionY);
-      }
-      // If the yeti did a snow throw attack, create impact particles
-      if (this.attackType === FrozenYetiAttackType.snowThrow && data.clientArgs[1] === 2 && this.attackStage === 1) {
-         const offsetMagnitude = FrozenYeti.SNOWBALL_THROW_OFFSET + 20;
-         const impactPositionX = this.position.x + offsetMagnitude * Math.sin(this.rotation);
-         const impactPositionY = this.position.y + offsetMagnitude * Math.cos(this.rotation);
-         
-         for (let i = 0; i < 30; i++) {
-            const offsetMagnitude = randFloat(0, 20);
-            const offsetDirection = 2 * Math.PI * Math.random();
-            const positionX = impactPositionX + offsetMagnitude * Math.sin(offsetDirection);
-            const positionY = impactPositionY + offsetMagnitude * Math.cos(offsetDirection);
-            
-            createSnowParticle(positionX, positionY, randFloat(40, 100));
-         }
-
-         // White smoke particles
-         for (let i = 0; i < 10; i++) {
-            const spawnPositionX = impactPositionX;
-            const spawnPositionY = impactPositionY;
-            createWhiteSmokeParticle(spawnPositionX, spawnPositionY, 1);
-         }
-      }
-
-      this.attackType = data.clientArgs[0];
-      this.attackStage = data.clientArgs[1];
-      this.stageProgress = data.clientArgs[2];
-
-      for (const positionData of data.clientArgs[3]) {
-         if (Math.random() < 5 / SETTINGS.TPS) {
-            if (Math.random() < 0.5) {
-               const spawnOffsetMagnitude = randFloat(0, 5);
-               const spawnOffsetDirection = 2 * Math.PI * Math.random();
-               const spawnPositionX = positionData[0] + spawnOffsetMagnitude / 2 * Math.sin(spawnOffsetDirection);
-               const spawnPositionY = positionData[1] + spawnOffsetMagnitude / 2 * Math.cos(spawnOffsetDirection);
-               
-               const lifetime = randFloat(1, 1.2);
-            
-               const velocityMagnitude = randFloat(30, 50);
-               const velocityDirection = spawnOffsetDirection + randFloat(-0.5, 0.5);
-               const velocityX = velocityMagnitude * Math.sin(velocityDirection);
-               const velocityY = velocityMagnitude * Math.cos(velocityDirection);
-               
-               const particle = new Particle(lifetime);
-               particle.getOpacity = (): number => {
-                  return 1 - particle.age / lifetime;
-               };
-            
-               const pixelSize = 4 * randInt(1, 2);
-            
-               const colour = randFloat(0.3, 0.5);
-               
-               addMonocolourParticleToBufferContainer(
-                  particle,
-                  ParticleRenderLayer.low,
-                  pixelSize, pixelSize,
-                  spawnPositionX, spawnPositionY,
-                  velocityX, velocityY,
-                  0, 0,
-                  0,
-                  2 * Math.PI * Math.random(),
-                  0,
-                  0,
-                  0,
-                  colour, colour, colour
-               );
-               Board.lowMonocolourParticles.push(particle);
-            } else {
-               const spawnOffsetMagnitude = randFloat(0, 5);
-               const spawnOffsetDirection = 2 * Math.PI * Math.random();
-               const spawnPositionX = positionData[0] + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
-               const spawnPositionY = positionData[1] + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
-   
-               createRockParticle(spawnPositionX, spawnPositionY, spawnOffsetDirection + randFloat(-0.5, 0.5), randFloat(80, 125));
-            }
-         }
-      }
-   }
-
    protected onHit(hitData: HitData): void {
       // Blood pool particle
       createBlueBloodPoolParticle(this.position.x, this.position.y, FrozenYeti.SIZE / 2);
@@ -554,7 +353,7 @@ class FrozenYeti extends Entity {
          createBlueBloodPoolParticle(this.position.x, this.position.y, FrozenYeti.SIZE / 2);
       }
 
-      createBloodParticleFountain(this, 0.15, 1.4);
+      createBlueBloodParticleFountain(this, 0.15, 1.4);
    }
 }
 

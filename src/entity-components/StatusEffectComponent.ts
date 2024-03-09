@@ -1,78 +1,34 @@
-import { EntityType, SETTINGS, StatusEffect, lerp, randFloat, randItem, customTickIntervalHasPassed, TileType, randInt } from "webgl-test-shared";
-import GameObject from "../GameObject";
-import Particle from "../Particle";
+import { ServerComponentType, StatusEffect, StatusEffectComponentData, StatusEffectData, customTickIntervalHasPassed, lerp, randFloat, randItem } from "webgl-test-shared";
+import ServerComponent from "./ServerComponent";
+import Entity from "../Entity";
+import { playSound } from "../sound";
 import Board, { Light } from "../Board";
-import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferContainer, addTexturedParticleToBufferContainer } from "../rendering/particle-rendering";
-import { BloodParticleSize, createBloodParticle, createPoisonBubble } from "../particles";
-import { AudioFilePath, playSound } from "../sound";
+import Particle from "../Particle";
+import { createPoisonBubble, createBloodParticle, BloodParticleSize } from "../particles";
+import { addTexturedParticleToBufferContainer, ParticleRenderLayer, addMonocolourParticleToBufferContainer, ParticleColour } from "../rendering/particle-rendering";
 
-/** Amount of seconds that the hit flash occurs for */
-const ATTACK_HIT_FLASH_DURATION = 0.4;
-const MAX_REDNESS = 0.85;
+const BURNING_PARTICLE_COLOURS: ReadonlyArray<ParticleColour> = [
+   [255/255, 102/255, 0],
+   [255/255, 184/255, 61/255]
+];
 
-abstract class Entity extends GameObject {
-   public static readonly BURNING_PARTICLE_COLOURS: ReadonlyArray<ParticleColour> = [
-      [255/255, 102/255, 0],
-      [255/255, 184/255, 61/255]
-   ];
+const BURNING_SMOKE_PARTICLE_FADEIN_TIME = 0.15;
 
-   private static readonly BURNING_SMOKE_PARTICLE_FADEIN_TIME = 0.15;
-   
-   public secondsSinceLastHit = 99999;
-
+class StatusEffectComponent extends ServerComponent<ServerComponentType.statusEffect> {
    private burningLight: Light | null = null;
+   
+   public statusEffects = new Array<StatusEffectData>()
+
+   constructor(entity: Entity, data: StatusEffectComponentData) {
+      super(entity);
+
+      this.updateFromData(data);
+   }
 
    public tick(): void {
-      super.tick();
-
       if (this.hasStatusEffect(StatusEffect.freezing)) {
-         this.tintB += 0.5;
-         this.tintR -= 0.15;
-      }
-
-      let redness: number;
-      if (this.secondsSinceLastHit === null || this.secondsSinceLastHit > ATTACK_HIT_FLASH_DURATION) {
-         redness = 0;
-      } else {
-         redness = MAX_REDNESS * (1 - this.secondsSinceLastHit / ATTACK_HIT_FLASH_DURATION);
-      }
-
-      this.tintR = lerp(this.tintR, 1, redness);
-      this.tintG = lerp(this.tintG, -1, redness);
-      this.tintB = lerp(this.tintB, -1, redness);
-
-      this.secondsSinceLastHit += 1 / SETTINGS.TPS;
-
-      // Water splash particles
-      if (this.isInRiver() && Board.tickIntervalHasPassed(0.15) && this.acceleration !== null && this.type !== EntityType.fish) {
-         const lifetime = 1.5;
-
-         const particle = new Particle(lifetime);
-         particle.getOpacity = (): number => {
-            return lerp(0.75, 0, particle.age / lifetime);
-         }
-         particle.getScale = (): number => {
-            return 1 + particle.age / lifetime;
-         }
-
-         addTexturedParticleToBufferContainer(
-            particle,
-            ParticleRenderLayer.low,
-            64, 64,
-            this.position.x, this.position.y,
-            0, 0,
-            0, 0,
-            0,
-            2 * Math.PI * Math.random(),
-            0,
-            0,
-            0,
-            8 * 1 + 5,
-            0, 0, 0
-         );
-         Board.lowTexturedParticles.push(particle);
-
-         playSound(("water-splash-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.25, 1, this.position.x, this.position.y);
+         this.entity.tintB += 0.5;
+         this.entity.tintR -= 0.15;
       }
       
       const poisonStatusEffect = this.getStatusEffect(StatusEffect.poisoned);
@@ -81,8 +37,8 @@ abstract class Entity extends GameObject {
          if (customTickIntervalHasPassed(poisonStatusEffect.ticksElapsed, 0.1)) {
             const spawnOffsetMagnitude = 30 * Math.random();
             const spawnOffsetDirection = 2 * Math.PI * Math.random()
-            const spawnPositionX = this.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
-            const spawnPositionY = this.position.y + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
+            const spawnPositionX = this.entity.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
+            const spawnPositionY = this.entity.position.y + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
 
             const lifetime = 2;
             
@@ -113,8 +69,8 @@ abstract class Entity extends GameObject {
          if (customTickIntervalHasPassed(poisonStatusEffect.ticksElapsed, 0.1)) {
             const spawnOffsetMagnitude = 30 * Math.random();
             const spawnOffsetDirection = 2 * Math.PI * Math.random()
-            const spawnPositionX = this.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
-            const spawnPositionY = this.position.y + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
+            const spawnPositionX = this.entity.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
+            const spawnPositionY = this.entity.position.y + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
 
             createPoisonBubble(spawnPositionX, spawnPositionY, randFloat(0.4, 0.6));
          }
@@ -124,7 +80,7 @@ abstract class Entity extends GameObject {
       if (fireStatusEffect !== null) {
          if (this.burningLight === null) {
             this.burningLight = {
-               position: this.position,
+               position: this.entity.position,
                intensity: 1,
                strength: 2.5,
                radius: 0.3,
@@ -139,8 +95,8 @@ abstract class Entity extends GameObject {
          if (customTickIntervalHasPassed(fireStatusEffect.ticksElapsed, 0.1)) {
             const spawnOffsetMagnitude = 30 * Math.random();
             const spawnOffsetDirection = 2 * Math.PI * Math.random();
-            const spawnPositionX = this.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
-            const spawnPositionY = this.position.y + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
+            const spawnPositionX = this.entity.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
+            const spawnPositionY = this.entity.position.y + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
 
             const lifetime = randFloat(0.6, 1.2);
 
@@ -160,7 +116,7 @@ abstract class Entity extends GameObject {
                return Math.pow(opacity, 0.3);
             }
 
-            const colour = randItem(Entity.BURNING_PARTICLE_COLOURS);
+            const colour = randItem(BURNING_PARTICLE_COLOURS);
 
             addMonocolourParticleToBufferContainer(
                particle,
@@ -183,8 +139,8 @@ abstract class Entity extends GameObject {
          if (customTickIntervalHasPassed(fireStatusEffect.ticksElapsed, 3/20)) {
             const spawnOffsetMagnitude = 20 * Math.random();
             const spawnOffsetDirection = 2 * Math.PI * Math.random();
-            const spawnPositionX = this.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
-            const spawnPositionY = this.position.y + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
+            const spawnPositionX = this.entity.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
+            const spawnPositionY = this.entity.position.y + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
 
             const accelerationDirection = 2 * Math.PI * Math.random();
             const accelerationX = 40 * Math.sin(accelerationDirection);
@@ -197,10 +153,10 @@ abstract class Entity extends GameObject {
 
             const particle = new Particle(lifetime);
             particle.getOpacity = (): number => {
-               if (particle.age <= Entity.BURNING_SMOKE_PARTICLE_FADEIN_TIME) {
-                  return particle.age / Entity.BURNING_SMOKE_PARTICLE_FADEIN_TIME;
+               if (particle.age <= BURNING_SMOKE_PARTICLE_FADEIN_TIME) {
+                  return particle.age / BURNING_SMOKE_PARTICLE_FADEIN_TIME;
                }
-               return lerp(0.75, 0, (particle.age - Entity.BURNING_SMOKE_PARTICLE_FADEIN_TIME) / (lifetime - Entity.BURNING_SMOKE_PARTICLE_FADEIN_TIME));
+               return lerp(0.75, 0, (particle.age - BURNING_SMOKE_PARTICLE_FADEIN_TIME) / (lifetime - BURNING_SMOKE_PARTICLE_FADEIN_TIME));
             }
             particle.getScale = (): number => {
                const deathProgress = particle.age / lifetime
@@ -236,11 +192,44 @@ abstract class Entity extends GameObject {
       if (bleedingStatusEffect !== null) {
          if (Board.tickIntervalHasPassed(0.15)) {
             const spawnOffsetDirection = 2 * Math.PI * Math.random();
-            const spawnPositionX = this.position.x + 32 * Math.sin(spawnOffsetDirection);
-            const spawnPositionY = this.position.y + 32 * Math.cos(spawnOffsetDirection);
+            const spawnPositionX = this.entity.position.x + 32 * Math.sin(spawnOffsetDirection);
+            const spawnPositionY = this.entity.position.y + 32 * Math.cos(spawnOffsetDirection);
             createBloodParticle(Math.random() < 0.5 ? BloodParticleSize.small : BloodParticleSize.large, spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(40, 60), true);
          }
       }
+   }
+
+   public updateFromData(data: StatusEffectComponentData): void {
+      for (const statusEffectData of data.statusEffects) {
+         if (!this.hasStatusEffect(statusEffectData.type)) {
+            switch (statusEffectData.type) {
+               case StatusEffect.freezing: {
+                  playSound("freezing.mp3", 0.4, 1, this.entity.position.x, this.entity.position.y)
+                  break;
+               }
+            }
+         }
+      }
+      
+      this.statusEffects = data.statusEffects;
+   }
+
+   public hasStatusEffect(type: StatusEffect): boolean {
+      for (const statusEffect of this.statusEffects) {
+         if (statusEffect.type === type) {
+            return true;
+         }
+      }
+      return false;
+   }
+
+   public getStatusEffect(type: StatusEffect): StatusEffectData | null {
+      for (const statusEffect of this.statusEffects) {
+         if (statusEffect.type === type) {
+            return statusEffect;
+         }
+      }
+      return null;
    }
 
    public onRemove(): void {
@@ -251,33 +240,6 @@ abstract class Entity extends GameObject {
          }
       }
    }
-
-   protected createFootstepSound(): void {
-      switch (this.tile.type) {
-         case TileType.grass: {
-            playSound(("grass-walk-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.04, 1, this.position.x, this.position.y);
-            break;
-         }
-         case TileType.sand: {
-            playSound(("sand-walk-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.02, 1, this.position.x, this.position.y);
-            break;
-         }
-         case TileType.snow: {
-            playSound(("snow-walk-" + randInt(1, 3) + ".mp3") as AudioFilePath, 0.07, 1, this.position.x, this.position.y);
-            break;
-         }
-         case TileType.rock: {
-            playSound(("rock-walk-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.08, 1, this.position.x, this.position.y);
-            break;
-         }
-         case TileType.water: {
-            if (!this.isInRiver()) {
-               playSound(("rock-walk-" + randInt(1, 4) + ".mp3") as AudioFilePath, 0.08, 1, this.position.x, this.position.y);
-            }
-            break;
-         }
-      }
-   }
 }
 
-export default Entity;
+export default StatusEffectComponent;

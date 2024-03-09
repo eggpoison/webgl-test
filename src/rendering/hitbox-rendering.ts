@@ -2,7 +2,7 @@ import { rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import CircularHitbox from "../hitboxes/CircularHitbox";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import Board from "../Board";
 
 const CIRCLE_VERTEX_COUNT = 20;
@@ -46,8 +46,8 @@ export function createHitboxShaders(): void {
    buffer = gl.createBuffer()!;
 }
 
-const calculateVisibleGameObjects = (): Array<GameObject> => {
-   const visibleGameObjects = new Array<GameObject>();
+const calculateVisibleGameObjects = (): Array<Entity> => {
+   const visibleGameObjects = new Array<Entity>();
 
    for (const gameObject of Board.entities) {
       visibleGameObjects.push(gameObject);
@@ -60,6 +60,10 @@ const calculateVisibleGameObjects = (): Array<GameObject> => {
 export function renderEntityHitboxes(): void {
    const gameObjects = calculateVisibleGameObjects();
    if (gameObjects.length === 0) return;
+
+   // @Speed
+   // @Speed
+   // @Speed
 
    // Calculate vertices
    const vertices = new Array<number>();

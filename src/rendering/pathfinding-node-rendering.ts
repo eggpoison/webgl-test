@@ -1,4 +1,4 @@
-import { PathfindingNodeIndex, PathfindingSettings, SETTINGS } from "webgl-test-shared";
+import { PathfindingNodeIndex, PathfindingSettings, Settings } from "webgl-test-shared";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 import Board from "../Board";
 import Game from "../Game";
@@ -195,10 +195,10 @@ export function renderPathfindingNodes(): void {
    // @Speed: Remove duplicates (nodes with same position)
    
    if (OPTIONS.showPathfindingNodes) {
-      const minNodeX = Math.ceil(Camera.minVisibleChunkX * SETTINGS.CHUNK_UNITS / PathfindingSettings.NODE_SEPARATION);
-      const maxNodeX = Math.floor((Camera.maxVisibleChunkX + 1) * SETTINGS.CHUNK_UNITS / PathfindingSettings.NODE_SEPARATION);
-      const minNodeY = Math.ceil(Camera.minVisibleChunkY * SETTINGS.CHUNK_UNITS / PathfindingSettings.NODE_SEPARATION);
-      const maxNodeY = Math.floor((Camera.maxVisibleChunkY + 1) * SETTINGS.CHUNK_UNITS / PathfindingSettings.NODE_SEPARATION);
+      const minNodeX = Math.ceil(Camera.minVisibleChunkX * Settings.CHUNK_UNITS / PathfindingSettings.NODE_SEPARATION);
+      const maxNodeX = Math.floor((Camera.maxVisibleChunkX + 1) * Settings.CHUNK_UNITS / PathfindingSettings.NODE_SEPARATION);
+      const minNodeY = Math.ceil(Camera.minVisibleChunkY * Settings.CHUNK_UNITS / PathfindingSettings.NODE_SEPARATION);
+      const maxNodeY = Math.floor((Camera.maxVisibleChunkY + 1) * Settings.CHUNK_UNITS / PathfindingSettings.NODE_SEPARATION);
 
       for (let nodeX = minNodeX; nodeX <= maxNodeX; nodeX++) {
          for (let nodeY = minNodeY; nodeY <= maxNodeY; nodeY++) {

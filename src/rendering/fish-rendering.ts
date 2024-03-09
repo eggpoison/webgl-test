@@ -1,8 +1,8 @@
-import { TileType, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
+import { ServerComponentType, TileType, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 import Board from "../Board";
 import { ATLAS_SLOT_SIZE } from "../texture-atlases/texture-atlas-stitching";
-import { ENTITY_TEXTURE_ATLAS, ENTITY_TEXTURE_ATLAS_LENGTH, ENTITY_TEXTURE_ATLAS_SIZE, getTextureHeight, getTextureWidth } from "../texture-atlases/entity-texture-atlas";
+import { ENTITY_TEXTURE_ATLAS, ENTITY_TEXTURE_ATLAS_LENGTH, ENTITY_TEXTURE_ATLAS_SIZE, ENTITY_TEXTURE_SLOT_INDEXES, getTextureHeight, getTextureWidth } from "../texture-atlases/entity-texture-atlas";
 
 // @Cleanup: This all sucks. should really be combined with game-object-rendering, as apart from the blur this is just a 1-1 copy of it
 
@@ -76,15 +76,16 @@ export function createFishShaders(): void {
       
       float textureIndex = u_textureSlotIndexes[textureArrayIndex];
       vec2 textureSize = u_textureSizes[textureArrayIndex];
+      // textureSize = vec2(16.0, 16.0);
 
       // Calculate the coordinates of the top left corner of the texture
       float textureX = mod(textureIndex * u_atlasSlotSize, u_atlasPixelSize);
       float textureY = floor(textureIndex * u_atlasSlotSize / u_atlasPixelSize) * u_atlasSlotSize;
-      
+
       // @Incomplete: This is very hacky, the - 0.2 and + 0.1 shenanigans are to prevent texture bleeding but it causes tiny bits of the edge of the textures to get cut off.
       float u = (textureX + v_texCoord.x * (textureSize.x - 0.2) + 0.1) / u_atlasPixelSize;
       float v = 1.0 - ((textureY + (1.0 - v_texCoord.y) * (textureSize.y - 0.2) + 0.1) / u_atlasPixelSize);
-   
+
       if (v_isInWater > 0.5) {
          float x,y,xx,yy,rr=blurRange*blurRange,dx,dy,w,w0;
          w0 = 0.3780 / pow(blurRange, 1.975);
@@ -147,11 +148,26 @@ export function createFishShaders(): void {
    const textureUniformLocation = gl.getUniformLocation(program, "u_textureAtlas")!;
    const atlasPixelSizeUniformLocation = gl.getUniformLocation(program, "u_atlasPixelSize")!;
    const atlasSlotSizeUniformLocation = gl.getUniformLocation(program, "u_atlasSlotSize")!;
+   const textureSlotIndexesUniformLocation = gl.getUniformLocation(program, "u_textureSlotIndexes")!;
+   const textureSizesUniformLocation = gl.getUniformLocation(program, "u_textureSizes")!;
+
+   const textureSlotIndexes = new Float32Array(ENTITY_TEXTURE_ATLAS_LENGTH);
+   for (let textureArrayIndex = 0; textureArrayIndex < ENTITY_TEXTURE_ATLAS_LENGTH; textureArrayIndex++) {
+      textureSlotIndexes[textureArrayIndex] = ENTITY_TEXTURE_SLOT_INDEXES[textureArrayIndex];
+   }
+
+   const textureSizes = new Float32Array(ENTITY_TEXTURE_ATLAS_LENGTH * 2);
+   for (let textureArrayIndex = 0; textureArrayIndex < ENTITY_TEXTURE_ATLAS_LENGTH; textureArrayIndex++) {
+      textureSizes[textureArrayIndex * 2] = getTextureWidth(textureArrayIndex);
+      textureSizes[textureArrayIndex * 2 + 1] = getTextureHeight(textureArrayIndex);
+   }
 
    gl.useProgram(program);
    gl.uniform1i(textureUniformLocation, 0);
    gl.uniform1f(atlasPixelSizeUniformLocation, ENTITY_TEXTURE_ATLAS_SIZE);
    gl.uniform1f(atlasSlotSizeUniformLocation, ATLAS_SLOT_SIZE);
+   gl.uniform1fv(textureSlotIndexesUniformLocation, textureSlotIndexes);
+   gl.uniform2fv(textureSizesUniformLocation, textureSizes);
 
    // 
    // Create VAO
@@ -163,15 +179,14 @@ export function createFishShaders(): void {
    buffer = gl.createBuffer()!;
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 
-   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 13 * Float32Array.BYTES_PER_ELEMENT, 0);
-   gl.vertexAttribPointer(1, 1, gl.FLOAT, false, 13 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(2, 2, gl.FLOAT, false, 13 * Float32Array.BYTES_PER_ELEMENT, 3 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(3, 1, gl.FLOAT, false, 13 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(4, 2, gl.FLOAT, false, 13 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(5, 3, gl.FLOAT, false, 13 * Float32Array.BYTES_PER_ELEMENT, 8 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(6, 1, gl.FLOAT, false, 13 * Float32Array.BYTES_PER_ELEMENT, 11 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(7, 1, gl.FLOAT, false, 13 * Float32Array.BYTES_PER_ELEMENT, 12 * Float32Array.BYTES_PER_ELEMENT);
-   
+   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 11 * Float32Array.BYTES_PER_ELEMENT, 0);
+   gl.vertexAttribPointer(1, 1, gl.FLOAT, false, 11 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(2, 2, gl.FLOAT, false, 11 * Float32Array.BYTES_PER_ELEMENT, 3 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(3, 1, gl.FLOAT, false, 11 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(4, 3, gl.FLOAT, false, 11 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(5, 1, gl.FLOAT, false, 11 * Float32Array.BYTES_PER_ELEMENT, 9 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(6, 1, gl.FLOAT, false, 11 * Float32Array.BYTES_PER_ELEMENT, 10 * Float32Array.BYTES_PER_ELEMENT);
+
    gl.enableVertexAttribArray(0);
    gl.enableVertexAttribArray(1);
    gl.enableVertexAttribArray(2);
@@ -179,7 +194,6 @@ export function createFishShaders(): void {
    gl.enableVertexAttribArray(4);
    gl.enableVertexAttribArray(5);
    gl.enableVertexAttribArray(6);
-   gl.enableVertexAttribArray(7);
 
    indexBuffer = gl.createBuffer()!;
    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
@@ -190,7 +204,7 @@ export function createFishShaders(): void {
 export function renderFish(): void {
    if (Board.fish.length === 0) return;
    
-   const vertexData = new Float32Array(Board.fish.length * 4 * 13);
+   const vertexData = new Float32Array(Board.fish.length * 4 * 11);
 
    const indicesData = new Uint16Array(Board.fish.length * 6);
 
@@ -225,11 +239,12 @@ export function renderFish(): void {
          const bottomRightX = rotateXAroundPoint(x2, y1, renderPart.renderPosition.x, renderPart.renderPosition.y, renderPart.totalRotation + renderPart.rotation);
          const bottomRightY = rotateYAroundPoint(x2, y1, renderPart.renderPosition.x, renderPart.renderPosition.y, renderPart.totalRotation + renderPart.rotation);
 
-         const vertexDataOffset = i * 4 * 13;
+         const vertexDataOffset = i * 4 * 11;
 
          let opacity = renderPart.opacity;
          if (fish.tile.type === TileType.water) {
-            opacity *= 0.75 * fish.waterOpacityMultiplier;
+            const fishComponent = fish.getServerComponent(ServerComponentType.fish);
+            opacity *= 0.75 * fishComponent.waterOpacityMultiplier;
          }
 
          const isInWater = fish.tile.type === TileType.water ? 1 : 0;
@@ -240,48 +255,47 @@ export function renderFish(): void {
          vertexData[vertexDataOffset + 3] = u0;
          vertexData[vertexDataOffset + 4] = 0;
          vertexData[vertexDataOffset + 5] = renderPart.textureArrayIndex;
-         vertexData[vertexDataOffset + 8] = fish.tintR;
-         vertexData[vertexDataOffset + 9] = fish.tintG;
-         vertexData[vertexDataOffset + 10] = fish.tintB;
-         vertexData[vertexDataOffset + 11] = opacity;
-         vertexData[vertexDataOffset + 11] = opacity;
-         vertexData[vertexDataOffset + 12] = isInWater;
+         vertexData[vertexDataOffset + 6] = fish.tintR;
+         vertexData[vertexDataOffset + 7] = fish.tintG;
+         vertexData[vertexDataOffset + 8] = fish.tintB;
+         vertexData[vertexDataOffset + 9] = opacity;
+         vertexData[vertexDataOffset + 10] = isInWater;
 
-         vertexData[vertexDataOffset + 13] = bottomRightX;
-         vertexData[vertexDataOffset + 14] = bottomRightY;
-         vertexData[vertexDataOffset + 15] = depth;
-         vertexData[vertexDataOffset + 16] = u1;
-         vertexData[vertexDataOffset + 17] = 0;
-         vertexData[vertexDataOffset + 18] = renderPart.textureArrayIndex;
-         vertexData[vertexDataOffset + 21] = fish.tintR;
-         vertexData[vertexDataOffset + 22] = fish.tintG;
-         vertexData[vertexDataOffset + 23] = fish.tintB;
-         vertexData[vertexDataOffset + 24] = opacity;
-         vertexData[vertexDataOffset + 25] = isInWater;
+         vertexData[vertexDataOffset + 11] = bottomRightX;
+         vertexData[vertexDataOffset + 12] = bottomRightY;
+         vertexData[vertexDataOffset + 13] = depth;
+         vertexData[vertexDataOffset + 14] = u1;
+         vertexData[vertexDataOffset + 15] = 0;
+         vertexData[vertexDataOffset + 16] = renderPart.textureArrayIndex;
+         vertexData[vertexDataOffset + 17] = fish.tintR;
+         vertexData[vertexDataOffset + 18] = fish.tintG;
+         vertexData[vertexDataOffset + 19] = fish.tintB;
+         vertexData[vertexDataOffset + 20] = opacity;
+         vertexData[vertexDataOffset + 21] = isInWater;
 
-         vertexData[vertexDataOffset + 26] = topLeftX;
-         vertexData[vertexDataOffset + 27] = topLeftY;
-         vertexData[vertexDataOffset + 28] = depth;
-         vertexData[vertexDataOffset + 29] = u0;
-         vertexData[vertexDataOffset + 30] = 1;
-         vertexData[vertexDataOffset + 31] = renderPart.textureArrayIndex;
-         vertexData[vertexDataOffset + 34] = fish.tintR;
-         vertexData[vertexDataOffset + 35] = fish.tintG;
-         vertexData[vertexDataOffset + 36] = fish.tintB;
-         vertexData[vertexDataOffset + 37] = opacity;
-         vertexData[vertexDataOffset + 38] = isInWater;
+         vertexData[vertexDataOffset + 22] = topLeftX;
+         vertexData[vertexDataOffset + 23] = topLeftY;
+         vertexData[vertexDataOffset + 24] = depth;
+         vertexData[vertexDataOffset + 25] = u0;
+         vertexData[vertexDataOffset + 26] = 1;
+         vertexData[vertexDataOffset + 27] = renderPart.textureArrayIndex;
+         vertexData[vertexDataOffset + 28] = fish.tintR;
+         vertexData[vertexDataOffset + 29] = fish.tintG;
+         vertexData[vertexDataOffset + 30] = fish.tintB;
+         vertexData[vertexDataOffset + 31] = opacity;
+         vertexData[vertexDataOffset + 32] = isInWater;
 
-         vertexData[vertexDataOffset + 39] = topRightX;
-         vertexData[vertexDataOffset + 40] = topRightY;
-         vertexData[vertexDataOffset + 41] = depth;
-         vertexData[vertexDataOffset + 42] = u1;
-         vertexData[vertexDataOffset + 43] = 1;
-         vertexData[vertexDataOffset + 44] = renderPart.textureArrayIndex;
-         vertexData[vertexDataOffset + 47] = fish.tintR;
-         vertexData[vertexDataOffset + 48] = fish.tintG;
-         vertexData[vertexDataOffset + 49] = fish.tintB;
-         vertexData[vertexDataOffset + 50] = opacity;
-         vertexData[vertexDataOffset + 51] = isInWater;
+         vertexData[vertexDataOffset + 33] = topRightX;
+         vertexData[vertexDataOffset + 34] = topRightY;
+         vertexData[vertexDataOffset + 35] = depth;
+         vertexData[vertexDataOffset + 36] = u1;
+         vertexData[vertexDataOffset + 37] = 1;
+         vertexData[vertexDataOffset + 38] = renderPart.textureArrayIndex;
+         vertexData[vertexDataOffset + 39] = fish.tintR;
+         vertexData[vertexDataOffset + 40] = fish.tintG;
+         vertexData[vertexDataOffset + 41] = fish.tintB;
+         vertexData[vertexDataOffset + 42] = opacity;
+         vertexData[vertexDataOffset + 43] = isInWater;
 
          const indicesDataOffset = i * 6;
 

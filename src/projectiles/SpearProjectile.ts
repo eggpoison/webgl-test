@@ -1,12 +1,12 @@
 import { EntityType, Point } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
-import GameObject from "../GameObject";
+import Entity from "../Entity";
 import { playSound } from "../sound";
 
-class SpearProjectile extends GameObject {
-   constructor(position: Point, id: number, ageTicks: number, renderDepth: number) {
-      super(position, id, EntityType.spearProjectile, ageTicks, renderDepth);
+class SpearProjectile extends Entity {
+   constructor(position: Point, id: number, ageTicks: number) {
+      super(position, id, EntityType.spearProjectile, ageTicks);
 
       this.attachRenderPart(
          new RenderPart(
