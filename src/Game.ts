@@ -4,10 +4,10 @@ import { isDev } from "./utils";
 import { createTextCanvasContext, updateTextNumbers, renderText } from "./text-canvas";
 import Camera from "./Camera";
 import { updateSpamFilter } from "./components/game/ChatBox";
-import { DecorationInfo, GameDataPacket, GameObjectDebugData, GrassTileInfo, RiverSteppingStoneData, SETTINGS, ServerTileData, WaterRockData } from "webgl-test-shared";
+import { DecorationInfo, GameDataPacket, EntityDebugData, GrassTileInfo, RiverSteppingStoneData, SETTINGS, ServerTileData, WaterRockData } from "webgl-test-shared";
 import { createEntityShaders, renderGameObjects } from "./rendering/game-object-rendering";
 import Client from "./client/Client";
-import { calculateCursorWorldPositionX, calculateCursorWorldPositionY, cursorX, cursorY, getMouseTargetEntity, handleMouseMovement, renderCursorTooltip } from "./mouse";
+import { calculateCursorWorldPositionX, calculateCursorWorldPositionY, cursorX, cursorY, handleMouseMovement, renderCursorTooltip } from "./mouse";
 import { refreshDebugInfo, setDebugInfoDebugData } from "./components/game/dev/DebugInfo";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, TIME_UNIFORM_BUFFER_BINDING_INDEX, createWebGLContext, gl, halfWindowHeight, halfWindowWidth, resizeCanvas } from "./webgl";
 import { loadTextures } from "./textures";
@@ -48,6 +48,7 @@ import { createStructureHighlightShaders, renderStructureHighlights } from "./re
 import { updateBlueprintMenu } from "./components/game/BlueprintMenu";
 import { InventorySelector_forceUpdate } from "./components/game/inventories/InventorySelector";
 import { createTurretRangeShaders, renderTurretRange } from "./rendering/turret-range-rendering";
+import { createPathfindNodeShaders, renderPathfindingNodes } from "./rendering/pathfinding-node-rendering";
 
 let listenersHaveBeenCreated = false;
 
@@ -96,7 +97,7 @@ abstract class Game {
    public static cursorPositionX: number | null = null;
    public static cursorPositionY: number | null = null;
 
-   private static gameObjectDebugData: GameObjectDebugData | null = null;
+   public static entityDebugData: EntityDebugData | null = null;
 
    public static tribe: Tribe;
    
@@ -106,18 +107,18 @@ abstract class Game {
    private static timeData = new Float32Array(4);
    private static timeBuffer: WebGLBuffer;
 
-   public static setGameObjectDebugData(gameObjectDebugData: GameObjectDebugData | undefined): void {
+   public static setGameObjectDebugData(gameObjectDebugData: EntityDebugData | undefined): void {
       if (typeof gameObjectDebugData === "undefined") {
-         this.gameObjectDebugData = null;
+         this.entityDebugData = null;
          setDebugInfoDebugData(null);
       } else {
-         this.gameObjectDebugData = gameObjectDebugData;
+         this.entityDebugData = gameObjectDebugData;
          setDebugInfoDebugData(gameObjectDebugData);
       }
    }
 
-   public static getGameObjectDebugData(): GameObjectDebugData | null {
-      return this.gameObjectDebugData || null;
+   public static getGameObjectDebugData(): EntityDebugData | null {
+      return this.entityDebugData || null;
    }
 
    /** Starts the game */
@@ -216,6 +217,7 @@ abstract class Game {
             createResearchOrbShaders();
             createStructureHighlightShaders();
             createTurretRangeShaders();
+            createPathfindNodeShaders();
 
             await setupAudio();
 
@@ -389,8 +391,8 @@ abstract class Game {
       renderTurretRange();
       renderAmbientOcclusion();
       renderWallBorders();
-      if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Board.hasEntityID(this.gameObjectDebugData.gameObjectID)) {
-         renderTriangleDebugData(this.gameObjectDebugData);
+      if (nerdVisionIsVisible() && this.entityDebugData !== null && Board.hasEntityID(this.entityDebugData.entityID)) {
+         renderTriangleDebugData(this.entityDebugData);
       }
       renderForcefield();
       renderWorldBorder();
@@ -415,22 +417,14 @@ abstract class Game {
          renderTexturedParticles(ParticleRenderLayer.high);
       }
 
+      renderPathfindingNodes();
       renderResearchOrb();
 
       if (nerdVisionIsVisible() && OPTIONS.showHitboxes) {
          renderEntityHitboxes();
       }
-      if (nerdVisionIsVisible() && this.gameObjectDebugData !== null && Board.hasEntityID(this.gameObjectDebugData.gameObjectID)) {
-         renderLineDebugData(this.gameObjectDebugData);
-      }
-
-      if (isDev()) {
-         if (nerdVisionIsVisible()) {
-            const targettedEntity = getMouseTargetEntity();
-            Client.sendTrackGameObject(targettedEntity !== null ? targettedEntity.id : null);
-         } else {
-            Client.sendTrackGameObject(null);
-         }
+      if (nerdVisionIsVisible() && this.entityDebugData !== null && Board.hasEntityID(this.entityDebugData.entityID)) {
+         renderLineDebugData(this.entityDebugData);
       }
 
       renderGhostPlaceableItem();

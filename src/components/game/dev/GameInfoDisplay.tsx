@@ -51,7 +51,8 @@ const GameInfoDisplay = () => {
    const [showHitboxes, setShowEntityHitboxes] = useState(OPTIONS.showHitboxes);
    const [showChunkBorders, setShowChunkBorders] = useState(OPTIONS.showChunkBorders);
    const [showRenderChunkBorders, setShowRenderChunkBorders] = useState(OPTIONS.showRenderChunkBorders);
-
+   const [showPathfindingNodes, setShowPathfindingNodes] = useState(OPTIONS.showPathfindingNodes);
+   
    useEffect(() => {
       if (typeof Board.time !== "undefined") {
          setCurrentTime(Board.time);
@@ -75,15 +76,20 @@ const GameInfoDisplay = () => {
       setShowEntityHitboxes(!showHitboxes);
    }, [showHitboxes]);
 
-   const toggleSetShowChunkBorders = useCallback(() => {
+   const toggleShowChunkBorders = useCallback(() => {
       OPTIONS.showChunkBorders = !showChunkBorders;
       setShowChunkBorders(!showChunkBorders);
    }, [showChunkBorders]);
 
-   const toggleSetShowRenderChunkBorders = useCallback(() => {
+   const toggleShowRenderChunkBorders = useCallback(() => {
       OPTIONS.showRenderChunkBorders = !showRenderChunkBorders;
       setShowRenderChunkBorders(!showRenderChunkBorders);
    }, [showRenderChunkBorders]);
+
+   const toggleShowPathfindingNodes = useCallback(() => {
+      OPTIONS.showPathfindingNodes = !showPathfindingNodes;
+      setShowPathfindingNodes(!showPathfindingNodes);
+   }, [showPathfindingNodes]);
 
    const changeZoom = () => {
       if (rangeInputRef.current === null) {
@@ -115,14 +121,20 @@ const GameInfoDisplay = () => {
          </li>
          <li>
             <label className={showChunkBorders ? "enabled" : undefined}>
-               <input checked={showChunkBorders} name="chunk-borders-checkbox" type="checkbox" onChange={toggleSetShowChunkBorders} />
+               <input checked={showChunkBorders} name="chunk-borders-checkbox" type="checkbox" onChange={toggleShowChunkBorders} />
                Chunk borders
             </label>
          </li>
          <li>
             <label className={showRenderChunkBorders ? "enabled" : undefined}>
-               <input checked={showRenderChunkBorders} name="render-chunk-borders-checkbox" type="checkbox" onChange={toggleSetShowRenderChunkBorders} />
+               <input checked={showRenderChunkBorders} name="render-chunk-borders-checkbox" type="checkbox" onChange={toggleShowRenderChunkBorders} />
                Render chunk borders
+            </label>
+         </li>
+         <li>
+            <label className={showPathfindingNodes ? "enabled" : undefined}>
+               <input checked={showPathfindingNodes} name="show-pathfinding-nodes-checkbox" type="checkbox" onChange={toggleShowPathfindingNodes} />
+               Show pathfinding nodes
             </label>
          </li>
       </ul>

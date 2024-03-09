@@ -1,7 +1,6 @@
 import { SETTINGS } from "webgl-test-shared";
 import { halfWindowHeight, halfWindowWidth } from "./webgl";
 import CLIENT_SETTINGS from "./client-settings";
-import { updateCursorTooltip } from "./components/game/dev/CursorTooltip";
 import Entity from "./entities/Entity";
 import Game from "./Game";
 import Camera from "./Camera";
@@ -89,7 +88,6 @@ export function getMouseTargetEntity(): Entity | null {
 // Maybe seperate this into two functions?
 export function renderCursorTooltip(): void {
    if (Game.cursorPositionX === null || Game.cursorPositionY === null) {
-      updateCursorTooltip(null, -1, -1);
       if (isDev()) {
          updateDebugInfoEntity(null);
       }
@@ -103,21 +101,11 @@ export function renderCursorTooltip(): void {
 
    // If there is no target, hide the tooltip
    if (targetEntity === null) {
-      updateCursorTooltip(null, -1, -1);
       if (isDev()) {
          updateDebugInfoEntity(null);
       }
       return;
    } else {
       updateDebugInfoEntity(targetEntity);
-   }
-
-   // Update the cursor tooltip
-   const entityScreenPositionX = Camera.calculateXScreenPos(targetEntity.renderPosition.x);
-   const entityScreenPositionY = Camera.calculateYScreenPos(targetEntity.renderPosition.y);
-
-   const debugData = Game.getGameObjectDebugData();
-   if (debugData === null || targetEntity.id === debugData.gameObjectID) {
-      updateCursorTooltip(debugData, entityScreenPositionX, entityScreenPositionY);
    }
 }

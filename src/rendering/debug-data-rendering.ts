@@ -1,4 +1,4 @@
-import { GameObjectDebugData, Point, SETTINGS } from "webgl-test-shared";
+import { EntityDebugData, Point, SETTINGS } from "webgl-test-shared";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, generateLine, generateThickCircleWireframeVertices, gl } from "../webgl";
 import GameObject from "../GameObject";
 import Board from "../Board";
@@ -87,7 +87,7 @@ export function createDebugDataShaders(): void {
    gl.uniformBlockBinding(triangleProgram, triangleCameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);
 }
 
-const addCircleVertices = (vertices: Array<number>, debugData: GameObjectDebugData, gameObject: GameObject): void => {
+const addCircleVertices = (vertices: Array<number>, debugData: EntityDebugData, gameObject: GameObject): void => {
    for (const circle of debugData.circles) {
       vertices.push(
          ...generateThickCircleWireframeVertices(gameObject.renderPosition, circle.radius, circle.thickness, circle.colour[0], circle.colour[1], circle.colour[2])
@@ -95,7 +95,7 @@ const addCircleVertices = (vertices: Array<number>, debugData: GameObjectDebugDa
    }
 }
 
-const addLineVertices = (vertices: Array<number>, debugData: GameObjectDebugData, gameObject: GameObject): void => {
+const addLineVertices = (vertices: Array<number>, debugData: EntityDebugData, gameObject: GameObject): void => {
    for (const line of debugData.lines) {
       const targetPosition = new Point(...line.targetPosition);
       vertices.push(
@@ -105,13 +105,13 @@ const addLineVertices = (vertices: Array<number>, debugData: GameObjectDebugData
 }
 
 /** Renders all hitboxes of a specified set of entities */
-export function renderLineDebugData(debugData: GameObjectDebugData): void {
+export function renderLineDebugData(debugData: EntityDebugData): void {
    gl.useProgram(lineProgram);
 
-   if (!Board.hasEntityID(debugData.gameObjectID)) {
+   if (!Board.hasEntityID(debugData.entityID)) {
       throw new Error("Couldn't find game object.");
    }
-   const gameObject = Board.entityRecord[debugData.gameObjectID];
+   const gameObject = Board.entityRecord[debugData.entityID];
 
    const vertices = new Array<number>();
    addCircleVertices(vertices, debugData, gameObject);
@@ -130,7 +130,7 @@ export function renderLineDebugData(debugData: GameObjectDebugData): void {
    gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 5);
 }
 
-const addTileHighlightVertices = (vertices: Array<number>, debugData: GameObjectDebugData): void => {
+const addTileHighlightVertices = (vertices: Array<number>, debugData: EntityDebugData): void => {
    for (const tileHighlight of debugData.tileHighlights) {
       const x1 = tileHighlight.tilePosition[0] * SETTINGS.TILE_SIZE;
       const x2 = (tileHighlight.tilePosition[0] + 1) * SETTINGS.TILE_SIZE;
@@ -149,7 +149,7 @@ const addTileHighlightVertices = (vertices: Array<number>, debugData: GameObject
    }
 }
 
-export function renderTriangleDebugData(debugData: GameObjectDebugData): void {
+export function renderTriangleDebugData(debugData: EntityDebugData): void {
    const vertices = new Array<number>();
    
    gl.useProgram(triangleProgram);

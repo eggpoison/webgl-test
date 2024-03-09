@@ -28,6 +28,7 @@ import { playSound } from "../sound";
 import { closeTechTree, updateTechTree } from "../components/game/TechTree";
 import { TechInfocard_setSelectedTech } from "../components/game/TechInfocard";
 import { getSelectedEntityID } from "../entity-selection";
+import { setVisiblePathfindingNodeOccupances } from "../rendering/pathfinding-node-rendering";
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -200,7 +201,7 @@ abstract class Client {
       updateDebugScreenCurrentTime(gameDataPacket.serverTime);
 
       if (isDev()) {
-         Game.setGameObjectDebugData(gameDataPacket.gameObjectDebugData);
+         Game.setGameObjectDebugData(gameDataPacket.entityDebugData);
       }
 
       this.updateEntities(gameDataPacket.entityDataArray);
@@ -266,6 +267,8 @@ abstract class Client {
       }
 
       definiteGameState.hotbarCrossbowLoadProgressRecord = gameDataPacket.hotbarCrossbowLoadProgressRecord;
+
+      setVisiblePathfindingNodeOccupances(gameDataPacket.visiblePathfindingNodeOccupances);
    }
 
    private static updateTribe(tribeData: TribeData): void {

@@ -12,6 +12,8 @@ import { isHoveringInBlueprintMenu } from "./components/game/BlueprintMenu";
 import Tribesman from "./entities/Tribesman";
 import Tombstone from "./entities/Tombstone";
 import { InventoryMenuType, InventorySelector_inventoryIsOpen, InventorySelector_setInventoryMenuType } from "./components/game/inventories/InventorySelector";
+import { isDev } from "./utils";
+import { nerdVisionIsVisible } from "./components/game/dev/NerdVision";
 
 const HIGHLIGHT_RANGE = 75;
 const HIGHLIGHT_DISTANCE = 150;
@@ -163,6 +165,15 @@ export function updateHighlightedAndHoveredEntities(): void {
    }
 
    hoveredEntityID = getEntityID(false);
+
+   // Track the hovered entity
+   if (isDev()) {
+      if (nerdVisionIsVisible()) {
+         Client.sendTrackGameObject(hoveredEntityID !== -1 ? hoveredEntityID : null);
+      } else {
+         Client.sendTrackGameObject(null);
+      }
+   }
 
    const newHighlightedEntityID = getEntityID(true);
    if (newHighlightedEntityID !== highlightedEntityID) {

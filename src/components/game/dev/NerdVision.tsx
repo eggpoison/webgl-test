@@ -1,6 +1,5 @@
 import DebugInfo from "./DebugInfo";
 import Terminal, { forceTerminalFocus, setTerminalVisibility } from "./Terminal";
-import CursorTooltip from "./CursorTooltip";
 import { useEffect, useState } from "react";
 import { addKeyListener } from "../../../keyboard-input";
 import GameInfoDisplay from "./GameInfoDisplay";
@@ -55,7 +54,6 @@ const NerdVision = () => {
       <DebugInfo />
       <TerminalButton startingIsOpened={terminalStartingVisibility} />
       <Terminal startingIsVisible={terminalStartingVisibility}/>
-      <CursorTooltip />
    </div>;
 }
 
