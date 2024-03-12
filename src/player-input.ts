@@ -27,6 +27,7 @@ import { attemptToCompleteNode } from "./research";
 import { spikesAreAttachedToWall } from "./entities/WoodenSpikes";
 import { punjiSticksAreAttachedToWall } from "./entities/PunjiSticks";
 import { blueprintMenuIsOpen, hideBlueprintMenu } from "./components/game/BlueprintMenu";
+import Camera from "./Camera";
 
 /** Acceleration of the player while moving without any modifiers. */
 const PLAYER_ACCELERATION = 700;
@@ -590,10 +591,17 @@ export function selectItem(item: Item): void {
    }
 }
 
-const calculateRegularPlacePosition = (placeableEntityInfo: PlaceableEntityInfo): Point => {
+const calculateRegularPlacePosition = (placeableEntityInfo: PlaceableEntityInfo, isVisualPosition: boolean): Point => {
+   let placeOrigin: Point;
+   if (isVisualPosition) {
+      placeOrigin = Camera.position;
+   } else {
+      placeOrigin = Player.instance!.position;
+   }
+   
    const placeOffset = placeableEntityInfo.height / 2;
-   const placePositionX = Player.instance!.position.x + (Settings.ITEM_PLACE_DISTANCE + placeOffset) * Math.sin(Player.instance!.rotation);
-   const placePositionY = Player.instance!.position.y + (Settings.ITEM_PLACE_DISTANCE + placeOffset) * Math.cos(Player.instance!.rotation);
+   const placePositionX = placeOrigin.x + (Settings.ITEM_PLACE_DISTANCE + placeOffset) * Math.sin(Player.instance!.rotation);
+   const placePositionY = placeOrigin.y + (Settings.ITEM_PLACE_DISTANCE + placeOffset) * Math.cos(Player.instance!.rotation);
    return new Point(placePositionX, placePositionY);
 }
 
@@ -671,8 +679,8 @@ interface BuildingSnapInfo {
    readonly entityType: EntityType;
    readonly snappedEntityID: number;
 }
-export function calculateSnapInfo(placeableEntityInfo: PlaceableEntityInfo): BuildingSnapInfo | null {
-   const regularPlacePosition = calculateRegularPlacePosition(placeableEntityInfo);
+export function calculateSnapInfo(placeableEntityInfo: PlaceableEntityInfo, isVisualPosition: boolean): BuildingSnapInfo | null {
+   const regularPlacePosition = calculateRegularPlacePosition(placeableEntityInfo, isVisualPosition);
 
    const minChunkX = Math.max(Math.floor((regularPlacePosition.x - Settings.STRUCTURE_SNAP_RANGE) / Settings.CHUNK_UNITS), 0);
    const maxChunkX = Math.min(Math.floor((regularPlacePosition.x + Settings.STRUCTURE_SNAP_RANGE) / Settings.CHUNK_UNITS), Settings.BOARD_SIZE - 1);
@@ -749,9 +757,9 @@ export function calculateSnapInfo(placeableEntityInfo: PlaceableEntityInfo): Bui
    return null;
 }
 
-export function calculatePlacePosition(placeableEntityInfo: PlaceableEntityInfo, snapInfo: BuildingSnapInfo | null): Point {
+export function calculatePlacePosition(placeableEntityInfo: PlaceableEntityInfo, snapInfo: BuildingSnapInfo | null, isVisualPosition: boolean): Point {
    if (snapInfo === null) {
-      return calculateRegularPlacePosition(placeableEntityInfo);
+      return calculateRegularPlacePosition(placeableEntityInfo, isVisualPosition);
    }
 
    return new Point(snapInfo.x, snapInfo.y);
@@ -946,8 +954,8 @@ const itemRightClickDown = (item: Item, isOffhand: boolean, itemSlot: number): v
       }
       case "placeable": {
          const placeableEntityInfo = PLACEABLE_ENTITY_INFO_RECORD[item.type as PlaceableItemType]!;
-         const snapInfo = calculateSnapInfo(placeableEntityInfo);
-         const placePosition = calculatePlacePosition(placeableEntityInfo, snapInfo);
+         const snapInfo = calculateSnapInfo(placeableEntityInfo, false);
+         const placePosition = calculatePlacePosition(placeableEntityInfo, snapInfo, false);
          const placeRotation = calculatePlaceRotation(snapInfo);
 
          const isPlacedOnWall = snapInfo !== null && Board.entityRecord[snapInfo.snappedEntityID].type === EntityType.woodenWall;

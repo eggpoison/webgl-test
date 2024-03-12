@@ -76,7 +76,7 @@ const EntityDebugInfo = ({ entity, debugData }: EntityDebugInfoProps) => {
       <p>Velocity: <span className="highlight">{displayVelocityMagnitude}</span></p>
       <p>Acceleration: <span className="highlight">{displayAccelerationMagnitude}</span></p>
 
-      <p>Rotation: <span className="highlight">{entity.rotation}</span></p>
+      <p>Rotation: <span className="highlight">{entity.rotation.toFixed(2)}</span></p>
 
       <p>Chunks: {chunkDisplayText}</p>
 

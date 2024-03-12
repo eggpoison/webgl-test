@@ -8,8 +8,8 @@ export type VisiblePositionBounds = [minX: number, maxX: number, minY: number, m
 abstract class Camera {
    /** Larger = zoomed in, smaller = zoomed out */
    // @Temporary
-   public static zoom: number = 1.75;
-   // public static zoom: number = 1;
+   // public static zoom: number = 1.75;
+   public static zoom: number = 1;
 
    public static position: Point;
    

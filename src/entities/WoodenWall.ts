@@ -8,6 +8,8 @@ import { addMonocolourParticleToBufferContainer, ParticleRenderLayer } from "../
 import HealthComponent from "../entity-components/HealthComponent";
 import Entity from "../Entity";
 
+// @Cleanup: Move to particles file
+
 export function createWoodShardParticle(originX: number, originY: number, offset: number): void {
    const spawnOffsetDirection = 2 * Math.PI * Math.random();
    const spawnPositionX = originX + offset * Math.sin(spawnOffsetDirection);
@@ -95,14 +97,8 @@ export function createLightWoodSpeckParticle(originX: number, originY: number, o
    Board.lowMonocolourParticles.push(particle);
 }
 
-export function createWoodenWallSpawnParticles(originX: number, originY: number): void {
-   for (let i = 0; i < 12; i++) {
-      createLightWoodSpeckParticle(originX, originY, 32);
-   }
-}
-
 class WoodenWall extends Entity {
-   private static readonly NUM_DAMAGE_STAGES = 7;
+   private static readonly NUM_DAMAGE_STAGES = 6;
    private static readonly MAX_HEALTH = 25;
 
    private damageRenderPart: RenderPart | null = null;
@@ -126,13 +122,15 @@ class WoodenWall extends Entity {
       this.addServerComponent(ServerComponentType.health, new HealthComponent(this, healthComponentData));
 
       if (this.ageTicks === 0) {
-         createWoodenWallSpawnParticles(this.position.x, this.position.y);
+         for (let i = 0; i < 12; i++) {
+            createLightWoodSpeckParticle(this.position.x, this.position.y, 32);
+         }
          playSound("wooden-wall-place.mp3", 0.3, 1, this.position.x, this.position.y);
       }
    }
 
    private updateDamageRenderPart(health: number): void {
-      const damageStage = Math.floor((1 - health / WoodenWall.MAX_HEALTH) * WoodenWall.NUM_DAMAGE_STAGES);
+      const damageStage = Math.ceil((1 - health / WoodenWall.MAX_HEALTH) * WoodenWall.NUM_DAMAGE_STAGES);
       if (damageStage === 0) {
          if (this.damageRenderPart !== null) {
             this.removeRenderPart(this.damageRenderPart);

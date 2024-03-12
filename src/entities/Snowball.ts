@@ -7,6 +7,8 @@ import { ParticleRenderLayer, addMonocolourParticleToBufferContainer } from "../
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import SnowballComponent from "../entity-components/SnowballComponent";
 import Entity from "../Entity";
+import HealthComponent from "../entity-components/HealthComponent";
+import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 
 const getTextureSource = (size: SnowballSize): string => {
    switch (size) {
@@ -34,6 +36,8 @@ class Snowball extends Entity {
          )
       );
 
+      this.addServerComponent(ServerComponentType.health, new HealthComponent(this, componentsData[1]));
+      this.addServerComponent(ServerComponentType.statusEffect, new StatusEffectComponent(this, componentsData[2]));
       this.addServerComponent(ServerComponentType.snowball, new SnowballComponent(this, snowballComponentData));
    }
 

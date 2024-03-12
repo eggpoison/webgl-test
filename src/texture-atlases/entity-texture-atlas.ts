@@ -212,7 +212,9 @@ const TEXTURE_SOURCES: Array<string> = [
    "projectiles/ballista-rock.png",
    "projectiles/ballista-slimeball.png",
    "projectiles/ballista-frostcicle.png",
-   "entities/wooden-tunnel/wooden-tunnel.png"
+   "entities/wooden-tunnel/wooden-tunnel.png",
+   // @Cleanup: Not in subfolder
+   "entities/low-health-marker.png"
 ];
 
 const addTextureSource = (textureSource: string): void => {

@@ -143,8 +143,8 @@ const getRenderingInfo = (): TurretRangeRenderingInfo | null => {
    if (playerSelectedItem !== null && (playerSelectedItem.type === ItemType.ballista || playerSelectedItem.type === ItemType.sling_turret)) {
       const placeableEntityInfo = PLACEABLE_ENTITY_INFO_RECORD[playerSelectedItem.type as PlaceableItemType]!;
    
-      const snapInfo = calculateSnapInfo(placeableEntityInfo);
-      const placePosition = calculatePlacePosition(placeableEntityInfo, snapInfo);
+      const snapInfo = calculateSnapInfo(placeableEntityInfo, true);
+      const placePosition = calculatePlacePosition(placeableEntityInfo, snapInfo, true);
       const placeRotation = calculatePlaceRotation(snapInfo);
 
       return {

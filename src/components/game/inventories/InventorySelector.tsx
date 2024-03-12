@@ -4,7 +4,7 @@ import CookingInventory from "./CookingInventory";
 import TombstoneEpitaph from "./TombstoneEpitaph";
 import TribesmanInventory from "./TribesmanInventory";
 import AmmoBoxInventory from "./AmmoBoxInventory";
-import { getSelectedEntityID } from "../../../entity-selection";
+import { deselectSelectedEntity, getSelectedEntityID } from "../../../entity-selection";
 import Board from "../../../Board";
 
 export enum InventoryMenuType {
@@ -30,15 +30,20 @@ const InventorySelector = () => {
       InventorySelector_forceUpdate = () => {
          forceUpdate();
       }
-
-      InventorySelector_setInventoryMenuType = (inventoryMenuType: InventoryMenuType): void => {
-         setInventoryMenuType(inventoryMenuType);
-      }
    }, []);
 
    useEffect(() => {
       InventorySelector_inventoryIsOpen = () => {
          return inventoryMenuType !== InventoryMenuType.none;
+      }
+
+      InventorySelector_setInventoryMenuType = (newInventoryMenuType: InventoryMenuType): void => {
+         // If the tribesman inventory is being closed, deselect the tribesman
+         if (inventoryMenuType === InventoryMenuType.tribesman) {
+            deselectSelectedEntity(false);
+         }
+         
+         setInventoryMenuType(newInventoryMenuType);
       }
    }, [inventoryMenuType]);
 

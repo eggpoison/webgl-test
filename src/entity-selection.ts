@@ -10,8 +10,6 @@ import Client from "./client/Client";
 import { latencyGameState } from "./game-state/game-states";
 import { isHoveringInBlueprintMenu } from "./components/game/BlueprintMenu";
 import { InventoryMenuType, InventorySelector_inventoryIsOpen, InventorySelector_setInventoryMenuType } from "./components/game/inventories/InventorySelector";
-import { isDev } from "./utils";
-import { nerdVisionIsVisible } from "./components/game/dev/NerdVision";
 
 const HIGHLIGHT_RANGE = 75;
 const HIGHLIGHT_DISTANCE = 150;
@@ -42,6 +40,12 @@ export function getSelectedEntityID(): number {
    return selectedEntityID;
 }
 
+export function resetInteractableEntityIDs(): void {
+   hoveredEntityID = -1;
+   highlightedEntityID = -1;
+   selectedEntityID = -1;
+}
+
 export function getSelectedEntity(): Entity {
    if (!Board.entityRecord.hasOwnProperty(selectedEntityID)) {
       throw new Error("Can't select: Entity with ID " + selectedEntityID + " doesn't exist");
@@ -50,14 +54,17 @@ export function getSelectedEntity(): Entity {
    return Board.entityRecord[selectedEntityID];
 }
 
-export function deselectSelectedEntity(): void {
+export function deselectSelectedEntity(closeInventory: boolean = true): void {
    if (Board.entityRecord.hasOwnProperty(selectedEntityID)) {
       const previouslySelectedEntity = Board.entityRecord[selectedEntityID];
       Client.sendStructureUninteract(previouslySelectedEntity.id);
    }
 
    selectedEntityID = -1;
-   InventorySelector_setInventoryMenuType(InventoryMenuType.none);
+
+   if (closeInventory) {
+      InventorySelector_setInventoryMenuType(InventoryMenuType.none);
+   }
 }
 
 export function deselectHighlightedEntity(): void {

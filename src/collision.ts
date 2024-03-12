@@ -42,7 +42,7 @@ const getCircleCircleCollisionPushInfo = (pushedHitbox: CircularHitbox, pushingH
    const dist = pushedHitbox.position.calculateDistanceBetween(pushingHitbox.position);
    
    return {
-      amountIn: dist - pushedHitbox.radius - pushingHitbox.radius,
+      amountIn: pushedHitbox.radius + pushingHitbox.radius - dist,
       direction: pushingHitbox.position.calculateAngleBetween(pushedHitbox.position)
    };
 }

@@ -434,18 +434,26 @@ class InventoryUseComponent extends ServerComponent<ServerComponentType.inventor
       const lastActionTicks = getLastActionTicks(useInfo);
       const secondsSinceLastAction = getSecondsSinceLastAction(lastActionTicks)
 
-      // @Incomplete
       // Special case if the entity is drawing a bow
       // Two hands are needed to draw a bow, one from each side of the entity
 
-      // const otherAction = i === 0 ? this.leftAction : this.rightAction;
-      // if (otherAction === TribeMemberAction.chargeBow || otherAction === TribeMemberAction.loadCrossbow) {
-      //    const handOffsetDirection = TribeMember.HAND_CHARGING_BOW_DIRECTION * handMult;
-      //    this.handRenderParts[i].offset.x = TribeMember.HAND_CHARGING_BOW_OFFSET * Math.sin(handOffsetDirection);
-      //    this.handRenderParts[i].offset.y = TribeMember.HAND_CHARGING_BOW_OFFSET * Math.cos(handOffsetDirection);
-      //    this.handRenderParts[i].rotation = TribeMember.HAND_CHARGING_BOW_DIRECTION * handMult;
-      //    continue;
-      // }
+      const otherUseInfo = this.useInfos[limbIdx === 0 ? 1 : 0];
+      if (otherUseInfo.currentAction === TribeMemberAction.chargeBow || otherUseInfo.currentAction === TribeMemberAction.loadCrossbow) {
+         const otherLastActionTicks = getLastActionTicks(otherUseInfo);
+         const otherSecondsSinceLastAction = getSecondsSinceLastAction(otherLastActionTicks);
+
+         let chargeProgress = otherSecondsSinceLastAction;
+         if (chargeProgress > 1) {
+            chargeProgress = 1;
+         }
+
+         const pullbackOffset = lerp(50, 30, chargeProgress);
+         
+         this.limbRenderParts[limbIdx].offset.x = -3;
+         this.limbRenderParts[limbIdx].offset.y = pullbackOffset;
+         this.limbRenderParts[limbIdx].rotation = 0;
+         return;
+      }
 
       
       const inventoryComponent = this.entity.getServerComponent(ServerComponentType.inventory);
@@ -493,14 +501,12 @@ class InventoryUseComponent extends ServerComponent<ServerComponentType.inventor
                this.arrowRenderParts[limbIdx].offset.y = pullbackOffset;
             }
 
-            const handOffsetDirection = HAND_CHARGING_BOW_DIRECTION * handMult;
-            limb.offset.x = HAND_CHARGING_BOW_OFFSET * Math.sin(handOffsetDirection);
-            limb.offset.y = HAND_CHARGING_BOW_OFFSET * Math.cos(handOffsetDirection);
-            limb.rotation = HAND_CHARGING_BOW_DIRECTION * handMult;
+            limb.offset.x = 10 * handMult;
+            limb.offset.y = 60;
+            limb.rotation = 0;
 
-            const activeItemOffsetAmount = 18 + itemSize / 2;
-            this.activeItemRenderParts[limbIdx].offset.x = activeItemOffsetAmount * Math.sin(0);
-            this.activeItemRenderParts[limbIdx].offset.y = activeItemOffsetAmount * Math.cos(0);
+            this.activeItemRenderParts[limbIdx].offset.x = -10 * handMult;
+            this.activeItemRenderParts[limbIdx].offset.y = -10;
             this.activeItemRenderParts[limbIdx].rotation = -Math.PI / 4;
             break;
          }

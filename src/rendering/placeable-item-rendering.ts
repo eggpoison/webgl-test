@@ -403,8 +403,8 @@ const getGhostInfo = (): GhostInfo | null => {
    if (playerSelectedItem !== null && PLACEABLE_ENTITY_INFO_RECORD.hasOwnProperty(playerSelectedItem.type)) {
       const placeableEntityInfo = PLACEABLE_ENTITY_INFO_RECORD[playerSelectedItem.type as PlaceableItemType]!;
       
-      const snapInfo = calculateSnapInfo(placeableEntityInfo);
-      const placePosition = calculatePlacePosition(placeableEntityInfo, snapInfo);
+      const snapInfo = calculateSnapInfo(placeableEntityInfo, true);
+      const placePosition = calculatePlacePosition(placeableEntityInfo, snapInfo, true);
       const placeRotation = calculatePlaceRotation(snapInfo);
 
       const isPlacedOnWall = snapInfo !== null && Board.entityRecord[snapInfo.snappedEntityID].type === EntityType.woodenWall;

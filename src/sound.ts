@@ -194,8 +194,10 @@ const calculateSoundVolume = (volume: number, x: number, y: number): number => {
       distanceFromPlayer = 1;
    }
 
-   const finalVolume = volume / (distanceFromPlayer * distanceFromPlayer);
-   return finalVolume;
+   // To fix division by 0 errors
+   distanceFromPlayer++;
+
+   return volume / (distanceFromPlayer * distanceFromPlayer);
 }
 
 export interface SoundInfo {
@@ -252,7 +254,7 @@ export function attachSoundToEntity(sound: Sound, entity: Entity): void {
    });
 }
 
-export function updateSoundEffectVolume(): void {
+export function updateSoundEffectVolumes(): void {
    for (let i = 0; i < entityAttachedSounds.length; i++) {
       const attachedSoundInfo = entityAttachedSounds[i];
 

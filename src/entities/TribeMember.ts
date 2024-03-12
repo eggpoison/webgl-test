@@ -1,4 +1,4 @@
-import { EntityType, HitData, ItemType, ServerComponentType, Settings, TileType, TribeMemberComponentData, TribeType, randFloat, randInt, randItem } from "webgl-test-shared";
+import { EntityData, EntityType, HitData, ItemType, ServerComponentType, Settings, TileType, TribeMemberComponentData, TribeType, lerp, randFloat, randInt, randItem } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import Entity, { getFrameProgress } from "../Entity";
 import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, createBloodPoolParticle } from "../particles";
@@ -112,6 +112,9 @@ export function addTribeMemberRenderParts(entity: Entity, tribeMemberComponentDa
 
 abstract class TribeMember extends Entity {
    private static readonly BLOOD_FOUNTAIN_INTERVAL = 0.1;
+
+   // @Cleanup: Move to TribeMember client component
+   private lowHealthMarker: RenderPart | null = null;
    
    protected onHit(hitData: HitData): void {
       // Blood pool particle
@@ -180,6 +183,38 @@ abstract class TribeMember extends Entity {
          }
       }
       return null;
+   }
+
+   private updateLowHealthMarker(shouldShow: boolean): void {
+      if (shouldShow) {
+         if (this.lowHealthMarker === null) {
+            this.lowHealthMarker = new RenderPart(
+               this,
+               getTextureArrayIndex("entities/low-health-marker.png"),
+               9,
+               0
+            );
+            this.lowHealthMarker.inheritParentRotation = false;
+            this.lowHealthMarker.offset.x = 20;
+            this.lowHealthMarker.offset.y = 20;
+            this.attachRenderPart(this.lowHealthMarker);
+         }
+
+         let opacity = Math.sin(this.ageTicks / Settings.TPS * 5) * 0.5 + 0.5;
+         this.lowHealthMarker.opacity = lerp(0.3, 0.8, opacity);
+      } else {
+         if (this.lowHealthMarker !== null) {
+            this.removeRenderPart(this.lowHealthMarker);
+            this.lowHealthMarker = null;
+         }
+      }
+   }
+
+   public updateFromData(data: EntityData<EntityType>): void {
+      super.updateFromData(data);
+
+      const healthComponent = this.getServerComponent(ServerComponentType.health);
+      this.updateLowHealthMarker(healthComponent.health <= healthComponent.maxHealth / 2);
    }
 }
 

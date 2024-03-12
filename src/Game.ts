@@ -39,11 +39,11 @@ import { createFishShaders } from "./rendering/fish-rendering";
 import { Tile } from "./Tile";
 import { createForcefieldShaders, renderForcefield } from "./rendering/world-border-forcefield-rendering";
 import { createDecorationShaders, renderDecorations } from "./rendering/decoration-rendering";
-import { playRiverSounds, setupAudio, updateSoundEffectVolume } from "./sound";
+import { playRiverSounds, setupAudio, updateSoundEffectVolumes } from "./sound";
 import { createTechTreeShaders, renderTechTree } from "./rendering/tech-tree-rendering";
 import { createResearchOrbShaders, renderResearchOrb } from "./rendering/research-orb-rendering";
 import { attemptToResearch, updateActiveResearchBench, updateResearchOrb } from "./research";
-import { updateHighlightedAndHoveredEntities, updateSelectedStructure } from "./entity-selection";
+import { resetInteractableEntityIDs, updateHighlightedAndHoveredEntities, updateSelectedStructure } from "./entity-selection";
 import { createStructureHighlightShaders, renderStructureHighlights } from "./rendering/entity-highlight-rendering";
 import { updateBlueprintMenu } from "./components/game/BlueprintMenu";
 import { InventorySelector_forceUpdate } from "./components/game/inventories/InventorySelector";
@@ -174,6 +174,13 @@ abstract class Game {
     * Prepares the game to be played. Called once just before the game starts.
     */
    public static async initialise(tiles: Array<Array<Tile>>, waterRocks: ReadonlyArray<WaterRockData>, riverSteppingStones: ReadonlyArray<RiverSteppingStoneData>, riverFlowDirections: Record<number, Record<number, number>>, edgeTiles: Array<ServerTileData>, edgeRiverFlowDirections: Record<number, Record<number, number>>, edgeRiverSteppingStones: ReadonlyArray<RiverSteppingStoneData>, grassInfo: Record<number, Record<number, GrassTileInfo>>, decorations: ReadonlyArray<DecorationInfo>): Promise<void> {
+      Game.enemyTribes = [];
+
+      // Clear any queued packets from previous games
+      Game.queuedPackets = [];
+
+      resetInteractableEntityIDs();
+      
       if (!Game.hasInitialised) {
          return new Promise(async resolve => {
             createWebGLContext();
@@ -320,7 +327,7 @@ abstract class Game {
       updateBlueprintMenu();
       InventorySelector_forceUpdate();
 
-      updateSoundEffectVolume();
+      updateSoundEffectVolumes();
       playRiverSounds();
 
       this.cursorPositionX = calculateCursorWorldPositionX();
