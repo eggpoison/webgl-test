@@ -8,6 +8,7 @@ import InventoryUseComponent from "../entity-components/InventoryUseComponent";
 import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 import TribeComponent from "../entity-components/TribeComponent";
 import { addTribeMemberRenderParts } from "./TribeMember";
+import TribesmanComponent from "../entity-components/TribesmanComponent";
 
 class TribeWorker extends Tribesman {
    constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.tribeWorker>) {
@@ -18,6 +19,7 @@ class TribeWorker extends Tribesman {
       this.addServerComponent(ServerComponentType.tribe, new TribeComponent(this, componentsData[3]));
       this.addServerComponent(ServerComponentType.inventory, new InventoryComponent(this, componentsData[5]));
       this.addServerComponent(ServerComponentType.inventoryUse, new InventoryUseComponent(this, componentsData[6]));
+      this.addServerComponent(ServerComponentType.tribesman, new TribesmanComponent(this, componentsData[7]));
       this.addClientComponent(ClientComponentType.footprint, new FootprintComponent(this, 0.15, 20, 64, 4, 50));
       
       addTribeMemberRenderParts(this, componentsData[4]);

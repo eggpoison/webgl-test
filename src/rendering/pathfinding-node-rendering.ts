@@ -1,4 +1,4 @@
-import { PathfindingNodeIndex, PathfindingSettings, Settings } from "webgl-test-shared";
+import { PathfindingNodeIndex, PathfindingSettings, Settings, angle } from "webgl-test-shared";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 import Board from "../Board";
 import Game from "../Game";
@@ -19,6 +19,8 @@ interface NodeInfo {
 const NODE_THICKNESS = 3;
 const NODE_RADIUS = 8;
 const NODE_CIRCLE_VERTEX_COUNT = 10;
+
+const CONNECTOR_THICKNESS = 8;
 
 let nodeProgram: WebGLProgram;
 
@@ -100,7 +102,7 @@ export function createPathfindNodeShaders(): void {
    out vec4 outputColour;
    
    void main() {
-      outputColour = vec4(1.0, 0.0, 0.0, 1.0);
+      outputColour = vec4(0.0, 0.3, 1.0, 1.0);
    }
    `;
 
@@ -113,6 +115,62 @@ export function createPathfindNodeShaders(): void {
 
    const triangleCameraBlockIndex = gl.getUniformBlockIndex(connectorProgram, "Camera");
    gl.uniformBlockBinding(connectorProgram, triangleCameraBlockIndex, CAMERA_UNIFORM_BUFFER_BINDING_INDEX);
+}
+
+const renderConnectors = (mainPathNodes: ReadonlyArray<PathfindingNodeIndex>): void => {
+   if (!Board.entityRecord.hasOwnProperty(Game.entityDebugData!.entityID)) {
+      return;
+   }
+   const debugEntity = Board.entityRecord[Game.entityDebugData!.entityID];
+   
+   const vertices = new Array<number>();
+   let lastNodeX = debugEntity.position.x;
+   let lastNodeY = debugEntity.position.y;
+   for (let i = 0; i < mainPathNodes.length; i++) {
+      const node = mainPathNodes[i];
+
+      const endNodeX = node % PathfindingSettings.NODES_IN_WORLD_WIDTH * PathfindingSettings.NODE_SEPARATION;
+      const endNodeY = Math.floor(node / PathfindingSettings.NODES_IN_WORLD_WIDTH) * PathfindingSettings.NODE_SEPARATION;
+
+      const connectDirection = angle(endNodeX - lastNodeX, endNodeY - lastNodeY);
+      
+      // To the left of the start node
+      const x1 = lastNodeX + CONNECTOR_THICKNESS / 2 * Math.sin(connectDirection - Math.PI/2);
+      const y1 = lastNodeY + CONNECTOR_THICKNESS / 2 * Math.cos(connectDirection - Math.PI/2);
+      // To the right of the start node
+      const x2 = lastNodeX + CONNECTOR_THICKNESS / 2 * Math.sin(connectDirection + Math.PI/2);
+      const y2 = lastNodeY + CONNECTOR_THICKNESS / 2 * Math.cos(connectDirection + Math.PI/2);
+      // To the left of the end node
+      const x3 = endNodeX + CONNECTOR_THICKNESS / 2 * Math.sin(connectDirection - Math.PI/2);
+      const y3 = endNodeY + CONNECTOR_THICKNESS / 2 * Math.cos(connectDirection - Math.PI/2);
+      // To the right of the end node
+      const x4 = endNodeX + CONNECTOR_THICKNESS / 2 * Math.sin(connectDirection + Math.PI/2);
+      const y4 = endNodeY + CONNECTOR_THICKNESS / 2 * Math.cos(connectDirection + Math.PI/2);
+
+      vertices.push(
+         x1, y1,
+         x2, y2,
+         x3, y3,
+         x3, y3,
+         x2, y2,
+         x4, y4
+      );
+      
+      lastNodeX = endNodeX;
+      lastNodeY = endNodeY;
+   }
+
+   gl.useProgram(connectorProgram);
+
+   const buffer = gl.createBuffer();
+   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+
+   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
+
+   gl.enableVertexAttribArray(0);
+
+   gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 2);
 }
 
 const renderNodes = (nodeInfoArray: ReadonlyArray<NodeInfo>): void => {
@@ -229,7 +287,8 @@ export function renderPathfindingNodes(): void {
       }
    }
 
-   // @Incomplete
-   // renderConnectors();
+   if (Game.entityDebugData !== null && typeof Game.entityDebugData.pathData !== "undefined") {
+      renderConnectors(Game.entityDebugData.pathData.pathNodes);
+   }
    renderNodes(nodeInfoArray);
 }

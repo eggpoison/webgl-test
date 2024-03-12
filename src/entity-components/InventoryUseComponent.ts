@@ -21,8 +21,6 @@ const ZOMBIE_HAND_RESTING_OFFSET = 32;
    
 const HAND_RESTING_DIRECTION = Math.PI / 2.5;
 const HAND_RESTING_ROTATION = 0;
-const HAND_CHARGING_BOW_DIRECTION = Math.PI / 4.2;
-const HAND_CHARGING_BOW_OFFSET = 37;
 
 const SPEAR_ATTACK_LUNGE_TIME = 0.2;
 const ITEM_SWING_RANGE = Math.PI / 2.5;
@@ -319,6 +317,11 @@ class InventoryUseComponent extends ServerComponent<ServerComponentType.inventor
             this.entity.removeRenderPart(this.inactiveCrossbowArrowRenderParts[limbIdx]);
             delete this.inactiveCrossbowArrowRenderParts[limbIdx];
          }
+
+         if (this.arrowRenderParts.hasOwnProperty(limbIdx)) {
+            this.entity.removeRenderPart(this.arrowRenderParts[limbIdx]);
+            delete this.arrowRenderParts[limbIdx];
+         }
       } else {
          if (!this.activeItemRenderParts.hasOwnProperty(limbIdx)) {
             const renderPart = new RenderPart(
@@ -367,6 +370,10 @@ class InventoryUseComponent extends ServerComponent<ServerComponentType.inventor
                      break;
                   }
                   default: {
+                     const tribesmanComponent = this.entity.getServerComponent(ServerComponentType.tribesman);
+                     console.log(tribesmanComponent.aiType);
+                     console.log(limbIdx);
+                     console.log(activeItem);
                      throw new Error("Not bow");
                   }
                }
@@ -530,7 +537,7 @@ class InventoryUseComponent extends ServerComponent<ServerComponentType.inventor
             const handRestingOffset = getHandRestingOffset(this.entity.type as InventoryUseEntityType);
             limb.offset.x = handRestingOffset * Math.sin(handDirection);
             limb.offset.y = handRestingOffset * Math.cos(handDirection);
-            limb.rotation = HAND_CHARGING_BOW_DIRECTION * handMult;
+            limb.rotation = Math.PI / 4.2 * handMult;
 
             this.activeItemRenderParts[limbIdx].offset.x = (ITEM_RESTING_OFFSET + itemSize/2) * Math.sin(itemDirection);
             this.activeItemRenderParts[limbIdx].offset.y = (ITEM_RESTING_OFFSET + itemSize/2) * Math.cos(itemDirection);

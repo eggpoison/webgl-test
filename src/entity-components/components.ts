@@ -34,6 +34,7 @@ import FishComponent from "./FishComponent";
 import RockSpikeComponent from "./RockSpikeComponent";
 import SlimeSpitComponent from "./SlimeSpitComponent";
 import DoorComponent from "./DoorComponent";
+import TribesmanComponent from "./TribesmanComponent";
 
 export enum ClientComponentType {
    equipment,
@@ -73,6 +74,7 @@ export const ServerComponents = {
    [ServerComponentType.rockSpike]: (): RockSpikeComponent => 0 as any,
    [ServerComponentType.slimeSpit]: (): SlimeSpitComponent => 0 as any,
    [ServerComponentType.door]: (): DoorComponent => 0 as any,
+   [ServerComponentType.tribesman]: (): TribesmanComponent => 0 as any,
 } satisfies Partial<Record<ServerComponentType, () => ServerComponent>>;
 
 export const ClientComponents = {

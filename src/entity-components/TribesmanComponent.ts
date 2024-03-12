@@ -8,7 +8,7 @@ const GOBLIN_ESCAPE_SOUNDS: ReadonlyArray<AudioFilePath> = ["goblin-escape-1.mp3
 const GOBLIN_AMBIENT_SOUNDS: ReadonlyArray<AudioFilePath> = ["goblin-ambient-1.mp3", "goblin-ambient-2.mp3", "goblin-ambient-3.mp3", "goblin-ambient-4.mp3", "goblin-ambient-5.mp3"];
 
 class TribesmanComponent extends ServerComponent<ServerComponentType.tribesman> {
-   private aiType: TribesmanAIType;
+   public aiType: TribesmanAIType;
 
    constructor(entity: Entity, data: TribesmanComponentData) {
       super(entity);
