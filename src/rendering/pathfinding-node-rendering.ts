@@ -129,8 +129,8 @@ const renderConnectors = (mainPathNodes: ReadonlyArray<PathfindingNodeIndex>): v
    for (let i = 0; i < mainPathNodes.length; i++) {
       const node = mainPathNodes[i];
 
-      const endNodeX = node % PathfindingSettings.NODES_IN_WORLD_WIDTH * PathfindingSettings.NODE_SEPARATION;
-      const endNodeY = Math.floor(node / PathfindingSettings.NODES_IN_WORLD_WIDTH) * PathfindingSettings.NODE_SEPARATION;
+      const endNodeX = (node % PathfindingSettings.NODES_IN_WORLD_WIDTH - 1) * PathfindingSettings.NODE_SEPARATION;
+      const endNodeY = (Math.floor(node / PathfindingSettings.NODES_IN_WORLD_WIDTH) - 1) * PathfindingSettings.NODE_SEPARATION;
 
       const connectDirection = angle(endNodeX - lastNodeX, endNodeY - lastNodeY);
       
@@ -182,8 +182,8 @@ const renderNodes = (nodeInfoArray: ReadonlyArray<NodeInfo>): void => {
    for (let i = 0; i < nodeInfoArray.length; i++) {
       const nodeInfo = nodeInfoArray[i];
 
-      const x = nodeInfo.node % PathfindingSettings.NODES_IN_WORLD_WIDTH * PathfindingSettings.NODE_SEPARATION;
-      const y = Math.floor(nodeInfo.node / PathfindingSettings.NODES_IN_WORLD_WIDTH) * PathfindingSettings.NODE_SEPARATION;
+      const x = (nodeInfo.node % PathfindingSettings.NODES_IN_WORLD_WIDTH - 1) * PathfindingSettings.NODE_SEPARATION;
+      const y = (Math.floor(nodeInfo.node / PathfindingSettings.NODES_IN_WORLD_WIDTH) - 1) * PathfindingSettings.NODE_SEPARATION;
       
       const step = 2 * Math.PI / NODE_CIRCLE_VERTEX_COUNT;
    
