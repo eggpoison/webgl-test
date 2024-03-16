@@ -17,7 +17,7 @@ class TunnelComponent extends ServerComponent<ServerComponentType.tunnel> {
    private addDoor(doorBit: number): void {
       const renderPart = new RenderPart(
          this.entity,
-         getTextureArrayIndex("entities/wooden-tunnel/tunnel-door.png"),
+         getTextureArrayIndex("entities/tunnel/tunnel-door.png"),
          0,
          0
       );

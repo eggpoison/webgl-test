@@ -34,19 +34,19 @@ import TribeWarrior from "./entities/TribeWarrior";
 import Wall from "./entities/Wall";
 import SlimeSpit from "./projectiles/SlimeSpit";
 import SpitPoison from "./projectiles/SpitPoison";
-import WoodenDoor from "./entities/WoodenDoor";
+import Door from "./entities/Door";
 import BattleaxeProjectile from "./projectiles/BattleaxeProjectile";
 import Golem from "./entities/Golem";
 import PlanterBox from "./entities/PlanterBox";
 import IceArrow from "./projectiles/IceArrow";
 import Pebblum from "./entities/Pebblum";
-import WoodenEmbrasure from "./entities/WoodenEmbrasure";
+import Embrasure from "./entities/Embrasure";
 import WoodenSpikes from "./entities/WoodenSpikes";
 import FloorPunjiSticks from "./entities/PunjiSticks";
 import BlueprintEntity from "./entities/BlueprintEntity";
 import Ballista from "./entities/Ballista";
 import SlingTurret from "./entities/SlingTurret";
-import WoodenTunnel from "./entities/WoodenTunnel";
+import Tunnel from "./entities/Tunnel";
 
 export type EntityClassType<T extends EntityType> = new (position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<T>) => Entity;
 
@@ -86,19 +86,19 @@ const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
    [EntityType.wall]: () => Wall,
    [EntityType.slimeSpit]: () => SlimeSpit,
    [EntityType.spitPoison]: () => SpitPoison,
-   [EntityType.woodenDoor]: () => WoodenDoor,
+   [EntityType.door]: () => Door,
    [EntityType.battleaxeProjectile]: () => BattleaxeProjectile,
    [EntityType.golem]: () => Golem,
    [EntityType.planterBox]: () => PlanterBox,
    [EntityType.iceArrow]: () => IceArrow,
    [EntityType.pebblum]: () => Pebblum,
-   [EntityType.woodenEmbrasure]: () => WoodenEmbrasure,
+   [EntityType.embrasure]: () => Embrasure,
    [EntityType.woodenSpikes]: () => WoodenSpikes,
    [EntityType.punjiSticks]: () => FloorPunjiSticks,
    [EntityType.blueprintEntity]: () => BlueprintEntity,
    [EntityType.ballista]: () => Ballista,
    [EntityType.slingTurret]: () => SlingTurret,
-   [EntityType.woodenTunnel]: () => WoodenTunnel
+   [EntityType.tunnel]: () => Tunnel
 };
 
 export default ENTITY_CLASS_RECORD;

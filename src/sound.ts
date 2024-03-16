@@ -143,7 +143,8 @@ const AUDIO_FILE_PATHS = [
    "flies.mp3",
    "cactus-hit.mp3",
    "cactus-destroy.mp3",
-   "barrel-place.mp3"
+   "barrel-place.mp3",
+   "error.mp3"
 ] as const;
 
 export type AudioFilePath = typeof AUDIO_FILE_PATHS[number];

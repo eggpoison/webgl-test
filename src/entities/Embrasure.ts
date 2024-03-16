@@ -2,24 +2,28 @@ import { EntityComponentsData, EntityType, HitData, Point, ServerComponentType }
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { playSound } from "../sound";
-import DoorComponent from "../entity-components/DoorComponent";
 import Entity from "../Entity";
+import HealthComponent from "../entity-components/HealthComponent";
+import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 import { createLightWoodSpeckParticle, createWoodShardParticle } from "../particles";
+import BuildingMaterialComponent from "../entity-components/BuildingMaterialComponent";
 
-class WoodenDoor extends Entity {
-   constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.woodenDoor>) {
-      super(position, id, EntityType.woodenDoor, ageTicks);
+class Embrasure extends Entity {
+   constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.embrasure>) {
+      super(position, id, EntityType.embrasure, ageTicks);
 
       this.attachRenderPart(
          new RenderPart(
             this,
-            getTextureArrayIndex("entities/wooden-door/wooden-door.png"),
+            getTextureArrayIndex("entities/embrasure/wooden-embrasure.png"),
             0,
             0
          )
       );
 
-      this.addServerComponent(ServerComponentType.door, new DoorComponent(this, componentsData[2]));
+      this.addServerComponent(ServerComponentType.health, new HealthComponent(this, componentsData[0]));
+      this.addServerComponent(ServerComponentType.statusEffect, new StatusEffectComponent(this, componentsData[1]));
+      this.addServerComponent(ServerComponentType.buildingMaterial, new BuildingMaterialComponent(this, componentsData[3]));
    }
 
    protected onHit(hitData: HitData): void {
@@ -51,4 +55,4 @@ class WoodenDoor extends Entity {
    }
 }
 
-export default WoodenDoor;
+export default Embrasure;

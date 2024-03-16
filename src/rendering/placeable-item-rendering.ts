@@ -26,10 +26,13 @@ export enum GhostType {
    woodenSpikes,
    punjiSticks,
    woodenDoor,
+   stoneDoor,
    woodenEmbrasure,
+   stoneEmbrasure,
    woodenWall,
    stoneWall,
    woodenTunnel,
+   stoneTunnel,
    tunnelDoor,
    ballista,
    slingTurret
@@ -64,10 +67,10 @@ const ENTITY_TYPE_TO_GHOST_TYPE_MAP: Partial<Record<EntityType, GhostType>> = {
    [EntityType.planterBox]: GhostType.planterBox,
    [EntityType.woodenSpikes]: GhostType.woodenSpikes,
    [EntityType.punjiSticks]: GhostType.punjiSticks,
-   [EntityType.woodenDoor]: GhostType.woodenDoor,
-   [EntityType.woodenEmbrasure]: GhostType.woodenEmbrasure,
+   [EntityType.door]: GhostType.woodenDoor,
+   [EntityType.embrasure]: GhostType.woodenEmbrasure,
    [EntityType.wall]: GhostType.woodenWall,
-   [EntityType.woodenTunnel]: GhostType.woodenTunnel,
+   [EntityType.tunnel]: GhostType.woodenTunnel,
    [EntityType.ballista]: GhostType.ballista,
    [EntityType.slingTurret]: GhostType.slingTurret,
 };
@@ -171,7 +174,15 @@ const TEXTURE_INFO_RECORD: Record<GhostType, ReadonlyArray<TextureInfo>> = {
    ],
    [GhostType.woodenDoor]: [
       {
-         textureSource: "entities/wooden-door/wooden-door.png",
+         textureSource: "entities/door/wooden-door.png",
+         offsetX: 0,
+         offsetY: 0,
+         rotation: 0
+      }
+   ],
+   [GhostType.stoneDoor]: [
+      {
+         textureSource: "entities/door/stone-door.png",
          offsetX: 0,
          offsetY: 0,
          rotation: 0
@@ -179,7 +190,15 @@ const TEXTURE_INFO_RECORD: Record<GhostType, ReadonlyArray<TextureInfo>> = {
    ],
    [GhostType.woodenEmbrasure]: [
       {
-         textureSource: "entities/wooden-embrasure/wooden-embrasure.png",
+         textureSource: "entities/embrasure/wooden-embrasure.png",
+         offsetX: 0,
+         offsetY: 22,
+         rotation: 0
+      }
+   ],
+   [GhostType.stoneEmbrasure]: [
+      {
+         textureSource: "entities/embrasure/stone-embrasure.png",
          offsetX: 0,
          offsetY: 22,
          rotation: 0
@@ -203,7 +222,15 @@ const TEXTURE_INFO_RECORD: Record<GhostType, ReadonlyArray<TextureInfo>> = {
    ],
    [GhostType.woodenTunnel]: [
       {
-         textureSource: "entities/wooden-tunnel/wooden-tunnel.png",
+         textureSource: "entities/tunnel/wooden-tunnel.png",
+         offsetX: 0,
+         offsetY: 0,
+         rotation: 0
+      }
+   ],
+   [GhostType.stoneTunnel]: [
+      {
+         textureSource: "entities/tunnel/stone-tunnel.png",
          offsetX: 0,
          offsetY: 0,
          rotation: 0
@@ -211,7 +238,7 @@ const TEXTURE_INFO_RECORD: Record<GhostType, ReadonlyArray<TextureInfo>> = {
    ],
    [GhostType.tunnelDoor]: [
       {
-         textureSource: "entities/wooden-tunnel/tunnel-door.png",
+         textureSource: "entities/tunnel/tunnel-door.png",
          offsetX: 0,
          offsetY: 22,
          rotation: 0

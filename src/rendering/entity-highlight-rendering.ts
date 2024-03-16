@@ -27,7 +27,7 @@ const HIGHLIGHT_INFO_RECORD: Partial<Record<EntityType, ReadonlyArray<HighlightI
          rotation: 0
       }
    ],
-   [EntityType.woodenDoor]: [
+   [EntityType.door]: [
       {
          width: 64,
          height: 24,
@@ -107,7 +107,7 @@ const HIGHLIGHT_INFO_RECORD: Partial<Record<EntityType, ReadonlyArray<HighlightI
          rotation: Math.PI / 2
       }
    ],
-   [EntityType.woodenTunnel]: [
+   [EntityType.tunnel]: [
       {
          width: 16,
          height: 64,
@@ -124,6 +124,16 @@ const HIGHLIGHT_INFO_RECORD: Partial<Record<EntityType, ReadonlyArray<HighlightI
          yOffset: 0,
          rotation: 0
       }
+   ],
+   [EntityType.embrasure]: [
+      {
+         width: 64,
+         height: 20,
+         isCircle: false,
+         xOffset: 0,
+         yOffset: 0,
+         rotation: 0
+      },
    ]
 };
 

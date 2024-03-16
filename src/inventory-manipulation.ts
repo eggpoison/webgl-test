@@ -2,7 +2,7 @@ import Client from "./client/Client";
 import { inventoryIsOpen } from "./components/game/menus/CraftingMenu";
 import { setHeldItemVisualPosition } from "./components/game/HeldItem";
 import { definiteGameState } from "./game-state/game-states";
-import { Inventory, Item, ItemSlots } from "webgl-test-shared";
+import { Inventory, Item, ItemType } from "webgl-test-shared";
 import { InventorySelector_inventoryIsOpen } from "./components/game/inventories/InventorySelector";
 
 const canInteractWithItemSlots = (): boolean => {
@@ -114,4 +114,19 @@ export function inventoryHasItems(inventory: Inventory): boolean {
       }
    }
    return false;
+}
+
+export function countItemTypesInInventory(inventory: Inventory, itemType: ItemType): number {
+   let count = 0;
+
+   for (let itemSlot = 1; itemSlot <= inventory.width * inventory.height; itemSlot++) {
+      if (inventory.itemSlots.hasOwnProperty(itemSlot)) {
+         const item = inventory.itemSlots[itemSlot];
+         if (item.type === itemType) {
+            count += item.count;
+         }
+      }
+   }
+   
+   return count;
 }

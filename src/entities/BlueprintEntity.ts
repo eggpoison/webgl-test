@@ -1,4 +1,4 @@
-import { EntityData, EntityType, Point, BlueprintBuildingType, randFloat, ServerComponentType, EntityComponentsData } from "webgl-test-shared";
+import { EntityData, EntityType, Point, BlueprintType, randFloat, ServerComponentType, EntityComponentsData } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { playSound } from "../sound";
@@ -19,38 +19,71 @@ interface ProgressTextureInfo {
 }
 
 // @Robustness: Do something better than hand-writing 'blueprint-1', 'blueprint-2', etc. in an array.
-export const BLUEPRINT_PROGRESS_TEXTURE_SOURCES: Record<BlueprintBuildingType, ReadonlyArray<ProgressTextureInfo>> = {
-   [BlueprintBuildingType.woodenDoor]: [
+export const BLUEPRINT_PROGRESS_TEXTURE_SOURCES: Record<BlueprintType, ReadonlyArray<ProgressTextureInfo>> = {
+   [BlueprintType.woodenDoor]: [
       {
-         progressTextureSources: ["entities/wooden-door/wooden-door-blueprint-1.png", "entities/wooden-door/wooden-door-blueprint-2.png"],
-         completedTextureSource: "entities/wooden-door/wooden-door.png",
+         progressTextureSources: ["entities/door/wooden-door-blueprint-1.png", "entities/door/wooden-door-blueprint-2.png"],
+         completedTextureSource: "entities/door/wooden-door.png",
          offsetX: 0,
          offsetY: 0,
          rotation: 0,
          zIndex: 0
       }
    ],
-   [BlueprintBuildingType.embrasure]: [
+   // @Incomplete
+   [BlueprintType.stoneDoor]: [
       {
-         progressTextureSources: ["entities/wooden-embrasure/wooden-embrasure-blueprint-1.png", "entities/wooden-embrasure/wooden-embrasure-blueprint-2.png", "entities/wooden-embrasure/wooden-embrasure-blueprint-3.png"],
-         completedTextureSource: "entities/wooden-embrasure/wooden-embrasure.png",
+         progressTextureSources: ["entities/door/wooden-door-blueprint-1.png", "entities/door/wooden-door-blueprint-2.png"],
+         completedTextureSource: "entities/door/stone-door.png",
          offsetX: 0,
          offsetY: 0,
          rotation: 0,
          zIndex: 0
       }
    ],
-   [BlueprintBuildingType.tunnel]: [
+   [BlueprintType.woodenEmbrasure]: [
       {
-         progressTextureSources: ["entities/wooden-tunnel/tunnel-blueprint-1.png", "entities/wooden-tunnel/tunnel-blueprint-2.png"],
-         completedTextureSource: "entities/wooden-tunnel/wooden-tunnel.png",
+         progressTextureSources: ["entities/embrasure/wooden-embrasure-blueprint-1.png", "entities/embrasure/wooden-embrasure-blueprint-2.png", "entities/embrasure/wooden-embrasure-blueprint-3.png"],
+         completedTextureSource: "entities/embrasure/wooden-embrasure.png",
          offsetX: 0,
          offsetY: 0,
          rotation: 0,
          zIndex: 0
       }
    ],
-   [BlueprintBuildingType.ballista]: [
+   // @Incomplete
+   [BlueprintType.stoneEmbrasure]: [
+      {
+         progressTextureSources: ["entities/embrasure/wooden-embrasure-blueprint-1.png", "entities/embrasure/wooden-embrasure-blueprint-2.png", "entities/embrasure/wooden-embrasure-blueprint-3.png"],
+         completedTextureSource: "entities/embrasure/stone-embrasure.png",
+         offsetX: 0,
+         offsetY: 0,
+         rotation: 0,
+         zIndex: 0
+      }
+   ],
+   [BlueprintType.woodenTunnel]: [
+      {
+         progressTextureSources: ["entities/tunnel/tunnel-blueprint-1.png", "entities/tunnel/tunnel-blueprint-2.png"],
+         completedTextureSource: "entities/tunnel/wooden-tunnel.png",
+         offsetX: 0,
+         offsetY: 0,
+         rotation: 0,
+         zIndex: 0
+      }
+   ],
+   // @Incomplete
+   [BlueprintType.stoneTunnel]: [
+      {
+         progressTextureSources: ["entities/tunnel/tunnel-blueprint-1.png", "entities/tunnel/tunnel-blueprint-2.png"],
+         completedTextureSource: "entities/tunnel/stone-tunnel.png",
+         offsetX: 0,
+         offsetY: 0,
+         rotation: 0,
+         zIndex: 0
+      }
+   ],
+   [BlueprintType.ballista]: [
       // Base
       {
          progressTextureSources: ["entities/ballista/base-blueprint-1.png", "entities/ballista/base-blueprint-2.png", "entities/ballista/base-blueprint-3.png", "entities/ballista/base-blueprint-4.png", "entities/ballista/base-blueprint-5.png", "entities/ballista/base-blueprint-6.png", "entities/ballista/base.png"],
@@ -115,7 +148,7 @@ export const BLUEPRINT_PROGRESS_TEXTURE_SOURCES: Record<BlueprintBuildingType, R
          zIndex: 1
       }
    ],
-   [BlueprintBuildingType.slingTurret]: [
+   [BlueprintType.slingTurret]: [
       // Base
       {
          progressTextureSources: ["entities/sling-turret/base-blueprint-1.png", "entities/sling-turret/base-blueprint-2.png", "entities/sling-turret/base-blueprint-3.png", "entities/sling-turret/base-blueprint-4.png", "entities/sling-turret/sling-turret-base.png"],
@@ -144,7 +177,7 @@ export const BLUEPRINT_PROGRESS_TEXTURE_SOURCES: Record<BlueprintBuildingType, R
          zIndex: 2
       }
    ],
-   [BlueprintBuildingType.stoneWallUpgrade]: [
+   [BlueprintType.stoneWall]: [
       // @Incomplete
       {
          progressTextureSources: ["entities/sling-turret/sling-blueprint-1.png", "entities/sling-turret/sling-blueprint-2.png"],
@@ -157,7 +190,7 @@ export const BLUEPRINT_PROGRESS_TEXTURE_SOURCES: Record<BlueprintBuildingType, R
    ]
 };
 
-const countProgressTextures = (buildingType: BlueprintBuildingType): number => {
+const countProgressTextures = (buildingType: BlueprintType): number => {
    let numTextures = 0;
    const progressTextureInfoArray = BLUEPRINT_PROGRESS_TEXTURE_SOURCES[buildingType];
    for (let i = 0; i < progressTextureInfoArray.length; i++) {
@@ -174,7 +207,7 @@ class BlueprintEntity extends Entity {
       const blueprintComponentData = componentsData[1];
       
       // Create completed render parts
-      const progressTextureInfoArray = BLUEPRINT_PROGRESS_TEXTURE_SOURCES[blueprintComponentData.buildingType];
+      const progressTextureInfoArray = BLUEPRINT_PROGRESS_TEXTURE_SOURCES[blueprintComponentData.blueprintType];
       for (let i = 0; i < progressTextureInfoArray.length; i++) {
          const progressTextureInfo = progressTextureInfoArray[i];
 
@@ -226,17 +259,17 @@ class BlueprintEntity extends Entity {
 
    private updatePartialTexture(): void {
       const blueprintComponent = this.getServerComponent(ServerComponentType.blueprint);
-      const buildingType = blueprintComponent.buildingType;
+      const blueprintType = blueprintComponent.blueprintType;
       const blueprintProgress = blueprintComponent.lastBlueprintProgress;
       
-      const numTextures = countProgressTextures(buildingType);
+      const numTextures = countProgressTextures(blueprintType);
       const stage = Math.floor(blueprintProgress * (numTextures + 1));
       if (stage === 0) {
          return;
       }
       
       const lastTextureIndex = stage - 1;
-      const progressTextureInfoArray = BLUEPRINT_PROGRESS_TEXTURE_SOURCES[buildingType];
+      const progressTextureInfoArray = BLUEPRINT_PROGRESS_TEXTURE_SOURCES[blueprintType];
 
       let currentIndexStart = 0;
       for (let i = 0; i < progressTextureInfoArray.length; i++) {

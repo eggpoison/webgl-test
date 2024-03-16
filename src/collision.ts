@@ -11,13 +11,13 @@ interface CollisionPushInfo {
 
 const entityHasHardCollision = (entity: Entity, collidingEntity: Entity): boolean => {
    // Doors have hard collision when closing/closed
-   if (entity.type === EntityType.woodenDoor) {
+   if (entity.type === EntityType.door) {
       const doorComponent = entity.getServerComponent(ServerComponentType.door);
       return doorComponent.toggleType === DoorToggleType.close || doorComponent.openProgress === 0;
    }
 
    // Tunnels have hard collision outside and soft inside
-   if (entity.type === EntityType.woodenTunnel) {
+   if (entity.type === EntityType.tunnel) {
       const projX = Math.sin(entity.rotation + Math.PI / 2);
       const projY = Math.cos(entity.rotation + Math.PI / 2);
 
@@ -35,7 +35,7 @@ const entityHasHardCollision = (entity: Entity, collidingEntity: Entity): boolea
       return centerProj <= minProj || centerProj >= maxProj;
    }
    
-   return entity.type === EntityType.wall || entity.type === EntityType.woodenEmbrasure;
+   return entity.type === EntityType.wall || entity.type === EntityType.embrasure;
 }
 
 const getCircleCircleCollisionPushInfo = (pushedHitbox: CircularHitbox, pushingHitbox: CircularHitbox): CollisionPushInfo => {

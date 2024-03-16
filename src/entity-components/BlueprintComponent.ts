@@ -1,4 +1,4 @@
-import { BlueprintBuildingType, BlueprintComponentData, ServerComponentType, randFloat } from "webgl-test-shared";
+import { BlueprintType, BlueprintComponentData, ServerComponentType, randFloat } from "webgl-test-shared";
 import ServerComponent from "./ServerComponent";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "../Entity";
@@ -8,13 +8,13 @@ import { createLightWoodSpeckParticle, createSawdustCloud, createWoodShardPartic
 class BlueprintComponent extends ServerComponent<ServerComponentType.blueprint> {
    public readonly partialRenderParts = new Array<RenderPart>();
    
-   public readonly buildingType: BlueprintBuildingType;
+   public readonly blueprintType: BlueprintType;
    public lastBlueprintProgress: number;
 
    constructor(entity: Entity, data: BlueprintComponentData) {
       super(entity);
 
-      this.buildingType = data.buildingType;
+      this.blueprintType = data.blueprintType;
       this.lastBlueprintProgress = data.buildProgress;
    }
 

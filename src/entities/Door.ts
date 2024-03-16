@@ -2,26 +2,26 @@ import { EntityComponentsData, EntityType, HitData, Point, ServerComponentType }
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { playSound } from "../sound";
+import DoorComponent from "../entity-components/DoorComponent";
 import Entity from "../Entity";
-import HealthComponent from "../entity-components/HealthComponent";
-import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 import { createLightWoodSpeckParticle, createWoodShardParticle } from "../particles";
+import BuildingMaterialComponent from "../entity-components/BuildingMaterialComponent";
 
-class WoodenEmbrasure extends Entity {
-   constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.woodenEmbrasure>) {
-      super(position, id, EntityType.woodenEmbrasure, ageTicks);
+class Door extends Entity {
+   constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.door>) {
+      super(position, id, EntityType.door, ageTicks);
 
       this.attachRenderPart(
          new RenderPart(
             this,
-            getTextureArrayIndex("entities/wooden-embrasure/wooden-embrasure.png"),
+            getTextureArrayIndex("entities/door/wooden-door.png"),
             0,
             0
          )
       );
 
-      this.addServerComponent(ServerComponentType.health, new HealthComponent(this, componentsData[0]));
-      this.addServerComponent(ServerComponentType.statusEffect, new StatusEffectComponent(this, componentsData[1]));
+      this.addServerComponent(ServerComponentType.door, new DoorComponent(this, componentsData[2]));
+      this.addServerComponent(ServerComponentType.buildingMaterial, new BuildingMaterialComponent(this, componentsData[4]));
    }
 
    protected onHit(hitData: HitData): void {
@@ -53,4 +53,4 @@ class WoodenEmbrasure extends Entity {
    }
 }
 
-export default WoodenEmbrasure;
+export default Door;

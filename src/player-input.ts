@@ -709,16 +709,16 @@ export function calculateSnapInfo(placeableEntityInfo: PlaceableEntityInfo, isVi
       let snapOrigin: Point;
       switch (snapEntity.type as StructureType) {
          case EntityType.wall:
-         case EntityType.woodenDoor:
+         case EntityType.door:
          case EntityType.woodenSpikes:
-         case EntityType.woodenTunnel:
+         case EntityType.tunnel:
          case EntityType.punjiSticks:
          case EntityType.slingTurret:
          case EntityType.ballista: {
             snapOrigin = snapEntity.position;
             break;
          }
-         case EntityType.woodenEmbrasure: {
+         case EntityType.embrasure: {
             const x = snapEntity.position.x - 22 * Math.sin(snapEntity.rotation);
             const y = snapEntity.position.y - 22 * Math.cos(snapEntity.rotation);
             snapOrigin = new Point(x, y);

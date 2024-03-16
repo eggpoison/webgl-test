@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, Settings, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TechID, Inventory, TRIBE_INFO_RECORD, STRUCTURE_TYPES, PlayerTribeData, ServerComponentType, EntityComponentsData } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, Settings, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TechID, Inventory, TRIBE_INFO_RECORD, STRUCTURE_TYPES, PlayerTribeData, ServerComponentType, EntityComponentsData, BlueprintType } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -708,9 +708,21 @@ abstract class Client {
       }
    }
 
-   public static sendShapeStructure(structureID: number, optionIdx: number): void {
+   public static sendPlaceBlueprint(structureID: number, blueprintType: BlueprintType): void {
       if (Game.isRunning && this.socket !== null) {
-         this.socket.emit("shape_structure", structureID, optionIdx);
+         this.socket.emit("place_blueprint", structureID, blueprintType);
+      }
+   }
+
+   public static sendModifyBuilding(structureID: number): void {
+      if (Game.isRunning && this.socket !== null) {
+         this.socket.emit("modify_building", structureID);
+      }
+   }
+
+   public static sendDeconstructBuilding(structureID: number): void {
+      if (Game.isRunning && this.socket !== null) {
+         this.socket.emit("deconstruct_building", structureID);
       }
    }
 
