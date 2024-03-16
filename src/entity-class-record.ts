@@ -31,7 +31,7 @@ import ResearchBench from "./entities/ResearchBench";
 import WarriorHut from "./entities/WarriorHut";
 import TribeWorker from "./entities/TribeWorker";
 import TribeWarrior from "./entities/TribeWarrior";
-import WoodenWall from "./entities/WoodenWall";
+import Wall from "./entities/Wall";
 import SlimeSpit from "./projectiles/SlimeSpit";
 import SpitPoison from "./projectiles/SpitPoison";
 import WoodenDoor from "./entities/WoodenDoor";
@@ -83,7 +83,7 @@ const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
    [EntityType.rockSpikeProjectile]: () => RockSpikeProjectile,
    [EntityType.spearProjectile]: () => SpearProjectile,
    [EntityType.researchBench]: () => ResearchBench,
-   [EntityType.woodenWall]: () => WoodenWall,
+   [EntityType.wall]: () => Wall,
    [EntityType.slimeSpit]: () => SlimeSpit,
    [EntityType.spitPoison]: () => SpitPoison,
    [EntityType.woodenDoor]: () => WoodenDoor,

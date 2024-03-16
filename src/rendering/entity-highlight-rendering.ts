@@ -3,80 +3,128 @@ import Board from "../Board";
 import { getHighlightedEntityID, getSelectedEntityID } from "../entity-selection";
 import { createWebGLProgram, gl, CAMERA_UNIFORM_BUFFER_BINDING_INDEX, TIME_UNIFORM_BUFFER_BINDING_INDEX, CIRCLE_VERTEX_COUNT } from "../webgl";
 import Entity from "../Entity";
-import { BALLISTA_AMMO_BOX_OFFSET_X, BALLISTA_AMMO_BOX_OFFSET_Y } from "../entities/Ballista";
+import { BALLISTA_AMMO_BOX_OFFSET_X, BALLISTA_AMMO_BOX_OFFSET_Y } from "../utils";
 
 const THICKNESS = 4;
 
-const HIGHLIGHTABLE_STRUCTURE_WIDTHS: Partial<Record<EntityType, number>> = {
-   [EntityType.woodenWall]: 64,
-   [EntityType.woodenDoor]: 64,
-   [EntityType.researchBench]: 32 * 4,
-   [EntityType.barrel]: 80,
-   [EntityType.tribeWorker]: 56,
-   [EntityType.tribeWarrior]: 64,
-   [EntityType.campfire]: 90,
-   [EntityType.furnace]: 80,
-   [EntityType.ballista]: 44
-};
+interface HighlightInfo {
+   readonly width: number;
+   readonly height: number;
+   readonly isCircle: boolean;
+   readonly xOffset: number;
+   readonly yOffset: number;
+   readonly rotation: number;
+}
 
-const HIGHLIGHTABLE_STRUCTURE_HEIGHTS: Partial<Record<EntityType, number>> = {
-   [EntityType.woodenWall]: 64,
-   [EntityType.woodenDoor]: 24,
-   [EntityType.researchBench]: 20 * 4,
-   [EntityType.barrel]: 80,
-   [EntityType.tribeWorker]: 56,
-   [EntityType.tribeWarrior]: 64,
-   [EntityType.campfire]: 90,
-   [EntityType.furnace]: 80,
-   [EntityType.ballista]: 36
-};
-
-const HIGHLIGHTABLE_ENTITY_IS_CIRCLE: Partial<Record<EntityType, boolean>> = {
-   [EntityType.woodenWall]: false,
-   [EntityType.woodenDoor]: false,
-   [EntityType.researchBench]: false,
-   [EntityType.barrel]: true,
-   [EntityType.tribeWorker]: true,
-   [EntityType.tribeWarrior]: true,
-   [EntityType.campfire]: true,
-   [EntityType.furnace]: false,
-   [EntityType.ballista]: false
-};
-
-const HIGHLIGHTABLE_STRUCTURE_OFFSETS_X: Partial<Record<EntityType, number>> = {
-   [EntityType.woodenWall]: 0,
-   [EntityType.woodenDoor]: 0,
-   [EntityType.researchBench]: 0,
-   [EntityType.barrel]: 0,
-   [EntityType.tribeWorker]: 0,
-   [EntityType.tribeWarrior]: 0,
-   [EntityType.campfire]: 0,
-   [EntityType.furnace]: 0,
-   [EntityType.ballista]: BALLISTA_AMMO_BOX_OFFSET_X
-};
-
-const HIGHLIGHTABLE_STRUCTURE_OFFSETS_Y: Partial<Record<EntityType, number>> = {
-   [EntityType.woodenWall]: 0,
-   [EntityType.woodenDoor]: 0,
-   [EntityType.researchBench]: 0,
-   [EntityType.barrel]: 0,
-   [EntityType.tribeWorker]: 0,
-   [EntityType.tribeWarrior]: 0,
-   [EntityType.campfire]: 0,
-   [EntityType.furnace]: 0,
-   [EntityType.ballista]: BALLISTA_AMMO_BOX_OFFSET_Y
-};
-
-const HIGHLIGHTABLE_STRUCTURE_ROTATIONS: Partial<Record<EntityType, number>> = {
-   [EntityType.woodenWall]: 0,
-   [EntityType.woodenDoor]: 0,
-   [EntityType.researchBench]: 0,
-   [EntityType.barrel]: 0,
-   [EntityType.tribeWorker]: 0,
-   [EntityType.tribeWarrior]: 0,
-   [EntityType.campfire]: 0,
-   [EntityType.furnace]: 0,
-   [EntityType.ballista]: Math.PI / 2
+const HIGHLIGHT_INFO_RECORD: Partial<Record<EntityType, ReadonlyArray<HighlightInfo>>> = {
+   [EntityType.wall]: [
+      {
+         width: 64,
+         height: 64,
+         isCircle: false,
+         xOffset: 0,
+         yOffset: 0,
+         rotation: 0
+      }
+   ],
+   [EntityType.woodenDoor]: [
+      {
+         width: 64,
+         height: 24,
+         isCircle: false,
+         xOffset: 0,
+         yOffset: 0,
+         rotation: 0
+      }
+   ],
+   [EntityType.researchBench]: [
+      {
+         width: 32 * 4,
+         height: 20 * 4,
+         isCircle: false,
+         xOffset: 0,
+         yOffset: 0,
+         rotation: 0
+      }
+   ],
+   [EntityType.barrel]: [
+      {
+         width: 80,
+         height: 80,
+         isCircle: true,
+         xOffset: 0,
+         yOffset: 0,
+         rotation: 0
+      }
+   ],
+   [EntityType.tribeWorker]: [
+      {
+         width: 56,
+         height: 56,
+         isCircle: true,
+         xOffset: 0,
+         yOffset: 0,
+         rotation: 0
+      }
+   ],
+   [EntityType.tribeWarrior]: [
+      {
+         width: 64,
+         height: 64,
+         isCircle: true,
+         xOffset: 0,
+         yOffset: 0,
+         rotation: 0
+      }
+   ],
+   [EntityType.campfire]: [
+      {
+         width: 90,
+         height: 90,
+         isCircle: true,
+         xOffset: 0,
+         yOffset: 0,
+         rotation: 0
+      }
+   ],
+   [EntityType.furnace]: [
+      {
+         width: 80,
+         height: 80,
+         isCircle: false,
+         xOffset: 0,
+         yOffset: 0,
+         rotation: 0
+      }
+   ],
+   [EntityType.ballista]: [
+      {
+         width: 44,
+         height: 36,
+         isCircle: false,
+         xOffset: BALLISTA_AMMO_BOX_OFFSET_X,
+         yOffset: BALLISTA_AMMO_BOX_OFFSET_Y,
+         rotation: Math.PI / 2
+      }
+   ],
+   [EntityType.woodenTunnel]: [
+      {
+         width: 16,
+         height: 64,
+         isCircle: false,
+         xOffset: -24,
+         yOffset: 0,
+         rotation: 0
+      },
+      {
+         width: 16,
+         height: 64,
+         isCircle: false,
+         xOffset: 24,
+         yOffset: 0,
+         rotation: 0
+      }
+   ]
 };
 
 let program: WebGLProgram;
@@ -173,62 +221,61 @@ const addSideVertices = (vertices: Array<number>, centerX: number, centerY: numb
    );
 }
 
-const calculateRectVertices = (entity: Entity): ReadonlyArray<number> => {
-   const vertices = new Array<number>();
-
-   const halfWidth = HIGHLIGHTABLE_STRUCTURE_WIDTHS[entity.type]! / 2;
-   const halfHeight = HIGHLIGHTABLE_STRUCTURE_HEIGHTS[entity.type]! / 2;
-
-   const offsetX = HIGHLIGHTABLE_STRUCTURE_OFFSETS_X[entity.type]!;
-   const offsetY = HIGHLIGHTABLE_STRUCTURE_OFFSETS_Y[entity.type]!;
+const calculateVertices = (entity: Entity): ReadonlyArray<number> => {
+   const highlightInfoArray = HIGHLIGHT_INFO_RECORD[entity.type]!;
    
-   const x = entity.position.x + rotateXAroundOrigin(offsetX, offsetY, entity.rotation);
-   const y = entity.position.y + rotateYAroundOrigin(offsetX, offsetY, entity.rotation);
-
-   const localRotation = HIGHLIGHTABLE_STRUCTURE_ROTATIONS[entity.type]!;
-
-   // Top
-   addSideVertices(vertices, x, y, x - halfWidth - THICKNESS, x + halfWidth + THICKNESS, y + halfHeight, y + halfHeight + THICKNESS, entity.rotation + localRotation);
-   // Right
-   addSideVertices(vertices, x, y, x + halfWidth, x + halfWidth + THICKNESS, y - halfHeight - THICKNESS, y + halfHeight + THICKNESS, entity.rotation + localRotation);
-   // Bottom
-   addSideVertices(vertices, x, y, x - halfWidth - THICKNESS, x + halfWidth + THICKNESS, y - halfHeight, y - halfHeight - THICKNESS, entity.rotation + localRotation);
-   // Left
-   addSideVertices(vertices, x, y, x - halfWidth - THICKNESS, x - halfWidth, y - halfHeight - THICKNESS, y + halfHeight + THICKNESS, entity.rotation + localRotation);
-
-   return vertices;
-}
-
-const calculateCircleVertices = (entity: Entity): ReadonlyArray<number> => {
-   const radius = HIGHLIGHTABLE_STRUCTURE_WIDTHS[entity.type]! / 2;
-
    const vertices = new Array<number>();
-   const step = 2 * Math.PI / CIRCLE_VERTEX_COUNT;
-   
-   // Add the outer vertices
-   for (let i = 0; i < CIRCLE_VERTEX_COUNT; i++) {
-      const radians = i * 2 * Math.PI / CIRCLE_VERTEX_COUNT;
-      // @Speed: Garbage collection
+   for (let i = 0; i < highlightInfoArray.length; i++) {
+      const highlightInfo = highlightInfoArray[i];
+
+      if (highlightInfo.isCircle) {
+         const radius = highlightInfo.width / 2;
       
-      // Trig shenanigans to get x and y coords
-      const bl = Point.fromVectorForm(radius, radians);
-      const br = Point.fromVectorForm(radius, radians + step);
-      const tl = Point.fromVectorForm(radius + THICKNESS, radians);
-      const tr = Point.fromVectorForm(radius + THICKNESS, radians + step);
-
-      bl.add(entity.position);
-      br.add(entity.position);
-      tl.add(entity.position);
-      tr.add(entity.position);
-
-      vertices.push(
-         bl.x, bl.y,
-         br.x, br.y,
-         tl.x, tl.y,
-         tl.x, tl.y,
-         br.x, br.y,
-         tr.x, tr.y
-      );
+         const step = 2 * Math.PI / CIRCLE_VERTEX_COUNT;
+         
+         // Add the outer vertices
+         for (let i = 0; i < CIRCLE_VERTEX_COUNT; i++) {
+            const radians = i * 2 * Math.PI / CIRCLE_VERTEX_COUNT;
+            // @Speed: Garbage collection
+            
+            // Trig shenanigans to get x and y coords
+            const bl = Point.fromVectorForm(radius, radians);
+            const br = Point.fromVectorForm(radius, radians + step);
+            const tl = Point.fromVectorForm(radius + THICKNESS, radians);
+            const tr = Point.fromVectorForm(radius + THICKNESS, radians + step);
+      
+            bl.add(entity.position);
+            br.add(entity.position);
+            tl.add(entity.position);
+            tr.add(entity.position);
+      
+            vertices.push(
+               bl.x, bl.y,
+               br.x, br.y,
+               tl.x, tl.y,
+               tl.x, tl.y,
+               br.x, br.y,
+               tr.x, tr.y
+            );
+         }
+      } else {
+         const halfWidth = highlightInfo.width / 2;
+         const halfHeight = highlightInfo.height / 2;
+      
+         const x = entity.position.x + rotateXAroundOrigin(highlightInfo.xOffset, highlightInfo.yOffset, entity.rotation);
+         const y = entity.position.y + rotateYAroundOrigin(highlightInfo.xOffset, highlightInfo.yOffset, entity.rotation);
+      
+         const rotation = entity.rotation + highlightInfo.rotation;
+         
+         // Top
+         addSideVertices(vertices, x, y, x - halfWidth - THICKNESS, x + halfWidth + THICKNESS, y + halfHeight, y + halfHeight + THICKNESS, rotation);
+         // Right
+         addSideVertices(vertices, x, y, x + halfWidth, x + halfWidth + THICKNESS, y - halfHeight - THICKNESS, y + halfHeight + THICKNESS, rotation);
+         // Bottom
+         addSideVertices(vertices, x, y, x - halfWidth - THICKNESS, x + halfWidth + THICKNESS, y - halfHeight, y - halfHeight - THICKNESS, rotation);
+         // Left
+         addSideVertices(vertices, x, y, x - halfWidth - THICKNESS, x - halfWidth, y - halfHeight - THICKNESS, y + halfHeight + THICKNESS, rotation);
+      }
    }
 
    return vertices;
@@ -242,12 +289,13 @@ export function renderStructureHighlights(): void {
 
    const highlightedEntity = Board.entityRecord[highlightedStructureID];
 
-   let vertices: ReadonlyArray<number>;
-   if (HIGHLIGHTABLE_ENTITY_IS_CIRCLE[highlightedEntity.type]) {
-      vertices = calculateCircleVertices(highlightedEntity);
-   } else {
-      vertices = calculateRectVertices(highlightedEntity);
+   if (!HIGHLIGHT_INFO_RECORD.hasOwnProperty(highlightedEntity.type)) {
+      console.warn("No render info for structure highlight!");
+      return;
    }
+
+
+   const vertices = calculateVertices(highlightedEntity);
    
    gl.useProgram(program);
 

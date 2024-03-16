@@ -1,12 +1,14 @@
-import { EntityType, HitData, Point } from "webgl-test-shared";
+import { EntityComponentsData, EntityType, HitData, Point, ServerComponentType } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { playSound } from "../sound";
-import { createLightWoodSpeckParticle, createWoodShardParticle } from "./WoodenWall";
 import Entity from "../Entity";
+import HealthComponent from "../entity-components/HealthComponent";
+import StatusEffectComponent from "../entity-components/StatusEffectComponent";
+import { createLightWoodSpeckParticle, createWoodShardParticle } from "../particles";
 
 class WoodenEmbrasure extends Entity {
-   constructor(position: Point, id: number, ageTicks: number) {
+   constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.woodenEmbrasure>) {
       super(position, id, EntityType.woodenEmbrasure, ageTicks);
 
       this.attachRenderPart(
@@ -17,6 +19,9 @@ class WoodenEmbrasure extends Entity {
             0
          )
       );
+
+      this.addServerComponent(ServerComponentType.health, new HealthComponent(this, componentsData[0]));
+      this.addServerComponent(ServerComponentType.statusEffect, new StatusEffectComponent(this, componentsData[1]));
    }
 
    protected onHit(hitData: HitData): void {

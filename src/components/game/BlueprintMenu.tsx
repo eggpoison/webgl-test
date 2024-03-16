@@ -1,17 +1,25 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { deselectSelectedEntity, getSelectedEntityID } from "../../entity-selection";
 import Board from "../../Board";
 import Camera from "../../Camera";
 import Client from "../../client/Client";
-import { BlueprintBuildingType, BuildingShapeType, EntityType } from "webgl-test-shared";
-import { addKeyListener } from "../../keyboard-input";
+import { BuildingShapeType, EntityType, ItemType } from "webgl-test-shared";
+import { GhostType } from "../../rendering/placeable-item-rendering";
+import { getItemTypeImage } from "../../client-item-info";
+import Entity from "../../Entity";
 
-let showBlueprintMenu: (x: number, y: number) => void;
+let showBlueprintMenu: (x: number, y: number, setEntityType: EntityType) => void;
 export let hideBlueprintMenu: () => void = () => {};
 
-let hoveredShapeType = -1;
-export function getHoveredShapeType(): BuildingShapeType | -1 {
-   return hoveredShapeType;
+export interface BuildingShapeInfo {
+   readonly shapeType: BuildingShapeType;
+   /** Extra information like which doors are on a tunnel */
+   readonly extraData: number;
+}
+
+let hoveredGhostType: GhostType | null = null;
+export function getHoveredGhostType(): GhostType | null {
+   return hoveredGhostType;
 }
 
 let isHovering = false;
@@ -21,54 +29,125 @@ export function isHoveringInBlueprintMenu(): boolean {
 
 export let blueprintMenuIsOpen: () => boolean;
 
-const TYPES: ReadonlyArray<BuildingShapeType> = [BlueprintBuildingType.door, BlueprintBuildingType.embrasure, BlueprintBuildingType.tunnel];
-const NAMES: ReadonlyArray<string> = ["DOOR", "EMBRASURE", "TUNNEL"]
-const IMAGE_SOURCES: ReadonlyArray<string> = [require("../../images/entities/wooden-door/wooden-door.png"), require("../../images/entities/wooden-embrasure/wooden-embrasure.png"), require("../../images/entities/wooden-tunnel/wooden-tunnel.png")];
-const IMAGE_WIDTHS = [64, 64, 64];
-const IMAGE_HEIGHTS = [24, 20, 64];
+enum OptionType {
+   construct,
+   deconstruct
+}
 
-// @Cleanup @Hack
-let _isVisible = false;
+interface OptionCost {
+   readonly itemType: ItemType;
+   readonly amount: number;
+}
+
+interface MenuOption {
+   readonly name: string;
+   readonly imageSource: string;
+   readonly imageWidth: number;
+   readonly imageHeight: number;
+   /** The type of the ghost which gets shown when previewing this option */
+   readonly ghostType: GhostType;
+   readonly optionType: OptionType;
+   readonly cost?: OptionCost;
+   readonly requirement?: (entity: Entity) => boolean;
+}
+
+const ENTITY_MENU_RECORD: Partial<Record<EntityType, ReadonlyArray<MenuOption>>> = {
+   [EntityType.wall]: [
+      {
+         name: "UPGRADE",
+         imageSource: require("../../images/entities/wall/stone-wall.png"),
+         imageWidth: 64,
+         imageHeight: 64,
+         ghostType: GhostType.stoneWall,
+         optionType: OptionType.construct,
+         cost: {
+            itemType: ItemType.rock,
+            amount: 5
+         },
+         requirement: (wall: Entity) => {
+            const wallComponent = ServerCOmp
+            return 
+         }
+      },
+      {
+         name: "DOOR",
+         imageSource: require("../../images/entities/wooden-door/wooden-door.png"),
+         imageWidth: 64,
+         imageHeight: 24,
+         ghostType: GhostType.woodenDoor,
+         optionType: OptionType.construct
+      },
+      {
+         name: "EMBRASURE",
+         imageSource: require("../../images/entities/wooden-embrasure/wooden-embrasure.png"),
+         imageWidth: 64,
+         imageHeight: 20,
+         ghostType: GhostType.woodenEmbrasure,
+         optionType: OptionType.construct
+      },
+      {
+         name: "TUNNEL",
+         imageSource: require("../../images/entities/wooden-tunnel/wooden-tunnel.png"),
+         imageWidth: 64,
+         imageHeight: 64,
+         ghostType: GhostType.woodenTunnel,
+         optionType: OptionType.construct
+      },
+      {
+         name: "DECONSTRUCT",
+         imageSource: require("../../images/miscellaneous/deconstruct.png"),
+         imageWidth: 64,
+         imageHeight: 64,
+         ghostType: GhostType.deconstructMarker,
+         optionType: OptionType.deconstruct
+      }
+   ],
+   [EntityType.woodenTunnel]: [
+      {
+         name: "DOOR",
+         imageSource: require("../../images/entities/wooden-tunnel/wooden-tunnel.png"),
+         imageWidth: 64,
+         imageHeight: 64,
+         ghostType: GhostType.tunnelDoor,
+         optionType: OptionType.construct
+      },
+      {
+         name: "DECONSTRUCT",
+         imageSource: require("../../images/miscellaneous/deconstruct.png"),
+         imageWidth: 64,
+         imageHeight: 64,
+         ghostType: GhostType.deconstructMarker,
+         optionType: OptionType.deconstruct
+      }
+   ]
+};
 
 const BlueprintMenu = () => {
    const [x, setX] = useState(0);
    const [y, setY] = useState(0);
    const [isVisible, setIsVisible] = useState(false);
-   const hasLoaded = useRef(false);
+   const [entityType, setEntityType] = useState(EntityType.wall);
 
-   const shapeStructure = (type: BuildingShapeType): void => {
+   const menuOptions = ENTITY_MENU_RECORD[entityType]!;
+
+   const selectOption = (optionIdx: number): void => {
       const selectedStructureID = getSelectedEntityID();
-      Client.sendShapeStructure(selectedStructureID, type);
+      Client.sendShapeStructure(selectedStructureID, optionIdx);
 
       deselectSelectedEntity();
    }
 
    useEffect(() => {
-      if (!hasLoaded.current) {
-         hasLoaded.current = true;
-
-         for (let i = 0; i < 2; i++) {
-            // @Cleanup
-            // eslint-disable-next-line no-loop-func
-            addKeyListener((i + 1).toString(), () => {
-               if (_isVisible) {
-                  shapeStructure(TYPES[i]);
-               }
-            });
-         }
-      }
-
-      showBlueprintMenu = (x: number, y: number): void => {
-         _isVisible = true;
+      showBlueprintMenu = (x: number, y: number, menuEntityType: EntityType): void => {
          setIsVisible(true);
          setX(x);
          setY(y + 13);
+         setEntityType(menuEntityType);
       }
 
       hideBlueprintMenu = (): void => {
-         hoveredShapeType = -1;
+         hoveredGhostType = null;
          isHovering = false;
-         _isVisible = false;
          setIsVisible(false);
       }
    }, []);
@@ -77,12 +156,12 @@ const BlueprintMenu = () => {
       blueprintMenuIsOpen = () => isVisible;
    }, [isVisible]);
    
-   const hoverOption = (type: BuildingShapeType): void => {
-      hoveredShapeType = type;
+   const setHoveredGhostType = (ghostType: GhostType): void => {
+      hoveredGhostType = ghostType;
    }
 
-   const unhoverOption = (): void => {
-      hoveredShapeType = -1;
+   const clearHoveredGhostType = (): void => {
+      hoveredGhostType = null;
    }
 
    if (!isVisible) {
@@ -90,14 +169,22 @@ const BlueprintMenu = () => {
    }
 
    const elems = new Array<JSX.Element>();
-   for (let i = 0; i < TYPES.length; i++) {
-      const type = TYPES[i];
+   for (let i = 0; i < menuOptions.length; i++) {
+      const option = menuOptions[i];
 
       elems.push(
-         <div key={i} onMouseOver={() => hoverOption(type)} onMouseLeave={() => unhoverOption()} onClick={() => shapeStructure(type)} className="structure-shaping-option">
-            <div className="blueprint-name">{NAMES[i]}</div>
-            <div className="hotkey-label">{i + 1}</div>
-            <img src={IMAGE_SOURCES[i]} alt="" style={{"--width": IMAGE_WIDTHS[i].toString(), "--height": IMAGE_HEIGHTS[i].toString()} as React.CSSProperties} />
+         <div key={i} onMouseOver={() => setHoveredGhostType(option.ghostType)} onMouseLeave={() => clearHoveredGhostType()} onClick={() => selectOption(i)} className={`structure-shaping-option${option.optionType === OptionType.deconstruct ? " deconstruct" : ""}`}>
+            <div className="blueprint-name">{option.name}</div>
+            {option.optionType !== OptionType.deconstruct ? (
+               <div className="hotkey-label">{i + 1}</div>
+            ) : undefined}
+            <img src={option.imageSource} alt="" style={{"--width": option.imageWidth.toString(), "--height": option.imageHeight.toString()} as React.CSSProperties} />
+            {typeof option.cost !== "undefined" ? (
+               <div className="cost-container">
+                  <img src={getItemTypeImage(option.cost.itemType)} alt="" />
+                  <span>{option.cost.amount}</span>
+               </div>
+            ) : undefined}
          </div> 
       );
    }
@@ -118,12 +205,11 @@ export function updateBlueprintMenu(): void {
    }
 
    const selectedStructure = Board.entityRecord[selectedStructureID];
-   if (selectedStructure.type !== EntityType.woodenWall && selectedStructure.type !== EntityType.woodenEmbrasure) {
+   if (selectedStructure.type === EntityType.wall || selectedStructure.type === EntityType.woodenTunnel) {
+      const screenX = Camera.calculateXScreenPos(selectedStructure.position.x);
+      const screenY = Camera.calculateYScreenPos(selectedStructure.position.y);
+      showBlueprintMenu(screenX, screenY, selectedStructure.type);
+   } else {
       hideBlueprintMenu();
-      return;
    }
-   
-   const screenX = Camera.calculateXScreenPos(selectedStructure.position.x);
-   const screenY = Camera.calculateYScreenPos(selectedStructure.position.y);
-   showBlueprintMenu(screenX, screenY);
 }

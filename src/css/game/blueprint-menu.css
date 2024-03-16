@@ -30,12 +30,42 @@
    height: 80px;
    border: 4px solid #e9e9e9;
    margin: 0.5rem;
-   background-color: #3543a1;
    display: flex;
    align-items: center;
    justify-content: center;
    position: relative;
    box-shadow: 0 0 15px 3px rgba(0, 0, 0, 0.5) inset;
+}
+#blueprint-menu .structure-shaping-option.deconstruct {
+   background-color: #867979;
+}
+#blueprint-menu .structure-shaping-option:not(.deconstruct) {
+   background-color: #3543a1;
+}
+
+#blueprint-menu .structure-shaping-option .cost-container {
+   background-color: #666;
+   border: 3px solid #000;
+   border-radius: 6px;
+   padding: 0 4px;
+   position: absolute;
+   bottom: -8px;
+   left: -8px;
+   display: flex;
+   align-items: center;
+}
+#blueprint-menu .cost-container img {
+   width: 32px;
+   height: 32px;
+   image-rendering: pixelated;
+   position: absolute;
+   margin-left: -6px;
+}
+#blueprint-menu .cost-container span {
+   color: #fff;
+   font-family: "Patua One";
+   font-size: 1.2rem;
+   margin-left: 23px;
 }
 
 #blueprint-menu .blueprint-name {
@@ -48,7 +78,7 @@
    transform: translateY(-100%);
 }
 
-#blueprint-menu .structure-shaping-option img {
+#blueprint-menu .structure-shaping-option > img {
    width: calc(1px * var(--width));
    height: calc(1px * var(--height));
    image-rendering: pixelated;

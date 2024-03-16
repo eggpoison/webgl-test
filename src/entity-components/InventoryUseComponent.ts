@@ -444,22 +444,24 @@ class InventoryUseComponent extends ServerComponent<ServerComponentType.inventor
       // Special case if the entity is drawing a bow
       // Two hands are needed to draw a bow, one from each side of the entity
 
-      const otherUseInfo = this.useInfos[limbIdx === 0 ? 1 : 0];
-      if (otherUseInfo.currentAction === TribeMemberAction.chargeBow || otherUseInfo.currentAction === TribeMemberAction.loadCrossbow) {
-         const otherLastActionTicks = getLastActionTicks(otherUseInfo);
-         const otherSecondsSinceLastAction = getSecondsSinceLastAction(otherLastActionTicks);
-
-         let chargeProgress = otherSecondsSinceLastAction;
-         if (chargeProgress > 1) {
-            chargeProgress = 1;
+      if (this.useInfos.length > 1) {
+         const otherUseInfo = this.useInfos[limbIdx === 0 ? 1 : 0];
+         if (otherUseInfo.currentAction === TribeMemberAction.chargeBow || otherUseInfo.currentAction === TribeMemberAction.loadCrossbow) {
+            const otherLastActionTicks = getLastActionTicks(otherUseInfo);
+            const otherSecondsSinceLastAction = getSecondsSinceLastAction(otherLastActionTicks);
+   
+            let chargeProgress = otherSecondsSinceLastAction;
+            if (chargeProgress > 1) {
+               chargeProgress = 1;
+            }
+   
+            const pullbackOffset = lerp(50, 30, chargeProgress);
+            
+            this.limbRenderParts[limbIdx].offset.x = -3;
+            this.limbRenderParts[limbIdx].offset.y = pullbackOffset;
+            this.limbRenderParts[limbIdx].rotation = 0;
+            return;
          }
-
-         const pullbackOffset = lerp(50, 30, chargeProgress);
-         
-         this.limbRenderParts[limbIdx].offset.x = -3;
-         this.limbRenderParts[limbIdx].offset.y = pullbackOffset;
-         this.limbRenderParts[limbIdx].rotation = 0;
-         return;
       }
 
       

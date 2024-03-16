@@ -2,9 +2,8 @@ import { EntityData, EntityType, Point, BlueprintBuildingType, randFloat, Server
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { playSound } from "../sound";
-import { createLightWoodSpeckParticle } from "./WoodenWall";
-import { BALLISTA_AMMO_BOX_OFFSET_X, BALLISTA_AMMO_BOX_OFFSET_Y, BALLISTA_GEAR_X, BALLISTA_GEAR_Y } from "./Ballista";
-import { createSawdustCloud } from "../particles";
+import { BALLISTA_AMMO_BOX_OFFSET_X, BALLISTA_AMMO_BOX_OFFSET_Y, BALLISTA_GEAR_X, BALLISTA_GEAR_Y } from "../utils";
+import { createLightWoodSpeckParticle, createSawdustCloud } from "../particles";
 import BlueprintComponent from "../entity-components/BlueprintComponent";
 import Entity from "../Entity";
 import HealthComponent from "../entity-components/HealthComponent";
@@ -21,7 +20,7 @@ interface ProgressTextureInfo {
 
 // @Robustness: Do something better than hand-writing 'blueprint-1', 'blueprint-2', etc. in an array.
 export const BLUEPRINT_PROGRESS_TEXTURE_SOURCES: Record<BlueprintBuildingType, ReadonlyArray<ProgressTextureInfo>> = {
-   [BlueprintBuildingType.door]: [
+   [BlueprintBuildingType.woodenDoor]: [
       {
          progressTextureSources: ["entities/wooden-door/wooden-door-blueprint-1.png", "entities/wooden-door/wooden-door-blueprint-2.png"],
          completedTextureSource: "entities/wooden-door/wooden-door.png",
@@ -43,9 +42,7 @@ export const BLUEPRINT_PROGRESS_TEXTURE_SOURCES: Record<BlueprintBuildingType, R
    ],
    [BlueprintBuildingType.tunnel]: [
       {
-         // @Incomplete
-         progressTextureSources: ["entities/wooden-tunnel/wooden-tunnel.png", "entities/wooden-tunnel/wooden-tunnel.png"],
-         // progressTextureSources: ["entities/wooden-tunnel/tunnel-blueprint-1.png", "entities/wooden-tunnel/tunnel-embrasure-blueprint-2.png"],
+         progressTextureSources: ["entities/wooden-tunnel/tunnel-blueprint-1.png", "entities/wooden-tunnel/tunnel-blueprint-2.png"],
          completedTextureSource: "entities/wooden-tunnel/wooden-tunnel.png",
          offsetX: 0,
          offsetY: 0,
@@ -145,6 +142,17 @@ export const BLUEPRINT_PROGRESS_TEXTURE_SOURCES: Record<BlueprintBuildingType, R
          offsetY: 0,
          rotation: 0,
          zIndex: 2
+      }
+   ],
+   [BlueprintBuildingType.stoneWallUpgrade]: [
+      // @Incomplete
+      {
+         progressTextureSources: ["entities/sling-turret/sling-blueprint-1.png", "entities/sling-turret/sling-blueprint-2.png"],
+         completedTextureSource: "entities/wall/stone-wall.png",
+         offsetX: 0,
+         offsetY: 0,
+         rotation: 0,
+         zIndex: 0
       }
    ]
 };

@@ -2,9 +2,8 @@ import { BlueprintBuildingType, BlueprintComponentData, ServerComponentType, ran
 import ServerComponent from "./ServerComponent";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "../Entity";
-import { createWoodShardParticle, createLightWoodSpeckParticle } from "../entities/WoodenWall";
 import { playSound } from "../sound";
-import { createSawdustCloud } from "../particles";
+import { createLightWoodSpeckParticle, createSawdustCloud, createWoodShardParticle } from "../particles";
 
 class BlueprintComponent extends ServerComponent<ServerComponentType.blueprint> {
    public readonly partialRenderParts = new Array<RenderPart>();

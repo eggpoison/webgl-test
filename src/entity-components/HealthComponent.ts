@@ -40,6 +40,7 @@ class HealthComponent extends ServerComponent<ServerComponentType.health> {
    
    public updateFromData(data: HealthComponentData): void {
       this.health = data.health;
+      this.maxHealth = data.maxHealth;
    }
 }
 

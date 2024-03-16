@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, Settings, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TechID, Inventory, TRIBE_INFO_RECORD, BuildingShapeType, STRUCTURE_TYPES, PlayerTribeData, ServerComponentType, EntityComponentsData } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, Settings, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TechID, Inventory, TRIBE_INFO_RECORD, STRUCTURE_TYPES, PlayerTribeData, ServerComponentType, EntityComponentsData } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -708,9 +708,9 @@ abstract class Client {
       }
    }
 
-   public static sendShapeStructure(structureID: number, shapeType: BuildingShapeType): void {
+   public static sendShapeStructure(structureID: number, optionIdx: number): void {
       if (Game.isRunning && this.socket !== null) {
-         this.socket.emit("shape_structure", structureID, shapeType);
+         this.socket.emit("shape_structure", structureID, optionIdx);
       }
    }
 

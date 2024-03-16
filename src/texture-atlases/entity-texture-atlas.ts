@@ -144,13 +144,14 @@ const TEXTURE_SOURCES: Array<string> = [
    "decorations/flower3.png",
    "decorations/flower4.png",
    "entities/research-bench/research-bench.png",
-   "entities/wooden-wall/wooden-wall.png",
-   "entities/wooden-wall/wooden-wall-damage-1.png",
-   "entities/wooden-wall/wooden-wall-damage-2.png",
-   "entities/wooden-wall/wooden-wall-damage-3.png",
-   "entities/wooden-wall/wooden-wall-damage-4.png",
-   "entities/wooden-wall/wooden-wall-damage-5.png",
-   "entities/wooden-wall/wooden-wall-damage-6.png",
+   "entities/wall/wooden-wall.png",
+   "entities/wall/wooden-wall-damage-1.png",
+   "entities/wall/wooden-wall-damage-2.png",
+   "entities/wall/wooden-wall-damage-3.png",
+   "entities/wall/wooden-wall-damage-4.png",
+   "entities/wall/wooden-wall-damage-5.png",
+   "entities/wall/wooden-wall-damage-6.png",
+   "entities/wall/stone-wall.png",
    "projectiles/slime-spit-medium.png",
    "projectiles/slime-spit-large.png",
    "entities/wooden-door/wooden-door.png",
@@ -213,8 +214,13 @@ const TEXTURE_SOURCES: Array<string> = [
    "projectiles/ballista-slimeball.png",
    "projectiles/ballista-frostcicle.png",
    "entities/wooden-tunnel/wooden-tunnel.png",
+   "entities/wooden-tunnel/tunnel-blueprint-1.png",
+   "entities/wooden-tunnel/tunnel-blueprint-2.png",
+   "entities/wooden-tunnel/tunnel-door.png",
    // @Cleanup: Not in subfolder
-   "entities/low-health-marker.png"
+   "entities/low-health-marker.png",
+   // @Cleanup: Not in subfolder
+   "entities/deconstruct-marker.png"
 ];
 
 const addTextureSource = (textureSource: string): void => {

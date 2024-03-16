@@ -76,7 +76,7 @@ export function deselectHighlightedEntity(): void {
 }
 
 const entityCanBeSelected = (entity: Entity): boolean => {
-   if (entity.type === EntityType.woodenWall) {
+   if (entity.type === EntityType.wall) {
       // Walls can be selected if the player is holding a hammer
       const selectedItem = getPlayerSelectedItem();
       return selectedItem !== null && ITEM_TYPE_RECORD[selectedItem.type] === "hammer";
@@ -96,6 +96,12 @@ const entityCanBeSelected = (entity: Entity): boolean => {
       }
 
       return true;
+   }
+
+   // Tunnels can be selected if they are able to have a door placed on them
+   if (entity.type === EntityType.woodenTunnel) {
+      const tunnelComponent = entity.getServerComponent(ServerComponentType.tunnel);
+      return tunnelComponent.doorBitset !== 0b11;
    }
 
    return entity.type === EntityType.woodenDoor || entity.type === EntityType.barrel || entity.type === EntityType.tribeWorker || entity.type === EntityType.tribeWarrior || entity.type === EntityType.furnace || entity.type === EntityType.campfire || entity.type === EntityType.ballista || entity.type === EntityType.slingTurret;

@@ -116,7 +116,7 @@ export const PLACEABLE_ENTITY_INFO_RECORD: Record<PlaceableItemType, PlaceableEn
       hitboxType: PlaceableItemHitboxType.rectangular
    },
    [ItemType.wooden_wall]: {
-      entityType: EntityType.woodenWall,
+      entityType: EntityType.wall,
       width: 64,
       height: 64,
       hitboxType: PlaceableItemHitboxType.rectangular
@@ -708,7 +708,7 @@ export function calculateSnapInfo(placeableEntityInfo: PlaceableEntityInfo, isVi
       // @Incomplete
       let snapOrigin: Point;
       switch (snapEntity.type as StructureType) {
-         case EntityType.woodenWall:
+         case EntityType.wall:
          case EntityType.woodenDoor:
          case EntityType.woodenSpikes:
          case EntityType.woodenTunnel:
@@ -725,7 +725,7 @@ export function calculateSnapInfo(placeableEntityInfo: PlaceableEntityInfo, isVi
          }
       }
 
-      const isPlacedOnWall = snapEntity.type === EntityType.woodenWall;
+      const isPlacedOnWall = snapEntity.type === EntityType.wall;
 
       // @Cleanup
       let clampedSnapRotation = snapEntity.rotation;
@@ -958,7 +958,7 @@ const itemRightClickDown = (item: Item, isOffhand: boolean, itemSlot: number): v
          const placePosition = calculatePlacePosition(placeableEntityInfo, snapInfo, false);
          const placeRotation = calculatePlaceRotation(snapInfo);
 
-         const isPlacedOnWall = snapInfo !== null && Board.entityRecord[snapInfo.snappedEntityID].type === EntityType.woodenWall;
+         const isPlacedOnWall = snapInfo !== null && Board.entityRecord[snapInfo.snappedEntityID].type === EntityType.wall;
          if (!canPlaceItem(placePosition, placeRotation, item, snapInfo !== null ? snapInfo.entityType : placeableEntityInfo.entityType, isPlacedOnWall)) {
             return;
          }

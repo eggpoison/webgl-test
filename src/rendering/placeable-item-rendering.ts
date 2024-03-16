@@ -1,14 +1,48 @@
-import { EntityType, PlaceableItemType, Point, BlueprintBuildingType, rotateXAroundOrigin, rotateXAroundPoint, rotateYAroundOrigin, rotateYAroundPoint, BuildingShapeType } from "webgl-test-shared";
+import { EntityType, PlaceableItemType, Point, ServerComponentType, rotateXAroundOrigin, rotateXAroundPoint, rotateYAroundOrigin, rotateYAroundPoint } from "webgl-test-shared";
 import Player, { getPlayerSelectedItem } from "../entities/Player";
 import { gl, createWebGLProgram, CAMERA_UNIFORM_BUFFER_BINDING_INDEX } from "../webgl";
 import { PLACEABLE_ENTITY_INFO_RECORD, calculatePlacePosition, calculatePlaceRotation, calculateSnapInfo, canPlaceItem } from "../player-input";
 import { ENTITY_TEXTURE_ATLAS, ENTITY_TEXTURE_ATLAS_SIZE, ENTITY_TEXTURE_SLOT_INDEXES, getTextureArrayIndex, getTextureHeight, getTextureWidth } from "../texture-atlases/entity-texture-atlas";
-import { getHoveredShapeType } from "../components/game/BlueprintMenu";
 import Board from "../Board";
 import { getSelectedEntityID } from "../entity-selection";
 import Entity from "../Entity";
 import { ATLAS_SLOT_SIZE } from "../texture-atlases/texture-atlas-stitching";
-import { BALLISTA_AMMO_BOX_OFFSET_X, BALLISTA_AMMO_BOX_OFFSET_Y, BALLISTA_GEAR_X, BALLISTA_GEAR_Y } from "../entities/Ballista";
+import { BALLISTA_AMMO_BOX_OFFSET_X, BALLISTA_AMMO_BOX_OFFSET_Y, BALLISTA_GEAR_X, BALLISTA_GEAR_Y } from "../utils";
+import { getHoveredGhostType } from "../components/game/BlueprintMenu";
+
+const PARTIAL_OPACITY = 0.5;
+
+export enum GhostType {
+   deconstructMarker,
+   campfire,
+   furnace,
+   tribeTotem,
+   workbench,
+   barrel,
+   workerHut,
+   warriorHut,
+   researchBench,
+   planterBox,
+   woodenSpikes,
+   punjiSticks,
+   woodenDoor,
+   woodenEmbrasure,
+   woodenWall,
+   stoneWall,
+   woodenTunnel,
+   tunnelDoor,
+   ballista,
+   slingTurret
+}
+
+interface GhostInfo {
+   readonly position: Point;
+   readonly rotation: number;
+   readonly ghostType: GhostType;
+   readonly isAttachedToWall: boolean;
+   readonly tint: [number, number, number];
+   readonly opacity: number;
+}
 
 interface TextureInfo {
    readonly textureSource: string;
@@ -17,9 +51,37 @@ interface TextureInfo {
    readonly rotation: number;
 }
 
-// @Robustness: Should make a PlaceableEntityType type to automatically detect which ones to use
-const TEXTURE_INFO_RECORD: Partial<Record<EntityType, ReadonlyArray<TextureInfo>>> = {
-   [EntityType.campfire]: [
+// @Robustness: Should automatically detect which entity types to have an entry for
+const ENTITY_TYPE_TO_GHOST_TYPE_MAP: Partial<Record<EntityType, GhostType>> = {
+   [EntityType.campfire]: GhostType.campfire,
+   [EntityType.furnace]: GhostType.furnace,
+   [EntityType.tribeTotem]: GhostType.tribeTotem,
+   [EntityType.workbench]: GhostType.workbench,
+   [EntityType.barrel]: GhostType.barrel,
+   [EntityType.workerHut]: GhostType.workerHut,
+   [EntityType.warriorHut]: GhostType.warriorHut,
+   [EntityType.researchBench]: GhostType.researchBench,
+   [EntityType.planterBox]: GhostType.planterBox,
+   [EntityType.woodenSpikes]: GhostType.woodenSpikes,
+   [EntityType.punjiSticks]: GhostType.punjiSticks,
+   [EntityType.woodenDoor]: GhostType.woodenDoor,
+   [EntityType.woodenEmbrasure]: GhostType.woodenEmbrasure,
+   [EntityType.wall]: GhostType.woodenWall,
+   [EntityType.woodenTunnel]: GhostType.woodenTunnel,
+   [EntityType.ballista]: GhostType.ballista,
+   [EntityType.slingTurret]: GhostType.slingTurret,
+};
+
+const TEXTURE_INFO_RECORD: Record<GhostType, ReadonlyArray<TextureInfo>> = {
+   [GhostType.deconstructMarker]: [
+      {
+         textureSource: "entities/deconstruct-marker.png",
+         offsetX: 0,
+         offsetY: 0,
+         rotation: 0
+      }
+   ],
+   [GhostType.campfire]: [
       {
          textureSource: "entities/campfire/campfire.png",
          offsetX: 0,
@@ -27,7 +89,7 @@ const TEXTURE_INFO_RECORD: Partial<Record<EntityType, ReadonlyArray<TextureInfo>
          rotation: 0
       }
    ],
-   [EntityType.furnace]: [
+   [GhostType.furnace]: [
       {
          textureSource: "entities/furnace/furnace.png",
          offsetX: 0,
@@ -35,7 +97,7 @@ const TEXTURE_INFO_RECORD: Partial<Record<EntityType, ReadonlyArray<TextureInfo>
          rotation: 0
       }
    ],
-   [EntityType.tribeTotem]: [
+   [GhostType.tribeTotem]: [
       {
          textureSource: "entities/tribe-totem/tribe-totem.png",
          offsetX: 0,
@@ -43,7 +105,7 @@ const TEXTURE_INFO_RECORD: Partial<Record<EntityType, ReadonlyArray<TextureInfo>
          rotation: 0
       }
    ],
-   [EntityType.workbench]: [
+   [GhostType.workbench]: [
       {
          textureSource: "entities/workbench/workbench.png",
          offsetX: 0,
@@ -51,7 +113,7 @@ const TEXTURE_INFO_RECORD: Partial<Record<EntityType, ReadonlyArray<TextureInfo>
          rotation: 0
       }
    ],
-   [EntityType.barrel]: [
+   [GhostType.barrel]: [
       {
          textureSource: "entities/barrel/barrel.png",
          offsetX: 0,
@@ -59,7 +121,7 @@ const TEXTURE_INFO_RECORD: Partial<Record<EntityType, ReadonlyArray<TextureInfo>
          rotation: 0
       }
    ],
-   [EntityType.workerHut]: [
+   [GhostType.workerHut]: [
       {
          textureSource: "entities/worker-hut/worker-hut.png",
          offsetX: 0,
@@ -67,7 +129,7 @@ const TEXTURE_INFO_RECORD: Partial<Record<EntityType, ReadonlyArray<TextureInfo>
          rotation: 0
       }
    ],
-   [EntityType.warriorHut]: [
+   [GhostType.warriorHut]: [
       {
          textureSource: "entities/warrior-hut/warrior-hut.png",
          offsetX: 0,
@@ -75,7 +137,7 @@ const TEXTURE_INFO_RECORD: Partial<Record<EntityType, ReadonlyArray<TextureInfo>
          rotation: 0
       }
    ],
-   [EntityType.researchBench]: [
+   [GhostType.researchBench]: [
       {
          textureSource: "entities/research-bench/research-bench.png",
          offsetX: 0,
@@ -83,7 +145,7 @@ const TEXTURE_INFO_RECORD: Partial<Record<EntityType, ReadonlyArray<TextureInfo>
          rotation: 0
       }
    ],
-   [EntityType.planterBox]: [
+   [GhostType.planterBox]: [
       {
          textureSource: "entities/planter-box/planter-box.png",
          offsetX: 0,
@@ -91,7 +153,7 @@ const TEXTURE_INFO_RECORD: Partial<Record<EntityType, ReadonlyArray<TextureInfo>
          rotation: 0
       }
    ],
-   [EntityType.woodenSpikes]: [
+   [GhostType.woodenSpikes]: [
       {
          textureSource: "entities/wooden-floor-spikes/wooden-floor-spikes.png",
          offsetX: 0,
@@ -99,7 +161,7 @@ const TEXTURE_INFO_RECORD: Partial<Record<EntityType, ReadonlyArray<TextureInfo>
          rotation: 0
       }
    ],
-   [EntityType.punjiSticks]: [
+   [GhostType.punjiSticks]: [
       {
          textureSource: "entities/floor-punji-sticks/floor-punji-sticks.png",
          offsetX: 0,
@@ -107,7 +169,7 @@ const TEXTURE_INFO_RECORD: Partial<Record<EntityType, ReadonlyArray<TextureInfo>
          rotation: 0
       }
    ],
-   [EntityType.woodenDoor]: [
+   [GhostType.woodenDoor]: [
       {
          textureSource: "entities/wooden-door/wooden-door.png",
          offsetX: 0,
@@ -115,23 +177,31 @@ const TEXTURE_INFO_RECORD: Partial<Record<EntityType, ReadonlyArray<TextureInfo>
          rotation: 0
       }
    ],
-   [EntityType.woodenEmbrasure]: [
+   [GhostType.woodenEmbrasure]: [
       {
          textureSource: "entities/wooden-embrasure/wooden-embrasure.png",
          offsetX: 0,
-         offsetY: 0,
+         offsetY: 22,
          rotation: 0
       }
    ],
-   [EntityType.woodenWall]: [
+   [GhostType.woodenWall]: [
       {
-         textureSource: "entities/wooden-wall/wooden-wall.png",
+         textureSource: "entities/wall/wooden-wall.png",
          offsetX: 0,
          offsetY: 0,
          rotation: 0
       }
    ],
-   [EntityType.woodenTunnel]: [
+   [GhostType.stoneWall]: [
+      {
+         textureSource: "entities/wall/stone-wall.png",
+         offsetX: 0,
+         offsetY: 0,
+         rotation: 0
+      }
+   ],
+   [GhostType.woodenTunnel]: [
       {
          textureSource: "entities/wooden-tunnel/wooden-tunnel.png",
          offsetX: 0,
@@ -139,7 +209,15 @@ const TEXTURE_INFO_RECORD: Partial<Record<EntityType, ReadonlyArray<TextureInfo>
          rotation: 0
       }
    ],
-   [EntityType.ballista]: [
+   [GhostType.tunnelDoor]: [
+      {
+         textureSource: "entities/wooden-tunnel/tunnel-door.png",
+         offsetX: 0,
+         offsetY: 22,
+         rotation: 0
+      }
+   ],
+   [GhostType.ballista]: [
       // Base
       {
          textureSource: "entities/ballista/base.png",
@@ -183,7 +261,7 @@ const TEXTURE_INFO_RECORD: Partial<Record<EntityType, ReadonlyArray<TextureInfo>
          rotation: 0
       },
    ],
-   [EntityType.slingTurret]: [
+   [GhostType.slingTurret]: [
       // Base
       {
          textureSource: "entities/sling-turret/sling-turret-base.png",
@@ -204,14 +282,8 @@ const TEXTURE_INFO_RECORD: Partial<Record<EntityType, ReadonlyArray<TextureInfo>
          offsetX: 0,
          offsetY: 0,
          rotation: 0
-      },
+      }
    ]
-};
-
-const SHAPE_ENTITY_TYPES: Record<BuildingShapeType, EntityType> = {
-   [BlueprintBuildingType.door]: EntityType.woodenDoor,
-   [BlueprintBuildingType.embrasure]: EntityType.woodenEmbrasure,
-   [BlueprintBuildingType.tunnel]: EntityType.woodenTunnel,
 };
 
 let program: WebGLProgram;
@@ -232,10 +304,12 @@ export function createPlaceableItemProgram(): void {
    layout(location = 1) in vec2 a_texCoord;
    layout(location = 2) in float a_textureIndex;
    layout(location = 3) in vec2 a_textureSize;
+   layout(location = 4) in float a_opacity;
    
    out vec2 v_texCoord;
    out float v_textureIndex;
    out vec2 v_textureSize;
+   out float v_opacity;
    
    void main() {
       vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
@@ -245,6 +319,7 @@ export function createPlaceableItemProgram(): void {
       v_texCoord = a_texCoord;
       v_textureIndex = a_textureIndex;
       v_textureSize = a_textureSize;
+      v_opacity = a_opacity;
    }
    `;
    
@@ -259,6 +334,7 @@ export function createPlaceableItemProgram(): void {
    in vec2 v_texCoord;
    in float v_textureIndex;
    in vec2 v_textureSize;
+   in float v_opacity;
    
    out vec4 outputColour;
    
@@ -273,7 +349,7 @@ export function createPlaceableItemProgram(): void {
       outputColour = texture(u_textureAtlas, vec2(u, v));
 
       outputColour.rgb *= u_tint;
-      outputColour.a *= 0.5;
+      outputColour.a *= v_opacity;
    }
    `;
 
@@ -295,26 +371,21 @@ export function createPlaceableItemProgram(): void {
    tintUniformLocation = gl.getUniformLocation(program, "u_tint")!;
 }
 
-const calculateVertices = (placePosition: Point, placeRotation: number, entityType: EntityType, isAttachedToWall: boolean): ReadonlyArray<number> => {
+const calculateVertices = (placePosition: Point, placeRotation: number, ghostType: GhostType, isAttachedToWall: boolean, opacity: number): ReadonlyArray<number> => {
    const vertices = new Array<number>();
    
-   // @Temporary
-   if (!TEXTURE_INFO_RECORD.hasOwnProperty(entityType)) {
-      throw new Error("No texture info entry for entity type " + EntityType[entityType]);
-   }
-   
-   const textureInfoArray = TEXTURE_INFO_RECORD[entityType]!;
+   const textureInfoArray = TEXTURE_INFO_RECORD[ghostType];
    for (let i = 0; i < textureInfoArray.length; i++) {
       const textureInfo = textureInfoArray[i];
 
       let textureSource: string;
-      if (entityType === EntityType.woodenSpikes) {
+      if (ghostType === GhostType.woodenSpikes) {
          if (isAttachedToWall) {
             textureSource = "entities/wooden-wall-spikes/wooden-wall-spikes.png";
          } else {
             textureSource = "entities/wooden-floor-spikes/wooden-floor-spikes.png";
          }
-      } else if (entityType === EntityType.punjiSticks) {
+      } else if (ghostType === GhostType.punjiSticks) {
          if (isAttachedToWall) {
             textureSource = "entities/wall-punji-sticks/wall-punji-sticks.png";
          } else {
@@ -340,7 +411,7 @@ const calculateVertices = (placePosition: Point, placeRotation: number, entityTy
       const y1 = y - height / 2;
       const y2 = y + height / 2;
    
-      const rotation = placeRotation + textureInfo.rotation;
+      const rotation = ghostType !== GhostType.deconstructMarker ? placeRotation + textureInfo.rotation : 0;
       const tlX = rotateXAroundPoint(x1, y2, x, y, rotation);
       const tlY = rotateYAroundPoint(x1, y2, x, y, rotation);
       const trX = rotateXAroundPoint(x2, y2, x, y, rotation);
@@ -351,39 +422,47 @@ const calculateVertices = (placePosition: Point, placeRotation: number, entityTy
       const brY = rotateYAroundPoint(x2, y1, x, y, rotation);
    
       vertices.push(
-         blX, blY, 0, 0, slotIndex, textureWidth, textureHeight,
-         brX, brY, 1, 0, slotIndex, textureWidth, textureHeight,
-         tlX, tlY, 0, 1, slotIndex, textureWidth, textureHeight,
-         tlX, tlY, 0, 1, slotIndex, textureWidth, textureHeight,
-         brX, brY, 1, 0, slotIndex, textureWidth, textureHeight,
-         trX, trY, 1, 1, slotIndex, textureWidth, textureHeight
+         blX, blY, 0, 0, slotIndex, textureWidth, textureHeight, opacity,
+         brX, brY, 1, 0, slotIndex, textureWidth, textureHeight, opacity,
+         tlX, tlY, 0, 1, slotIndex, textureWidth, textureHeight, opacity,
+         tlX, tlY, 0, 1, slotIndex, textureWidth, textureHeight, opacity,
+         brX, brY, 1, 0, slotIndex, textureWidth, textureHeight, opacity,
+         trX, trY, 1, 1, slotIndex, textureWidth, textureHeight, opacity
       );
    }
 
    return vertices;
 }
 
-const getStructureShapePosition = (existingStructure: Entity, shapeType: BuildingShapeType, blueprintRotation: number): Point => {
-   switch (shapeType) {
-      case BlueprintBuildingType.door:
-      case BlueprintBuildingType.tunnel: {
-         return existingStructure.position.copy();
+const getGhostRotation = (building: Entity, ghostType: GhostType): number => {
+   switch (ghostType) {
+      case GhostType.tunnelDoor: {
+         const tunnelComponent = building.getServerComponent(ServerComponentType.tunnel);
+         switch (tunnelComponent.doorBitset) {
+            case 0b00: {
+               // Show the door closest to the player
+               const dirToPlayer = building.position.calculateAngleBetween(Player.instance!.position);
+               const dot = Math.sin(building.rotation) * Math.sin(dirToPlayer) + Math.cos(building.rotation) * Math.cos(dirToPlayer);
+
+               return dot > 0 ? building.rotation : building.rotation + Math.PI;
+            }
+            case 0b01: {
+               // Show bottom door
+               return building.rotation + Math.PI;
+            }
+            case 0b10: {
+               // Show top door
+               return building.rotation;
+            }
+            default: {
+               throw new Error("Unknown door bitset " + tunnelComponent.doorBitset);
+            }
+         }
       }
-      case BlueprintBuildingType.embrasure: {
-         const position = existingStructure.position.copy();
-         position.x += 22 * Math.sin(blueprintRotation);
-         position.y += 22 * Math.cos(blueprintRotation);
-         return position;
+      default: {
+         return snapRotationToPlayer(building, building.rotation);
       }
    }
-}
-
-interface GhostInfo {
-   readonly position: Point;
-   readonly rotation: number;
-   readonly entityType: EntityType;
-   readonly isAttachedToWall: boolean;
-   readonly tint: [number, number, number];
 }
 
 const snapRotationToPlayer = (structure: Entity, rotation: number): number => {
@@ -407,32 +486,32 @@ const getGhostInfo = (): GhostInfo | null => {
       const placePosition = calculatePlacePosition(placeableEntityInfo, snapInfo, true);
       const placeRotation = calculatePlaceRotation(snapInfo);
 
-      const isPlacedOnWall = snapInfo !== null && Board.entityRecord[snapInfo.snappedEntityID].type === EntityType.woodenWall;
+      const isPlacedOnWall = snapInfo !== null && Board.entityRecord[snapInfo.snappedEntityID].type === EntityType.wall;
       const canPlace = canPlaceItem(placePosition, placeRotation, playerSelectedItem, snapInfo !== null ? snapInfo.entityType : placeableEntityInfo.entityType, isPlacedOnWall);
 
       return {
          position: placePosition,
          rotation: placeRotation,
-         entityType: placeableEntityInfo.entityType,
+         ghostType: ENTITY_TYPE_TO_GHOST_TYPE_MAP[placeableEntityInfo.entityType]!,
          tint: canPlace ? [1, 1, 1] : [1.5, 0.5, 0.5],
-         isAttachedToWall: snapInfo !== null ? Board.entityRecord[snapInfo.snappedEntityID].type === EntityType.woodenWall : false
+         isAttachedToWall: snapInfo !== null ? Board.entityRecord[snapInfo.snappedEntityID].type === EntityType.wall : false,
+         opacity: PARTIAL_OPACITY
       };
    }
 
    // Blueprint ghost
-   const hoveredShapeType = getHoveredShapeType();
-   if (hoveredShapeType !== -1) {
+   const hoveredGhostType = getHoveredGhostType();
+   if (hoveredGhostType !== null) {
       const selectedStructureID = getSelectedEntityID();
       const selectedStructure = Board.entityRecord[selectedStructureID];
 
-      const blueprintRotation = snapRotationToPlayer(selectedStructure, selectedStructure.rotation);
-
       return {
-         position: getStructureShapePosition(selectedStructure, hoveredShapeType, blueprintRotation),
-         rotation: blueprintRotation,
-         entityType: SHAPE_ENTITY_TYPES[hoveredShapeType],
+         position: selectedStructure.position.copy(),
+         rotation: getGhostRotation(selectedStructure, hoveredGhostType),
+         ghostType: hoveredGhostType,
          isAttachedToWall: false,
-         tint: [1, 1, 1]
+         tint: [1, 1, 1],
+         opacity: hoveredGhostType === GhostType.deconstructMarker ? 0.8 : PARTIAL_OPACITY
       };
    }
 
@@ -449,7 +528,7 @@ export function renderGhostPlaceableItem(): void {
       return;
    }
    
-   const vertices = calculateVertices(ghostInfo.position, ghostInfo.rotation, ghostInfo.entityType, ghostInfo.isAttachedToWall);
+   const vertices = calculateVertices(ghostInfo.position, ghostInfo.rotation, ghostInfo.ghostType, ghostInfo.isAttachedToWall, ghostInfo.opacity);
 
    gl.useProgram(program);
 
@@ -460,22 +539,24 @@ export function renderGhostPlaceableItem(): void {
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW); // @Speed
 
-   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 0);
-   gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(2, 1, gl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(3, 2, gl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 0);
+   gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(2, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(3, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(4, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
 
    gl.enableVertexAttribArray(0);
    gl.enableVertexAttribArray(1);
    gl.enableVertexAttribArray(2);
    gl.enableVertexAttribArray(3);
+   gl.enableVertexAttribArray(4);
 
    gl.uniform3f(tintUniformLocation, ghostInfo.tint[0], ghostInfo.tint[1], ghostInfo.tint[2]);
 
    gl.activeTexture(gl.TEXTURE0);
    gl.bindTexture(gl.TEXTURE_2D, ENTITY_TEXTURE_ATLAS);
 
-   gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 7);
+   gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 8);
 
    gl.disable(gl.BLEND);
    gl.blendFunc(gl.ONE, gl.ZERO);

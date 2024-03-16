@@ -35,7 +35,7 @@ const entityHasHardCollision = (entity: Entity, collidingEntity: Entity): boolea
       return centerProj <= minProj || centerProj >= maxProj;
    }
    
-   return entity.type === EntityType.woodenWall || entity.type === EntityType.woodenEmbrasure;
+   return entity.type === EntityType.wall || entity.type === EntityType.woodenEmbrasure;
 }
 
 const getCircleCircleCollisionPushInfo = (pushedHitbox: CircularHitbox, pushingHitbox: CircularHitbox): CollisionPushInfo => {

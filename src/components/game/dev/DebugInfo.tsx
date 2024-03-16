@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useRef, useState } from "react";
-import { EntityDebugData, Settings, TileType, roundNum } from "webgl-test-shared";
+import { EntityDebugData, ServerComponentType, Settings, TileType, roundNum } from "webgl-test-shared";
 import Entity from "../../../Entity";
 import Board from "../../../Board";
 import { Tile } from "../../../Tile";
@@ -79,6 +79,14 @@ const EntityDebugInfo = ({ entity, debugData }: EntityDebugInfoProps) => {
       <p>Rotation: <span className="highlight">{entity.rotation.toFixed(2)}</span></p>
 
       <p>Chunks: {chunkDisplayText}</p>
+
+      {entity.hasServerComponent(ServerComponentType.health) ? (() => {
+         const healthComponent = entity.getServerComponent(ServerComponentType.health);
+
+         return <>
+            <p>Health: <span className="highlight">{healthComponent.health}/{healthComponent.maxHealth}</span></p>
+         </>;
+      })() : undefined}
 
       {debugData !== null ? debugData.debugEntries.map((str, i) => {
          return <p key={i}>{str}</p>;

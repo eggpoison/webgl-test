@@ -2,9 +2,9 @@ import { EntityComponentsData, EntityType, HitData, Point, ServerComponentType }
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { playSound } from "../sound";
-import { createLightWoodSpeckParticle, createWoodShardParticle } from "./WoodenWall";
 import DoorComponent from "../entity-components/DoorComponent";
 import Entity from "../Entity";
+import { createLightWoodSpeckParticle, createWoodShardParticle } from "../particles";
 
 class WoodenDoor extends Entity {
    constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.woodenDoor>) {

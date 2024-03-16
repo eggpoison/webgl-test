@@ -138,6 +138,10 @@ abstract class Entity extends RenderObject {
    public getClientComponent<T extends ClientComponentType>(componentType: T): ClientComponentClass<T> {
       return this.clientComponents[componentType]!;
    }
+
+   public hasServerComponent(componentType: keyof typeof ServerComponents): boolean {
+      return this.serverComponents.hasOwnProperty(componentType);
+   }
    
    public attachRenderPart(renderPart: RenderPart): void {
       // Don't add if already attached

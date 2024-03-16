@@ -7,7 +7,8 @@ enum RenderLayer {
    droppedItems,
    lowEntities,
    projectiles,
-   highEntities
+   highEntities,
+   blueprints
 }
 const NUM_RENDER_LAYERS = Object.keys(RenderLayer).length / 2;
 
@@ -34,17 +35,23 @@ const getEntityRenderLayer = (entityType: EntityType): RenderLayer => {
       case EntityType.itemEntity: {
          return RenderLayer.droppedItems;
       }
+      // @Incomplete: Only blueprints which go on existing buildings should be here, all others should be low entities
+      // Blueprints
+      case EntityType.blueprintEntity: {
+         return RenderLayer.blueprints;
+      }
       // High entities
       case EntityType.cactus:
       case EntityType.berryBush:
       case EntityType.tree:
       case EntityType.woodenTunnel:
       case EntityType.workerHut:
-      case EntityType.warriorHut: {
+      case EntityType.warriorHut:
+      case EntityType.wall: {
          return RenderLayer.highEntities;
       }
       // Projectiles
-      case EntityType.woodenArrowProjectile: {
+      case EntityType.woodenArrowProjectile: {  
          return RenderLayer.projectiles;
       }
       // Low entities (default)

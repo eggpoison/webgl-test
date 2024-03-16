@@ -1246,3 +1246,90 @@ export function createBlueBloodParticleFountain(entity: Entity, interval: number
       });
    }
 }
+
+export function createWoodShardParticle(originX: number, originY: number, offset: number): void {
+   const spawnOffsetDirection = 2 * Math.PI * Math.random();
+   const spawnPositionX = originX + offset * Math.sin(spawnOffsetDirection);
+   const spawnPositionY = originY + offset * Math.cos(spawnOffsetDirection);
+
+   const velocityMagnitude = randFloat(80, 140);
+   const velocityDirection = 2 * Math.PI * Math.random();
+   const velocityX = velocityMagnitude * Math.sin(velocityDirection);
+   const velocityY = velocityMagnitude * Math.cos(velocityDirection);
+
+   const lifetime = randFloat(3.5, 5);
+   
+   const particle = new Particle(lifetime);
+   particle.getOpacity = (): number => {
+      return Math.pow(1 - particle.age / lifetime, 0.3);
+   }
+   
+   const colourLerp = Math.random();
+   const r = lerp(197/255, 215/255, colourLerp);
+   const g = lerp(151/255, 180/255, colourLerp);
+   const b = lerp(68/255, 97/255, colourLerp);
+
+   const angularVelocity = randFloat(-Math.PI, Math.PI) * 2;
+
+   const width = randFloat(10, 18);
+   const height = randFloat(4, 8);
+
+   addMonocolourParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.low,
+      width, height,
+      spawnPositionX, spawnPositionY,
+      velocityX, velocityY,
+      0, 0,
+      velocityMagnitude,
+      2 * Math.PI * Math.random(),
+      angularVelocity,
+      0,
+      Math.abs(angularVelocity),
+      r, g, b
+   );
+   Board.lowMonocolourParticles.push(particle);
+}
+
+export function createLightWoodSpeckParticle(originX: number, originY: number, offset: number): void {
+   const spawnOffsetDirection = 2 * Math.PI * Math.random();
+   const spawnPositionX = originX + offset * Math.sin(spawnOffsetDirection);
+   const spawnPositionY = originY + offset * Math.cos(spawnOffsetDirection);
+
+   const velocityMagnitude = randFloat(60, 80);
+   const velocityDirection = spawnOffsetDirection + randFloat(1, -1);
+   const velocityX = velocityMagnitude * Math.sin(velocityDirection);
+   const velocityY = velocityMagnitude * Math.cos(velocityDirection);
+
+   const lifetime = randFloat(0.3, 0.4);
+   
+   const particle = new Particle(lifetime);
+   particle.getOpacity = (): number => {
+      return Math.pow(1 - particle.age / lifetime, 0.5);
+   }
+   
+   const colourLerp = Math.random();
+   const r = lerp(197/255, 215/255, colourLerp);
+   const g = lerp(151/255, 180/255, colourLerp);
+   const b = lerp(68/255, 97/255, colourLerp);
+
+   const angularVelocity = randFloat(-Math.PI, Math.PI) * 2;
+
+   const scale = randFloat(1, 1.8);
+
+   addMonocolourParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.low,
+      4 * scale, 4 * scale,
+      spawnPositionX, spawnPositionY,
+      velocityX, velocityY,
+      0, 0,
+      0,
+      2 * Math.PI * Math.random(),
+      angularVelocity,
+      0,
+      Math.abs(angularVelocity) / lifetime / 1.5,
+      r, g, b
+   );
+   Board.lowMonocolourParticles.push(particle);
+}
