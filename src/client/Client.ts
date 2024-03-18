@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, Settings, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TechID, Inventory, TRIBE_INFO_RECORD, STRUCTURE_TYPES, PlayerTribeData, ServerComponentType, EntityComponentsData, BlueprintType } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, Settings, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TechID, Inventory, TRIBE_INFO_RECORD, STRUCTURE_TYPES, PlayerTribeData, ServerComponentType, EntityComponentsData, BlueprintType, HitboxCollisionType } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -491,7 +491,7 @@ abstract class Client {
       for (let i = 0; i < data.circularHitboxes.length; i++) {
          const hitboxData = data.circularHitboxes[i];
 
-         const hitbox = new CircularHitbox(hitboxData.mass, hitboxData.radius);
+         const hitbox = new CircularHitbox(hitboxData.mass, hitboxData.collisionType as unknown as HitboxCollisionType, hitboxData.radius);
          hitbox.offset.x = hitboxData.offsetX;
          hitbox.offset.y = hitboxData.offsetY;
 
@@ -501,7 +501,7 @@ abstract class Client {
       for (let i = 0; i < data.rectangularHitboxes.length; i++) {
          const hitboxData = data.rectangularHitboxes[i];
 
-         const hitbox = new RectangularHitbox(hitboxData.mass, hitboxData.width, hitboxData.height);
+         const hitbox = new RectangularHitbox(hitboxData.mass, hitboxData.collisionType as unknown as HitboxCollisionType, hitboxData.width, hitboxData.height);
          hitbox.offset.x = hitboxData.offsetX;
          hitbox.offset.y = hitboxData.offsetY;
          hitbox.rotation = hitboxData.rotation;

@@ -1,4 +1,4 @@
-import { AttackPacket, EntityType, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, Inventory, Item, ItemType, PlaceableItemType, Point, Settings, STATUS_EFFECT_MODIFIERS, STRUCTURE_TYPES, StructureType, TRIBE_INFO_RECORD, ToolItemInfo, TribeMemberAction, TribeType, ServerComponentType, getSnapOffsetWidth, getSnapOffsetHeight, StructureTypeConst } from "webgl-test-shared";
+import { AttackPacket, EntityType, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, Inventory, Item, ItemType, PlaceableItemType, Point, Settings, STATUS_EFFECT_MODIFIERS, STRUCTURE_TYPES, StructureType, TRIBE_INFO_RECORD, ToolItemInfo, TribeMemberAction, TribeType, ServerComponentType, getSnapOffsetWidth, getSnapOffsetHeight, StructureTypeConst, HitboxCollisionType } from "webgl-test-shared";
 import { addKeyListener, clearPressedKeys, keyIsPressed } from "./keyboard-input";
 import { CraftingMenu_setIsVisible } from "./components/game/menus/CraftingMenu";
 import Player from "./entities/Player";
@@ -24,8 +24,6 @@ import { attemptStructureSelect, deselectSelectedEntity, getSelectedEntityID } f
 import { playSound } from "./sound";
 import { InventoryMenuType, InventorySelector_inventoryIsOpen, InventorySelector_setInventoryMenuType } from "./components/game/inventories/InventorySelector";
 import { attemptToCompleteNode } from "./research";
-import { spikesAreAttachedToWall } from "./entities/WoodenSpikes";
-import { punjiSticksAreAttachedToWall } from "./entities/PunjiSticks";
 import { blueprintMenuIsOpen, hideBlueprintMenu } from "./components/game/BlueprintMenu";
 import Camera from "./Camera";
 
@@ -128,7 +126,7 @@ export const PLACEABLE_ENTITY_INFO_RECORD: Record<PlaceableItemType, PlaceableEn
       hitboxType: PlaceableItemHitboxType.rectangular
    },
    [ItemType.wooden_spikes]: {
-      entityType: EntityType.woodenSpikes,
+      entityType: EntityType.spikes,
       width: 40,
       height: 40,
       hitboxType: PlaceableItemHitboxType.rectangular
@@ -154,7 +152,7 @@ export const PLACEABLE_ENTITY_INFO_RECORD: Record<PlaceableItemType, PlaceableEn
 };
 
 const getPlaceableEntityWidth = (entityType: EntityType, isPlacedOnWall: boolean): number | null => {
-   if (entityType === EntityType.woodenSpikes) {
+   if (entityType === EntityType.spikes) {
       return isPlacedOnWall ? 56 : 48;
    } else if (entityType === EntityType.punjiSticks) {
       return isPlacedOnWall ? 56 : 48;
@@ -163,7 +161,7 @@ const getPlaceableEntityWidth = (entityType: EntityType, isPlacedOnWall: boolean
 }
 
 const getPlaceableEntityHeight = (entityType: EntityType, isPlacedOnWall: boolean): number | null => {
-   if (entityType === EntityType.woodenSpikes) {
+   if (entityType === EntityType.spikes) {
       return isPlacedOnWall ? 28 : 48;
    } else if (entityType === EntityType.punjiSticks) {
       return isPlacedOnWall ? 32 : 48;
@@ -171,8 +169,8 @@ const getPlaceableEntityHeight = (entityType: EntityType, isPlacedOnWall: boolea
    return null;
 }
 
-const testRectangularHitbox = new RectangularHitbox(1, -1, -1);
-const testCircularHitbox = new CircularHitbox(1, -1);
+const testRectangularHitbox = new RectangularHitbox(1, HitboxCollisionType.soft, -1, -1);
+const testCircularHitbox = new CircularHitbox(1, HitboxCollisionType.soft, -1);
 
 const hotbarItemAttackCooldowns: Record<number, number> = {};
 const offhandItemAttackCooldowns: Record<number, number> = {};
@@ -606,10 +604,9 @@ const calculateRegularPlacePosition = (placeableEntityInfo: PlaceableEntityInfo,
 }
 
 const entityIsPlacedOnWall = (entity: Entity): boolean => {
-   if (entity.type === EntityType.woodenSpikes) {
-      return spikesAreAttachedToWall(entity);
-   } else if (entity.type === EntityType.punjiSticks) {
-      return punjiSticksAreAttachedToWall(entity);
+   if (entity.hasServerComponent(ServerComponentType.spikes)) {
+      const spikesComponent = entity.getServerComponent(ServerComponentType.spikes);
+      return spikesComponent.attachedWallID !== 99999999;
    }
    return false;
 }
@@ -636,7 +633,7 @@ const calculateStructureSnapPositions = (snapOrigin: Point, snapEntity: Entity, 
       }
 
       let structureOffset: number;
-      if (structureOffsetI % 2 === 0 || (isPlacedOnWall && (placeableEntityInfo.entityType === EntityType.woodenSpikes || placeableEntityInfo.entityType === EntityType.punjiSticks))) {
+      if (structureOffsetI % 2 === 0 || (isPlacedOnWall && (placeableEntityInfo.entityType === EntityType.spikes || placeableEntityInfo.entityType === EntityType.punjiSticks))) {
          // Top and bottom
          structureOffset = getSnapOffsetHeight(placeableEntityInfo.entityType as unknown as StructureTypeConst, isPlacedOnWall) * 0.5;
       } else {
@@ -705,24 +702,10 @@ export function calculateSnapInfo(placeableEntityInfo: PlaceableEntityInfo, isVi
    }
 
    for (const snapEntity of snappableEntities) {
-      // @Incomplete
-      let snapOrigin: Point;
-      switch (snapEntity.type as StructureType) {
-         case EntityType.wall:
-         case EntityType.door:
-         case EntityType.woodenSpikes:
-         case EntityType.tunnel:
-         case EntityType.punjiSticks:
-         case EntityType.slingTurret:
-         case EntityType.ballista: {
-            snapOrigin = snapEntity.position;
-            break;
-         }
-         case EntityType.embrasure: {
-            const x = snapEntity.position.x - 22 * Math.sin(snapEntity.rotation);
-            const y = snapEntity.position.y - 22 * Math.cos(snapEntity.rotation);
-            snapOrigin = new Point(x, y);
-         }
+      const snapOrigin = snapEntity.position.copy();
+      if (snapEntity.type === EntityType.embrasure) {
+         snapOrigin.x -= 22 * Math.sin(snapEntity.rotation);
+         snapOrigin.y -= 22 * Math.cos(snapEntity.rotation);
       }
 
       const isPlacedOnWall = snapEntity.type === EntityType.wall;
@@ -741,7 +724,7 @@ export function calculateSnapInfo(placeableEntityInfo: PlaceableEntityInfo, isVi
       const snapPosition = calculateStructureSnapPosition(snapPositions, regularPlacePosition);
       if (snapPosition !== null) {
          let finalPlaceRotation = placeRotation;
-         if (isPlacedOnWall && (placeableEntityInfo.entityType === EntityType.woodenSpikes || placeableEntityInfo.entityType === EntityType.punjiSticks)) {
+         if (isPlacedOnWall && (placeableEntityInfo.entityType === EntityType.spikes || placeableEntityInfo.entityType === EntityType.punjiSticks)) {
             finalPlaceRotation = snapEntity.position.calculateAngleBetween(snapPosition);
          }
          return {
@@ -844,7 +827,7 @@ export function canPlaceItem(placePosition: Point, placeRotation: number, item: 
    // 
 
    // @Speed: Garbage collection
-   const tileHitbox = new RectangularHitbox(1, Settings.TILE_SIZE, Settings.TILE_SIZE);
+   const tileHitbox = new RectangularHitbox(1, HitboxCollisionType.soft, Settings.TILE_SIZE, Settings.TILE_SIZE);
 
    const minTileX = Math.floor(placeTestHitbox.bounds[0] / Settings.TILE_SIZE);
    const maxTileX = Math.floor(placeTestHitbox.bounds[1] / Settings.TILE_SIZE);

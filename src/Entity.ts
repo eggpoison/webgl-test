@@ -1,4 +1,4 @@
-import { EntityData, EntityType, HitData, HitFlags, Point, RIVER_STEPPING_STONE_SIZES, Settings, TILE_FRICTIONS, TILE_MOVE_SPEED_MULTIPLIERS, TileType, distance, randFloat, randInt, rotateXAroundOrigin, rotateYAroundOrigin, lerp, EntityComponents } from "webgl-test-shared";
+import { EntityData, EntityType, HitData, HitFlags, Point, RIVER_STEPPING_STONE_SIZES, Settings, TILE_FRICTIONS, TILE_MOVE_SPEED_MULTIPLIERS, TileType, distance, randFloat, randInt, rotateXAroundOrigin, rotateYAroundOrigin, lerp, EntityComponents, HitboxCollisionType } from "webgl-test-shared";
 import RenderPart, { RenderObject } from "./render-parts/RenderPart";
 import Chunk from "./Chunk";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
@@ -16,6 +16,8 @@ import { addTexturedParticleToBufferContainer, ParticleRenderLayer } from "./ren
 
 // Use prime numbers / 100 to ensure a decent distribution of different types of particles
 const HEALING_PARTICLE_AMOUNTS = [0.05, 0.37, 1.01];
+
+// @Cleanup: Move frame progress stuff to a different file
 
 let frameProgress = Number.EPSILON;
 export function setFrameProgress(newFrameProgress: number): void {
@@ -437,7 +439,7 @@ abstract class Entity extends RenderObject {
       this.hitboxes = [];
 
       for (const hitboxData of data.circularHitboxes) {
-         const hitbox = new CircularHitbox(hitboxData.mass, hitboxData.radius);
+         const hitbox = new CircularHitbox(hitboxData.mass, hitboxData.collisionType as unknown as HitboxCollisionType, hitboxData.radius);
          hitbox.offset.x = hitboxData.offsetX;
          hitbox.offset.y = hitboxData.offsetY;
          this.addCircularHitbox(hitbox);
@@ -461,7 +463,7 @@ abstract class Entity extends RenderObject {
       }
       
       for (const hitboxData of data.rectangularHitboxes) {
-         const hitbox = new RectangularHitbox(hitboxData.mass, hitboxData.width, hitboxData.height);
+         const hitbox = new RectangularHitbox(hitboxData.mass, hitboxData.collisionType as unknown as HitboxCollisionType, hitboxData.width, hitboxData.height);
          hitbox.offset.x = hitboxData.offsetX;
          hitbox.offset.y = hitboxData.offsetY;
          this.addRectangularHitbox(hitbox);
@@ -546,7 +548,7 @@ abstract class Entity extends RenderObject {
       if (Board.entityRecord.hasOwnProperty(hitData.attackerID)) {
          const attacker = Board.entityRecord[hitData.attackerID];
          switch (attacker.type) {
-            case EntityType.woodenSpikes:
+            case EntityType.spikes:
             case EntityType.punjiSticks: {
                playSound("spike-stab.mp3", 0.3, 1, attacker.position.x, attacker.position.y);
                break;

@@ -4,6 +4,7 @@ import { isDev } from "../../../utils";
 import Client from "../../../client/Client";
 import { setTerminalButtonOpened } from "./TerminalButton";
 import Camera from "../../../Camera";
+import Board from "../../../Board";
 
 /** All lines output by the terminal */
 let terminalLines = new Array<string>();
@@ -123,6 +124,7 @@ const Terminal = ({ startingIsVisible }: TerminalParams) => {
       // Execute the command
       const userPermissions = isDev() ? CommandPermissions.dev : CommandPermissions.player;
       if (commandIsValid(command, userPermissions)) {
+         // @Cleanup
          if (command.split(" ")[0] === "clear") {
             terminalLines = [];
          } else if (command.split(" ")[0] === "zoom") {
@@ -130,6 +132,14 @@ const Terminal = ({ startingIsVisible }: TerminalParams) => {
             if (!Number.isNaN(zoomAmountString)) {
                const zoomAmount = Number(zoomAmountString);
                Camera.zoom = zoomAmount;
+            }
+         } else if (command.split(" ")[0] === "track") {
+            const trackedEntityID = command.split(" ")[1];
+            if (!Number.isNaN(trackedEntityID)) {
+               const id = Number(trackedEntityID);
+               if (Board.entityRecord.hasOwnProperty(id)) {
+                  Camera.setTrackedEntityID(id);
+               }
             }
          } else {
             Client.sendCommand(command);

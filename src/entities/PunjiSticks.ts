@@ -1,34 +1,25 @@
-import { EntityType, Point, Settings, randFloat } from "webgl-test-shared";
+import { EntityComponentsData, EntityType, Point, ServerComponentType, Settings, randFloat } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { playSound } from "../sound";
 import { createFlyParticle } from "../particles";
 import Entity from "../Entity";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
+import HealthComponent from "../entity-components/HealthComponent";
+import SpikesComponent from "../entity-components/SpikesComponent";
+import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 
-export function punjiSticksAreAttachedToWall(entity: Entity): boolean {
-   const hitbox = entity.hitboxes[0] as RectangularHitbox;
-   return Math.abs(hitbox.height - (32 - 0.05)) < 0.01;
-}
-
-class FloorPunjiSticks extends Entity {
+class PunjiSticks extends Entity {
    private ticksSinceLastFly = 0;
    private ticksSinceLastFlySound = 0;
 
-   constructor(position: Point, id: number, ageTicks: number) {
+   constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.punjiSticks>) {
       super(position, id, EntityType.punjiSticks, ageTicks);
 
-      if (ageTicks === 0) {
-         playSound("spike-place.mp3", 0.5, 1, this.position.x, this.position.y);
-      }
-   }
-
-   // @Hack
-   public addRectangularHitbox(hitbox: RectangularHitbox): void {
-      super.addRectangularHitbox(hitbox);
+      const spikesComponentData = componentsData[3];
 
       let textureArrayIndex: number;
-      if (punjiSticksAreAttachedToWall(this)) {
+      if (spikesComponentData.attachedWallID !== 99999999) {
          textureArrayIndex = getTextureArrayIndex("entities/wall-punji-sticks/wall-punji-sticks.png");
       } else {
          textureArrayIndex = getTextureArrayIndex("entities/floor-punji-sticks/floor-punji-sticks.png");
@@ -42,6 +33,19 @@ class FloorPunjiSticks extends Entity {
             0
          )
       );
+
+      this.addServerComponent(ServerComponentType.health, new HealthComponent(this, componentsData[0]));
+      this.addServerComponent(ServerComponentType.statusEffect, new StatusEffectComponent(this, componentsData[1]));
+      this.addServerComponent(ServerComponentType.spikes, new SpikesComponent(this, spikesComponentData));
+
+      if (ageTicks === 0) {
+         playSound("spike-place.mp3", 0.5, 1, this.position.x, this.position.y);
+      }
+   }
+
+   // @Hack
+   public addRectangularHitbox(hitbox: RectangularHitbox): void {
+      super.addRectangularHitbox(hitbox);
    }
 
    public tick(): void {
@@ -75,4 +79,4 @@ class FloorPunjiSticks extends Entity {
    }
 }
 
-export default FloorPunjiSticks;
+export default PunjiSticks;

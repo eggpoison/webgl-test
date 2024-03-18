@@ -5,14 +5,13 @@ import { playSound } from "../sound";
 import HealthComponent from "../entity-components/HealthComponent";
 import Entity from "../Entity";
 import { createLightWoodSpeckParticle, createWoodShardParticle } from "../particles";
-import BuildingMaterialComponent from "../entity-components/BuildingMaterialComponent";
+import BuildingMaterialComponent, { WALL_TEXTURE_SOURCES } from "../entity-components/BuildingMaterialComponent";
+import TribeComponent from "../entity-components/TribeComponent";
 
-const TEXTURE_SOURCES = ["entities/wall/wooden-wall.png", "entities/wall/stone-wall.png"]
 
 class Wall extends Entity {
    private static readonly NUM_DAMAGE_STAGES = 6;
 
-   private readonly mainRenderPart: RenderPart;
    private damageRenderPart: RenderPart | null = null;
 
    constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.wall>) {
@@ -20,20 +19,21 @@ class Wall extends Entity {
 
       const buildingMaterialComponentData = componentsData[2];
       
-      this.mainRenderPart = new RenderPart(
+      const mainRenderPart = new RenderPart(
          this,
-         getTextureArrayIndex(TEXTURE_SOURCES[buildingMaterialComponentData.material]),
+         getTextureArrayIndex(WALL_TEXTURE_SOURCES[buildingMaterialComponentData.material]),
          0,
          0
       );
-      this.attachRenderPart(this.mainRenderPart);
+      this.attachRenderPart(mainRenderPart);
 
       const healthComponentData = componentsData[0];
 
       this.updateDamageRenderPart(healthComponentData.health, healthComponentData.maxHealth);
 
       this.addServerComponent(ServerComponentType.health, new HealthComponent(this, healthComponentData));
-      this.addServerComponent(ServerComponentType.buildingMaterial, new BuildingMaterialComponent(this, buildingMaterialComponentData));
+      this.addServerComponent(ServerComponentType.tribe, new TribeComponent(this, componentsData[1]));
+      this.addServerComponent(ServerComponentType.buildingMaterial, new BuildingMaterialComponent(this, buildingMaterialComponentData, mainRenderPart));
 
       if (this.ageTicks === 0) {
          for (let i = 0; i < 12; i++) {
@@ -54,7 +54,6 @@ class Wall extends Entity {
       }
       
       const textureSource = "entities/wall/wooden-wall-damage-" + damageStage + ".png";
-      console.log(damageStage, textureSource);
       if (this.damageRenderPart === null) {
          this.damageRenderPart = new RenderPart(
             this,
@@ -72,9 +71,6 @@ class Wall extends Entity {
 
       const healthComponent = this.getServerComponent(ServerComponentType.health);
       this.updateDamageRenderPart(healthComponent.health, healthComponent.maxHealth);
-
-      const buildingMaterialComponentData = data.components[2];
-      this.mainRenderPart.switchTextureSource(TEXTURE_SOURCES[buildingMaterialComponentData.material]);
    }
 
    protected onHit(hitData: HitData): void {

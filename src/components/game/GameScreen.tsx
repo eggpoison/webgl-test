@@ -12,6 +12,7 @@ import TechTree from "./TechTree";
 import BlueprintMenu from "./BlueprintMenu";
 import TechInfocard from "./TechInfocard";
 import InventorySelector from "./inventories/InventorySelector";
+import InspectHealthBar from "./InspectHealthBar";
 
 export let showPauseScreen: () => void = () => {};
 export let hidePauseScreen: () => void = () => {};
@@ -91,6 +92,8 @@ const GameScreen = () => {
       <BlueprintMenu />
 
       <InventorySelector />
+
+      <InspectHealthBar />
    </>;
 }
 

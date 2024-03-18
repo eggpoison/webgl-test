@@ -49,6 +49,7 @@ import { updateBlueprintMenu } from "./components/game/BlueprintMenu";
 import { InventorySelector_forceUpdate } from "./components/game/inventories/InventorySelector";
 import { createTurretRangeShaders, renderTurretRange } from "./rendering/turret-range-rendering";
 import { createPathfindNodeShaders, renderPathfindingNodes } from "./rendering/pathfinding-node-rendering";
+import { updateInspectHealthBar } from "./components/game/InspectHealthBar";
 
 let listenersHaveBeenCreated = false;
 
@@ -325,6 +326,7 @@ abstract class Game {
       updateHighlightedAndHoveredEntities();
       updateSelectedStructure();
       updateBlueprintMenu();
+      updateInspectHealthBar();
       InventorySelector_forceUpdate();
 
       updateSoundEffectVolumes();
@@ -371,7 +373,7 @@ abstract class Game {
       // Update the camera
       if (Player.instance !== null) {
          Player.instance.updateRenderPosition();
-         Camera.setCameraPosition(Player.instance.renderPosition);
+         Camera.updatePosition();
          Camera.updateVisibleChunkBounds();
          Camera.updateVisibleRenderChunkBounds();
       }
@@ -430,6 +432,7 @@ abstract class Game {
       if (nerdVisionIsVisible() && OPTIONS.showHitboxes) {
          renderEntityHitboxes();
       }
+      // @Temporary
       if (nerdVisionIsVisible() && this.entityDebugData !== null && Board.hasEntityID(this.entityDebugData.entityID)) {
          renderLineDebugData(this.entityDebugData);
       }

@@ -41,8 +41,8 @@ import PlanterBox from "./entities/PlanterBox";
 import IceArrow from "./projectiles/IceArrow";
 import Pebblum from "./entities/Pebblum";
 import Embrasure from "./entities/Embrasure";
-import WoodenSpikes from "./entities/WoodenSpikes";
-import FloorPunjiSticks from "./entities/PunjiSticks";
+import Spikes from "./entities/Spikes";
+import PunjiSticks from "./entities/PunjiSticks";
 import BlueprintEntity from "./entities/BlueprintEntity";
 import Ballista from "./entities/Ballista";
 import SlingTurret from "./entities/SlingTurret";
@@ -93,8 +93,8 @@ const ENTITY_CLASS_RECORD: { [E in EntityType]: () => EntityClassType<E>} = {
    [EntityType.iceArrow]: () => IceArrow,
    [EntityType.pebblum]: () => Pebblum,
    [EntityType.embrasure]: () => Embrasure,
-   [EntityType.woodenSpikes]: () => WoodenSpikes,
-   [EntityType.punjiSticks]: () => FloorPunjiSticks,
+   [EntityType.spikes]: () => Spikes,
+   [EntityType.punjiSticks]: () => PunjiSticks,
    [EntityType.blueprintEntity]: () => BlueprintEntity,
    [EntityType.ballista]: () => Ballista,
    [EntityType.slingTurret]: () => SlingTurret,

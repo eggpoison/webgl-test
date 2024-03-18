@@ -2,16 +2,20 @@ import { Point, Settings, VisibleChunkBounds } from "webgl-test-shared";
 import { halfWindowHeight, halfWindowWidth } from "./webgl";
 import { RENDER_CHUNK_EDGE_GENERATION, RENDER_CHUNK_SIZE, WORLD_RENDER_CHUNK_SIZE } from "./rendering/render-chunks";
 import Entity from "./Entity";
+import Board from "./Board";
 
 export type VisiblePositionBounds = [minX: number, maxX: number, minY: number, maxY: number];
 
 abstract class Camera {
    /** Larger = zoomed in, smaller = zoomed out */
    // @Temporary
-   // public static zoom: number = 1.75;
-   public static zoom: number = 1;
+   public static zoom: number = 1.4;
+   // public static zoom: number = 1;
 
-   public static position: Point;
+   // @Temporary
+   private static trackedEntityID = 0;
+
+   public static position = new Point(0, 0);
    
    public static minVisibleChunkX = -1;
    public static maxVisibleChunkX = -1;
@@ -43,8 +47,21 @@ abstract class Camera {
       this.maxVisibleRenderChunkY = Math.min(Math.floor((this.position.y + halfWindowHeight / this.zoom) / unitsInChunk), WORLD_RENDER_CHUNK_SIZE + RENDER_CHUNK_EDGE_GENERATION - 1);
    }
 
-   public static setCameraPosition(position: Point): void {
-      this.position = position;
+   public static setTrackedEntityID(entityID: number): void {
+      this.trackedEntityID = entityID;
+   }
+
+   public static setPosition(x: number, y: number): void {
+      this.position.x = x;
+      this.position.y = y;
+   }
+
+   public static updatePosition(): void {
+      if (Board.entityRecord.hasOwnProperty(this.trackedEntityID)) {
+         const entity = Board.entityRecord[this.trackedEntityID];
+         this.position.x = entity.renderPosition.x;
+         this.position.y = entity.renderPosition.y;
+      }
    }
 
    /** X position in the screen (0 = left, windowWidth = right) */

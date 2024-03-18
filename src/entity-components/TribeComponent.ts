@@ -23,6 +23,8 @@ class TribeComponent extends ServerComponent<ServerComponentType.tribe> {
             }
          }
          if (typeof tribeData === "undefined") {
+            console.log("ID:",data.tribeID);
+            console.log(Game.enemyTribes.map(t => t.id));
             throw new Error("Tribe data is undefined!");
          }
          this.tribeType = tribeData.tribeType;

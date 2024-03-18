@@ -70,7 +70,8 @@ const LoadingScreen = ({ username, tribeType, initialStatus }: LoadingScreenProp
             break;
          }
          case "sending_visible_chunk_bounds": {
-            Camera.setCameraPosition(spawnPositionRef.current!);
+            const spawnPosition = spawnPositionRef.current!;
+            Camera.setPosition(spawnPosition.x, spawnPosition.y);
             Camera.updateVisibleChunkBounds();
             Camera.updateVisibleRenderChunkBounds();
             Client.sendVisibleChunkBounds(Camera.getVisibleChunkBounds());

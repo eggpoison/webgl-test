@@ -5,6 +5,8 @@ import { playBuildingHitSound, playSound } from "../sound";
 import TribeComponent from "../entity-components/TribeComponent";
 import HutComponent from "../entity-components/HutComponent";
 import Entity from "../Entity";
+import HealthComponent from "../entity-components/HealthComponent";
+import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 
 class WorkerHut extends Entity {
    public static readonly SIZE = 88;
@@ -30,6 +32,8 @@ class WorkerHut extends Entity {
       );
       this.attachRenderPart(doorRenderPart);
 
+      this.addServerComponent(ServerComponentType.health, new HealthComponent(this, componentsData[0]))
+      this.addServerComponent(ServerComponentType.statusEffect, new StatusEffectComponent(this, componentsData[1]))
       this.addServerComponent(ServerComponentType.tribe, new TribeComponent(this, componentsData[2]))
       this.addServerComponent(ServerComponentType.hut, new HutComponent(this, componentsData[3], [doorRenderPart]))
    }

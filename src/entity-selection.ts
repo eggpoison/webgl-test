@@ -76,7 +76,7 @@ export function deselectHighlightedEntity(): void {
 }
 
 const entityCanBeSelected = (entity: Entity): boolean => {
-   if (entity.type === EntityType.wall || entity.type === EntityType.tunnel || entity.type === EntityType.embrasure) {
+   if (entity.type === EntityType.wall || entity.type === EntityType.tunnel || entity.type === EntityType.embrasure || entity.type === EntityType.spikes) {
       // Walls can be selected if the player is holding a hammer
       const selectedItem = getPlayerSelectedItem();
       return selectedItem !== null && ITEM_TYPE_RECORD[selectedItem.type] === "hammer";
@@ -98,10 +98,14 @@ const entityCanBeSelected = (entity: Entity): boolean => {
       return true;
    }
 
+   if (entity.type === EntityType.tribeWorker || entity.type === EntityType.tribeWarrior) {
+      // @Temporary: when able to recruit them, should be able to be selected if they are neutral with you
+      const tribeComponent = entity.getServerComponent(ServerComponentType.tribe);
+      return tribeComponent.tribeID === Game.tribe.id;
+   }
+
    return entity.type === EntityType.door
       || entity.type === EntityType.barrel
-      || entity.type === EntityType.tribeWorker
-      || entity.type === EntityType.tribeWarrior
       || entity.type === EntityType.furnace
       || entity.type === EntityType.campfire
       || entity.type === EntityType.ballista
@@ -109,7 +113,7 @@ const entityCanBeSelected = (entity: Entity): boolean => {
 }
 
 // @Cleanup: name
-const getEntityID = (doPlayerProximityCheck: boolean): number => {
+const getEntityID = (doPlayerProximityCheck: boolean, doCanSelectCheck: boolean): number => {
    const minChunkX = Math.max(Math.floor((Game.cursorPositionX! - HIGHLIGHT_RANGE) / Settings.CHUNK_UNITS), 0);
    const maxChunkX = Math.min(Math.floor((Game.cursorPositionX! + HIGHLIGHT_RANGE) / Settings.CHUNK_UNITS), Settings.BOARD_SIZE - 1);
    const minChunkY = Math.max(Math.floor((Game.cursorPositionY! - HIGHLIGHT_RANGE) / Settings.CHUNK_UNITS), 0);
@@ -123,7 +127,7 @@ const getEntityID = (doPlayerProximityCheck: boolean): number => {
       for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
          const chunk = Board.getChunk(chunkX, chunkY);
          for (const entity of chunk.entities) {
-            if (!entityCanBeSelected(entity)) {
+            if (doCanSelectCheck && !entityCanBeSelected(entity)) {
                continue;
             }
 
@@ -162,7 +166,7 @@ export function updateHighlightedAndHoveredEntities(): void {
    if (latencyGameState.playerIsPlacingEntity) {
       // When the player is placing an entity, we don't want them to be able to select entities.
       deselectHighlightedEntity();
-      hoveredEntityID = getEntityID(false);
+      hoveredEntityID = getEntityID(false, false);
       return;
    }
 
@@ -171,14 +175,14 @@ export function updateHighlightedAndHoveredEntities(): void {
       const selectedEntity = getSelectedEntity();
       const distance = Player.instance.position.calculateDistanceBetween(selectedEntity.position);
       if (distance <= HIGHLIGHT_DISTANCE) {
-         hoveredEntityID = getEntityID(false);
+         hoveredEntityID = getEntityID(false, false);
          return;
       }
    }
 
-   hoveredEntityID = getEntityID(false);
+   hoveredEntityID = getEntityID(false, false);
 
-   const newHighlightedEntityID = getEntityID(true);
+   const newHighlightedEntityID = getEntityID(true, true);
    if (newHighlightedEntityID !== highlightedEntityID) {
       deselectHighlightedEntity();
       highlightedEntityID = newHighlightedEntityID;
@@ -189,23 +193,31 @@ export function attemptStructureSelect(): void {
    if (selectedEntityID !== -1) {
       deselectSelectedEntity();
    }
-   selectedEntityID = highlightedEntityID;
 
-   if (Board.entityRecord.hasOwnProperty(selectedEntityID)) {
-      const entity = Board.entityRecord[selectedEntityID];
+   let shouldSetSelectedEntity = true;
 
-      if (entity.type === EntityType.door || entity.type === EntityType.researchBench) {
-         Client.sendStructureInteract(selectedEntityID);
+   if (Board.entityRecord.hasOwnProperty(highlightedEntityID)) {
+      const highlightedEntity = Board.entityRecord[highlightedEntityID];
+
+      if (highlightedEntity.type === EntityType.door) {
+         // Try to toggle doors if not holding a hammer
+         const selectedItem = getPlayerSelectedItem();
+         if (selectedItem === null || ITEM_TYPE_RECORD[selectedItem.type] !== "hammer") {
+            Client.sendStructureInteract(highlightedEntityID);
+            shouldSetSelectedEntity = false;
+         }
+      } else if (highlightedEntity.type === EntityType.researchBench) {
+         Client.sendStructureInteract(highlightedEntityID);
       }
 
-      switch (entity.type) {
+      switch (highlightedEntity.type) {
          case EntityType.barrel: {
             InventorySelector_setInventoryMenuType(InventoryMenuType.barrel);
             break;
          }
          case EntityType.tribeWorker:
          case EntityType.tribeWarrior: {
-            const entityTribeComponent = entity.getServerComponent(ServerComponentType.tribe);
+            const entityTribeComponent = highlightedEntity.getServerComponent(ServerComponentType.tribe);
             const playerTribeComponent = Player.instance!.getServerComponent(ServerComponentType.tribe);
             // Only interact with tribesman inventories if the player is of the same tribe
             if (entityTribeComponent.tribeID === playerTribeComponent.tribeID) {
@@ -224,7 +236,7 @@ export function attemptStructureSelect(): void {
             break;
          }
          case EntityType.tombstone: {
-            const tombstoneComponent = entity.getServerComponent(ServerComponentType.tombstone);
+            const tombstoneComponent = highlightedEntity.getServerComponent(ServerComponentType.tombstone);
             if (tombstoneComponent.deathInfo !== null) {
                InventorySelector_setInventoryMenuType(InventoryMenuType.tombstone);
             } else {
@@ -241,6 +253,10 @@ export function attemptStructureSelect(): void {
             break;
          }
       }
+   }
+
+   if (shouldSetSelectedEntity) {
+      selectedEntityID = highlightedEntityID;
    }
 }
 

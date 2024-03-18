@@ -28,7 +28,7 @@ const TURRET_RANGE_INFO_RECORD: Partial<Record<ItemType, TurretRangeInfo>> = {
       arc: Math.PI / 2
    },
    [ItemType.sling_turret]: {
-      range: 300,
+      range: 400,
       arc: 2 * Math.PI
    }
 };

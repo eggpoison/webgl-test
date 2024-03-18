@@ -6,24 +6,27 @@ import Entity from "../Entity";
 import HealthComponent from "../entity-components/HealthComponent";
 import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 import { createLightWoodSpeckParticle, createWoodShardParticle } from "../particles";
-import BuildingMaterialComponent from "../entity-components/BuildingMaterialComponent";
+import BuildingMaterialComponent, { EMBRASURE_TEXTURE_SOURCES } from "../entity-components/BuildingMaterialComponent";
+import TribeComponent from "../entity-components/TribeComponent";
 
 class Embrasure extends Entity {
    constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.embrasure>) {
       super(position, id, EntityType.embrasure, ageTicks);
 
-      this.attachRenderPart(
-         new RenderPart(
-            this,
-            getTextureArrayIndex("entities/embrasure/wooden-embrasure.png"),
-            0,
-            0
-         )
+      const buildingMaterialComponentData = componentsData[3];
+
+      const renderPart = new RenderPart(
+         this,
+         getTextureArrayIndex(EMBRASURE_TEXTURE_SOURCES[buildingMaterialComponentData.material]),
+         0,
+         0
       );
+      this.attachRenderPart(renderPart);
 
       this.addServerComponent(ServerComponentType.health, new HealthComponent(this, componentsData[0]));
       this.addServerComponent(ServerComponentType.statusEffect, new StatusEffectComponent(this, componentsData[1]));
-      this.addServerComponent(ServerComponentType.buildingMaterial, new BuildingMaterialComponent(this, componentsData[3]));
+      this.addServerComponent(ServerComponentType.tribe, new TribeComponent(this, componentsData[2]));
+      this.addServerComponent(ServerComponentType.buildingMaterial, new BuildingMaterialComponent(this, componentsData[3], renderPart));
    }
 
    protected onHit(hitData: HitData): void {

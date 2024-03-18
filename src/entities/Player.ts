@@ -1,4 +1,4 @@
-import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitData, Point, Settings, clampToBoardDimensions, TileType, EntityType, ItemSlot, Item, TRIBE_INFO_RECORD, EntityComponentsData, ServerComponentType, COLLISION_BITS, DEFAULT_COLLISION_MASK, randInt, InventoryUseInfoData, TribeMemberAction } from "webgl-test-shared";
+import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitData, Point, Settings, clampToBoardDimensions, TileType, EntityType, ItemSlot, Item, TRIBE_INFO_RECORD, EntityComponentsData, ServerComponentType, COLLISION_BITS, DEFAULT_COLLISION_MASK, randInt, InventoryUseInfoData, TribeMemberAction, HitboxCollisionType } from "webgl-test-shared";
 import Camera from "../Camera";
 import { setCraftingMenuAvailableRecipes, setCraftingMenuAvailableCraftingStations } from "../components/game/menus/CraftingMenu";
 import CircularHitbox from "../hitboxes/CircularHitbox";
@@ -20,7 +20,7 @@ import HealthComponent from "../entity-components/HealthComponent";
 import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 import TribeComponent from "../entity-components/TribeComponent";
 import EquipmentComponent from "../entity-components/EquipmentComponent";
-import { collide } from "../collision";
+import { collide, resolveWallTileCollisions } from "../collision";
 
 /** Maximum distance from a crafting station which will allow its recipes to be crafted. */
 const MAX_CRAFTING_DISTANCE_FROM_CRAFTING_STATION = 250;
@@ -226,15 +226,14 @@ class Player extends TribeMember {
       ];
       
       const player = new Player(position, playerID, 0, componentsData);
-      // const player = new Player(position, playerID, 0, null, tribeType, null, TribeMemberAction.none, -1, -99999, -1, null, TribeMemberAction.none, -1, -99999, -1, false, tribeType === TribeType.goblins ? randInt(1, 5) : -1, username);
-      player.addCircularHitbox(new CircularHitbox(1, 32));
+      player.addCircularHitbox(new CircularHitbox(1, HitboxCollisionType.soft, 32));
       player.collisionBit = COLLISION_BITS.default;
       player.collisionMask = DEFAULT_COLLISION_MASK;
       Board.addEntity(player);
 
       Player.instance = player;
 
-      Camera.position = player.position;
+      Camera.setTrackedEntityID(player.id);
 
       // @Cleanup: Shouldn't be in this function
       definiteGameState.setPlayerHealth(maxHealth);
@@ -263,8 +262,9 @@ class Player extends TribeMember {
       // Don't resolve wall tile collisions in lightspeed mode
       if (!keyIsPressed("l")) {
          this.resolveWallTileCollisions();
+         resolveWallTileCollisions(Player.instance!);
       }
-      this.resolveWallCollisions();
+      this.resolveBorderCollisions();
       this.resolveGameObjectCollisions();
 
       // @Cleanup: We call resolveWallCollisions 2 calls before this, is this really necessary??
@@ -280,11 +280,13 @@ class Player extends TribeMember {
       const minTileY = clampToBoardDimensions(Math.floor((Player.instance.position.y - 32) / Settings.TILE_SIZE));
       const maxTileY = clampToBoardDimensions(Math.floor((Player.instance.position.y + 32) / Settings.TILE_SIZE));
 
+      // @Incomplete
       for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
          for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
             const tile = Board.getTile(tileX, tileY);
             if (tile.isWall) {
-               const tileHitbox = new RectangularHitbox(1, Settings.TILE_SIZE, Settings.TILE_SIZE);
+               // @Cleanup
+               const tileHitbox = new RectangularHitbox(1, HitboxCollisionType.soft, Settings.TILE_SIZE, Settings.TILE_SIZE);
                tileHitbox.position.x = (tile.x + 0.5) * Settings.TILE_SIZE;
                tileHitbox.position.y = (tile.y + 0.5) * Settings.TILE_SIZE;
                tileHitbox.updateHitboxBounds(0);
@@ -296,8 +298,7 @@ class Player extends TribeMember {
       }
    }
    
-   // @Cleanup: rename, too similar to wall tiles
-   private static resolveWallCollisions(): void {
+   private static resolveBorderCollisions(): void {
       const boardUnits = Settings.BOARD_DIMENSIONS * Settings.TILE_SIZE;
 
       for (const hitbox of Player.instance!.hitboxes) {
@@ -329,7 +330,6 @@ class Player extends TribeMember {
       const potentialCollidingEntities = this.getPotentialCollidingEntities();
 
       // @Cleanup: Remove this tag system
-      mainLoop:
       for (let i = 0; i < potentialCollidingEntities.length; i++) {
          const entity = potentialCollidingEntities[i];
 
@@ -349,8 +349,7 @@ class Player extends TribeMember {
          for (const hitbox of Player.instance!.hitboxes) {
             for (const otherHitbox of entity.hitboxes) {
                if (hitbox.isColliding(otherHitbox)) {
-                  collide(Player.instance!, entity, hitbox, otherHitbox);
-                  continue mainLoop;
+                  collide(Player.instance!, hitbox, otherHitbox);
                }
             }
          }

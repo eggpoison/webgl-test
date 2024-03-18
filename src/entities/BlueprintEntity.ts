@@ -18,6 +18,7 @@ interface ProgressTextureInfo {
    readonly zIndex: number;
 }
 
+// @Cleanup: Some of these are duplicates
 // @Robustness: Do something better than hand-writing 'blueprint-1', 'blueprint-2', etc. in an array.
 export const BLUEPRINT_PROGRESS_TEXTURE_SOURCES: Record<BlueprintType, ReadonlyArray<ProgressTextureInfo>> = {
    [BlueprintType.woodenDoor]: [
@@ -30,10 +31,20 @@ export const BLUEPRINT_PROGRESS_TEXTURE_SOURCES: Record<BlueprintType, ReadonlyA
          zIndex: 0
       }
    ],
-   // @Incomplete
    [BlueprintType.stoneDoor]: [
       {
-         progressTextureSources: ["entities/door/wooden-door-blueprint-1.png", "entities/door/wooden-door-blueprint-2.png"],
+         progressTextureSources: ["entities/door/stone-door-blueprint-1.png", "entities/door/stone-door-blueprint-2.png"],
+         completedTextureSource: "entities/door/stone-door.png",
+         offsetX: 0,
+         offsetY: 0,
+         rotation: 0,
+         zIndex: 0
+      }
+   ],
+   // @Cleanup
+   [BlueprintType.stoneDoorUpgrade]: [
+      {
+         progressTextureSources: ["entities/door/stone-door-blueprint-1.png", "entities/door/stone-door-blueprint-2.png"],
          completedTextureSource: "entities/door/stone-door.png",
          offsetX: 0,
          offsetY: 0,
@@ -51,10 +62,20 @@ export const BLUEPRINT_PROGRESS_TEXTURE_SOURCES: Record<BlueprintType, ReadonlyA
          zIndex: 0
       }
    ],
-   // @Incomplete
    [BlueprintType.stoneEmbrasure]: [
       {
-         progressTextureSources: ["entities/embrasure/wooden-embrasure-blueprint-1.png", "entities/embrasure/wooden-embrasure-blueprint-2.png", "entities/embrasure/wooden-embrasure-blueprint-3.png"],
+         progressTextureSources: ["entities/embrasure/stone-embrasure-blueprint-1.png", "entities/embrasure/stone-embrasure-blueprint-2.png", "entities/embrasure/stone-embrasure-blueprint-3.png"],
+         completedTextureSource: "entities/embrasure/stone-embrasure.png",
+         offsetX: 0,
+         offsetY: 0,
+         rotation: 0,
+         zIndex: 0
+      }
+   ],
+   // @Cleanup
+   [BlueprintType.stoneEmbrasureUpgrade]: [
+      {
+         progressTextureSources: ["entities/embrasure/stone-embrasure-blueprint-1.png", "entities/embrasure/stone-embrasure-blueprint-2.png", "entities/embrasure/stone-embrasure-blueprint-3.png"],
          completedTextureSource: "entities/embrasure/stone-embrasure.png",
          offsetX: 0,
          offsetY: 0,
@@ -64,7 +85,7 @@ export const BLUEPRINT_PROGRESS_TEXTURE_SOURCES: Record<BlueprintType, ReadonlyA
    ],
    [BlueprintType.woodenTunnel]: [
       {
-         progressTextureSources: ["entities/tunnel/tunnel-blueprint-1.png", "entities/tunnel/tunnel-blueprint-2.png"],
+         progressTextureSources: ["entities/tunnel/wooden-tunnel-blueprint-1.png", "entities/tunnel/wooden-tunnel-blueprint-2.png"],
          completedTextureSource: "entities/tunnel/wooden-tunnel.png",
          offsetX: 0,
          offsetY: 0,
@@ -72,10 +93,20 @@ export const BLUEPRINT_PROGRESS_TEXTURE_SOURCES: Record<BlueprintType, ReadonlyA
          zIndex: 0
       }
    ],
-   // @Incomplete
    [BlueprintType.stoneTunnel]: [
       {
-         progressTextureSources: ["entities/tunnel/tunnel-blueprint-1.png", "entities/tunnel/tunnel-blueprint-2.png"],
+         progressTextureSources: ["entities/tunnel/stone-tunnel-blueprint-1.png", "entities/tunnel/stone-tunnel-blueprint-2.png"],
+         completedTextureSource: "entities/tunnel/stone-tunnel.png",
+         offsetX: 0,
+         offsetY: 0,
+         rotation: 0,
+         zIndex: 0
+      }
+   ],
+   // @Cleanup
+   [BlueprintType.stoneTunnelUpgrade]: [
+      {
+         progressTextureSources: ["entities/tunnel/stone-tunnel-blueprint-1.png", "entities/tunnel/stone-tunnel-blueprint-2.png"],
          completedTextureSource: "entities/tunnel/stone-tunnel.png",
          offsetX: 0,
          offsetY: 0,
@@ -178,16 +209,26 @@ export const BLUEPRINT_PROGRESS_TEXTURE_SOURCES: Record<BlueprintType, ReadonlyA
       }
    ],
    [BlueprintType.stoneWall]: [
-      // @Incomplete
       {
-         progressTextureSources: ["entities/sling-turret/sling-blueprint-1.png", "entities/sling-turret/sling-blueprint-2.png"],
+         progressTextureSources: ["entities/wall/stone-wall-blueprint-1.png", "entities/wall/stone-wall-blueprint-2.png", "entities/wall/stone-wall-blueprint-3.png"],
          completedTextureSource: "entities/wall/stone-wall.png",
          offsetX: 0,
          offsetY: 0,
          rotation: 0,
          zIndex: 0
       }
-   ]
+   ],
+   [BlueprintType.stoneSpikes]: [
+      {
+         // @Incomplete
+         progressTextureSources: ["entities/door/stone-door-blueprint-1.png", "entities/door/stone-door-blueprint-2.png"],
+         completedTextureSource: "entities/spikes/stone-floor-spikes.png",
+         offsetX: 0,
+         offsetY: 0,
+         rotation: 0,
+         zIndex: 0
+      }
+   ],
 };
 
 const countProgressTextures = (buildingType: BlueprintType): number => {

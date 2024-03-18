@@ -5,6 +5,9 @@ import Board from "../Board";
 import { createEmberParticle, createSmokeParticle } from "../particles";
 import Entity from "../Entity";
 import CookingComponent from "../entity-components/CookingComponent";
+import HealthComponent from "../entity-components/HealthComponent";
+import StatusEffectComponent from "../entity-components/StatusEffectComponent";
+import InventoryComponent from "../entity-components/InventoryComponent";
 
 class Campfire extends Entity {
    public static readonly SIZE = 104;
@@ -21,6 +24,9 @@ class Campfire extends Entity {
          )
       );
 
+      this.addServerComponent(ServerComponentType.health, new HealthComponent(this, componentsData[0]));
+      this.addServerComponent(ServerComponentType.statusEffect, new StatusEffectComponent(this, componentsData[1]));
+      this.addServerComponent(ServerComponentType.inventory, new InventoryComponent(this, componentsData[2]));
       this.addServerComponent(ServerComponentType.cooking, new CookingComponent(this, componentsData[3]));
    }
 

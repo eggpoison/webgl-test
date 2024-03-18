@@ -1,4 +1,4 @@
-import { Point, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
+import { HitboxCollisionType, Point, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import CircularHitbox from "./CircularHitbox";
 import RectangularHitbox from "./RectangularHitbox";
 import Entity from "../Entity";
@@ -7,6 +7,7 @@ export type HitboxBounds = [minX: number, maxX: number, minY: number, maxY: numb
 
 abstract class Hitbox {
    public readonly mass: number;
+   public collisionType: HitboxCollisionType;
    
    /** The position of the hitbox, accounting for its offset and offset rotation */
    public position = new Point(0, 0);
@@ -16,8 +17,9 @@ abstract class Hitbox {
    /** The bounds of the hitbox since the last physics update */
    public bounds: HitboxBounds = [-1, -1, -1, -1];
 
-   constructor(mass: number) {
+   constructor(mass: number, collisionType: HitboxCollisionType) {
       this.mass = mass;
+      this.collisionType = collisionType;
    }
 
    public abstract updateHitboxBounds(offsetRotation: number): void;

@@ -11,7 +11,8 @@ class TunnelComponent extends ServerComponent<ServerComponentType.tunnel> {
    constructor(entity: Entity, data: TunnelComponentData) {
       super(entity);
 
-      this.doorBitset = data.doorBitset;
+      this.doorBitset = 0;
+      this.updateFromData(data);
    }
 
    private addDoor(doorBit: number): void {
@@ -19,9 +20,9 @@ class TunnelComponent extends ServerComponent<ServerComponentType.tunnel> {
          this.entity,
          getTextureArrayIndex("entities/tunnel/tunnel-door.png"),
          0,
-         0
+         doorBit === 0b10 ? Math.PI : 0
       );
-      renderPart.offset.y = doorBit === 0b10 ? -22 : 22;
+      renderPart.offset.y = doorBit === 0b10 ? -28 : 28;
       
       this.doorRenderParts.push(renderPart);
       this.entity.attachRenderPart(renderPart);

@@ -1,10 +1,12 @@
-import { rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
+import { HitboxCollisionType, Point, rotateXAroundOrigin, rotateYAroundOrigin } from "webgl-test-shared";
 import { CAMERA_UNIFORM_BUFFER_BINDING_INDEX, createWebGLProgram, gl } from "../webgl";
 import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import Entity from "../Entity";
 import Board from "../Board";
 
+const BORDER_THICKNESS = 3;
+const HALF_BORDER_THICKNESS = BORDER_THICKNESS / 2;
 const CIRCLE_VERTEX_COUNT = 20;
 
 let program: WebGLProgram;
@@ -21,20 +23,34 @@ export function createHitboxShaders(): void {
    };
    
    layout(location = 0) in vec2 a_position;
+   layout(location = 1) in float a_hasHardCollision;
+
+   out float v_hasHardCollision;
    
    void main() {
       vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
       vec2 clipSpacePos = screenPos / u_halfWindowSize - 1.0;
       gl_Position = vec4(clipSpacePos, 0.0, 1.0); 
+
+      v_hasHardCollision = a_hasHardCollision;
    }
    `;
    const fragmentShaderText = `#version 300 es
    precision mediump float;
+
+   #define HARD_BORDER vec4(1.0, 0.0, 0.0, 1.0)
+   #define SOFT_BORDER vec4(0.0, 1.0, 0.0, 1.0)
+   
+   in float v_hasHardCollision;
    
    out vec4 outputColour;
    
    void main() {
-      outputColour = vec4(1.0, 0.0, 0.0, 1.0);   
+      if (v_hasHardCollision > 0.5) {
+         outputColour = HARD_BORDER;
+      } else {
+         outputColour = SOFT_BORDER;
+      }
    }
    `;
 
@@ -69,63 +85,136 @@ export function renderEntityHitboxes(): void {
    const vertices = new Array<number>();
    for (const entity of entities) {
       for (const hitbox of entity.hitboxes) {
+         // Interpolate the hitbox render position
          let hitboxRenderPositionX = hitbox.position.x;
          let hitboxRenderPositionY = hitbox.position.y;
-
-         // Interpolate the hitbox render position
          hitboxRenderPositionX += entity.renderPosition.x - entity.position.x;
          hitboxRenderPositionY += entity.renderPosition.y - entity.position.y;
+
+         const hasHardCollision = hitbox.collisionType === HitboxCollisionType.hard ? 1 : 0;
          
          if (hitbox.hasOwnProperty("width")) {
             // Rectangular
             
-            const x1 = hitboxRenderPositionX - (hitbox as RectangularHitbox).width / 2;
-            const x2 = hitboxRenderPositionX + (hitbox as RectangularHitbox).width / 2;
-            const y1 = hitboxRenderPositionY - (hitbox as RectangularHitbox).height / 2;
-            const y2 = hitboxRenderPositionY + (hitbox as RectangularHitbox).height / 2;
+            const rotation = (hitbox as RectangularHitbox).rotation + entity.rotation;
+            const halfWidth = (hitbox as RectangularHitbox).width / 2;
+            const halfHeight = (hitbox as RectangularHitbox).height / 2;
+            
+            // Top
+            {
+               const tlX = hitboxRenderPositionX + rotateXAroundOrigin(-halfWidth - HALF_BORDER_THICKNESS, halfHeight + HALF_BORDER_THICKNESS, rotation);
+               const tlY = hitboxRenderPositionY + rotateYAroundOrigin(-halfWidth - HALF_BORDER_THICKNESS, halfHeight + HALF_BORDER_THICKNESS, rotation);
+               const trX = hitboxRenderPositionX + rotateXAroundOrigin(halfWidth + HALF_BORDER_THICKNESS, halfHeight + HALF_BORDER_THICKNESS, rotation);
+               const trY = hitboxRenderPositionY + rotateYAroundOrigin(halfWidth + HALF_BORDER_THICKNESS, halfHeight + HALF_BORDER_THICKNESS, rotation);
+               const blX = hitboxRenderPositionX + rotateXAroundOrigin(-halfWidth + HALF_BORDER_THICKNESS, halfHeight - HALF_BORDER_THICKNESS, rotation);
+               const blY = hitboxRenderPositionY + rotateYAroundOrigin(-halfWidth + HALF_BORDER_THICKNESS, halfHeight - HALF_BORDER_THICKNESS, rotation);
+               const brX = hitboxRenderPositionX + rotateXAroundOrigin(halfWidth - HALF_BORDER_THICKNESS, halfHeight - HALF_BORDER_THICKNESS, rotation);
+               const brY = hitboxRenderPositionY + rotateYAroundOrigin(halfWidth - HALF_BORDER_THICKNESS, halfHeight - HALF_BORDER_THICKNESS, rotation);
 
-            // Rotate to match the entity's rotation
-            const topLeftX = rotateXAroundPoint(x1, y2, hitboxRenderPositionX, hitboxRenderPositionY, entity.rotation);
-            const topLeftY = rotateYAroundPoint(x1, y2, hitboxRenderPositionX, hitboxRenderPositionY, entity.rotation);
-            const topRightX = rotateXAroundPoint(x2, y2, hitboxRenderPositionX, hitboxRenderPositionY, entity.rotation);
-            const topRightY = rotateYAroundPoint(x2, y2, hitboxRenderPositionX, hitboxRenderPositionY, entity.rotation);
-            const bottomRightX = rotateXAroundPoint(x2, y1, hitboxRenderPositionX, hitboxRenderPositionY, entity.rotation);
-            const bottomRightY = rotateYAroundPoint(x2, y1, hitboxRenderPositionX, hitboxRenderPositionY, entity.rotation);
-            const bottomLeftX = rotateXAroundPoint(x1, y1, hitboxRenderPositionX, hitboxRenderPositionY, entity.rotation);
-            const bottomLeftY = rotateYAroundPoint(x1, y1, hitboxRenderPositionX, hitboxRenderPositionY, entity.rotation);
+               vertices.push(
+                  blX, blY, hasHardCollision,
+                  brX, brY, hasHardCollision,
+                  tlX, tlY, hasHardCollision,
+                  tlX, tlY, hasHardCollision,
+                  brX, brY, hasHardCollision,
+                  trX, trY, hasHardCollision
+               );
+            }
+            
+            // Right
+            {
+               const tlX = hitboxRenderPositionX + rotateXAroundOrigin(halfWidth - HALF_BORDER_THICKNESS, halfHeight - HALF_BORDER_THICKNESS, rotation);
+               const tlY = hitboxRenderPositionY + rotateYAroundOrigin(halfWidth - HALF_BORDER_THICKNESS, halfHeight - HALF_BORDER_THICKNESS, rotation);
+               const trX = hitboxRenderPositionX + rotateXAroundOrigin(halfWidth + HALF_BORDER_THICKNESS, halfHeight + HALF_BORDER_THICKNESS, rotation);
+               const trY = hitboxRenderPositionY + rotateYAroundOrigin(halfWidth + HALF_BORDER_THICKNESS, halfHeight + HALF_BORDER_THICKNESS, rotation);
+               const blX = hitboxRenderPositionX + rotateXAroundOrigin(halfWidth - HALF_BORDER_THICKNESS, -halfHeight + HALF_BORDER_THICKNESS, rotation);
+               const blY = hitboxRenderPositionY + rotateYAroundOrigin(halfWidth - HALF_BORDER_THICKNESS, -halfHeight + HALF_BORDER_THICKNESS, rotation);
+               const brX = hitboxRenderPositionX + rotateXAroundOrigin(halfWidth + HALF_BORDER_THICKNESS, -halfHeight - HALF_BORDER_THICKNESS, rotation);
+               const brY = hitboxRenderPositionY + rotateYAroundOrigin(halfWidth + HALF_BORDER_THICKNESS, -halfHeight - HALF_BORDER_THICKNESS, rotation);
 
-            vertices.push(
-               topLeftX, topLeftY,
-               topRightX, topRightY,
-               topRightX, topRightY,
-               bottomRightX, bottomRightY,
-               bottomRightX, bottomRightY,
-               bottomLeftX, bottomLeftY,
-               bottomLeftX, bottomLeftY,
-               topLeftX, topLeftY
-            );
+               vertices.push(
+                  blX, blY, hasHardCollision,
+                  brX, brY, hasHardCollision,
+                  tlX, tlY, hasHardCollision,
+                  tlX, tlY, hasHardCollision,
+                  brX, brY, hasHardCollision,
+                  trX, trY, hasHardCollision
+               );
+            }
+            
+            // Bottom
+            {
+               const tlX = hitboxRenderPositionX + rotateXAroundOrigin(-halfWidth + HALF_BORDER_THICKNESS, -halfHeight + HALF_BORDER_THICKNESS, rotation);
+               const tlY = hitboxRenderPositionY + rotateYAroundOrigin(-halfWidth + HALF_BORDER_THICKNESS, -halfHeight + HALF_BORDER_THICKNESS, rotation);
+               const trX = hitboxRenderPositionX + rotateXAroundOrigin(halfWidth - HALF_BORDER_THICKNESS, -halfHeight + HALF_BORDER_THICKNESS, rotation);
+               const trY = hitboxRenderPositionY + rotateYAroundOrigin(halfWidth - HALF_BORDER_THICKNESS, -halfHeight + HALF_BORDER_THICKNESS, rotation);
+               const blX = hitboxRenderPositionX + rotateXAroundOrigin(-halfWidth - HALF_BORDER_THICKNESS, -halfHeight - HALF_BORDER_THICKNESS, rotation);
+               const blY = hitboxRenderPositionY + rotateYAroundOrigin(-halfWidth - HALF_BORDER_THICKNESS, -halfHeight - HALF_BORDER_THICKNESS, rotation);
+               const brX = hitboxRenderPositionX + rotateXAroundOrigin(halfWidth + HALF_BORDER_THICKNESS, -halfHeight - HALF_BORDER_THICKNESS, rotation);
+               const brY = hitboxRenderPositionY + rotateYAroundOrigin(halfWidth + HALF_BORDER_THICKNESS, -halfHeight - HALF_BORDER_THICKNESS, rotation);
+
+               vertices.push(
+                  blX, blY, hasHardCollision,
+                  brX, brY, hasHardCollision,
+                  tlX, tlY, hasHardCollision,
+                  tlX, tlY, hasHardCollision,
+                  brX, brY, hasHardCollision,
+                  trX, trY, hasHardCollision
+               );
+            }
+            
+            // Left
+            {
+               const tlX = hitboxRenderPositionX + rotateXAroundOrigin(-halfWidth - HALF_BORDER_THICKNESS, halfHeight + HALF_BORDER_THICKNESS, rotation);
+               const tlY = hitboxRenderPositionY + rotateYAroundOrigin(-halfWidth - HALF_BORDER_THICKNESS, halfHeight + HALF_BORDER_THICKNESS, rotation);
+               const trX = hitboxRenderPositionX + rotateXAroundOrigin(-halfWidth + HALF_BORDER_THICKNESS, halfHeight - HALF_BORDER_THICKNESS, rotation);
+               const trY = hitboxRenderPositionY + rotateYAroundOrigin(-halfWidth + HALF_BORDER_THICKNESS, halfHeight - HALF_BORDER_THICKNESS, rotation);
+               const blX = hitboxRenderPositionX + rotateXAroundOrigin(-halfWidth - HALF_BORDER_THICKNESS, -halfHeight - HALF_BORDER_THICKNESS, rotation);
+               const blY = hitboxRenderPositionY + rotateYAroundOrigin(-halfWidth - HALF_BORDER_THICKNESS, -halfHeight - HALF_BORDER_THICKNESS, rotation);
+               const brX = hitboxRenderPositionX + rotateXAroundOrigin(-halfWidth + HALF_BORDER_THICKNESS, -halfHeight + HALF_BORDER_THICKNESS, rotation);
+               const brY = hitboxRenderPositionY + rotateYAroundOrigin(-halfWidth + HALF_BORDER_THICKNESS, -halfHeight + HALF_BORDER_THICKNESS, rotation);
+
+               vertices.push(
+                  blX, blY, hasHardCollision,
+                  brX, brY, hasHardCollision,
+                  tlX, tlY, hasHardCollision,
+                  tlX, tlY, hasHardCollision,
+                  brX, brY, hasHardCollision,
+                  trX, trY, hasHardCollision
+               );
+            }
          } else {
             // Circular
 
             const step = 2 * Math.PI / CIRCLE_VERTEX_COUNT;
 
-            let previousX: number;
-            let previousY: number;
-         
-            // Add the outer vertices
-            for (let radians = 0, n = 0; n <= CIRCLE_VERTEX_COUNT; radians += step, n++) {
-               if (n > 1) {
-                  vertices.push(previousX!, previousY!);
-               }
-
-               // Trig shenanigans to get x and y coords
-               const worldX = Math.cos(radians) * (hitbox as CircularHitbox).radius + hitboxRenderPositionX;
-               const worldY = Math.sin(radians) * (hitbox as CircularHitbox).radius + hitboxRenderPositionY;
+            for (let i = 0; i < CIRCLE_VERTEX_COUNT; i++) {
+               const radians = i * 2 * Math.PI / CIRCLE_VERTEX_COUNT;
+               // @Speed: Garbage collection
                
-               vertices.push(worldX, worldY);
-
-               previousX = worldX;
-               previousY = worldY;
+               const radius = (hitbox as CircularHitbox).radius;
+               const bl = Point.fromVectorForm(radius, radians);
+               const br = Point.fromVectorForm(radius, radians + step);
+               const tl = Point.fromVectorForm(radius + BORDER_THICKNESS, radians);
+               const tr = Point.fromVectorForm(radius + BORDER_THICKNESS, radians + step);
+         
+               bl.x += hitboxRenderPositionX;
+               bl.y += hitboxRenderPositionY;
+               br.x += hitboxRenderPositionX;
+               br.y += hitboxRenderPositionY;
+               tl.x += hitboxRenderPositionX;
+               tl.y += hitboxRenderPositionY;
+               tr.x += hitboxRenderPositionX;
+               tr.y += hitboxRenderPositionY;
+         
+               vertices.push(
+                  bl.x, bl.y, hasHardCollision,
+                  br.x, br.y, hasHardCollision,
+                  tl.x, tl.y, hasHardCollision,
+                  tl.x, tl.y, hasHardCollision,
+                  br.x, br.y, hasHardCollision,
+                  tr.x, tr.y, hasHardCollision
+               );
             }
          }
       }
@@ -136,9 +225,11 @@ export function renderEntityHitboxes(): void {
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
-   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
+   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 3 * Float32Array.BYTES_PER_ELEMENT, 0);
+   gl.vertexAttribPointer(1, 1, gl.FLOAT, false, 3 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
 
    gl.enableVertexAttribArray(0);
+   gl.enableVertexAttribArray(1);
 
-   gl.drawArrays(gl.LINES, 0, vertices.length / 2);
+   gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 3);
 }

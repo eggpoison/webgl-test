@@ -27,15 +27,19 @@ export enum GhostType {
    punjiSticks,
    woodenDoor,
    stoneDoor,
+   stoneDoorUpgrade,
    woodenEmbrasure,
    stoneEmbrasure,
+   stoneEmbrasureUpgrade,
    woodenWall,
    stoneWall,
    woodenTunnel,
    stoneTunnel,
+   stoneTunnelUpgrade,
    tunnelDoor,
    ballista,
-   slingTurret
+   slingTurret,
+   stoneSpikes
 }
 
 interface GhostInfo {
@@ -65,7 +69,7 @@ const ENTITY_TYPE_TO_GHOST_TYPE_MAP: Partial<Record<EntityType, GhostType>> = {
    [EntityType.warriorHut]: GhostType.warriorHut,
    [EntityType.researchBench]: GhostType.researchBench,
    [EntityType.planterBox]: GhostType.planterBox,
-   [EntityType.woodenSpikes]: GhostType.woodenSpikes,
+   [EntityType.spikes]: GhostType.woodenSpikes,
    [EntityType.punjiSticks]: GhostType.punjiSticks,
    [EntityType.door]: GhostType.woodenDoor,
    [EntityType.embrasure]: GhostType.woodenEmbrasure,
@@ -75,6 +79,7 @@ const ENTITY_TYPE_TO_GHOST_TYPE_MAP: Partial<Record<EntityType, GhostType>> = {
    [EntityType.slingTurret]: GhostType.slingTurret,
 };
 
+// @Cleanup: Some of these are duplicates
 const TEXTURE_INFO_RECORD: Record<GhostType, ReadonlyArray<TextureInfo>> = {
    [GhostType.deconstructMarker]: [
       {
@@ -158,7 +163,7 @@ const TEXTURE_INFO_RECORD: Record<GhostType, ReadonlyArray<TextureInfo>> = {
    ],
    [GhostType.woodenSpikes]: [
       {
-         textureSource: "entities/wooden-floor-spikes/wooden-floor-spikes.png",
+         textureSource: "entities/spikes/wooden-floor-spikes.png",
          offsetX: 0,
          offsetY: 0,
          rotation: 0
@@ -188,6 +193,15 @@ const TEXTURE_INFO_RECORD: Record<GhostType, ReadonlyArray<TextureInfo>> = {
          rotation: 0
       }
    ],
+   // @Cleanup
+   [GhostType.stoneDoorUpgrade]: [
+      {
+         textureSource: "entities/door/stone-door.png",
+         offsetX: 0,
+         offsetY: 0,
+         rotation: 0
+      }
+   ],
    [GhostType.woodenEmbrasure]: [
       {
          textureSource: "entities/embrasure/wooden-embrasure.png",
@@ -197,6 +211,15 @@ const TEXTURE_INFO_RECORD: Record<GhostType, ReadonlyArray<TextureInfo>> = {
       }
    ],
    [GhostType.stoneEmbrasure]: [
+      {
+         textureSource: "entities/embrasure/stone-embrasure.png",
+         offsetX: 0,
+         offsetY: 22,
+         rotation: 0
+      }
+   ],
+   // @Cleanup
+   [GhostType.stoneEmbrasureUpgrade]: [
       {
          textureSource: "entities/embrasure/stone-embrasure.png",
          offsetX: 0,
@@ -229,6 +252,15 @@ const TEXTURE_INFO_RECORD: Record<GhostType, ReadonlyArray<TextureInfo>> = {
       }
    ],
    [GhostType.stoneTunnel]: [
+      {
+         textureSource: "entities/tunnel/stone-tunnel.png",
+         offsetX: 0,
+         offsetY: 0,
+         rotation: 0
+      }
+   ],
+   // @Cleanup
+   [GhostType.stoneTunnelUpgrade]: [
       {
          textureSource: "entities/tunnel/stone-tunnel.png",
          offsetX: 0,
@@ -306,6 +338,14 @@ const TEXTURE_INFO_RECORD: Record<GhostType, ReadonlyArray<TextureInfo>> = {
       // Sling
       {
          textureSource: "entities/sling-turret/sling-turret-sling.png",
+         offsetX: 0,
+         offsetY: 0,
+         rotation: 0
+      }
+   ],
+   [GhostType.stoneSpikes]: [
+      {
+         textureSource: "entities/spikes/stone-floor-spikes.png",
          offsetX: 0,
          offsetY: 0,
          rotation: 0
@@ -408,9 +448,9 @@ const calculateVertices = (placePosition: Point, placeRotation: number, ghostTyp
       let textureSource: string;
       if (ghostType === GhostType.woodenSpikes) {
          if (isAttachedToWall) {
-            textureSource = "entities/wooden-wall-spikes/wooden-wall-spikes.png";
+            textureSource = "entities/spikes/wooden-wall-spikes.png";
          } else {
-            textureSource = "entities/wooden-floor-spikes/wooden-floor-spikes.png";
+            textureSource = "entities/spikes/wooden-floor-spikes.png";
          }
       } else if (ghostType === GhostType.punjiSticks) {
          if (isAttachedToWall) {
@@ -485,6 +525,9 @@ const getGhostRotation = (building: Entity, ghostType: GhostType): number => {
                throw new Error("Unknown door bitset " + tunnelComponent.doorBitset);
             }
          }
+      }
+      case GhostType.stoneDoorUpgrade: {
+         return building.rotation;
       }
       default: {
          return snapRotationToPlayer(building, building.rotation);

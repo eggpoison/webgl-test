@@ -134,6 +134,26 @@ const HIGHLIGHT_INFO_RECORD: Partial<Record<EntityType, ReadonlyArray<HighlightI
          yOffset: 0,
          rotation: 0
       },
+   ],
+   [EntityType.spikes]: [
+      {
+         width: 48,
+         height: 48,
+         isCircle: false,
+         xOffset: 0,
+         yOffset: 0,
+         rotation: 0
+      },
+   ],
+   [EntityType.slingTurret]: [
+      {
+         width: 64,
+         height: 64,
+         isCircle: true,
+         xOffset: 0,
+         yOffset: 0,
+         rotation: 0
+      },
    ]
 };
 

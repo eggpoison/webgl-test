@@ -5,23 +5,30 @@ import { playSound } from "../sound";
 import DoorComponent from "../entity-components/DoorComponent";
 import Entity from "../Entity";
 import { createLightWoodSpeckParticle, createWoodShardParticle } from "../particles";
-import BuildingMaterialComponent from "../entity-components/BuildingMaterialComponent";
+import BuildingMaterialComponent, { DOOR_TEXTURE_SOURCES } from "../entity-components/BuildingMaterialComponent";
+import HealthComponent from "../entity-components/HealthComponent";
+import StatusEffectComponent from "../entity-components/StatusEffectComponent";
+import TribeComponent from "../entity-components/TribeComponent";
 
 class Door extends Entity {
    constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.door>) {
       super(position, id, EntityType.door, ageTicks);
 
-      this.attachRenderPart(
-         new RenderPart(
-            this,
-            getTextureArrayIndex("entities/door/wooden-door.png"),
-            0,
-            0
-         )
-      );
+      const buildingMaterialComponentData = componentsData[4];
 
+      const renderPart = new RenderPart(
+         this,
+         getTextureArrayIndex(DOOR_TEXTURE_SOURCES[buildingMaterialComponentData.material]),
+         0,
+         0
+      );
+      this.attachRenderPart(renderPart);
+
+      this.addServerComponent(ServerComponentType.health, new HealthComponent(this, componentsData[0]));
+      this.addServerComponent(ServerComponentType.statusEffect, new StatusEffectComponent(this, componentsData[1]));
       this.addServerComponent(ServerComponentType.door, new DoorComponent(this, componentsData[2]));
-      this.addServerComponent(ServerComponentType.buildingMaterial, new BuildingMaterialComponent(this, componentsData[4]));
+      this.addServerComponent(ServerComponentType.tribe, new TribeComponent(this, componentsData[3]));
+      this.addServerComponent(ServerComponentType.buildingMaterial, new BuildingMaterialComponent(this, componentsData[4], renderPart));
    }
 
    protected onHit(hitData: HitData): void {

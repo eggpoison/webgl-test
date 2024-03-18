@@ -1,41 +1,13 @@
-import { DoorToggleType, EntityType, ServerComponentType, Settings, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
+import { HitboxCollisionType, Settings, clampToBoardDimensions, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import CircularHitbox from "./hitboxes/CircularHitbox";
 import Hitbox from "./hitboxes/Hitbox";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import Entity from "./Entity";
+import Board from "./Board";
 
 interface CollisionPushInfo {
    direction: number;
    amountIn: number;
-}
-
-const entityHasHardCollision = (entity: Entity, collidingEntity: Entity): boolean => {
-   // Doors have hard collision when closing/closed
-   if (entity.type === EntityType.door) {
-      const doorComponent = entity.getServerComponent(ServerComponentType.door);
-      return doorComponent.toggleType === DoorToggleType.close || doorComponent.openProgress === 0;
-   }
-
-   // Tunnels have hard collision outside and soft inside
-   if (entity.type === EntityType.tunnel) {
-      const projX = Math.sin(entity.rotation + Math.PI / 2);
-      const projY = Math.cos(entity.rotation + Math.PI / 2);
-
-      const o = 32 - (8 - 0.05); // @Cleanup
-      const minX = entity.position.x - o * projX;
-      const minY = entity.position.y - o * projY;
-      const maxX = entity.position.x + o * projX;
-      const maxY = entity.position.y + o * projY;
-
-      const minProj = minX * projX + minY * projY;
-      const maxProj = maxX * projX + maxY * projY;
-
-      const centerProj = collidingEntity.position.x * projX + collidingEntity.position.y * projY;
-
-      return centerProj <= minProj || centerProj >= maxProj;
-   }
-   
-   return entity.type === EntityType.wall || entity.type === EntityType.embrasure;
 }
 
 const getCircleCircleCollisionPushInfo = (pushedHitbox: CircularHitbox, pushingHitbox: CircularHitbox): CollisionPushInfo => {
@@ -47,42 +19,40 @@ const getCircleCircleCollisionPushInfo = (pushedHitbox: CircularHitbox, pushingH
    };
 }
 
-const getCircleRectCollisionPushInfo = (pushedHitbox: CircularHitbox, pushingHitbox: RectangularHitbox): CollisionPushInfo => {
-   const rectRotation = pushingHitbox.rotation + pushingHitbox.externalRotation;
+const getCircleRectCollisionPushInfo = (pushedHitbox: CircularHitbox, rectX: number, rectY: number, rectWidth: number, rectHeight: number, rectRotation: number): CollisionPushInfo => {
+   const circlePosX = rotateXAroundPoint(pushedHitbox.position.x, pushedHitbox.position.y, rectX, rectY, -rectRotation);
+   const circlePosY = rotateYAroundPoint(pushedHitbox.position.x, pushedHitbox.position.y, rectX, rectY, -rectRotation);
    
-   const circlePosX = rotateXAroundPoint(pushedHitbox.position.x, pushedHitbox.position.y, pushingHitbox.position.x, pushingHitbox.position.y, -rectRotation);
-   const circlePosY = rotateYAroundPoint(pushedHitbox.position.x, pushedHitbox.position.y, pushingHitbox.position.x, pushingHitbox.position.y, -rectRotation);
-   
-   const distanceX = circlePosX - pushingHitbox.position.x;
-   const distanceY = circlePosY - pushingHitbox.position.y;
+   const distanceX = circlePosX - rectX;
+   const distanceY = circlePosY - rectY;
 
    const absDistanceX = Math.abs(distanceX);
    const absDistanceY = Math.abs(distanceY);
 
    // Top and bottom collisions
-   if (absDistanceX <= (pushingHitbox.width/2)) {
+   if (absDistanceX <= (rectWidth/2)) {
       return {
-         amountIn: pushingHitbox.height/2 + pushedHitbox.radius - absDistanceY,
+         amountIn: rectHeight/2 + pushedHitbox.radius - absDistanceY,
          direction: rectRotation + Math.PI + (distanceY > 0 ? Math.PI : 0)
       };
    }
 
    // Left and right collisions
-   if (absDistanceY <= (pushingHitbox.height/2)) {
+   if (absDistanceY <= (rectHeight/2)) {
       return {
-         amountIn: pushingHitbox.width/2 + pushedHitbox.radius - absDistanceX,
+         amountIn: rectWidth/2 + pushedHitbox.radius - absDistanceX,
          direction: rectRotation + (distanceX > 0 ? Math.PI/2 : -Math.PI/2)
       };
    }
 
-   const cornerDistanceSquared = Math.pow(absDistanceX - pushingHitbox.width/2, 2) + Math.pow(absDistanceY - pushingHitbox.height/2, 2);
+   const cornerDistanceSquared = Math.pow(absDistanceX - rectWidth/2, 2) + Math.pow(absDistanceY - rectHeight/2, 2);
    if (cornerDistanceSquared <= pushedHitbox.radius * pushedHitbox.radius) {
       // @Cleanup: Whole lot of copy and paste
-      const amountInX = absDistanceX - pushingHitbox.width/2 - pushedHitbox.radius;
-      const amountInY = absDistanceY - pushingHitbox.height/2 - pushedHitbox.radius;
+      const amountInX = absDistanceX - rectWidth/2 - pushedHitbox.radius;
+      const amountInY = absDistanceY - rectHeight/2 - pushedHitbox.radius;
       if (Math.abs(amountInY) < Math.abs(amountInX)) {
-         const closestRectBorderY = circlePosY < pushingHitbox.position.y ? pushingHitbox.position.y - pushingHitbox.height/2 : pushingHitbox.position.y + pushingHitbox.height/2;
-         const closestRectBorderX = circlePosX < pushingHitbox.position.x ? pushingHitbox.position.x - pushingHitbox.width/2 : pushingHitbox.position.x + pushingHitbox.width/2;
+         const closestRectBorderY = circlePosY < rectY ? rectY - rectHeight/2 : rectY + rectHeight/2;
+         const closestRectBorderX = circlePosX < rectX ? rectX - rectWidth/2 : rectX + rectWidth/2;
          const xDistanceFromRectBorder = Math.abs(closestRectBorderX - circlePosX);
          const len = Math.sqrt(pushedHitbox.radius * pushedHitbox.radius - xDistanceFromRectBorder * xDistanceFromRectBorder);
 
@@ -91,9 +61,9 @@ const getCircleRectCollisionPushInfo = (pushedHitbox: CircularHitbox, pushingHit
             direction: rectRotation + Math.PI + (distanceY > 0 ? Math.PI : 0)
          };
       } else {
-         const closestRectBorderX = circlePosX < pushingHitbox.position.x ? pushingHitbox.position.x - pushingHitbox.width/2 : pushingHitbox.position.x + pushingHitbox.width/2;
+         const closestRectBorderX = circlePosX < rectX ? rectX - rectWidth/2 : rectX + rectWidth/2;
          
-         const closestRectBorderY = circlePosY < pushingHitbox.position.y ? pushingHitbox.position.y - pushingHitbox.height/2 : pushingHitbox.position.y + pushingHitbox.height/2;
+         const closestRectBorderY = circlePosY < rectY ? rectY - rectHeight/2 : rectY + rectHeight/2;
          const yDistanceFromRectBorder = Math.abs(closestRectBorderY - circlePosY);
          const len = Math.sqrt(pushedHitbox.radius * pushedHitbox.radius - yDistanceFromRectBorder * yDistanceFromRectBorder);
 
@@ -104,7 +74,11 @@ const getCircleRectCollisionPushInfo = (pushedHitbox: CircularHitbox, pushingHit
       }
    }
 
-   throw new Error();
+   console.warn("Couldn't find the collision!");
+   return {
+      amountIn: 0,
+      direction: 0
+   };
 }
 
 const getCollisionPushInfo = (pushedHitbox: Hitbox, pushingHitbox: Hitbox): CollisionPushInfo => {
@@ -113,10 +87,16 @@ const getCollisionPushInfo = (pushedHitbox: Hitbox, pushingHitbox: Hitbox): Coll
       return getCircleCircleCollisionPushInfo(pushedHitbox as CircularHitbox, pushingHitbox as CircularHitbox);
    } else if (pushedHitbox.hasOwnProperty("radius") && !pushingHitbox.hasOwnProperty("radius")) {
       // Circle + Rectangle
-      return getCircleRectCollisionPushInfo(pushedHitbox as CircularHitbox, pushingHitbox as RectangularHitbox);
+      const rectWidth = (pushingHitbox as RectangularHitbox).width;
+      const rectHeight = (pushingHitbox as RectangularHitbox).height;
+      const rectRotation = (pushingHitbox as RectangularHitbox).rotation + (pushingHitbox as RectangularHitbox).externalRotation;
+      return getCircleRectCollisionPushInfo(pushedHitbox as CircularHitbox, pushingHitbox.position.x, pushingHitbox.position.y, rectWidth, rectHeight, rectRotation);
    } else if (!pushedHitbox.hasOwnProperty("radius") && pushingHitbox.hasOwnProperty("radius")) {
       // Rectangle + Circle
-      const pushInfo = getCircleRectCollisionPushInfo(pushingHitbox as CircularHitbox, pushedHitbox as RectangularHitbox);
+      const rectWidth = (pushingHitbox as RectangularHitbox).width;
+      const rectHeight = (pushingHitbox as RectangularHitbox).height;
+      const rectRotation = (pushingHitbox as RectangularHitbox).rotation + (pushingHitbox as RectangularHitbox).externalRotation;
+      const pushInfo = getCircleRectCollisionPushInfo(pushingHitbox as CircularHitbox, pushingHitbox.position.x, pushingHitbox.position.y, rectWidth, rectHeight, rectRotation);
       pushInfo.direction += Math.PI;
       return pushInfo;
    } else {
@@ -142,17 +122,52 @@ const resolveHardCollision = (entity: Entity, pushInfo: CollisionPushInfo): void
 const resolveSoftCollision = (entity: Entity, pushedHitbox: Hitbox, pushingHitbox: Hitbox, pushInfo: CollisionPushInfo): void => {
    // Force gets greater the further into each other the entities are
    const distMultiplier = Math.pow(pushInfo.amountIn, 1.1);
+   // @Incomplete: divide by total mass not just pushed hitbox mass
    const pushForce = Settings.ENTITY_PUSH_FORCE * Settings.I_TPS * distMultiplier * pushingHitbox.mass / pushedHitbox.mass;
    
    entity.velocity.x += pushForce * Math.sin(pushInfo.direction);
    entity.velocity.y += pushForce * Math.cos(pushInfo.direction);
 }
 
-export function collide(entity: Entity, pushingEntity: Entity, pushedHitbox: Hitbox, pushingHitbox: Hitbox): void {
+export function collide(entity: Entity, pushedHitbox: Hitbox, pushingHitbox: Hitbox): void {
    const pushInfo = getCollisionPushInfo(pushedHitbox, pushingHitbox);
-   if (entityHasHardCollision(pushingEntity, entity)) {
+   if (pushingHitbox.collisionType === HitboxCollisionType.hard) {
       resolveHardCollision(entity, pushInfo);
    } else {
       resolveSoftCollision(entity, pushedHitbox, pushingHitbox, pushInfo);
+   }
+}
+
+export function resolveWallTileCollisions(entity: Entity): void {
+   for (let i = 0; i < entity.hitboxes.length; i++) {
+      const hitbox = entity.hitboxes[i];
+      
+      const minTileX = clampToBoardDimensions(Math.floor((entity.position.x - 32) / Settings.TILE_SIZE));
+      const maxTileX = clampToBoardDimensions(Math.floor((entity.position.x + 32) / Settings.TILE_SIZE));
+      const minTileY = clampToBoardDimensions(Math.floor((entity.position.y - 32) / Settings.TILE_SIZE));
+      const maxTileY = clampToBoardDimensions(Math.floor((entity.position.y + 32) / Settings.TILE_SIZE));
+   
+      // @Incomplete
+      for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
+         for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
+            const tile = Board.getTile(tileX, tileY);
+            if (!tile.isWall) {
+               continue;
+            }
+
+            let pushInfo: CollisionPushInfo | undefined; // @Temporary (undefined)
+            if (hitbox.hasOwnProperty("radius")) {
+               const rectX = (tileX + 0.5) * Settings.TILE_SIZE;
+               const rectY = (tileY + 0.5) * Settings.TILE_SIZE;
+               
+               pushInfo = getCircleRectCollisionPushInfo(hitbox as CircularHitbox, rectX, rectY, Settings.TILE_SIZE, Settings.TILE_SIZE, 0);
+            }
+
+            // @Temporary
+            if (typeof pushInfo !== "undefined") {
+               resolveHardCollision(entity, pushInfo);
+            }
+         }
+      }
    }
 }

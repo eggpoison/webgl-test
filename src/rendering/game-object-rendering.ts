@@ -166,6 +166,7 @@ export function renderGameObjects(): void {
       entity.updateRenderPosition();
 
       // Calculate render info for all render parts
+      // Update render parts from parent -> child
       const remainingRenderParts: Array<RenderPart> = [];
       for (const child of entity.children) {
          remainingRenderParts.push(child);

@@ -48,8 +48,8 @@ interface MenuOption {
    readonly optionType: OptionType;
    readonly cost?: OptionCost;
    readonly requirement?: (entity: Entity) => boolean;
-   readonly makeErrorSound?: () => boolean;
    readonly blueprintType: BlueprintType | ((entity: Entity) => BlueprintType) | null;
+   readonly isClickable?: (entity: Entity) => boolean;
 }
 
 const EMBRASURE_IMAGE_SOURCES = [require("../../images/entities/embrasure/wooden-embrasure.png"), require("../../images/entities/embrasure/stone-embrasure.png")];
@@ -63,15 +63,6 @@ const TUNNEL_GHOST_TYPES = [GhostType.woodenTunnel, GhostType.stoneTunnel];
 const EMBRASURE_BLUEPRINT_TYPES = [BlueprintType.woodenEmbrasure, BlueprintType.stoneEmbrasure];
 const DOOR_BLUEPRINT_TYPES = [BlueprintType.woodenDoor, BlueprintType.stoneDoor];
 const TUNNEL_BLUEPRINT_TYPES = [BlueprintType.woodenTunnel, BlueprintType.stoneTunnel];
-
-const shouldMakeErrorSound = (): boolean => {
-   let count = countItemTypesInInventory(definiteGameState.hotbar, ItemType.rock);
-   if (definiteGameState.backpack !== null) {
-      count += countItemTypesInInventory(definiteGameState.backpack, ItemType.rock);
-   }
-
-   return count < 5;
-}
 
 const ENTITY_MENU_RECORD: Partial<Record<EntityType, ReadonlyArray<MenuOption>>> = {
    [EntityType.wall]: [
@@ -90,9 +81,6 @@ const ENTITY_MENU_RECORD: Partial<Record<EntityType, ReadonlyArray<MenuOption>>>
          requirement: (wall: Entity): boolean => {
             const wallComponent = wall.getServerComponent(ServerComponentType.buildingMaterial);
             return wallComponent.material < BuildingMaterial.stone;
-         },
-         makeErrorSound: (): boolean => {
-            return shouldMakeErrorSound();
          }
       },
       {
@@ -165,7 +153,7 @@ const ENTITY_MENU_RECORD: Partial<Record<EntityType, ReadonlyArray<MenuOption>>>
          imageSource: require("../../images/entities/tunnel/stone-tunnel.png"),
          imageWidth: 64,
          imageHeight: 64,
-         ghostType: GhostType.stoneTunnel,
+         ghostType: GhostType.stoneTunnelUpgrade,
          optionType: OptionType.placeBlueprint,
          cost: {
             itemType: ItemType.rock,
@@ -175,10 +163,7 @@ const ENTITY_MENU_RECORD: Partial<Record<EntityType, ReadonlyArray<MenuOption>>>
             const wallComponent = tunnel.getServerComponent(ServerComponentType.buildingMaterial);
             return wallComponent.material < BuildingMaterial.stone;
          },
-         makeErrorSound: (): boolean => {
-            return shouldMakeErrorSound();
-         },
-         blueprintType: BlueprintType.stoneTunnel
+         blueprintType: BlueprintType.stoneTunnelUpgrade
       },
       {
          name: "DOOR",
@@ -192,6 +177,10 @@ const ENTITY_MENU_RECORD: Partial<Record<EntityType, ReadonlyArray<MenuOption>>>
          cost: {
             itemType: ItemType.wood,
             amount: 2
+         },
+         isClickable: (tunnel: Entity): boolean => {
+            const tunnelComponent = tunnel.getServerComponent(ServerComponentType.tunnel);
+            return tunnelComponent.doorBitset < 0b11;
          }
       },
       {
@@ -210,7 +199,7 @@ const ENTITY_MENU_RECORD: Partial<Record<EntityType, ReadonlyArray<MenuOption>>>
          imageSource: require("../../images/entities/door/stone-door.png"),
          imageWidth: 64,
          imageHeight: 24,
-         ghostType: GhostType.stoneDoor,
+         ghostType: GhostType.stoneDoorUpgrade,
          optionType: OptionType.placeBlueprint,
          cost: {
             itemType: ItemType.rock,
@@ -220,10 +209,7 @@ const ENTITY_MENU_RECORD: Partial<Record<EntityType, ReadonlyArray<MenuOption>>>
             const wallComponent = door.getServerComponent(ServerComponentType.buildingMaterial);
             return wallComponent.material < BuildingMaterial.stone;
          },
-         makeErrorSound: (): boolean => {
-            return shouldMakeErrorSound();
-         },
-         blueprintType: BlueprintType.stoneDoor
+         blueprintType: BlueprintType.stoneDoorUpgrade
       },
       {
          name: "DECONSTRUCT",
@@ -241,7 +227,7 @@ const ENTITY_MENU_RECORD: Partial<Record<EntityType, ReadonlyArray<MenuOption>>>
          imageSource: require("../../images/entities/embrasure/stone-embrasure.png"),
          imageWidth: 64,
          imageHeight: 20,
-         ghostType: GhostType.stoneEmbrasure,
+         ghostType: GhostType.stoneEmbrasureUpgrade,
          optionType: OptionType.placeBlueprint,
          cost: {
             itemType: ItemType.rock,
@@ -251,10 +237,36 @@ const ENTITY_MENU_RECORD: Partial<Record<EntityType, ReadonlyArray<MenuOption>>>
             const wallComponent = door.getServerComponent(ServerComponentType.buildingMaterial);
             return wallComponent.material < BuildingMaterial.stone;
          },
-         makeErrorSound: (): boolean => {
-            return shouldMakeErrorSound();
+         blueprintType: BlueprintType.stoneEmbrasureUpgrade
+      },
+      {
+         name: "DECONSTRUCT",
+         imageSource: require("../../images/miscellaneous/deconstruct.png"),
+         imageWidth: 64,
+         imageHeight: 64,
+         ghostType: GhostType.deconstructMarker,
+         optionType: OptionType.deconstruct,
+         blueprintType: null
+      }
+   ],
+   [EntityType.spikes]: [
+      {
+         name: "UPGRADE",
+         // @Incomplete: Should wall/floor image depending on whether the spike is attached to a wall or not
+         imageSource: require("../../images/entities/spikes/stone-floor-spikes.png"),
+         imageWidth: 56,
+         imageHeight: 56,
+         ghostType: GhostType.stoneSpikes,
+         optionType: OptionType.placeBlueprint,
+         cost: {
+            itemType: ItemType.rock,
+            amount: 5
          },
-         blueprintType: BlueprintType.stoneEmbrasure
+         requirement: (door: Entity): boolean => {
+            const wallComponent = door.getServerComponent(ServerComponentType.buildingMaterial);
+            return wallComponent.material < BuildingMaterial.stone;
+         },
+         blueprintType: BlueprintType.stoneSpikes
       },
       {
          name: "DECONSTRUCT",
@@ -276,9 +288,16 @@ const BlueprintMenu = () => {
 
 
    const selectOption = (option: MenuOption): void => {
-      if (typeof option.makeErrorSound !== "undefined" && option.makeErrorSound()) {
-         playSound("error.mp3", 0.4, 1, Player.instance!.position.x, Player.instance!.position.y);
-         return;
+      if (typeof option.cost !== "undefined") {
+         let count = countItemTypesInInventory(definiteGameState.hotbar, option.cost.itemType);
+         if (definiteGameState.backpack !== null) {
+            count += countItemTypesInInventory(definiteGameState.backpack, option.cost.itemType);
+         }
+
+         if (count < option.cost.amount) {
+            playSound("error.mp3", 0.4, 1, Player.instance!.position.x, Player.instance!.position.y);
+            return;
+         }
       }
 
       const selectedStructureID = getSelectedEntityID();
@@ -292,7 +311,6 @@ const BlueprintMenu = () => {
             } else {
                blueprintType = option.blueprintType(building!);
             }
-            console.log(BlueprintType[blueprintType]);
             
             Client.sendPlaceBlueprint(selectedStructureID, blueprintType);
             break;
@@ -363,9 +381,11 @@ const BlueprintMenu = () => {
       } else {
          ghostType = option.ghostType(building);
       }
+
+      const isClickable = typeof option.isClickable === "undefined" || option.isClickable(building);
       
       elems.push(
-         <div key={i} onMouseOver={() => setHoveredGhostType(ghostType)} onMouseLeave={() => clearHoveredGhostType()} onClick={() => selectOption(option)} className={`structure-shaping-option${option.optionType === OptionType.deconstruct ? " deconstruct" : ""}`}>
+         <div key={i} onMouseOver={isClickable ? (() => setHoveredGhostType(ghostType)) : undefined} onMouseLeave={() => clearHoveredGhostType()} onClick={isClickable ? (() => selectOption(option)) : undefined} className={`structure-shaping-option${option.optionType === OptionType.deconstruct ? " deconstruct" : ""}${!isClickable ? " non-clickable" : ""}`}>
             <div className="blueprint-name">{option.name}</div>
             {option.optionType !== OptionType.deconstruct ? (
                <div className="hotkey-label">{i + 1}</div>
@@ -396,8 +416,8 @@ export function updateBlueprintMenu(): void {
       return;
    }
 
-   const selectedStructure = Board.entityRecord[selectedStructureID];
-   if (selectedStructure.type === EntityType.wall || selectedStructure.type === EntityType.tunnel || selectedStructure.type === EntityType.door || selectedStructure.type === EntityType.embrasure) {
+const selectedStructure = Board.entityRecord[selectedStructureID];
+   if (selectedStructure.type === EntityType.wall || selectedStructure.type === EntityType.tunnel || selectedStructure.type === EntityType.door || selectedStructure.type === EntityType.embrasure || selectedStructure.type === EntityType.spikes) {
       const screenX = Camera.calculateXScreenPos(selectedStructure.position.x);
       const screenY = Camera.calculateYScreenPos(selectedStructure.position.y);
       showBlueprintMenu(screenX, screenY, selectedStructure);

@@ -290,5 +290,7 @@ export function renderPathfindingNodes(): void {
    if (Game.entityDebugData !== null && typeof Game.entityDebugData.pathData !== "undefined") {
       renderConnectors(Game.entityDebugData.pathData.pathNodes);
    }
-   renderNodes(nodeInfoArray);
+   if (nodeInfoArray.length > 0) {
+      renderNodes(nodeInfoArray);
+   }
 }

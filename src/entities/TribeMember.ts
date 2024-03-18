@@ -5,6 +5,7 @@ import { BloodParticleSize, createBloodParticle, createBloodParticleFountain, cr
 import Board from "../Board";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { AudioFilePath, playSound } from "../sound";
+import Game from "../Game";
 
 const GOBLIN_EAR_OFFSET = 4;
 const GOBLIN_EAR_ANGLE = Math.PI / 3;
@@ -213,8 +214,12 @@ abstract class TribeMember extends Entity {
    public updateFromData(data: EntityData<EntityType>): void {
       super.updateFromData(data);
 
-      const healthComponent = this.getServerComponent(ServerComponentType.health);
-      this.updateLowHealthMarker(healthComponent.health <= healthComponent.maxHealth / 2);
+      // Show low health marker for friendly tribe members
+      const tribeComponent = this.getServerComponent(ServerComponentType.tribe);
+      if (tribeComponent.tribeID === Game.tribe.id) {
+         const healthComponent = this.getServerComponent(ServerComponentType.health);
+         this.updateLowHealthMarker(healthComponent.health <= healthComponent.maxHealth / 2);
+      }
    }
 }
 

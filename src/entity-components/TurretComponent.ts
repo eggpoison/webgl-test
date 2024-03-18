@@ -7,7 +7,8 @@ import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 
 type TurretType = EntityType.slingTurret | EntityType.ballista;
 
-const NUM_CHARGE_TEXTURES = 11;
+const NUM_SLING_TURRET_CHARGE_TEXTURES = 5;
+const NUM_BALLISTA_CHARGE_TEXTURES = 11;
 
 interface AmmoRenderInfo {
    readonly projectileTextureSource: string;
@@ -34,9 +35,9 @@ const AMMO_RENDER_INFO_RECORD: Record<BallistaAmmoType, AmmoRenderInfo> = {
 };
 
 const getSlingTurretChargeTextureSource = (chargeProgress: number): string => {
-   let textureIdx = Math.floor(chargeProgress * NUM_CHARGE_TEXTURES);
-   if (textureIdx >= NUM_CHARGE_TEXTURES) {
-      textureIdx = NUM_CHARGE_TEXTURES - 1;
+   let textureIdx = Math.floor(chargeProgress * NUM_SLING_TURRET_CHARGE_TEXTURES);
+   if (textureIdx >= NUM_SLING_TURRET_CHARGE_TEXTURES) {
+      textureIdx = NUM_SLING_TURRET_CHARGE_TEXTURES - 1;
    }
 
    if (textureIdx === 0) {
@@ -46,9 +47,9 @@ const getSlingTurretChargeTextureSource = (chargeProgress: number): string => {
 }
 
 const getBallistaCrossbarTextureSource = (chargeProgress: number): string => {
-   let textureIdx = Math.floor(chargeProgress * NUM_CHARGE_TEXTURES);
-   if (textureIdx >= NUM_CHARGE_TEXTURES) {
-      textureIdx = NUM_CHARGE_TEXTURES - 1;
+   let textureIdx = Math.floor(chargeProgress * NUM_BALLISTA_CHARGE_TEXTURES);
+   if (textureIdx >= NUM_BALLISTA_CHARGE_TEXTURES) {
+      textureIdx = NUM_BALLISTA_CHARGE_TEXTURES - 1;
    }
    return "entities/ballista/crossbow-" + (textureIdx + 1) + ".png";
 }

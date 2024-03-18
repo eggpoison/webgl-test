@@ -42,6 +42,9 @@
 #blueprint-menu .structure-shaping-option:not(.deconstruct) {
    background-color: #3543a1;
 }
+#blueprint-menu .structure-shaping-option.non-clickable {
+   filter: grayscale(1);
+}
 
 #blueprint-menu .structure-shaping-option .cost-container {
    background-color: #666;
@@ -82,6 +85,7 @@
    width: calc(1px * var(--width));
    height: calc(1px * var(--height));
    image-rendering: pixelated;
+   user-select: none;
 }
 
 #blueprint-menu .hotkey-label {
