@@ -32,7 +32,7 @@ const InspectHealthBar = () => {
    }, []);
 
    // @Temporary
-   if (entity === null || 1+1===2) {
+   if (entity === null) {
       return null;
    }
    
