@@ -44,7 +44,7 @@ import { createTechTreeShaders, renderTechTree } from "./rendering/tech-tree-ren
 import { createResearchOrbShaders, renderResearchOrb } from "./rendering/research-orb-rendering";
 import { attemptToResearch, updateActiveResearchBench, updateResearchOrb } from "./research";
 import { resetInteractableEntityIDs, updateHighlightedAndHoveredEntities, updateSelectedStructure } from "./entity-selection";
-import { createStructureHighlightShaders, renderStructureHighlights } from "./rendering/entity-highlight-rendering";
+import { createStructureHighlightShaders, renderStructureHighlights } from "./rendering/entity-select-rendering";
 import { updateBlueprintMenu } from "./components/game/BlueprintMenu";
 import { InventorySelector_forceUpdate } from "./components/game/inventories/InventorySelector";
 import { createTurretRangeShaders, renderTurretRange } from "./rendering/turret-range-rendering";
@@ -326,7 +326,7 @@ abstract class Game {
       updateHighlightedAndHoveredEntities();
       updateSelectedStructure();
       updateBlueprintMenu();
-      updateInspectHealthBar();
+      // updateInspectHealthBar();
       InventorySelector_forceUpdate();
 
       updateSoundEffectVolumes();
@@ -394,12 +394,11 @@ abstract class Game {
 
       renderText();
 
-      renderSolidTiles();
+      renderSolidTiles(false);
       renderRivers();
       renderDecorations();
       renderTurretRange();
       renderAmbientOcclusion();
-      renderWallBorders();
       if (nerdVisionIsVisible() && this.entityDebugData !== null && Board.hasEntityID(this.entityDebugData.entityID)) {
          renderTriangleDebugData(this.entityDebugData);
       }
@@ -418,6 +417,9 @@ abstract class Game {
       }
 
       renderGameObjects();
+
+      renderSolidTiles(true);
+      renderWallBorders();
 
       renderStructureHighlights();
       
@@ -451,6 +453,7 @@ abstract class Game {
       renderNight();
 
       updateDebugScreenFPS();
+      updateInspectHealthBar();
       
       renderTechTree();
    }

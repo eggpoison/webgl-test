@@ -491,7 +491,7 @@ abstract class Client {
       for (let i = 0; i < data.circularHitboxes.length; i++) {
          const hitboxData = data.circularHitboxes[i];
 
-         const hitbox = new CircularHitbox(hitboxData.mass, hitboxData.collisionType as unknown as HitboxCollisionType, hitboxData.radius);
+         const hitbox = new CircularHitbox(hitboxData.mass, hitboxData.collisionType as unknown as HitboxCollisionType, hitboxData.localID, hitboxData.radius);
          hitbox.offset.x = hitboxData.offsetX;
          hitbox.offset.y = hitboxData.offsetY;
 
@@ -501,10 +501,9 @@ abstract class Client {
       for (let i = 0; i < data.rectangularHitboxes.length; i++) {
          const hitboxData = data.rectangularHitboxes[i];
 
-         const hitbox = new RectangularHitbox(hitboxData.mass, hitboxData.collisionType as unknown as HitboxCollisionType, hitboxData.width, hitboxData.height);
+         const hitbox = new RectangularHitbox(hitboxData.mass, hitboxData.collisionType as unknown as HitboxCollisionType, hitboxData.localID, hitboxData.width, hitboxData.height, hitboxData.rotation);
          hitbox.offset.x = hitboxData.offsetX;
          hitbox.offset.y = hitboxData.offsetY;
-         hitbox.rotation = hitboxData.rotation;
 
          entity.addRectangularHitbox(hitbox);
       }
@@ -726,9 +725,9 @@ abstract class Client {
       }
    }
 
-   public static sendStructureInteract(structureID: number): void {
+   public static sendStructureInteract(structureID: number, interactData: number): void {
       if (Game.isRunning && this.socket !== null) {
-         this.socket.emit("structure_interact", structureID);
+         this.socket.emit("structure_interact", structureID, interactData);
       }
    }
 

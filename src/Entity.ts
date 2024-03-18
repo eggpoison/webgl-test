@@ -430,57 +430,119 @@ abstract class Entity extends RenderObject {
       this.rotation = data.rotation;
       this.ageTicks = data.ageTicks;
 
+      // 
+      // Update hitboxes
+      // 
+
+      // Remove hitboxes which are no longer exist
+      for (let i = 0; i < this.hitboxes.length; i++) {
+         const hitbox = this.hitboxes[i];
+
+         // @Speed
+         let localIDExists = false;
+         for (let j = 0; j < data.circularHitboxes.length; j++) {
+            const hitboxData = data.circularHitboxes[j];
+            if (hitboxData.localID === hitbox.localID) {
+               localIDExists = true;
+               break;
+            }
+         }
+         for (let j = 0; j < data.rectangularHitboxes.length; j++) {
+            const hitboxData = data.rectangularHitboxes[j];
+            if (hitboxData.localID === hitbox.localID) {
+               localIDExists = true;
+               break;
+            }
+         }
+
+         if (!localIDExists) {
+            this.hitboxes.splice(i, 1);
+            i--;
+         }
+      }
+
+      for (let i = 0; i < data.circularHitboxes.length; i++) {
+         const hitboxData = data.circularHitboxes[i];
+
+         // @Speed
+         let existingHitboxIdx = 99999;
+         for (let j = 0; j < this.hitboxes.length; j++) {
+            const hitbox = this.hitboxes[j];
+            if (!hitbox.hasOwnProperty("radius")) {
+               continue;
+            }
+            
+            if (hitbox.localID === hitboxData.localID) {
+               existingHitboxIdx = j;
+               break;
+            }
+         }
+         
+         let hitbox: CircularHitbox;
+         if (existingHitboxIdx !== 99999) {
+            // Update the existing hitbox
+            hitbox = this.hitboxes[existingHitboxIdx] as CircularHitbox;
+            hitbox.radius = hitboxData.radius;
+         } else {
+            // Create new hitbox
+            hitbox = new CircularHitbox(hitboxData.mass, hitboxData.collisionType as unknown as HitboxCollisionType, hitboxData.localID, hitboxData.radius);
+            this.addCircularHitbox(hitbox);
+         }
+
+         hitbox.offset.x = hitboxData.offsetX;
+         hitbox.offset.y = hitboxData.offsetY;
+      }
+      for (let i = 0; i < data.rectangularHitboxes.length; i++) {
+         const hitboxData = data.rectangularHitboxes[i];
+
+         // @Speed
+         let existingHitboxIdx = 99999;
+         for (let j = 0; j < this.hitboxes.length; j++) {
+            const hitbox = this.hitboxes[j];
+            if (hitbox.hasOwnProperty("radius")) {
+               continue;
+            }
+            
+            if (hitbox.localID === hitboxData.localID) {
+               existingHitboxIdx = j;
+               break;
+            }
+         }
+         
+         let hitbox: RectangularHitbox;
+         if (existingHitboxIdx !== 99999) {
+            // Update the existing hitbox
+            hitbox = this.hitboxes[existingHitboxIdx] as RectangularHitbox;
+            hitbox.width = hitboxData.width;
+            hitbox.height = hitboxData.height;
+         } else {
+            // Create new hitbox
+            hitbox = new RectangularHitbox(hitboxData.mass, hitboxData.collisionType as unknown as HitboxCollisionType, hitboxData.localID, hitboxData.width, hitboxData.height, hitboxData.rotation);
+            this.addRectangularHitbox(hitbox);
+         }
+
+         hitbox.offset.x = hitboxData.offsetX;
+         hitbox.offset.y = hitboxData.offsetY;
+      }
+
+      // Update containing chunks
+
       // @Speed
       // @Speed
       // @Speed
 
       const containingChunks = new Set<Chunk>();
 
-      this.hitboxes = [];
-
-      for (const hitboxData of data.circularHitboxes) {
-         const hitbox = new CircularHitbox(hitboxData.mass, hitboxData.collisionType as unknown as HitboxCollisionType, hitboxData.radius);
-         hitbox.offset.x = hitboxData.offsetX;
-         hitbox.offset.y = hitboxData.offsetY;
-         this.addCircularHitbox(hitbox);
-
+      for (const hitbox of this.hitboxes) {
          // Recalculate the game object's containing chunks based on the new hitbox bounds
-         const minChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[0] / Settings.TILE_SIZE / Settings.CHUNK_SIZE), Settings.BOARD_SIZE - 1), 0);
-         const maxChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[1] / Settings.TILE_SIZE / Settings.CHUNK_SIZE), Settings.BOARD_SIZE - 1), 0);
-         const minChunkY = Math.max(Math.min(Math.floor(hitbox.bounds[2] / Settings.TILE_SIZE / Settings.CHUNK_SIZE), Settings.BOARD_SIZE - 1), 0);
-         const maxChunkY = Math.max(Math.min(Math.floor(hitbox.bounds[3] / Settings.TILE_SIZE / Settings.CHUNK_SIZE), Settings.BOARD_SIZE - 1), 0);
+         const minChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[0] / Settings.CHUNK_UNITS), Settings.BOARD_SIZE - 1), 0);
+         const maxChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[1] / Settings.CHUNK_UNITS), Settings.BOARD_SIZE - 1), 0);
+         const minChunkY = Math.max(Math.min(Math.floor(hitbox.bounds[2] / Settings.CHUNK_UNITS), Settings.BOARD_SIZE - 1), 0);
+         const maxChunkY = Math.max(Math.min(Math.floor(hitbox.bounds[3] / Settings.CHUNK_UNITS), Settings.BOARD_SIZE - 1), 0);
          
          for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
             for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
                const chunk = Board.getChunk(chunkX, chunkY);
-               // if (!this.chunks.has(chunk)) {
-               //    chunk.addEntity(this as unknown as Entity);
-               //    this.chunks.add(chunk);
-               // }
-               containingChunks.add(chunk);
-            }
-         }
-      }
-      
-      for (const hitboxData of data.rectangularHitboxes) {
-         const hitbox = new RectangularHitbox(hitboxData.mass, hitboxData.collisionType as unknown as HitboxCollisionType, hitboxData.width, hitboxData.height);
-         hitbox.offset.x = hitboxData.offsetX;
-         hitbox.offset.y = hitboxData.offsetY;
-         this.addRectangularHitbox(hitbox);
-
-         // Recalculate the game object's containing chunks based on the new hitbox bounds
-         const minChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[0] / Settings.TILE_SIZE / Settings.CHUNK_SIZE), Settings.BOARD_SIZE - 1), 0);
-         const maxChunkX = Math.max(Math.min(Math.floor(hitbox.bounds[1] / Settings.TILE_SIZE / Settings.CHUNK_SIZE), Settings.BOARD_SIZE - 1), 0);
-         const minChunkY = Math.max(Math.min(Math.floor(hitbox.bounds[2] / Settings.TILE_SIZE / Settings.CHUNK_SIZE), Settings.BOARD_SIZE - 1), 0);
-         const maxChunkY = Math.max(Math.min(Math.floor(hitbox.bounds[3] / Settings.TILE_SIZE / Settings.CHUNK_SIZE), Settings.BOARD_SIZE - 1), 0);
-         
-         for (let chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
-            for (let chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
-               const chunk = Board.getChunk(chunkX, chunkY);
-               // if (!this.chunks.has(chunk)) {
-               //    chunk.addEntity(this as unknown as Entity);
-               //    this.chunks.add(chunk);
-               // }
                containingChunks.add(chunk);
             }
          }

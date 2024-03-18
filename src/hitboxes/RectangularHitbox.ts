@@ -6,8 +6,8 @@ import Entity from "../Entity";
 class RectangularHitbox extends Hitbox {
    public width: number;
    public height: number;
+   public rotation: number;
 
-   public rotation = 0;
    public externalRotation = 0;
    
    /** Length of half of the diagonal of the rectangle */
@@ -17,16 +17,17 @@ class RectangularHitbox extends Hitbox {
 
    public sideAxes = [new Point(0, 0), new Point(0, 0)] as const;
 
-   constructor(mass: number, collisionType: HitboxCollisionType, width: number, height: number) {
-      super(mass, collisionType);
+   constructor(mass: number, collisionType: HitboxCollisionType, localID: number, width: number, height: number, rotation: number) {
+      super(mass, collisionType, localID);
       
       this.width = width;
       this.height = height;
+      this.rotation = rotation;
       this.halfDiagonalLength = Math.sqrt(Math.pow(width / 2, 2) + Math.pow(height / 2, 2));
    }
 
    public recalculateHalfDiagonalLength(): void {
-      this.halfDiagonalLength = Math.sqrt(Math.pow(this.width / 2, 2) + Math.pow(this.height / 2, 2));
+      this.halfDiagonalLength = Math.sqrt(this.width * this.width / 4 + this.height * this.height / 4);
    }
 
    public updateFromEntity(gameObject: Entity): void {

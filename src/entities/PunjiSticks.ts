@@ -19,7 +19,7 @@ class PunjiSticks extends Entity {
       const spikesComponentData = componentsData[3];
 
       let textureArrayIndex: number;
-      if (spikesComponentData.attachedWallID !== 99999999) {
+      if (spikesComponentData.attachedWallID !== 0) {
          textureArrayIndex = getTextureArrayIndex("entities/wall-punji-sticks/wall-punji-sticks.png");
       } else {
          textureArrayIndex = getTextureArrayIndex("entities/floor-punji-sticks/floor-punji-sticks.png");

@@ -6,6 +6,8 @@ import Entity from "../Entity";
 export type HitboxBounds = [minX: number, maxX: number, minY: number, maxY: number];
 
 abstract class Hitbox {
+   public readonly localID: number;
+   
    public readonly mass: number;
    public collisionType: HitboxCollisionType;
    
@@ -17,9 +19,10 @@ abstract class Hitbox {
    /** The bounds of the hitbox since the last physics update */
    public bounds: HitboxBounds = [-1, -1, -1, -1];
 
-   constructor(mass: number, collisionType: HitboxCollisionType) {
+   constructor(mass: number, collisionType: HitboxCollisionType, localID: number) {
       this.mass = mass;
       this.collisionType = collisionType;
+      this.localID = localID;
    }
 
    public abstract updateHitboxBounds(offsetRotation: number): void;

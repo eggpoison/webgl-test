@@ -11,6 +11,7 @@ import { definiteGameState } from "../../game-state/game-states";
 import { countItemTypesInInventory } from "../../inventory-manipulation";
 import { playSound } from "../../sound";
 import Player from "../../entities/Player";
+import { entityIsPlacedOnWall } from "../../entities/Spikes";
 
 let showBlueprintMenu: (x: number, y: number, building: Entity) => void;
 export let hideBlueprintMenu: () => void = () => {};
@@ -41,8 +42,8 @@ interface OptionCost {
 interface MenuOption {
    readonly name: string;
    readonly imageSource: string | ((entity: Entity) => string);
-   readonly imageWidth: number;
-   readonly imageHeight: number;
+   readonly imageWidth: number | ((entity: Entity) => number);
+   readonly imageHeight: number | ((entity: Entity) => number);
    /** The type of the ghost which gets shown when previewing this option */
    readonly ghostType: GhostType | ((entity: Entity) => GhostType);
    readonly optionType: OptionType;
@@ -55,6 +56,9 @@ interface MenuOption {
 const EMBRASURE_IMAGE_SOURCES = [require("../../images/entities/embrasure/wooden-embrasure.png"), require("../../images/entities/embrasure/stone-embrasure.png")];
 const DOOR_IMAGE_SOURCES = [require("../../images/entities/door/wooden-door.png"), require("../../images/entities/door/stone-door.png")];
 const TUNNEL_IMAGE_SOURCES = [require("../../images/entities/tunnel/wooden-tunnel.png"), require("../../images/entities/tunnel/stone-tunnel.png")];
+
+const FLOOR_SPIKE_IMAGE_SOURCE = require("../../images/entities/spikes/stone-floor-spikes.png");
+const WALL_SPIKE_IMAGE_SOURCE = require("../../images/entities/spikes/stone-wall-spikes.png");
 
 const EMBRASURE_GHOST_TYPES = [GhostType.woodenEmbrasure, GhostType.stoneEmbrasure];
 const DOOR_GHOST_TYPES = [GhostType.woodenDoor, GhostType.stoneDoor];
@@ -252,21 +256,34 @@ const ENTITY_MENU_RECORD: Partial<Record<EntityType, ReadonlyArray<MenuOption>>>
    [EntityType.spikes]: [
       {
          name: "UPGRADE",
-         // @Incomplete: Should wall/floor image depending on whether the spike is attached to a wall or not
-         imageSource: require("../../images/entities/spikes/stone-floor-spikes.png"),
-         imageWidth: 56,
-         imageHeight: 56,
-         ghostType: GhostType.stoneSpikes,
+         imageSource: (entity: Entity): string => {
+            if (entityIsPlacedOnWall(entity)) {
+               return WALL_SPIKE_IMAGE_SOURCE;
+            } else {
+               return FLOOR_SPIKE_IMAGE_SOURCE;
+            }
+         },
+         imageWidth: (entity: Entity): number => {
+            return entityIsPlacedOnWall(entity) ? 68 : 56;
+         },
+         imageHeight: (entity: Entity): number => {
+            return entityIsPlacedOnWall(entity) ? 28 : 56;
+         },
+         ghostType: (entity: Entity): number => {
+            return entityIsPlacedOnWall(entity) ? GhostType.stoneWallSpikes : GhostType.stoneFloorSpikes;
+         },
          optionType: OptionType.placeBlueprint,
          cost: {
             itemType: ItemType.rock,
             amount: 5
          },
-         requirement: (door: Entity): boolean => {
-            const wallComponent = door.getServerComponent(ServerComponentType.buildingMaterial);
+         requirement: (entity: Entity): boolean => {
+            const wallComponent = entity.getServerComponent(ServerComponentType.buildingMaterial);
             return wallComponent.material < BuildingMaterial.stone;
          },
-         blueprintType: BlueprintType.stoneSpikes
+         blueprintType: (entity: Entity): number => {
+            return entityIsPlacedOnWall(entity) ? BlueprintType.stoneWallSpikes : BlueprintType.stoneFloorSpikes;
+         }
       },
       {
          name: "DECONSTRUCT",
@@ -332,7 +349,7 @@ const BlueprintMenu = () => {
       showBlueprintMenu = (x: number, y: number, building: Entity): void => {
          setIsVisible(true);
          setX(x);
-         setY(y + 13);
+         setY(y + 5);
          setBuilding(building);
       }
 
@@ -383,6 +400,20 @@ const BlueprintMenu = () => {
       }
 
       const isClickable = typeof option.isClickable === "undefined" || option.isClickable(building);
+
+      let imageWidth: number;
+      if (typeof option.imageWidth === "number") {
+         imageWidth = option.imageWidth;
+      } else {
+         imageWidth = option.imageWidth(building);
+      }
+
+      let imageHeight: number;
+      if (typeof option.imageHeight === "number") {
+         imageHeight = option.imageHeight;
+      } else {
+         imageHeight = option.imageHeight(building);
+      }
       
       elems.push(
          <div key={i} onMouseOver={isClickable ? (() => setHoveredGhostType(ghostType)) : undefined} onMouseLeave={() => clearHoveredGhostType()} onClick={isClickable ? (() => selectOption(option)) : undefined} className={`structure-shaping-option${option.optionType === OptionType.deconstruct ? " deconstruct" : ""}${!isClickable ? " non-clickable" : ""}`}>
@@ -390,7 +421,7 @@ const BlueprintMenu = () => {
             {option.optionType !== OptionType.deconstruct ? (
                <div className="hotkey-label">{i + 1}</div>
             ) : undefined}
-            <img src={imageSource} alt="" style={{"--width": option.imageWidth.toString(), "--height": option.imageHeight.toString()} as React.CSSProperties} />
+            <img src={imageSource} alt="" style={{"--width": imageWidth.toString(), "--height": imageHeight.toString()} as React.CSSProperties} />
             {typeof option.cost !== "undefined" ? (
                <div className="cost-container">
                   <img src={getItemTypeImage(option.cost.itemType)} alt="" />

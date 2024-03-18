@@ -218,10 +218,9 @@ export const BLUEPRINT_PROGRESS_TEXTURE_SOURCES: Record<BlueprintType, ReadonlyA
          zIndex: 0
       }
    ],
-   [BlueprintType.stoneSpikes]: [
+   [BlueprintType.stoneFloorSpikes]: [
       {
-         // @Incomplete
-         progressTextureSources: ["entities/door/stone-door-blueprint-1.png", "entities/door/stone-door-blueprint-2.png"],
+         progressTextureSources: ["entities/spikes/stone-floor-spikes-blueprint-1.png", "entities/spikes/stone-floor-spikes-blueprint-2.png"],
          completedTextureSource: "entities/spikes/stone-floor-spikes.png",
          offsetX: 0,
          offsetY: 0,
@@ -229,6 +228,16 @@ export const BLUEPRINT_PROGRESS_TEXTURE_SOURCES: Record<BlueprintType, ReadonlyA
          zIndex: 0
       }
    ],
+   [BlueprintType.stoneWallSpikes]: [
+      {
+         progressTextureSources: ["entities/spikes/stone-wall-spikes-blueprint-1.png", "entities/spikes/stone-wall-spikes-blueprint-2.png"],
+         completedTextureSource: "entities/spikes/stone-wall-spikes.png",
+         offsetX: 0,
+         offsetY: 0,
+         rotation: 0,
+         zIndex: 0
+      }
+   ]
 };
 
 const countProgressTextures = (buildingType: BlueprintType): number => {

@@ -26,6 +26,7 @@ import { InventoryMenuType, InventorySelector_inventoryIsOpen, InventorySelector
 import { attemptToCompleteNode } from "./research";
 import { blueprintMenuIsOpen, hideBlueprintMenu } from "./components/game/BlueprintMenu";
 import Camera from "./Camera";
+import { entityIsPlacedOnWall } from "./entities/Spikes";
 
 /** Acceleration of the player while moving without any modifiers. */
 const PLAYER_ACCELERATION = 700;
@@ -169,8 +170,9 @@ const getPlaceableEntityHeight = (entityType: EntityType, isPlacedOnWall: boolea
    return null;
 }
 
-const testRectangularHitbox = new RectangularHitbox(1, HitboxCollisionType.soft, -1, -1);
-const testCircularHitbox = new CircularHitbox(1, HitboxCollisionType.soft, -1);
+// @Cleanup: Remove these
+const testRectangularHitbox = new RectangularHitbox(1, HitboxCollisionType.soft, 1, -1, -1, 0);
+const testCircularHitbox = new CircularHitbox(1, HitboxCollisionType.soft, 1, -1);
 
 const hotbarItemAttackCooldowns: Record<number, number> = {};
 const offhandItemAttackCooldowns: Record<number, number> = {};
@@ -603,14 +605,6 @@ const calculateRegularPlacePosition = (placeableEntityInfo: PlaceableEntityInfo,
    return new Point(placePositionX, placePositionY);
 }
 
-const entityIsPlacedOnWall = (entity: Entity): boolean => {
-   if (entity.hasServerComponent(ServerComponentType.spikes)) {
-      const spikesComponent = entity.getServerComponent(ServerComponentType.spikes);
-      return spikesComponent.attachedWallID !== 99999999;
-   }
-   return false;
-}
-
 const calculateStructureSnapPositions = (snapOrigin: Point, snapEntity: Entity, placeRotation: number, isPlacedOnWall: boolean, placeableEntityInfo: PlaceableEntityInfo): ReadonlyArray<Point> => {
    const snapPositions = new Array<Point>();
    for (let i = 0; i < 4; i++) {
@@ -826,8 +820,9 @@ export function canPlaceItem(placePosition: Point, placeRotation: number, item: 
    // Check for wall tile collisions
    // 
 
+   // @Cleanup: Use collision file
    // @Speed: Garbage collection
-   const tileHitbox = new RectangularHitbox(1, HitboxCollisionType.soft, Settings.TILE_SIZE, Settings.TILE_SIZE);
+   const tileHitbox = new RectangularHitbox(1, HitboxCollisionType.soft, 1, Settings.TILE_SIZE, Settings.TILE_SIZE, 0);
 
    const minTileX = Math.floor(placeTestHitbox.bounds[0] / Settings.TILE_SIZE);
    const maxTileX = Math.floor(placeTestHitbox.bounds[1] / Settings.TILE_SIZE);

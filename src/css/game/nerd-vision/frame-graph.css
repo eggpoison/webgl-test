@@ -12,15 +12,18 @@
    background-color: rgba(0, 0, 0, 0.3);
 }
 
-#frame-graph p.fps {
-   color: #fff;
-   font-family: "Inconsolata";
-   font-size: 1.2rem;
-   font-weight: 700;
-   text-shadow: 0 0 1px #000, 0 0 2px #000, 0 0 3px #000;
+#frame-graph p.info {
    margin: 0;
    position: absolute;
    top: 0.2rem;
    left: 0.2rem;
    user-select: none;
+}
+
+#frame-graph .info span {
+   color: #fff;
+   font-family: "Inconsolata";
+   font-size: 1rem;
+   font-weight: 400;
+   background-color: rgba(0, 0, 0, 0.8);
 }

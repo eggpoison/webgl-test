@@ -1,10 +1,9 @@
-import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitData, Point, Settings, clampToBoardDimensions, TileType, EntityType, ItemSlot, Item, TRIBE_INFO_RECORD, EntityComponentsData, ServerComponentType, COLLISION_BITS, DEFAULT_COLLISION_MASK, randInt, InventoryUseInfoData, TribeMemberAction, HitboxCollisionType } from "webgl-test-shared";
+import { CraftingRecipe, CraftingStation, CRAFTING_RECIPES, HitData, Point, Settings, TileType, EntityType, ItemSlot, Item, TRIBE_INFO_RECORD, EntityComponentsData, ServerComponentType, COLLISION_BITS, DEFAULT_COLLISION_MASK, randInt, InventoryUseInfoData, TribeMemberAction, HitboxCollisionType } from "webgl-test-shared";
 import Camera from "../Camera";
 import { setCraftingMenuAvailableRecipes, setCraftingMenuAvailableCraftingStations } from "../components/game/menus/CraftingMenu";
 import CircularHitbox from "../hitboxes/CircularHitbox";
 import { halfWindowHeight, halfWindowWidth } from "../webgl";
 import Entity from "../Entity";
-import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import ItemEntity from "../items/ItemEntity";
 import TribeMember, { addTribeMemberRenderParts } from "./TribeMember";
 import Board from "../Board";
@@ -226,7 +225,7 @@ class Player extends TribeMember {
       ];
       
       const player = new Player(position, playerID, 0, componentsData);
-      player.addCircularHitbox(new CircularHitbox(1, HitboxCollisionType.soft, 32));
+      player.addCircularHitbox(new CircularHitbox(1, HitboxCollisionType.soft, 1, 32));
       player.collisionBit = COLLISION_BITS.default;
       player.collisionMask = DEFAULT_COLLISION_MASK;
       Board.addEntity(player);
@@ -261,7 +260,6 @@ class Player extends TribeMember {
    public static resolveCollisions(): void {
       // Don't resolve wall tile collisions in lightspeed mode
       if (!keyIsPressed("l")) {
-         this.resolveWallTileCollisions();
          resolveWallTileCollisions(Player.instance!);
       }
       this.resolveBorderCollisions();
@@ -272,32 +270,6 @@ class Player extends TribeMember {
       Player.instance!.resolveBorderCollisions();
    }
 
-   private static resolveWallTileCollisions(): void {
-      if (Player.instance === null) return;
-      
-      const minTileX = clampToBoardDimensions(Math.floor((Player.instance.position.x - 32) / Settings.TILE_SIZE));
-      const maxTileX = clampToBoardDimensions(Math.floor((Player.instance.position.x + 32) / Settings.TILE_SIZE));
-      const minTileY = clampToBoardDimensions(Math.floor((Player.instance.position.y - 32) / Settings.TILE_SIZE));
-      const maxTileY = clampToBoardDimensions(Math.floor((Player.instance.position.y + 32) / Settings.TILE_SIZE));
-
-      // @Incomplete
-      for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
-         for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
-            const tile = Board.getTile(tileX, tileY);
-            if (tile.isWall) {
-               // @Cleanup
-               const tileHitbox = new RectangularHitbox(1, HitboxCollisionType.soft, Settings.TILE_SIZE, Settings.TILE_SIZE);
-               tileHitbox.position.x = (tile.x + 0.5) * Settings.TILE_SIZE;
-               tileHitbox.position.y = (tile.y + 0.5) * Settings.TILE_SIZE;
-               tileHitbox.updateHitboxBounds(0);
-
-               // @Incomplete
-               // this.resolveCollisionHard(Player.instance.hitboxes[0] as CircularHitbox, tileHitbox);
-            }
-         }
-      }
-   }
-   
    private static resolveBorderCollisions(): void {
       const boardUnits = Settings.BOARD_DIMENSIONS * Settings.TILE_SIZE;
 

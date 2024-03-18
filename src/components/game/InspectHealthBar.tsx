@@ -1,22 +1,26 @@
 import { useEffect, useState } from "react";
 import Entity from "../../Entity"
 import Camera from "../../Camera";
-import { ServerComponentType } from "webgl-test-shared";
+import { ServerComponentType, distance } from "webgl-test-shared";
 import Board from "../../Board";
 import { getHoveredEntityID } from "../../entity-selection";
 import Game from "../../Game";
 import Player from "../../entities/Player";
 import { latencyGameState } from "../../game-state/game-states";
 
+const Y_OFFSET = -50;
+
 let InspectHealthBar_setEntity: (entity: Entity | null) => void = () => {};
 let InspectHealthBar_setPos: (x: number, y: number) => void;
 let InspectHealthBar_setHealth: (health: number) => void;
+let InspectHealthBar_setOpacity: (opacity: number) => void;
 
 const InspectHealthBar = () => {
    const [entity, setEntity] = useState<Entity | null>(null);
    const [x, setX] = useState(0);
    const [y, setY] = useState(0);
    const [health, setHealth] = useState(0);
+   const [opacity, setOpacity] = useState(1);
    
    useEffect(() => {
       InspectHealthBar_setEntity = (entity: Entity | null): void => {
@@ -29,6 +33,9 @@ const InspectHealthBar = () => {
       InspectHealthBar_setHealth = (health: number): void => {
          setHealth(health);
       }
+      InspectHealthBar_setOpacity = (opacity: number): void => {
+         setOpacity(opacity);
+      }
    }, []);
 
    // @Temporary
@@ -38,7 +45,7 @@ const InspectHealthBar = () => {
    
    const healthComponent = entity.getServerComponent(ServerComponentType.health);
    
-   return <div id="inspect-health-bar" style={{left: x + "px", bottom: y + "px"}}>
+   return <div id="inspect-health-bar" style={{left: x + "px", bottom: y + "px", opacity: opacity}}>
       <div className="health-slider" style={{width: (health / healthComponent.maxHealth) * 100 + "%"}}></div>
       <div className="health-counter-container">
          <span>{healthComponent.health}</span>
@@ -82,7 +89,10 @@ export function updateInspectHealthBar(): void {
    const healthComponent = hoveredEntity.getServerComponent(ServerComponentType.health);
    InspectHealthBar_setHealth(healthComponent.health);
 
-   const screenX = Camera.calculateXScreenPos(hoveredEntity.position.x);
-   const screenY = Camera.calculateYScreenPos(hoveredEntity.position.y);
-   InspectHealthBar_setPos(screenX, screenY);
+   const barX = hoveredEntity.renderPosition.x;
+   const barY = hoveredEntity.renderPosition.y + Y_OFFSET;
+   InspectHealthBar_setPos(Camera.calculateXScreenPos(barX), Camera.calculateYScreenPos(barY));
+
+   const dist = distance(barX, barY, Player.instance.position.x, Player.instance.position.y);
+   InspectHealthBar_setOpacity(dist < 80 ? 0.5 : 1);
 }

@@ -1,5 +1,5 @@
 import { DecorationInfo, RIVER_STEPPING_STONE_SIZES, RiverSteppingStoneData, Settings, ServerTileUpdateData, WaterRockData } from "webgl-test-shared";
-import { createSolidTileRenderChunkData, recalculateSolidTileRenderChunkData } from "./solid-tile-rendering";
+import { createTileRenderChunks, recalculateSolidTileRenderChunkData } from "./solid-tile-rendering";
 import { calculateRiverRenderChunkData } from "./river-rendering";
 import { calculateAmbientOcclusionInfo } from "./ambient-occlusion-rendering";
 import { calculateWallBorderInfo } from "./wall-border-rendering";
@@ -48,7 +48,6 @@ export interface RenderChunkDecorationInfo {
    readonly decorations: Array<DecorationInfo>;
 }
 
-let solidTileInfoArray: Array<RenderChunkSolidTileInfo>;
 // @Speed: Polymorphism
 let riverInfoArray: Array<RenderChunkRiverInfo | null>;
 // @Speed: Polymorphism
@@ -68,10 +67,6 @@ export function getRenderChunkDecorationInfo(renderChunkX: number, renderChunkY:
 
 export function getRenderChunkRiverInfo(renderChunkX: number, renderChunkY: number): RenderChunkRiverInfo | null {
    return riverInfoArray[getRenderChunkIndex(renderChunkX, renderChunkY)];
-}
-
-export function getRenderChunkSolidTileInfo(renderChunkX: number, renderChunkY: number): RenderChunkSolidTileInfo {
-   return solidTileInfoArray[getRenderChunkIndex(renderChunkX, renderChunkY)];
 }
 
 export function getRenderChunkWallBorderInfo(renderChunkX: number, renderChunkY: number): RenderChunkWallBorderInfo {
@@ -123,14 +118,7 @@ export function createRenderChunks(decorations: ReadonlyArray<DecorationInfo>, w
       }
    }
 
-   // Solid tile info
-   solidTileInfoArray = [];
-   for (let renderChunkY = -RENDER_CHUNK_EDGE_GENERATION; renderChunkY < WORLD_RENDER_CHUNK_SIZE + RENDER_CHUNK_EDGE_GENERATION; renderChunkY++) {
-      for (let renderChunkX = -RENDER_CHUNK_EDGE_GENERATION; renderChunkX < WORLD_RENDER_CHUNK_SIZE + RENDER_CHUNK_EDGE_GENERATION; renderChunkX++) {
-         const data = createSolidTileRenderChunkData(renderChunkX, renderChunkY);
-         solidTileInfoArray.push(data);
-      }
-   }
+   createTileRenderChunks();
 
    // River info
    riverInfoArray = [];

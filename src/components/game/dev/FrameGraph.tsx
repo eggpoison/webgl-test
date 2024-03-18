@@ -56,9 +56,26 @@ const FrameGraph = (): JSX.Element => {
          updateFrameGraph = () => {};
       }
    }, []);
+
+   let average = 0;
+   let min = 999;
+   let max = 0;
+   for (let i = 0; i < trackedFrames.length; i++) {
+      const frame = trackedFrames[i];
+      const duration = frame.endTime - frame.startTime;
+
+      average += duration;
+      if (duration < min) {
+         min = duration;
+      }
+      if (duration > max) {
+         max = duration;
+      }
+   }
+   average /= trackedFrames.length;
    
    return <div id="frame-graph" className={!isVisible ? "hidden" : undefined}>
-      <p className="fps">FPS {fps}</p>
+      <p className="info"><span>fps={fps}</span> <span>rt_avg={average.toFixed(2)}</span> <span>rt_min={min.toFixed(2)}</span> <span>rt_max={max.toFixed(2)}</span></p>
       <canvas id="frame-graph-canvas"></canvas>
    </div>;
 }

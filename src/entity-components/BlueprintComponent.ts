@@ -10,12 +10,14 @@ class BlueprintComponent extends ServerComponent<ServerComponentType.blueprint> 
    
    public readonly blueprintType: BlueprintType;
    public lastBlueprintProgress: number;
+   public readonly associatedEntityID: number;
 
    constructor(entity: Entity, data: BlueprintComponentData) {
       super(entity);
 
       this.blueprintType = data.blueprintType;
       this.lastBlueprintProgress = data.buildProgress;
+      this.associatedEntityID = data.associatedEntityID;
    }
 
    public updateFromData(data: BlueprintComponentData): void {

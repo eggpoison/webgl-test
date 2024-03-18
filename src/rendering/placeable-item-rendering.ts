@@ -39,7 +39,8 @@ export enum GhostType {
    tunnelDoor,
    ballista,
    slingTurret,
-   stoneSpikes
+   stoneFloorSpikes,
+   stoneWallSpikes
 }
 
 interface GhostInfo {
@@ -223,7 +224,7 @@ const TEXTURE_INFO_RECORD: Record<GhostType, ReadonlyArray<TextureInfo>> = {
       {
          textureSource: "entities/embrasure/stone-embrasure.png",
          offsetX: 0,
-         offsetY: 22,
+         offsetY: 0,
          rotation: 0
       }
    ],
@@ -272,7 +273,7 @@ const TEXTURE_INFO_RECORD: Record<GhostType, ReadonlyArray<TextureInfo>> = {
       {
          textureSource: "entities/tunnel/tunnel-door.png",
          offsetX: 0,
-         offsetY: 22,
+         offsetY: 32,
          rotation: 0
       }
    ],
@@ -343,9 +344,17 @@ const TEXTURE_INFO_RECORD: Record<GhostType, ReadonlyArray<TextureInfo>> = {
          rotation: 0
       }
    ],
-   [GhostType.stoneSpikes]: [
+   [GhostType.stoneFloorSpikes]: [
       {
          textureSource: "entities/spikes/stone-floor-spikes.png",
+         offsetX: 0,
+         offsetY: 0,
+         rotation: 0
+      }
+   ],
+   [GhostType.stoneWallSpikes]: [
+      {
+         textureSource: "entities/spikes/stone-wall-spikes.png",
          offsetX: 0,
          offsetY: 0,
          rotation: 0
@@ -526,7 +535,11 @@ const getGhostRotation = (building: Entity, ghostType: GhostType): number => {
             }
          }
       }
-      case GhostType.stoneDoorUpgrade: {
+      case GhostType.stoneDoorUpgrade:
+      case GhostType.stoneEmbrasureUpgrade:
+      case GhostType.stoneTunnelUpgrade:
+      case GhostType.stoneFloorSpikes:
+      case GhostType.stoneWallSpikes: {
          return building.rotation;
       }
       default: {

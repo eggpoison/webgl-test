@@ -7,9 +7,10 @@ import CircularHitbox from "./hitboxes/CircularHitbox";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
 import Entity from "./Entity";
 import Client from "./client/Client";
-import { latencyGameState } from "./game-state/game-states";
+import { latencyGameState, playerIsHoldingHammer } from "./game-state/game-states";
 import { isHoveringInBlueprintMenu } from "./components/game/BlueprintMenu";
 import { InventoryMenuType, InventorySelector_inventoryIsOpen, InventorySelector_setInventoryMenuType } from "./components/game/inventories/InventorySelector";
+import { getClosestGroupNum } from "./rendering/entity-select-rendering";
 
 const HIGHLIGHT_RANGE = 75;
 const HIGHLIGHT_DISTANCE = 150;
@@ -76,8 +77,16 @@ export function deselectHighlightedEntity(): void {
 }
 
 const entityCanBeSelected = (entity: Entity): boolean => {
+   // Tunnels can be selected if they have doors
+   if (entity.type === EntityType.tunnel) {
+      const tunnelComponent = entity.getServerComponent(ServerComponentType.tunnel);
+      if (tunnelComponent.doorBitset !== 0) {
+         return true;
+      }
+   }
+   
    if (entity.type === EntityType.wall || entity.type === EntityType.tunnel || entity.type === EntityType.embrasure || entity.type === EntityType.spikes) {
-      // Walls can be selected if the player is holding a hammer
+      // Buildings can be selected if the player is holding a hammer
       const selectedItem = getPlayerSelectedItem();
       return selectedItem !== null && ITEM_TYPE_RECORD[selectedItem.type] === "hammer";
    }
@@ -199,18 +208,36 @@ export function attemptStructureSelect(): void {
    if (Board.entityRecord.hasOwnProperty(highlightedEntityID)) {
       const highlightedEntity = Board.entityRecord[highlightedEntityID];
 
-      if (highlightedEntity.type === EntityType.door) {
-         // Try to toggle doors if not holding a hammer
-         const selectedItem = getPlayerSelectedItem();
-         if (selectedItem === null || ITEM_TYPE_RECORD[selectedItem.type] !== "hammer") {
-            Client.sendStructureInteract(highlightedEntityID);
-            shouldSetSelectedEntity = false;
-         }
-      } else if (highlightedEntity.type === EntityType.researchBench) {
-         Client.sendStructureInteract(highlightedEntityID);
-      }
-
       switch (highlightedEntity.type) {
+         case EntityType.tunnel: {
+            const groupNum = getClosestGroupNum(highlightedEntity);
+            if (groupNum === 0) {
+               break;
+            }
+            
+            let interactData: number;
+            switch (groupNum) {
+               case 1: interactData = 0b01; break;
+               case 2: interactData = 0b10; break;
+               default: throw new Error();
+            }
+
+            Client.sendStructureInteract(highlightedEntityID, interactData);
+            shouldSetSelectedEntity = false;
+            break;
+         }
+         case EntityType.door: {
+            // Try to toggle doors if not holding a hammer
+            if (!playerIsHoldingHammer()) {
+               Client.sendStructureInteract(highlightedEntityID, 0);
+               shouldSetSelectedEntity = false;
+            }
+            break;
+         }
+         case EntityType.researchBench: {
+            Client.sendStructureInteract(highlightedEntityID, 0);
+            break;
+         }
          case EntityType.barrel: {
             InventorySelector_setInventoryMenuType(InventoryMenuType.barrel);
             break;

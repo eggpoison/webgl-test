@@ -30,6 +30,8 @@ const calculateRenderDepthFromLayer = (renderLayer: RenderLayer): number => {
 }
 
 const getEntityRenderLayer = (entityType: EntityType): RenderLayer => {
+   // @Incomplete: Make floor spikes render below player and wall spikes render above
+   
    switch (entityType) {
       // Item entities
       case EntityType.itemEntity: {

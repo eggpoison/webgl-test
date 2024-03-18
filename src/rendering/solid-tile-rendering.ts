@@ -2,9 +2,12 @@ import { Settings, TileType } from "webgl-test-shared";
 import Camera from "../Camera";
 import { TEXTURE_IMAGE_RECORD } from "../textures";
 import { gl, createWebGLProgram, CAMERA_UNIFORM_BUFFER_BINDING_INDEX } from "../webgl";
-import { RenderChunkSolidTileInfo, getRenderChunkMaxTileX, getRenderChunkMaxTileY, getRenderChunkMinTileX, getRenderChunkMinTileY, getRenderChunkSolidTileInfo } from "./render-chunks";
+import { RENDER_CHUNK_EDGE_GENERATION, RenderChunkSolidTileInfo, WORLD_RENDER_CHUNK_SIZE, getRenderChunkIndex, getRenderChunkMaxTileX, getRenderChunkMaxTileY, getRenderChunkMinTileX, getRenderChunkMinTileY } from "./render-chunks";
 import Board from "../Board";
 import { TILE_TYPE_TEXTURE_SOURCES } from "../tile-type-texture-sources";
+
+let groundTileInfoArray: Array<RenderChunkSolidTileInfo>;
+let wallTileInfoArray: Array<RenderChunkSolidTileInfo>;
 
 let program: WebGLProgram;
 let tileTextureArray: WebGLTexture;
@@ -150,7 +153,7 @@ export function createSolidTileShaders(): void {
    gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
 }
 
-const updateVertexData = (data: Float32Array, renderChunkX: number, renderChunkY: number): void => {
+const updateVertexData = (data: Float32Array, renderChunkX: number, renderChunkY: number, isWallTiles: boolean): void => {
    const minTileX = getRenderChunkMinTileX(renderChunkX);
    const maxTileX = getRenderChunkMaxTileX(renderChunkX);
    const minTileY = getRenderChunkMinTileY(renderChunkY);
@@ -160,7 +163,7 @@ const updateVertexData = (data: Float32Array, renderChunkX: number, renderChunkY
    for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
       for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
          const tile = Board.getTile(tileX, tileY);
-         if (tile.type === TileType.water) {
+         if (tile.type === TileType.water || tile.isWall !== isWallTiles) {
             continue;
          }
 
@@ -234,7 +237,7 @@ const updateVertexData = (data: Float32Array, renderChunkX: number, renderChunkY
 
 // @Cleanup A lot of the webgl calls in create and update render data are the same
 
-export function createSolidTileRenderChunkData(renderChunkX: number, renderChunkY: number): RenderChunkSolidTileInfo {
+const createSolidTileRenderChunkData = (renderChunkX: number, renderChunkY: number, isWallTiles: boolean): RenderChunkSolidTileInfo => {
    const minTileX = getRenderChunkMinTileX(renderChunkX);
    const maxTileX = getRenderChunkMaxTileX(renderChunkX);
    const minTileY = getRenderChunkMinTileY(renderChunkY);
@@ -244,14 +247,14 @@ export function createSolidTileRenderChunkData(renderChunkX: number, renderChunk
    for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
       for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
          const tile = Board.getTile(tileX, tileY);
-         if (tile.type !== TileType.water) {
+         if (tile.type !== TileType.water && tile.isWall === isWallTiles) {
             numTiles++;
          }
       }
    }
 
    const vertexData = new Float32Array(numTiles * 6 * 8);
-   updateVertexData(vertexData, renderChunkX, renderChunkY);
+   updateVertexData(vertexData, renderChunkX, renderChunkY, isWallTiles);
 
    const vao = gl.createVertexArray()!;
    gl.bindVertexArray(vao);
@@ -281,11 +284,22 @@ export function createSolidTileRenderChunkData(renderChunkX: number, renderChunk
    };
 }
 
-export function recalculateSolidTileRenderChunkData(renderChunkX: number, renderChunkY: number): void {
-   const info = getRenderChunkSolidTileInfo(renderChunkX, renderChunkY);
+export function createTileRenderChunks(): void {
+   // @Speed: Clear these instead of setting them to empty so that it remains const (good for v8)
+   groundTileInfoArray = [];
+   wallTileInfoArray = [];
    
+   for (let renderChunkY = -RENDER_CHUNK_EDGE_GENERATION; renderChunkY < WORLD_RENDER_CHUNK_SIZE + RENDER_CHUNK_EDGE_GENERATION; renderChunkY++) {
+      for (let renderChunkX = -RENDER_CHUNK_EDGE_GENERATION; renderChunkX < WORLD_RENDER_CHUNK_SIZE + RENDER_CHUNK_EDGE_GENERATION; renderChunkX++) {
+         groundTileInfoArray.push(createSolidTileRenderChunkData(renderChunkX, renderChunkY, false));
+         wallTileInfoArray.push(createSolidTileRenderChunkData(renderChunkX, renderChunkY, true));
+      }
+   }
+}
+
+const recalculateChunkData = (info: RenderChunkSolidTileInfo, renderChunkX: number, renderChunkY: number, isWallTiles: boolean): void => {
    const vertexData = new Float32Array(info.vertexCount);
-   updateVertexData(vertexData, renderChunkX, renderChunkY);
+   updateVertexData(vertexData, renderChunkX, renderChunkY, isWallTiles);
 
    gl.bindVertexArray(info.vao);
 
@@ -307,17 +321,26 @@ export function recalculateSolidTileRenderChunkData(renderChunkX: number, render
    gl.bindVertexArray(null);
 }
 
-export function renderSolidTiles(): void {
+export function recalculateSolidTileRenderChunkData(renderChunkX: number, renderChunkY: number): void {
+   const idx = getRenderChunkIndex(renderChunkX, renderChunkY);
+   recalculateChunkData(groundTileInfoArray[idx], renderChunkX, renderChunkX, false);
+   recalculateChunkData(wallTileInfoArray[idx], renderChunkX, renderChunkX, true);
+}
+
+export function renderSolidTiles(isWallTiles: boolean): void {
    gl.useProgram(program);
 
    gl.activeTexture(gl.TEXTURE0);
    gl.bindTexture(gl.TEXTURE_2D_ARRAY, tileTextureArray);
    
+   const infoArray = isWallTiles ? wallTileInfoArray : groundTileInfoArray;
    for (let renderChunkX = Camera.minVisibleRenderChunkX; renderChunkX <= Camera.maxVisibleRenderChunkX; renderChunkX++) {
       for (let renderChunkY = Camera.minVisibleRenderChunkY; renderChunkY <= Camera.maxVisibleRenderChunkY; renderChunkY++) {
-         const solidTileInfo = getRenderChunkSolidTileInfo(renderChunkX, renderChunkY);
-         gl.bindVertexArray(solidTileInfo.vao);
-         gl.drawArrays(gl.TRIANGLES, 0, solidTileInfo.vertexCount);
+         const idx = getRenderChunkIndex(renderChunkX, renderChunkY);
+         const tileInfo = infoArray[idx];
+
+         gl.bindVertexArray(tileInfo.vao);
+         gl.drawArrays(gl.TRIANGLES, 0, tileInfo.vertexCount);
       }
    }
 

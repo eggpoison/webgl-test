@@ -1,4 +1,4 @@
-import { HitboxCollisionType, Settings, clampToBoardDimensions, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
+import { HitboxCollisionType, HitboxVertexPositions, Point, Settings, circleAndRectangleDoIntersect, clampToBoardDimensions, distance, rectanglePointsDoIntersect, rotateXAroundPoint, rotateYAroundPoint } from "webgl-test-shared";
 import CircularHitbox from "./hitboxes/CircularHitbox";
 import Hitbox from "./hitboxes/Hitbox";
 import RectangularHitbox from "./hitboxes/RectangularHitbox";
@@ -155,12 +155,42 @@ export function resolveWallTileCollisions(entity: Entity): void {
                continue;
             }
 
+            // Check if the tile is colliding
+            const tileCenterX = (tileX + 0.5) * Settings.TILE_SIZE;
+            const tileCenterY = (tileY + 0.5) * Settings.TILE_SIZE;
+
+         if (hitbox.hasOwnProperty("radius")) {
+            // Circular
+            if (!circleAndRectangleDoIntersect(hitbox.position.x, hitbox.position.y, (hitbox as CircularHitbox).radius, tileCenterX, tileCenterY, Settings.TILE_SIZE, Settings.TILE_SIZE, 0)) {
+               continue;
+            }
+         } else {
+            // Rectangular
+
+            // If the distance between the hitboxes is greater than the sum of their half diagonals then they're not colliding
+            const dist = distance(tileCenterX, tileCenterY, hitbox.position.x, hitbox.position.y);
+            const halfDiagonalLength = Math.sqrt(Settings.TILE_SIZE * Settings.TILE_SIZE / 4 + Settings.TILE_SIZE * Settings.TILE_SIZE / 4);
+            if (dist > halfDiagonalLength + (hitbox as RectangularHitbox).halfDiagonalLength) {
+               continue;
+            }
+            
+            // @Speed
+            const tileVertexPositions: HitboxVertexPositions = [
+               new Point(tileCenterX - Settings.TILE_SIZE/2, tileCenterY + Settings.TILE_SIZE/2),
+               new Point(tileCenterX + Settings.TILE_SIZE/2, tileCenterY + Settings.TILE_SIZE/2),
+               new Point(tileCenterX - Settings.TILE_SIZE/2, tileCenterY - Settings.TILE_SIZE/2),
+               new Point(tileCenterX + Settings.TILE_SIZE/2, tileCenterY - Settings.TILE_SIZE/2)
+            ];
+            if (!rectanglePointsDoIntersect(tileVertexPositions, (hitbox as RectangularHitbox).vertexPositions, 0, 0, 0, 0, 0, 1, (hitbox as RectangularHitbox).sideAxes[0].x, (hitbox as RectangularHitbox).sideAxes[0].y)) {
+               continue;
+            }
+         }
+
+            // Resolve collision
             let pushInfo: CollisionPushInfo | undefined; // @Temporary (undefined)
             if (hitbox.hasOwnProperty("radius")) {
-               const rectX = (tileX + 0.5) * Settings.TILE_SIZE;
-               const rectY = (tileY + 0.5) * Settings.TILE_SIZE;
                
-               pushInfo = getCircleRectCollisionPushInfo(hitbox as CircularHitbox, rectX, rectY, Settings.TILE_SIZE, Settings.TILE_SIZE, 0);
+               pushInfo = getCircleRectCollisionPushInfo(hitbox as CircularHitbox, tileCenterX, tileCenterY, Settings.TILE_SIZE, Settings.TILE_SIZE, 0);
             }
 
             // @Temporary

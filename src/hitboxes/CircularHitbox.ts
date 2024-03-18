@@ -5,8 +5,8 @@ import RectangularHitbox from "./RectangularHitbox";
 class CircularHitbox extends Hitbox {
    public radius: number;
 
-   constructor(mass: number, collisionType: HitboxCollisionType, radius: number) {
-      super(mass, collisionType);
+   constructor(mass: number, collisionType: HitboxCollisionType, localID: number, radius: number) {
+      super(mass, collisionType, localID);
       
       this.radius = radius;
    }
@@ -29,4 +29,4 @@ class CircularHitbox extends Hitbox {
    }
 }
 
-export default CircularHitbox;
+export default CircularHitbox;   

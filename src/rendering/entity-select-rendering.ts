@@ -1,9 +1,12 @@
-import { EntityType, Point, rotateXAroundOrigin, rotateXAroundPoint, rotateYAroundOrigin, rotateYAroundPoint } from "webgl-test-shared";
+import { EntityType, Point, ServerComponentType, distance, rotateXAroundOrigin, rotateXAroundPoint, rotateYAroundOrigin, rotateYAroundPoint } from "webgl-test-shared";
 import Board from "../Board";
 import { getHighlightedEntityID, getSelectedEntityID } from "../entity-selection";
 import { createWebGLProgram, gl, CAMERA_UNIFORM_BUFFER_BINDING_INDEX, TIME_UNIFORM_BUFFER_BINDING_INDEX, CIRCLE_VERTEX_COUNT } from "../webgl";
 import Entity from "../Entity";
 import { BALLISTA_AMMO_BOX_OFFSET_X, BALLISTA_AMMO_BOX_OFFSET_Y } from "../utils";
+import { entityIsPlacedOnWall } from "../entities/Spikes";
+import { playerIsHoldingHammer } from "../game-state/game-states";
+import Game from "../Game";
 
 const THICKNESS = 4;
 
@@ -14,148 +17,242 @@ interface HighlightInfo {
    readonly xOffset: number;
    readonly yOffset: number;
    readonly rotation: number;
+   readonly group: number;
 }
 
-const HIGHLIGHT_INFO_RECORD: Partial<Record<EntityType, ReadonlyArray<HighlightInfo>>> = {
-   [EntityType.wall]: [
-      {
-         width: 64,
-         height: 64,
-         isCircle: false,
-         xOffset: 0,
-         yOffset: 0,
-         rotation: 0
+type HighlightInfoGroup = ReadonlyArray<HighlightInfo>;
+
+const getEntityHighlightInfoArray = (entity: Entity): ReadonlyArray<HighlightInfoGroup> => {
+   switch (entity.type) {
+      case EntityType.wall: return [
+         [{
+            width: 64,
+            height: 64,
+            isCircle: false,
+            xOffset: 0,
+            yOffset: 0,
+            rotation: 0,
+            group: 0
+         }]
+      ];
+      case EntityType.door: return [
+         [{
+            width: 64,
+            height: 24,
+            isCircle: false,
+            xOffset: 0,
+            yOffset: 0,
+            rotation: 0,
+            group: 0
+         }]
+      ];
+      case EntityType.researchBench: return [
+         [{
+            width: 32 * 4,
+            height: 20 * 4,
+            isCircle: false,
+            xOffset: 0,
+            yOffset: 0,
+            rotation: 0,
+            group: 0
+         }]
+      ];
+      case EntityType.barrel: return [
+         [{
+            width: 80,
+            height: 80,
+            isCircle: true,
+            xOffset: 0,
+            yOffset: 0,
+            rotation: 0,
+            group: 0
+         }]
+      ];
+      case EntityType.tribeWorker: return [
+         [{
+            width: 56,
+            height: 56,
+            isCircle: true,
+            xOffset: 0,
+            yOffset: 0,
+            rotation: 0,
+            group: 0
+         }]
+      ];
+      case EntityType.tribeWarrior: return [
+         [{
+            width: 64,
+            height: 64,
+            isCircle: true,
+            xOffset: 0,
+            yOffset: 0,
+            rotation: 0,
+            group: 0
+         }]
+      ];
+      case EntityType.campfire: return [
+         [{
+            width: 90,
+            height: 90,
+            isCircle: true,
+            xOffset: 0,
+            yOffset: 0,
+            rotation: 0,
+            group: 0
+         }]
+      ];
+      case EntityType.furnace: return [
+         [{
+            width: 80,
+            height: 80,
+            isCircle: false,
+            xOffset: 0,
+            yOffset: 0,
+            rotation: 0,
+            group: 0
+         }]
+      ];
+      case EntityType.ballista: return [
+         [{
+            width: 44,
+            height: 36,
+            isCircle: false,
+            xOffset: BALLISTA_AMMO_BOX_OFFSET_X,
+            yOffset: BALLISTA_AMMO_BOX_OFFSET_Y,
+            rotation: Math.PI / 2,
+            group: 0
+         }]
+      ];
+      case EntityType.tunnel: {
+         const highlightInfoArray = new Array<HighlightInfoGroup>();
+         
+         // If holding a hammer, can manipulate the tunne;
+         if (playerIsHoldingHammer()) {
+            highlightInfoArray.push(
+               [{
+                  width: 16,
+                  height: 64,
+                  isCircle: false,
+                  xOffset: -24,
+                  yOffset: 0,
+                  rotation: 0,
+                  group: 0
+               },
+               {
+                  width: 16,
+                  height: 64,
+                  isCircle: false,
+                  xOffset: 24,
+                  yOffset: 0,
+                  rotation: 0,
+                  group: 0
+               }]
+            );
+         }
+
+         const tunnelComponent = entity.getServerComponent(ServerComponentType.tunnel);
+         if (tunnelComponent.hasTopDoor()) {
+            highlightInfoArray.push([{
+               width: 48,
+               height: 16,
+               isCircle: false,
+               xOffset: 0,
+               yOffset: 30,
+               rotation: 0,
+               group: 1
+            }]);
+         }
+         if (tunnelComponent.hasBottomDoor()) {
+            highlightInfoArray.push([{
+               width: 48,
+               height: 16,
+               isCircle: false,
+               xOffset: 0,
+               yOffset: -30,
+               rotation: 0,
+               group: 2
+            }]);
+         }
+            
+         return highlightInfoArray;
       }
-   ],
-   [EntityType.door]: [
-      {
-         width: 64,
-         height: 24,
-         isCircle: false,
-         xOffset: 0,
-         yOffset: 0,
-         rotation: 0
+      case EntityType.embrasure: return [
+         [{
+            width: 64,
+            height: 20,
+            isCircle: false,
+            xOffset: 0,
+            yOffset: 0,
+            rotation: 0,
+            group: 0
+         }],
+      ];
+      case EntityType.spikes: {
+         const isAttachedToWall = entityIsPlacedOnWall(entity);
+         return [
+            [{
+               width: isAttachedToWall ? 68 : 56,
+               height: isAttachedToWall ? 28 : 56,
+               isCircle: false,
+               xOffset: 0,
+               yOffset: 0,
+               rotation: 0,
+               group: 0
+            }],
+         ];
       }
-   ],
-   [EntityType.researchBench]: [
-      {
-         width: 32 * 4,
-         height: 20 * 4,
-         isCircle: false,
-         xOffset: 0,
-         yOffset: 0,
-         rotation: 0
+      case EntityType.slingTurret: return [
+         [{
+            width: 64,
+            height: 64,
+            isCircle: true,
+            xOffset: 0,
+            yOffset: 0,
+            rotation: 0,
+            group: 0
+         }],
+      ]
+   }
+
+   throw new Error("No highlight info for entity type " + EntityType[entity.type]);
+}
+
+export function getClosestGroupNum(entity: Entity): number {
+   const groups = getEntityHighlightInfoArray(entity);
+   
+   let minCursorDist = Number.MAX_SAFE_INTEGER;
+   let closestGroupNum = 0;
+   
+   for (let i = 0; i < groups.length; i++) {
+      const group = groups[i];
+
+      for (let j = 0; j < group.length; j++) {
+         const highlightInfo = group[j];
+
+         const x = entity.position.x + rotateXAroundOrigin(highlightInfo.xOffset, highlightInfo.yOffset, entity.rotation + highlightInfo.rotation);
+         const y = entity.position.y + rotateYAroundOrigin(highlightInfo.xOffset, highlightInfo.yOffset, entity.rotation + highlightInfo.rotation);
+         const dist = distance(Game.cursorPositionX!, Game.cursorPositionY!, x, y);
+         if (dist < minCursorDist) {
+            minCursorDist = dist;
+            closestGroupNum = highlightInfo.group;
+         }
       }
-   ],
-   [EntityType.barrel]: [
-      {
-         width: 80,
-         height: 80,
-         isCircle: true,
-         xOffset: 0,
-         yOffset: 0,
-         rotation: 0
+   }
+
+   return closestGroupNum;
+}
+
+const getHighlightInfoGroup = (entity: Entity): HighlightInfoGroup => {
+   const groupNum = getClosestGroupNum(entity);
+   const highlightInfoArray = getEntityHighlightInfoArray(entity);
+   for (let i = 0; i < highlightInfoArray.length; i++) {
+      const group = highlightInfoArray[i];
+      if (group[0].group === groupNum) {
+         return group;
       }
-   ],
-   [EntityType.tribeWorker]: [
-      {
-         width: 56,
-         height: 56,
-         isCircle: true,
-         xOffset: 0,
-         yOffset: 0,
-         rotation: 0
-      }
-   ],
-   [EntityType.tribeWarrior]: [
-      {
-         width: 64,
-         height: 64,
-         isCircle: true,
-         xOffset: 0,
-         yOffset: 0,
-         rotation: 0
-      }
-   ],
-   [EntityType.campfire]: [
-      {
-         width: 90,
-         height: 90,
-         isCircle: true,
-         xOffset: 0,
-         yOffset: 0,
-         rotation: 0
-      }
-   ],
-   [EntityType.furnace]: [
-      {
-         width: 80,
-         height: 80,
-         isCircle: false,
-         xOffset: 0,
-         yOffset: 0,
-         rotation: 0
-      }
-   ],
-   [EntityType.ballista]: [
-      {
-         width: 44,
-         height: 36,
-         isCircle: false,
-         xOffset: BALLISTA_AMMO_BOX_OFFSET_X,
-         yOffset: BALLISTA_AMMO_BOX_OFFSET_Y,
-         rotation: Math.PI / 2
-      }
-   ],
-   [EntityType.tunnel]: [
-      {
-         width: 16,
-         height: 64,
-         isCircle: false,
-         xOffset: -24,
-         yOffset: 0,
-         rotation: 0
-      },
-      {
-         width: 16,
-         height: 64,
-         isCircle: false,
-         xOffset: 24,
-         yOffset: 0,
-         rotation: 0
-      }
-   ],
-   [EntityType.embrasure]: [
-      {
-         width: 64,
-         height: 20,
-         isCircle: false,
-         xOffset: 0,
-         yOffset: 0,
-         rotation: 0
-      },
-   ],
-   [EntityType.spikes]: [
-      {
-         width: 48,
-         height: 48,
-         isCircle: false,
-         xOffset: 0,
-         yOffset: 0,
-         rotation: 0
-      },
-   ],
-   [EntityType.slingTurret]: [
-      {
-         width: 64,
-         height: 64,
-         isCircle: true,
-         xOffset: 0,
-         yOffset: 0,
-         rotation: 0
-      },
-   ]
-};
+   }
+   throw new Error();
+}
 
 let program: WebGLProgram;
 
@@ -252,11 +349,11 @@ const addSideVertices = (vertices: Array<number>, centerX: number, centerY: numb
 }
 
 const calculateVertices = (entity: Entity): ReadonlyArray<number> => {
-   const highlightInfoArray = HIGHLIGHT_INFO_RECORD[entity.type]!;
+   const highlightInfoGroup = getHighlightInfoGroup(entity);
    
    const vertices = new Array<number>();
-   for (let i = 0; i < highlightInfoArray.length; i++) {
-      const highlightInfo = highlightInfoArray[i];
+   for (let i = 0; i < highlightInfoGroup.length; i++) {
+      const highlightInfo = highlightInfoGroup[i];
 
       if (highlightInfo.isCircle) {
          const radius = highlightInfo.width / 2;
@@ -318,13 +415,6 @@ export function renderStructureHighlights(): void {
    }
 
    const highlightedEntity = Board.entityRecord[highlightedStructureID];
-
-   if (!HIGHLIGHT_INFO_RECORD.hasOwnProperty(highlightedEntity.type)) {
-      console.warn("No render info for structure highlight!");
-      return;
-   }
-
-
    const vertices = calculateVertices(highlightedEntity);
    
    gl.useProgram(program);
