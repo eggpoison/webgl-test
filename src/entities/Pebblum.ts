@@ -1,12 +1,14 @@
-import { EntityType, Point } from "webgl-test-shared";
+import { EntityComponentsData, EntityType, Point, ServerComponentType } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { ClientComponentType } from "../entity-components/components";
 import FootprintComponent from "../entity-components/FootprintComponent";
 import Entity from "../Entity";
+import HealthComponent from "../entity-components/HealthComponent";
+import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 
 class Pebblum extends Entity {
-   constructor(position: Point, id: number, ageTicks: number) {
+   constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.pebblum>) {
       super(position, id, EntityType.pebblum, ageTicks);
 
       // Nose
@@ -29,6 +31,8 @@ class Pebblum extends Entity {
       body.offset.y = -8;
       this.attachRenderPart(body);
 
+      this.addServerComponent(ServerComponentType.health, new HealthComponent(this, componentsData[1]));
+      this.addServerComponent(ServerComponentType.statusEffect, new StatusEffectComponent(this, componentsData[2]));
       this.addClientComponent(ClientComponentType.footprint, new FootprintComponent(this, 0.3, 20, 64, 5, 40));
    }
 }

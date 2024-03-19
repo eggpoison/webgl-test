@@ -23,8 +23,8 @@ interface Options {
 
 const OPTIONS: Options = {
    // @Temporary
-   // uiZoom: 1.4,
-   uiZoom: 1,
+   uiZoom: 1.4,
+   // uiZoom: 1,
    nightVisionIsEnabled: false,
    showHitboxes: false,
    showChunkBorders: false,
@@ -34,7 +34,6 @@ const OPTIONS: Options = {
    showPathfindingNodes: false
 };
 
-// @Cleanup: Should this exist?
 document.documentElement.style.setProperty("--zoom", OPTIONS.uiZoom.toString());
 
 export default OPTIONS;

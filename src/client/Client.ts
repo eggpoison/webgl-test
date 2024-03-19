@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, Settings, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TechID, Inventory, TRIBE_INFO_RECORD, STRUCTURE_TYPES, PlayerTribeData, ServerComponentType, EntityComponentsData, BlueprintType, HitboxCollisionType } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, Settings, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TechID, Inventory, TRIBE_INFO_RECORD, STRUCTURE_TYPES, PlayerTribeData, ServerComponentType, EntityComponentsData, BlueprintType, HitboxCollisionType, InventoryUseInfoData } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -9,7 +9,7 @@ import RectangularHitbox from "../hitboxes/RectangularHitbox";
 import { Tile } from "../Tile";
 import { gameScreenSetIsDead } from "../components/game/GameScreen";
 import { removeSelectedItem, selectItem, updateInventoryIsOpen } from "../player-input";
-import { Hotbar_setHotbarSelectedItemSlot, Hotbar_update } from "../components/game/inventories/Hotbar";
+import { Hotbar_setHotbarSelectedItemSlot, Hotbar_update, Hotbar_updateRightThrownBattleaxeItemID } from "../components/game/inventories/Hotbar";
 import { setHeldItemVisual } from "../components/game/HeldItem";
 import { CraftingMenu_setCraftingMenuOutputItem } from "../components/game/menus/CraftingMenu";
 import { HealthBar_setHasFrostShield, updateHealthBar } from "../components/game/HealthBar";
@@ -304,6 +304,31 @@ abstract class Client {
                const componentsData = data.components as EntityComponentsData<EntityType.player>;
                Player.instance.getServerComponent(ServerComponentType.statusEffect).updateFromData(componentsData[2]);
                
+               
+               // @Cleanup @Hack
+               const inventoryUseComponentsData = componentsData[6];
+               let hotbarUseInfo: InventoryUseInfoData | undefined;
+               for (let i = 0; i < inventoryUseComponentsData.inventoryUseInfos.length; i++) {
+                  const useInfo = inventoryUseComponentsData.inventoryUseInfos[i];
+                  if (useInfo.inventoryName === "hotbar") {
+                     hotbarUseInfo = useInfo;
+                     break;
+                  }
+               }
+               if (typeof hotbarUseInfo === "undefined") {
+                  throw new Error();
+               }
+
+               const inventoryUseComponent = Player.instance.getServerComponent(ServerComponentType.inventoryUse);
+               inventoryUseComponent.getUseInfo("hotbar").thrownBattleaxeItemID = hotbarUseInfo.thrownBattleaxeItemID;
+               
+               Hotbar_updateRightThrownBattleaxeItemID(hotbarUseInfo.thrownBattleaxeItemID);
+
+               // @Incomplete
+               // const leftThrownBattleaxeItemID = entityData.clientArgs[14] as number;
+               // player.leftThrownBattleaxeItemID = leftThrownBattleaxeItemID;
+               // Hotbar_updateLeftThrownBattleaxeItemID(leftThrownBattleaxeItemID);
+               
                entityDataArray.splice(i, 1);
                break;
             }
@@ -315,22 +340,6 @@ abstract class Client {
          // If it already exists, update it
          if (Board.entityRecord.hasOwnProperty(entityData.id)) {
             Board.entityRecord[entityData.id].updateFromData(entityData);
-
-            // @Incomplete
-            // if (Board.entityRecord[entityData.id] !== Player.instance) {
-            // } else {
-            //    const player = (Board.entityRecord[entityData.id] as Player);
-
-            //    player.genericUpdateFromData(entityData as unknown as EntityData<EntityType.player>);
-
-            //    // @Cleanup @Hack
-            //    const rightThrownBattleaxeItemID = entityData.clientArgs[9];
-            //    player.rightThrownBattleaxeItemID = rightThrownBattleaxeItemID;
-            //    Hotbar_updateRightThrownBattleaxeItemID(rightThrownBattleaxeItemID);
-            //    const leftThrownBattleaxeItemID = entityData.clientArgs[14] as number;
-            //    player.leftThrownBattleaxeItemID = leftThrownBattleaxeItemID;
-            //    Hotbar_updateLeftThrownBattleaxeItemID(leftThrownBattleaxeItemID);
-            // }
          } else {
             this.createEntityFromData(entityData);
          }
@@ -491,20 +500,14 @@ abstract class Client {
       for (let i = 0; i < data.circularHitboxes.length; i++) {
          const hitboxData = data.circularHitboxes[i];
 
-         const hitbox = new CircularHitbox(hitboxData.mass, hitboxData.collisionType as unknown as HitboxCollisionType, hitboxData.localID, hitboxData.radius);
-         hitbox.offset.x = hitboxData.offsetX;
-         hitbox.offset.y = hitboxData.offsetY;
-
+         const hitbox = new CircularHitbox(hitboxData.mass, hitboxData.offsetX, hitboxData.offsetY, hitboxData.collisionType as unknown as HitboxCollisionType, hitboxData.localID, hitboxData.radius);
          entity.addCircularHitbox(hitbox);
       }
 
       for (let i = 0; i < data.rectangularHitboxes.length; i++) {
          const hitboxData = data.rectangularHitboxes[i];
 
-         const hitbox = new RectangularHitbox(hitboxData.mass, hitboxData.collisionType as unknown as HitboxCollisionType, hitboxData.localID, hitboxData.width, hitboxData.height, hitboxData.rotation);
-         hitbox.offset.x = hitboxData.offsetX;
-         hitbox.offset.y = hitboxData.offsetY;
-
+         const hitbox = new RectangularHitbox(hitboxData.mass, hitboxData.offsetX, hitboxData.offsetY, hitboxData.collisionType as unknown as HitboxCollisionType, hitboxData.localID, hitboxData.width, hitboxData.height, hitboxData.rotation);
          entity.addRectangularHitbox(hitbox);
       }
    }

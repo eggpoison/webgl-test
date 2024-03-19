@@ -539,11 +539,18 @@ class InventoryUseComponent extends ServerComponent<ServerComponentType.inventor
             const handRestingOffset = getHandRestingOffset(this.entity.type as InventoryUseEntityType);
             limb.offset.x = handRestingOffset * Math.sin(handDirection);
             limb.offset.y = handRestingOffset * Math.cos(handDirection);
-            limb.rotation = Math.PI / 4.2 * handMult;
+            limb.rotation = lerp(HAND_RESTING_DIRECTION, Math.PI / 4.2, chargeProgress) * handMult;
 
-            this.activeItemRenderParts[limbIdx].offset.x = (ITEM_RESTING_OFFSET + itemSize/2) * Math.sin(itemDirection);
-            this.activeItemRenderParts[limbIdx].offset.y = (ITEM_RESTING_OFFSET + itemSize/2) * Math.cos(itemDirection);
-            this.activeItemRenderParts[limbIdx].rotation = ITEM_RESTING_ROTATION * handMult;
+            itemDirection = 0;
+            if (useInfo.currentAction === TribeMemberAction.chargeSpear) {
+               this.activeItemRenderParts[limbIdx].offset.x = (ITEM_RESTING_OFFSET + itemSize/2) * Math.sin(itemDirection);
+               this.activeItemRenderParts[limbIdx].offset.y = (ITEM_RESTING_OFFSET + itemSize/2) * Math.cos(itemDirection);
+               this.activeItemRenderParts[limbIdx].rotation = ITEM_RESTING_ROTATION * handMult;
+            } else {
+               this.activeItemRenderParts[limbIdx].offset.x = (ITEM_RESTING_OFFSET + itemSize/2) * Math.sin(itemDirection);
+               this.activeItemRenderParts[limbIdx].offset.y = (ITEM_RESTING_OFFSET + itemSize/2) * Math.cos(itemDirection);
+               this.activeItemRenderParts[limbIdx].rotation = ITEM_RESTING_ROTATION * handMult;
+            }
 
             limb.shakeAmount = lerp(0, 1.5, chargeProgress);
             break;

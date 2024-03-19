@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Entity from "../../Entity"
 import Camera from "../../Camera";
-import { ServerComponentType, distance } from "webgl-test-shared";
+import { ServerComponentType, clamp, distance, lerp } from "webgl-test-shared";
 import Board from "../../Board";
 import { getHoveredEntityID } from "../../entity-selection";
 import Game from "../../Game";
@@ -94,5 +94,6 @@ export function updateInspectHealthBar(): void {
    InspectHealthBar_setPos(Camera.calculateXScreenPos(barX), Camera.calculateYScreenPos(barY));
 
    const dist = distance(barX, barY, Player.instance.position.x, Player.instance.position.y);
-   InspectHealthBar_setOpacity(dist < 80 ? 0.5 : 1);
+   const opacity = lerp(0.4, 1, clamp((dist - 80) / 80, 0, 1));
+   InspectHealthBar_setOpacity(opacity);
 }

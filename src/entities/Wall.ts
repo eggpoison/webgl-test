@@ -44,13 +44,17 @@ class Wall extends Entity {
    }
 
    private updateDamageRenderPart(health: number, maxHealth: number): void {
-      const damageStage = Math.ceil((1 - health / maxHealth) * Wall.NUM_DAMAGE_STAGES);
+      let damageStage = Math.ceil((1 - health / maxHealth) * Wall.NUM_DAMAGE_STAGES);
       if (damageStage === 0) {
          if (this.damageRenderPart !== null) {
             this.removeRenderPart(this.damageRenderPart);
             this.damageRenderPart = null;
          }
          return;
+      }
+      // @Temporary: this is only here due to a bug which lets health go negative when attacking 25 health wooden wall with deepfrost axe (8 damage). remove when that bug is fixed
+      if (damageStage > Wall.NUM_DAMAGE_STAGES) {
+         damageStage = Wall.NUM_DAMAGE_STAGES;
       }
       
       const textureSource = "entities/wall/wooden-wall-damage-" + damageStage + ".png";

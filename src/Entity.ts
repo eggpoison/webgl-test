@@ -483,14 +483,16 @@ abstract class Entity extends RenderObject {
             // Update the existing hitbox
             hitbox = this.hitboxes[existingHitboxIdx] as CircularHitbox;
             hitbox.radius = hitboxData.radius;
+            hitbox.offset.x = hitboxData.offsetX;
+            hitbox.offset.y = hitboxData.offsetY;
+            hitbox.collisionType = hitboxData.collisionType as unknown as HitboxCollisionType;
+            hitbox.updateFromEntity(this);
+            hitbox.updateHitboxBounds();
          } else {
             // Create new hitbox
-            hitbox = new CircularHitbox(hitboxData.mass, hitboxData.collisionType as unknown as HitboxCollisionType, hitboxData.localID, hitboxData.radius);
+            hitbox = new CircularHitbox(hitboxData.mass, hitboxData.offsetX, hitboxData.offsetY, hitboxData.collisionType as unknown as HitboxCollisionType, hitboxData.localID, hitboxData.radius);
             this.addCircularHitbox(hitbox);
          }
-
-         hitbox.offset.x = hitboxData.offsetX;
-         hitbox.offset.y = hitboxData.offsetY;
       }
       for (let i = 0; i < data.rectangularHitboxes.length; i++) {
          const hitboxData = data.rectangularHitboxes[i];
@@ -515,14 +517,17 @@ abstract class Entity extends RenderObject {
             hitbox = this.hitboxes[existingHitboxIdx] as RectangularHitbox;
             hitbox.width = hitboxData.width;
             hitbox.height = hitboxData.height;
+            hitbox.rotation = hitboxData.rotation;
+            hitbox.offset.x = hitboxData.offsetX;
+            hitbox.offset.y = hitboxData.offsetY;
+            hitbox.collisionType = hitboxData.collisionType as unknown as HitboxCollisionType;
+            hitbox.updateFromEntity(this);
+            hitbox.updateHitboxBounds(this.rotation);
          } else {
             // Create new hitbox
-            hitbox = new RectangularHitbox(hitboxData.mass, hitboxData.collisionType as unknown as HitboxCollisionType, hitboxData.localID, hitboxData.width, hitboxData.height, hitboxData.rotation);
+            hitbox = new RectangularHitbox(hitboxData.mass, hitboxData.offsetX, hitboxData.offsetY, hitboxData.collisionType as unknown as HitboxCollisionType, hitboxData.localID, hitboxData.width, hitboxData.height, hitboxData.rotation);
             this.addRectangularHitbox(hitbox);
          }
-
-         hitbox.offset.x = hitboxData.offsetX;
-         hitbox.offset.y = hitboxData.offsetY;
       }
 
       // Update containing chunks

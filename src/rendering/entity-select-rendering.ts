@@ -7,6 +7,7 @@ import { BALLISTA_AMMO_BOX_OFFSET_X, BALLISTA_AMMO_BOX_OFFSET_Y } from "../utils
 import { entityIsPlacedOnWall } from "../entities/Spikes";
 import { playerIsHoldingHammer } from "../game-state/game-states";
 import Game from "../Game";
+import { getTunnelDoorInfo } from "../entity-components/TunnelComponent";
 
 const THICKNESS = 4;
 
@@ -150,26 +151,29 @@ const getEntityHighlightInfoArray = (entity: Entity): ReadonlyArray<HighlightInf
             );
          }
 
+         // @Incomplete: the positions of these highlights are a bit incorrect
          const tunnelComponent = entity.getServerComponent(ServerComponentType.tunnel);
          if (tunnelComponent.hasTopDoor()) {
+            const doorInfo = getTunnelDoorInfo(0b01, tunnelComponent.topDoorOpenProgress);
             highlightInfoArray.push([{
                width: 48,
                height: 16,
                isCircle: false,
-               xOffset: 0,
-               yOffset: 30,
-               rotation: 0,
+               xOffset: doorInfo.offsetX - 2 * Math.sin(doorInfo.rotation + entity.rotation),
+               yOffset: doorInfo.offsetY - 2 * Math.sin(doorInfo.rotation + entity.rotation),
+               rotation: doorInfo.rotation,
                group: 1
             }]);
          }
          if (tunnelComponent.hasBottomDoor()) {
+            const doorInfo = getTunnelDoorInfo(0b10, tunnelComponent.bottomDoorOpenProgress);
             highlightInfoArray.push([{
                width: 48,
                height: 16,
                isCircle: false,
-               xOffset: 0,
-               yOffset: -30,
-               rotation: 0,
+               xOffset: doorInfo.offsetX - 2 * Math.sin(doorInfo.rotation + entity.rotation),
+               yOffset: doorInfo.offsetY - 2 * Math.sin(doorInfo.rotation + entity.rotation),
+               rotation: doorInfo.rotation,
                group: 2
             }]);
          }
@@ -229,8 +233,8 @@ export function getClosestGroupNum(entity: Entity): number {
       for (let j = 0; j < group.length; j++) {
          const highlightInfo = group[j];
 
-         const x = entity.position.x + rotateXAroundOrigin(highlightInfo.xOffset, highlightInfo.yOffset, entity.rotation + highlightInfo.rotation);
-         const y = entity.position.y + rotateYAroundOrigin(highlightInfo.xOffset, highlightInfo.yOffset, entity.rotation + highlightInfo.rotation);
+         const x = entity.position.x + rotateXAroundOrigin(highlightInfo.xOffset, highlightInfo.yOffset, entity.rotation);
+         const y = entity.position.y + rotateYAroundOrigin(highlightInfo.xOffset, highlightInfo.yOffset, entity.rotation);
          const dist = distance(Game.cursorPositionX!, Game.cursorPositionY!, x, y);
          if (dist < minCursorDist) {
             minCursorDist = dist;

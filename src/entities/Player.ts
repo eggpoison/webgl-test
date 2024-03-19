@@ -225,7 +225,7 @@ class Player extends TribeMember {
       ];
       
       const player = new Player(position, playerID, 0, componentsData);
-      player.addCircularHitbox(new CircularHitbox(1, HitboxCollisionType.soft, 1, 32));
+      player.addCircularHitbox(new CircularHitbox(1, 0, 0, HitboxCollisionType.soft, 1, 32));
       player.collisionBit = COLLISION_BITS.default;
       player.collisionMask = DEFAULT_COLLISION_MASK;
       Board.addEntity(player);

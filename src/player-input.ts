@@ -171,8 +171,8 @@ const getPlaceableEntityHeight = (entityType: EntityType, isPlacedOnWall: boolea
 }
 
 // @Cleanup: Remove these
-const testRectangularHitbox = new RectangularHitbox(1, HitboxCollisionType.soft, 1, -1, -1, 0);
-const testCircularHitbox = new CircularHitbox(1, HitboxCollisionType.soft, 1, -1);
+const testRectangularHitbox = new RectangularHitbox(1, 0, 0, HitboxCollisionType.soft, 1, -1, -1, 0);
+const testCircularHitbox = new CircularHitbox(1, 0, 0, HitboxCollisionType.soft, 1, -1);
 
 const hotbarItemAttackCooldowns: Record<number, number> = {};
 const offhandItemAttackCooldowns: Record<number, number> = {};
@@ -820,9 +820,9 @@ export function canPlaceItem(placePosition: Point, placeRotation: number, item: 
    // Check for wall tile collisions
    // 
 
-   // @Cleanup: Use collision file
+   // @Cleanup: Use collision file, remove test hitbox
    // @Speed: Garbage collection
-   const tileHitbox = new RectangularHitbox(1, HitboxCollisionType.soft, 1, Settings.TILE_SIZE, Settings.TILE_SIZE, 0);
+   const tileHitbox = new RectangularHitbox(1, 0, 0, HitboxCollisionType.soft, 1, Settings.TILE_SIZE, Settings.TILE_SIZE, 0);
 
    const minTileX = Math.floor(placeTestHitbox.bounds[0] / Settings.TILE_SIZE);
    const maxTileX = Math.floor(placeTestHitbox.bounds[1] / Settings.TILE_SIZE);

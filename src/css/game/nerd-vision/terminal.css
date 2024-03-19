@@ -12,7 +12,7 @@
    top: 50%;
    left: 50%;
    transform: translate(-50%, -50%);
-   z-index: 2;
+   z-index: 3;
    box-shadow: 0 0 6px 3px rgba(0, 0, 0, 0.3);
 }
 #terminal.focused {
@@ -38,11 +38,9 @@
 #terminal .line-reader .line-input {
    width: 0;
    background-color: #000;
-   /* background-color: red; */
    display: inline-block;
    padding: 0;
    border: none;
-   /* caret-color: transparent; */
    outline: none;
 }
 

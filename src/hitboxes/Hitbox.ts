@@ -14,13 +14,14 @@ abstract class Hitbox {
    /** The position of the hitbox, accounting for its offset and offset rotation */
    public position = new Point(0, 0);
 
-   public offset = new Point(0, 0);
+   public offset: Point;
 
    /** The bounds of the hitbox since the last physics update */
    public bounds: HitboxBounds = [-1, -1, -1, -1];
 
-   constructor(mass: number, collisionType: HitboxCollisionType, localID: number) {
+   constructor(mass: number, offsetX: number, offsetY: number, collisionType: HitboxCollisionType, localID: number) {
       this.mass = mass;
+      this.offset = new Point(offsetX, offsetY);
       this.collisionType = collisionType;
       this.localID = localID;
    }
