@@ -12,8 +12,7 @@ abstract class Camera {
    public static zoom: number = 1.4;
    // public static zoom: number = 1;
 
-   // @Temporary
-   private static trackedEntityID = 0;
+   public static trackedEntityID = 0;
 
    public static position = new Point(0, 0);
    

@@ -435,12 +435,18 @@ abstract class Game {
          renderEntityHitboxes();
       }
       // @Temporary
-      if (nerdVisionIsVisible() && this.entityDebugData !== null && Board.hasEntityID(this.entityDebugData.entityID)) {
+      if (this.entityDebugData !== null && Board.hasEntityID(this.entityDebugData.entityID)) {
+      // if (nerdVisionIsVisible() && this.entityDebugData !== null && Board.hasEntityID(this.entityDebugData.entityID)) {
          renderLineDebugData(this.entityDebugData);
       }
 
       if (isDev()) {
-         if (nerdVisionIsVisible()) {
+         // @Temporary
+         if (Board.entityRecord.hasOwnProperty(Camera.trackedEntityID) && Camera.trackedEntityID !== Player.instance?.id) {
+            console.log("track");
+            const entity = Board.entityRecord[Camera.trackedEntityID];
+            Client.sendTrackEntity(entity.id);
+         } else if (nerdVisionIsVisible()) {
             const targettedEntity = getMouseTargetEntity();
             Client.sendTrackEntity(targettedEntity !== null ? targettedEntity.id : null);
          } else {
