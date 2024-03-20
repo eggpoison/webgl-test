@@ -32,7 +32,7 @@ const getHutSize = (hutType: HutType): number => {
    }
 }
 
-const getDoorHeight = (hutType: HutType): number => {
+const getHutDoorHeight = (hutType: HutType): number => {
    switch (hutType) {
       case EntityType.workerHut: return 48;
       case EntityType.warriorHut: return 44;
@@ -41,7 +41,7 @@ const getDoorHeight = (hutType: HutType): number => {
 
 const getDoorXOffset = (hutType: HutType, i: number): number => {
    switch (hutType) {
-      case EntityType.workerHut: return -getDoorHeight(hutType) / 2;
+      case EntityType.workerHut: return -getHutDoorHeight(hutType) / 2;
       case EntityType.warriorHut: return -40 * (i === 0 ? 1 : -1);
    }
 }
@@ -68,7 +68,7 @@ class HutComponent extends ServerComponent<ServerComponentType.hut> {
          
          const hutType = this.entity.type as HutType;
          const hutSize = getHutSize(hutType);
-         const doorHeight = getDoorHeight(hutType);
+         const doorHeight = getHutDoorHeight(hutType);
          const doorXOffset = getDoorXOffset(hutType, i);
          
          // @Speed: Garbage collection

@@ -4,6 +4,8 @@ import { ParticleColour, ParticleRenderLayer, addMonocolourParticleToBufferConta
 import Board from "./Board";
 import Entity, { getRandomPointInEntity } from "./Entity";
 
+// @Cleanup: Standardise all these functions to just take the stuff necessary to create them, then have the places which call them modify the returned particle
+
 const BLOOD_COLOUR_LOW: Readonly<ParticleColour> = [150, 0, 0];
 const BLOOD_COLOUR_HIGH: Readonly<ParticleColour> = [212, 0, 0];
 

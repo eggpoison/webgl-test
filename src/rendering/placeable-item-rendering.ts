@@ -9,6 +9,8 @@ import Entity from "../Entity";
 import { ATLAS_SLOT_SIZE } from "../texture-atlases/texture-atlas-stitching";
 import { BALLISTA_AMMO_BOX_OFFSET_X, BALLISTA_AMMO_BOX_OFFSET_Y, BALLISTA_GEAR_X, BALLISTA_GEAR_Y } from "../utils";
 import { getHoveredGhostType } from "../components/game/BlueprintMenu";
+import WorkerHut from "../entities/WorkerHut";
+import WarriorHut from "../entities/WarriorHut";
 
 const PARTIAL_OPACITY = 0.5;
 
@@ -132,6 +134,12 @@ const TEXTURE_INFO_RECORD: Record<GhostType, ReadonlyArray<TextureInfo>> = {
    ],
    [GhostType.workerHut]: [
       {
+         textureSource: "entities/worker-hut/worker-hut-door.png",
+         offsetX: 0,
+         offsetY: WorkerHut.SIZE / 2,
+         rotation: Math.PI/2
+      },
+      {
          textureSource: "entities/worker-hut/worker-hut.png",
          offsetX: 0,
          offsetY: 0,
@@ -139,6 +147,18 @@ const TEXTURE_INFO_RECORD: Record<GhostType, ReadonlyArray<TextureInfo>> = {
       }
    ],
    [GhostType.warriorHut]: [
+      {
+         textureSource: "entities/warrior-hut/warrior-hut-door.png",
+         offsetX: -20,
+         offsetY: WarriorHut.SIZE / 2,
+         rotation: Math.PI/2
+      },
+      {
+         textureSource: "entities/warrior-hut/warrior-hut-door.png",
+         offsetX: 20,
+         offsetY: WarriorHut.SIZE / 2,
+         rotation: Math.PI * 3/2
+      },
       {
          textureSource: "entities/warrior-hut/warrior-hut.png",
          offsetX: 0,

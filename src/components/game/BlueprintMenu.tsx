@@ -7,7 +7,7 @@ import { BlueprintType, BuildingMaterial, EntityType, ItemType, ServerComponentT
 import { GhostType } from "../../rendering/placeable-item-rendering";
 import { getItemTypeImage } from "../../client-item-info";
 import Entity from "../../Entity";
-import { definiteGameState } from "../../game-state/game-states";
+import { definiteGameState, playerIsHoldingHammer } from "../../game-state/game-states";
 import { countItemTypesInInventory } from "../../inventory-manipulation";
 import { playSound } from "../../sound";
 import Player from "../../entities/Player";
@@ -441,6 +441,12 @@ const BlueprintMenu = () => {
 export default BlueprintMenu;
 
 export function updateBlueprintMenu(): void {
+   // Deselect if switching to a non-hammer item
+   if (!playerIsHoldingHammer()) {
+      hideBlueprintMenu();
+      return;
+   }
+   
    const selectedStructureID = getSelectedEntityID();
    if (selectedStructureID === -1 || !Board.entityRecord.hasOwnProperty(selectedStructureID)) {
       hideBlueprintMenu();
