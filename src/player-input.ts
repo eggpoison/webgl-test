@@ -233,7 +233,7 @@ export function updatePlayerItems(): void {
    }
 }
 
-const attack = (isOffhand: boolean): void => {
+const attack = (isOffhand: boolean, attackCooldown: number): void => {
    const attackPacket: AttackPacket = {
       itemSlot: latencyGameState.selectedHotbarItemSlot,
       attackDirection: Player.instance!.rotation
@@ -244,7 +244,10 @@ const attack = (isOffhand: boolean): void => {
    if (latencyGameState.mainAction !== TribeMemberAction.chargeBow) {
       const limbIdx = isOffhand ? 1 : 0;
       const inventoryUseComponent = Player.instance!.getServerComponent(ServerComponentType.inventoryUse);
-      inventoryUseComponent.useInfos[limbIdx].lastAttackTicks = Board.ticks;
+      const useInfo = inventoryUseComponent.useInfos[limbIdx];
+
+      useInfo.lastAttackTicks = Board.ticks;
+      useInfo.lastAttackCooldown = attackCooldown;
    }
 }
 
@@ -258,32 +261,35 @@ const attemptInventoryAttack = (inventory: Inventory): boolean => {
    const selectedItemSlot = useInfo.selectedItemSlot;
 
    if (inventory.itemSlots.hasOwnProperty(selectedItemSlot)) {
-      // Don't attack if the hand is busy waiting for a battleaxe to return
-      const selectedItem = inventory.itemSlots[selectedItemSlot];
-      if (useInfo.thrownBattleaxeItemID === selectedItem.id) {
-         return false;
-      }
-
       // Attack with item
       if (!attackCooldowns.hasOwnProperty(selectedItemSlot)) {
-         attack(isOffhand);
+         const selectedItem = inventory.itemSlots[selectedItemSlot];
          
          // Reset the attack cooldown of the weapon
+         let attackCooldown: number;
          const itemTypeInfo = ITEM_TYPE_RECORD[selectedItem.type];
          if (itemTypeInfo === "axe" || itemTypeInfo === "pickaxe" || itemTypeInfo === "sword" || itemTypeInfo === "spear" || itemTypeInfo === "hammer" || itemTypeInfo === "battleaxe" || itemTypeInfo === "crossbow") {
-            const itemInfo = ITEM_INFO_RECORD[selectedItem.type];
-            attackCooldowns[selectedItemSlot] = (itemInfo as ToolItemInfo).attackCooldown;
+            if (selectedItem.id === useInfo.thrownBattleaxeItemID) {
+               attackCooldown = Settings.DEFAULT_ATTACK_COOLDOWN;
+            } else {
+               const itemInfo = ITEM_INFO_RECORD[selectedItem.type];
+               attackCooldown = (itemInfo as ToolItemInfo).attackCooldown;
+            }
          } else {
-            attackCooldowns[selectedItemSlot] = Settings.DEFAULT_ATTACK_COOLDOWN;
+            attackCooldown = Settings.DEFAULT_ATTACK_COOLDOWN;
          }
+
+         attackCooldowns[selectedItemSlot] = attackCooldown;
+
+         attack(isOffhand, attackCooldown);
 
          return true;
       }
    } else {
       // Attack without item
       if (!attackCooldowns.hasOwnProperty(selectedItemSlot)) {
-         attack(isOffhand);
          attackCooldowns[selectedItemSlot] = Settings.DEFAULT_ATTACK_COOLDOWN;
+         attack(isOffhand, Settings.DEFAULT_ATTACK_COOLDOWN);
 
          return true;
       }

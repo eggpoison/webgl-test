@@ -127,7 +127,8 @@ const createInitialInventoryUseInfo = (inventoryName: string): InventoryUseInfoD
       lastSpearChargeTicks: 0,
       lastBattleaxeChargeTicks: 0,
       lastCrossbowLoadTicks: 0,
-      thrownBattleaxeItemID: -1
+      thrownBattleaxeItemID: -1,
+      lastAttackCooldown: Settings.DEFAULT_ATTACK_COOLDOWN
    }
 }
 
