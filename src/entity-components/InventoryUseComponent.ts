@@ -544,17 +544,18 @@ class InventoryUseComponent extends ServerComponent<ServerComponentType.inventor
             const handRestingOffset = getHandRestingOffset(this.entity.type as InventoryUseEntityType);
             limb.offset.x = handRestingOffset * Math.sin(handDirection);
             limb.offset.y = handRestingOffset * Math.cos(handDirection);
-            limb.rotation = lerp(Math.PI / 4.2, Math.PI / 2.5, chargeProgress) * handMult;
 
             itemDirection = 0;
             if (useInfo.currentAction === TribeMemberAction.chargeSpear) {
-               this.activeItemRenderParts[limbIdx].offset.x = (ITEM_RESTING_OFFSET + itemSize/2) * Math.sin(itemDirection);
-               this.activeItemRenderParts[limbIdx].offset.y = (ITEM_RESTING_OFFSET + itemSize/2) * Math.cos(itemDirection);
-               this.activeItemRenderParts[limbIdx].rotation = ITEM_RESTING_ROTATION * handMult;
-            } else {
-               this.activeItemRenderParts[limbIdx].offset.x = (ITEM_RESTING_OFFSET + itemSize/2) * Math.sin(itemDirection);
-               this.activeItemRenderParts[limbIdx].offset.y = (ITEM_RESTING_OFFSET + itemSize/2) * Math.cos(itemDirection);
+               limb.rotation = lerp(ITEM_RESTING_ROTATION, Math.PI / 3.5, chargeProgress) * handMult;
+               // this.activeItemRenderParts[limbIdx].offset.x = (ITEM_RESTING_OFFSET + itemSize/2) * Math.sin(itemDirection);
+               // this.activeItemRenderParts[limbIdx].offset.y = (ITEM_RESTING_OFFSET + itemSize/2) * Math.cos(itemDirection);
+               this.activeItemRenderParts[limbIdx].offset.x = 5;
+               this.activeItemRenderParts[limbIdx].offset.y = 11;
                // this.activeItemRenderParts[limbIdx].rotation = ITEM_RESTING_ROTATION * handMult;
+               this.activeItemRenderParts[limbIdx].rotation = 0;
+            } else {
+               limb.rotation = lerp(Math.PI / 4.2, Math.PI / 2.5, chargeProgress) * handMult;
                this.activeItemRenderParts[limbIdx].offset.x = 12;
                this.activeItemRenderParts[limbIdx].offset.y = 36;
                this.activeItemRenderParts[limbIdx].rotation = -Math.PI/6 * handMult;
@@ -632,11 +633,9 @@ class InventoryUseComponent extends ServerComponent<ServerComponentType.inventor
                limb.offset.y = handOffsetAmount * Math.cos(handOffsetDirection);
                limb.rotation = attackHandRotation * handMult;
    
-               const activeItemOffsetAmount = ITEM_RESTING_OFFSET + itemSize/2 + extraOffset;
-               const activeItemOffsetDirection = (direction - Math.PI/14) * handMult;
-               this.activeItemRenderParts[limbIdx].offset.x = activeItemOffsetAmount * Math.sin(activeItemOffsetDirection);
-               this.activeItemRenderParts[limbIdx].offset.y = activeItemOffsetAmount * Math.cos(activeItemOffsetDirection);
-               this.activeItemRenderParts[limbIdx].rotation = attackHandRotation * handMult;
+               this.activeItemRenderParts[limbIdx].offset.x = 5;
+               this.activeItemRenderParts[limbIdx].offset.y = 11;
+               this.activeItemRenderParts[limbIdx].rotation = 0;
             } else {
                let direction: number;
                let attackHandRotation: number;

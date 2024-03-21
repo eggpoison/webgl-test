@@ -251,6 +251,17 @@ const attack = (isOffhand: boolean, attackCooldown: number): void => {
    }
 }
 
+const getSwingTimeMulitplier = (): number => {
+   let swingTimeMultiplier = 1;
+
+   if (Game.tribe.tribeType === TribeType.barbarians) {
+      // 30% slower
+      swingTimeMultiplier /= 0.7;
+   }
+
+   return swingTimeMultiplier;
+}
+
 const attemptInventoryAttack = (inventory: Inventory): boolean => {
    const isOffhand = inventory.name !== "hotbar";
 
@@ -266,19 +277,22 @@ const attemptInventoryAttack = (inventory: Inventory): boolean => {
          const selectedItem = inventory.itemSlots[selectedItemSlot];
          
          // Reset the attack cooldown of the weapon
-         let attackCooldown: number;
+         let baseAttackCooldown: number;
          const itemTypeInfo = ITEM_TYPE_RECORD[selectedItem.type];
          if (itemTypeInfo === "axe" || itemTypeInfo === "pickaxe" || itemTypeInfo === "sword" || itemTypeInfo === "spear" || itemTypeInfo === "hammer" || itemTypeInfo === "battleaxe" || itemTypeInfo === "crossbow") {
             if (selectedItem.id === useInfo.thrownBattleaxeItemID) {
-               attackCooldown = Settings.DEFAULT_ATTACK_COOLDOWN;
+               baseAttackCooldown = Settings.DEFAULT_ATTACK_COOLDOWN;
             } else {
                const itemInfo = ITEM_INFO_RECORD[selectedItem.type];
-               attackCooldown = (itemInfo as ToolItemInfo).attackCooldown;
+               baseAttackCooldown = (itemInfo as ToolItemInfo).attackCooldown;
             }
          } else {
-            attackCooldown = Settings.DEFAULT_ATTACK_COOLDOWN;
+            baseAttackCooldown = Settings.DEFAULT_ATTACK_COOLDOWN;
          }
 
+         const attackCooldown = baseAttackCooldown * getSwingTimeMulitplier();
+         
+         // @Cleanup: Should be done in attack function
          attackCooldowns[selectedItemSlot] = attackCooldown;
 
          attack(isOffhand, attackCooldown);
@@ -288,8 +302,9 @@ const attemptInventoryAttack = (inventory: Inventory): boolean => {
    } else {
       // Attack without item
       if (!attackCooldowns.hasOwnProperty(selectedItemSlot)) {
-         attackCooldowns[selectedItemSlot] = Settings.DEFAULT_ATTACK_COOLDOWN;
-         attack(isOffhand, Settings.DEFAULT_ATTACK_COOLDOWN);
+         const attackCooldown = Settings.DEFAULT_ATTACK_COOLDOWN * getSwingTimeMulitplier();
+         attackCooldowns[selectedItemSlot] = attackCooldown;
+         attack(isOffhand, attackCooldown);
 
          return true;
       }
@@ -1054,6 +1069,7 @@ const selectItemSlot = (itemSlot: number): void => {
    const hotbarUseInfo = playerInventoryUseComponent.getUseInfo("hotbar");
    hotbarUseInfo.selectedItemSlot = itemSlot;
 
+   // @Incomplete
    // @Cleanup: Copy and paste, and shouldn't be here
    // if (Player.instance !== null) {
    //    if (definiteGameState.hotbar.itemSlots.hasOwnProperty(latencyGameState.selectedHotbarItemSlot)) {

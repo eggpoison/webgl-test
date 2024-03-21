@@ -304,7 +304,6 @@ abstract class Client {
                const componentsData = data.components as EntityComponentsData<EntityType.player>;
                Player.instance.getServerComponent(ServerComponentType.statusEffect).updateFromData(componentsData[2]);
                
-               
                // @Cleanup @Hack
                const inventoryUseComponentsData = componentsData[6];
                let hotbarUseInfo: InventoryUseInfoData | undefined;
@@ -406,6 +405,9 @@ abstract class Client {
          const inventoryComponent = Player.instance.getServerComponent(ServerComponentType.inventory);
          if (hotbarHasChanged) {
             updateInventoryFromData(inventoryComponent.getInventory("hotbar"), playerInventoryData.hotbar);
+         }
+         if (offhandHasChanged) {
+            updateInventoryFromData(inventoryComponent.getInventory("offhand"), playerInventoryData.offhand);
          }
          if (armourSlotHasChanged) {
             updateInventoryFromData(inventoryComponent.getInventory("armourSlot"), playerInventoryData.armourSlot);

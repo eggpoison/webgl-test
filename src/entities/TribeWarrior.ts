@@ -10,6 +10,7 @@ import TribeComponent from "../entity-components/TribeComponent";
 import { addTribeMemberRenderParts } from "./TribeMember";
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import EquipmentComponent from "../entity-components/EquipmentComponent";
 
 class TribeWarrior extends Tribesman {
    constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.tribeWarrior>) {
@@ -21,6 +22,7 @@ class TribeWarrior extends Tribesman {
       this.addServerComponent(ServerComponentType.inventory, new InventoryComponent(this, componentsData[5]));
       this.addServerComponent(ServerComponentType.inventoryUse, new InventoryUseComponent(this, componentsData[6]));
       this.addClientComponent(ClientComponentType.footprint, new FootprintComponent(this, 0.15, 20, 64, 4, 64));
+      this.addClientComponent(ClientComponentType.equipment, new EquipmentComponent(this));
       
       addTribeMemberRenderParts(this, componentsData[4]);
 
