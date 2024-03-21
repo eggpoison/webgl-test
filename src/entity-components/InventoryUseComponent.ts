@@ -534,18 +534,10 @@ class InventoryUseComponent extends ServerComponent<ServerComponentType.inventor
             const handRestingDirection = getLimbRestingDirection(this.entity.type as InventoryUseEntityType);
             const handDirection = lerp(handRestingDirection, Math.PI / 1.5, chargeProgress) * handMult;
 
-            let itemDirection: number;
-            if (useInfo.currentAction === TribeMemberAction.chargeSpear) {
-               itemDirection = handDirection - Math.PI/14 * handMult;
-            } else {
-               itemDirection = lerp(handRestingDirection - Math.PI/14, Math.PI / 2.2, chargeProgress) * handMult
-            }
-            
             const handRestingOffset = getHandRestingOffset(this.entity.type as InventoryUseEntityType);
             limb.offset.x = handRestingOffset * Math.sin(handDirection);
             limb.offset.y = handRestingOffset * Math.cos(handDirection);
 
-            itemDirection = 0;
             if (useInfo.currentAction === TribeMemberAction.chargeSpear) {
                limb.rotation = lerp(ITEM_RESTING_ROTATION, Math.PI / 3.5, chargeProgress) * handMult;
                // this.activeItemRenderParts[limbIdx].offset.x = (ITEM_RESTING_OFFSET + itemSize/2) * Math.sin(itemDirection);
