@@ -6,6 +6,7 @@ import { ROCK_DESTROY_SOUNDS, ROCK_HIT_SOUNDS, playSound } from "../sound";
 import Entity from "../Entity";
 import HealthComponent from "../entity-components/HealthComponent";
 import StatusEffectComponent from "../entity-components/StatusEffectComponent";
+import { ParticleRenderLayer } from "../rendering/particle-rendering";
 
 class Boulder extends Entity {
    private static readonly RADIUS = 40;
@@ -42,11 +43,11 @@ class Boulder extends Entity {
 
          moveDirection += randFloat(-1, 1);
 
-         createRockParticle(spawnPositionX, spawnPositionY, moveDirection, randFloat(80, 125));
+         createRockParticle(spawnPositionX, spawnPositionY, moveDirection, randFloat(80, 125), ParticleRenderLayer.low);
       }
 
       for (let i = 0; i < 5; i++) {
-         createRockSpeckParticle(this.position.x, this.position.y, Boulder.RADIUS, 0, 0);
+         createRockSpeckParticle(this.position.x, this.position.y, Boulder.RADIUS, 0, 0, ParticleRenderLayer.low);
       }
 
       playSound(randItem(ROCK_HIT_SOUNDS), 0.3, 1, this.position.x, this.position.y);
@@ -59,11 +60,11 @@ class Boulder extends Entity {
          const spawnPositionX = this.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
          const spawnPositionY = this.position.y + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
 
-         createRockParticle(spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(80, 125));
+         createRockParticle(spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(80, 125), ParticleRenderLayer.low);
       }
 
       for (let i = 0; i < 5; i++) {
-         createRockSpeckParticle(this.position.x, this.position.y, Boulder.RADIUS, 0, 0);
+         createRockSpeckParticle(this.position.x, this.position.y, Boulder.RADIUS, 0, 0, ParticleRenderLayer.low);
       }
 
       playSound(randItem(ROCK_DESTROY_SOUNDS), 0.4, 1, this.position.x, this.position.y);

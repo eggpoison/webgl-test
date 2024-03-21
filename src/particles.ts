@@ -188,7 +188,7 @@ export function createBloodPoolParticle(originX: number, originY: number, spawnR
    Board.lowTexturedParticles.push(particle);
 }
    
-export function createRockParticle(spawnPositionX: number, spawnPositionY: number, moveDirection: number, moveSpeed: number): void {
+export function createRockParticle(spawnPositionX: number, spawnPositionY: number, moveDirection: number, moveSpeed: number, renderLayer: ParticleRenderLayer): void {
    const lifetime = randFloat(0.3, 0.6);
 
    let textureIndex: number;
@@ -217,7 +217,7 @@ export function createRockParticle(spawnPositionX: number, spawnPositionY: numbe
 
    addTexturedParticleToBufferContainer(
       particle,
-      ParticleRenderLayer.low,
+      renderLayer,
       64, 64,
       spawnPositionX, spawnPositionY,
       velocityX, velocityY,
@@ -230,7 +230,11 @@ export function createRockParticle(spawnPositionX: number, spawnPositionY: numbe
       textureIndex,
       0, 0, 0
    );
-   Board.lowTexturedParticles.push(particle);
+   if (renderLayer === ParticleRenderLayer.high) {
+      Board.highTexturedParticles.push(particle);
+   } else {
+      Board.lowTexturedParticles.push(particle);
+   }
 }
 
 export function createDirtParticle(spawnPositionX: number, spawnPositionY: number): void {
@@ -418,7 +422,7 @@ export function createWoodSpeckParticle(originX: number, originY: number, offset
    Board.lowMonocolourParticles.push(particle);
 }
 
-export function createRockSpeckParticle(originX: number, originY: number, offset: number, velocityAddX: number, velocityAddY: number): void {
+export function createRockSpeckParticle(originX: number, originY: number, offset: number, velocityAddX: number, velocityAddY: number, renderLayer: ParticleRenderLayer): void {
    const spawnOffsetDirection = 2 * Math.PI * Math.random();
    const spawnPositionX = originX + offset * Math.sin(spawnOffsetDirection);
    const spawnPositionY = originY + offset * Math.cos(spawnOffsetDirection);
@@ -444,7 +448,7 @@ export function createRockSpeckParticle(originX: number, originY: number, offset
 
    addMonocolourParticleToBufferContainer(
       particle,
-      ParticleRenderLayer.low,
+      renderLayer,
       baseSize * scale, baseSize * scale,
       spawnPositionX, spawnPositionY,
       velocityX, velocityY,
@@ -456,7 +460,11 @@ export function createRockSpeckParticle(originX: number, originY: number, offset
       Math.abs(angularVelocity) / lifetime / 1.5,
       colour, colour, colour
    );
-   Board.lowMonocolourParticles.push(particle);
+   if (renderLayer === ParticleRenderLayer.high) {
+      Board.highMonocolourParticles.push(particle);
+   } else {
+      Board.lowMonocolourParticles.push(particle);
+   }
 }
 
 export function createSlimeSpeckParticle(originX: number, originY: number, spawnOffset: number): void {
@@ -1067,6 +1075,38 @@ export function createSawdustCloud(x: number, y: number): void {
       0,
       0,
       6 * 8,
+      0, 0, 0
+   );
+   Board.highTexturedParticles.push(particle);
+}
+
+export function createDustCloud(x: number, y: number): void {
+   const lifetime = randFloat(0.4, 0.7);
+   
+   const moveSpeed = randFloat(75, 150);
+   const moveDirection = 2 * Math.PI * Math.random();
+   const velocityX = moveSpeed * Math.sin(moveDirection);
+   const velocityY = moveSpeed * Math.cos(moveDirection);
+
+   const opacity = randFloat(0.7, 1);
+   const particle = new Particle(lifetime);
+   particle.getOpacity = (): number => {
+      return (1 - particle.age / lifetime) * opacity;
+   };
+   
+   addTexturedParticleToBufferContainer(
+      particle,
+      ParticleRenderLayer.high,
+      64, 64,
+      x, y,
+      velocityX, velocityY,
+      0, 0,
+      0,
+      2 * Math.PI * Math.random(),
+      randFloat(-1, 1) * Math.PI * 2,
+      0,
+      0,
+      4 * 8 + 3,
       0, 0, 0
    );
    Board.highTexturedParticles.push(particle);

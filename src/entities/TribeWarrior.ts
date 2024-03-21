@@ -8,6 +8,8 @@ import InventoryUseComponent from "../entity-components/InventoryUseComponent";
 import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 import TribeComponent from "../entity-components/TribeComponent";
 import { addTribeMemberRenderParts } from "./TribeMember";
+import RenderPart from "../render-parts/RenderPart";
+import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 
 class TribeWarrior extends Tribesman {
    constructor(position: Point, id: number, ageTicks: number, componentsData: EntityComponentsData<EntityType.tribeWarrior>) {
@@ -21,6 +23,21 @@ class TribeWarrior extends Tribesman {
       this.addClientComponent(ClientComponentType.footprint, new FootprintComponent(this, 0.15, 20, 64, 4, 64));
       
       addTribeMemberRenderParts(this, componentsData[4]);
+
+      const tribeWarriorComponentData = componentsData[8];
+      for (let i = 0; i < tribeWarriorComponentData.scars.length; i++) {
+         const scarInfo = tribeWarriorComponentData.scars[i];
+
+         const renderPart = new RenderPart(
+            this,
+            getTextureArrayIndex("scars/scar-" + (scarInfo.type + 1) + ".png"),
+            3,
+            scarInfo.rotation
+         );
+         renderPart.offset.x = scarInfo.offsetX;
+         renderPart.offset.y = scarInfo.offsetY;
+         this.attachRenderPart(renderPart);
+      }
    }
 }
 

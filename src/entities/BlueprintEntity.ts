@@ -1,12 +1,15 @@
-import { EntityData, EntityType, Point, BlueprintType, randFloat, ServerComponentType, EntityComponentsData } from "webgl-test-shared";
+import { EntityData, EntityType, Point, BlueprintType, randFloat, ServerComponentType, EntityComponentsData, assertUnreachable } from "webgl-test-shared";
 import RenderPart from "../render-parts/RenderPart";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
 import { playSound } from "../sound";
 import { BALLISTA_AMMO_BOX_OFFSET_X, BALLISTA_AMMO_BOX_OFFSET_Y, BALLISTA_GEAR_X, BALLISTA_GEAR_Y } from "../utils";
-import { createLightWoodSpeckParticle, createSawdustCloud } from "../particles";
+import { createDustCloud, createLightWoodSpeckParticle, createRockParticle, createRockSpeckParticle, createSawdustCloud } from "../particles";
 import BlueprintComponent from "../entity-components/BlueprintComponent";
 import Entity from "../Entity";
 import HealthComponent from "../entity-components/HealthComponent";
+import { ParticleRenderLayer } from "../rendering/particle-rendering";
+
+// @Cleanup: Move all this logic to the blueprint component file
 
 interface ProgressTextureInfo {
    readonly progressTextureSources: ReadonlyArray<string>;
@@ -240,14 +243,36 @@ export const BLUEPRINT_PROGRESS_TEXTURE_SOURCES: Record<BlueprintType, ReadonlyA
    ]
 };
 
-const countProgressTextures = (buildingType: BlueprintType): number => {
+const countProgressTextures = (blueprintType: BlueprintType): number => {
    let numTextures = 0;
-   const progressTextureInfoArray = BLUEPRINT_PROGRESS_TEXTURE_SOURCES[buildingType];
+   const progressTextureInfoArray = BLUEPRINT_PROGRESS_TEXTURE_SOURCES[blueprintType];
    for (let i = 0; i < progressTextureInfoArray.length; i++) {
       const progressTextureInfo = progressTextureInfoArray[i];
       numTextures += progressTextureInfo.progressTextureSources.length;
    }
    return numTextures;
+}
+
+export function getCurrentBlueprintProgressTexture(blueprintType: BlueprintType, blueprintProgress: number): ProgressTextureInfo {
+   const numTextures = countProgressTextures(blueprintType);
+
+   const stage = Math.floor(blueprintProgress * (numTextures + 1));
+   
+   const lastTextureIndex = stage - 1;
+   const progressTextureInfoArray = BLUEPRINT_PROGRESS_TEXTURE_SOURCES[blueprintType];
+
+   let currentIndexStart = 0;
+   for (let i = 0; i < progressTextureInfoArray.length; i++) {
+      const progressTextureInfo = progressTextureInfoArray[i];
+
+      currentIndexStart += progressTextureInfo.progressTextureSources.length;
+
+      if (currentIndexStart >= lastTextureIndex) {
+         return progressTextureInfo;
+      }
+   }
+
+   return progressTextureInfoArray[progressTextureInfoArray.length - 1];
 }
 
 class BlueprintEntity extends Entity {
@@ -290,14 +315,54 @@ class BlueprintEntity extends Entity {
       playSound("blueprint-work.mp3", 0.4, 1, this.position.x, this.position.y);
       playSound("structure-shaping.mp3", 0.4, 1, this.position.x, this.position.y);
 
-      for (let i = 0; i < 5; i++) {
-         const x = this.position.x + randFloat(-32, 32);
-         const y = this.position.y + randFloat(-32, 32);
-         createSawdustCloud(x, y);
-      }
-
-      for (let i = 0; i < 8; i++) {
-         createLightWoodSpeckParticle(this.position.x, this.position.y, 32);
+      // @Cleanup: Copy and pasted from blueprint component
+      const blueprintComponent = this.getServerComponent(ServerComponentType.blueprint);
+      switch (blueprintComponent.blueprintType) {
+         case BlueprintType.woodenDoor:
+         case BlueprintType.woodenEmbrasure:
+         case BlueprintType.woodenTunnel:
+         case BlueprintType.slingTurret:
+         case BlueprintType.ballista: {
+            for (let i = 0; i < 5; i++) {
+               const x = this.position.x + randFloat(-32, 32);
+               const y = this.position.y + randFloat(-32, 32);
+               createSawdustCloud(x, y);
+            }
+      
+            for (let i = 0; i < 8; i++) {
+               createLightWoodSpeckParticle(this.position.x, this.position.y, 32);
+            }
+            break;
+         }
+         case BlueprintType.stoneDoorUpgrade:
+         case BlueprintType.stoneEmbrasure:
+         case BlueprintType.stoneEmbrasureUpgrade:
+         case BlueprintType.stoneFloorSpikes:
+         case BlueprintType.stoneTunnel:
+         case BlueprintType.stoneTunnelUpgrade:
+         case BlueprintType.stoneWallSpikes:
+         case BlueprintType.stoneWall:
+         case BlueprintType.stoneDoor: {
+            for (let i = 0; i < 5; i++) {
+               const offsetDirection = 2 * Math.PI * Math.random();
+               const offsetAmount = 32 * Math.random();
+               createRockParticle(this.position.x + offsetAmount * Math.sin(offsetDirection), this.position.y + offsetAmount * Math.cos(offsetDirection), 2 * Math.PI * Math.random(), randFloat(50, 70), ParticleRenderLayer.high);
+            }
+         
+            for (let i = 0; i < 10; i++) {
+               createRockSpeckParticle(this.position.x, this.position.y, 32 * Math.random(), 0, 0, ParticleRenderLayer.high);
+            }
+         
+            for (let i = 0; i < 3; i++) {
+               const x = this.position.x + randFloat(-32, 32);
+               const y = this.position.y + randFloat(-32, 32);
+               createDustCloud(x, y);
+            }
+            break;
+         }
+         default: {
+            assertUnreachable(blueprintComponent.blueprintType);
+         }
       }
    }
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { deselectSelectedEntity, getSelectedEntityID } from "../../entity-selection";
 import Board from "../../Board";
 import Camera from "../../Camera";
@@ -26,7 +26,7 @@ export function isHoveringInBlueprintMenu(): boolean {
    return isHovering;
 }
 
-export let blueprintMenuIsOpen: () => boolean;
+export let blueprintMenuIsOpen: () => boolean = () => false;
 
 enum OptionType {
    placeBlueprint,
@@ -144,8 +144,8 @@ const ENTITY_MENU_RECORD: Partial<Record<EntityType, ReadonlyArray<MenuOption>>>
       {
          name: "DECONSTRUCT",
          imageSource: require("../../images/miscellaneous/deconstruct.png"),
-         imageWidth: 64,
-         imageHeight: 64,
+         imageWidth: 60,
+         imageHeight: 60,
          ghostType: GhostType.deconstructMarker,
          optionType: OptionType.deconstruct,
          blueprintType: null
@@ -190,8 +190,8 @@ const ENTITY_MENU_RECORD: Partial<Record<EntityType, ReadonlyArray<MenuOption>>>
       {
          name: "DECONSTRUCT",
          imageSource: require("../../images/miscellaneous/deconstruct.png"),
-         imageWidth: 64,
-         imageHeight: 64,
+         imageWidth: 60,
+         imageHeight: 60,
          ghostType: GhostType.deconstructMarker,
          optionType: OptionType.deconstruct,
          blueprintType: null
@@ -218,8 +218,8 @@ const ENTITY_MENU_RECORD: Partial<Record<EntityType, ReadonlyArray<MenuOption>>>
       {
          name: "DECONSTRUCT",
          imageSource: require("../../images/miscellaneous/deconstruct.png"),
-         imageWidth: 64,
-         imageHeight: 64,
+         imageWidth: 60,
+         imageHeight: 60,
          ghostType: GhostType.deconstructMarker,
          optionType: OptionType.deconstruct,
          blueprintType: null
@@ -246,8 +246,8 @@ const ENTITY_MENU_RECORD: Partial<Record<EntityType, ReadonlyArray<MenuOption>>>
       {
          name: "DECONSTRUCT",
          imageSource: require("../../images/miscellaneous/deconstruct.png"),
-         imageWidth: 64,
-         imageHeight: 64,
+         imageWidth: 60,
+         imageHeight: 60,
          ghostType: GhostType.deconstructMarker,
          optionType: OptionType.deconstruct,
          blueprintType: null
@@ -288,8 +288,8 @@ const ENTITY_MENU_RECORD: Partial<Record<EntityType, ReadonlyArray<MenuOption>>>
       {
          name: "DECONSTRUCT",
          imageSource: require("../../images/miscellaneous/deconstruct.png"),
-         imageWidth: 64,
-         imageHeight: 64,
+         imageWidth: 60,
+         imageHeight: 60,
          ghostType: GhostType.deconstructMarker,
          optionType: OptionType.deconstruct,
          blueprintType: null
@@ -302,54 +302,14 @@ const BlueprintMenu = () => {
    const [y, setY] = useState(0);
    const [isVisible, setIsVisible] = useState(false);
    const [building, setBuilding] = useState<Entity | null>(null);
-
-
-   const selectOption = (option: MenuOption): void => {
-      if (typeof option.cost !== "undefined") {
-         let count = countItemTypesInInventory(definiteGameState.hotbar, option.cost.itemType);
-         if (definiteGameState.backpack !== null) {
-            count += countItemTypesInInventory(definiteGameState.backpack, option.cost.itemType);
-         }
-
-         if (count < option.cost.amount) {
-            playSound("error.mp3", 0.4, 1, Player.instance!.position.x, Player.instance!.position.y);
-            return;
-         }
-      }
-
-      const selectedStructureID = getSelectedEntityID();
-      switch (option.optionType) {
-         case OptionType.placeBlueprint: {
-            let blueprintType: BlueprintType;
-            if (option.blueprintType === null) {
-               throw new Error();
-            } else if (typeof option.blueprintType === "number") {
-               blueprintType = option.blueprintType;
-            } else {
-               blueprintType = option.blueprintType(building!);
-            }
-            
-            Client.sendPlaceBlueprint(selectedStructureID, blueprintType);
-            break;
-         }
-         case OptionType.modify: {
-            Client.sendModifyBuilding(selectedStructureID);
-            break;
-         }
-         case OptionType.deconstruct: {
-            Client.sendDeconstructBuilding(selectedStructureID);
-            break;
-         }
-      }
-
-      deselectSelectedEntity();
-   }
+   const [hoveredOptionIdx, setHoveredOptionIdx] = useState<number | null>(null);
+   const blueprintRef = useRef<HTMLDivElement | null>(null);
 
    useEffect(() => {
       showBlueprintMenu = (x: number, y: number, building: Entity): void => {
          setIsVisible(true);
          setX(x);
-         setY(y + 5);
+         setY(y);
          setBuilding(building);
       }
 
@@ -372,13 +332,88 @@ const BlueprintMenu = () => {
       hoveredGhostType = null;
    }
 
+   const click = useCallback((): void => {
+      if (hoveredOptionIdx === null || building === null) {
+         return;
+      }
+
+      const selectOption = (option: MenuOption): void => {
+         if (typeof option.cost !== "undefined") {
+            let count = countItemTypesInInventory(definiteGameState.hotbar, option.cost.itemType);
+            if (definiteGameState.backpack !== null) {
+               count += countItemTypesInInventory(definiteGameState.backpack, option.cost.itemType);
+            }
+   
+            if (count < option.cost.amount) {
+               playSound("error.mp3", 0.4, 1, Player.instance!.position.x, Player.instance!.position.y);
+               return;
+            }
+         }
+   
+         const selectedStructureID = getSelectedEntityID();
+         switch (option.optionType) {
+            case OptionType.placeBlueprint: {
+               let blueprintType: BlueprintType;
+               if (option.blueprintType === null) {
+                  throw new Error();
+               } else if (typeof option.blueprintType === "number") {
+                  blueprintType = option.blueprintType;
+               } else {
+                  blueprintType = option.blueprintType(building!);
+               }
+               
+               Client.sendPlaceBlueprint(selectedStructureID, blueprintType);
+               break;
+            }
+            case OptionType.modify: {
+               Client.sendModifyBuilding(selectedStructureID);
+               break;
+            }
+            case OptionType.deconstruct: {
+               Client.sendDeconstructBuilding(selectedStructureID);
+               break;
+            }
+         }
+   
+         deselectSelectedEntity();
+      }
+
+      const menuOptions = ENTITY_MENU_RECORD[building.type]!;
+      const option = menuOptions[hoveredOptionIdx];
+      const isClickable = typeof option.isClickable === "undefined" || option.isClickable(building);
+      if (isClickable) {
+         selectOption(option);
+      }
+   }, [hoveredOptionIdx, building]);
+
    if (!isVisible || building === null) {
       return null;
    }
 
    const menuOptions = ENTITY_MENU_RECORD[building.type]!;
 
-   const elems = new Array<JSX.Element>();
+   
+   const separators = new Array<JSX.Element>();
+   for (let i = 0; i < menuOptions.length; i++) {
+      const direction = 2 * Math.PI * i / menuOptions.length + 2 * Math.PI / menuOptions.length * 0.5;
+
+      separators.push(
+         <div key={i} className="separator" style={{"--direction": direction.toString(), "--x-proj": Math.cos(direction + Math.PI/2).toString(), "--y-proj": Math.sin(direction + Math.PI/2).toString()} as React.CSSProperties}></div>
+      );
+   }
+
+   const segments = new Array<JSX.Element>();
+   const segmentCoverage = 2 * Math.PI / menuOptions.length * (180 / Math.PI);
+   for (let i = 0; i < menuOptions.length; i++) {
+      // @Incomplete
+      const direction = 2 * Math.PI * i / menuOptions.length + 2 * Math.PI / menuOptions.length * 2.5;
+
+      segments.push(
+         <div key={i} className={`segment${i === hoveredOptionIdx ? " hovered" : ""}`} style={{"--direction": (direction).toString(), "--coverage": segmentCoverage.toString()} as React.CSSProperties}></div>
+      );
+   }
+
+   const options = new Array<JSX.Element>();
    for (let i = 0; i < menuOptions.length; i++) {
       const option = menuOptions[i];
       if (typeof option.requirement !== "undefined" && !option.requirement(building)) {
@@ -391,15 +426,6 @@ const BlueprintMenu = () => {
       } else {
          imageSource = option.imageSource(building);
       }
-
-      let ghostType: GhostType;
-      if (typeof option.ghostType === "number") {
-         ghostType = option.ghostType;
-      } else {
-         ghostType = option.ghostType(building);
-      }
-
-      const isClickable = typeof option.isClickable === "undefined" || option.isClickable(building);
 
       let imageWidth: number;
       if (typeof option.imageWidth === "number") {
@@ -414,13 +440,11 @@ const BlueprintMenu = () => {
       } else {
          imageHeight = option.imageHeight(building);
       }
-      
-      elems.push(
-         <div key={i} onMouseOver={isClickable ? (() => setHoveredGhostType(ghostType)) : undefined} onMouseLeave={() => clearHoveredGhostType()} onClick={isClickable ? (() => selectOption(option)) : undefined} className={`structure-shaping-option${option.optionType === OptionType.deconstruct ? " deconstruct" : ""}${!isClickable ? " non-clickable" : ""}`}>
-            <div className="blueprint-name">{option.name}</div>
-            {option.optionType !== OptionType.deconstruct ? (
-               <div className="hotkey-label">{i + 1}</div>
-            ) : undefined}
+
+      const direction = 2 * Math.PI * i / menuOptions.length;
+
+      options.push(
+         <div key={i} className="option" style={{"--direction": (direction + Math.PI/4).toString(), "--x-proj": Math.cos(direction + Math.PI/2).toString(), "--y-proj": Math.sin(direction + Math.PI/2).toString()} as React.CSSProperties}>
             <img src={imageSource} alt="" style={{"--width": imageWidth.toString(), "--height": imageHeight.toString()} as React.CSSProperties} />
             {typeof option.cost !== "undefined" ? (
                <div className="cost-container">
@@ -428,13 +452,69 @@ const BlueprintMenu = () => {
                   <span>{option.cost.amount}</span>
                </div>
             ) : undefined}
-         </div> 
+         </div>
       );
    }
-   
-   return <div id="blueprint-menu" onMouseEnter={() => {isHovering = true}} onMouseLeave={() => {isHovering = false}} style={{"--x": x.toString(), "--y": y.toString()} as React.CSSProperties}>
-      <h1 className="title">BUILD</h1>
-      {elems}
+
+   const hotkeyLabels = new Array<JSX.Element>();
+   for (let i = 0; i < menuOptions.length; i++) {
+      const direction = 2 * Math.PI * i / menuOptions.length;
+
+      hotkeyLabels.push(
+         <div key={i} className="hotkey-label" style={{"--direction": (direction + Math.PI/4).toString(), "--x-proj": Math.cos(direction + Math.PI/2).toString(), "--y-proj": Math.sin(direction + Math.PI/2).toString()} as React.CSSProperties}>
+            {i + 1}
+         </div>
+      );
+   }
+
+   const getOptionIdx = (e: MouseEvent): number | null => {
+      const menuElement = blueprintRef.current;
+      if (menuElement === null) {
+         return null;
+      }
+
+      const rect = menuElement.getBoundingClientRect();
+
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      const diffX = e.clientX - centerX;
+      const diffY = centerY - e.clientY;
+      let angle = Math.atan2(diffY, diffX);
+      angle -= 2 * Math.PI / menuOptions.length / 2;
+      angle += Math.PI/2;
+      if (angle < 0) {
+         angle += Math.PI * 2;
+      }
+
+      const segmentIdx = menuOptions.length - 1 - Math.floor(angle / (2 * Math.PI) * menuOptions.length);
+      return segmentIdx;
+   }
+
+   const mouseMove = (e: MouseEvent) => {
+      const optionIdx = getOptionIdx(e);
+      setHoveredOptionIdx(optionIdx);
+
+      if (optionIdx !== null) {
+         const option = menuOptions[optionIdx];
+         
+         let ghostType: GhostType;
+         if (typeof option.ghostType === "number") {
+            ghostType = option.ghostType;
+         } else {
+            ghostType = option.ghostType(building);
+         }
+
+         setHoveredGhostType(ghostType);
+      }
+   }
+
+   return <div ref={blueprintRef} id="blueprint-menu" onMouseDown={() => click()} onMouseMove={e => mouseMove(e.nativeEvent)} onMouseEnter={() => {isHovering = true}} onMouseLeave={() => {isHovering = false; setHoveredOptionIdx(null); clearHoveredGhostType()}}  style={{"--x": x.toString(), "--y": y.toString()} as React.CSSProperties} onContextMenu={e => { e.preventDefault() }}>
+      <div className="inner-ring"></div>
+      {separators}
+      {segments}
+      {options}
+      {hotkeyLabels}
    </div>;
 }
 

@@ -111,7 +111,7 @@ class RockSpikeProjectile extends Entity {
          const spawnPositionX = this.position.x + RockSpikeProjectile.SIZES[rockSpikeComponentData.size] / 2 * Math.sin(spawnOffsetDirection);
          const spawnPositionY = this.position.y + RockSpikeProjectile.SIZES[rockSpikeComponentData.size] / 2 * Math.cos(spawnOffsetDirection);
 
-         createRockParticle(spawnPositionX, spawnPositionY, spawnOffsetDirection + randFloat(-0.5, 0.5), randFloat(80, 125));
+         createRockParticle(spawnPositionX, spawnPositionY, spawnOffsetDirection + randFloat(-0.5, 0.5), randFloat(80, 125), ParticleRenderLayer.low);
       }
    }
 

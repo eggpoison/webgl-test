@@ -5,6 +5,7 @@ import { createEmberParticle, createRockParticle, createRockSpeckParticle, creat
 import Board from "../Board";
 import Entity from "../Entity";
 import CookingComponent from "../entity-components/CookingComponent";
+import { ParticleRenderLayer } from "../rendering/particle-rendering";
 
 class Furnace extends Entity {
    public static readonly SIZE = 80;
@@ -68,11 +69,11 @@ class Furnace extends Entity {
          let moveDirection = angle(spawnPositionX - this.position.x, spawnPositionY - this.position.y)
          moveDirection += randFloat(-1, 1);
 
-         createRockParticle(spawnPositionX, spawnPositionY, moveDirection, randFloat(80, 125));
+         createRockParticle(spawnPositionX, spawnPositionY, moveDirection, randFloat(80, 125), ParticleRenderLayer.low);
       }
 
       for (let i = 0; i < 5; i++) {
-         createRockSpeckParticle(this.position.x, this.position.y, Furnace.SIZE / 2, 0, 0);
+         createRockSpeckParticle(this.position.x, this.position.y, Furnace.SIZE / 2, 0, 0, ParticleRenderLayer.low);
       }
    }
 
@@ -81,11 +82,11 @@ class Furnace extends Entity {
          const spawnPositionX = this.position.x + randFloat(-0.5, 0.5) * Furnace.SIZE;
          const spawnPositionY = this.position.y + randFloat(-0.5, 0.5) * Furnace.SIZE;
 
-         createRockParticle(spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(80, 125));
+         createRockParticle(spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(80, 125), ParticleRenderLayer.low);
       }
 
       for (let i = 0; i < 5; i++) {
-         createRockSpeckParticle(this.position.x, this.position.y, Furnace.SIZE / 2, 0, 0);
+         createRockSpeckParticle(this.position.x, this.position.y, Furnace.SIZE / 2, 0, 0, ParticleRenderLayer.low);
       }
    }
 }

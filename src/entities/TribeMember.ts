@@ -29,7 +29,9 @@ export function addTribeMemberRenderParts(entity: Entity, tribeMemberComponentDa
    let bodyTextureSource: string;
    switch (tribeComponent.tribeType) {
       case TribeType.plainspeople: {
-         if (entity.type === EntityType.player || entity.type === EntityType.tribeWarrior) {
+         if (entity.type === EntityType.tribeWarrior) {
+            bodyTextureSource = "entities/plainspeople/warrior.png";
+         } else if (entity.type === EntityType.player) {
             bodyTextureSource = "entities/plainspeople/player.png";
          } else {
             bodyTextureSource = "entities/plainspeople/worker.png";
@@ -37,7 +39,9 @@ export function addTribeMemberRenderParts(entity: Entity, tribeMemberComponentDa
          break;
       }
       case TribeType.goblins: {
-         if (entity.type === EntityType.player || entity.type === EntityType.tribeWarrior) {
+         if (entity.type === EntityType.tribeWarrior) {
+            bodyTextureSource = "entities/goblins/warrior.png";
+         } else if (entity.type === EntityType.player) {
             bodyTextureSource = "entities/goblins/player.png";
          } else {
             bodyTextureSource = "entities/goblins/worker.png";
@@ -45,7 +49,9 @@ export function addTribeMemberRenderParts(entity: Entity, tribeMemberComponentDa
          break;
       }
       case TribeType.frostlings: {
-         if (entity.type === EntityType.player || entity.type === EntityType.tribeWarrior) {
+         if (entity.type === EntityType.tribeWarrior) {
+            bodyTextureSource = "entities/frostlings/warrior.png";
+         } else if (entity.type === EntityType.player) {
             bodyTextureSource = "entities/frostlings/player.png";
          } else {
             bodyTextureSource = "entities/frostlings/worker.png";
@@ -53,7 +59,9 @@ export function addTribeMemberRenderParts(entity: Entity, tribeMemberComponentDa
          break;
       }
       case TribeType.barbarians: {
-         if (entity.type === EntityType.player || entity.type === EntityType.tribeWarrior) {
+         if (entity.type === EntityType.tribeWarrior) {
+            bodyTextureSource = "entities/barbarians/warrior.png";
+         } else if (entity.type === EntityType.player) {
             bodyTextureSource = "entities/barbarians/player.png";
          } else {
             bodyTextureSource = "entities/barbarians/worker.png";
@@ -76,11 +84,18 @@ export function addTribeMemberRenderParts(entity: Entity, tribeMemberComponentDa
    ));
 
    if (tribeComponent.tribeType === TribeType.goblins) {
+      let textureSource: string;
+      if (entity.type === EntityType.tribeWarrior) {
+         textureSource = `entities/goblins/warrior-warpaint-${tribeMemberComponentData.warPaintType}.png`;
+      } else {
+         textureSource = `entities/goblins/goblin-warpaint-${tribeMemberComponentData.warPaintType}.png`;
+      }
+      
       // Goblin warpaint
       entity.attachRenderPart(
          new RenderPart(
             entity,
-            getTextureArrayIndex(`entities/goblins/goblin-warpaint-${tribeMemberComponentData.warPaintType}.png`),
+            getTextureArrayIndex(textureSource),
             4,
             0
          )

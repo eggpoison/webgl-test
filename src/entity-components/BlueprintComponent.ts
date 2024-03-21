@@ -1,9 +1,12 @@
-import { BlueprintType, BlueprintComponentData, ServerComponentType, randFloat, assertUnreachable } from "webgl-test-shared";
+import { BlueprintType, BlueprintComponentData, ServerComponentType, randFloat, assertUnreachable, rotateXAroundOrigin, rotateYAroundOrigin } from "webgl-test-shared";
 import ServerComponent from "./ServerComponent";
 import RenderPart from "../render-parts/RenderPart";
 import Entity from "../Entity";
 import { playSound } from "../sound";
-import { createLightWoodSpeckParticle, createRockParticle, createRockSpeckParticle, createSawdustCloud, createWoodShardParticle } from "../particles";
+import { createDustCloud, createLightWoodSpeckParticle, createRockParticle, createRockSpeckParticle, createSawdustCloud, createWoodShardParticle } from "../particles";
+import { getCurrentBlueprintProgressTexture } from "../entities/BlueprintEntity";
+import { getTextureArrayIndex, getTextureHeight, getTextureWidth } from "../texture-atlases/entity-texture-atlas";
+import { ParticleRenderLayer } from "../rendering/particle-rendering";
 
 const createWoodenBlueprintWorkParticleEffects = (entity: Entity): void => {
    for (let i = 0; i < 2; i++) {
@@ -28,15 +31,21 @@ make the origin point for the offset be based on the partial render part (random
 
 
 
-const createStoneBlueprintWorkParticleEffects = (entity: Entity): void => {
+const createStoneBlueprintWorkParticleEffects = (originX: number, originY: number): void => {
    for (let i = 0; i < 3; i++) {
       const offsetDirection = 2 * Math.PI * Math.random();
-      const offsetAmount = 24 * Math.random();
-      createRockParticle(entity.position.x + offsetAmount * Math.sin(offsetDirection), entity.position.y + offsetAmount * Math.cos(offsetDirection), 2 * Math.PI * Math.random(), randFloat(50, 70));
+      const offsetAmount = 12 * Math.random();
+      createRockParticle(originX + offsetAmount * Math.sin(offsetDirection), originY + offsetAmount * Math.cos(offsetDirection), 2 * Math.PI * Math.random(), randFloat(50, 70), ParticleRenderLayer.high);
    }
 
-   for (let i = 0; i < 3; i++) {
-      createRockSpeckParticle(entity.position.x, entity.position.y, 24 * Math.random(), 0, 0);
+   for (let i = 0; i < 10; i++) {
+      createRockSpeckParticle(originX, originY, 12 * Math.random(), 0, 0, ParticleRenderLayer.high);
+   }
+
+   for (let i = 0; i < 2; i++) {
+      const x = originX + randFloat(-24, 24);
+      const y = originY + randFloat(-24, 24);
+      createDustCloud(x, y);
    }
 }
 
@@ -60,8 +69,15 @@ class BlueprintComponent extends ServerComponent<ServerComponentType.blueprint> 
 
       if (blueprintProgress !== this.lastBlueprintProgress) {
          playSound("blueprint-work.mp3", 0.4, randFloat(0.9, 1.1), this.entity.position.x, this.entity.position.y);
+
+         const progressTexture = getCurrentBlueprintProgressTexture(data.blueprintType, data.buildProgress);
          
-         // @Incomplete: Create the particle effects at the positoin of the partial texture
+         const textureArrayIndex = getTextureArrayIndex(progressTexture.completedTextureSource);
+         const xShift = getTextureWidth(textureArrayIndex) * 4 * 0.5 * randFloat(-0.75, 0.75);
+         const yShift = getTextureHeight(textureArrayIndex) * 4 * 0.5 * randFloat(-0.75, 0.75);
+         const particleOriginX = this.entity.position.x + rotateXAroundOrigin(progressTexture.offsetX + xShift, progressTexture.offsetY + yShift, progressTexture.rotation);
+         const particleOriginY = this.entity.position.y + rotateYAroundOrigin(progressTexture.offsetX + xShift, progressTexture.offsetY + yShift, progressTexture.rotation);
+         
          // @Incomplete: Change the particle effect type depending on the material of the worked-on partial texture
          // Create particle effects
          switch (this.blueprintType) {
@@ -82,7 +98,7 @@ class BlueprintComponent extends ServerComponent<ServerComponentType.blueprint> 
             case BlueprintType.stoneWallSpikes:
             case BlueprintType.stoneWall:
             case BlueprintType.stoneDoor: {
-               createStoneBlueprintWorkParticleEffects(this.entity);
+               createStoneBlueprintWorkParticleEffects(particleOriginX, particleOriginY);
                break;
             }
             default: {

@@ -7,6 +7,7 @@ import TombstoneComponent from "../entity-components/TombstoneComponent";
 import Entity from "../Entity";
 import StatusEffectComponent from "../entity-components/StatusEffectComponent";
 import HealthComponent from "../entity-components/HealthComponent";
+import { ParticleRenderLayer } from "../rendering/particle-rendering";
 
 class Tombstone extends Entity {
    private static readonly HITBOX_WIDTH = 48;
@@ -39,14 +40,14 @@ class Tombstone extends Entity {
          let moveDirection = Math.PI/2 - Math.atan2(spawnPositionY, spawnPositionX);
          moveDirection += randFloat(-1, 1);
          
-         createRockParticle(spawnPositionX, spawnPositionY, moveDirection, randFloat(80, 125));
+         createRockParticle(spawnPositionX, spawnPositionY, moveDirection, randFloat(80, 125), ParticleRenderLayer.low);
       }
 
       for (let i = 0; i < 8; i++) {
          const spawnPositionX = this.position.x + randFloat(-Tombstone.HITBOX_WIDTH/2, Tombstone.HITBOX_WIDTH/2);
          const spawnPositionY = this.position.y + randFloat(-Tombstone.HITBOX_HEIGHT/2, Tombstone.HITBOX_HEIGHT/2);
 
-         createRockSpeckParticle(spawnPositionX, spawnPositionY, 0, 0, 0);
+         createRockSpeckParticle(spawnPositionX, spawnPositionY, 0, 0, 0, ParticleRenderLayer.low);
       }
 
       playSound(randItem(ROCK_HIT_SOUNDS), 0.3, 1, this.position.x, this.position.y);
@@ -57,14 +58,14 @@ class Tombstone extends Entity {
          const spawnPositionX = this.position.x + randFloat(-Tombstone.HITBOX_WIDTH/2, Tombstone.HITBOX_WIDTH/2);
          const spawnPositionY = this.position.y + randFloat(-Tombstone.HITBOX_HEIGHT/2, Tombstone.HITBOX_HEIGHT/2);
 
-         createRockParticle(spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(80, 125));
+         createRockParticle(spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(80, 125), ParticleRenderLayer.low);
       }
 
       for (let i = 0; i < 5; i++) {
          const spawnPositionX = this.position.x + randFloat(-Tombstone.HITBOX_WIDTH/2, Tombstone.HITBOX_WIDTH/2);
          const spawnPositionY = this.position.y + randFloat(-Tombstone.HITBOX_HEIGHT/2, Tombstone.HITBOX_HEIGHT/2);
 
-         createRockSpeckParticle(spawnPositionX, spawnPositionY, 0, 0, 0);
+         createRockSpeckParticle(spawnPositionX, spawnPositionY, 0, 0, 0, ParticleRenderLayer.low);
       }
 
       playSound(randItem(ROCK_DESTROY_SOUNDS), 0.4, 1, this.position.x, this.position.y);

@@ -6,6 +6,7 @@ import { createRockSpeckParticle } from "../particles";
 import RenderPart from "../render-parts/RenderPart";
 import Board, { Light } from "../Board";
 import { getTextureArrayIndex } from "../texture-atlases/entity-texture-atlas";
+import { ParticleRenderLayer } from "../rendering/particle-rendering";
 
 enum GolemRockSize {
    massive,
@@ -90,7 +91,7 @@ class GolemComponent extends ServerComponent<ServerComponentType.golem> {
             const offsetDirection = 2 * Math.PI * Math.random();
             const x = hitbox.position.x + hitbox.radius * Math.sin(offsetDirection);
             const y = hitbox.position.y + hitbox.radius * Math.cos(offsetDirection);
-            createRockSpeckParticle(x, y, 0, this.entity.velocity.x, this.entity.velocity.y);
+            createRockSpeckParticle(x, y, 0, this.entity.velocity.x, this.entity.velocity.y, ParticleRenderLayer.low);
          }
       } else if (this.wakeProgress === 1) {
          for (let i = 0; i < this.entity.hitboxes.length; i++) {
@@ -103,7 +104,7 @@ class GolemComponent extends ServerComponent<ServerComponentType.golem> {
             const offsetDirection = 2 * Math.PI * Math.random();
             const x = hitbox.position.x + hitbox.radius * Math.sin(offsetDirection);
             const y = hitbox.position.y + hitbox.radius * Math.cos(offsetDirection);
-            createRockSpeckParticle(x, y, 0, this.entity.velocity.x, this.entity.velocity.y);
+         createRockSpeckParticle(x, y, 0, this.entity.velocity.x, this.entity.velocity.y, ParticleRenderLayer.low);
          }
       }
 

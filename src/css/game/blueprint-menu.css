@@ -2,6 +2,134 @@
 @import url('https://fonts.googleapis.com/css2?family=Patua+One&display=swap');
 
 #blueprint-menu {
+   --menu-size: 28rem;
+   width: var(--menu-size);
+   height: var(--menu-size);
+   border: 5px solid #e2e2e2;
+   border-radius: 100%;
+   position: absolute;
+   left: calc(1px * var(--x));
+   bottom: calc(1px * var(--y));
+   transform: translate(-50%, 50%);
+   z-index: 2;
+   box-shadow: 0 0 0 5px #000;
+   cursor: pointer;
+}
+
+#blueprint-menu .inner-ring {
+   --inner-ring-size: 15rem;
+   width: var(--inner-ring-size);
+   height: var(--inner-ring-size);
+   border: 5px solid #a7a7a7;
+   border-radius: 100%;
+   position: absolute;
+   top: 50%;
+   left: 50%;
+   transform: translate(-50%, -50%);
+   z-index: 2;
+   box-shadow: 0 0 0 5px #000 inset;
+}
+
+#blueprint-menu .separator {
+   width: 5px;
+   height: 6.4rem;
+   background-color: #a7a7a7;
+   position: absolute;
+   top: 50%;
+   left: 50%;
+   transform: translate(calc(11rem * var(--x-proj) - 50%), calc(11rem * var(--y-proj) - 50%)) rotate(calc(var(--direction) * 1rad));
+   z-index: 2;
+}
+
+#blueprint-menu .segment {
+   --bg-colour: rgba(0.2, 0.2, 0.2, 0.3);
+   width: var(--menu-size);
+   height: var(--menu-size);
+   border-radius: 100%;
+   background-color: var(--bg-colour);
+   position: absolute;
+   top: 50%;
+   left: 50%;
+   transform: translate(-50%, -50%) rotate(calc(var(--direction) * 1rad));
+   z-index: 1;
+   mask: conic-gradient(#fff 0deg, #fff calc(var(--coverage) * 0.5 * 1deg), transparent calc(var(--coverage) * 0.5 * 1deg), transparent calc(360deg - (var(--coverage) * 0.5 * 1deg)), #fff calc(360deg - (var(--coverage) * 0.5 * 1deg))), radial-gradient(circle at 50% 50%, transparent 0%, transparent 39%, #fff 39%);
+   mask-composite: intersect;
+   pointer-events: none;
+}
+
+#blueprint-menu .segment.hovered {
+   --bg-colour: rgba(117, 117, 117, 0.5);
+}
+
+#blueprint-menu .option {
+   width: 5.5rem;
+   height: 5.5rem;
+   background-color: rgba(0, 0, 0, 0.3);
+   border-radius: 100%;
+   position: absolute;
+   top: 50%;
+   left: 50%;
+   transform: translate(calc(11rem * var(--x-proj) - 50%), calc(11rem * var(--y-proj) - 50%));
+   z-index: 3;
+   pointer-events: none;
+   user-select: none;
+}
+
+#blueprint-menu .option > img {
+   width: calc(1px * var(--width));
+   height: calc(1px * var(--height));
+   image-rendering: pixelated;
+   position: absolute;
+   top: 50%;
+   left: 50%;
+   transform: translate(-50%, -50%);
+   z-index: -1;
+}
+
+#blueprint-menu .hotkey-label {
+   text-align: center;
+   width: 1.7rem;
+   height: 1.7rem;
+   color: #000;
+   font-size: 1.4rem;
+   font-family: "Patua One";
+   border-radius: 100%;
+   border: 3px solid #444;
+   background-color: #d3d3d3;
+   position: absolute;
+   top: 50%;
+   left: 50%;
+   transform: translate(calc(7.7rem * var(--x-proj) - 50%), calc(7.7rem * var(--y-proj) - 50%));
+   z-index: 3;
+}
+
+#blueprint-menu .cost-container {
+   background-color: #666;
+   border: 3px solid #000;
+   border-radius: 6px;
+   padding: 0 4px;
+   position: absolute;
+   bottom: -4px;
+   left: -4px;
+   z-index: 40;
+   display: flex;
+   align-items: center;
+}
+#blueprint-menu .cost-container img {
+   width: 32px;
+   height: 32px;
+   image-rendering: pixelated;
+   position: absolute;
+   margin-left: -6px;
+}
+#blueprint-menu .cost-container span {
+   color: #fff;
+   font-family: "Patua One";
+   font-size: 1.2rem;
+   margin-left: 23px;
+}
+
+/* #blueprint-menu {
    border: 4px solid #d6d6d6;
    background-color: rgba(53, 53, 53, 0.3);
    padding: 0.8rem 0 0 0;
@@ -46,31 +174,6 @@
    filter: grayscale(1);
 }
 
-#blueprint-menu .structure-shaping-option .cost-container {
-   background-color: #666;
-   border: 3px solid #000;
-   border-radius: 6px;
-   padding: 0 4px;
-   position: absolute;
-   bottom: -8px;
-   left: -8px;
-   display: flex;
-   align-items: center;
-}
-#blueprint-menu .cost-container img {
-   width: 32px;
-   height: 32px;
-   image-rendering: pixelated;
-   position: absolute;
-   margin-left: -6px;
-}
-#blueprint-menu .cost-container span {
-   color: #fff;
-   font-family: "Patua One";
-   font-size: 1.2rem;
-   margin-left: 23px;
-}
-
 #blueprint-menu .blueprint-name {
    color: #fff;
    font-size: 1.1rem;
@@ -99,4 +202,4 @@
    bottom: 0;
    right: 0;
    transform: translate(25%, 25%);
-}
+} */

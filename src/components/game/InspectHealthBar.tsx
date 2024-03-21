@@ -7,6 +7,7 @@ import { getHoveredEntityID } from "../../entity-selection";
 import Game from "../../Game";
 import Player from "../../entities/Player";
 import { latencyGameState } from "../../game-state/game-states";
+import { blueprintMenuIsOpen } from "./BlueprintMenu";
 
 const Y_OFFSET = -50;
 
@@ -56,7 +57,7 @@ const InspectHealthBar = () => {
 export default InspectHealthBar;
 
 export function updateInspectHealthBar(): void {
-   if (Player.instance === null || latencyGameState.playerIsPlacingEntity) {
+   if (Player.instance === null || latencyGameState.playerIsPlacingEntity || blueprintMenuIsOpen()) {
       InspectHealthBar_setEntity(null);
       return;
    }

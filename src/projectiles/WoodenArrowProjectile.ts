@@ -7,6 +7,7 @@ import { createArrowDestroyParticle, createRockParticle, createRockSpeckParticle
 import ArrowComponent from "../entity-components/ArrowComponent";
 import PhysicsComponent from "../entity-components/PhysicsComponent";
 import TribeComponent from "../entity-components/TribeComponent";
+import { ParticleRenderLayer } from "../rendering/particle-rendering";
 
 const ARROW_TEXTURE_SOURCES: Record<GenericArrowType, string> = {
    [GenericArrowType.woodenArrow]: "projectiles/wooden-arrow.png",
@@ -67,11 +68,11 @@ class WoodenArrowProjectile extends Entity {
                const spawnPositionX = this.position.x + spawnOffsetMagnitude * Math.sin(spawnOffsetDirection);
                const spawnPositionY = this.position.y + spawnOffsetMagnitude * Math.cos(spawnOffsetDirection);
 
-               createRockParticle(spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(60, 100));
+               createRockParticle(spawnPositionX, spawnPositionY, 2 * Math.PI * Math.random(), randFloat(60, 100), ParticleRenderLayer.low);
             }
 
             for (let i = 0; i < 5; i++) {
-               createRockSpeckParticle(this.position.x, this.position.y, 16, 0, 0);
+               createRockSpeckParticle(this.position.x, this.position.y, 16, 0, 0, ParticleRenderLayer.low);
             }
             break;
          }

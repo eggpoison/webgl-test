@@ -301,7 +301,6 @@ class Player extends TribeMember {
       
       const potentialCollidingEntities = this.getPotentialCollidingEntities();
 
-      // @Cleanup: Remove this tag system
       for (let i = 0; i < potentialCollidingEntities.length; i++) {
          const entity = potentialCollidingEntities[i];
 
