@@ -75,7 +75,7 @@ const FrameGraph = (): JSX.Element => {
    average /= trackedFrames.length;
    
    return <div id="frame-graph" className={!isVisible ? "hidden" : undefined}>
-      <p className="info"><span>fps={fps}</span> <span>rt_avg={average.toFixed(2)}</span> <span>rt_min={min.toFixed(2)}</span> <span>rt_max={max.toFixed(2)}</span></p>
+      <p className="info"><span>fps={fps}</span> <span>t_avg={average.toFixed(2)}</span> <span>t_min={min.toFixed(2)}</span> <span>t_max={max.toFixed(2)}</span></p>
       <canvas id="frame-graph-canvas"></canvas>
    </div>;
 }

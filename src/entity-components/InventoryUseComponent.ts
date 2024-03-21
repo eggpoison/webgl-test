@@ -1,4 +1,4 @@
-import { BowItemInfo, ServerComponentType, EntityType, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, InventoryUseComponentData, InventoryUseInfoData, Item, ItemType, Settings, ToolItemInfo, TribeMemberAction, TribeType, lerp, randFloat, randItem } from "webgl-test-shared";
+import { BowItemInfo, ServerComponentType, EntityType, ITEM_INFO_RECORD, ITEM_TYPE_RECORD, InventoryUseComponentData, InventoryUseInfoData, Item, ItemType, Settings, TribeMemberAction, TribeType, lerp, randFloat, randItem } from "webgl-test-shared";
 import ServerComponent from "./ServerComponent";
 import Entity from "../Entity";
 import RenderPart from "../render-parts/RenderPart";
@@ -468,7 +468,12 @@ class InventoryUseComponent extends ServerComponent<ServerComponentType.inventor
       const inventoryComponent = this.entity.getServerComponent(ServerComponentType.inventory);
       const inventory = inventoryComponent.getInventory(useInfo.inventoryName);
       
-      const item = inventory.itemSlots.hasOwnProperty(useInfo.selectedItemSlot) ? inventory.itemSlots[useInfo.selectedItemSlot] : null;
+      let item = inventory.itemSlots.hasOwnProperty(useInfo.selectedItemSlot) ? inventory.itemSlots[useInfo.selectedItemSlot] : null;
+
+      if (item !== null && useInfo.thrownBattleaxeItemID === item.id) {
+         item = null;
+      }
+      
       const itemSize = item !== null && showLargeItemTexture(item.type) ? 8 * 4 : 4 * 4;
       
       const shouldShowActiveItemRenderPart = item !== null && useInfo.thrownBattleaxeItemID === item.id ? false : true;
@@ -593,29 +598,11 @@ class InventoryUseComponent extends ServerComponent<ServerComponentType.inventor
 
             const handRestingDirection = getLimbRestingDirection(this.entity.type as InventoryUseEntityType);
 
-            if (item !== null && useInfo.thrownBattleaxeItemID === item.id) {
-               // @Incomplete: Make hand follow thrown battleaxe
-               const handRestingOffset = getHandRestingOffset(this.entity.type as InventoryUseEntityType);
-               const handOffsetDirection = handRestingDirection * handMult;
-               limb.offset.x = handRestingOffset * Math.sin(handOffsetDirection);
-               limb.offset.y = handRestingOffset * Math.cos(handOffsetDirection);
-               limb.rotation = ITEM_RESTING_ROTATION * handMult;
-               break;
-            }
-
-
             // 
             // Calculate attack progress
             // 
-
-            let attackDuration: number;
-            if (item !== null && (ITEM_TYPE_RECORD[item.type] === "sword" || ITEM_TYPE_RECORD[item.type] === "axe" || ITEM_TYPE_RECORD[item.type] === "pickaxe" || ITEM_TYPE_RECORD[item.type] === "spear" || ITEM_TYPE_RECORD[item.type] === "hammer" || ITEM_TYPE_RECORD[item.type] === "battleaxe")) {
-               attackDuration = (ITEM_INFO_RECORD[item.type] as ToolItemInfo).attackCooldown;
-            } else {
-               attackDuration = Settings.DEFAULT_ATTACK_COOLDOWN;
-            }
       
-            let attackProgress = secondsSinceLastAction / attackDuration;
+            let attackProgress = secondsSinceLastAction / useInfo.lastAttackCooldown;
             if (attackProgress > 1) {
                attackProgress = 1;
             }
@@ -698,24 +685,27 @@ class InventoryUseComponent extends ServerComponent<ServerComponentType.inventor
    
    public updateFromData(data: InventoryUseComponentData): void {
       for (let i = 0; i < data.inventoryUseInfos.length; i++) {
-         const useInfo = data.inventoryUseInfos[i];
+         const useInfoData = data.inventoryUseInfos[i];
+         const useInfo = this.useInfos[i];
+         
+         useInfo.bowCooldownTicks = useInfoData.bowCooldownTicks;
+         useInfo.selectedItemSlot = useInfoData.selectedItemSlot;
+         useInfo.bowCooldownTicks = useInfoData.bowCooldownTicks;
+         useInfo.itemAttackCooldowns = useInfoData.itemAttackCooldowns;
+         useInfo.spearWindupCooldowns = useInfoData.spearWindupCooldowns;
+         useInfo.crossbowLoadProgressRecord = useInfoData.crossbowLoadProgressRecord;
+         useInfo.foodEatingTimer = useInfoData.foodEatingTimer;
+         useInfo.currentAction = useInfoData.currentAction;
+         useInfo.lastAttackTicks = useInfoData.lastAttackTicks;
+         useInfo.lastEatTicks = useInfoData.lastEatTicks;
+         useInfo.lastBowChargeTicks = useInfoData.lastBowChargeTicks;
+         useInfo.lastSpearChargeTicks = useInfoData.lastSpearChargeTicks;
+         useInfo.lastBattleaxeChargeTicks = useInfoData.lastBattleaxeChargeTicks;
+         useInfo.lastCrossbowLoadTicks = useInfoData.lastCrossbowLoadTicks;
+         useInfo.thrownBattleaxeItemID = useInfoData.thrownBattleaxeItemID;
+         useInfo.lastAttackCooldown = useInfoData.lastAttackCooldown;
+         
          this.updateLimb(i, useInfo);
-
-         this.useInfos[i].bowCooldownTicks = useInfo.bowCooldownTicks;
-         this.useInfos[i].selectedItemSlot = useInfo.selectedItemSlot;
-         this.useInfos[i].bowCooldownTicks = useInfo.bowCooldownTicks;
-         this.useInfos[i].itemAttackCooldowns = useInfo.itemAttackCooldowns;
-         this.useInfos[i].spearWindupCooldowns = useInfo.spearWindupCooldowns;
-         this.useInfos[i].crossbowLoadProgressRecord = useInfo.crossbowLoadProgressRecord;
-         this.useInfos[i].foodEatingTimer = useInfo.foodEatingTimer;
-         this.useInfos[i].currentAction = useInfo.currentAction;
-         this.useInfos[i].lastAttackTicks = useInfo.lastAttackTicks;
-         this.useInfos[i].lastEatTicks = useInfo.lastEatTicks;
-         this.useInfos[i].lastBowChargeTicks = useInfo.lastBowChargeTicks;
-         this.useInfos[i].lastSpearChargeTicks = useInfo.lastSpearChargeTicks;
-         this.useInfos[i].lastBattleaxeChargeTicks = useInfo.lastBattleaxeChargeTicks;
-         this.useInfos[i].lastCrossbowLoadTicks = useInfo.lastCrossbowLoadTicks;
-         this.useInfos[i].thrownBattleaxeItemID = useInfo.thrownBattleaxeItemID;
       }
    }
 
