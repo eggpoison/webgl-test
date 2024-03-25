@@ -654,8 +654,8 @@ export function renderGhostEntities(): void {
          ghostType: ENTITY_TYPE_TO_GHOST_TYPE_MAP[plan.entityType]!,
          isAttachedToWall: false,
          opacity: PARTIAL_OPACITY,
-         tint: [1, 1, 1]
-      })
+         tint: [0.9, 1.5, 0.8]
+      });
    }
    
    if (ghostInfos.length === 0) {
@@ -690,7 +690,7 @@ export function renderGhostEntities(): void {
    gl.activeTexture(gl.TEXTURE0);
    gl.bindTexture(gl.TEXTURE_2D, ENTITY_TEXTURE_ATLAS);
 
-   gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 8);
+   gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 11);
 
    gl.disable(gl.BLEND);
    gl.blendFunc(gl.ONE, gl.ZERO);
