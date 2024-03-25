@@ -52,6 +52,7 @@ const GameInfoDisplay = () => {
    const [showChunkBorders, setShowChunkBorders] = useState(OPTIONS.showChunkBorders);
    const [showRenderChunkBorders, setShowRenderChunkBorders] = useState(OPTIONS.showRenderChunkBorders);
    const [showPathfindingNodes, setShowPathfindingNodes] = useState(OPTIONS.showPathfindingNodes);
+   const [showVulnerabilityNodes, setShowVulnerabilityNodes] = useState(OPTIONS.showPathfindingNodes);
    
    useEffect(() => {
       if (typeof Board.time !== "undefined") {
@@ -90,6 +91,11 @@ const GameInfoDisplay = () => {
       OPTIONS.showPathfindingNodes = !showPathfindingNodes;
       setShowPathfindingNodes(!showPathfindingNodes);
    }, [showPathfindingNodes]);
+
+   const toggleShowVulnerabilityNodes = useCallback(() => {
+      OPTIONS.showVulnerabilityNodes = !showVulnerabilityNodes;
+      setShowVulnerabilityNodes(!showVulnerabilityNodes);
+   }, [showVulnerabilityNodes]);
 
    const changeZoom = () => {
       if (rangeInputRef.current === null) {
@@ -135,6 +141,12 @@ const GameInfoDisplay = () => {
             <label className={showPathfindingNodes ? "enabled" : undefined}>
                <input checked={showPathfindingNodes} name="show-pathfinding-nodes-checkbox" type="checkbox" onChange={toggleShowPathfindingNodes} />
                Show pathfinding nodes
+            </label>
+         </li>
+         <li>
+            <label className={showVulnerabilityNodes ? "enabled" : undefined}>
+               <input checked={showVulnerabilityNodes} name="show-vulnerability-nodes-checkbox" type="checkbox" onChange={toggleShowVulnerabilityNodes} />
+               Show vulnerability nodes
             </label>
          </li>
       </ul>

@@ -32,7 +32,7 @@ import OPTIONS from "./options";
 import { RENDER_CHUNK_SIZE, createRenderChunks } from "./rendering/render-chunks";
 import { registerFrame, updateFrameGraph } from "./components/game/dev/FrameGraph";
 import { createNightShaders, renderNight } from "./rendering/night-rendering";
-import { createPlaceableItemProgram, renderGhostPlaceableItem } from "./rendering/placeable-item-rendering";
+import { createPlaceableItemProgram, renderGhostEntities } from "./rendering/entity-ghost-rendering";
 import { setupFrameGraph } from "./rendering/frame-graph-rendering";
 import { createEntityTextureAtlas } from "./texture-atlases/entity-texture-atlas";
 import { createFishShaders } from "./rendering/fish-rendering";
@@ -44,12 +44,13 @@ import { createTechTreeShaders, renderTechTree } from "./rendering/tech-tree-ren
 import { createResearchOrbShaders, renderResearchOrb } from "./rendering/research-orb-rendering";
 import { attemptToResearch, updateActiveResearchBench, updateResearchOrb } from "./research";
 import { resetInteractableEntityIDs, updateHighlightedAndHoveredEntities, updateSelectedStructure } from "./entity-selection";
-import { createStructureHighlightShaders, renderStructureHighlights } from "./rendering/entity-select-rendering";
+import { createStructureHighlightShaders, renderStructureHighlights } from "./rendering/entity-selection-rendering";
 import { updateBlueprintMenu } from "./components/game/BlueprintMenu";
 import { InventorySelector_forceUpdate } from "./components/game/inventories/InventorySelector";
 import { createTurretRangeShaders, renderTurretRange } from "./rendering/turret-range-rendering";
 import { createPathfindNodeShaders, renderPathfindingNodes } from "./rendering/pathfinding-node-rendering";
 import { updateInspectHealthBar } from "./components/game/InspectHealthBar";
+import { createVulnerabilityNodeShaders, renderVulnerabilityNodes } from "./rendering/vulnerability-node-rendering";
 
 let listenersHaveBeenCreated = false;
 
@@ -227,6 +228,7 @@ abstract class Game {
             createStructureHighlightShaders();
             createTurretRangeShaders();
             createPathfindNodeShaders();
+            createVulnerabilityNodeShaders();
 
             await setupAudio();
 
@@ -429,6 +431,7 @@ abstract class Game {
       }
 
       renderPathfindingNodes();
+      renderVulnerabilityNodes();
       renderResearchOrb();
 
       if (nerdVisionIsVisible() && OPTIONS.showHitboxes) {
@@ -454,7 +457,7 @@ abstract class Game {
          }
       }
 
-      renderGhostPlaceableItem();
+      renderGhostEntities();
       
       renderNight();
 

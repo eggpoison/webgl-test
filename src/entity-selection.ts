@@ -10,7 +10,7 @@ import Client from "./client/Client";
 import { latencyGameState, playerIsHoldingHammer } from "./game-state/game-states";
 import { isHoveringInBlueprintMenu } from "./components/game/BlueprintMenu";
 import { InventoryMenuType, InventorySelector_inventoryIsOpen, InventorySelector_setInventoryMenuType } from "./components/game/inventories/InventorySelector";
-import { getClosestGroupNum } from "./rendering/entity-select-rendering";
+import { getClosestGroupNum } from "./rendering/entity-selection-rendering";
 
 const HIGHLIGHT_RANGE = 75;
 const HIGHLIGHT_DISTANCE = 150;

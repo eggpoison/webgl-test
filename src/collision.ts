@@ -189,7 +189,6 @@ export function resolveWallTileCollisions(entity: Entity): void {
             // Resolve collision
             let pushInfo: CollisionPushInfo | undefined; // @Temporary (undefined)
             if (hitbox.hasOwnProperty("radius")) {
-               
                pushInfo = getCircleRectCollisionPushInfo(hitbox as CircularHitbox, tileCenterX, tileCenterY, Settings.TILE_SIZE, Settings.TILE_SIZE, 0);
             }
 

@@ -4,7 +4,7 @@ import Board from "../../Board";
 import Camera from "../../Camera";
 import Client from "../../client/Client";
 import { BlueprintType, BuildingMaterial, EntityType, ItemType, ServerComponentType } from "webgl-test-shared";
-import { GhostType } from "../../rendering/placeable-item-rendering";
+import { GhostType } from "../../rendering/entity-ghost-rendering";
 import { getItemTypeImage } from "../../client-item-info";
 import Entity from "../../Entity";
 import { definiteGameState, playerIsHoldingHammer } from "../../game-state/game-states";

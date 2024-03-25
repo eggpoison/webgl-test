@@ -1,4 +1,4 @@
-import { EntityType, PlaceableItemType, Point, ServerComponentType, rotateXAroundOrigin, rotateXAroundPoint, rotateYAroundOrigin, rotateYAroundPoint } from "webgl-test-shared";
+import { BuildingPlanData, EntityType, PlaceableItemType, Point, ServerComponentType, rotateXAroundOrigin, rotateXAroundPoint, rotateYAroundOrigin, rotateYAroundPoint } from "webgl-test-shared";
 import Player, { getPlayerSelectedItem } from "../entities/Player";
 import { gl, createWebGLProgram, CAMERA_UNIFORM_BUFFER_BINDING_INDEX } from "../webgl";
 import { PLACEABLE_ENTITY_INFO_RECORD, calculatePlacePosition, calculatePlaceRotation, calculateSnapInfo, canPlaceItem } from "../player-input";
@@ -384,7 +384,12 @@ const TEXTURE_INFO_RECORD: Record<GhostType, ReadonlyArray<TextureInfo>> = {
 
 let program: WebGLProgram;
 
-let tintUniformLocation: WebGLUniformLocation;
+let buildingPlans: ReadonlyArray<BuildingPlanData>;
+
+export function setVisibleBuildingPlans(newBuildingPlans: ReadonlyArray<BuildingPlanData>): void {
+   // @Speed: Garbage collection
+   buildingPlans = newBuildingPlans;
+}
 
 export function createPlaceableItemProgram(): void {
    const vertexShaderText = `#version 300 es
@@ -401,11 +406,13 @@ export function createPlaceableItemProgram(): void {
    layout(location = 2) in float a_textureIndex;
    layout(location = 3) in vec2 a_textureSize;
    layout(location = 4) in float a_opacity;
+   layout(location = 5) in vec3 a_tint;
    
    out vec2 v_texCoord;
    out float v_textureIndex;
    out vec2 v_textureSize;
    out float v_opacity;
+   out vec3 v_tint;
    
    void main() {
       vec2 screenPos = (a_position - u_playerPos) * u_zoom + u_halfWindowSize;
@@ -416,6 +423,7 @@ export function createPlaceableItemProgram(): void {
       v_textureIndex = a_textureIndex;
       v_textureSize = a_textureSize;
       v_opacity = a_opacity;
+      v_tint = a_tint;
    }
    `;
    
@@ -425,12 +433,12 @@ export function createPlaceableItemProgram(): void {
    uniform sampler2D u_textureAtlas;
    uniform float u_atlasPixelSize;
    uniform float u_atlasSlotSize;
-   uniform vec3 u_tint;
    
    in vec2 v_texCoord;
    in float v_textureIndex;
    in vec2 v_textureSize;
    in float v_opacity;
+   in vec3 v_tint;
    
    out vec4 outputColour;
    
@@ -444,7 +452,7 @@ export function createPlaceableItemProgram(): void {
       float v = 1.0 - ((textureY + (1.0 - v_texCoord.y) * (v_textureSize.y - 0.2) + 0.1) / u_atlasPixelSize);
       outputColour = texture(u_textureAtlas, vec2(u, v));
 
-      outputColour.rgb *= u_tint;
+      outputColour.rgb *= v_tint;
       outputColour.a *= v_opacity;
    }
    `;
@@ -463,68 +471,70 @@ export function createPlaceableItemProgram(): void {
    gl.uniform1i(programTextureUniformLocation, 0);
    gl.uniform1f(atlasPixelSizeUniformLocation, ENTITY_TEXTURE_ATLAS_SIZE);
    gl.uniform1f(atlasSlotSizeUniformLocation, ATLAS_SLOT_SIZE);
-
-   tintUniformLocation = gl.getUniformLocation(program, "u_tint")!;
 }
 
-const calculateVertices = (placePosition: Point, placeRotation: number, ghostType: GhostType, isAttachedToWall: boolean, opacity: number): ReadonlyArray<number> => {
+const calculateVertices = (ghostInfos: ReadonlyArray<GhostInfo>): ReadonlyArray<number> => {
    const vertices = new Array<number>();
    
-   const textureInfoArray = TEXTURE_INFO_RECORD[ghostType];
-   for (let i = 0; i < textureInfoArray.length; i++) {
-      const textureInfo = textureInfoArray[i];
+   for (let i = 0; i < ghostInfos.length; i++) {
+      const ghostInfo = ghostInfos[i];
 
-      let textureSource: string;
-      if (ghostType === GhostType.woodenSpikes) {
-         if (isAttachedToWall) {
-            textureSource = "entities/spikes/wooden-wall-spikes.png";
+      const textureInfoArray = TEXTURE_INFO_RECORD[ghostInfo.ghostType];
+      for (let i = 0; i < textureInfoArray.length; i++) {
+         const textureInfo = textureInfoArray[i];
+   
+         let textureSource: string;
+         if (ghostInfo.ghostType === GhostType.woodenSpikes) {
+            if (ghostInfo.isAttachedToWall) {
+               textureSource = "entities/spikes/wooden-wall-spikes.png";
+            } else {
+               textureSource = "entities/spikes/wooden-floor-spikes.png";
+            }
+         } else if (ghostInfo.ghostType === GhostType.punjiSticks) {
+            if (ghostInfo.isAttachedToWall) {
+               textureSource = "entities/wall-punji-sticks/wall-punji-sticks.png";
+            } else {
+               textureSource = "entities/floor-punji-sticks/floor-punji-sticks.png";
+            }
          } else {
-            textureSource = "entities/spikes/wooden-floor-spikes.png";
+            textureSource = textureInfo.textureSource;
          }
-      } else if (ghostType === GhostType.punjiSticks) {
-         if (isAttachedToWall) {
-            textureSource = "entities/wall-punji-sticks/wall-punji-sticks.png";
-         } else {
-            textureSource = "entities/floor-punji-sticks/floor-punji-sticks.png";
-         }
-      } else {
-         textureSource = textureInfo.textureSource;
+      
+         // Find texture size
+         const textureArrayIndex = getTextureArrayIndex(textureSource);
+         const textureWidth = getTextureWidth(textureArrayIndex);
+         const textureHeight = getTextureHeight(textureArrayIndex);
+         const width = textureWidth * 4;
+         const height = textureHeight * 4;
+         const slotIndex = ENTITY_TEXTURE_SLOT_INDEXES[textureArrayIndex];
+         
+         const x = ghostInfo.position.x + rotateXAroundOrigin(textureInfo.offsetX, textureInfo.offsetY, ghostInfo.rotation);
+         const y = ghostInfo.position.y + rotateYAroundOrigin(textureInfo.offsetX, textureInfo.offsetY, ghostInfo.rotation);
+         
+         const x1 = x - width / 2;
+         const x2 = x + width / 2;
+         const y1 = y - height / 2;
+         const y2 = y + height / 2;
+      
+         const rotation = ghostInfo.ghostType !== GhostType.deconstructMarker ? ghostInfo.rotation + textureInfo.rotation : 0;
+         const tlX = rotateXAroundPoint(x1, y2, x, y, rotation);
+         const tlY = rotateYAroundPoint(x1, y2, x, y, rotation);
+         const trX = rotateXAroundPoint(x2, y2, x, y, rotation);
+         const trY = rotateYAroundPoint(x2, y2, x, y, rotation);
+         const blX = rotateXAroundPoint(x1, y1, x, y, rotation);
+         const blY = rotateYAroundPoint(x1, y1, x, y, rotation);
+         const brX = rotateXAroundPoint(x2, y1, x, y, rotation);
+         const brY = rotateYAroundPoint(x2, y1, x, y, rotation);
+      
+         vertices.push(
+            blX, blY, 0, 0, slotIndex, textureWidth, textureHeight, ghostInfo.opacity, ghostInfo.tint[0], ghostInfo.tint[1], ghostInfo.tint[2],
+            brX, brY, 1, 0, slotIndex, textureWidth, textureHeight, ghostInfo.opacity, ghostInfo.tint[0], ghostInfo.tint[1], ghostInfo.tint[2],
+            tlX, tlY, 0, 1, slotIndex, textureWidth, textureHeight, ghostInfo.opacity, ghostInfo.tint[0], ghostInfo.tint[1], ghostInfo.tint[2],
+            tlX, tlY, 0, 1, slotIndex, textureWidth, textureHeight, ghostInfo.opacity, ghostInfo.tint[0], ghostInfo.tint[1], ghostInfo.tint[2],
+            brX, brY, 1, 0, slotIndex, textureWidth, textureHeight, ghostInfo.opacity, ghostInfo.tint[0], ghostInfo.tint[1], ghostInfo.tint[2],
+            trX, trY, 1, 1, slotIndex, textureWidth, textureHeight, ghostInfo.opacity, ghostInfo.tint[0], ghostInfo.tint[1], ghostInfo.tint[2]
+         );
       }
-   
-      // Find texture size
-      const textureArrayIndex = getTextureArrayIndex(textureSource);
-      const textureWidth = getTextureWidth(textureArrayIndex);
-      const textureHeight = getTextureHeight(textureArrayIndex);
-      const width = textureWidth * 4;
-      const height = textureHeight * 4;
-      const slotIndex = ENTITY_TEXTURE_SLOT_INDEXES[textureArrayIndex];
-      
-      const x = placePosition.x + rotateXAroundOrigin(textureInfo.offsetX, textureInfo.offsetY, placeRotation);
-      const y = placePosition.y + rotateYAroundOrigin(textureInfo.offsetX, textureInfo.offsetY, placeRotation);
-      
-      const x1 = x - width / 2;
-      const x2 = x + width / 2;
-      const y1 = y - height / 2;
-      const y2 = y + height / 2;
-   
-      const rotation = ghostType !== GhostType.deconstructMarker ? placeRotation + textureInfo.rotation : 0;
-      const tlX = rotateXAroundPoint(x1, y2, x, y, rotation);
-      const tlY = rotateYAroundPoint(x1, y2, x, y, rotation);
-      const trX = rotateXAroundPoint(x2, y2, x, y, rotation);
-      const trY = rotateYAroundPoint(x2, y2, x, y, rotation);
-      const blX = rotateXAroundPoint(x1, y1, x, y, rotation);
-      const blY = rotateYAroundPoint(x1, y1, x, y, rotation);
-      const brX = rotateXAroundPoint(x2, y1, x, y, rotation);
-      const brY = rotateYAroundPoint(x2, y1, x, y, rotation);
-   
-      vertices.push(
-         blX, blY, 0, 0, slotIndex, textureWidth, textureHeight, opacity,
-         brX, brY, 1, 0, slotIndex, textureWidth, textureHeight, opacity,
-         tlX, tlY, 0, 1, slotIndex, textureWidth, textureHeight, opacity,
-         tlX, tlY, 0, 1, slotIndex, textureWidth, textureHeight, opacity,
-         brX, brY, 1, 0, slotIndex, textureWidth, textureHeight, opacity,
-         trX, trY, 1, 1, slotIndex, textureWidth, textureHeight, opacity
-      );
    }
 
    return vertices;
@@ -621,17 +631,38 @@ const getGhostInfo = (): GhostInfo | null => {
    return null;
 }
 
-export function renderGhostPlaceableItem(): void {
+export function renderGhostEntities(): void {
    if (Player.instance === null) {
       return;
    }
 
+   const ghostInfos = new Array<GhostInfo>();
+
    const ghostInfo = getGhostInfo();
-   if (ghostInfo === null) {
-      return;
+   if (ghostInfo !== null) {
+      ghostInfos.push(ghostInfo);
+   }
+
+   // Building plans
+   console.log(buildingPlans.length);
+   for (let i = 0; i < buildingPlans.length; i++) {
+      const plan = buildingPlans[i];
+
+      ghostInfos.push({
+         position: new Point(plan.x, plan.y),
+         rotation: plan.rotation,
+         ghostType: ENTITY_TYPE_TO_GHOST_TYPE_MAP[plan.entityType]!,
+         isAttachedToWall: false,
+         opacity: PARTIAL_OPACITY,
+         tint: [1, 1, 1]
+      })
    }
    
-   const vertices = calculateVertices(ghostInfo.position, ghostInfo.rotation, ghostInfo.ghostType, ghostInfo.isAttachedToWall, ghostInfo.opacity);
+   if (ghostInfos.length === 0) {
+      return;
+   }
+
+   const vertices = calculateVertices(ghostInfos);
 
    gl.useProgram(program);
 
@@ -642,19 +673,19 @@ export function renderGhostPlaceableItem(): void {
    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW); // @Speed
 
-   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 0);
-   gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(2, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(3, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
-   gl.vertexAttribPointer(4, 1, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 11 * Float32Array.BYTES_PER_ELEMENT, 0);
+   gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 11 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(2, 1, gl.FLOAT, false, 11 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(3, 2, gl.FLOAT, false, 11 * Float32Array.BYTES_PER_ELEMENT, 5 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(4, 1, gl.FLOAT, false, 11 * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
+   gl.vertexAttribPointer(5, 3, gl.FLOAT, false, 11 * Float32Array.BYTES_PER_ELEMENT, 8 * Float32Array.BYTES_PER_ELEMENT);
 
    gl.enableVertexAttribArray(0);
    gl.enableVertexAttribArray(1);
    gl.enableVertexAttribArray(2);
    gl.enableVertexAttribArray(3);
    gl.enableVertexAttribArray(4);
-
-   gl.uniform3f(tintUniformLocation, ghostInfo.tint[0], ghostInfo.tint[1], ghostInfo.tint[2]);
+   gl.enableVertexAttribArray(4);
 
    gl.activeTexture(gl.TEXTURE0);
    gl.bindTexture(gl.TEXTURE_2D, ENTITY_TEXTURE_ATLAS);

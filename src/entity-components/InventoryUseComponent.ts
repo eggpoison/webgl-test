@@ -540,11 +540,8 @@ class InventoryUseComponent extends ServerComponent<ServerComponentType.inventor
 
             if (useInfo.currentAction === TribeMemberAction.chargeSpear) {
                limb.rotation = lerp(ITEM_RESTING_ROTATION, Math.PI / 3.5, chargeProgress) * handMult;
-               // this.activeItemRenderParts[limbIdx].offset.x = (ITEM_RESTING_OFFSET + itemSize/2) * Math.sin(itemDirection);
-               // this.activeItemRenderParts[limbIdx].offset.y = (ITEM_RESTING_OFFSET + itemSize/2) * Math.cos(itemDirection);
                this.activeItemRenderParts[limbIdx].offset.x = 5;
                this.activeItemRenderParts[limbIdx].offset.y = 11;
-               // this.activeItemRenderParts[limbIdx].rotation = ITEM_RESTING_ROTATION * handMult;
                this.activeItemRenderParts[limbIdx].rotation = 0;
             } else {
                limb.rotation = lerp(Math.PI / 4.2, Math.PI / 2.5, chargeProgress) * handMult;
