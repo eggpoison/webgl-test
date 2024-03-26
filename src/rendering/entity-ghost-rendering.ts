@@ -644,7 +644,6 @@ export function renderGhostEntities(): void {
    }
 
    // Building plans
-   console.log(buildingPlans.length);
    for (let i = 0; i < buildingPlans.length; i++) {
       const plan = buildingPlans[i];
 
