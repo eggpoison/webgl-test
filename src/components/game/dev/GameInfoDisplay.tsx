@@ -52,7 +52,9 @@ const GameInfoDisplay = () => {
    const [showChunkBorders, setShowChunkBorders] = useState(OPTIONS.showChunkBorders);
    const [showRenderChunkBorders, setShowRenderChunkBorders] = useState(OPTIONS.showRenderChunkBorders);
    const [showPathfindingNodes, setShowPathfindingNodes] = useState(OPTIONS.showPathfindingNodes);
-   const [showVulnerabilityNodes, setShowVulnerabilityNodes] = useState(OPTIONS.showPathfindingNodes);
+   const [showVulnerabilityNodes, setShowVulnerabilityNodes] = useState(OPTIONS.showVulnerabilityNodes);
+   const [showBuildingVulnerabilities, setShowBuildingVulnerabilities] = useState(OPTIONS.showBuildingVulnerabilities);
+   const [showBuildingPlans, setShowBuildingPlans] = useState(OPTIONS.showBuildingPlans);
    
    useEffect(() => {
       if (typeof Board.time !== "undefined") {
@@ -97,6 +99,28 @@ const GameInfoDisplay = () => {
       setShowVulnerabilityNodes(!showVulnerabilityNodes);
    }, [showVulnerabilityNodes]);
 
+   const toggleShowBuildingVulnerabilities = useCallback(() => {
+      OPTIONS.showBuildingVulnerabilities = !showBuildingVulnerabilities;
+      setShowBuildingVulnerabilities(!showBuildingVulnerabilities);
+   }, [showBuildingVulnerabilities]);
+
+   const toggleShowBuildingPlans = useCallback(() => {
+      OPTIONS.showBuildingPlans = !showBuildingPlans;
+      setShowBuildingPlans(!showBuildingPlans);
+   }, [showBuildingPlans]);
+
+   const toggleAIBuilding = useCallback(() => {
+      const toggleResult = !showVulnerabilityNodes || !showBuildingVulnerabilities || !showBuildingPlans;
+      
+      setShowVulnerabilityNodes(toggleResult);
+      setShowBuildingVulnerabilities(toggleResult);
+      setShowBuildingPlans(toggleResult);
+
+      OPTIONS.showVulnerabilityNodes = toggleResult;
+      OPTIONS.showBuildingVulnerabilities = toggleResult;
+      OPTIONS.showBuildingPlans = toggleResult;
+   }, [showVulnerabilityNodes, showBuildingVulnerabilities, showBuildingPlans]);
+
    const changeZoom = () => {
       if (rangeInputRef.current === null) {
          return;
@@ -112,7 +136,7 @@ const GameInfoDisplay = () => {
       <p>Ticks: {roundNum(ticks, 2)}</p>
       <p>Server TPS: {tps}</p>
 
-      <ul className="options">
+      <ul className="area options">
          <li>
             <label className={nightVisionIsEnabled ? "enabled" : undefined}>
                <input checked={nightVisionIsEnabled} name="nightvision-checkbox" type="checkbox" onChange={toggleNightvision} />
@@ -143,21 +167,15 @@ const GameInfoDisplay = () => {
                Show pathfinding nodes
             </label>
          </li>
-         <li>
-            <label className={showVulnerabilityNodes ? "enabled" : undefined}>
-               <input checked={showVulnerabilityNodes} name="show-vulnerability-nodes-checkbox" type="checkbox" onChange={toggleShowVulnerabilityNodes} />
-               Show vulnerability nodes
-            </label>
-         </li>
       </ul>
 
-      <ul>
+      <ul className="area">
          <li>{Board.entities.size} Entities</li>
          {/* @Incomplete: Subdivide into projectiles, item entities, and other */}
          <li>{Board.lowMonocolourParticles.length + Board.lowTexturedParticles.length + Board.highMonocolourParticles.length + Board.highTexturedParticles.length} Particles</li>
       </ul>
 
-      <ul>
+      <ul className="area">
          <li>
             <label>
                <input ref={rangeInputRef} type="range" name="zoom-input" defaultValue={Camera.zoom} min={1} max={2.25} step={0.25} onChange={changeZoom} />
@@ -165,6 +183,31 @@ const GameInfoDisplay = () => {
             </label>
          </li>
       </ul>
+
+      <div className="area">
+         <label className={"title" + ((showVulnerabilityNodes && showBuildingVulnerabilities && showBuildingPlans) ? " enabled" : "")}>
+            AI Building
+            <input checked={showVulnerabilityNodes && showBuildingVulnerabilities && showBuildingPlans} type="checkbox" onChange={toggleAIBuilding} />
+         </label>
+         <div>
+            <label className={showVulnerabilityNodes ? "enabled" : undefined}>
+               <input checked={showVulnerabilityNodes} name="show-vulnerability-nodes-checkbox" type="checkbox" onChange={toggleShowVulnerabilityNodes} />
+               Show vulnerability nodes
+            </label>
+         </div>
+         <div>
+            <label className={showBuildingVulnerabilities ? "enabled" : undefined}>
+               <input checked={showBuildingVulnerabilities} name="show-building-vulnerabilities-checkbox" type="checkbox" onChange={toggleShowBuildingVulnerabilities} />
+               Show building vulnerabilities
+            </label>
+         </div>
+         <div>
+            <label className={showBuildingPlans ? "enabled" : undefined}>
+               <input checked={showBuildingPlans} name="show-building-plans-checkbox" type="checkbox" onChange={toggleShowBuildingPlans} />
+               Show building plans
+            </label>
+         </div>
+      </div>
    </div>;
 }
 

@@ -19,11 +19,11 @@
    margin: 0.5rem 0;
 }
 
-#game-info-display ul {
+#game-info-display .area {
    color: #fff;
    background-color: #000;
    margin-left: 0rem;
-   padding-left: 1rem;
+   padding: 0.2rem;
 }
 
 #game-info-display ul.options {
@@ -35,10 +35,20 @@
 #game-info-display input {
    outline: none;
 }
+#game-info-display label.title input {
+   float: right;
+}
 
-#game-info-display ul label.enabled {
+/* #game-info-display label:is(.enabled, .title) { */
+#game-info-display label.enabled{
    color: #fff;
 }
-#game-info-display ul label {
+#game-info-display label {
    color: #ccc;
+   cursor: pointer;
+}
+#game-info-display label.title {
+   display: block;
+   text-decoration: underline;
+   margin-bottom: 0.2rem;
 }

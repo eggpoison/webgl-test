@@ -11,6 +11,7 @@ import { BALLISTA_AMMO_BOX_OFFSET_X, BALLISTA_AMMO_BOX_OFFSET_Y, BALLISTA_GEAR_X
 import { getHoveredGhostType } from "../components/game/BlueprintMenu";
 import WorkerHut from "../entities/WorkerHut";
 import WarriorHut from "../entities/WarriorHut";
+import OPTIONS from "../options";
 
 const PARTIAL_OPACITY = 0.5;
 
@@ -644,17 +645,19 @@ export function renderGhostEntities(): void {
    }
 
    // Building plans
-   for (let i = 0; i < buildingPlans.length; i++) {
-      const plan = buildingPlans[i];
-
-      ghostInfos.push({
-         position: new Point(plan.x, plan.y),
-         rotation: plan.rotation,
-         ghostType: ENTITY_TYPE_TO_GHOST_TYPE_MAP[plan.entityType]!,
-         isAttachedToWall: false,
-         opacity: PARTIAL_OPACITY,
-         tint: [0.9, 1.5, 0.8]
-      });
+   if (OPTIONS.showBuildingPlans) {
+      for (let i = 0; i < buildingPlans.length; i++) {
+         const plan = buildingPlans[i];
+         
+         ghostInfos.push({
+            position: new Point(plan.x, plan.y),
+            rotation: plan.rotation,
+            ghostType: ENTITY_TYPE_TO_GHOST_TYPE_MAP[plan.entityType]!,
+            isAttachedToWall: false,
+            opacity: PARTIAL_OPACITY,
+            tint: [0.9, 1.5, 0.8]
+         });
+      }
    }
    
    if (ghostInfos.length === 0) {

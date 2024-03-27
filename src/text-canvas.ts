@@ -1,7 +1,8 @@
-import { ServerComponentType, Settings, randFloat } from "webgl-test-shared";
+import { BuildingVulnerabilityData, ServerComponentType, Settings, randFloat } from "webgl-test-shared";
 import Board from "./Board";
 import Camera from "./Camera";
 import { halfWindowHeight, halfWindowWidth, windowHeight, windowWidth } from "./webgl";
+import OPTIONS from "./options";
 
 // @Cleanup: The logic for damage, research and heal numbers is extremely similar, can probably be combined
 
@@ -42,6 +43,13 @@ let accumulatedDamage = 0;
 let damageTime = 0;
 let damageNumberX = -1;
 let damageNumberY = -1;
+
+let buildingVulnerabilities: ReadonlyArray<BuildingVulnerabilityData>;
+
+export function setVisibleBuildingVulnerabilities(newBuildingVulnerabilities: ReadonlyArray<BuildingVulnerabilityData>): void {
+   // @Speed: Garbage collection
+   buildingVulnerabilities = newBuildingVulnerabilities;
+}
 
 export function createTextCanvasContext(): void {
    const textCanvas = document.getElementById("text-canvas") as HTMLCanvasElement;
@@ -283,10 +291,51 @@ const renderPlayerNames = (): void => {
    }
 }
 
+const renderBuildingVulnerabilities = (): void => {
+   for (let i = 0; i < buildingVulnerabilities.length; i++) {
+      const buildingVulnerabilityData = buildingVulnerabilities[i];
+
+      // Calculate position in camera
+      const cameraX = getXPosInCamera(buildingVulnerabilityData.x);
+      const cameraY = getYPosInCamera(buildingVulnerabilityData.y);
+      const height = 20;
+
+      ctx.fillStyle = "#000";
+      ctx.font = "400 20px Helvetica";
+      ctx.lineJoin = "round";
+      ctx.miterLimit = 2;
+
+      const minText = "min=" + Math.floor(buildingVulnerabilityData.minVulnerability);
+      const minWidth = ctx.measureText(minText).width; // @Speed
+
+      // Draw text bg
+      ctx.fillStyle = "#000";
+      ctx.fillRect(cameraX - minWidth/2, cameraY - height, minWidth, height);
+      
+      // Draw text
+      ctx.fillStyle = "#fff";
+      ctx.fillText(minText, cameraX - minWidth / 2, cameraY - 3);
+
+      const averageText = "avg=" + buildingVulnerabilityData.averageVulnerability.toFixed(2);
+      const averageWidth = ctx.measureText(averageText).width; // @Speed
+
+      // Draw text bg
+      ctx.fillStyle = "#000";
+      ctx.fillRect(cameraX - averageWidth/2, cameraY, averageWidth, height);
+      
+      // Draw text
+      ctx.fillStyle = "#fff";
+      ctx.fillText(averageText, cameraX - averageWidth / 2, cameraY + height - 3);
+   }
+}
+
 export function renderText(): void {
    clearTextCanvas();
    renderPlayerNames();
    renderDamageNumbers();
    renderResearchNumbers();
    renderHealNumbers();
+   if (OPTIONS.showBuildingVulnerabilities) {
+      renderBuildingVulnerabilities();
+   }
 }

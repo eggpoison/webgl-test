@@ -446,7 +446,6 @@ abstract class Game {
       if (isDev()) {
          // @Temporary
          if (Board.entityRecord.hasOwnProperty(Camera.trackedEntityID) && Camera.trackedEntityID !== Player.instance?.id) {
-            console.log("track");
             const entity = Board.entityRecord[Camera.trackedEntityID];
             Client.sendTrackEntity(entity.id);
          } else if (nerdVisionIsVisible()) {

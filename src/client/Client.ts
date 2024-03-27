@@ -22,7 +22,7 @@ import { definiteGameState, latencyGameState } from "../game-state/game-states";
 import { BackpackInventoryMenu_update } from "../components/game/inventories/BackpackInventory";
 import { updateInventoryFromData } from "../inventory-manipulation";
 import Entity from "../Entity";
-import { createDamageNumber, createHealNumber, createResearchNumber } from "../text-canvas";
+import { createDamageNumber, createHealNumber, createResearchNumber, setVisibleBuildingVulnerabilities } from "../text-canvas";
 import { playSound } from "../sound";
 import { closeTechTree, updateTechTree } from "../components/game/TechTree";
 import { TechInfocard_setSelectedTech } from "../components/game/TechInfocard";
@@ -273,6 +273,7 @@ abstract class Client {
       setVisiblePathfindingNodeOccupances(gameDataPacket.visiblePathfindingNodeOccupances);
       setVisibleVulnerabilityNodes(gameDataPacket.visibleVulnerabilityNodes);
       setVisibleBuildingPlans(gameDataPacket.visibleBuildingPlans);
+      setVisibleBuildingVulnerabilities(gameDataPacket.visibleBuildingVulnerabilities);
    }
 
    private static updateTribe(tribeData: PlayerTribeData): void {

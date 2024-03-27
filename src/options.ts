@@ -20,6 +20,8 @@ interface Options {
    readonly showAllTechs: boolean;
    showPathfindingNodes: boolean;
    showVulnerabilityNodes: boolean;
+   showBuildingVulnerabilities: boolean;
+   showBuildingPlans: boolean;
 }
 
 const OPTIONS: Options = {
@@ -33,7 +35,9 @@ const OPTIONS: Options = {
    showParticles: true,
    showAllTechs: false,
    showPathfindingNodes: false,
-   showVulnerabilityNodes: false
+   showVulnerabilityNodes: false,
+   showBuildingVulnerabilities: false,
+   showBuildingPlans: false
 };
 
 document.documentElement.style.setProperty("--zoom", OPTIONS.uiZoom.toString());
