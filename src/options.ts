@@ -22,6 +22,7 @@ interface Options {
    showVulnerabilityNodes: boolean;
    showBuildingVulnerabilities: boolean;
    showBuildingPlans: boolean;
+   showRestrictedAreas: boolean;
 }
 
 const OPTIONS: Options = {
@@ -37,7 +38,8 @@ const OPTIONS: Options = {
    showPathfindingNodes: false,
    showVulnerabilityNodes: false,
    showBuildingVulnerabilities: false,
-   showBuildingPlans: false
+   showBuildingPlans: false,
+   showRestrictedAreas: false
 };
 
 document.documentElement.style.setProperty("--zoom", OPTIONS.uiZoom.toString());

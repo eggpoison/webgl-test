@@ -55,6 +55,7 @@ const GameInfoDisplay = () => {
    const [showVulnerabilityNodes, setShowVulnerabilityNodes] = useState(OPTIONS.showVulnerabilityNodes);
    const [showBuildingVulnerabilities, setShowBuildingVulnerabilities] = useState(OPTIONS.showBuildingVulnerabilities);
    const [showBuildingPlans, setShowBuildingPlans] = useState(OPTIONS.showBuildingPlans);
+   const [showRestrictedAreas, setShowRestrictedAreas] = useState(OPTIONS.showRestrictedAreas);
    
    useEffect(() => {
       if (typeof Board.time !== "undefined") {
@@ -109,17 +110,24 @@ const GameInfoDisplay = () => {
       setShowBuildingPlans(!showBuildingPlans);
    }, [showBuildingPlans]);
 
+   const toggleShowRestrictedAreas = useCallback(() => {
+      OPTIONS.showRestrictedAreas = !showRestrictedAreas;
+      setShowRestrictedAreas(!showRestrictedAreas);
+   }, [showRestrictedAreas]);
+
    const toggleAIBuilding = useCallback(() => {
-      const toggleResult = !showVulnerabilityNodes || !showBuildingVulnerabilities || !showBuildingPlans;
+      const toggleResult = !showVulnerabilityNodes || !showBuildingVulnerabilities || !showBuildingPlans || !showRestrictedAreas;
       
       setShowVulnerabilityNodes(toggleResult);
       setShowBuildingVulnerabilities(toggleResult);
       setShowBuildingPlans(toggleResult);
+      setShowRestrictedAreas(toggleResult);
 
       OPTIONS.showVulnerabilityNodes = toggleResult;
       OPTIONS.showBuildingVulnerabilities = toggleResult;
       OPTIONS.showBuildingPlans = toggleResult;
-   }, [showVulnerabilityNodes, showBuildingVulnerabilities, showBuildingPlans]);
+      OPTIONS.showRestrictedAreas = toggleResult;
+   }, [showVulnerabilityNodes, showBuildingVulnerabilities, showBuildingPlans, showRestrictedAreas]);
 
    const changeZoom = () => {
       if (rangeInputRef.current === null) {
@@ -171,7 +179,6 @@ const GameInfoDisplay = () => {
 
       <ul className="area">
          <li>{Board.entities.size} Entities</li>
-         {/* @Incomplete: Subdivide into projectiles, item entities, and other */}
          <li>{Board.lowMonocolourParticles.length + Board.lowTexturedParticles.length + Board.highMonocolourParticles.length + Board.highTexturedParticles.length} Particles</li>
       </ul>
 
@@ -185,9 +192,9 @@ const GameInfoDisplay = () => {
       </ul>
 
       <div className="area">
-         <label className={"title" + ((showVulnerabilityNodes && showBuildingVulnerabilities && showBuildingPlans) ? " enabled" : "")}>
+         <label className={"title" + ((showVulnerabilityNodes && showBuildingVulnerabilities && showBuildingPlans && showRestrictedAreas) ? " enabled" : "")}>
             AI Building
-            <input checked={showVulnerabilityNodes && showBuildingVulnerabilities && showBuildingPlans} type="checkbox" onChange={toggleAIBuilding} />
+            <input checked={showVulnerabilityNodes && showBuildingVulnerabilities && showBuildingPlans && showRestrictedAreas} type="checkbox" onChange={toggleAIBuilding} />
          </label>
          <div>
             <label className={showVulnerabilityNodes ? "enabled" : undefined}>
@@ -205,6 +212,12 @@ const GameInfoDisplay = () => {
             <label className={showBuildingPlans ? "enabled" : undefined}>
                <input checked={showBuildingPlans} name="show-building-plans-checkbox" type="checkbox" onChange={toggleShowBuildingPlans} />
                Show building plans
+            </label>
+         </div>
+         <div>
+            <label className={showRestrictedAreas ? "enabled" : undefined}>
+               <input checked={showRestrictedAreas} name="show-restricted-areas-checkbox" type="checkbox" onChange={toggleShowRestrictedAreas} />
+               Show restricted areas
             </label>
          </div>
       </div>

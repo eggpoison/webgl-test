@@ -51,6 +51,7 @@ import { createTurretRangeShaders, renderTurretRange } from "./rendering/turret-
 import { createPathfindNodeShaders, renderPathfindingNodes } from "./rendering/pathfinding-node-rendering";
 import { updateInspectHealthBar } from "./components/game/InspectHealthBar";
 import { createVulnerabilityNodeShaders, renderVulnerabilityNodes } from "./rendering/vulnerability-node-rendering";
+import { createRestrictedBuildingAreaShaders, renderRestrictedBuildingAreas } from "./rendering/restricted-building-areas-rendering";
 
 let listenersHaveBeenCreated = false;
 
@@ -229,6 +230,7 @@ abstract class Game {
             createTurretRangeShaders();
             createPathfindNodeShaders();
             createVulnerabilityNodeShaders();
+            createRestrictedBuildingAreaShaders();
 
             await setupAudio();
 
@@ -406,6 +408,7 @@ abstract class Game {
       }
       renderForcefield();
       renderWorldBorder();
+      renderRestrictedBuildingAreas();
       if (nerdVisionIsVisible() && OPTIONS.showChunkBorders) {
          renderChunkBorders(Camera.minVisibleChunkX, Camera.maxVisibleChunkX, Camera.minVisibleChunkY, Camera.maxVisibleChunkY, Settings.CHUNK_SIZE, 1);
       }

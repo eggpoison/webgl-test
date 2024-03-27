@@ -30,6 +30,7 @@ import { getSelectedEntityID } from "../entity-selection";
 import { setVisiblePathfindingNodeOccupances } from "../rendering/pathfinding-node-rendering";
 import { setVisibleVulnerabilityNodes } from "../rendering/vulnerability-node-rendering";
 import { setVisibleBuildingPlans } from "../rendering/entity-ghost-rendering";
+import { setVisibleRestrictedBuildingAreas } from "../rendering/restricted-building-areas-rendering";
 
 type ISocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -274,6 +275,7 @@ abstract class Client {
       setVisibleVulnerabilityNodes(gameDataPacket.visibleVulnerabilityNodes);
       setVisibleBuildingPlans(gameDataPacket.visibleBuildingPlans);
       setVisibleBuildingVulnerabilities(gameDataPacket.visibleBuildingVulnerabilities);
+      setVisibleRestrictedBuildingAreas(gameDataPacket.visibleRestrictedBuildingAreas);
    }
 
    private static updateTribe(tribeData: PlayerTribeData): void {
