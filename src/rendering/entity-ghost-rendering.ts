@@ -1,4 +1,4 @@
-import { BuildingPlanData, EntityType, PlaceableItemType, Point, ServerComponentType, rotateXAroundOrigin, rotateXAroundPoint, rotateYAroundOrigin, rotateYAroundPoint } from "webgl-test-shared";
+import { BuildingPlanData, EntityType, PlaceableItemType, Point, ServerComponentType, lerp, rotateXAroundOrigin, rotateXAroundPoint, rotateYAroundOrigin, rotateYAroundPoint } from "webgl-test-shared";
 import Player, { getPlayerSelectedItem } from "../entities/Player";
 import { gl, createWebGLProgram, CAMERA_UNIFORM_BUFFER_BINDING_INDEX } from "../webgl";
 import { PLACEABLE_ENTITY_INFO_RECORD, calculatePlacePosition, calculatePlaceRotation, calculateSnapInfo, canPlaceItem } from "../player-input";
@@ -12,7 +12,7 @@ import { getHoveredGhostType } from "../components/game/BlueprintMenu";
 import WorkerHut from "../entities/WorkerHut";
 import WarriorHut from "../entities/WarriorHut";
 import OPTIONS from "../options";
-import { getPotentialBuildingPlans } from "../client/Client";
+import { getPotentialBuildingPlanIdealness, getPotentialBuildingPlans } from "../client/Client";
 
 const PARTIAL_OPACITY = 0.5;
 
@@ -672,7 +672,7 @@ export function renderGhostEntities(): void {
             rotation: potentialPlan.rotation,
             ghostType: ENTITY_TYPE_TO_GHOST_TYPE_MAP[potentialPlan.buildingType]!,
             isAttachedToWall: false,
-            opacity: 0.35,
+            opacity: lerp(0.15, 0.6, getPotentialBuildingPlanIdealness(potentialPlan)),
             tint: [1.2, 1.4, 0.8]
          })
       }

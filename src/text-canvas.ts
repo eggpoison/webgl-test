@@ -1,9 +1,10 @@
-import { BuildingVulnerabilityData, ServerComponentType, Settings, randFloat } from "webgl-test-shared";
+import { BuildingVulnerabilityData, EntityType, PotentialBuildingPlanData, ServerComponentType, Settings, distance, lerp, randFloat } from "webgl-test-shared";
 import Board from "./Board";
 import Camera from "./Camera";
 import { halfWindowHeight, halfWindowWidth, windowHeight, windowWidth } from "./webgl";
 import OPTIONS from "./options";
-import { getPotentialBuildingPlans } from "./client/Client";
+import { getPotentialBuildingPlanIdealness, getPotentialBuildingPlans } from "./client/Client";
+import Game from "./Game";
 
 // @Cleanup: The logic for damage, research and heal numbers is extremely similar, can probably be combined
 
@@ -302,44 +303,108 @@ const renderPotentialBuildingPlans = (): void => {
       const cameraY = getYPosInCamera(potentialPlan.y);
       const height = 15;
 
-      const textColour = potentialPlan.isBestMin ? "#fff" : "#ccc";
+      const idealness = getPotentialBuildingPlanIdealness(potentialPlan);
+
+      // @Incomplete
+      // const textColour = potentialPlan.isBestMin ? "#fff" : "#ccc";
+      const textColour = "#fff";
 
       ctx.font = "400 13px Helvetica";
       ctx.lineJoin = "round";
       ctx.miterLimit = 2;
 
-      const minText = "min=" + Math.floor(potentialPlan.minVulnerability);
+      const text = potentialPlan.safety.toFixed(2);
+      const width = ctx.measureText(text).width; // @Speed
+
+      // Draw text bg
+      ctx.globalAlpha = lerp(0.3, 1, idealness);
+      ctx.fillStyle = "#000";
+      ctx.fillRect(cameraX - width/2, cameraY - height / 2, width, height);
+      
+      // Draw text
+      ctx.globalAlpha = lerp(0.7, 1, idealness);
+      ctx.fillStyle = textColour;
+      ctx.fillText(text, cameraX - width / 2, cameraY + height / 2 - 3);
+   }
+   ctx.globalAlpha = 1;
+}
+
+const getHoveredPotentialPlan = (): PotentialBuildingPlanData | null => {
+   if (Game.cursorPositionX === null || Game.cursorPositionY === null) {
+      return null;
+   }
+   
+   const potentialBuildingPlans = getPotentialBuildingPlans();
+
+   let closestPlan: PotentialBuildingPlanData | undefined;
+   let minDist = 64;
+   for (let i = 0; i < potentialBuildingPlans.length; i++) {
+      const plan = potentialBuildingPlans[i];
+
+      const dist = distance(Game.cursorPositionX, Game.cursorPositionY, plan.x, plan.y);
+      if (dist < minDist) {
+         minDist = dist;
+         closestPlan = plan;
+      }
+   }
+
+   if (typeof closestPlan !== "undefined") {
+      return closestPlan;
+   }
+   return null;
+}
+
+const renderHoveredPotentialPlanInfo = (): void => {
+   const hoveredPlan = getHoveredPotentialPlan();
+   if (hoveredPlan === null) {
+      return;
+   }
+
+   let left = getXPosInCamera(hoveredPlan.x);
+   const top = getYPosInCamera(hoveredPlan.y);
+   const height = 50;
+   
+   const safetyInfo = hoveredPlan.safetyInfo;
+   for (let i = 0; i < safetyInfo.buildingIDs.length; i++) {
+      const buildingID = safetyInfo.buildingIDs[i];
+      const buildingType = safetyInfo.buildingTypes[i];
+      const minSafety = safetyInfo.buildingMinSafetys[i];
+      const averageSafety = safetyInfo.buildingAverageSafetys[i];
+
+      ctx.font = "400 13px Helvetica";
+      ctx.lineJoin = "round";
+      ctx.miterLimit = 2;
+
+      const text = EntityType[buildingType] + " #" + buildingID;
+      const labelWidth = ctx.measureText(text).width; // @Speed
+
+      const minText = "- min=" + minSafety.toFixed(2);
       const minWidth = ctx.measureText(minText).width; // @Speed
 
-      // Draw text bg
-      ctx.fillStyle = "#000";
-      ctx.fillRect(cameraX - minWidth/2, cameraY - height, minWidth, height);
-      
-      // Draw text
-      ctx.fillStyle = textColour;
-      ctx.fillText(minText, cameraX - minWidth / 2, cameraY - 3);
-
-      const averageText = "avg=" + potentialPlan.averageVulnerability.toFixed(2);
+      const averageText = "- avg=" + averageSafety.toFixed(2);
       const averageWidth = ctx.measureText(averageText).width; // @Speed
 
-      // Draw text bg
-      ctx.fillStyle = "#000";
-      ctx.fillRect(cameraX - averageWidth/2, cameraY, averageWidth, height);
-      
-      // Draw text
-      ctx.fillStyle = textColour;
-      ctx.fillText(averageText, cameraX - averageWidth / 2, cameraY + height - 3);
+      const width = Math.max(labelWidth, minWidth, averageWidth);
 
-      const extendedAverageText = "xavg=" + potentialPlan.extendedAverageVulnerability.toFixed(2);
-      const extendedAverageWidth = ctx.measureText(extendedAverageText).width; // @Speed
-
-      // Draw text bg
       ctx.fillStyle = "#000";
-      ctx.fillRect(cameraX - extendedAverageWidth/2, cameraY + height, extendedAverageWidth, height);
+      ctx.fillRect(left, top, width, height);
+
+      // Label text
       
-      // Draw text
-      ctx.fillStyle = textColour;
-      ctx.fillText(extendedAverageText, cameraX - extendedAverageWidth / 2, cameraY + height * 2 - 3);
+      ctx.fillStyle = "#fff";
+      ctx.fillText(text, left, top + 13);
+
+      // Min text
+
+      ctx.fillStyle = "#fff";
+      ctx.fillText(minText, left, top + 13 * 2);
+
+      // Average text
+
+      ctx.fillStyle = "#fff";
+      ctx.fillText(averageText, left, top + 13 * 3);
+
+      left += width + 3;
    }
 }
 
@@ -352,32 +417,20 @@ const renderBuildingVulnerabilities = (): void => {
       const cameraY = getYPosInCamera(buildingVulnerabilityData.y);
       const height = 20;
 
-      ctx.fillStyle = "#000";
       ctx.font = "400 20px Helvetica";
       ctx.lineJoin = "round";
       ctx.miterLimit = 2;
 
-      const minText = "min=" + Math.floor(buildingVulnerabilityData.minVulnerability);
-      const minWidth = ctx.measureText(minText).width; // @Speed
+      const text = buildingVulnerabilityData.safety.toFixed(2);
+      const width = ctx.measureText(text).width; // @Speed
 
       // Draw text bg
       ctx.fillStyle = "#000";
-      ctx.fillRect(cameraX - minWidth/2, cameraY - height, minWidth, height);
+      ctx.fillRect(cameraX - width/2, cameraY - height, width, height);
       
       // Draw text
       ctx.fillStyle = "#fff";
-      ctx.fillText(minText, cameraX - minWidth / 2, cameraY - 3);
-
-      const averageText = "avg=" + buildingVulnerabilityData.averageVulnerability.toFixed(2);
-      const averageWidth = ctx.measureText(averageText).width; // @Speed
-
-      // Draw text bg
-      ctx.fillStyle = "#000";
-      ctx.fillRect(cameraX - averageWidth/2, cameraY, averageWidth, height);
-      
-      // Draw text
-      ctx.fillStyle = "#fff";
-      ctx.fillText(averageText, cameraX - averageWidth / 2, cameraY + height - 3);
+      ctx.fillText(text, cameraX - width / 2, cameraY - 3);
    }
 }
 
@@ -392,5 +445,6 @@ export function renderText(): void {
    }
    if (OPTIONS.showPotentialBuildingPlans) {
       renderPotentialBuildingPlans();
+      renderHoveredPotentialPlanInfo();
    }
 }

@@ -207,13 +207,13 @@ const GameInfoDisplay = () => {
          <div>
             <label className={showVulnerabilityNodes ? "enabled" : undefined}>
                <input checked={showVulnerabilityNodes} name="show-vulnerability-nodes-checkbox" type="checkbox" onChange={toggleShowVulnerabilityNodes} />
-               Show vulnerability nodes
+               Show safety nodes
             </label>
          </div>
          <div>
             <label className={showBuildingVulnerabilities ? "enabled" : undefined}>
                <input checked={showBuildingVulnerabilities} name="show-building-vulnerabilities-checkbox" type="checkbox" onChange={toggleShowBuildingVulnerabilities} />
-               Show building vulnerabilities
+               Show building safety
             </label>
          </div>
          <div>

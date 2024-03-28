@@ -40,10 +40,34 @@ export type GameData = {
    readonly playerID: number;
 }
 
+let minPlanSafety = 0;
+let maxPlanSafety = 0;
 let potentialBuildingPlans: ReadonlyArray<PotentialBuildingPlanData>;
+
+const updatePotentialBuildingPlans = (newPotentialBuildingPlans: ReadonlyArray<PotentialBuildingPlanData>): void => {
+   potentialBuildingPlans = newPotentialBuildingPlans;
+
+   if (newPotentialBuildingPlans.length > 0) {
+      const firstPlan = newPotentialBuildingPlans[0];
+      minPlanSafety = firstPlan.safety;
+      maxPlanSafety = firstPlan.safety;
+      for (let i = 1; i < newPotentialBuildingPlans.length; i++) {
+         const plan = newPotentialBuildingPlans[i];
+         if (plan.safety < minPlanSafety) {
+            minPlanSafety = plan.safety;
+         } else if (plan.safety > maxPlanSafety) {
+            maxPlanSafety = plan.safety;
+         }
+      }
+   }
+}
 
 export function getPotentialBuildingPlans(): ReadonlyArray<PotentialBuildingPlanData> {
    return potentialBuildingPlans;
+}
+
+export function getPotentialBuildingPlanIdealness(plan: PotentialBuildingPlanData): number {
+   return (plan.safety - minPlanSafety) / (maxPlanSafety - minPlanSafety);
 }
 
 const shouldShowDamageNumber = (attackerID: number): boolean => {
@@ -282,7 +306,8 @@ abstract class Client {
       setVisibleBuildingPlans(gameDataPacket.visibleBuildingPlans);
       setVisibleBuildingVulnerabilities(gameDataPacket.visibleBuildingVulnerabilities);
       setVisibleRestrictedBuildingAreas(gameDataPacket.visibleRestrictedBuildingAreas);
-      potentialBuildingPlans = gameDataPacket.visiblePotentialBuildingPlans;
+
+      updatePotentialBuildingPlans(gameDataPacket.visiblePotentialBuildingPlans);
    }
 
    private static updateTribe(tribeData: PlayerTribeData): void {
