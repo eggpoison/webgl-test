@@ -12,6 +12,7 @@ import { getHoveredGhostType } from "../components/game/BlueprintMenu";
 import WorkerHut from "../entities/WorkerHut";
 import WarriorHut from "../entities/WarriorHut";
 import OPTIONS from "../options";
+import { getPotentialBuildingPlans } from "../client/Client";
 
 const PARTIAL_OPACITY = 0.5;
 
@@ -654,9 +655,26 @@ export function renderGhostEntities(): void {
             rotation: plan.rotation,
             ghostType: ENTITY_TYPE_TO_GHOST_TYPE_MAP[plan.entityType]!,
             isAttachedToWall: false,
-            opacity: PARTIAL_OPACITY,
+            opacity: 0.5,
             tint: [0.9, 1.5, 0.8]
          });
+      }
+   }
+
+   // Potential building plans
+   if (OPTIONS.showPotentialBuildingPlans) {
+      const potentialBuildingPlans = getPotentialBuildingPlans();
+      for (let i = 0; i < potentialBuildingPlans.length; i++) {
+         const potentialPlan = potentialBuildingPlans[i];
+
+         ghostInfos.push({
+            position: new Point(potentialPlan.x, potentialPlan.y),
+            rotation: potentialPlan.rotation,
+            ghostType: ENTITY_TYPE_TO_GHOST_TYPE_MAP[potentialPlan.buildingType]!,
+            isAttachedToWall: false,
+            opacity: 0.35,
+            tint: [1.2, 1.4, 0.8]
+         })
       }
    }
    

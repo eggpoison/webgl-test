@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, Settings, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TechID, Inventory, TRIBE_INFO_RECORD, STRUCTURE_TYPES, PlayerTribeData, ServerComponentType, EntityComponentsData, BlueprintType, HitboxCollisionType, InventoryUseInfoData } from "webgl-test-shared";
+import { AttackPacket, ClientToServerEvents, GameDataPacket, PlayerDataPacket, Point, EntityData, ServerToClientEvents, Settings, ServerTileUpdateData, ServerTileData, InitialGameDataPacket, GameDataSyncPacket, RespawnDataPacket, PlayerInventoryData, EntityType, VisibleChunkBounds, TribeType, TechID, Inventory, TRIBE_INFO_RECORD, STRUCTURE_TYPES, PlayerTribeData, ServerComponentType, EntityComponentsData, BlueprintType, HitboxCollisionType, InventoryUseInfoData, PotentialBuildingPlanData } from "webgl-test-shared";
 import { setGameState, setLoadingScreenInitialStatus } from "../components/App";
 import Player from "../entities/Player";
 import ENTITY_CLASS_RECORD, { EntityClassType } from "../entity-class-record";
@@ -38,6 +38,12 @@ export type GameData = {
    readonly gameTicks: number;
    readonly tiles: Array<Array<Tile>>;
    readonly playerID: number;
+}
+
+let potentialBuildingPlans: ReadonlyArray<PotentialBuildingPlanData>;
+
+export function getPotentialBuildingPlans(): ReadonlyArray<PotentialBuildingPlanData> {
+   return potentialBuildingPlans;
 }
 
 const shouldShowDamageNumber = (attackerID: number): boolean => {
@@ -276,6 +282,7 @@ abstract class Client {
       setVisibleBuildingPlans(gameDataPacket.visibleBuildingPlans);
       setVisibleBuildingVulnerabilities(gameDataPacket.visibleBuildingVulnerabilities);
       setVisibleRestrictedBuildingAreas(gameDataPacket.visibleRestrictedBuildingAreas);
+      potentialBuildingPlans = gameDataPacket.visiblePotentialBuildingPlans;
    }
 
    private static updateTribe(tribeData: PlayerTribeData): void {

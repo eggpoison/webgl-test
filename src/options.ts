@@ -22,6 +22,7 @@ interface Options {
    showVulnerabilityNodes: boolean;
    showBuildingVulnerabilities: boolean;
    showBuildingPlans: boolean;
+   showPotentialBuildingPlans: boolean;
    showRestrictedAreas: boolean;
 }
 
@@ -39,6 +40,7 @@ const OPTIONS: Options = {
    showVulnerabilityNodes: false,
    showBuildingVulnerabilities: false,
    showBuildingPlans: false,
+   showPotentialBuildingPlans: false,
    showRestrictedAreas: false
 };
 

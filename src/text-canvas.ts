@@ -3,6 +3,7 @@ import Board from "./Board";
 import Camera from "./Camera";
 import { halfWindowHeight, halfWindowWidth, windowHeight, windowWidth } from "./webgl";
 import OPTIONS from "./options";
+import { getPotentialBuildingPlans } from "./client/Client";
 
 // @Cleanup: The logic for damage, research and heal numbers is extremely similar, can probably be combined
 
@@ -291,6 +292,57 @@ const renderPlayerNames = (): void => {
    }
 }
 
+const renderPotentialBuildingPlans = (): void => {
+   const potentialBuildingPlans = getPotentialBuildingPlans();
+   for (let i = 0; i < potentialBuildingPlans.length; i++) {
+      const potentialPlan = potentialBuildingPlans[i];
+
+      // Calculate position in camera
+      const cameraX = getXPosInCamera(potentialPlan.x);
+      const cameraY = getYPosInCamera(potentialPlan.y);
+      const height = 15;
+
+      const textColour = potentialPlan.isBestMin ? "#fff" : "#ccc";
+
+      ctx.font = "400 13px Helvetica";
+      ctx.lineJoin = "round";
+      ctx.miterLimit = 2;
+
+      const minText = "min=" + Math.floor(potentialPlan.minVulnerability);
+      const minWidth = ctx.measureText(minText).width; // @Speed
+
+      // Draw text bg
+      ctx.fillStyle = "#000";
+      ctx.fillRect(cameraX - minWidth/2, cameraY - height, minWidth, height);
+      
+      // Draw text
+      ctx.fillStyle = textColour;
+      ctx.fillText(minText, cameraX - minWidth / 2, cameraY - 3);
+
+      const averageText = "avg=" + potentialPlan.averageVulnerability.toFixed(2);
+      const averageWidth = ctx.measureText(averageText).width; // @Speed
+
+      // Draw text bg
+      ctx.fillStyle = "#000";
+      ctx.fillRect(cameraX - averageWidth/2, cameraY, averageWidth, height);
+      
+      // Draw text
+      ctx.fillStyle = textColour;
+      ctx.fillText(averageText, cameraX - averageWidth / 2, cameraY + height - 3);
+
+      const extendedAverageText = "xavg=" + potentialPlan.extendedAverageVulnerability.toFixed(2);
+      const extendedAverageWidth = ctx.measureText(extendedAverageText).width; // @Speed
+
+      // Draw text bg
+      ctx.fillStyle = "#000";
+      ctx.fillRect(cameraX - extendedAverageWidth/2, cameraY + height, extendedAverageWidth, height);
+      
+      // Draw text
+      ctx.fillStyle = textColour;
+      ctx.fillText(extendedAverageText, cameraX - extendedAverageWidth / 2, cameraY + height * 2 - 3);
+   }
+}
+
 const renderBuildingVulnerabilities = (): void => {
    for (let i = 0; i < buildingVulnerabilities.length; i++) {
       const buildingVulnerabilityData = buildingVulnerabilities[i];
@@ -337,5 +389,8 @@ export function renderText(): void {
    renderHealNumbers();
    if (OPTIONS.showBuildingVulnerabilities) {
       renderBuildingVulnerabilities();
+   }
+   if (OPTIONS.showPotentialBuildingPlans) {
+      renderPotentialBuildingPlans();
    }
 }
